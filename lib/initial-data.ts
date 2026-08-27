@@ -100,4 +100,5 @@ export const INITIAL_SETTINGS: SiteSettings = {
     'Vintage 35mm',
     'Hyperrealistic',
   ],
+  geminiCustomInstructions: '',
 };

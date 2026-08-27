@@ -120,6 +120,7 @@ export interface SiteSettings {
   cloudinaryApiKey?: string;
   cloudinaryApiSecret?: string;
   cloudinaryUploadPreset?: string;
+  geminiCustomInstructions?: string;
 }
 
 export interface AdminUser {

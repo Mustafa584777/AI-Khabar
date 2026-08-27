@@ -344,11 +344,13 @@ export const ServerStorage = {
         const { error } = await db().from('posts').upsert(payload, { onConflict: 'id' });
         if (error) {
           console.error('Supabase savePost error:', error.message, error.details);
+          throw new Error(`Supabase database error: ${error.message}`);
         } else {
           console.log(`Saved post ${savedPost.id} to Supabase successfully.`);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Supabase savePost exception:', err);
+        throw err;
       }
     }
 

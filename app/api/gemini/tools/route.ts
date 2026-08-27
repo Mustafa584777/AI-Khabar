@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
+import { ServerStorage } from '@/lib/server-storage';
 
 const IMAGE_TO_PROMPT_SYSTEM_INSTRUCTION = `You are an expert AI Image Prompt Reverse-Engineering Engine.
 
@@ -503,7 +504,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Image data is required' }, { status: 400 });
       }
 
-      const activeInstructions = (customInstructions || styleFocus || '').trim();
+      const settings = await ServerStorage.getSettings().catch(() => null);
+      const globalCustom = settings?.geminiCustomInstructions || '';
+      const activeInstructions = [globalCustom, customInstructions, styleFocus].filter(Boolean).join('\n\n');
 
       if (!apiKey) {
         const fallback = generateLocalImageToPrompt(activeInstructions);

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
-import { Settings, Save, RotateCcw, Download, Database, Cloud, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { Settings, Save, RotateCcw, Download, Database, Cloud, CheckCircle2, AlertCircle, X, Sparkles } from 'lucide-react';
 
 export const SettingsView = () => {
   const { settings, saveSettings, posts, categories, refreshData, showToast, setAdminSubView } = useApp();
@@ -20,6 +20,7 @@ export const SettingsView = () => {
   const [faviconUrl, setFaviconUrl] = useState(settings.faviconUrl || '/favicon.ico');
   const [popularTags, setPopularTags] = useState<string[]>(settings.popularTags || []);
   const [newTag, setNewTag] = useState('');
+  const [geminiCustomInstructions, setGeminiCustomInstructions] = useState(settings.geminiCustomInstructions || '');
 
   // Cloudinary Settings
   const [cloudinaryCloudName, setCloudinaryCloudName] = useState(settings.cloudinaryCloudName || '');
@@ -129,6 +130,7 @@ export const SettingsView = () => {
       cloudinaryCloudName: cloudinaryCloudName.trim(),
       cloudinaryApiKey: cloudinaryApiKey.trim(),
       cloudinaryApiSecret: cloudinaryApiSecret.trim(),
+      geminiCustomInstructions: geminiCustomInstructions.trim(),
     };
     saveSettings(updated);
     showToast('Site settings updated successfully!');
@@ -369,6 +371,39 @@ export const SettingsView = () => {
             >
               <Save className="w-4 h-4" />
               <span>Save Changes</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Gemini AI Custom System Instructions & Directives */}
+        <div className="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
+          <div>
+            <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-indigo-500" />
+              <span>Gemini AI Custom System Instructions & Directives</span>
+            </h3>
+            <p className="text-xs text-neutral-500 mt-0.5">
+              Specify permanent custom rules, tone of voice, formatting styles, or reverse-engineering directives for all server-side Gemini API calls.
+            </p>
+          </div>
+
+          <div>
+            <textarea
+              rows={4}
+              value={geminiCustomInstructions}
+              onChange={(e) => setGeminiCustomInstructions(e.target.value)}
+              placeholder="e.g. Always include ultra-detailed lighting descriptions, camera focal lengths, and cinematic ratios in every generated prompt package..."
+              className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/30 transition-colors"
+            >
+              <Save className="w-4 h-4" />
+              <span>Save Gemini Instructions</span>
             </button>
           </div>
         </div>
