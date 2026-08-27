@@ -742,14 +742,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     isSavingRef.current = true;
 
     // Immediate optimistic local update
+    let nextPosts: PromptPost[] = [];
     setPosts((prev) => {
       const idx = prev.findIndex((p) => p.id === post.id);
       if (idx >= 0) {
         const updated = [...prev];
         updated[idx] = post;
-        return updated;
+        nextPosts = updated;
+      } else {
+        nextPosts = [post, ...prev];
       }
-      return [post, ...prev];
+      StorageService.saveCachedPosts(nextPosts);
+      return nextPosts;
     });
 
     try {
@@ -763,6 +767,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const data = await res.json();
       if (data.success && Array.isArray(data.posts)) {
         setPosts(data.posts);
+        StorageService.saveCachedPosts(data.posts);
         const savedPost = data.post || post;
         showToast(
           savedPost.status === 'published'

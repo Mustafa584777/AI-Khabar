@@ -92,7 +92,18 @@ export const AIStudioTool = () => {
     return null;
   });
 
-  const [customInstructions, setCustomInstructions] = useState<string>('');
+  const [customInstructions, setCustomInstructions] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('promptcms_custom_instructions') || '';
+    }
+    return '';
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('promptcms_custom_instructions', customInstructions);
+    }
+  }, [customInstructions]);
   const [isExtractingPrompt, setIsExtractingPrompt] = useState<boolean>(false);
   const [extractedData, setExtractedData] = useState<ExtractedPromptData | null>(null);
   const [isSavedExtracted, setIsSavedExtracted] = useState<boolean>(false);
