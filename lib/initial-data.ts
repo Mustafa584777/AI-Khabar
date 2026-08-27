@@ -1,0 +1,103 @@
+import { Category, PromptPost, SiteSettings } from '@/types/prompt';
+import defaultPostsData from '@/data/posts.json';
+
+export const INITIAL_CATEGORIES: Category[] = [
+  {
+    id: 'cat-1',
+    name: 'Photorealistic & Portraits',
+    slug: 'photorealistic-portraits',
+    iconName: 'Camera',
+    description: 'Ultra-realistic human portraits, fashion photography, and candid shots',
+    color: '#3B82F6',
+    badgeBg: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800',
+  },
+  {
+    id: 'cat-2',
+    name: '3D Art & CGI Renders',
+    slug: '3d-art-cgi',
+    iconName: 'Box',
+    description: 'Octane render, Unreal Engine 5, claymation, and futuristic 3D characters',
+    color: '#8B5CF6',
+    badgeBg: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800',
+  },
+  {
+    id: 'cat-3',
+    name: 'Anime & Cyberpunk',
+    slug: 'anime-cyberpunk',
+    iconName: 'Sparkles',
+    description: 'Japanese animation aesthetic, neon streets, mecha, and studio ghibli styles',
+    color: '#EC4899',
+    badgeBg: 'bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-950/50 dark:text-pink-300 dark:border-pink-800',
+  },
+  {
+    id: 'cat-4',
+    name: 'Logo & Brand Identity',
+    slug: 'logo-brand-identity',
+    iconName: 'Palette',
+    description: 'Minimalist vector logos, mascot badges, brand mockups, and typography icons',
+    color: '#10B981',
+    badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800',
+  },
+  {
+    id: 'cat-5',
+    name: 'ChatGPT & Coding Assistant',
+    slug: 'chatgpt-coding',
+    iconName: 'Code',
+    description: 'Full-stack development, code refactoring, system architecture, and debug prompts',
+    color: '#F59E0B',
+    badgeBg: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800',
+  },
+  {
+    id: 'cat-6',
+    name: 'SEO & Copywriting',
+    slug: 'seo-copywriting',
+    iconName: 'FileText',
+    description: 'High-ranking blog posts, viral marketing hooks, ad copies, and YouTube scripts',
+    color: '#6366F1',
+    badgeBg: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800',
+  },
+  {
+    id: 'cat-7',
+    name: 'Architecture & Interiors',
+    slug: 'architecture-interiors',
+    iconName: 'Building',
+    description: 'Modern luxury villas, brutalist structures, Scandinavian interior design',
+    color: '#06B6D4',
+    badgeBg: 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/50 dark:text-cyan-300 dark:border-cyan-800',
+  },
+  {
+    id: 'cat-8',
+    name: 'Fantasy & Concept Art',
+    slug: 'fantasy-concept-art',
+    iconName: 'Wand2',
+    description: 'Mythical creatures, ancient temples, sci-fi space stations, and epic battlefields',
+    color: '#D97706',
+    badgeBg: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/50 dark:text-orange-300 dark:border-orange-800',
+  }
+];
+
+export const INITIAL_POSTS: PromptPost[] = (Array.isArray(defaultPostsData) ? defaultPostsData : []) as unknown as PromptPost[];
+
+export const INITIAL_SETTINGS: SiteSettings = {
+  siteName: 'Trending Copy Paste Photo Prompts',
+  siteTagline: 'Free Copy-Paste AI Photo Prompts, Codes & Creative Guides',
+  siteUrl: 'https://trendinggeminiprompts.com',
+  logoText: 'Trending Copy Paste Photo Prompts',
+  logoUrl: '/logo.png',
+  faviconUrl: '/favicon.ico',
+  heroHeadline: 'Trending Copy Paste Photo Prompts',
+  heroSubheadline: 'Explore curated photo prompts for Gemini, Midjourney and ChatGPT. Copy with 1 click.',
+  defaultTool: 'Gemini',
+  enableAiGenerator: true,
+  footerText: '© 2026 Trending Copy Paste Photo Prompts - Built for creators, designers & engineers. All prompts free to copy and commercial use.',
+  adminEmail: 'admin@trendinggeminiprompts.com',
+  popularTags: [
+    'Cinematic 8K',
+    '3D Character',
+    'Minimalist Logo',
+    'Anime Style',
+    'Cyberpunk City',
+    'Vintage 35mm',
+    'Hyperrealistic',
+  ],
+};

@@ -1,0 +1,6 @@
+{
+  "name": "Trending Copy Paste Photo Prompts",
+  "description": "Copy-paste prompt directory for Trending Copy Paste Photo Prompts with a WordPress-like CMS for creating, editing, and publishing prompt articles and AI guides.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
