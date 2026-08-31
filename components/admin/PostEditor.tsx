@@ -117,6 +117,7 @@ export const PostEditor = () => {
   const [imageUrl, setImageUrl] = useState(
     () => existingPost?.imageUrl || ''
   );
+  const [rawBase64Image, setRawBase64Image] = useState<string>('');
   const [imageAlt, setImageAlt] = useState(
     () => existingPost?.imageAlt || (existingPost?.title || '')
   );
@@ -487,6 +488,7 @@ export const PostEditor = () => {
     try {
       const optimized = await optimizeImageFile(file);
       if (optimized) {
+        setRawBase64Image(optimized);
         let finalImageUrl = optimized;
         try {
           const cleanPublicId = slug || slugify(title) || `prompt-${Date.now()}`;
@@ -634,7 +636,7 @@ export const PostEditor = () => {
           action: 'generate_full_post',
           mode: autoFillMode,
           topic: effectiveTopic || (autoFillMode === 'image' ? 'Reverse engineer this image' : 'Photorealistic Artwork Recreation'),
-          image: autoFillMode === 'image' ? imageUrl : undefined,
+          image: autoFillMode === 'image' ? (rawBase64Image || imageUrl) : undefined,
           tool: 'Gemini',
           category,
           categories: categories.map((c) => c.name),
