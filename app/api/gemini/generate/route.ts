@@ -1,6 +1,5 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
-import { ServerStorage } from '@/lib/server-storage';
 
 // Prioritized model fallback sequence: if one model fails or is unavailable, switch to the next
 const CANDIDATE_MODELS = [
@@ -139,12 +138,9 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      const settings = await ServerStorage.getSettings().catch(() => null);
-      const customIns = settings?.geminiCustomInstructions || '';
       const systemInstruction = `You are a world-class prompt engineer and AI art director specializing in Midjourney v6, ChatGPT-4o, Flux.1, Stable Diffusion XL, Claude 3.5, and Gemini.
 Generate a comprehensive, high-quality prompt package formatted for a prompt directory article like trendinggeminiprompts.com.
-Ensure the prompt includes dynamic variable placeholders like [subject], [lighting], [style] so users can customize them.
-${customIns ? `\nUSER CUSTOM SYSTEM INSTRUCTIONS & GUIDELINES:\n${customIns}` : ''}`;
+Ensure the prompt includes dynamic variable placeholders like [subject], [lighting], [style] so users can customize them.`;
 
       let contentsPayload: any;
 

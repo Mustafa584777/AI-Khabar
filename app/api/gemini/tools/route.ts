@@ -1,6 +1,5 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
-import { ServerStorage } from '@/lib/server-storage';
 
 const IMAGE_TO_PROMPT_SYSTEM_INSTRUCTION = `You are an expert AI Image Prompt Reverse-Engineering Engine.
 
@@ -448,8 +447,8 @@ async function generateWithModel(ai: GoogleGenAI, preferredModel: string | undef
 }
 
 // Fallback reverse-prompt generator when offline or API key missing
-function generateLocalImageToPrompt(customInstructions?: string) {
-  const instructions = customInstructions ? ` with user custom modifications: ${customInstructions}` : '';
+function generateLocalImageToPrompt(styleFocus?: string) {
+  const focus = styleFocus || 'Photorealistic & 8K Portrait';
   return {
     title: 'Photographic Visual Reconstruction',
     summary: 'A precision-reconstructed composition featuring authentic textures, balanced natural lighting, and photographic realism.',
@@ -464,10 +463,10 @@ function generateLocalImageToPrompt(customInstructions?: string) {
       effects: 'Natural optical depth blur, subtle organic grain, crisp in-focus subject without digital over-sharpening',
       text_and_layout: 'None visible',
     },
-    prompt: `Masterful photorealistic photograph of the subject with authentic physical presence${instructions}. Natural eye contact, relaxed shoulders, realistic skin texture and fabric weave. Shot with natural portrait lens perspective, soft balanced key and fill lighting, shallow depth of field, natural color grade and true black levels --ar 16:9 --v 6.1 --style raw`,
-    promptText: `Masterful photorealistic photograph of the subject with authentic physical presence${instructions}. Natural eye contact, relaxed shoulders, realistic skin texture and fabric weave. Shot with natural portrait lens perspective, soft balanced key and fill lighting, shallow depth of field, natural color grade and true black levels --ar 16:9 --v 6.1 --style raw`,
-    negative_prompt: 'cartoon, anime, CGI, plastic skin, altered face, distorted anatomy, extra fingers, extra limbs, unrealistic hands, incorrect object geometry, unnatural shadows, excessive blur, oversaturation, watermark, text',
-    negativePrompt: 'cartoon, anime, CGI, plastic skin, altered face, distorted anatomy, extra fingers, extra limbs, unrealistic hands, incorrect object geometry, unnatural shadows, excessive blur, oversaturation, watermark, text',
+    prompt: `Masterful ${focus} photograph of the subject with authentic physical presence. Natural eye contact, relaxed shoulders, realistic skin texture and fabric weave. Shot with natural portrait lens perspective, soft balanced key and fill lighting, shallow depth of field, natural color grade and true black levels --ar 16:9 --v 6.1 --style raw`,
+    promptText: `Masterful ${focus} photograph of the subject with authentic physical presence. Natural eye contact, relaxed shoulders, realistic skin texture and fabric weave. Shot with natural portrait lens perspective, soft balanced key and fill lighting, shallow depth of field, natural color grade and true black levels --ar 16:9 --v 6.1 --style raw`,
+    negative_prompt: 'cartoon, anime, CGI, plastic skin, altered face, distorted anatomy, extra fingers, extra limbs, unrealistic hands, incorrect object geometry, unnatural shadows, excessive blur, oversaturation, watermark',
+    negativePrompt: 'cartoon, anime, CGI, plastic skin, altered face, distorted anatomy, extra fingers, extra limbs, unrealistic hands, incorrect object geometry, unnatural shadows, excessive blur, oversaturation, watermark',
     aspect_ratio: '16:9',
     aspectRatio: '16:9',
     confidence: 'high',
@@ -486,7 +485,6 @@ export async function POST(req: NextRequest) {
       action,
       image,
       referenceImage,
-      customInstructions,
       styleFocus,
       prompt,
       aspectRatio,
@@ -504,12 +502,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Image data is required' }, { status: 400 });
       }
 
-      const settings = await ServerStorage.getSettings().catch(() => null);
-      const globalCustom = settings?.geminiCustomInstructions || '';
-      const activeInstructions = [globalCustom, customInstructions, styleFocus].filter(Boolean).join('\n\n');
-
       if (!apiKey) {
-        const fallback = generateLocalImageToPrompt(activeInstructions);
+        const fallback = generateLocalImageToPrompt(styleFocus);
         return NextResponse.json({ success: true, data: fallback, fallback: true });
       }
 
@@ -537,16 +531,13 @@ export async function POST(req: NextRequest) {
       }
 
       if (!base64Data) {
-        const fallback = generateLocalImageToPrompt(activeInstructions);
+        const fallback = generateLocalImageToPrompt(styleFocus);
         return NextResponse.json({ success: true, data: fallback, fallback: true });
       }
 
       const promptInstruction = `Inspect this uploaded reference image with extreme technical and artistic precision.
 Follow the ANALYSIS PIPELINE and reconstruct the exact AI prompt that would reproduce this image in an AI image generator.
-${activeInstructions ? `CRITICAL USER CUSTOM INSTRUCTIONS & MODIFICATIONS:
-The user explicitly requests the following instructions to be incorporated into the prompt reconstruction:
-"${activeInstructions}"
-(e.g., if asked to remove watermarks, remove text, ignore background, modify clothing, or adjust lighting/style, apply these modifications into the generated prompt and negative prompt while keeping the rest of the visual composition faithful to the image).` : ''}
+${styleFocus ? `User requested aesthetic/style: "${styleFocus}". Remember the uploaded image is the PRIMARY SOURCE OF TRUTH.` : ''}
 Return the final response strictly conforming to the required JSON schema.`;
 
       const jsonSchemaConfig = {
