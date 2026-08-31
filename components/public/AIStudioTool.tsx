@@ -92,7 +92,18 @@ export const AIStudioTool = () => {
     return null;
   });
 
-  const [styleFocus, setStyleFocus] = useState<string>('Photorealistic & 8K Portrait');
+  const [customInstructions, setCustomInstructions] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('promptcms_custom_instructions') || '';
+    }
+    return '';
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('promptcms_custom_instructions', customInstructions);
+    }
+  }, [customInstructions]);
   const [isExtractingPrompt, setIsExtractingPrompt] = useState<boolean>(false);
   const [extractedData, setExtractedData] = useState<ExtractedPromptData | null>(null);
   const [isSavedExtracted, setIsSavedExtracted] = useState<boolean>(false);
@@ -147,7 +158,7 @@ export const AIStudioTool = () => {
         body: JSON.stringify({
           action: 'image_to_prompt',
           image: uploadedImage,
-          styleFocus,
+          customInstructions: customInstructions.trim(),
         }),
       });
 
@@ -321,7 +332,6 @@ export const AIStudioTool = () => {
                       key={sample.name}
                       onClick={() => {
                         setUploadedImage(sample.url);
-                        setStyleFocus(sample.style);
                         setExtractedData(null);
                         setIsSavedExtracted(false);
                       }}
@@ -343,38 +353,75 @@ export const AIStudioTool = () => {
               </div>
             </div>
 
-            {/* Tuning Options */}
+            {/* Custom Instructions */}
             <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
-              <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-[#E60023]" />
-                <span>Aesthetic Style Focus</span>
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                  <Sliders className="w-4 h-4 text-[#E60023]" />
+                  <span>Custom Instructions (Optional)</span>
+                </h3>
+                {customInstructions && (
+                  <button
+                    type="button"
+                    onClick={() => setCustomInstructions('')}
+                    className="text-[11px] font-semibold text-neutral-400 hover:text-red-500 transition-colors"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
 
               <div>
                 <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-1.5">
-                  Target Aesthetic & Lens Mood
+                  Tailor prompt extraction & reverse modifications:
                 </label>
-                <select
-                  value={styleFocus}
-                  onChange={(e) => setStyleFocus(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-bold focus:ring-2 focus:ring-red-500 focus:outline-none"
-                >
-                  <option value="Photorealistic & 8K Portrait">Photorealistic & 8K Portrait</option>
-                  <option value="Cinematic Film & 35mm Optics">Cinematic Film & 35mm Optics</option>
-                  <option value="Studio Editorial & Fashion">Studio Editorial & Fashion</option>
-                  <option value="Cyberpunk & Sci-Fi Neon">Cyberpunk & Sci-Fi Neon</option>
-                  <option value="Anime & Manga Masterpiece">Anime & Manga Masterpiece</option>
-                  <option value="3D Unreal Engine 5 Render">3D Unreal Engine 5 Render</option>
-                  <option value="Minimalist Graphic Vector">Minimalist Graphic Vector</option>
-                  <option value="Dark Luxury & Moody Lighting">Dark Luxury & Moody Lighting</option>
-                </select>
+                <textarea
+                  value={customInstructions}
+                  onChange={(e) => setCustomInstructions(e.target.value)}
+                  placeholder="remove watermark, text or add something..."
+                  rows={4}
+                  className="w-full px-3.5 py-2.5 text-xs rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-[#E60023] focus:outline-none resize-none placeholder:text-neutral-400 dark:placeholder:text-neutral-500 leading-relaxed"
+                />
+              </div>
+
+              {/* Quick suggestion chips */}
+              <div className="space-y-1.5 pt-0.5">
+                <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider block">
+                  Quick Add Suggestions:
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    'remove watermark & logos',
+                    'remove text & overlays',
+                    'clean background',
+                    'add golden hour lighting',
+                    'cinematic film 35mm grain',
+                    'photorealistic 8K portrait',
+                  ].map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      onClick={() => {
+                        setCustomInstructions((prev) => {
+                          const trimmed = prev.trim();
+                          if (!trimmed) return suggestion;
+                          if (trimmed.toLowerCase().includes(suggestion.toLowerCase())) return trimmed;
+                          return `${trimmed}, ${suggestion}`;
+                        });
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 hover:bg-red-50 dark:hover:bg-red-950/60 hover:text-[#E60023] hover:border-red-300 dark:hover:border-red-800 text-neutral-600 dark:text-neutral-300 text-[11px] font-medium transition-colors border border-neutral-200 dark:border-neutral-700"
+                    >
+                      + {suggestion}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <button
                 type="button"
                 disabled={!uploadedImage || isExtractingPrompt}
                 onClick={handleExtractPrompt}
-                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#E60023] to-[#ff3b56] hover:from-red-700 hover:to-red-600 text-white text-xs sm:text-sm font-black shadow-md shadow-red-500/25 flex items-center justify-center gap-2 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#E60023] to-[#ff3b56] hover:from-red-700 hover:to-red-600 text-white text-xs sm:text-sm font-black shadow-md shadow-red-500/25 flex items-center justify-center gap-2 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isExtractingPrompt ? (
                   <>

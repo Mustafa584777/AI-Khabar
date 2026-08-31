@@ -65,6 +65,29 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
         style={{ aspectRatio }}
         onContextMenu={(e) => e.preventDefault()}
       >
+        {/* Requested Badge */}
+        {post.isRequested && (
+          <div className="absolute top-2.5 left-2.5 z-20 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md text-neutral-900 dark:text-white font-extrabold px-2.5 py-1 rounded-full text-[10px] shadow-md border border-red-200 dark:border-red-900/60 flex items-center gap-1.5 select-none">
+            {post.requestedByAvatar ? (
+              <div className="w-4 h-4 rounded-full overflow-hidden relative shrink-0 border border-neutral-200">
+                <Image
+                  src={post.requestedByAvatar}
+                  alt={post.requestedByName || 'User'}
+                  width={16}
+                  height={16}
+                  className="w-full h-full object-cover rounded-full"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+            ) : (
+              <span className="w-2 h-2 rounded-full bg-[#E60023]" />
+            )}
+            <span className="truncate max-w-[120px] font-bold">
+              {post.requestedByName ? `Req by ${post.requestedByName}` : 'Requested'}
+            </span>
+          </div>
+        )}
+
         {/* Full-Height Shimmer Skeleton Placeholder */}
         {!imageLoaded && post.imageUrl && (
           <div className="absolute inset-0 z-0 bg-neutral-200 dark:bg-neutral-800 animate-pulse flex flex-col items-center justify-center p-4">

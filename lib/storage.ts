@@ -19,14 +19,6 @@ export const StorageService = {
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            // Invalidate legacy base64 bloated cache
-            const hasLegacyBase64 = parsed.some(
-              (p: any) => typeof p.imageUrl === 'string' && p.imageUrl.startsWith('data:image/')
-            );
-            if (hasLegacyBase64) {
-              localStorage.removeItem(STORAGE_KEY_CACHED_POSTS);
-              return INITIAL_POSTS || [];
-            }
             return parsed;
           }
         }
@@ -42,7 +34,22 @@ export const StorageService = {
       try {
         localStorage.setItem(STORAGE_KEY_CACHED_POSTS, JSON.stringify(posts));
       } catch (e) {
-        console.error('Error saving cached posts:', e);
+        console.warn('Direct localStorage quota warning, attempting sanitized storage:', e);
+        try {
+          // If storage full due to base64 images, save with trimmed image data for cache
+          const sanitized = posts.map((p) => {
+            if (typeof p.imageUrl === 'string' && p.imageUrl.startsWith('data:image/') && p.imageUrl.length > 5000) {
+              return {
+                ...p,
+                imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80',
+              };
+            }
+            return p;
+          });
+          localStorage.setItem(STORAGE_KEY_CACHED_POSTS, JSON.stringify(sanitized));
+        } catch (innerErr) {
+          console.error('Failed to save cached posts to localStorage:', innerErr);
+        }
       }
     }
   },
@@ -362,6 +369,12 @@ export const StorageService = {
       localStorage.setItem('promptcms_prompt_requests', JSON.stringify(updated));
     }
     return updated;
+  },
+
+  savePromptRequests: (requests: any[]): void => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('promptcms_prompt_requests', JSON.stringify(requests));
+    }
   },
 
   getLeaderboardUsers: (): any[] => {

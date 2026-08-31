@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
 import { PromptPost, AIHistoryItem } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
@@ -30,7 +30,13 @@ import {
   Send,
   Upload,
   Camera,
+  Edit3,
+  RefreshCw,
+  X,
+  CheckCircle2,
+  Loader2,
 } from 'lucide-react';
+import { CARTOON_AVATARS } from '@/lib/avatar-constants';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
@@ -45,6 +51,8 @@ export const UserDashboard = () => {
     tasteProfile,
     updateTasteProfile,
     userAccount,
+    setUserAccount,
+    updateUserProfile,
     logoutUser,
     openAuthModal,
     aiHistory,
@@ -55,32 +63,160 @@ export const UserDashboard = () => {
     setPersistentRefImage,
     promptRequests,
     addPromptRequest,
+    refreshPromptRequests,
     awardPoints,
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'saved' | 'history' | 'taste' | 'request' | 'leaderboard'>('saved');
+  const [activeTab, setActiveTab] = useState<'saved' | 'history' | 'my-requested' | 'taste' | 'request' | 'leaderboard'>(() => {
+    if (typeof window !== 'undefined') {
+      const tab = sessionStorage.getItem('promptcms_dashboard_tab');
+      if (tab === 'request' || tab === 'saved' || tab === 'history' || tab === 'my-requested' || tab === 'taste' || tab === 'leaderboard') {
+        sessionStorage.removeItem('promptcms_dashboard_tab');
+        return tab as any;
+      }
+    }
+    return 'saved';
+  });
   const [historyFilter, setHistoryFilter] = useState<'all' | 'image_to_prompt'>('all');
   const [historySearch, setHistorySearch] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Request a prompt form state
-  const [requestText, setRequestText] = useState('');
-  const [requestCategory, setRequestCategory] = useState('Photorealistic');
+  // Profile editing state
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editUsername, setEditUsername] = useState('');
+  const [editAvatar, setEditAvatar] = useState('');
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const avatarFileInputRef = React.useRef<HTMLInputElement>(null);
+  const [isRefreshingPoints, setIsRefreshingPoints] = useState(false);
 
-  const handleRequestSubmit = (e: React.FormEvent) => {
+  // Request a prompt form state (category select removed per user request)
+  const [requestText, setRequestText] = useState('');
+
+  // Auto-refresh user account & requests on mount and tab changes
+  useEffect(() => {
+    const acc = StorageService.getUserAccount();
+    if (acc) {
+      setUserAccount(acc);
+    }
+    void refreshPromptRequests();
+  }, [activeTab, setUserAccount, refreshPromptRequests]);
+
+  const handleOpenEditProfile = () => {
+    if (!userAccount?.isLoggedIn) {
+      openAuthModal('Sign in or create an account to customize your profile avatar and details.');
+      return;
+    }
+    setEditName(userAccount.name || '');
+    setEditUsername(userAccount.username || '');
+    setEditAvatar(userAccount.avatar || CARTOON_AVATARS[0].url);
+    setIsEditProfileOpen(true);
+  };
+
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Image must be under 5MB');
+      return;
+    }
+    setIsUploadingAvatar(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      setEditAvatar(dataUrl);
+      setIsUploadingAvatar(false);
+      showToast('Profile photo selected');
+    };
+    reader.onerror = () => {
+      setIsUploadingAvatar(false);
+      showToast('Failed to load image');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editName.trim()) {
+      showToast('Name cannot be empty');
+      return;
+    }
+    const cleanHandle = editUsername.trim()
+      ? editUsername.startsWith('@')
+        ? editUsername
+        : '@' + editUsername
+      : '@' + editName.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    updateUserProfile({
+      name: editName.trim(),
+      username: cleanHandle,
+      avatar: editAvatar || CARTOON_AVATARS[0].url,
+    });
+    setIsEditProfileOpen(false);
+  };
+
+  const handleRefreshPoints = () => {
+    setIsRefreshingPoints(true);
+    const acc = StorageService.getUserAccount();
+    if (acc) {
+      setUserAccount(acc);
+    }
+    void refreshPromptRequests();
+    setTimeout(() => {
+      setIsRefreshingPoints(false);
+      showToast('Points & request status refreshed!');
+    }, 400);
+  };
+
+  const handleRequestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!requestText.trim()) {
       showToast('Please enter your prompt request description');
       return;
     }
-    const success = addPromptRequest(requestText, requestCategory);
+    const success = await addPromptRequest(requestText, 'Photorealistic & Portraits');
     if (success) {
       setRequestText('');
+      const acc = StorageService.getUserAccount();
+      if (acc) setUserAccount(acc);
     }
   };
 
   // Filtered saved posts
   const savedPosts = posts.filter((p) => bookmarkedIds.includes(p.id));
+
+  // Fulfilled Requested posts matching current logged-in user (by email, name, handle, or fulfilled request ID)
+  const myFulfilledRequestedPosts = useMemo(() => {
+    if (!userAccount) return [];
+    const uEmail = userAccount.email?.toLowerCase().trim() || '';
+    const uName = userAccount.name?.toLowerCase().trim() || '';
+    const uHandle = userAccount.username?.toLowerCase().replace('@', '').trim() || '';
+
+    return posts.filter((p) => {
+      if (p.status !== 'published' || !p.isRequested) return false;
+
+      const pEmail = p.requestedByEmail?.toLowerCase().trim();
+      const pName = p.requestedByName?.toLowerCase().trim();
+
+      const matchEmail = Boolean(uEmail && pEmail && pEmail === uEmail);
+      const matchName = Boolean(
+        uName &&
+          pName &&
+          (pName === uName ||
+            pName === uHandle ||
+            pName.includes(uName) ||
+            uName.includes(pName))
+      );
+
+      const matchReqItem = promptRequests.some(
+        (r) =>
+          r.fulfilledPostId === p.id ||
+          (r.userEmail && uEmail && r.userEmail.toLowerCase().trim() === uEmail)
+      );
+
+      return matchEmail || matchName || matchReqItem;
+    });
+  }, [posts, userAccount, promptRequests]);
 
   // Filtered AI history
   const filteredHistory = aiHistory.filter((item) => {
@@ -177,22 +313,41 @@ export const UserDashboard = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
-        {/* Profile Card */}
+        {/* Profile Card with Avatar Customization */}
         <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4 sm:gap-5">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-[#E60023] to-amber-500 text-white flex items-center justify-center font-black text-2xl sm:text-3xl shadow-lg shadow-red-500/20 shrink-0 overflow-hidden relative">
-              {userAccount?.avatar ? (
-                <Image
-                  src={userAccount.avatar}
-                  alt={userAccount.name || 'User'}
-                  fill
-                  sizes="80px"
-                  className="object-cover"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <User className="w-8 h-8 sm:w-10 sm:h-10" />
-              )}
+            {/* Avatar with click-to-edit overlay */}
+            <div className="relative group shrink-0">
+              <button
+                type="button"
+                onClick={handleOpenEditProfile}
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-[#E60023] to-amber-500 text-white flex items-center justify-center font-black text-2xl sm:text-3xl shadow-lg shadow-red-500/20 overflow-hidden relative border-2 border-white dark:border-neutral-800 hover:ring-4 hover:ring-red-500/30 transition-all cursor-pointer"
+                title="Change Avatar & Profile"
+              >
+                {userAccount?.avatar ? (
+                  <Image
+                    src={userAccount.avatar}
+                    alt={userAccount.name || 'User'}
+                    fill
+                    sizes="80px"
+                    className="object-cover rounded-full"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <User className="w-8 h-8 sm:w-10 sm:h-10" />
+                )}
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-full">
+                  <Camera className="w-6 h-6 text-white drop-shadow-md" />
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={handleOpenEditProfile}
+                className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white flex items-center justify-center shadow-md border-2 border-white dark:border-neutral-900 transition-transform hover:scale-110"
+                title="Change profile avatar"
+              >
+                <Edit3 className="w-3 h-3" />
+              </button>
             </div>
 
             <div className="space-y-1">
@@ -214,9 +369,19 @@ export const UserDashboard = () => {
                     ? 'All Aesthetics'
                     : `${tasteProfile.genderVibe.toUpperCase()} Focus`}
                 </span>
+                {userAccount?.isLoggedIn && (
+                  <button
+                    type="button"
+                    onClick={handleOpenEditProfile}
+                    className="px-2.5 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-[11px] font-bold flex items-center gap-1 transition-colors"
+                  >
+                    <Edit3 className="w-3 h-3 text-[#E60023]" />
+                    <span>Change Avatar / Name</span>
+                  </button>
+                )}
               </div>
               <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400">
-                {userAccount?.isLoggedIn ? userAccount.email : 'Personal AI Prompt Studio'} • Top Style:{' '}
+                {userAccount?.isLoggedIn ? `${userAccount.username || ''} • ${userAccount.email}` : 'Personal AI Prompt Studio'} • Top Style:{' '}
                 <span className="font-semibold text-neutral-800 dark:text-neutral-200">{topCategory}</span>
               </p>
             </div>
@@ -238,12 +403,182 @@ export const UserDashboard = () => {
             </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
-                {Object.values(tasteProfile.categoryAffinities || {}).reduce((a, b) => a + b, 0)}
+                {userAccount?.points || 0}
               </div>
-              <div className="text-[11px] text-neutral-500 font-medium">Taste Points</div>
+              <div className="text-[11px] text-neutral-500 font-medium">Earned Points</div>
             </div>
           </div>
         </div>
+
+        {/* Edit Profile & Avatar Modal */}
+        {isEditProfileOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+            <div className="relative w-full max-w-lg bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden">
+              <div className="p-6 bg-neutral-950 text-white flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <Camera className="w-5 h-5 text-[#E60023]" />
+                  <h3 className="text-base font-black">Customize Profile & Avatar</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsEditProfileOpen(false)}
+                  className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveProfile} className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+                {/* Active Avatar Preview */}
+                <div className="flex items-center gap-4 p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
+                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-[#E60023] bg-neutral-200 dark:bg-neutral-800 shrink-0">
+                    {editAvatar ? (
+                      <Image
+                        src={editAvatar}
+                        alt={editName || 'Avatar'}
+                        fill
+                        sizes="64px"
+                        className="object-cover rounded-full"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <User className="w-8 h-8 m-auto text-neutral-400" />
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-neutral-900 dark:text-white">
+                      {editName || 'Your Name'}
+                    </h4>
+                    <p className="text-xs text-neutral-500 font-medium">{editUsername || '@username'}</p>
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold block mt-0.5">
+                      ✓ Ready to save
+                    </span>
+                  </div>
+                </div>
+
+                {/* Option 1: Upload Custom Photo */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                    Upload Your Own Photo / Image
+                  </label>
+                  <input
+                    type="file"
+                    ref={avatarFileInputRef}
+                    onChange={handleAvatarFileChange}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => avatarFileInputRef.current?.click()}
+                    disabled={isUploadingAvatar}
+                    className="w-full py-2.5 px-4 rounded-xl bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-white text-xs font-bold transition-all flex items-center justify-center gap-2 border border-dashed border-neutral-300 dark:border-neutral-700"
+                  >
+                    {isUploadingAvatar ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-[#E60023]" />
+                    ) : (
+                      <Upload className="w-4 h-4 text-[#E60023]" />
+                    )}
+                    <span>{isUploadingAvatar ? 'Loading Image...' : 'Browse Image from Device (Max 5MB)'}</span>
+                  </button>
+                </div>
+
+                {/* Option 2: 2D & 3D Cartoon Avatars (Google / Gmail style) */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                      Or Pick a 3D / 2D Cartoon Character Avatar
+                    </label>
+                    <span className="text-[10px] text-neutral-400">Google style</span>
+                  </div>
+                  <div className="grid grid-cols-5 gap-2.5 p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
+                    {CARTOON_AVATARS.map((av) => (
+                      <button
+                        key={av.id}
+                        type="button"
+                        onClick={() => setEditAvatar(av.url)}
+                        className={`relative aspect-square rounded-2xl overflow-hidden border-2 transition-all p-0.5 ${
+                          editAvatar === av.url
+                            ? 'border-[#E60023] ring-2 ring-red-400 scale-105 shadow-md'
+                            : 'border-transparent opacity-80 hover:opacity-100 hover:scale-105'
+                        }`}
+                        title={av.name}
+                      >
+                        <Image
+                          src={av.url}
+                          alt={av.name}
+                          fill
+                          sizes="60px"
+                          className="object-cover rounded-xl"
+                          referrerPolicy="no-referrer"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Option 3: Direct URL */}
+                <div>
+                  <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                    Or Image URL
+                  </label>
+                  <input
+                    type="url"
+                    value={editAvatar}
+                    onChange={(e) => setEditAvatar(e.target.value)}
+                    placeholder="https://images.unsplash.com/..."
+                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-mono focus:ring-2 focus:ring-red-500 focus:outline-none"
+                  />
+                </div>
+
+                {/* Name & Handle Inputs */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+                  <div>
+                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                      Display Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder="Your Name"
+                      className="w-full px-3.5 py-2 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-red-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                      Username (@)
+                    </label>
+                    <input
+                      type="text"
+                      value={editUsername}
+                      onChange={(e) => setEditUsername(e.target.value)}
+                      placeholder="@username"
+                      className="w-full px-3.5 py-2 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-red-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditProfileOpen(false)}
+                    className="px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-bold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-md shadow-red-500/20 transition-all transform active:scale-95"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* Guest Banner if not logged in */}
         {!userAccount?.isLoggedIn && (
@@ -272,6 +607,36 @@ export const UserDashboard = () => {
 
 
 
+        {/* Celebration Banner for Fulfilled Requested Prompts */}
+        {myFulfilledRequestedPosts.length > 0 && (
+          <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-emerald-500/10 via-red-500/10 to-amber-500/10 border border-emerald-300/80 dark:border-emerald-800/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-300">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-sm sm:text-base font-black text-neutral-900 dark:text-white flex items-center gap-2">
+                  <span>Your Requested Prompts are Ready & Live!</span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[11px] font-black">
+                    {myFulfilledRequestedPosts.length} Live
+                  </span>
+                </h3>
+                <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">
+                  Our creators have completed and published your custom prompt request. Click below to view and copy!
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setActiveTab('my-requested')}
+              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md flex items-center gap-2 shrink-0 self-start sm:self-auto transition-all transform active:scale-95"
+            >
+              <span>View My Prompts</span>
+              <ArrowUpRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {/* Navigation Tabs */}
         <div className="flex items-center gap-2 border-b border-neutral-200 dark:border-neutral-800 pb-1 overflow-x-auto">
           <button
@@ -284,6 +649,19 @@ export const UserDashboard = () => {
           >
             <Bookmark className="w-4 h-4 fill-current" />
             <span>Saved Prompts ({savedPosts.length})</span>
+          </button>
+
+          {/* My Requested Prompts Tab */}
+          <button
+            onClick={() => setActiveTab('my-requested')}
+            className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shrink-0 ${
+              activeTab === 'my-requested'
+                ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-sm'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-[#E60023]" />
+            <span>My Requested Prompts ({myFulfilledRequestedPosts.length})</span>
           </button>
 
           <button
@@ -334,6 +712,185 @@ export const UserDashboard = () => {
             <span>AI Taste Preferences</span>
           </button>
         </div>
+
+        {/* TAB: My Requested Prompts */}
+        {activeTab === 'my-requested' && (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            {myFulfilledRequestedPosts.length === 0 ? (
+              <div className="text-center py-16 bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-8 space-y-4">
+                <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-950/50 text-[#E60023] flex items-center justify-center mx-auto shadow-inner">
+                  <Sparkles className="w-8 h-8" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-lg font-bold text-neutral-900 dark:text-white">
+                    No fulfilled requested prompts yet
+                  </h3>
+                  <p className="text-xs sm:text-sm text-neutral-500 max-w-md mx-auto">
+                    When our creators publish a prompt created specifically from your custom request (matching your email or name), it will appear right here!
+                  </p>
+                </div>
+                <div className="pt-2 flex items-center justify-center gap-3">
+                  <button
+                    onClick={() => setActiveTab('request')}
+                    className="px-5 py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold transition-all inline-flex items-center gap-1.5 shadow-md shadow-red-500/20"
+                  >
+                    <Target className="w-4 h-4" />
+                    <span>Submit a Prompt Request</span>
+                  </button>
+                  <button
+                    onClick={() => setCurrentView('for-you')}
+                    className="px-4 py-2.5 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-bold transition-colors inline-flex items-center gap-1.5"
+                  >
+                    <Sparkles className="w-4 h-4 text-[#E60023]" />
+                    <span>Explore Community Requests</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-black text-neutral-900 dark:text-white flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-[#E60023]" />
+                      <span>My Fulfilled Custom Prompts</span>
+                    </h3>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                      Prompts crafted especially for your creative requests. Ready to copy, refine in AI Studio, or download.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {myFulfilledRequestedPosts.map((post) => {
+                    const promptSlug = getPromptSlug(post);
+                    const isBookmarked = bookmarkedIds.includes(post.id);
+
+                    return (
+                      <div
+                        key={post.id}
+                        className="rounded-3xl overflow-hidden bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col"
+                      >
+                        {/* Image Header */}
+                        <div
+                          className="relative aspect-video w-full bg-neutral-100 dark:bg-neutral-800 cursor-pointer overflow-hidden group"
+                          onClick={() => {
+                            setSelectedPost(post);
+                            if (typeof window !== 'undefined') {
+                              window.history.pushState({ postId: post.id }, '', `/prompt/${promptSlug}`);
+                            }
+                          }}
+                        >
+                          {post.imageUrl ? (
+                            <Image
+                              src={getOptimizedImageUrl(post.imageUrl, 600)}
+                              alt={post.title}
+                              fill
+                              sizes="(max-width: 768px) 100vw, 33vw"
+                              className="object-cover group-hover:scale-105 transition-transform duration-500"
+                              referrerPolicy="no-referrer"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-neutral-400">
+                              <Sparkles className="w-8 h-8 opacity-40" />
+                            </div>
+                          )}
+
+                          <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-black shadow-md flex items-center gap-1">
+                            <Check className="w-3 h-3 stroke-[3]" />
+                            <span>Fulfilled Request</span>
+                          </div>
+
+                          <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold">
+                            {post.category}
+                          </div>
+                        </div>
+
+                        {/* Card Body */}
+                        <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                          <div className="space-y-2">
+                            <h4
+                              onClick={() => {
+                                setSelectedPost(post);
+                                if (typeof window !== 'undefined') {
+                                  window.history.pushState({ postId: post.id }, '', `/prompt/${promptSlug}`);
+                                }
+                              }}
+                              className="text-sm font-bold text-neutral-900 dark:text-white hover:text-[#E60023] transition-colors cursor-pointer line-clamp-1"
+                            >
+                              {post.title}
+                            </h4>
+
+                            {post.requestedPromptDescription && (
+                              <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-[11px] text-neutral-600 dark:text-neutral-400">
+                                <span className="font-bold text-neutral-700 dark:text-neutral-300">
+                                  Original Request:
+                                </span>{' '}
+                                &quot;{post.requestedPromptDescription}&quot;
+                              </div>
+                            )}
+
+                            <p className="text-xs text-neutral-600 dark:text-neutral-300 line-clamp-3 bg-neutral-50 dark:bg-neutral-950 p-2.5 rounded-xl font-mono text-[11px] border border-neutral-200/60 dark:border-neutral-800/60">
+                              {post.promptText}
+                            </p>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex items-center gap-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+                            <button
+                              onClick={(e) => handleCopyPrompt(e, post.promptText, post.id)}
+                              className="flex-1 py-2 px-3 rounded-xl bg-neutral-900 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-900 text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
+                            >
+                              {copiedId === post.id ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                  <span>Copied!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3.5 h-3.5" />
+                                  <span>Copy Prompt</span>
+                                </>
+                              )}
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                if (typeof window !== 'undefined') {
+                                  sessionStorage.setItem('promptcms_studio_preload', post.promptText);
+                                  if (post.imageUrl) {
+                                    sessionStorage.setItem('promptcms_studio_image_preload', post.imageUrl);
+                                  }
+                                }
+                                setCurrentView('studio-tool');
+                                showToast('Loaded into AI Studio!');
+                              }}
+                              className="p-2 rounded-xl bg-red-50 dark:bg-red-950/60 text-[#E60023] hover:bg-red-100 transition-colors"
+                              title="Open in AI Studio"
+                            >
+                              <Sparkles className="w-4 h-4" />
+                            </button>
+
+                            <button
+                              onClick={() => toggleBookmark(post.id)}
+                              className={`p-2 rounded-xl transition-colors ${
+                                isBookmarked
+                                  ? 'bg-red-50 dark:bg-red-950/60 text-[#E60023]'
+                                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900'
+                              }`}
+                              title={isBookmarked ? 'Saved' : 'Save'}
+                            >
+                              <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* TAB 1: Saved Prompts */}
         {activeTab === 'saved' && (
@@ -782,12 +1339,23 @@ export const UserDashboard = () => {
                   </p>
                 </div>
 
-                {/* Progress Bar Badge */}
-                <div className="px-4 py-2 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-right">
-                  <div className="text-xs font-bold text-neutral-500">Current Cycle Points</div>
-                  <div className="text-lg font-black text-[#E60023]">
-                    {userAccount?.points || 0} / 10 Points
+                {/* Progress Bar Badge with Instant Refresh */}
+                <div className="flex items-center gap-2">
+                  <div className="px-4 py-2 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-right">
+                    <div className="text-xs font-bold text-neutral-500">Current Cycle Points</div>
+                    <div className="text-lg font-black text-[#E60023]">
+                      {userAccount?.points || 0} / 10 Points
+                    </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleRefreshPoints}
+                    disabled={isRefreshingPoints}
+                    className="p-2.5 rounded-2xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 hover:text-[#E60023] transition-all disabled:opacity-50"
+                    title="Refresh Points Status"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isRefreshingPoints ? 'animate-spin text-[#E60023]' : ''}`} />
+                  </button>
                 </div>
               </div>
 
@@ -806,35 +1374,26 @@ export const UserDashboard = () => {
               </div>
 
               {/* Activity Guide */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2">
-                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 pt-2">
+                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1 text-center sm:text-left">
                   <div className="font-bold text-neutral-900 dark:text-white">10 Likes</div>
                   <div className="text-neutral-500">+1 Point</div>
                 </div>
-                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1">
-                  <div className="font-bold text-neutral-900 dark:text-white">5 Saves / Bookmarks</div>
+                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1 text-center sm:text-left">
+                  <div className="font-bold text-neutral-900 dark:text-white">5 Saves</div>
                   <div className="text-neutral-500">+1 Point</div>
                 </div>
-                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1">
-                  <div className="font-bold text-neutral-900 dark:text-white">AI Image / Prompt Gen</div>
+                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1 text-center sm:text-left">
+                  <div className="font-bold text-neutral-900 dark:text-white">Prompt Generation</div>
                   <div className="text-neutral-500">+1 Point</div>
                 </div>
-                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1">
+                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1 text-center sm:text-left">
                   <div className="font-bold text-neutral-900 dark:text-white">Share with Friend</div>
                   <div className="text-neutral-500">+2 Points</div>
                 </div>
-                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1">
-                  <div className="font-bold text-neutral-900 dark:text-white">Friend Login / Referral</div>
+                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1 text-center sm:text-left col-span-2 sm:col-span-1">
+                  <div className="font-bold text-neutral-900 dark:text-white">Friend Login</div>
                   <div className="text-neutral-500">+5 Points</div>
-                </div>
-                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
-                  <span className="text-xs font-bold">Quick Test Activity</span>
-                  <button
-                    onClick={() => awardPoints(2, 'generation')}
-                    className="px-3 py-1 rounded-xl bg-[#E60023] text-white text-[11px] font-bold hover:bg-red-700"
-                  >
-                    +2 Points
-                  </button>
                 </div>
               </div>
 
@@ -847,30 +1406,13 @@ export const UserDashboard = () => {
                 <form onSubmit={handleRequestSubmit} className="space-y-4">
                   <div>
                     <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-1.5">
-                      Category
-                    </label>
-                    <select
-                      value={requestCategory}
-                      onChange={(e) => setRequestCategory(e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-bold"
-                    >
-                      <option value="Photorealistic">Photorealistic & Portraits</option>
-                      <option value="Cyberpunk">Cyberpunk & Sci-Fi</option>
-                      <option value="Cinematic">Cinematic 8K</option>
-                      <option value="Anime">Anime Masterpiece</option>
-                      <option value="3D Render">3D Unreal Engine</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-1.5">
                       Describe what you want the prompt to generate
                     </label>
                     <textarea
                       rows={3}
                       value={requestText}
                       onChange={(e) => setRequestText(e.target.value)}
-                      placeholder="e.g. A futuristic cyberpunk geisha standing in a neon Tokyo alleyway with volumetric teal lighting..."
+                      placeholder="e.g. A traditional Indian red saree portrait in cinematic golden hour lighting with delicate embroidery..."
                       className="w-full p-3.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-red-500 focus:outline-none"
                     />
                   </div>
@@ -894,21 +1436,67 @@ export const UserDashboard = () => {
                   Your Submitted Requests
                 </h3>
                 <div className="space-y-3">
-                  {promptRequests.map((req) => (
-                    <div key={req.id} className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex items-center justify-between gap-4">
-                      <div className="space-y-1">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-950/60 text-[#E60023]">
-                          {req.category}
-                        </span>
-                        <p className="text-xs font-medium text-neutral-800 dark:text-neutral-200">
-                          {req.promptDescription}
-                        </p>
+                  {promptRequests.map((req) => {
+                    const matchedPost = posts.find(
+                      (p) =>
+                        p.id === req.fulfilledPostId ||
+                        (p.isRequested &&
+                          p.requestedPromptDescription &&
+                          p.requestedPromptDescription.toLowerCase() === req.requestText.toLowerCase())
+                    );
+
+                    return (
+                      <div
+                        key={req.id}
+                        className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-950/60 text-[#E60023]">
+                              {req.category}
+                            </span>
+                            <span className="text-[10px] text-neutral-400">
+                              {formatTimestamp(req.createdAt)}
+                            </span>
+                          </div>
+                          <p className="text-xs font-medium text-neutral-800 dark:text-neutral-200">
+                            {req.requestText}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                          {matchedPost ? (
+                            <button
+                              onClick={() => {
+                                setSelectedPost(matchedPost);
+                                if (typeof window !== 'undefined') {
+                                  window.history.pushState(
+                                    { postId: matchedPost.id },
+                                    '',
+                                    `/prompt/${getPromptSlug(matchedPost)}`
+                                  );
+                                }
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm transition-colors"
+                            >
+                              <span>View Live Prompt</span>
+                              <ArrowUpRight className="w-3.5 h-3.5" />
+                            </button>
+                          ) : (
+                            <span
+                              className={`text-[11px] font-bold px-2.5 py-1 rounded-xl ${
+                                req.status === 'completed'
+                                  ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50'
+                                  : 'text-amber-600 bg-amber-50 dark:bg-amber-950/50'
+                              }`}
+                            >
+                              {req.status === 'completed' ? 'Fulfilled' : 'Under Creation'}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-xl">
-                        {req.status}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
