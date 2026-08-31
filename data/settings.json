@@ -3,6 +3,8 @@
   "siteTagline": "Free Copy-Paste AI Photo Prompts, Codes & Creative Guides",
   "siteUrl": "https://trendinggeminiprompts.com",
   "logoText": "Trending Copy Paste Photo Prompts",
+  "logoUrl": "https://res.cloudinary.com/idbpgaqz/image/upload/v1787717738/branding/logo-1787717737127.webp",
+  "faviconUrl": "https://res.cloudinary.com/idbpgaqz/image/upload/v1787717740/branding/favicon-1787717739448.webp",
   "heroHeadline": "Trending Copy Paste Photo Prompts",
   "heroSubheadline": "Explore curated photo prompts for Gemini, Midjourney and ChatGPT. Copy with 1 click.",
   "defaultTool": "Gemini",
@@ -16,6 +18,7 @@
     "lifestyle",
     "aesthetic"
   ],
+  "geminiCustomInstructions": "",
   "cloudinaryApiKey": "837113197117363",
   "cloudinaryApiSecret": "12_Kq-KezfLMwUrNo7omUReD6UA",
   "cloudinaryCloudName": "idbpgaqz"

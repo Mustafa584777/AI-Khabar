@@ -62,12 +62,13 @@ let memoryPromptRequests: PromptRequestItem[] | null = null;
 
 // Helpers to map Supabase snake_case rows to PromptPost
 function mapSupabasePost(row: any): PromptPost {
+  const params = typeof row.parameters === 'object' && row.parameters !== null ? row.parameters : {};
   return {
     id: row.id,
     title: row.title,
     slug: row.slug,
     category: row.category,
-    aiTool: row.ai_tool || 'Midjourney',
+    aiTool: row.ai_tool || 'ChatGPT',
     promptText: row.prompt_text,
     negativePrompt: row.negative_prompt || undefined,
     imageUrl: row.image_url,
@@ -75,18 +76,18 @@ function mapSupabasePost(row: any): PromptPost {
     imageWidth: row.image_width || 1024,
     imageHeight: row.image_height || 1536,
     additionalImages: Array.isArray(row.additional_images) ? row.additional_images : [],
-    parameters: typeof row.parameters === 'object' && row.parameters !== null ? row.parameters : {},
+    parameters: params,
     variables: Array.isArray(row.variables) ? row.variables : [],
     articleContent: row.article_content || '',
     tags: Array.isArray(row.tags) ? row.tags : [],
     status: row.status || 'published',
     isFeatured: Boolean(row.is_featured),
     isTrending: Boolean(row.is_trending),
-    isRequested: Boolean(row.is_requested || row.isRequested),
-    requestedByName: row.requested_by_name || row.requestedByName || undefined,
-    requestedByEmail: row.requested_by_email || row.requestedByEmail || undefined,
-    requestedByAvatar: row.requested_by_avatar || row.requestedByAvatar || undefined,
-    requestedPromptDescription: row.requested_prompt_description || row.requestedPromptDescription || undefined,
+    isRequested: Boolean(row.is_requested || row.isRequested || params.isRequested),
+    requestedByName: row.requested_by_name || row.requestedByName || params.requestedByName || undefined,
+    requestedByEmail: row.requested_by_email || row.requestedByEmail || params.requestedByEmail || undefined,
+    requestedByAvatar: row.requested_by_avatar || row.requestedByAvatar || params.requestedByAvatar || undefined,
+    requestedPromptDescription: row.requested_prompt_description || row.requestedPromptDescription || params.requestedPromptDescription || undefined,
     viewsCount: Number(row.views_count) || 0,
     copiesCount: Number(row.copies_count) || 0,
     likesCount: Number(row.likes_count) || 0,
@@ -110,12 +111,22 @@ function mapSupabasePost(row: any): PromptPost {
 }
 
 function mapPostToSupabase(post: PromptPost) {
+  // Store custom fields in parameters JSON column to guarantee 100% compatibility with Supabase schema
+  const parameters = {
+    ...(typeof post.parameters === 'object' && post.parameters !== null ? post.parameters : {}),
+    isRequested: Boolean(post.isRequested),
+    requestedByName: post.requestedByName || null,
+    requestedByEmail: post.requestedByEmail || null,
+    requestedByAvatar: post.requestedByAvatar || null,
+    requestedPromptDescription: post.requestedPromptDescription || null,
+  };
+
   return {
     id: post.id,
     title: post.title,
     slug: post.slug,
     category: post.category,
-    ai_tool: post.aiTool || 'Midjourney',
+    ai_tool: post.aiTool || 'ChatGPT',
     prompt_text: post.promptText,
     negative_prompt: post.negativePrompt || null,
     image_url: post.imageUrl,
@@ -123,17 +134,13 @@ function mapPostToSupabase(post: PromptPost) {
     image_width: post.imageWidth || 1024,
     image_height: post.imageHeight || 1536,
     additional_images: post.additionalImages || [],
-    parameters: post.parameters || {},
+    parameters,
     variables: post.variables || [],
     article_content: post.articleContent || '',
     tags: post.tags || [],
     status: post.status || 'published',
     is_featured: Boolean(post.isFeatured),
     is_trending: Boolean(post.isTrending),
-    is_requested: Boolean(post.isRequested),
-    requested_by_name: post.requestedByName || null,
-    requested_by_email: post.requestedByEmail || null,
-    requested_prompt_description: post.requestedPromptDescription || null,
     views_count: Number(post.viewsCount) || 0,
     copies_count: Number(post.copiesCount) || 0,
     likes_count: Number(post.likesCount) || 0,

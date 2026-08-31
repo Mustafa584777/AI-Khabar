@@ -417,11 +417,10 @@ QUALITY STANDARD:
 
 async function generateWithModel(ai: GoogleGenAI, preferredModel: string | undefined, payload: any) {
   const candidateModels = [
-    preferredModel && preferredModel !== 'imagen-3.0-generate-002' ? preferredModel : 'gemini-2.5-flash',
-    'gemini-2.5-flash',
-    'gemini-3.7-flash',
+    preferredModel && preferredModel !== 'imagen-3.0-generate-002' && preferredModel !== 'gemini-2.5-flash' ? preferredModel : 'gemini-3.1-flash-lite',
     'gemini-3.1-flash-lite',
     'gemini-flash-latest',
+    'gemini-3.7-flash',
     'gemini-2.5-pro',
   ];
 

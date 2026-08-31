@@ -7,9 +7,9 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 const CANDIDATE_MODELS = [
-  'gemini-2.5-flash',
+  'gemini-3.1-flash-lite',
   'gemini-flash-latest',
-  'gemini-2.5-flash-lite',
+  'gemini-3.7-flash',
 ];
 
 export async function POST(req: NextRequest) {
