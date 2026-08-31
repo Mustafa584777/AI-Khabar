@@ -343,12 +343,12 @@ export const ServerStorage = {
         const payload = mapPostToSupabase(savedPost);
         const { error } = await db().from('posts').upsert(payload, { onConflict: 'id' });
         if (error) {
-          console.error('Supabase savePost error:', error.message, error.details);
+          console.warn('Supabase savePost error (falling back to local JSON):', error.message);
         } else {
           console.log(`Saved post ${savedPost.id} to Supabase successfully.`);
         }
       } catch (err: any) {
-        console.error('Supabase savePost exception:', err);
+        console.warn('Supabase savePost exception (falling back to local JSON):', err);
       }
     }
 
