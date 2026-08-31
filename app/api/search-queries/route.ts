@@ -4,7 +4,8 @@ import { ServerStorage } from '@/lib/server-storage';
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const limitParam = parseInt(searchParams.get('limit') || '12', 10);
+    const limitRaw = searchParams.get('limit');
+    const limitParam = limitRaw === 'all' ? 500 : parseInt(limitRaw || '12', 10);
     const queries = await ServerStorage.getTopSearchQueries(limitParam);
     return NextResponse.json({ success: true, queries });
   } catch (err: any) {

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import {
   Search,
@@ -15,6 +16,7 @@ import {
   Check,
   Sliders,
 } from 'lucide-react';
+import { getPromptSlug, getDynamicPopularTags, getOptimizedImageUrl } from '@/lib/utils';
 
 export const HeroSection = () => {
   const {
@@ -44,21 +46,10 @@ export const HeroSection = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  // Use popular tags configured by Admin in Settings, with fallback defaults
+  // Automatically assign popular tags based on number of times they are used across posts
   const popularTags = useMemo(() => {
-    if (settings.popularTags && Array.isArray(settings.popularTags) && settings.popularTags.length > 0) {
-      return settings.popularTags;
-    }
-    return [
-      'Cinematic 8K',
-      '3D Character',
-      'Minimalist Logo',
-      'Anime Style',
-      'Cyberpunk City',
-      'Vintage 35mm',
-      'Hyperrealistic',
-    ];
-  }, [settings.popularTags]);
+    return getDynamicPopularTags(posts, 7);
+  }, [posts]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -231,15 +222,21 @@ export const HeroSection = () => {
                               key={post.id}
                               onClick={() => {
                                 setSelectedPost(post);
+                                if (typeof window !== 'undefined') {
+                                  window.history.pushState({ postId: post.id }, '', `/prompt/${getPromptSlug(post)}`);
+                                }
                                 setIsSearchOpen(false);
                               }}
                               className="relative aspect-square rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 cursor-pointer group shadow-xs hover:shadow-md transition-all"
                             >
-                              <img
-                                src={post.imageUrl}
+                              <Image
+                                src={getOptimizedImageUrl(post.imageUrl, 200)}
                                 alt={post.title}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                fill
+                                sizes="80px"
+                                className="object-cover group-hover:scale-105 transition-transform duration-300"
                                 referrerPolicy="no-referrer"
+                                loading="lazy"
                               />
                               <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
                                 <span className="text-[10px] font-bold text-white truncate">

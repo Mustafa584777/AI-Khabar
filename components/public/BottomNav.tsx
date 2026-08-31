@@ -107,19 +107,19 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
         </span>
       </button>
 
-      {/* 4. For You Personalized Feed Button */}
+      {/* 4. Requested Prompts Feed Button */}
       <button
         onClick={handleForYouClick}
-        id="bottom-nav-for-you"
+        id="bottom-nav-requested"
         className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 ${
           currentView === 'for-you'
             ? 'text-[#E60023] scale-105 font-bold'
             : 'text-neutral-500 hover:text-[#E60023] dark:hover:text-white'
         }`}
-        title="Personalized For You Feed"
+        title="Community Requested Prompts"
       >
         <Sparkles className="w-6 h-6 text-[#E60023]" />
-        <span className="text-[10px] mt-0.5 font-medium">For You</span>
+        <span className="text-[10px] mt-0.5 font-medium">Requested</span>
       </button>
 
       {/* 5. Account / Profile Button */}

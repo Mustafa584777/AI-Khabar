@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
+import { ServerStorage } from '@/lib/server-storage';
 
 const IMAGE_TO_PROMPT_SYSTEM_INSTRUCTION = `You are an expert AI Image Prompt Reverse-Engineering Engine.
 
@@ -412,354 +413,14 @@ Do not output multiple alternative prompts unless explicitly requested.
 
 QUALITY STANDARD:
 
-The generated prompt must be detailed enough that another capable image model could reproduce the reference image's composition, subject, pose, environment, lighting and overall visual treatment with minimal interpretation.`;
-
-const PROMPT_TO_IMAGE_SYSTEM_INSTRUCTION = `You are an expert AI Image Generation Director and Prompt Expansion Engine.
-
-Your task is to transform the user's natural-language image idea into a precise, visually coherent, production-ready image generation instruction.
-
-The goal is NOT to make the prompt unnecessarily long.
-
-The goal is to make the user's intended image visually specific, realistic, coherent and controllable.
-
-━━━━━━━━━━━━━━━━━━━━
-CORE PRINCIPLE
-━━━━━━━━━━━━━━━━━━━━
-
-Understand the user's INTENT first.
-
-Then construct the image around:
-
-1. Subject
-2. Identity
-3. Pose
-4. Clothing
-5. Objects
-6. Environment
-7. Composition
-8. Camera
-9. Lighting
-10. Color grading
-11. Atmosphere/effects
-12. Typography when requested
-13. Realism constraints
-
-Never add random objects, random locations, random accessories or unrelated cinematic effects.
-
-Every added detail must support the user's requested concept.
-
-━━━━━━━━━━━━━━━━━━━━
-USER IMAGE / FACE REFERENCE
-━━━━━━━━━━━━━━━━━━━━
-
-If the user uploads a personal image and asks to transform/create an image using that person:
-
-Use the uploaded image as the ONLY facial identity reference.
-
-Preserve:
-
-- exact facial identity
-- facial proportions
-- eyes
-- eyebrows
-- nose
-- lips
-- jawline
-- skin tone
-- hairstyle
-- facial hair
-- natural imperfections
-
-Do not replace, beautify, reshape, smooth, age or de-age the face unless the user explicitly requests it.
-
-If no personal image is supplied, do not invent a face-identity requirement.
-
-━━━━━━━━━━━━━━━━━━━━
-PROMPT INTERPRETATION
-━━━━━━━━━━━━━━━━━━━━
-
-Convert vague user requests into useful visual specifications.
-
-Example:
-
-User:
-"Create my photo with a Royal Enfield."
-
-Interpret this into a coherent scene:
-
-- user is the main subject
-- Royal Enfield is a secondary hero object
-- choose a natural interaction/pose
-- choose a plausible environment
-- establish camera framing
-- establish lighting
-- establish realistic shadows
-- establish believable scale and perspective
-
-But do NOT randomly add:
-
-- helicopters
-- neon lights
-- rain
-- luxury cars
-- cinematic explosions
-- unnecessary props
-
-unless requested or clearly appropriate to the user's chosen style.
-
-━━━━━━━━━━━━━━━━━━━━
-POSE ENGINE
-━━━━━━━━━━━━━━━━━━━━
-
-Always define the subject's physical interaction with the scene.
-
-Specify:
-
-- standing/sitting/walking/riding
-- head direction
-- gaze direction
-- shoulder orientation
-- arm position
-- hand placement
-- leg position
-- weight distribution
-- interaction with props
-
-Avoid generic:
-"confident pose."
-
-Prefer:
-"standing beside the motorcycle with the left hand resting naturally on the handlebar, right hand in the jacket pocket, shoulders slightly turned toward camera, head facing forward."
-
-━━━━━━━━━━━━━━━━━━━━
-COMPOSITION ENGINE
-━━━━━━━━━━━━━━━━━━━━
-
-Choose composition based on the requested image.
-
-Define:
-
-- portrait or landscape
-- aspect ratio
-- camera height
-- camera angle
-- framing
-- subject placement
-- foreground
-- middle ground
-- background
-- negative space
-
-Examples:
-
-- close-up
-- medium portrait
-- waist-up
-- three-quarter portrait
-- full-body
-- low-angle hero shot
-- overhead shot
-- symmetrical composition
-
-Do not force cinematic composition into every request.
-
-━━━━━━━━━━━━━━━━━━━━
-CAMERA ENGINE
-━━━━━━━━━━━━━━━━━━━━
-
-Select realistic camera characteristics that match the intended visual style.
-
-For smartphone realism:
-Use:
-"modern flagship smartphone main camera, natural perspective, computational HDR, realistic sharpening, natural depth."
-
-For professional portrait:
-Use:
-"full-frame camera, portrait lens, controlled depth of field."
-
-For cinematic:
-Use appropriate cinematic lens language.
-
-Do NOT blindly add "85mm f/1.4" to every image.
-
-Camera specifications must support the requested look.
-
-━━━━━━━━━━━━━━━━━━━━
-LIGHTING ENGINE
-━━━━━━━━━━━━━━━━━━━━
-
-Construct lighting based on:
-
-- location
-- time of day
-- weather
-- requested mood
-- visual style
-
-Examples:
-
-Golden hour:
-"low warm sunlight from camera-left, soft golden rim light, warm highlights and long natural shadows."
-
-Overcast:
-"large diffused sky light, soft shadow edges, low contrast and neutral skin tones."
-
-Night city:
-"cool ambient blue light with warm practical lights and realistic reflections."
-
-Studio:
-"large soft key light with controlled fill and subtle rim light."
-
-Do not add dramatic lighting when the user asks for natural photography.
-
-━━━━━━━━━━━━━━━━━━━━
-REALISM ENGINE
-━━━━━━━━━━━━━━━━━━━━
-
-For photorealistic requests prioritize:
-
-- correct anatomy
-- natural hands
-- realistic fingers
-- physically correct object scale
-- realistic shadows
-- realistic reflections
-- natural skin texture
-- realistic fabric
-- believable perspective
-- consistent lighting
-- realistic depth of field
-
-Objects must physically exist in the scene.
-
-A person must not appear pasted into the environment.
-
-Hands must actually grip objects.
-
-Feet must actually contact surfaces.
-
-Shadows must match light direction.
-
-━━━━━━━━━━━━━━━━━━━━
-STYLE ENGINE
-━━━━━━━━━━━━━━━━━━━━
-
-If the user specifies an aesthetic, translate it into visual properties.
-
-Examples:
-
-"Dreamy":
-soft diffusion, glowing highlights, gentle bloom, pastel colors, lifted blacks.
-
-"Luxury":
-controlled lighting, premium materials, clean composition, refined color grading.
-
-"Vintage":
-film grain, muted colors, subtle halation, slightly faded blacks.
-
-"Real-life phone photo":
-natural exposure, smartphone HDR, slight computational sharpening, imperfect highlights, realistic skin and moderate background blur.
-
-Do not use contradictory styles.
-
-Example:
-Do not combine "raw natural phone photograph" with "extreme Hollywood cinematic lighting" unless explicitly requested.
-
-━━━━━━━━━━━━━━━━━━━━
-TEXT / POSTER ENGINE
-━━━━━━━━━━━━━━━━━━━━
-
-If the user asks for text inside the image:
-
-Specify:
-
-- exact text
-- location
-- alignment
-- font style
-- approximate size
-- color
-- hierarchy
-- spacing
-
-Do not invent additional text.
-
-If text accuracy is critical, preserve exact spelling.
-
-━━━━━━━━━━━━━━━━━━━━
-NEGATIVE PROMPT
-━━━━━━━━━━━━━━━━━━━━
-
-Generate a relevant negative prompt.
-
-Include only useful exclusions such as:
-
-cartoon, anime, CGI, plastic skin, altered face, distorted anatomy, extra fingers, extra limbs, unrealistic hands, incorrect object geometry, unnatural shadows, excessive blur, oversaturation, watermark.
-
-Do not generate a giant irrelevant negative prompt.
-
-━━━━━━━━━━━━━━━━━━━━
-IF THE USER PROVIDES A DETAILED PROMPT
-━━━━━━━━━━━━━━━━━━━━
-
-Do NOT unnecessarily rewrite or change the user's creative intent.
-
-Preserve all explicit requirements.
-
-Improve only:
-
-- clarity
-- ordering
-- visual consistency
-- realism
-- missing technical details required to execute the request
-
-━━━━━━━━━━━━━━━━━━━━
-IF THE USER PROVIDES ONLY A SHORT IDEA
-━━━━━━━━━━━━━━━━━━━━
-
-Expand it intelligently into a complete image-generation prompt.
-
-Use reasonable visual decisions while keeping the original idea dominant.
-
-━━━━━━━━━━━━━━━━━━━━
-FINAL IMAGE INSTRUCTION
-━━━━━━━━━━━━━━━━━━━━
-
-After understanding the user's request, produce ONE final image-generation prompt.
-
-The final prompt should be written as direct instructions to an image generation model.
-
-It should be detailed but not filled with meaningless adjectives.
-
-Prioritize concrete visual information over decorative wording.
-
-━━━━━━━━━━━━━━━━━━━━
-OUTPUT
-━━━━━━━━━━━━━━━━━━━━
-
-Return ONLY valid JSON:
-
-{
-"title": "Short image title",
-"interpreted_concept": "One sentence describing what will be generated",
-"prompt": "Complete production-ready image generation prompt",
-"negative_prompt": "Relevant negative prompt",
-"aspect_ratio": "Recommended aspect ratio",
-"style": "Detected/requested visual style"
-}
-
-Do not output markdown.
-Do not output explanations outside JSON.
-Do not output multiple prompts unless explicitly requested.`;
+`;
 
 async function generateWithModel(ai: GoogleGenAI, preferredModel: string | undefined, payload: any) {
   const candidateModels = [
-    preferredModel && preferredModel !== 'imagen-3.0-generate-002' ? preferredModel : 'gemini-2.5-flash',
-    'gemini-2.5-flash',
-    'gemini-3.7-flash',
+    preferredModel && preferredModel !== 'imagen-3.0-generate-002' && preferredModel !== 'gemini-2.5-flash' ? preferredModel : 'gemini-3.1-flash-lite',
     'gemini-3.1-flash-lite',
     'gemini-flash-latest',
+    'gemini-3.7-flash',
     'gemini-2.5-pro',
   ];
 
@@ -786,8 +447,8 @@ async function generateWithModel(ai: GoogleGenAI, preferredModel: string | undef
 }
 
 // Fallback reverse-prompt generator when offline or API key missing
-function generateLocalImageToPrompt(styleFocus?: string) {
-  const focus = styleFocus || 'Photorealistic & 8K Portrait';
+function generateLocalImageToPrompt(customInstructions?: string) {
+  const instructions = customInstructions ? ` with user custom modifications: ${customInstructions}` : '';
   return {
     title: 'Photographic Visual Reconstruction',
     summary: 'A precision-reconstructed composition featuring authentic textures, balanced natural lighting, and photographic realism.',
@@ -802,10 +463,10 @@ function generateLocalImageToPrompt(styleFocus?: string) {
       effects: 'Natural optical depth blur, subtle organic grain, crisp in-focus subject without digital over-sharpening',
       text_and_layout: 'None visible',
     },
-    prompt: `Masterful ${focus} photograph of the subject with authentic physical presence. Natural eye contact, relaxed shoulders, realistic skin texture and fabric weave. Shot with natural portrait lens perspective, soft balanced key and fill lighting, shallow depth of field, natural color grade and true black levels --ar 16:9 --v 6.1 --style raw`,
-    promptText: `Masterful ${focus} photograph of the subject with authentic physical presence. Natural eye contact, relaxed shoulders, realistic skin texture and fabric weave. Shot with natural portrait lens perspective, soft balanced key and fill lighting, shallow depth of field, natural color grade and true black levels --ar 16:9 --v 6.1 --style raw`,
-    negative_prompt: 'cartoon, anime, CGI, plastic skin, altered face, distorted anatomy, extra fingers, extra limbs, unrealistic hands, incorrect object geometry, unnatural shadows, excessive blur, oversaturation, watermark',
-    negativePrompt: 'cartoon, anime, CGI, plastic skin, altered face, distorted anatomy, extra fingers, extra limbs, unrealistic hands, incorrect object geometry, unnatural shadows, excessive blur, oversaturation, watermark',
+    prompt: `Masterful photorealistic photograph of the subject with authentic physical presence${instructions}. Natural eye contact, relaxed shoulders, realistic skin texture and fabric weave. Shot with natural portrait lens perspective, soft balanced key and fill lighting, shallow depth of field, natural color grade and true black levels --ar 16:9 --v 6.1 --style raw`,
+    promptText: `Masterful photorealistic photograph of the subject with authentic physical presence${instructions}. Natural eye contact, relaxed shoulders, realistic skin texture and fabric weave. Shot with natural portrait lens perspective, soft balanced key and fill lighting, shallow depth of field, natural color grade and true black levels --ar 16:9 --v 6.1 --style raw`,
+    negative_prompt: 'cartoon, anime, CGI, plastic skin, altered face, distorted anatomy, extra fingers, extra limbs, unrealistic hands, incorrect object geometry, unnatural shadows, excessive blur, oversaturation, watermark, text',
+    negativePrompt: 'cartoon, anime, CGI, plastic skin, altered face, distorted anatomy, extra fingers, extra limbs, unrealistic hands, incorrect object geometry, unnatural shadows, excessive blur, oversaturation, watermark, text',
     aspect_ratio: '16:9',
     aspectRatio: '16:9',
     confidence: 'high',
@@ -824,6 +485,7 @@ export async function POST(req: NextRequest) {
       action,
       image,
       referenceImage,
+      customInstructions,
       styleFocus,
       prompt,
       aspectRatio,
@@ -841,8 +503,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Image data is required' }, { status: 400 });
       }
 
+      const settings = await ServerStorage.getSettings().catch(() => null);
+      const globalCustom = settings?.geminiCustomInstructions || '';
+      const activeInstructions = [globalCustom, customInstructions, styleFocus].filter(Boolean).join('\n\n');
+
       if (!apiKey) {
-        const fallback = generateLocalImageToPrompt(styleFocus);
+        const fallback = generateLocalImageToPrompt(activeInstructions);
         return NextResponse.json({ success: true, data: fallback, fallback: true });
       }
 
@@ -870,13 +536,16 @@ export async function POST(req: NextRequest) {
       }
 
       if (!base64Data) {
-        const fallback = generateLocalImageToPrompt(styleFocus);
+        const fallback = generateLocalImageToPrompt(activeInstructions);
         return NextResponse.json({ success: true, data: fallback, fallback: true });
       }
 
       const promptInstruction = `Inspect this uploaded reference image with extreme technical and artistic precision.
 Follow the ANALYSIS PIPELINE and reconstruct the exact AI prompt that would reproduce this image in an AI image generator.
-${styleFocus ? `User requested aesthetic/style: "${styleFocus}". Remember the uploaded image is the PRIMARY SOURCE OF TRUTH.` : ''}
+${activeInstructions ? `CRITICAL USER CUSTOM INSTRUCTIONS & MODIFICATIONS:
+The user explicitly requests the following instructions to be incorporated into the prompt reconstruction:
+"${activeInstructions}"
+(e.g., if asked to remove watermarks, remove text, ignore background, modify clothing, or adjust lighting/style, apply these modifications into the generated prompt and negative prompt while keeping the rest of the visual composition faithful to the image).` : ''}
 Return the final response strictly conforming to the required JSON schema.`;
 
       const jsonSchemaConfig = {
@@ -954,228 +623,6 @@ Return the final response strictly conforming to the required JSON schema.`;
         console.warn('Gemini vision failed, using heuristic reverse prompt:', err?.message);
         const fallback = generateLocalImageToPrompt(styleFocus);
         return NextResponse.json({ success: true, data: fallback, fallback: true });
-      }
-    }
-
-    // =========================================================================
-    // ACTION 2: PROMPT TO IMAGE (Generates image URL & enhanced prompt)
-    // =========================================================================
-    if (action === 'prompt_to_image') {
-      if (!prompt || !prompt.trim()) {
-        return NextResponse.json({ error: 'Prompt text is required' }, { status: 400 });
-      }
-
-      let finalPrompt = prompt.trim();
-      let enhancedPromptText = finalPrompt;
-      let interpretedConceptText = '';
-      let negativePromptText = 'cartoon, anime, CGI, plastic skin, altered face, distorted anatomy, extra fingers, extra limbs, unrealistic hands, incorrect object geometry, unnatural shadows, excessive blur, oversaturation, watermark';
-      let modelUsedToSynthesize = selectedModel || 'gemini-2.5-flash';
-
-      // Use Gemini Director and Prompt Expansion Engine
-      if (apiKey) {
-        try {
-          const ai = new GoogleGenAI({ apiKey });
-          const promptToImageJsonConfig = {
-            systemInstruction: PROMPT_TO_IMAGE_SYSTEM_INSTRUCTION,
-            responseMimeType: 'application/json',
-            responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                title: { type: Type.STRING, description: 'Short image title' },
-                interpreted_concept: { type: Type.STRING, description: 'One sentence describing what will be generated' },
-                prompt: { type: Type.STRING, description: 'Complete production-ready image generation prompt' },
-                negative_prompt: { type: Type.STRING, description: 'Relevant negative prompt' },
-                aspect_ratio: { type: Type.STRING, description: 'Recommended aspect ratio' },
-                style: { type: Type.STRING, description: 'Detected/requested visual style' },
-              },
-              required: ['title', 'interpreted_concept', 'prompt', 'negative_prompt'],
-            },
-          };
-
-          if (referenceImage) {
-            // Reference image multimodal expansion
-            let refMimeType = 'image/jpeg';
-            let refBase64 = '';
-
-            if (referenceImage.startsWith('data:')) {
-              const match = referenceImage.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
-              if (match) {
-                refMimeType = match[1];
-                refBase64 = match[2];
-              }
-            }
-
-            if (refBase64) {
-              const { response, modelUsed } = await generateWithModel(ai, selectedModel, {
-                contents: {
-                  parts: [
-                    {
-                      inlineData: {
-                        mimeType: refMimeType,
-                        data: refBase64,
-                      },
-                    },
-                    {
-                      text: `The user has uploaded this reference image and wants to generate/transform an image based on: "${finalPrompt}".
-Follow the USER IMAGE / FACE REFERENCE and PROMPT INTERPRETATION rules carefully.
-Transform the idea into a production-ready image instruction.`,
-                    },
-                  ],
-                },
-                config: promptToImageJsonConfig,
-              });
-
-              const parsed = JSON.parse(response.text || '{}');
-              if (parsed.prompt) {
-                finalPrompt = parsed.prompt;
-                enhancedPromptText = parsed.prompt;
-                interpretedConceptText = parsed.interpreted_concept || '';
-                if (parsed.negative_prompt) negativePromptText = parsed.negative_prompt;
-                modelUsedToSynthesize = modelUsed;
-              }
-            }
-          } else {
-            // Text idea expansion with Director Engine
-            const { response, modelUsed } = await generateWithModel(ai, selectedModel, {
-              contents: `User image idea: "${finalPrompt}".
-Target Aspect Ratio: "${aspectRatio || '1:1'}".
-Transform this into a precise, visually coherent, production-ready image generation instruction strictly adhering to your director principles.`,
-              config: promptToImageJsonConfig,
-            });
-
-            const parsed = JSON.parse(response.text || '{}');
-            if (parsed.prompt) {
-              finalPrompt = parsed.prompt;
-              enhancedPromptText = parsed.prompt;
-              interpretedConceptText = parsed.interpreted_concept || '';
-              if (parsed.negative_prompt) negativePromptText = parsed.negative_prompt;
-              modelUsedToSynthesize = modelUsed;
-            }
-          }
-        } catch (genErr) {
-          console.warn('Gemini director expansion encountered error, proceeding with input:', genErr);
-        }
-      }
-
-      // Map aspect ratio to width & height
-      let width = 1024;
-      let height = 1024;
-      switch (aspectRatio) {
-        case '16:9':
-          width = 1280;
-          height = 720;
-          break;
-        case '9:16':
-          width = 720;
-          height = 1280;
-          break;
-        case '4:5':
-          width = 864;
-          height = 1080;
-          break;
-        case '3:4':
-          width = 768;
-          height = 1024;
-          break;
-        case '1:1':
-        default:
-          width = 1024;
-          height = 1024;
-          break;
-      }
-
-      const seed = Math.floor(Math.random() * 9999999) + 1000;
-      
-      // Clean and distill prompt specifically for the image synthesis engine with high-quality modifiers
-      const baseClean = finalPrompt
-        .replace(/--ar\s+[0-9:]+/gi, '')
-        .replace(/--v\s+[0-9.]+/gi, '')
-        .replace(/--s\s+[0-9]+/gi, '')
-        .replace(/--style\s+\w+/gi, '')
-        .replace(/[^\w\s,.-]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-
-      const qualityEnhancedText = `${baseClean}, ultra-realistic, 8k resolution, highly detailed, sharp focus, professional cinematic lighting, photorealistic rendering`.slice(0, 280);
-
-      const encodedPrompt = encodeURIComponent(qualityEnhancedText || 'masterpiece photographic visual 8k ultra realistic');
-      const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&model=flux&enhance=true&nologo=true&seed=${seed}`;
-      const alternativeUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&model=turbo&enhance=true&nologo=true&seed=${seed + 77}`;
-
-      return NextResponse.json({
-        success: true,
-        data: {
-          imageUrl,
-          alternativeUrl,
-          prompt: finalPrompt,
-          enhancedPrompt: enhancedPromptText,
-          interpretedConcept: interpretedConceptText,
-          negativePrompt: negativePromptText,
-          aspectRatio: aspectRatio || '1:1',
-          width,
-          height,
-          seed,
-          modelUsed: modelUsedToSynthesize,
-        },
-      });
-    }
-
-    // =========================================================================
-    // ACTION 3: PROMPT ENHANCER
-    // =========================================================================
-    if (action === 'enhance_prompt') {
-      if (!prompt) {
-        return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
-      }
-
-      if (!apiKey) {
-        return NextResponse.json({
-          success: true,
-          data: {
-            enhancedPrompt: `${prompt.trim()}, natural photographic textures, authentic skin tones, balanced directional lighting, realistic optics --ar 16:9 --v 6.1`,
-          },
-        });
-      }
-
-      const ai = new GoogleGenAI({ apiKey });
-      const { response, modelUsed } = await generateWithModel(ai, selectedModel, {
-        contents: `Transform this prompt idea into a production-ready AI image generation instruction:
-Prompt: "${prompt}"`,
-        config: {
-          systemInstruction: PROMPT_TO_IMAGE_SYSTEM_INSTRUCTION,
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              interpreted_concept: { type: Type.STRING },
-              prompt: { type: Type.STRING },
-              negative_prompt: { type: Type.STRING },
-            },
-            required: ['prompt', 'negative_prompt'],
-          },
-        },
-      });
-
-      try {
-        const parsed = JSON.parse(response.text || '{}');
-        return NextResponse.json({
-          success: true,
-          data: {
-            enhancedPrompt: parsed.prompt || prompt,
-            negativePrompt: parsed.negative_prompt,
-            interpretedConcept: parsed.interpreted_concept,
-            modelUsed,
-          },
-        });
-      } catch {
-        return NextResponse.json({
-          success: true,
-          data: {
-            enhancedPrompt: response.text?.trim() || prompt,
-            modelUsed,
-          },
-        });
       }
     }
 

@@ -1,6 +1,8 @@
-import { Category, PromptPost, SiteSettings, SearchQueryItem } from '@/types/prompt';
+import { Category, PromptPost, SiteSettings, SearchQueryItem, PromptRequestItem } from '@/types/prompt';
 import { INITIAL_CATEGORIES, INITIAL_SETTINGS, INITIAL_POSTS } from './initial-data';
 import { supabase, supabaseAdmin, isSupabaseConfigured } from './supabase';
+import { cleanTagsArray, canonicalizeTag } from './tag-utils';
+import { uploadImageToCloudinary } from './cloudinary-server';
 import fs from 'fs';
 import path from 'path';
 
@@ -10,6 +12,7 @@ const CATEGORIES_FILE = path.join(DATA_DIR, 'categories.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const TAGS_FILE = path.join(DATA_DIR, 'tags.json');
 const SEARCH_QUERIES_FILE = path.join(DATA_DIR, 'search_queries.json');
+const PROMPT_REQUESTS_FILE = path.join(DATA_DIR, 'prompt_requests.json');
 
 const DEFAULT_TAGS = [
   'Portrait', '35mm', 'Cinematic', 'Street Photography', 'Fashion',
@@ -55,15 +58,17 @@ let memoryCategories: Category[] | null = null;
 let memorySettings: SiteSettings | null = null;
 let memoryTags: string[] | null = null;
 let memorySearchQueries: SearchQueryItem[] | null = null;
+let memoryPromptRequests: PromptRequestItem[] | null = null;
 
 // Helpers to map Supabase snake_case rows to PromptPost
 function mapSupabasePost(row: any): PromptPost {
+  const params = typeof row.parameters === 'object' && row.parameters !== null ? row.parameters : {};
   return {
     id: row.id,
     title: row.title,
     slug: row.slug,
     category: row.category,
-    aiTool: row.ai_tool || 'Midjourney',
+    aiTool: row.ai_tool || 'ChatGPT',
     promptText: row.prompt_text,
     negativePrompt: row.negative_prompt || undefined,
     imageUrl: row.image_url,
@@ -71,13 +76,18 @@ function mapSupabasePost(row: any): PromptPost {
     imageWidth: row.image_width || 1024,
     imageHeight: row.image_height || 1536,
     additionalImages: Array.isArray(row.additional_images) ? row.additional_images : [],
-    parameters: typeof row.parameters === 'object' && row.parameters !== null ? row.parameters : {},
+    parameters: params,
     variables: Array.isArray(row.variables) ? row.variables : [],
     articleContent: row.article_content || '',
     tags: Array.isArray(row.tags) ? row.tags : [],
     status: row.status || 'published',
     isFeatured: Boolean(row.is_featured),
     isTrending: Boolean(row.is_trending),
+    isRequested: Boolean(row.is_requested || row.isRequested || params.isRequested),
+    requestedByName: row.requested_by_name || row.requestedByName || params.requestedByName || undefined,
+    requestedByEmail: row.requested_by_email || row.requestedByEmail || params.requestedByEmail || undefined,
+    requestedByAvatar: row.requested_by_avatar || row.requestedByAvatar || params.requestedByAvatar || undefined,
+    requestedPromptDescription: row.requested_prompt_description || row.requestedPromptDescription || params.requestedPromptDescription || undefined,
     viewsCount: Number(row.views_count) || 0,
     copiesCount: Number(row.copies_count) || 0,
     likesCount: Number(row.likes_count) || 0,
@@ -101,12 +111,22 @@ function mapSupabasePost(row: any): PromptPost {
 }
 
 function mapPostToSupabase(post: PromptPost) {
+  // Store custom fields in parameters JSON column to guarantee 100% compatibility with Supabase schema
+  const parameters = {
+    ...(typeof post.parameters === 'object' && post.parameters !== null ? post.parameters : {}),
+    isRequested: Boolean(post.isRequested),
+    requestedByName: post.requestedByName || null,
+    requestedByEmail: post.requestedByEmail || null,
+    requestedByAvatar: post.requestedByAvatar || null,
+    requestedPromptDescription: post.requestedPromptDescription || null,
+  };
+
   return {
     id: post.id,
     title: post.title,
     slug: post.slug,
     category: post.category,
-    ai_tool: post.aiTool || 'Midjourney',
+    ai_tool: post.aiTool || 'ChatGPT',
     prompt_text: post.promptText,
     negative_prompt: post.negativePrompt || null,
     image_url: post.imageUrl,
@@ -114,7 +134,7 @@ function mapPostToSupabase(post: PromptPost) {
     image_width: post.imageWidth || 1024,
     image_height: post.imageHeight || 1536,
     additional_images: post.additionalImages || [],
-    parameters: post.parameters || {},
+    parameters,
     variables: post.variables || [],
     article_content: post.articleContent || '',
     tags: post.tags || [],
@@ -144,6 +164,17 @@ const db = () => supabaseAdmin || supabase;
 export const ServerStorage = {
   // Posts
   getAllPosts: async (includeDrafts = true): Promise<PromptPost[]> => {
+    let localPosts: PromptPost[] = [];
+    try {
+      const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
+      localPosts = rawPosts.map((p) => ({
+        ...p,
+        tags: cleanTagsArray(p.tags || []),
+      }));
+    } catch (e) {
+      localPosts = INITIAL_POSTS || [];
+    }
+
     if (isSupabaseConfigured()) {
       try {
         let query = db().from('posts').select('*').order('created_at', { ascending: false });
@@ -152,14 +183,30 @@ export const ServerStorage = {
         }
         const { data, error } = await query;
         if (!error && data && Array.isArray(data)) {
-          const posts = data.map(mapSupabasePost);
-          if (posts.length > 0) {
-            memoryPosts = posts;
-            writeJsonFile(POSTS_FILE, posts);
-            return posts;
-          }
-        } else if (error) {
-          console.warn('Supabase getAllPosts notice:', error.message);
+          const supabasePosts = data.map((d) => {
+            const mapped = mapSupabasePost(d);
+            mapped.tags = cleanTagsArray(mapped.tags || []);
+            return mapped;
+          });
+
+          // Merge localPosts and supabasePosts by ID, prioritizing the most recent updatedAt/createdAt
+          const map = new Map<string, PromptPost>();
+          // Put local posts first, then overwrite/merge with Supabase posts
+          localPosts.forEach(p => map.set(p.id, p));
+          supabasePosts.forEach(p => {
+            const existing = map.get(p.id);
+            if (!existing || new Date(p.updatedAt || p.createdAt || 0).getTime() >= new Date(existing.updatedAt || existing.createdAt || 0).getTime()) {
+              map.set(p.id, p);
+            }
+          });
+
+          const merged = Array.from(map.values()).sort((a, b) => 
+            new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+          );
+
+          memoryPosts = merged;
+          writeJsonFile(POSTS_FILE, merged);
+          return includeDrafts ? merged : merged.filter((p) => p.status === 'published');
         }
       } catch (err) {
         console.warn('Supabase getAllPosts fallback:', err);
@@ -167,7 +214,7 @@ export const ServerStorage = {
     }
 
     if (memoryPosts === null) {
-      memoryPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
+      memoryPosts = localPosts;
     }
     return includeDrafts ? memoryPosts : memoryPosts.filter((p) => p.status === 'published');
   },
@@ -227,6 +274,7 @@ export const ServerStorage = {
         ...existing,
         ...post,
         id,
+        tags: cleanTagsArray(post.tags || existing.tags || []),
         author: post.author || {
           name: 'tool.reelz',
           avatar: '/logo.png',
@@ -241,6 +289,7 @@ export const ServerStorage = {
       savedPost = {
         ...post,
         id,
+        tags: cleanTagsArray(post.tags || []),
         author: post.author || {
           name: 'tool.reelz',
           avatar: '/logo.png',
@@ -256,18 +305,71 @@ export const ServerStorage = {
       };
     }
 
+    // If image is a local base64 data URI, attempt auto-uploading to Cloudinary or save as static file in public/images/prompts/
+    if (savedPost.imageUrl && savedPost.imageUrl.startsWith('data:image/')) {
+      let uploadedToCloud = false;
+      try {
+        const clRes = await uploadImageToCloudinary(savedPost.imageUrl, {
+          folder: 'prompts',
+          publicId: savedPost.slug || savedPost.id,
+        });
+        if (clRes.success && clRes.url) {
+          savedPost.imageUrl = clRes.url;
+          uploadedToCloud = true;
+        }
+      } catch (uploadErr) {
+        console.warn('ServerStorage Cloudinary auto-upload fallback:', uploadErr);
+      }
+
+      if (!uploadedToCloud) {
+        try {
+          const match = savedPost.imageUrl.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
+          if (match) {
+            const safeId = (savedPost.id || `prompt_${Date.now()}`).replace(/[^a-zA-Z0-9_-]/g, '_');
+            let ext = match[1] === 'jpeg' ? 'jpg' : match[1];
+            if (ext.includes('webp')) ext = 'webp';
+            const promptsDir = path.join(process.cwd(), 'public', 'images', 'prompts');
+            if (!fs.existsSync(promptsDir)) {
+              fs.mkdirSync(promptsDir, { recursive: true });
+            }
+            const filename = `${safeId}.${ext}`;
+            const filePath = path.join(promptsDir, filename);
+            const buffer = Buffer.from(match[2], 'base64');
+            fs.writeFileSync(filePath, buffer);
+            savedPost.imageUrl = `/images/prompts/${filename}`;
+          }
+        } catch (localFileErr) {
+          console.error('Failed to save static prompt image:', localFileErr);
+        }
+      }
+    }
+
     // Save to Supabase
     if (isSupabaseConfigured()) {
       try {
         const payload = mapPostToSupabase(savedPost);
-        const { error } = await db().from('posts').upsert(payload, { onConflict: 'id' });
+        let { error } = await db().from('posts').upsert(payload, { onConflict: 'id' });
+        
+        // If the table doesn't have the newly requested columns, retry without them
+        if (error && error.message && error.message.includes('column')) {
+          console.warn('Supabase savePost column error detected, retrying without request fields...', error.message);
+          const safePayload = { ...payload };
+          delete (safePayload as any).is_requested;
+          delete (safePayload as any).requested_by_name;
+          delete (safePayload as any).requested_by_email;
+          delete (safePayload as any).requested_prompt_description;
+          
+          const retryRes = await db().from('posts').upsert(safePayload, { onConflict: 'id' });
+          error = retryRes.error;
+        }
+
         if (error) {
-          console.error('Supabase savePost error:', error.message, error.details);
+          console.warn('Supabase savePost error (falling back to local JSON):', error.message);
         } else {
           console.log(`Saved post ${savedPost.id} to Supabase successfully.`);
         }
-      } catch (err) {
-        console.error('Supabase savePost exception:', err);
+      } catch (err: any) {
+        console.warn('Supabase savePost exception (falling back to local JSON):', err);
       }
     }
 
@@ -573,8 +675,9 @@ export const ServerStorage = {
     if (isSupabaseConfigured()) {
       try {
         const { data, error } = await db().from('settings').select('*').eq('id', 'general_settings').maybeSingle();
-        if (!error && data && data.data) {
-          memorySettings = { ...INITIAL_SETTINGS, ...data.data };
+        if (!error && data) {
+          const settingsPayload = (data.data && typeof data.data === 'object') ? data.data : data;
+          memorySettings = { ...INITIAL_SETTINGS, ...settingsPayload };
           writeJsonFile(SETTINGS_FILE, memorySettings);
           return memorySettings as SiteSettings;
         }
@@ -586,7 +689,7 @@ export const ServerStorage = {
     if (memorySettings === null) {
       memorySettings = readJsonFile<SiteSettings>(SETTINGS_FILE, INITIAL_SETTINGS);
     }
-    return memorySettings as SiteSettings;
+    return (memorySettings || INITIAL_SETTINGS) as SiteSettings;
   },
 
   saveSettings: async (newSettings: Partial<SiteSettings>): Promise<SiteSettings> => {
@@ -615,9 +718,10 @@ export const ServerStorage = {
       try {
         const { data, error } = await db().from('tags').select('*').eq('id', 'all_tags').maybeSingle();
         if (!error && data && Array.isArray(data.tags)) {
-          memoryTags = data.tags;
-          writeJsonFile(TAGS_FILE, data.tags);
-          return data.tags;
+          const cleaned = cleanTagsArray(data.tags);
+          memoryTags = cleaned;
+          writeJsonFile(TAGS_FILE, cleaned);
+          return cleaned;
         }
       } catch (err) {
         console.warn('Supabase getAllTags fallback:', err);
@@ -625,19 +729,17 @@ export const ServerStorage = {
     }
 
     if (memoryTags === null) {
-      memoryTags = readJsonFile<string[]>(TAGS_FILE, DEFAULT_TAGS);
+      const raw = readJsonFile<string[]>(TAGS_FILE, DEFAULT_TAGS);
+      memoryTags = cleanTagsArray(raw);
     }
-    return memoryTags;
+    return cleanTagsArray(memoryTags);
   },
 
   addTag: async (tag: string): Promise<string[]> => {
-    const cleanTag = tag.trim().replace(/^#/, '');
-    if (!cleanTag) return ServerStorage.getAllTags();
+    const canonical = canonicalizeTag(tag);
+    if (!canonical) return ServerStorage.getAllTags();
     const current = await ServerStorage.getAllTags();
-    if (current.some((t) => t.toLowerCase() === cleanTag.toLowerCase())) {
-      return current;
-    }
-    const updated = [cleanTag, ...current];
+    const updated = cleanTagsArray([canonical, ...current]);
 
     if (isSupabaseConfigured()) {
       try {
@@ -657,7 +759,10 @@ export const ServerStorage = {
 
   deleteTag: async (tag: string): Promise<string[]> => {
     const current = await ServerStorage.getAllTags();
-    const filtered = current.filter((t) => t.toLowerCase() !== tag.toLowerCase());
+    const targetCanonical = canonicalizeTag(tag);
+    const filtered = current.filter(
+      (t) => t.toLowerCase() !== tag.toLowerCase() && t.toLowerCase() !== targetCanonical.toLowerCase()
+    );
 
     if (isSupabaseConfigured()) {
       try {
@@ -672,6 +777,166 @@ export const ServerStorage = {
 
     memoryTags = filtered;
     writeJsonFile(TAGS_FILE, filtered);
+    return filtered;
+  },
+
+  // Prompt Requests (User-submitted custom prompt requests)
+  getAllPromptRequests: async (): Promise<PromptRequestItem[]> => {
+    if (isSupabaseConfigured()) {
+      try {
+        const { data, error } = await db()
+          .from('prompt_requests')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && data && Array.isArray(data)) {
+          const mapped: PromptRequestItem[] = data.map((d: any) => ({
+            id: d.id,
+            userId: d.user_id || 'anonymous',
+            userName: d.user_name || 'Community Creator',
+            userEmail: d.user_email || undefined,
+            userAvatar: d.user_avatar || undefined,
+            requestText: d.request_text || d.prompt_description || '',
+            category: d.category || 'Photorealistic & Portraits',
+            aiTool: d.ai_tool || 'Midjourney',
+            status: (d.status as 'pending' | 'in_progress' | 'completed') || 'pending',
+            fulfilledPostId: d.fulfilled_post_id || undefined,
+            createdAt: d.created_at ? (typeof d.created_at === 'number' ? d.created_at : new Date(d.created_at).getTime()) : Date.now(),
+            likesCount: Number(d.likes_count) || 0,
+          }));
+
+          memoryPromptRequests = mapped;
+          writeJsonFile(PROMPT_REQUESTS_FILE, mapped);
+          return mapped;
+        }
+      } catch (err) {
+        console.warn('Supabase getAllPromptRequests notice:', err);
+      }
+    }
+
+    if (memoryPromptRequests === null) {
+      memoryPromptRequests = readJsonFile<PromptRequestItem[]>(PROMPT_REQUESTS_FILE, [
+        {
+          id: 'req_1',
+          userId: 'u_mock1',
+          userName: 'Alex Visuals',
+          userEmail: 'alex.creator@example.com',
+          userAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
+          requestText: 'Cinematic 8K portrait of a neon cyberpunk geisha with intricate golden kintsugi porcelain skin in rainy Shibuya alleyway',
+          category: 'Photorealistic & Portraits',
+          aiTool: 'Midjourney',
+          status: 'completed',
+          createdAt: Date.now() - 3600000 * 24,
+          likesCount: 18,
+        },
+        {
+          id: 'req_2',
+          userId: 'u_mock2',
+          userName: 'Elena Art',
+          userEmail: 'elena.designs@gmail.com',
+          userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80',
+          requestText: 'Ethereal floating bioluminescent island with crystal waterfalls, volumetric golden hour haze, and ancient glowing runes',
+          category: 'Fantasy & Concept Art',
+          aiTool: 'Flux',
+          status: 'pending',
+          createdAt: Date.now() - 3600000 * 5,
+          likesCount: 9,
+        },
+      ]);
+    }
+    return memoryPromptRequests;
+  },
+
+  savePromptRequest: async (req: Partial<PromptRequestItem> & { requestText: string }): Promise<PromptRequestItem> => {
+    const current = await ServerStorage.getAllPromptRequests();
+    const id = req.id || `req_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const now = Date.now();
+
+    const newRequest: PromptRequestItem = {
+      id,
+      userId: req.userId || 'anonymous',
+      userName: req.userName || 'Community Creator',
+      userEmail: req.userEmail || '',
+      userAvatar: req.userAvatar || undefined,
+      requestText: req.requestText,
+      category: req.category || 'Photorealistic & Portraits',
+      aiTool: req.aiTool || 'Midjourney',
+      status: req.status || 'pending',
+      fulfilledPostId: req.fulfilledPostId || undefined,
+      createdAt: req.createdAt || now,
+      likesCount: req.likesCount || 0,
+    };
+
+    if (isSupabaseConfigured()) {
+      try {
+        await db().from('prompt_requests').upsert({
+          id: newRequest.id,
+          user_id: newRequest.userId,
+          user_name: newRequest.userName,
+          user_email: newRequest.userEmail,
+          user_avatar: newRequest.userAvatar,
+          request_text: newRequest.requestText,
+          category: newRequest.category,
+          ai_tool: newRequest.aiTool,
+          status: newRequest.status,
+          fulfilled_post_id: newRequest.fulfilledPostId,
+          created_at: new Date(newRequest.createdAt).toISOString(),
+          likes_count: newRequest.likesCount,
+        }, { onConflict: 'id' });
+      } catch (err) {
+        console.warn('Supabase savePromptRequest fallback:', err);
+      }
+    }
+
+    const filtered = current.filter((r) => r.id !== id);
+    const updated = [newRequest, ...filtered];
+    memoryPromptRequests = updated;
+    writeJsonFile(PROMPT_REQUESTS_FILE, updated);
+    return newRequest;
+  },
+
+  updatePromptRequestStatus: async (id: string, status: 'pending' | 'in_progress' | 'completed', fulfilledPostId?: string): Promise<PromptRequestItem[]> => {
+    const current = await ServerStorage.getAllPromptRequests();
+    const target = current.find((r) => r.id === id);
+    if (!target) return current;
+
+    const updatedItem: PromptRequestItem = {
+      ...target,
+      status,
+      fulfilledPostId: fulfilledPostId !== undefined ? fulfilledPostId : target.fulfilledPostId,
+    };
+
+    if (isSupabaseConfigured()) {
+      try {
+        await db().from('prompt_requests').update({
+          status,
+          fulfilled_post_id: updatedItem.fulfilledPostId || null,
+        }).eq('id', id);
+      } catch (err) {
+        console.warn('Supabase updatePromptRequestStatus exception:', err);
+      }
+    }
+
+    const updatedList = current.map((r) => (r.id === id ? updatedItem : r));
+    memoryPromptRequests = updatedList;
+    writeJsonFile(PROMPT_REQUESTS_FILE, updatedList);
+    return updatedList;
+  },
+
+  deletePromptRequest: async (id: string): Promise<PromptRequestItem[]> => {
+    const current = await ServerStorage.getAllPromptRequests();
+    const filtered = current.filter((r) => r.id !== id);
+
+    if (isSupabaseConfigured()) {
+      try {
+        await db().from('prompt_requests').delete().eq('id', id);
+      } catch (err) {
+        console.warn('Supabase deletePromptRequest exception:', err);
+      }
+    }
+
+    memoryPromptRequests = filtered;
+    writeJsonFile(PROMPT_REQUESTS_FILE, filtered);
     return filtered;
   },
 };
