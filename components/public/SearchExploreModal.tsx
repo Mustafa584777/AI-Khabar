@@ -19,7 +19,6 @@ import {
 import { Category, PromptPost } from '@/types/prompt';
 import { getPromptSlug, getOptimizedImageUrl } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
-import { semanticSearchPosts } from '@/lib/semantic-search';
 
 export const SearchExploreModal = () => {
   const router = useRouter();
@@ -119,15 +118,21 @@ export const SearchExploreModal = () => {
     return catWithStats.sort((a, b) => b.totalViews - a.totalViews || b.postCount - a.postCount);
   }, [categories, posts]);
 
-  // Live Instant Search Filter Results with Semantic Engine
+  // Live Instant Search Filter Results
   const liveResults = useMemo(() => {
-    const query = localInput.trim();
+    const query = localInput.trim().toLowerCase();
     if (!query || query.length < 2) return [];
 
     const published = posts.filter((p) => p.status === 'published');
-    return semanticSearchPosts(published, query);
+    return published.filter((post) => {
+      const titleMatch = post.title?.toLowerCase().includes(query);
+      const promptMatch = post.promptText?.toLowerCase().includes(query);
+      const catMatch = post.category?.toLowerCase().includes(query);
+      const tagMatch = Array.isArray(post.tags) && post.tags.some((t) => t.toLowerCase().includes(query));
+      const toolMatch = post.aiTool?.toLowerCase().includes(query);
+      return titleMatch || promptMatch || catMatch || tagMatch || toolMatch;
+    });
   }, [localInput, posts]);
-
 
   const handleCopyPrompt = (e: React.MouseEvent, post: PromptPost) => {
     e.stopPropagation();

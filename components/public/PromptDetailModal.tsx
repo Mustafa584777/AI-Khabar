@@ -634,20 +634,20 @@ export const PromptDetailModal = () => {
             {/* Left Column: Natural High-Resolution Photo Showcase */}
             <div
               onContextMenu={(e) => e.preventDefault()}
-              className="lg:col-span-7 bg-neutral-950 flex flex-col justify-center items-center p-0 relative group min-h-[420px] sm:min-h-[540px] select-none overflow-hidden"
+              className="lg:col-span-7 bg-neutral-950 flex flex-col justify-center items-center p-3 sm:p-6 lg:p-8 relative group min-h-[360px] sm:min-h-[480px] select-none"
             >
               {selectedPost.imageUrl ? (
                 <div
                   onContextMenu={(e) => e.preventDefault()}
-                  className="relative w-full h-full min-h-[420px] sm:min-h-[540px] max-h-[760px] overflow-hidden flex items-center justify-center select-none"
+                  className="relative w-full h-full min-h-[340px] sm:min-h-[460px] max-h-[720px] rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center select-none"
                 >
                   <Image
-                    src={getOptimizedImageUrl(selectedPost.imageUrl, 1200)}
+                    src={getOptimizedImageUrl(selectedPost.imageUrl, 1000)}
                     alt={selectedPost.imageAlt || selectedPost.title}
                     width={1200}
                     height={1200}
                     draggable={false}
-                    className="w-full h-full max-h-[760px] object-cover select-none pointer-events-none"
+                    className="w-full h-auto max-h-[720px] object-contain rounded-2xl sm:rounded-3xl select-none pointer-events-none"
                     referrerPolicy="no-referrer"
                     priority
                   />
@@ -765,45 +765,6 @@ export const PromptDetailModal = () => {
                   <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-neutral-900 dark:text-white leading-tight tracking-tight">
                     {selectedPost.title}
                   </h1>
-
-                  {/* Requested Prompt Metadata Card */}
-                  {selectedPost.isRequested && (
-                    <div className="mt-3.5 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-red-500/10 via-amber-500/10 to-red-500/10 border border-red-200/80 dark:border-red-900/60 flex items-start gap-3">
-                      {selectedPost.requestedByAvatar ? (
-                        <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-red-200 shadow-sm relative mt-0.5">
-                          <Image
-                            src={selectedPost.requestedByAvatar}
-                            alt={selectedPost.requestedByName || 'User'}
-                            fill
-                            sizes="32px"
-                            className="object-cover rounded-full"
-                            referrerPolicy="no-referrer"
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-[#E60023] text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
-                          <Sparkles className="w-4 h-4" />
-                        </div>
-                      )}
-                      <div className="space-y-1 flex-1 text-xs">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-extrabold text-[#E60023] tracking-wide uppercase text-[10px]">
-                            Community Requested Prompt
-                          </span>
-                          {selectedPost.requestedByName && (
-                            <span className="px-2 py-0.5 rounded-full bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 font-bold text-[10px]">
-                              Requested by: {selectedPost.requestedByName}
-                            </span>
-                          )}
-                        </div>
-                        {selectedPost.requestedPromptDescription && (
-                          <p className="text-neutral-700 dark:text-neutral-300 italic">
-                            &quot;{selectedPost.requestedPromptDescription}&quot;
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
 
                   {/* Metadata Stats - Genuine Counts */}
                   <div className="flex flex-wrap items-center gap-4 text-xs text-neutral-500 dark:text-neutral-400 mt-3 pt-2 border-t border-neutral-100 dark:border-neutral-800">
@@ -1009,7 +970,7 @@ export const PromptDetailModal = () => {
               width={1600}
               height={1600}
               draggable={false}
-              className="w-full h-full max-w-full max-h-[90vh] object-cover rounded-2xl shadow-2xl select-none pointer-events-auto"
+              className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl select-none pointer-events-auto"
               referrerPolicy="no-referrer"
             />
           </div>

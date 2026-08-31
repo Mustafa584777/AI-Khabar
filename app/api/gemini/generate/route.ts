@@ -1,15 +1,13 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
-import { ServerStorage } from '@/lib/server-storage';
-import fs from 'fs';
-import path from 'path';
 
 // Prioritized model fallback sequence: if one model fails or is unavailable, switch to the next
 const CANDIDATE_MODELS = [
   'gemini-2.5-flash',
-  'gemini-2.0-flash',
-  'gemini-1.5-flash',
-  'gemini-1.5-pro',
+  'gemini-3.7-flash',
+  'gemini-3.1-flash-lite',
+  'gemini-flash-latest',
+  'gemini-2.5-pro',
 ];
 
 // Reusable executor that tries candidate models in sequence
@@ -140,12 +138,9 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      const settings = await ServerStorage.getSettings().catch(() => null);
-      const customIns = settings?.geminiCustomInstructions || '';
       const systemInstruction = `You are a world-class prompt engineer and AI art director specializing in Midjourney v6, ChatGPT-4o, Flux.1, Stable Diffusion XL, Claude 3.5, and Gemini.
 Generate a comprehensive, high-quality prompt package formatted for a prompt directory article like trendinggeminiprompts.com.
-Ensure the prompt includes dynamic variable placeholders like [subject], [lighting], [style] so users can customize them.
-${customIns ? `\nUSER CUSTOM SYSTEM INSTRUCTIONS & GUIDELINES:\n${customIns}` : ''}`;
+Ensure the prompt includes dynamic variable placeholders like [subject], [lighting], [style] so users can customize them.`;
 
       let contentsPayload: any;
 
@@ -168,18 +163,6 @@ ${customIns ? `\nUSER CUSTOM SYSTEM INSTRUCTIONS & GUIDELINES:\n${customIns}` : 
             mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
           } catch (fetchErr) {
             console.warn('Failed to fetch remote image for multimodal analysis:', fetchErr);
-          }
-        } else if (image.startsWith('/')) {
-          try {
-            const filePath = path.join(process.cwd(), 'public', image);
-            if (fs.existsSync(filePath)) {
-              const fileBuffer = fs.readFileSync(filePath);
-              base64Data = fileBuffer.toString('base64');
-              const ext = path.extname(image).toLowerCase();
-              mimeType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : ext === '.gif' ? 'image/gif' : 'image/jpeg';
-            }
-          } catch (localErr) {
-            console.warn('Failed to read local image for multimodal analysis:', localErr);
           }
         }
 
@@ -208,7 +191,7 @@ Provide a structured JSON output with:
 - "seo": metaTitle, metaDescription, focusKeyword
 - "articleContent": rich markdown guide explaining how the prompt works, lighting/camera breakdowns, parameter settings, and pro tips.`,
           };
-          contentsPayload = [imagePart, textPart];
+          contentsPayload = { parts: [imagePart, textPart] };
         } else {
           // Fallback to text prompt
           contentsPayload = `Create a complete prompt post based on image concept: "${topic || 'Photorealistic Artwork'}" for ${tool || 'Midjourney'}. Available Categories: [${existingCatsList}].`;
