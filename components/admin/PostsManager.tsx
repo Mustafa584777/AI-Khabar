@@ -89,10 +89,13 @@ export const PostsManager = () => {
     showToast('Selected posts reverted to draft');
   };
 
-  const handleBulkDelete = () => {
+  const handleBulkDelete = async () => {
     if (confirm(`Are you sure you want to delete ${selectedIds.length} prompts?`)) {
-      selectedIds.forEach((id) => deletePost(id));
+      const idsToDelete = [...selectedIds];
       setSelectedIds([]);
+      for (const id of idsToDelete) {
+        await deletePost(id);
+      }
     }
   };
 

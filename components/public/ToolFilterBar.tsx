@@ -33,13 +33,27 @@ export const ToolFilterBar = () => {
       <div className="flex items-center gap-2">
         {/* Pinterest Style Pill Tabs Slider */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1.5 no-scrollbar flex-1 scroll-smooth">
-          {/* 1. "Requested" / Main Feed Tab */}
+          {/* 1. "All" Main Feed Tab */}
           <button
             onClick={() => {
               setSelectedCategory('all');
             }}
             className={`flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 shrink-0 ${
-              selectedCategory === 'all'
+              selectedCategory === 'all' && selectedSort !== 'trending'
+                ? 'bg-[#E60023] text-white shadow-sm shadow-[#E60023]/30 scale-100'
+                : 'bg-[#efefef] dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 hover:bg-[#e2e2e2] dark:hover:bg-neutral-700'
+            }`}
+          >
+            <span>All</span>
+          </button>
+
+          {/* 2. "Requested" Dedicated Tab */}
+          <button
+            onClick={() => {
+              setSelectedCategory('requested');
+            }}
+            className={`flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 shrink-0 ${
+              selectedCategory === 'requested'
                 ? 'bg-[#E60023] text-white shadow-sm shadow-[#E60023]/30 scale-100'
                 : 'bg-[#efefef] dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 hover:bg-[#e2e2e2] dark:hover:bg-neutral-700'
             }`}
@@ -48,9 +62,10 @@ export const ToolFilterBar = () => {
             <span>Requested</span>
           </button>
 
-          {/* 2. "Trending" Tab */}
+          {/* 3. "Trending" Tab */}
           <button
             onClick={() => {
+              setSelectedCategory('all');
               setSelectedSort('trending');
             }}
             className={`flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 shrink-0 ${
