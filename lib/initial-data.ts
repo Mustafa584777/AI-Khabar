@@ -1,5 +1,4 @@
 import { Category, PromptPost, SiteSettings } from '@/types/prompt';
-import defaultPostsData from '@/data/posts.json';
 
 export const INITIAL_CATEGORIES: Category[] = [
   {
@@ -76,7 +75,7 @@ export const INITIAL_CATEGORIES: Category[] = [
   }
 ];
 
-export const INITIAL_POSTS: PromptPost[] = (Array.isArray(defaultPostsData) ? defaultPostsData : []) as unknown as PromptPost[];
+export const INITIAL_POSTS: PromptPost[] = [];
 
 export const INITIAL_SETTINGS: SiteSettings = {
   siteName: 'Trending Copy Paste Photo Prompts',

@@ -414,7 +414,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const isSavingRef = React.useRef(false);
 
-  const syncFromRemote = React.useCallback(async () => {
+  const syncFromRemote = async () => {
     if (isSavingRef.current) return;
     try {
       // Fetch posts independently and quickly for fast initial render
@@ -473,7 +473,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       console.error('Failed to sync from server API:', err);
       setIsLoadingPosts(false);
     }
-  }, []);
+  };
 
   // Initial load and auto-sync on mount / window focus
   useEffect(() => {
@@ -524,7 +524,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('taste_profile_updated', handleTasteProfileEvent);
     };
-  }, [syncFromRemote]);
+  }, []);
 
   const updateTasteProfile = (updates: Partial<UserTasteProfile>) => {
     const current = PersonalizationEngine.getProfile();

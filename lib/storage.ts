@@ -1,5 +1,5 @@
 import { Category, PromptPost, SiteSettings, UserAccount, AIHistoryItem } from '@/types/prompt';
-import { INITIAL_CATEGORIES, INITIAL_SETTINGS, INITIAL_POSTS } from './initial-data';
+import { INITIAL_CATEGORIES, INITIAL_SETTINGS } from './initial-data';
 
 const STORAGE_KEY_BOOKMARKS = 'promptcms_user_bookmarks';
 const STORAGE_KEY_LIKES = 'promptcms_user_likes';
@@ -18,23 +18,13 @@ export const StorageService = {
         const saved = localStorage.getItem(STORAGE_KEY_CACHED_POSTS);
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            // Invalidate legacy base64 bloated cache
-            const hasLegacyBase64 = parsed.some(
-              (p: any) => typeof p.imageUrl === 'string' && p.imageUrl.startsWith('data:image/')
-            );
-            if (hasLegacyBase64) {
-              localStorage.removeItem(STORAGE_KEY_CACHED_POSTS);
-              return INITIAL_POSTS || [];
-            }
-            return parsed;
-          }
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
         }
       } catch (e) {
         console.error('Error reading cached posts:', e);
       }
     }
-    return INITIAL_POSTS || [];
+    return [];
   },
 
   saveCachedPosts: (posts: PromptPost[]): void => {

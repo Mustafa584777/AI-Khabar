@@ -8,7 +8,7 @@ import { SearchX, Filter, Loader2 } from 'lucide-react';
 import { PromptPost } from '@/types/prompt';
 import { PersonalizationEngine } from '@/lib/personalization';
 
-const INITIAL_BATCH_SIZE = 10;
+const INITIAL_BATCH_SIZE = 6;
 const SCROLL_BATCH_SIZE = 6;
 
 export const PromptGrid = () => {
@@ -109,7 +109,7 @@ export const PromptGrid = () => {
           setDisplayedCount((prev) => Math.min(prev + SCROLL_BATCH_SIZE, filteredPosts.length));
         }
       },
-      { rootMargin: '250px' }
+      { rootMargin: '400px' }
     );
 
     observer.observe(sentinel);
@@ -157,7 +157,7 @@ export const PromptGrid = () => {
           )}
         </>
       ) : isLoadingPosts ? (
-        /* Pinterest-Style Shimmer Skeleton Loading Grid for Viewport */
+        /* Pinterest-Style Shimmer Skeleton Loading Grid for Slow Internet */
         <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4 [column-fill:_balance]">
           {[
             'aspect-[3/4]',
@@ -165,6 +165,13 @@ export const PromptGrid = () => {
             'aspect-[9/16]',
             'aspect-[3/4]',
             'aspect-[1/1]',
+            'aspect-[4/5]',
+            'aspect-[3/4]',
+            'aspect-[9/16]',
+            'aspect-[4/5]',
+            'aspect-[3/4]',
+            'aspect-[1/1]',
+            'aspect-[4/5]',
           ].map((aspect, idx) => (
             <div
               key={idx}

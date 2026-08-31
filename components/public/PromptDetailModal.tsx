@@ -23,133 +23,7 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { PersonalizationEngine } from '@/lib/personalization';
-import { getPromptSlug, slugify, getOptimizedImageUrl } from '@/lib/utils';
-import { useRouter } from 'next/navigation';
-
-interface RecommendedPinCardProps {
-  pin: PromptPost;
-  isPinBookmarked: boolean;
-  isCopied: boolean;
-  onSelect: (pin: PromptPost) => void;
-  onGenerate: (e: React.MouseEvent, pin: PromptPost) => void;
-  onCopy: (e: React.MouseEvent, pin: PromptPost) => void;
-  onToggleBookmark: (e: React.MouseEvent, pin: PromptPost) => void;
-}
-
-const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
-  pin,
-  isPinBookmarked,
-  isCopied,
-  onSelect,
-  onGenerate,
-  onCopy,
-  onToggleBookmark,
-}) => {
-  const [inView, setInView] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = cardRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setInView(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: '60px 0px', threshold: 0.01 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <div
-      ref={cardRef}
-      onClick={() => onSelect(pin)}
-      className="break-inside-avoid group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-neutral-200 dark:bg-neutral-900 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-300 border border-neutral-200/60 dark:border-neutral-800/80 min-h-[160px]"
-      id={`masonry-pin-${pin.id}`}
-    >
-      {/* Shimmer Placeholder */}
-      {(!loaded || !inView) && pin.imageUrl && (
-        <div className="w-full aspect-[3/4] bg-neutral-200 dark:bg-neutral-800 animate-pulse flex items-center justify-center">
-          <Sparkles className="w-4 h-4 text-neutral-400 dark:text-neutral-500 animate-spin" style={{ animationDuration: '4s' }} />
-        </div>
-      )}
-
-      {/* Photo Pin Image (rendered ONLY when inView is true) */}
-      {pin.imageUrl && inView && (
-        <Image
-          src={getOptimizedImageUrl(pin.imageUrl, 500)}
-          alt={pin.imageAlt || pin.title}
-          width={600}
-          height={800}
-          onLoad={() => setLoaded(true)}
-          className={`w-full h-auto object-cover group-hover:scale-105 transition-all duration-500 ${
-            loaded ? 'opacity-100' : 'opacity-0 absolute inset-0'
-          }`}
-          referrerPolicy="no-referrer"
-          loading="lazy"
-          decoding="async"
-          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-        />
-      )}
-
-      {/* Dark Vignette Overlay on Hover */}
-      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-between p-3 pointer-events-none">
-        {/* Top Actions */}
-        <div className="flex items-center justify-between w-full pointer-events-auto">
-          <button
-            type="button"
-            onClick={(e) => onGenerate(e, pin)}
-            className="px-2.5 py-1 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 text-[10px] font-bold shadow-md transition-transform hover:scale-105 flex items-center gap-1"
-            title="Generate Image with this prompt"
-          >
-            <Sparkles className="w-3 h-3 text-[#E60023]" />
-            <span>Generate</span>
-          </button>
-
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={(e) => onCopy(e, pin)}
-              className="p-1.5 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-md transition-all hover:scale-105"
-              title="Quick Copy Prompt"
-            >
-              {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-            </button>
-
-            <button
-              type="button"
-              onClick={(e) => onToggleBookmark(e, pin)}
-              className={`px-2.5 py-1 rounded-full text-[10px] font-bold shadow-md transition-all hover:scale-105 flex items-center gap-1 ${
-                isPinBookmarked
-                  ? 'bg-white text-[#E60023]'
-                  : 'bg-white hover:bg-neutral-100 text-neutral-900'
-              }`}
-              title={isPinBookmarked ? 'Saved to collection' : 'Save Pin'}
-            >
-              <Bookmark className={`w-3 h-3 ${isPinBookmarked ? 'fill-[#E60023] text-[#E60023]' : ''}`} />
-              <span>{isPinBookmarked ? 'Saved' : 'Save'}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Bottom Info: Category & Title */}
-        <div className="pointer-events-auto">
-          <span className="px-2 py-0.5 rounded-full bg-black/75 backdrop-blur-md text-[9px] font-bold text-white mb-1 inline-block">
-            {pin.category}
-          </span>
-          <p className="text-xs font-bold text-white line-clamp-2 leading-snug drop-shadow-md">
-            {pin.title}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-};
+import { getPromptSlug, slugify } from '@/lib/utils';
 
 export const PromptDetailModal = () => {
   const {
@@ -169,76 +43,31 @@ export const PromptDetailModal = () => {
 
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [copiedPinId, setCopiedPinId] = useState<string | null>(null);
-  const [displayedCount, setDisplayedCount] = useState<number>(5);
+  const [displayedCount, setDisplayedCount] = useState<number>(15);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [showFullImageModal, setShowFullImageModal] = useState<boolean>(false);
   const [isDownloadingImage, setIsDownloadingImage] = useState<boolean>(false);
-  const [historyStack, setHistoryStack] = useState<PromptPost[]>(() => (selectedPost ? [selectedPost] : []));
-  const [prevSelectedId, setPrevSelectedId] = useState<string | null>(selectedPost?.id || null);
-
-  const router = useRouter();
-
-  // Keep historyStack synchronized with selectedPost during render
-  if (selectedPost && selectedPost.id !== prevSelectedId) {
-    setPrevSelectedId(selectedPost.id);
-    if (historyStack.length === 0 || !historyStack.some((p) => p.id === selectedPost.id)) {
-      setHistoryStack((prev) => (prev.length === 0 ? [selectedPost] : [...prev, selectedPost]));
-    }
-  } else if (!selectedPost && prevSelectedId !== null) {
-    setPrevSelectedId(null);
-    if (historyStack.length > 0) {
-      setHistoryStack([]);
-    }
-  }
 
   const isLiked = selectedPost ? likedIds?.includes(selectedPost.id) : false;
   const currentPost = posts.find((p) => p.id === selectedPost?.id) || selectedPost;
   const currentLikesCount = currentPost?.likesCount ?? selectedPost?.likesCount ?? 0;
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const bottomSentinelRef = useRef<HTMLDivElement>(null);
-
   const closeModal = useCallback(() => {
     setSelectedPost(null);
-    setHistoryStack([]);
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/prompt')) {
       window.history.pushState(null, '', '/');
-      if (window.location.pathname.startsWith('/prompt')) {
-        router.push('/');
-      }
     }
-  }, [setSelectedPost, router]);
+  }, [setSelectedPost]);
 
-  const handleGoBack = useCallback(() => {
-    if (historyStack.length > 1) {
-      const newStack = [...historyStack];
-      newStack.pop(); // Remove active prompt
-      const prevPost = newStack[newStack.length - 1];
-      setHistoryStack(newStack);
-      if (containerRef.current) {
-        containerRef.current.scrollTop = 0;
-      }
-      setSelectedPost(prevPost);
-      if (typeof window !== 'undefined') {
-        const prevSlug = getPromptSlug(prevPost);
-        window.history.pushState({ postId: prevPost.id }, '', `/prompt/${prevSlug}`);
-      }
-      setDisplayedCount(5);
-    } else {
-      closeModal();
-    }
-  }, [historyStack, closeModal, setSelectedPost]);
-
-  // Handle browser back / forward navigation and Escape key
+  // Handle browser back / forward navigation
   useEffect(() => {
     const handlePopState = () => {
       if (typeof window !== 'undefined') {
         const path = window.location.pathname;
-        if (path === '/' || path === '' || !path.startsWith('/prompt')) {
+        if (path === '/' || path === '') {
           setSelectedPost(null);
-          setHistoryStack([]);
         } else if (path.startsWith('/prompt/')) {
-          const rawSlug = path.replace('/prompt/', '').split('/')[0];
+          const rawSlug = path.replace('/prompt/', '');
           const targetSlug = decodeURIComponent(rawSlug).toLowerCase().trim();
           const matched = posts.find((p) => {
             if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
@@ -247,56 +76,14 @@ export const PromptDetailModal = () => {
             return false;
           });
           if (matched) {
-            if (containerRef.current) {
-              containerRef.current.scrollTop = 0;
-            }
             setSelectedPost(matched);
-            setHistoryStack((prev) => {
-              const idx = prev.findIndex((p) => p.id === matched.id);
-              if (idx !== -1) return prev.slice(0, idx + 1);
-              return [...prev, matched];
-            });
-            setDisplayedCount(5);
-          } else {
-            fetch(`/api/posts/${encodeURIComponent(targetSlug)}`)
-              .then((res) => (res.ok ? res.json() : Promise.reject(res)))
-              .then((data) => {
-                if (data.success && data.post) {
-                  if (containerRef.current) {
-                    containerRef.current.scrollTop = 0;
-                  }
-                  setSelectedPost(data.post);
-                  setHistoryStack((prev) => {
-                    const idx = prev.findIndex((p) => p.id === data.post.id);
-                    if (idx !== -1) return prev.slice(0, idx + 1);
-                    return [...prev, data.post];
-                  });
-                  setDisplayedCount(5);
-                }
-              })
-              .catch(() => {});
           }
         }
       }
     };
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (showFullImageModal) {
-          setShowFullImageModal(false);
-        } else if (selectedPost) {
-          handleGoBack();
-        }
-      }
-    };
-
     window.addEventListener('popstate', handlePopState);
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [setSelectedPost, posts, showFullImageModal, selectedPost, handleGoBack]);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [setSelectedPost, posts]);
 
   const handleLike = () => {
     if (!selectedPost) return;
@@ -349,6 +136,9 @@ export const PromptDetailModal = () => {
     }
   };
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const bottomSentinelRef = useRef<HTMLDivElement>(null);
+
   // Track genuine view count (1 view per unique user session per prompt)
   useEffect(() => {
     if (selectedPost?.id) {
@@ -372,7 +162,7 @@ export const PromptDetailModal = () => {
   useEffect(() => {
     if (selectedPost) {
       if (containerRef.current) {
-        containerRef.current.scrollTop = 0;
+        containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
       }
       // Lock background body scroll
       document.body.style.overflow = 'hidden';
@@ -455,14 +245,14 @@ export const PromptDetailModal = () => {
 
   const hasMorePins = displayedCount < allRecommendedPins.length;
 
-  // Infinite scroll loader trigger (5 pins per batch)
+  // Infinite scroll loader trigger
   const loadMorePins = useCallback(() => {
     if (isLoadingMore || !hasMorePins) return;
     setIsLoadingMore(true);
     setTimeout(() => {
-      setDisplayedCount((prev) => prev + 5);
+      setDisplayedCount((prev) => prev + 10);
       setIsLoadingMore(false);
-    }, 250);
+    }, 300);
   }, [isLoadingMore, hasMorePins]);
 
   // Intersection observer for bottom sentinel
@@ -476,7 +266,7 @@ export const PromptDetailModal = () => {
           loadMorePins();
         }
       },
-      { root: containerRef.current, threshold: 0.1, rootMargin: '80px' }
+      { root: containerRef.current, threshold: 0.1, rootMargin: '200px' }
     );
 
     observer.observe(sentinel);
@@ -525,20 +315,15 @@ export const PromptDetailModal = () => {
   };
 
   const handleSelectPin = (pin: PromptPost) => {
-    PersonalizationEngine.recordView(pin);
-    setHistoryStack((prev) => {
-      if (prev.length > 0 && prev[prev.length - 1]?.id === pin.id) return prev;
-      return [...prev, pin];
-    });
-    if (containerRef.current) {
-      containerRef.current.scrollTop = 0;
-    }
     setSelectedPost(pin);
     if (typeof window !== 'undefined') {
       const pinSlug = getPromptSlug(pin);
       window.history.pushState({ postId: pin.id }, '', `/prompt/${pinSlug}`);
     }
-    setDisplayedCount(5);
+    setDisplayedCount(15);
+    if (containerRef.current) {
+      containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleDeconstructImage = () => {
@@ -565,18 +350,16 @@ export const PromptDetailModal = () => {
     >
       {/* Top Pinterest-Style Navigation Bar */}
       <header className="sticky top-0 z-40 flex items-center justify-between px-3 sm:px-6 lg:px-8 py-3 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md border-b border-neutral-200/80 dark:border-neutral-800 shadow-sm">
-        {/* Left: Back to explore / previous pin button */}
+        {/* Left: Back to explore button */}
         <div className="flex items-center gap-3">
           <button
-            onClick={handleGoBack}
+            onClick={closeModal}
             className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-bold text-xs sm:text-sm transition-all shadow-sm group"
             id="back-to-prompts-btn"
-            title={historyStack.length > 1 ? 'Go back to previous prompt card' : 'Back to explore feed'}
+            title="Back to all prompts"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-            <span className="hidden sm:inline">
-              {historyStack.length > 1 ? 'Previous Prompt' : 'Explore Prompts'}
-            </span>
+            <span className="hidden sm:inline">Explore Prompts</span>
           </button>
 
           <div className="hidden md:flex items-center gap-2 text-xs font-semibold text-neutral-400">
@@ -616,7 +399,7 @@ export const PromptDetailModal = () => {
           <button
             onClick={closeModal}
             className="p-2.5 rounded-full bg-[#efefef] hover:bg-[#e2e2e2] dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-600 hover:text-neutral-900 dark:hover:text-white transition-colors"
-            title="Close View and Return to Home"
+            title="Close View"
           >
             <X className="w-4 h-4" />
           </button>
@@ -626,10 +409,7 @@ export const PromptDetailModal = () => {
       {/* Main Content Area */}
       <main className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-12">
         {/* Pinterest Master Pin Card */}
-        <section
-          key={selectedPost.id}
-          className="bg-white dark:bg-neutral-900 rounded-[28px] sm:rounded-[36px] shadow-2xl border border-neutral-200/80 dark:border-neutral-800 overflow-hidden animate-fade-in transition-all duration-150"
-        >
+        <section className="bg-white dark:bg-neutral-900 rounded-[28px] sm:rounded-[36px] shadow-2xl border border-neutral-200/80 dark:border-neutral-800 overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
             {/* Left Column: Natural High-Resolution Photo Showcase */}
             <div
@@ -642,7 +422,7 @@ export const PromptDetailModal = () => {
                   className="relative w-full h-full min-h-[340px] sm:min-h-[460px] max-h-[720px] rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center select-none"
                 >
                   <Image
-                    src={getOptimizedImageUrl(selectedPost.imageUrl, 1000)}
+                    src={selectedPost.imageUrl}
                     alt={selectedPost.imageAlt || selectedPost.title}
                     width={1200}
                     height={1200}
@@ -810,6 +590,16 @@ export const PromptDetailModal = () => {
 
                       <div className="flex items-center gap-2">
                         <button
+                          onClick={handleDeconstructImage}
+                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold bg-neutral-800 hover:bg-neutral-700 text-white shadow-md transition-all"
+                          title="Deconstruct & Select Image in Image-to-Prompt Tool"
+                          id="modal-deconstruct-btn-inner"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Decide / Deconstruct</span>
+                        </button>
+
+                        <button
                           onClick={handleCopyMasterPrompt}
                           className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold shadow-md transition-all ${
                             copiedPrompt
@@ -875,29 +665,97 @@ export const PromptDetailModal = () => {
 
           {/* Pinterest Responsive Masonry Columns (Images Only) */}
           <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4 space-y-4">
-            {visiblePins.map((pin) => (
-              <RecommendedPinCard
-                key={pin.id}
-                pin={pin}
-                isPinBookmarked={bookmarkedIds.includes(pin.id)}
-                isCopied={copiedPinId === pin.id}
-                onSelect={handleSelectPin}
-                onGenerate={(e, p) => {
-                  e.stopPropagation();
-                  if (typeof window !== 'undefined') {
-                    sessionStorage.setItem('auraprompt_studio_preload', p.promptText);
-                  }
-                  setSelectedPost(null);
-                  setCurrentView('studio-tool');
-                  showToast('Loaded prompt into AI Studio Image Generator!');
-                }}
-                onCopy={(e, p) => handleQuickCopyPin(e, p)}
-                onToggleBookmark={(e, p) => {
-                  e.stopPropagation();
-                  toggleBookmark(p.id);
-                }}
-              />
-            ))}
+            {visiblePins.map((pin) => {
+              const isPinBookmarked = bookmarkedIds.includes(pin.id);
+              const isCopied = copiedPinId === pin.id;
+
+              return (
+                <div
+                  key={pin.id}
+                  onClick={() => handleSelectPin(pin)}
+                  className="break-inside-avoid group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-neutral-200 dark:bg-neutral-900 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-300 border border-neutral-200/60 dark:border-neutral-800/80"
+                  id={`masonry-pin-${pin.id}`}
+                >
+                  {/* Photo Pin Image */}
+                  {pin.imageUrl && (
+                    <Image
+                      src={pin.imageUrl}
+                      alt={pin.imageAlt || pin.title}
+                      width={800}
+                      height={1000}
+                      className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500"
+                      referrerPolicy="no-referrer"
+                      loading="lazy"
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                    />
+                  )}
+
+                  {/* Dark Vignette Overlay on Hover */}
+                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-between p-3 pointer-events-none">
+                    {/* Top Actions: White Generate Button (Left) & White Save Button (Right) */}
+                    <div className="flex items-center justify-between w-full pointer-events-auto">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (typeof window !== 'undefined') {
+                            sessionStorage.setItem('auraprompt_studio_preload', pin.promptText);
+                          }
+                          setSelectedPost(null);
+                          setCurrentView('studio-tool');
+                          showToast('Loaded prompt into AI Studio Image Generator!');
+                        }}
+                        className="px-2.5 py-1 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 text-[10px] font-bold shadow-md transition-transform hover:scale-105 flex items-center gap-1"
+                        title="Generate Image with this prompt"
+                      >
+                        <Sparkles className="w-3 h-3 text-[#E60023]" />
+                        <span>Generate</span>
+                      </button>
+
+                      <div className="flex items-center gap-1.5">
+                        {/* Quick Copy in White */}
+                        <button
+                          type="button"
+                          onClick={(e) => handleQuickCopyPin(e, pin)}
+                          className="p-1.5 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-md transition-all hover:scale-105"
+                          title="Quick Copy Prompt"
+                        >
+                          {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                        </button>
+
+                        {/* Save in White */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleBookmark(pin.id);
+                          }}
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-bold shadow-md transition-all hover:scale-105 flex items-center gap-1 ${
+                            isPinBookmarked
+                              ? 'bg-white text-[#E60023]'
+                              : 'bg-white hover:bg-neutral-100 text-neutral-900'
+                          }`}
+                          title={isPinBookmarked ? 'Saved to collection' : 'Save Pin'}
+                        >
+                          <Bookmark className={`w-3 h-3 ${isPinBookmarked ? 'fill-[#E60023] text-[#E60023]' : ''}`} />
+                          <span>{isPinBookmarked ? 'Saved' : 'Save'}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Bottom Info: Category & Title */}
+                    <div className="pointer-events-auto">
+                      <span className="px-2 py-0.5 rounded-full bg-black/75 backdrop-blur-md text-[9px] font-bold text-white mb-1 inline-block">
+                        {pin.category}
+                      </span>
+                      <p className="text-xs font-bold text-white line-clamp-2 leading-snug drop-shadow-md">
+                        {pin.title}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           {/* Bottom Infinite Scroll Sentinel & Loader */}

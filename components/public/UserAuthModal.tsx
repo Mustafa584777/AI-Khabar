@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import {
   X,
@@ -217,7 +216,7 @@ export const UserAuthModal = () => {
                             : 'border-transparent opacity-70 hover:opacity-100'
                         }`}
                       >
-                        <Image src={av} alt="Avatar option" fill sizes="48px" className="object-cover" />
+                        <img src={av} alt="Avatar option" className="w-full h-full object-cover" />
                       </button>
                     ))}
                   </div>

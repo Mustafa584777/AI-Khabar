@@ -24,34 +24,6 @@ export const SettingsView = () => {
   const [cloudinaryApiKey, setCloudinaryApiKey] = useState(settings.cloudinaryApiKey || '');
   const [cloudinaryApiSecret, setCloudinaryApiSecret] = useState(settings.cloudinaryApiSecret || '');
   const [cloudinaryStatus, setCloudinaryStatus] = useState<{ configured: boolean; cloudName?: string } | null>(null);
-  const [testingCloudinary, setTestingCloudinary] = useState(false);
-
-  const testCloudinaryConnection = async () => {
-    setTestingCloudinary(true);
-    try {
-      // First save current inputs if changed
-      const updated = {
-        ...settings,
-        cloudinaryCloudName: cloudinaryCloudName.trim(),
-        cloudinaryApiKey: cloudinaryApiKey.trim(),
-        cloudinaryApiSecret: cloudinaryApiSecret.trim(),
-      };
-      await saveSettings(updated);
-
-      const res = await fetch('/api/upload?test=true');
-      const data = await res.json();
-      if (data.success) {
-        setCloudinaryStatus({ configured: true, cloudName: data.cloudName });
-        showToast(data.message || 'Connected to Cloudinary successfully!');
-      } else {
-        showToast(`Cloudinary error: ${data.error || 'Connection failed'}`);
-      }
-    } catch (err: any) {
-      showToast(`Failed to test Cloudinary: ${err.message}`);
-    } finally {
-      setTestingCloudinary(false);
-    }
-  };
 
   // Supabase Status
   const [supabaseStatus, setSupabaseStatus] = useState<{
@@ -342,17 +314,7 @@ export const SettingsView = () => {
                 Automatically host and deliver prompt cover photos via high-speed Cloudinary CDN.
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={testCloudinaryConnection}
-                disabled={testingCloudinary}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-bold transition-colors disabled:opacity-50"
-              >
-                <Cloud className={`w-3.5 h-3.5 ${testingCloudinary ? 'animate-spin' : ''}`} />
-                <span>{testingCloudinary ? 'Testing...' : 'Test Connection'}</span>
-              </button>
-
+            <div>
               {cloudinaryStatus?.configured ? (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold">
                   <CheckCircle2 className="w-3.5 h-3.5" />

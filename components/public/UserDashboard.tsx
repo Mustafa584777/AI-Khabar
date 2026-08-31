@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { PromptPost, AIHistoryItem } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
-import { getPromptSlug, getOptimizedImageUrl } from '@/lib/utils';
+import { getPromptSlug } from '@/lib/utils';
 import {
   User,
   Bookmark,
@@ -32,10 +32,8 @@ import {
   Camera,
 } from 'lucide-react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 
 export const UserDashboard = () => {
-  const router = useRouter();
   const {
     posts,
     bookmarkedIds,
@@ -59,13 +57,25 @@ export const UserDashboard = () => {
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'saved' | 'history' | 'taste' | 'request' | 'leaderboard'>('saved');
-  const [historyFilter, setHistoryFilter] = useState<'all' | 'image_to_prompt'>('all');
+  const [historyFilter, setHistoryFilter] = useState<'all' | 'image_to_prompt' | 'prompt_to_image'>('all');
   const [historySearch, setHistorySearch] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Request a prompt form state
   const [requestText, setRequestText] = useState('');
   const [requestCategory, setRequestCategory] = useState('Photorealistic');
+  const refPhotoInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleRefPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setPersistentRefImage(base64);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleRequestSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -180,15 +190,12 @@ export const UserDashboard = () => {
         {/* Profile Card */}
         <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4 sm:gap-5">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-[#E60023] to-amber-500 text-white flex items-center justify-center font-black text-2xl sm:text-3xl shadow-lg shadow-red-500/20 shrink-0 overflow-hidden relative">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-[#E60023] to-amber-500 text-white flex items-center justify-center font-black text-2xl sm:text-3xl shadow-lg shadow-red-500/20 shrink-0 overflow-hidden">
               {userAccount?.avatar ? (
-                <Image
+                <img
                   src={userAccount.avatar}
                   alt={userAccount.name || 'User'}
-                  fill
-                  sizes="80px"
-                  className="object-cover"
-                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover"
                 />
               ) : (
                 <User className="w-8 h-8 sm:w-10 sm:h-10" />
@@ -270,7 +277,57 @@ export const UserDashboard = () => {
           </div>
         )}
 
+        {/* Persistent Reference Photo Card */}
+        <input
+          type="file"
+          ref={refPhotoInputRef}
+          onChange={handleRefPhotoUpload}
+          accept="image/*"
+          className="hidden"
+        />
+        <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-1">
+            <h3 className="text-sm sm:text-base font-black text-neutral-900 dark:text-white flex items-center gap-2">
+              <Camera className="w-5 h-5 text-[#E60023]" />
+              <span>Persistent Reference Photo for AI Generation</span>
+            </h3>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              Upload once here, and it will automatically persist in the Prompt-to-Image studio until you replace or remove it.
+            </p>
+          </div>
 
+          <div className="flex items-center gap-3">
+            {persistentRefImage ? (
+              <div className="flex items-center gap-3">
+                <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-700 shadow-sm shrink-0">
+                  <img src={persistentRefImage} alt="Ref" className="w-full h-full object-cover" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => refPhotoInputRef.current?.click()}
+                    className="px-3.5 py-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 text-xs font-bold hover:bg-neutral-200 transition-colors"
+                  >
+                    Replace
+                  </button>
+                  <button
+                    onClick={() => setPersistentRefImage(null)}
+                    className="px-3.5 py-2 rounded-xl bg-red-50 dark:bg-red-950/60 text-red-600 text-xs font-bold hover:bg-red-100 transition-colors"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => refPhotoInputRef.current?.click()}
+                className="px-4 py-2.5 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-md shadow-red-500/20 flex items-center gap-2"
+              >
+                <Upload className="w-4 h-4" />
+                <span>Upload Reference Photo</span>
+              </button>
+            )}
+          </div>
+        </div>
 
         {/* Navigation Tabs */}
         <div className="flex items-center gap-2 border-b border-neutral-200 dark:border-neutral-800 pb-1 overflow-x-auto">
@@ -473,6 +530,17 @@ export const UserDashboard = () => {
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>Image to Prompt ({aiHistory.filter((i) => i.type === 'image_to_prompt').length})</span>
                 </button>
+                <button
+                  onClick={() => setHistoryFilter('prompt_to_image')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    historyFilter === 'prompt_to_image'
+                      ? 'bg-amber-600 text-white'
+                      : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Wand2 className="w-3.5 h-3.5" />
+                  <span>Prompt to Image ({aiHistory.filter((i) => i.type === 'prompt_to_image').length})</span>
+                </button>
               </div>
 
               <div className="flex items-center gap-2">
@@ -558,15 +626,12 @@ export const UserDashboard = () => {
                       </div>
 
                       {/* Visual Thumbnail */}
-                      {item.imageUrl && (
+                      {(item.imageUrl || item.referenceImageUrl) && (
                         <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 mb-3 group">
-                          <Image
-                            src={getOptimizedImageUrl(item.imageUrl, 400)}
+                          <img
+                            src={item.imageUrl || item.referenceImageUrl}
                             alt={item.title}
-                            fill
-                            sizes="(max-width: 640px) 100vw, 300px"
-                            className="object-cover"
-                            referrerPolicy="no-referrer"
+                            className="w-full h-full object-cover"
                           />
                           {item.modelUsed && (
                             <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-white text-[10px] font-bold">
@@ -942,9 +1007,9 @@ export const UserDashboard = () => {
                         <div className={`w-8 h-8 rounded-xl font-black text-xs flex items-center justify-center shrink-0 ${rankColors}`}>
                           #{index + 1}
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-700 overflow-hidden shrink-0 relative">
+                        <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-700 overflow-hidden shrink-0">
                           {u.avatar ? (
-                            <Image src={u.avatar} alt={u.name} fill sizes="40px" className="object-cover" referrerPolicy="no-referrer" />
+                            <img src={u.avatar} alt={u.name} className="w-full h-full object-cover" />
                           ) : (
                             <User className="w-full h-full p-2 text-neutral-500" />
                           )}

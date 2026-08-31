@@ -1,8 +1,6 @@
 import { Category, PromptPost, SiteSettings, SearchQueryItem } from '@/types/prompt';
 import { INITIAL_CATEGORIES, INITIAL_SETTINGS, INITIAL_POSTS } from './initial-data';
 import { supabase, supabaseAdmin, isSupabaseConfigured } from './supabase';
-import { cleanTagsArray, canonicalizeTag } from './tag-utils';
-import { uploadImageToCloudinary } from './cloudinary-server';
 import fs from 'fs';
 import path from 'path';
 
@@ -154,11 +152,7 @@ export const ServerStorage = {
         }
         const { data, error } = await query;
         if (!error && data && Array.isArray(data)) {
-          const posts = data.map((d) => {
-            const mapped = mapSupabasePost(d);
-            mapped.tags = cleanTagsArray(mapped.tags || []);
-            return mapped;
-          });
+          const posts = data.map(mapSupabasePost);
           if (posts.length > 0) {
             memoryPosts = posts;
             writeJsonFile(POSTS_FILE, posts);
@@ -173,11 +167,7 @@ export const ServerStorage = {
     }
 
     if (memoryPosts === null) {
-      const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
-      memoryPosts = rawPosts.map((p) => ({
-        ...p,
-        tags: cleanTagsArray(p.tags || []),
-      }));
+      memoryPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
     }
     return includeDrafts ? memoryPosts : memoryPosts.filter((p) => p.status === 'published');
   },
@@ -237,7 +227,6 @@ export const ServerStorage = {
         ...existing,
         ...post,
         id,
-        tags: cleanTagsArray(post.tags || existing.tags || []),
         author: post.author || {
           name: 'tool.reelz',
           avatar: '/logo.png',
@@ -252,7 +241,6 @@ export const ServerStorage = {
       savedPost = {
         ...post,
         id,
-        tags: cleanTagsArray(post.tags || []),
         author: post.author || {
           name: 'tool.reelz',
           avatar: '/logo.png',
@@ -266,45 +254,6 @@ export const ServerStorage = {
         likesCount: post.likesCount || 0,
         bookmarksCount: post.bookmarksCount || 0,
       };
-    }
-
-    // If image is a local base64 data URI, attempt auto-uploading to Cloudinary or save as static file in public/images/prompts/
-    if (savedPost.imageUrl && savedPost.imageUrl.startsWith('data:image/')) {
-      let uploadedToCloud = false;
-      try {
-        const clRes = await uploadImageToCloudinary(savedPost.imageUrl, {
-          folder: 'prompts',
-          publicId: savedPost.slug || savedPost.id,
-        });
-        if (clRes.success && clRes.url) {
-          savedPost.imageUrl = clRes.url;
-          uploadedToCloud = true;
-        }
-      } catch (uploadErr) {
-        console.warn('ServerStorage Cloudinary auto-upload fallback:', uploadErr);
-      }
-
-      if (!uploadedToCloud) {
-        try {
-          const match = savedPost.imageUrl.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
-          if (match) {
-            const safeId = (savedPost.id || `prompt_${Date.now()}`).replace(/[^a-zA-Z0-9_-]/g, '_');
-            let ext = match[1] === 'jpeg' ? 'jpg' : match[1];
-            if (ext.includes('webp')) ext = 'webp';
-            const promptsDir = path.join(process.cwd(), 'public', 'images', 'prompts');
-            if (!fs.existsSync(promptsDir)) {
-              fs.mkdirSync(promptsDir, { recursive: true });
-            }
-            const filename = `${safeId}.${ext}`;
-            const filePath = path.join(promptsDir, filename);
-            const buffer = Buffer.from(match[2], 'base64');
-            fs.writeFileSync(filePath, buffer);
-            savedPost.imageUrl = `/images/prompts/${filename}`;
-          }
-        } catch (localFileErr) {
-          console.error('Failed to save static prompt image:', localFileErr);
-        }
-      }
     }
 
     // Save to Supabase
@@ -666,10 +615,9 @@ export const ServerStorage = {
       try {
         const { data, error } = await db().from('tags').select('*').eq('id', 'all_tags').maybeSingle();
         if (!error && data && Array.isArray(data.tags)) {
-          const cleaned = cleanTagsArray(data.tags);
-          memoryTags = cleaned;
-          writeJsonFile(TAGS_FILE, cleaned);
-          return cleaned;
+          memoryTags = data.tags;
+          writeJsonFile(TAGS_FILE, data.tags);
+          return data.tags;
         }
       } catch (err) {
         console.warn('Supabase getAllTags fallback:', err);
@@ -677,17 +625,19 @@ export const ServerStorage = {
     }
 
     if (memoryTags === null) {
-      const raw = readJsonFile<string[]>(TAGS_FILE, DEFAULT_TAGS);
-      memoryTags = cleanTagsArray(raw);
+      memoryTags = readJsonFile<string[]>(TAGS_FILE, DEFAULT_TAGS);
     }
-    return cleanTagsArray(memoryTags);
+    return memoryTags;
   },
 
   addTag: async (tag: string): Promise<string[]> => {
-    const canonical = canonicalizeTag(tag);
-    if (!canonical) return ServerStorage.getAllTags();
+    const cleanTag = tag.trim().replace(/^#/, '');
+    if (!cleanTag) return ServerStorage.getAllTags();
     const current = await ServerStorage.getAllTags();
-    const updated = cleanTagsArray([canonical, ...current]);
+    if (current.some((t) => t.toLowerCase() === cleanTag.toLowerCase())) {
+      return current;
+    }
+    const updated = [cleanTag, ...current];
 
     if (isSupabaseConfigured()) {
       try {
@@ -707,10 +657,7 @@ export const ServerStorage = {
 
   deleteTag: async (tag: string): Promise<string[]> => {
     const current = await ServerStorage.getAllTags();
-    const targetCanonical = canonicalizeTag(tag);
-    const filtered = current.filter(
-      (t) => t.toLowerCase() !== tag.toLowerCase() && t.toLowerCase() !== targetCanonical.toLowerCase()
-    );
+    const filtered = current.filter((t) => t.toLowerCase() !== tag.toLowerCase());
 
     if (isSupabaseConfigured()) {
       try {

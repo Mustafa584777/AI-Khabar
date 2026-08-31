@@ -4,11 +4,9 @@ import React from 'react';
 import { useApp } from '@/context/AppContext';
 import { X, Bookmark, Copy, Trash2, ExternalLink, Sparkles } from 'lucide-react';
 import Image from 'next/image';
-import { getPromptSlug, getOptimizedImageUrl } from '@/lib/utils';
-import { useRouter } from 'next/navigation';
+import { getPromptSlug } from '@/lib/utils';
 
 export const BookmarksDrawer = () => {
-  const router = useRouter();
   const {
     isBookmarksDrawerOpen,
     setIsBookmarksDrawerOpen,
@@ -69,7 +67,7 @@ export const BookmarksDrawer = () => {
                     className="relative w-16 h-20 rounded-xl overflow-hidden bg-neutral-900 shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
                   >
                     <Image
-                      src={getOptimizedImageUrl(post.imageUrl, 200)}
+                      src={post.imageUrl}
                       alt={post.title}
                       fill
                       className="object-cover"

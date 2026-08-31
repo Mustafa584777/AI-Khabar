@@ -25,23 +25,26 @@ import {
   Check,
 } from 'lucide-react';
 import Image from 'next/image';
-import { cleanTagsArray, canonicalizeTag, slugify } from '@/lib/utils';
 
 const generateImageFileNameFromTitle = (titleText: string, currentFileName?: string): string => {
   const fallback = 'photo-prompt.webp';
   if (!titleText || !titleText.trim()) {
-    if (currentFileName) {
-      const base = currentFileName.replace(/\.[^/.]+$/, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-      return `${base || 'photo-prompt'}.webp`;
-    }
-    return fallback;
+    return currentFileName || fallback;
   }
   const cleanSlug = titleText
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)+/g, '');
 
-  return `${cleanSlug || 'photo-prompt'}.webp`;
+  let ext = 'webp';
+  if (currentFileName && currentFileName.includes('.')) {
+    const parts = currentFileName.split('.');
+    const detectedExt = parts[parts.length - 1].toLowerCase();
+    if (['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif'].includes(detectedExt)) {
+      ext = detectedExt === 'jpeg' ? 'jpg' : detectedExt;
+    }
+  }
+  return `${cleanSlug || 'photo-prompt'}.${ext}`;
 };
 
 const detectCategoryFromText = (text: string): string => {
@@ -213,16 +216,27 @@ export const PostEditor = () => {
         }
         if (Array.isArray(detectedTags) && detectedTags.length > 0) {
           const activeCatLower = (detectedCat || category).trim().toLowerCase();
-          const cleanDetected = cleanTagsArray(detectedTags).filter(
-            (t) => t.toLowerCase() !== activeCatLower
-          );
-          setTags((prev) => cleanTagsArray([...cleanDetected, ...prev]).slice(0, 12));
-          setAiSuggestedTags(cleanDetected);
+          setTags((prev) => {
+            const seen = new Set<string>();
+            const result: string[] = [];
+            for (const t of [...detectedTags, ...prev]) {
+              const trimmed = String(t).trim().replace(/^#/, '');
+              if (!trimmed) continue;
+              const lower = trimmed.toLowerCase();
+              if (lower === activeCatLower) continue;
+              if (!seen.has(lower)) {
+                seen.add(lower);
+                result.push(trimmed);
+              }
+            }
+            return result.slice(0, 12);
+          });
+          setAiSuggestedTags(detectedTags);
         }
         if (detectedDesc && !metaDescription) {
           setMetaDescription(detectedDesc);
         }
-        showToast(`AI Auto-Assigned Category "${detectedCat}" & ${detectedTags?.length || 0} unique tags`);
+        showToast(`AI Auto-Assigned Category "${detectedCat}" & ${detectedTags?.length || 0} tags`);
       }
     } catch (err) {
       console.error('Auto taxonomy failed:', err);
@@ -232,14 +246,16 @@ export const PostEditor = () => {
   };
 
   const handleAddTag = (tagToAdd: string) => {
-    const canonical = canonicalizeTag(tagToAdd);
-    if (!canonical) return;
-    setTags((prev) => cleanTagsArray([...prev, canonical]));
-    setNewTagInput('');
+    const trimmed = tagToAdd.trim().replace(/^#/, '');
+    const lower = trimmed.toLowerCase();
+    if (trimmed && !tags.some((t) => t.toLowerCase() === lower)) {
+      setTags((prev) => [...prev, trimmed]);
+      setNewTagInput('');
+    }
   };
 
   const handleRemoveTag = (tagToRemove: string) => {
-    setTags((prev) => prev.filter((t) => t.toLowerCase() !== tagToRemove.toLowerCase()));
+    setTags((prev) => prev.filter((t) => t !== tagToRemove));
   };
 
   // AI Generator state
@@ -284,15 +300,8 @@ export const PostEditor = () => {
             return;
           }
           ctx.drawImage(img, 0, 0, width, height);
-          try {
-            const webpData = canvas.toDataURL('image/webp', 0.90);
-            if (webpData && webpData.startsWith('data:image/webp')) {
-              resolve(webpData);
-              return;
-            }
-          } catch {}
-          const fallback = canvas.toDataURL('image/jpeg', 0.88);
-          resolve(fallback);
+          const compressed = canvas.toDataURL('image/jpeg', 0.88);
+          resolve(compressed);
         };
         img.onerror = () => resolve(dataUrl);
         img.src = dataUrl;
@@ -321,21 +330,16 @@ export const PostEditor = () => {
       if (optimized) {
         let finalImageUrl = optimized;
         try {
-          const cleanPublicId = slug || slugify(title) || `prompt-${Date.now()}`;
           const uploadRes = await fetch('/api/upload', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              image: optimized,
-              folder: 'prompts',
-              publicId: cleanPublicId,
-            }),
+            body: JSON.stringify({ image: optimized }),
           });
           const uploadData = await uploadRes.json();
           if (uploadData && uploadData.url) {
             finalImageUrl = uploadData.url;
             if (uploadData.provider === 'cloudinary') {
-              showToast('Image uploaded & saved to Cloudinary CDN successfully!');
+              showToast('Image uploaded to Cloudinary CDN successfully!');
             } else {
               showToast('Image optimized and attached to prompt!');
             }
@@ -594,7 +598,7 @@ export const PostEditor = () => {
       imageFileName: finalFileName,
       variables: [],
       articleContent,
-      tags: cleanTagsArray(tags.length > 0 ? tags : [chosenCat || 'AI Prompt']),
+      tags: tags.length > 0 ? tags : [chosenCat || 'AI Prompt'],
       status: publishStatus,
       viewsCount: existingPost?.viewsCount || 0,
       copiesCount: existingPost?.copiesCount || 0,

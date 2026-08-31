@@ -35,10 +35,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="dark">
       <head>
-        {/* Preconnect to Cloudinary CDN & Fonts for optimal performance */}
-        <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://res.cloudinary.com" />
-
         {/* Google Site Verification */}
         <meta
           name="google-site-verification"
@@ -47,9 +43,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Google tag (gtag.js) */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-28QHB2KNZC"
-          strategy="lazyOnload"
+          strategy="afterInteractive"
         />
-        <Script id="google-analytics" strategy="lazyOnload">
+        <Script id="google-analytics" strategy="afterInteractive">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
