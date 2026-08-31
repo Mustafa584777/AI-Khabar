@@ -1,12 +1,10 @@
 'use client';
 /* eslint-disable react-hooks/purity */
-/* eslint-disable react-hooks/set-state-in-effect */
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import confetti from 'canvas-confetti';
 import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
-import { INITIAL_POSTS, INITIAL_CATEGORIES, INITIAL_SETTINGS } from '@/lib/initial-data';
 import {
   UserTasteProfile,
   PersonalizationEngine,
@@ -127,17 +125,43 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [selectedPost, setSelectedPost] = useState<PromptPost | null>(null);
 
   // Auth State
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [currentUser, setCurrentUser] = useState<AdminUser | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('promptcms_auth') === 'true';
+    }
+    return false;
+  });
+  const [currentUser, setCurrentUser] = useState<AdminUser | null>(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('promptcms_auth') === 'true') {
+      return {
+        id: 'admin-1',
+        name: 'Administrator',
+        email: 'admin@trendinggeminiprompts.com',
+        role: 'Administrator',
+        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
+      };
+    }
+    return null;
+  });
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
 
   // End-User Account State (For saving history, sync pins & taste profile)
-  const [userAccount, setUserAccount] = useState<UserAccount | null>(null);
+  const [userAccount, setUserAccount] = useState<UserAccount | null>(() => {
+    if (typeof window !== 'undefined') {
+      return StorageService.getUserAccount();
+    }
+    return null;
+  });
   const [isUserAuthModalOpen, setIsUserAuthModalOpen] = useState<boolean>(false);
   const [authModalMessage, setAuthModalMessage] = useState<string | null>(null);
 
   // AI Studio History State
-  const [aiHistory, setAiHistory] = useState<AIHistoryItem[]>([]);
+  const [aiHistory, setAiHistory] = useState<AIHistoryItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      return StorageService.getAiHistory();
+    }
+    return [];
+  });
 
   const openAuthModal = (message?: string) => {
     setAuthModalMessage(message || 'Sign in or create a free account to save your generation history.');
@@ -145,7 +169,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Persistent Reference Photo State
-  const [persistentRefImage, setPersistentRefImageState] = useState<string | null>(null);
+  const [persistentRefImage, setPersistentRefImageState] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return StorageService.getPersistentRefImage();
+    }
+    return null;
+  });
 
   const setPersistentRefImage = (url: string | null) => {
     StorageService.savePersistentRefImage(url);
@@ -158,7 +187,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Prompt Requests State
-  const [promptRequests, setPromptRequests] = useState<any[]>([]);
+  const [promptRequests, setPromptRequests] = useState<any[]>(() => {
+    if (typeof window !== 'undefined') {
+      return StorageService.getPromptRequests();
+    }
+    return [];
+  });
 
   const addPromptRequest = (requestText: string, category?: string): boolean => {
     if (!userAccount || !userAccount.isLoggedIn) {
@@ -293,28 +327,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     showToast('AI Generation history cleared');
   };
 
-  // Data: Fast Cached + Server-Side Driven (SSR-safe initial states)
-  const [posts, setPosts] = useState<PromptPost[]>(INITIAL_POSTS);
-  const [isLoadingPosts, setIsLoadingPosts] = useState<boolean>(false);
-  const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
-  const [tags, setTags] = useState<string[]>([
-    'Portrait',
-    '35mm',
-    'Cinematic',
-    'Street Photography',
-    'Fashion',
-    'Monochrome',
-    'Tokyo',
-    'Cyberpunk',
-    'Studio Ghibli',
-    'Japandi',
-    'Architecture',
-    '3D Render',
-    'Pixar',
-    'Underwater',
-    'Logo',
-    'Minimalist',
-  ]);
+  // Data: Fast Cached + Server-Side Driven
+  const [posts, setPosts] = useState<PromptPost[]>(() => StorageService.getCachedPosts());
+  const [isLoadingPosts, setIsLoadingPosts] = useState<boolean>(() => StorageService.getCachedPosts().length === 0);
+  const [categories, setCategories] = useState<Category[]>(() => StorageService.getCachedCategories());
+  const [tags, setTags] = useState<string[]>(() => StorageService.getCachedTags());
 
   const allKnownTags = React.useMemo(() => {
     const set = new Set<string>(tags);
@@ -325,13 +342,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
     return Array.from(set);
   }, [tags, posts]);
-  const [settings, setSettings] = useState<SiteSettings>(INITIAL_SETTINGS);
-  const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([]);
-  const [likedIds, setLikedIds] = useState<string[]>([]);
+  const [settings, setSettings] = useState<SiteSettings>(() => StorageService.getCachedSettings());
+  const [bookmarkedIds, setBookmarkedIds] = useState<string[]>(() => StorageService.getBookmarkedIds());
+  const [likedIds, setLikedIds] = useState<string[]>(() => StorageService.getLikedIds());
   const [isBookmarksDrawerOpen, setIsBookmarksDrawerOpen] = useState<boolean>(false);
 
   // Personalization Taste Profile (Pinterest AI Personalization)
-  const [tasteProfile, setTasteProfile] = useState<UserTasteProfile>(INITIAL_TASTE_PROFILE);
+  const [tasteProfile, setTasteProfile] = useState<UserTasteProfile>(() => PersonalizationEngine.getProfile());
   const [isTasteModalOpen, setIsTasteModalOpen] = useState<boolean>(false);
 
   // Search & Filter
@@ -363,7 +380,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         }
       }
     } catch (e) {
-      console.warn('Notice fetching search queries:', e);
+      console.warn('Error fetching search queries:', e);
     }
   };
 
@@ -381,7 +398,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         body: JSON.stringify({ query: trimmed }),
       }).catch(() => {});
     } catch (e) {
-      console.warn('Notice recording search query:', e);
+      console.warn('Error recording search query:', e);
     }
   };
 
@@ -411,9 +428,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             }
           }
         })
-        .catch((err) => {
-          console.warn('Network sync posts notice (using cache):', err?.message || err);
-        })
+        .catch((err) => console.error('Failed to sync posts:', err))
         .finally(() => setIsLoadingPosts(false));
 
       const fetchCats = fetch('/api/categories', { cache: 'no-store' })
@@ -426,9 +441,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             }
           }
         })
-        .catch((err) => {
-          console.warn('Network sync categories notice (using cache):', err?.message || err);
-        });
+        .catch((err) => console.error('Failed to sync categories:', err));
 
       const fetchTags = fetch('/api/tags', { cache: 'no-store' })
         .then(async (res) => {
@@ -440,9 +453,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             }
           }
         })
-        .catch((err) => {
-          console.warn('Network sync tags notice (using cache):', err?.message || err);
-        });
+        .catch((err) => console.error('Failed to sync tags:', err));
 
       const fetchSettings = fetch('/api/settings', { cache: 'no-store' })
         .then(async (res) => {
@@ -454,74 +465,31 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             }
           }
         })
-        .catch((err) => {
-          console.warn('Network sync settings notice (using cache):', err?.message || err);
-        });
+        .catch((err) => console.error('Failed to sync settings:', err));
 
       fetchSearchQueries();
       await Promise.allSettled([fetchPosts, fetchCats, fetchTags, fetchSettings]);
     } catch (err) {
-      console.warn('Network sync notice (using cache):', err);
+      console.error('Failed to sync from server API:', err);
       setIsLoadingPosts(false);
     }
   }, []);
 
   // Initial load and auto-sync on mount / window focus
   useEffect(() => {
-    // 1. Read cached localStorage data immediately on client mount
-    try {
-      if (localStorage.getItem('promptcms_auth') === 'true') {
-        setIsAuthenticated(true);
-        setCurrentUser({
-          id: 'admin-1',
-          name: 'Administrator',
-          email: 'admin@trendinggeminiprompts.com',
-          role: 'Administrator',
-          avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
-        });
-      }
-      const acc = StorageService.getUserAccount();
-      if (acc) setUserAccount(acc);
-
-      const hist = StorageService.getAiHistory();
-      if (hist && hist.length > 0) setAiHistory(hist);
-
-      const refImg = StorageService.getPersistentRefImage();
-      if (refImg) setPersistentRefImageState(refImg);
-
-      const reqs = StorageService.getPromptRequests();
-      if (reqs && reqs.length > 0) setPromptRequests(reqs);
-
+    const timer = setTimeout(() => {
       const cachedPosts = StorageService.getCachedPosts();
-      if (cachedPosts && cachedPosts.length > 0) {
+      if (cachedPosts.length > 0) {
         setPosts(cachedPosts);
         setIsLoadingPosts(false);
+      } else {
+        setIsLoadingPosts(true);
       }
-
-      const cachedCats = StorageService.getCachedCategories();
-      if (cachedCats && cachedCats.length > 0) {
-        setCategories(cachedCats);
-      }
-
-      const cachedTags = StorageService.getCachedTags();
-      if (cachedTags && cachedTags.length > 0) {
-        setTags(cachedTags);
-      }
-
-      const cachedSettings = StorageService.getCachedSettings();
-      if (cachedSettings) {
-        setSettings(cachedSettings);
-      }
-
       setBookmarkedIds(StorageService.getBookmarkedIds());
       setLikedIds(StorageService.getLikedIds());
       setTasteProfile(PersonalizationEngine.getProfile());
-    } catch (e) {
-      console.warn('Error reading local cache on mount:', e);
-    }
-
-    // 2. Background sync from server API
-    void syncFromRemote();
+      void syncFromRemote();
+    }, 0);
 
     const handleFocus = () => {
       if (!isSavingRef.current) {
@@ -551,6 +519,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     window.addEventListener('storage', handleStorage);
     window.addEventListener('taste_profile_updated', handleTasteProfileEvent);
     return () => {
+      clearTimeout(timer);
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('taste_profile_updated', handleTasteProfileEvent);

@@ -31,11 +31,11 @@ export function getPromptSlug(post: { slug?: string; title?: string; id?: string
   return post.id || 'prompt';
 }
 
-export function getOptimizedImageUrl(url?: string, width = 550): string {
+export function getOptimizedImageUrl(url?: string, width = 600): string {
   if (!url || typeof url !== 'string') return url || '';
   if (url.includes('res.cloudinary.com') && url.includes('/image/upload/')) {
-    if (url.includes('/image/upload/f_auto') || url.includes('/image/upload/q_auto') || url.includes('/image/upload/w_')) {
-      return url.replace(/\/image\/upload\/[^/]+\//, `/image/upload/f_auto,q_auto:good,w_${width},c_limit/`);
+    if (url.includes('/image/upload/f_auto')) {
+      return url.replace(/\/image\/upload\/f_auto[^\/]+\//, `/image/upload/f_auto,q_auto:good,w_${width},c_limit/`);
     }
     return url.replace('/image/upload/', `/image/upload/f_auto,q_auto:good,w_${width},c_limit/`);
   }

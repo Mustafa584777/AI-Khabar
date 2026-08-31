@@ -134,8 +134,8 @@ export const PromptGrid = () => {
       {filteredPosts.length > 0 ? (
         <>
           <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4 [column-fill:_balance]">
-            {visiblePosts.map((post, idx) => (
-              <PromptCard key={post.id} post={post} priority={idx < 4} />
+            {visiblePosts.map((post) => (
+              <PromptCard key={post.id} post={post} />
             ))}
           </div>
 
@@ -165,11 +165,6 @@ export const PromptGrid = () => {
             'aspect-[9/16]',
             'aspect-[3/4]',
             'aspect-[1/1]',
-            'aspect-[4/5]',
-            'aspect-[3/4]',
-            'aspect-[9/16]',
-            'aspect-[4/5]',
-            'aspect-[3/4]',
           ].map((aspect, idx) => (
             <div
               key={idx}

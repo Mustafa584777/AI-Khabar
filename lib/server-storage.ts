@@ -624,9 +624,8 @@ export const ServerStorage = {
     if (isSupabaseConfigured()) {
       try {
         const { data, error } = await db().from('settings').select('*').eq('id', 'general_settings').maybeSingle();
-        if (!error && data) {
-          const settingsPayload = (data.data && typeof data.data === 'object') ? data.data : data;
-          memorySettings = { ...INITIAL_SETTINGS, ...settingsPayload };
+        if (!error && data && data.data) {
+          memorySettings = { ...INITIAL_SETTINGS, ...data.data };
           writeJsonFile(SETTINGS_FILE, memorySettings);
           return memorySettings as SiteSettings;
         }
@@ -638,7 +637,7 @@ export const ServerStorage = {
     if (memorySettings === null) {
       memorySettings = readJsonFile<SiteSettings>(SETTINGS_FILE, INITIAL_SETTINGS);
     }
-    return (memorySettings || INITIAL_SETTINGS) as SiteSettings;
+    return memorySettings as SiteSettings;
   },
 
   saveSettings: async (newSettings: Partial<SiteSettings>): Promise<SiteSettings> => {

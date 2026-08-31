@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { Sparkles, Bookmark } from 'lucide-react';
 import { getPromptSlug, getOptimizedImageUrl } from '@/lib/utils';
 
-export const PromptCard = ({ post, priority = false }: { post: PromptPost; priority?: boolean }) => {
+export const PromptCard = ({ post }: { post: PromptPost }) => {
   const {
     setSelectedPost,
     toggleBookmark,
@@ -17,12 +17,33 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   } = useApp();
 
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [isInViewport, setIsInViewport] = useState(false);
+  const cardRef = useRef<HTMLElement>(null);
   const isBookmarked = bookmarkedIds.includes(post.id);
   const promptSlug = getPromptSlug(post);
   const optimizedImgUrl = getOptimizedImageUrl(post.imageUrl, 550);
-  const imageWidth = post.imageWidth || 600;
-  const imageHeight = post.imageHeight || 800;
-  const aspectRatio = `${imageWidth} / ${imageHeight}`;
+
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+
+    // Fast-response IntersectionObserver with comfortable 250px rootMargin
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInViewport(true);
+          observer.disconnect();
+        }
+      },
+      {
+        rootMargin: '250px 0px',
+        threshold: 0.01,
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const handleCardClick = (e: React.MouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.button === 1) return;
@@ -54,6 +75,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
 
   return (
     <article
+      ref={cardRef}
       className="group relative mb-4 break-inside-avoid rounded-[20px] sm:rounded-[24px] overflow-hidden bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800/80 cursor-pointer shadow-xs hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 select-none"
       id={`prompt-pin-${post.id}`}
       style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
@@ -61,12 +83,13 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
       <a
         href={`/prompt/${promptSlug}`}
         onClick={handleCardClick}
-        className="block relative w-full overflow-hidden bg-neutral-100 dark:bg-neutral-800 focus:outline-none"
-        style={{ aspectRatio }}
+        className={`block relative w-full overflow-hidden bg-neutral-100 dark:bg-neutral-800 focus:outline-none ${
+          !imageLoaded ? 'aspect-[3/4]' : ''
+        }`}
         onContextMenu={(e) => e.preventDefault()}
       >
         {/* Full-Height Shimmer Skeleton Placeholder */}
-        {!imageLoaded && post.imageUrl && (
+        {(!imageLoaded || !isInViewport) && post.imageUrl && (
           <div className="absolute inset-0 z-0 bg-neutral-200 dark:bg-neutral-800 animate-pulse flex flex-col items-center justify-center p-4">
             <div className="w-10 h-10 rounded-full bg-neutral-300 dark:bg-neutral-700 mb-2 flex items-center justify-center shadow-xs">
               <Sparkles className="w-5 h-5 text-neutral-400 dark:text-neutral-500 animate-spin" style={{ animationDuration: '4s' }} />
@@ -76,25 +99,24 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
           </div>
         )}
 
-        {optimizedImgUrl ? (
+        {optimizedImgUrl && isInViewport ? (
           <Image
             src={optimizedImgUrl}
             alt={post.imageAlt || post.title}
-            width={imageWidth}
-            height={imageHeight}
+            width={600}
+            height={800}
             draggable={false}
-            priority={priority}
             onLoad={() => setImageLoaded(true)}
-            className={`w-full h-full object-cover group-hover:scale-102 transition-all duration-500 ease-out select-none pointer-events-none relative z-1 ${
+            className={`w-full h-auto object-cover group-hover:scale-102 transition-all duration-500 ease-out select-none pointer-events-none relative z-1 ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
             referrerPolicy="no-referrer"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-            loading={priority ? 'eager' : 'lazy'}
+            loading="lazy"
             decoding="async"
           />
         ) : !post.imageUrl ? (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-tr from-neutral-800 to-neutral-900 text-neutral-400">
+          <div className="w-full aspect-[3/4] flex items-center justify-center bg-gradient-to-tr from-neutral-800 to-neutral-900 text-neutral-400">
             <Sparkles className="w-8 h-8 opacity-40" />
           </div>
         ) : null}

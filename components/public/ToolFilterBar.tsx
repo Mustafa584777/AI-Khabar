@@ -6,9 +6,6 @@ import { Flame, Sliders, Sparkles } from 'lucide-react';
 import { getCategoryIcon } from '@/lib/icons';
 import { PersonalizationEngine } from '@/lib/personalization';
 
-const emptySubscribe = () => () => {};
-const useIsMounted = () => React.useSyncExternalStore(emptySubscribe, () => true, () => false);
-
 export const ToolFilterBar = () => {
   const {
     selectedCategory,
@@ -20,13 +17,10 @@ export const ToolFilterBar = () => {
     setIsTasteModalOpen,
   } = useApp();
 
-  const isMounted = useIsMounted();
-
-  // Dynamically reorder categories based on user's active AI engagement affinities after client mount
+  // Dynamically reorder categories based on user's active AI engagement affinities
   const personalizedCategories = useMemo(() => {
-    if (!isMounted) return categories;
     return PersonalizationEngine.getPersonalizedCategoryOrder(categories, tasteProfile);
-  }, [categories, tasteProfile, isMounted]);
+  }, [categories, tasteProfile]);
 
   return (
     <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-3 pb-2">
