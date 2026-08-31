@@ -633,7 +633,7 @@ export const PostEditor = () => {
         body: JSON.stringify({
           action: 'generate_full_post',
           mode: autoFillMode,
-          topic: effectiveTopic || 'Photorealistic Artwork Recreation',
+          topic: effectiveTopic || undefined,
           image: autoFillMode === 'image' ? imageUrl : undefined,
           tool: 'Gemini',
           category,
@@ -703,7 +703,11 @@ export const PostEditor = () => {
         }
 
         const modelNote = json.modelUsed ? ` (via ${json.modelUsed})` : '';
-        showToast(`Auto-filled prompt fields successfully${modelNote}!`);
+        if (json.fallback) {
+          showToast('Warning: Gemini API Key missing or invalid. Used generic fallback data.');
+        } else {
+          showToast(`Auto-filled prompt fields successfully${modelNote}!`);
+        }
       } else {
         showToast(json.error || 'Failed to generate prompt');
       }

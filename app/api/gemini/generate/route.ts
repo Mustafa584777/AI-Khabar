@@ -1,6 +1,8 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
 import { ServerStorage } from '@/lib/server-storage';
+import fs from 'fs';
+import path from 'path';
 
 // Prioritized model fallback sequence: if one model fails or is unavailable, switch to the next
 const CANDIDATE_MODELS = [
@@ -167,6 +169,18 @@ ${customIns ? `\nUSER CUSTOM SYSTEM INSTRUCTIONS & GUIDELINES:\n${customIns}` : 
             mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
           } catch (fetchErr) {
             console.warn('Failed to fetch remote image for multimodal analysis:', fetchErr);
+          }
+        } else if (image.startsWith('/images/')) {
+          try {
+            const filePath = path.join(process.cwd(), 'public', image);
+            const buffer = fs.readFileSync(filePath);
+            base64Data = buffer.toString('base64');
+            const ext = path.extname(filePath).toLowerCase();
+            if (ext === '.png') mimeType = 'image/png';
+            else if (ext === '.webp') mimeType = 'image/webp';
+            else mimeType = 'image/jpeg';
+          } catch (localErr) {
+            console.warn('Failed to read local image for multimodal analysis:', localErr);
           }
         }
 
