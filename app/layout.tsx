@@ -35,17 +35,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="dark">
       <head>
-        {/* Preconnect to Cloudinary CDN & Fonts for optimal performance */}
-        <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://res.cloudinary.com" />
-
         {/* Google Site Verification */}
         <meta
           name="google-site-verification"
           content="uh9o8y5P0cVpFtJIJXovv8RSzxSxcRkOYLK6ZthiZDg"
         />
-      </head>
-      <body className={`${poppins.variable} ${poppins.className} font-sans antialiased selection:bg-[#E60023] selection:text-white`} suppressHydrationWarning>
         {/* Google tag (gtag.js) */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-28QHB2KNZC"
@@ -60,6 +54,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             gtag('config', 'G-28QHB2KNZC');
           `}
         </Script>
+      </head>
+      <body className={`${poppins.variable} ${poppins.className} font-sans antialiased selection:bg-[#E60023] selection:text-white`} suppressHydrationWarning>
         {children}
       </body>
     </html>

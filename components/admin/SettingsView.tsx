@@ -2,117 +2,39 @@
 
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
-import { Settings, Save, RotateCcw, Download, Database, Cloud, CheckCircle2, AlertCircle, X, Sparkles } from 'lucide-react';
+import { Settings, Save, RotateCcw, Download, Upload, Shield, Globe, X, Plus, Database, Cloud, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export const SettingsView = () => {
   const { settings, saveSettings, posts, categories, refreshData, showToast, setAdminSubView } = useApp();
 
-  const [siteName, setSiteName] = useState(settings.siteName || 'Trending Copy Paste Photo Prompts');
+  const [siteName, setSiteName] = useState(settings.siteName || 'Trending Gemini Prompts');
   const [siteTagline, setSiteTagline] = useState(
-    settings.siteTagline || 'Free Copy-Paste AI Photo Prompts, Codes & Creative Guides'
+    settings.siteTagline || 'The Ultimate AI Prompt Directory & Copy-Paste Library'
   );
   const [siteUrl, setSiteUrl] = useState(settings.siteUrl || 'https://trendinggeminiprompts.com');
   const [adminEmail, setAdminEmail] = useState(settings.adminEmail || 'admin@trendinggeminiprompts.com');
   const [footerText, setFooterText] = useState(
-    settings.footerText || '© 2026 Trending Copy Paste Photo Prompts. All prompts are free to copy and modify.'
+    settings.footerText || '© 2026 Trending Gemini Prompts. All prompts are free to copy and modify.'
   );
-  const [logoUrl, setLogoUrl] = useState(settings.logoUrl || '/logo.png');
-  const [faviconUrl, setFaviconUrl] = useState(settings.faviconUrl || '/favicon.ico');
   const [popularTags, setPopularTags] = useState<string[]>(settings.popularTags || []);
   const [newTag, setNewTag] = useState('');
-  const [geminiCustomInstructions, setGeminiCustomInstructions] = useState(settings.geminiCustomInstructions || '');
 
   // Cloudinary Settings
   const [cloudinaryCloudName, setCloudinaryCloudName] = useState(settings.cloudinaryCloudName || '');
   const [cloudinaryApiKey, setCloudinaryApiKey] = useState(settings.cloudinaryApiKey || '');
   const [cloudinaryApiSecret, setCloudinaryApiSecret] = useState(settings.cloudinaryApiSecret || '');
   const [cloudinaryStatus, setCloudinaryStatus] = useState<{ configured: boolean; cloudName?: string } | null>(null);
-  const [testingCloudinary, setTestingCloudinary] = useState(false);
-
-  const testCloudinaryConnection = async () => {
-    setTestingCloudinary(true);
-    try {
-      // First save current inputs if changed
-      const updated = {
-        ...settings,
-        cloudinaryCloudName: cloudinaryCloudName.trim(),
-        cloudinaryApiKey: cloudinaryApiKey.trim(),
-        cloudinaryApiSecret: cloudinaryApiSecret.trim(),
-      };
-      await saveSettings(updated);
-
-      const res = await fetch('/api/upload?test=true');
-      const data = await res.json();
-      if (data.success) {
-        setCloudinaryStatus({ configured: true, cloudName: data.cloudName });
-        showToast(data.message || 'Connected to Cloudinary successfully!');
-      } else {
-        showToast(`Cloudinary error: ${data.error || 'Connection failed'}`);
-      }
-    } catch (err: any) {
-      showToast(`Failed to test Cloudinary: ${err.message}`);
-    } finally {
-      setTestingCloudinary(false);
-    }
-  };
-
-  // Supabase Status
-  const [supabaseStatus, setSupabaseStatus] = useState<{
-    configured: boolean;
-    connected: boolean;
-    supabaseUrl?: string;
-    projectId?: string;
-    tables: { posts: boolean; categories: boolean; settings: boolean; tags: boolean; searchQueries: boolean };
-    counts: { posts: number; categories: number };
-    error?: string;
-  } | null>(null);
-  const [checkingSupabase, setCheckingSupabase] = useState(false);
-
-  const checkSupabaseHealth = () => {
-    setCheckingSupabase(true);
-    fetch('/api/supabase/status')
-      .then((res) => res.json())
-      .then((data) => {
-        setSupabaseStatus(data);
-        setCheckingSupabase(false);
-      })
-      .catch(() => {
-        setSupabaseStatus({
-          configured: true,
-          connected: false,
-          supabaseUrl: 'https://kigytienokbvwetbemac.supabase.co',
-          projectId: 'kigytienokbvwetbemac',
-          tables: { posts: false, categories: false, settings: false, tags: false, searchQueries: false },
-          counts: { posts: 0, categories: 0 },
-          error: 'Failed to verify Supabase connection',
-        });
-        setCheckingSupabase(false);
-      });
-  };
 
   useEffect(() => {
-    let isMounted = true;
     fetch('/api/upload')
       .then((res) => res.json())
       .then((data) => {
-        if (isMounted) {
-          setCloudinaryStatus({
-            configured: data.configured,
-            cloudName: data.cloudName,
-          });
-        }
+        setCloudinaryStatus({
+          configured: data.configured,
+          cloudName: data.cloudName,
+        });
       })
       .catch(() => {});
-
-    setTimeout(() => {
-      if (isMounted) {
-        checkSupabaseHealth();
-      }
-    }, 100);
-
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   const handleSaveSettings = (e: React.FormEvent) => {
@@ -124,17 +46,15 @@ export const SettingsView = () => {
       siteUrl,
       adminEmail,
       footerText,
-      logoUrl: logoUrl.trim(),
-      faviconUrl: faviconUrl.trim(),
       popularTags,
       cloudinaryCloudName: cloudinaryCloudName.trim(),
       cloudinaryApiKey: cloudinaryApiKey.trim(),
       cloudinaryApiSecret: cloudinaryApiSecret.trim(),
-      geminiCustomInstructions: geminiCustomInstructions.trim(),
     };
     saveSettings(updated);
     showToast('Site settings updated successfully!');
     
+    // Refresh status check
     fetch('/api/upload')
       .then((res) => res.json())
       .then((data) => {
@@ -157,7 +77,7 @@ export const SettingsView = () => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backup, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `prompts-backup-${new Date().toISOString().slice(0, 10)}.json`);
+    downloadAnchor.setAttribute('download', `geminiprompts-backup-${new Date().toISOString().slice(0, 10)}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -166,7 +86,7 @@ export const SettingsView = () => {
 
   const handleResetToDefaults = () => {
     refreshData();
-    showToast('Synced all data with server storage.');
+    showToast('Synced all data with server database.');
   };
 
   return (
@@ -174,10 +94,10 @@ export const SettingsView = () => {
       <div>
         <h1 className="text-2xl font-extrabold text-neutral-900 dark:text-white flex items-center gap-2">
           <Settings className="w-6 h-6 text-neutral-700 dark:text-neutral-300" />
-          <span>General Settings & Infrastructure</span>
+          <span>WordPress General Settings</span>
         </h1>
         <p className="text-xs text-neutral-500 mt-1">
-          Configure site identity, Cloudinary media CDN, popular tags, and backup routines.
+          Configure site identity, domain branding, and database backups.
         </p>
       </div>
 
@@ -237,121 +157,6 @@ export const SettingsView = () => {
             />
           </div>
 
-          {/* Logo & Favicon Upload / URL */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-neutral-100 dark:border-neutral-800">
-            <div>
-              <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
-                Logo URL / Image
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={logoUrl}
-                  onChange={(e) => setLogoUrl(e.target.value)}
-                  placeholder="/logo.png or https://..."
-                  className="flex-1 px-3.5 py-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <label className="px-3.5 py-2.5 rounded-xl bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-bold cursor-pointer flex items-center gap-1.5 shrink-0">
-                  <span>Upload</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = async () => {
-                        const base64 = reader.result as string;
-                        try {
-                          const res = await fetch('/api/upload', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              image: base64,
-                              folder: 'branding',
-                              publicId: `logo-${Date.now()}`,
-                            }),
-                          });
-                          const data = await res.json();
-                          if (data.success && data.url) {
-                            setLogoUrl(data.url);
-                            if (data.provider === 'cloudinary') {
-                              showToast('Logo uploaded & saved to Cloudinary successfully!');
-                            } else {
-                              showToast('Logo uploaded successfully!');
-                            }
-                          } else {
-                            showToast('Logo upload failed');
-                          }
-                        } catch {
-                          showToast('Logo upload error');
-                        }
-                      };
-                      reader.readAsDataURL(file);
-                    }}
-                  />
-                </label>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
-                Favicon URL / Icon
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={faviconUrl}
-                  onChange={(e) => setFaviconUrl(e.target.value)}
-                  placeholder="/favicon.ico or https://..."
-                  className="flex-1 px-3.5 py-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <label className="px-3.5 py-2.5 rounded-xl bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-bold cursor-pointer flex items-center gap-1.5 shrink-0">
-                  <span>Upload</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = async () => {
-                        const base64 = reader.result as string;
-                        try {
-                          const res = await fetch('/api/upload', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              image: base64,
-                              folder: 'branding',
-                              publicId: `favicon-${Date.now()}`,
-                            }),
-                          });
-                          const data = await res.json();
-                          if (data.success && data.url) {
-                            setFaviconUrl(data.url);
-                            if (data.provider === 'cloudinary') {
-                              showToast('Favicon uploaded & saved to Cloudinary successfully!');
-                            } else {
-                              showToast('Favicon uploaded successfully!');
-                            }
-                          } else {
-                            showToast('Favicon upload failed');
-                          }
-                        } catch {
-                          showToast('Favicon upload error');
-                        }
-                      };
-                      reader.readAsDataURL(file);
-                    }}
-                  />
-                </label>
-              </div>
-            </div>
-          </div>
-
           <div>
             <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
               Footer Copyright Text
@@ -375,115 +180,6 @@ export const SettingsView = () => {
           </div>
         </div>
 
-        {/* Gemini AI Custom System Instructions & Directives */}
-        <div className="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
-          <div>
-            <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-indigo-500" />
-              <span>Gemini AI Custom System Instructions & Directives</span>
-            </h3>
-            <p className="text-xs text-neutral-500 mt-0.5">
-              Specify permanent custom rules, tone of voice, formatting styles, or reverse-engineering directives for all server-side Gemini API calls.
-            </p>
-          </div>
-
-          <div>
-            <textarea
-              rows={4}
-              value={geminiCustomInstructions}
-              onChange={(e) => setGeminiCustomInstructions(e.target.value)}
-              placeholder="e.g. Always include ultra-detailed lighting descriptions, camera focal lengths, and cinematic ratios in every generated prompt package..."
-              className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/30 transition-colors"
-            >
-              <Save className="w-4 h-4" />
-              <span>Save Gemini Instructions</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Supabase PostgreSQL Database Connection Card */}
-        <div className="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                <Database className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>Supabase PostgreSQL Database (Project: kigytienokbvwetbemac)</span>
-              </h3>
-              <p className="text-xs text-neutral-500 mt-0.5">
-                Connected to Supabase cloud database for secure prompt persistence across sessions.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={checkSupabaseHealth}
-                disabled={checkingSupabase}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-bold transition-colors"
-              >
-                <Database className={`w-3.5 h-3.5 ${checkingSupabase ? 'animate-spin' : ''}`} />
-                <span>{checkingSupabase ? 'Checking...' : 'Test Connection'}</span>
-              </button>
-
-              {supabaseStatus?.connected ? (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Connected & Ready ({supabaseStatus.counts.posts} Posts Synced)</span>
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Active & Configured</span>
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2 text-xs">
-            <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-              <span className="block text-[10px] text-neutral-400 uppercase font-bold">posts table</span>
-              <span className={supabaseStatus?.tables?.posts ? 'text-emerald-600 font-bold' : 'text-emerald-600 font-bold'}>
-                {supabaseStatus?.tables?.posts ? '✓ Ready' : '✓ Connected'}
-              </span>
-            </div>
-            <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-              <span className="block text-[10px] text-neutral-400 uppercase font-bold">categories</span>
-              <span className="text-emerald-600 font-bold">✓ Ready</span>
-            </div>
-            <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-              <span className="block text-[10px] text-neutral-400 uppercase font-bold">settings</span>
-              <span className="text-emerald-600 font-bold">✓ Ready</span>
-            </div>
-            <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-              <span className="block text-[10px] text-neutral-400 uppercase font-bold">tags</span>
-              <span className="text-emerald-600 font-bold">✓ Ready</span>
-            </div>
-            <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-              <span className="block text-[10px] text-neutral-400 uppercase font-bold">search_queries</span>
-              <span className="text-emerald-600 font-bold">✓ Ready</span>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 text-xs text-neutral-500">
-            <span>Project URL: <code className="font-mono text-neutral-700 dark:text-neutral-300">https://kigytienokbvwetbemac.supabase.co</code></span>
-            <button
-              type="button"
-              onClick={() => {
-                window.open('https://supabase.com/dashboard/project/kigytienokbvwetbemac', '_blank');
-              }}
-              className="text-blue-600 dark:text-blue-400 font-bold hover:underline flex items-center gap-1"
-            >
-              <span>Open Supabase Dashboard</span>
-            </button>
-          </div>
-        </div>
-
         {/* Cloudinary CDN Media Storage Settings */}
         <div className="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -496,17 +192,7 @@ export const SettingsView = () => {
                 Automatically host and deliver prompt cover photos via high-speed Cloudinary CDN.
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={testCloudinaryConnection}
-                disabled={testingCloudinary}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-bold transition-colors disabled:opacity-50"
-              >
-                <Cloud className={`w-3.5 h-3.5 ${testingCloudinary ? 'animate-spin' : ''}`} />
-                <span>{testingCloudinary ? 'Testing...' : 'Test Connection'}</span>
-              </button>
-
+            <div>
               {cloudinaryStatus?.configured ? (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold">
                   <CheckCircle2 className="w-3.5 h-3.5" />
@@ -655,7 +341,7 @@ export const SettingsView = () => {
           <span>Prompt Cards Backup & Restore</span>
         </h3>
         <p className="text-xs text-neutral-500">
-          Download clean local JSON backups containing all prompt cards, or restore/replace prompts easily.
+          Download clean local JSON backups containing only prompt cards, or restore/replace prompts into your database.
         </p>
 
         <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -683,7 +369,7 @@ export const SettingsView = () => {
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-red-50 dark:bg-red-950/60 hover:bg-red-100 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs font-bold transition-colors"
           >
             <RotateCcw className="w-4 h-4 text-red-600" />
-            <span>Reset to Factory Data</span>
+            <span>Reset to Factory Seed Prompts</span>
           </button>
         </div>
       </div>

@@ -9,11 +9,12 @@ import {
   Lock,
   User,
   ArrowRight,
+  ShieldCheck,
+  Zap,
   Bookmark,
   History,
-  Zap,
+  CheckCircle,
 } from 'lucide-react';
-import { CARTOON_AVATARS } from '@/lib/avatar-constants';
 
 export const UserAuthModal = () => {
   const {
@@ -30,7 +31,17 @@ export const UserAuthModal = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [selectedAvatar, setSelectedAvatar] = useState(
+    'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80'
+  );
   const [isLoading, setIsLoading] = useState(false);
+
+  const AVATAR_OPTIONS = [
+    'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80',
+  ];
 
   if (!isUserAuthModalOpen) return null;
 
@@ -48,18 +59,13 @@ export const UserAuthModal = () => {
     setIsLoading(true);
 
     setTimeout(() => {
-      const defaultAvatar = CARTOON_AVATARS[0].url;
       if (mode === 'signup') {
         const userName = name.trim() || email.split('@')[0];
-        const userHandle = username.trim()
-          ? username.startsWith('@')
-            ? username
-            : '@' + username
-          : '@' + userName.toLowerCase().replace(/[^a-z0-9]/g, '');
-        signupUser(userName, userHandle, email, password, defaultAvatar);
+        const userHandle = username.trim() ? (username.startsWith('@') ? username : '@' + username) : '@' + userName.toLowerCase().replace(/[^a-z0-9]/g, '');
+        signupUser(userName, userHandle, email, password, selectedAvatar);
         showToast(`Welcome ${userName}! Account created successfully.`);
       } else {
-        loginUser(email, password, username, defaultAvatar);
+        loginUser(email, password, username, selectedAvatar);
         showToast('Welcome back! You are now logged in.');
       }
       setIsLoading(false);
@@ -71,6 +77,16 @@ export const UserAuthModal = () => {
     }, 400);
   };
 
+  const handleInstantDemoLogin = () => {
+    setIsLoading(true);
+    setTimeout(() => {
+      signupUser('Creative Explorer', '@creative_explorer', 'creator@promptcms.com', 'demo123', AVATAR_OPTIONS[0]);
+      showToast('Signed in as Creative Explorer!');
+      setIsLoading(false);
+      setIsUserAuthModalOpen(false);
+    }, 300);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
       <div
@@ -80,9 +96,7 @@ export const UserAuthModal = () => {
         {/* Header Ribbon */}
         <div className="p-6 bg-gradient-to-br from-neutral-900 via-neutral-950 to-neutral-900 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 text-white relative">
           <button
-            onClick={() => {
-              setIsUserAuthModalOpen(false);
-            }}
+            onClick={() => setIsUserAuthModalOpen(false)}
             className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white transition-colors"
             title="Close"
           >
@@ -94,7 +108,7 @@ export const UserAuthModal = () => {
               <Sparkles className="w-4 h-4" />
             </span>
             <span className="text-xs font-black uppercase tracking-widest text-red-400">
-              Creator Account
+              Creative Account
             </span>
           </div>
 
@@ -119,20 +133,20 @@ export const UserAuthModal = () => {
           </div>
           <div className="flex items-center gap-1.5">
             <Zap className="w-3.5 h-3.5 text-[#E60023] shrink-0" />
-            <span>Requested Prompts</span>
+            <span>AI Personalization</span>
           </div>
         </div>
 
         {/* Form Body */}
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-5">
           {/* Mode Switcher Pills */}
           <div className="grid grid-cols-2 p-1 bg-neutral-100 dark:bg-neutral-800 rounded-2xl">
             <button
               type="button"
               onClick={() => setMode('signup')}
-              className={`py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+              className={`py-2 text-xs font-bold rounded-xl transition-all ${
                 mode === 'signup'
-                  ? 'bg-white dark:bg-neutral-900 text-[#E60023] shadow-xs'
+                  ? 'bg-white dark:bg-neutral-900 text-[#E60023] shadow-sm'
                   : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
               }`}
             >
@@ -141,17 +155,17 @@ export const UserAuthModal = () => {
             <button
               type="button"
               onClick={() => setMode('login')}
-              className={`py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+              className={`py-2 text-xs font-bold rounded-xl transition-all ${
                 mode === 'login'
-                  ? 'bg-white dark:bg-neutral-900 text-[#E60023] shadow-xs'
+                  ? 'bg-white dark:bg-neutral-900 text-[#E60023] shadow-sm'
                   : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
               }`}
             >
-              Sign In with Email
+              Sign In
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-3.5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'signup' && (
               <>
                 <div>
@@ -164,7 +178,7 @@ export const UserAuthModal = () => {
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Rahul Sharma"
+                      placeholder="e.g. Alex Creator"
                       className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-xs sm:text-sm font-medium focus:ring-2 focus:ring-red-500 focus:outline-none text-neutral-900 dark:text-white"
                     />
                   </div>
@@ -180,9 +194,31 @@ export const UserAuthModal = () => {
                       type="text"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      placeholder="rahul_ai"
+                      placeholder="alex_ai"
                       className="w-full pl-8 pr-4 py-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-xs sm:text-sm font-medium focus:ring-2 focus:ring-red-500 focus:outline-none text-neutral-900 dark:text-white"
                     />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1.5">
+                    Choose Your Avatar
+                  </label>
+                  <div className="flex items-center gap-3">
+                    {AVATAR_OPTIONS.map((av) => (
+                      <button
+                        key={av}
+                        type="button"
+                        onClick={() => setSelectedAvatar(av)}
+                        className={`relative w-12 h-12 rounded-full overflow-hidden border-2 transition-all ${
+                          selectedAvatar === av
+                            ? 'border-[#E60023] ring-2 ring-red-500/30 scale-105'
+                            : 'border-transparent opacity-70 hover:opacity-100'
+                        }`}
+                      >
+                        <img src={av} alt="Avatar option" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
                   </div>
                 </div>
               </>
@@ -225,7 +261,7 @@ export const UserAuthModal = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs sm:text-sm font-bold shadow-md shadow-red-500/25 flex items-center justify-center gap-2 transition-all transform active:scale-95 disabled:opacity-50 cursor-pointer"
+              className="w-full py-3 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs sm:text-sm font-bold shadow-md shadow-red-500/25 flex items-center justify-center gap-2 transition-all transform active:scale-95 disabled:opacity-50"
             >
               {isLoading ? (
                 <span>Processing...</span>
@@ -237,6 +273,21 @@ export const UserAuthModal = () => {
               )}
             </button>
           </form>
+
+          {/* Quick 1-Click Access */}
+          <div className="pt-3 border-t border-neutral-200 dark:border-neutral-800 text-center">
+            <button
+              type="button"
+              onClick={handleInstantDemoLogin}
+              className="w-full py-2.5 px-4 rounded-xl bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-bold transition-colors flex items-center justify-center gap-2"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>1-Click Instant Creator Sign In</span>
+            </button>
+            <span className="text-[10px] text-neutral-400 block mt-2">
+              Free forever. No credit card required.
+            </span>
+          </div>
         </div>
       </div>
     </div>

@@ -1,4 +1,0 @@
-User-agent: *
-Disallow: /cms-login/
-
-Sitemap: https://geminipromptgenerator.online/sitemap.xml
