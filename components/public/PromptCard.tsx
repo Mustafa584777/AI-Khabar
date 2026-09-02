@@ -29,7 +29,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
     e.preventDefault();
     setSelectedPost(post);
     if (typeof window !== 'undefined') {
-      window.history.pushState({ postId: post.id }, '', `/prompt/${promptSlug}`);
+      window.history.pushState({ postId: post.id }, '', `/${promptSlug}`);
     }
   };
 
@@ -59,7 +59,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
       style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
     >
       <a
-        href={`/prompt/${promptSlug}`}
+        href={`/${promptSlug}`}
         onClick={handleCardClick}
         className="block relative w-full overflow-hidden bg-neutral-100 dark:bg-neutral-800 focus:outline-none"
         style={{ aspectRatio }}

@@ -1700,7 +1700,7 @@ export const PostEditor = () => {
                 {metaTitle || `${title || 'Prompt Title'} | Trending Copy Paste Photo Prompts`}
               </p>
               <p className="text-[11px] text-emerald-700 dark:text-emerald-500 font-mono truncate">
-                https://trendinggeminiprompts.com/prompt/{slug || 'sample-prompt'}
+                https://trendinggeminiprompts.com/{slug || 'sample-prompt'}
               </p>
               <p className="text-[11px] text-neutral-600 dark:text-neutral-400 line-clamp-2 leading-relaxed">
                 {metaDescription || `Copy and paste this photo prompt for ${title}.`}

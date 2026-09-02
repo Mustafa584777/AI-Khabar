@@ -223,7 +223,7 @@ export const HeroSection = () => {
                               onClick={() => {
                                 setSelectedPost(post);
                                 if (typeof window !== 'undefined') {
-                                  window.history.pushState({ postId: post.id }, '', `/prompt/${getPromptSlug(post)}`);
+                                  window.history.pushState({ postId: post.id }, '', `/${getPromptSlug(post)}`);
                                 }
                                 setIsSearchOpen(false);
                               }}

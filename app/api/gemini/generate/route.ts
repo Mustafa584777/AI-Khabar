@@ -4,8 +4,9 @@ import { ServerStorage } from '@/lib/server-storage';
 import fs from 'fs';
 import path from 'path';
 
-// Prioritized model fallback sequence
+// Prioritized model fallback sequence: using current active Gemini 3 and latest generation models
 const CANDIDATE_MODELS = [
+  'gemini-2.5-flash',
   'gemini-2.0-flash',
   'gemini-1.5-flash',
   'gemini-1.5-pro',
@@ -141,15 +142,22 @@ export async function POST(req: NextRequest) {
 
       const settings = await ServerStorage.getSettings().catch(() => null);
       const customIns = settings?.geminiCustomInstructions || '';
-      const systemInstruction = `You are a world-class prompt engineer and AI art director.
-Your job is to generate comprehensive, highly descriptive prompt packages formatted for a premier prompt directory.
+      const systemInstruction = `You are an expert AI prompt engineer. Generate a high-quality, copy-paste ready prompt for AI image generators based on the user's request.
+Ensure the prompt is highly descriptive, specific, and ready to use without placeholders.
 
-CRITICAL DIRECTIVES:
-- Every prompt MUST be written as a template utilizing [bracketed variables] for the user to fill in themselves (e.g. [subject], [location], [time_of_day], [colors]).
-- DO NOT hardcode specific subjects if they can be variables. Make it highly customizable!
-- Describe the lighting, camera optics, and style around the variables.
-- For images: reverse-engineer what is visibly in the image, but still convert the core subject and elements into [bracketed variables] for customization.
-${customIns ? `\nUSER CUSTOM SYSTEM INSTRUCTIONS & GUIDELINES:\n${customIns}` : ''}`;
+Output a valid JSON object matching this schema:
+{
+  "title": "A short, catchy title",
+  "promptText": "The actual detailed prompt",
+  "category": "The most appropriate category",
+  "tags": ["tag1", "tag2"],
+  "seo": {
+    "metaTitle": "SEO title",
+    "metaDescription": "SEO description",
+    "focusKeyword": "keyword"
+  },
+  "articleContent": "A short markdown article explaining how to use this prompt and tips for best results."
+}`;
 
       let contentsPayload: any;
 

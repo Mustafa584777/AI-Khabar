@@ -186,12 +186,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
 
-    // If user is logged in, optionally deduct points if they have any, or allow submission
     if (userAccount && userAccount.isLoggedIn) {
-      const currentPoints = userAccount.points || 0;
       const updatedAccount: UserAccount = {
         ...userAccount,
-        points: Math.max(0, currentPoints - 10),
         requestsMade: (userAccount.requestsMade || 0) + 1,
       };
       setUserAccount(updatedAccount);

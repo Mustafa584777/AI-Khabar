@@ -221,7 +221,7 @@ export const PromptDetailModal = () => {
       setSelectedPost(prevPost);
       if (typeof window !== 'undefined') {
         const prevSlug = getPromptSlug(prevPost);
-        window.history.pushState({ postId: prevPost.id }, '', `/prompt/${prevSlug}`);
+        window.history.pushState({ postId: prevPost.id }, '', `/${prevSlug}`);
       }
       setDisplayedCount(5);
     } else {
@@ -234,11 +234,11 @@ export const PromptDetailModal = () => {
     const handlePopState = () => {
       if (typeof window !== 'undefined') {
         const path = window.location.pathname;
-        if (path === '/' || path === '' || !path.startsWith('/prompt')) {
+        if (path === '/' || path === '') {
           setSelectedPost(null);
           setHistoryStack([]);
-        } else if (path.startsWith('/prompt/')) {
-          const rawSlug = path.replace('/prompt/', '').split('/')[0];
+        } else {
+          const rawSlug = path.replace(/^\//, '').split('/')[0];
           const targetSlug = decodeURIComponent(rawSlug).toLowerCase().trim();
           const matched = posts.find((p) => {
             if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
@@ -272,9 +272,15 @@ export const PromptDetailModal = () => {
                     return [...prev, data.post];
                   });
                   setDisplayedCount(5);
+                } else {
+                  setSelectedPost(null);
+                  setHistoryStack([]);
                 }
               })
-              .catch(() => {});
+              .catch(() => {
+                setSelectedPost(null);
+                setHistoryStack([]);
+              });
           }
         }
       }
@@ -502,7 +508,7 @@ export const PromptDetailModal = () => {
 
   const handleShare = async () => {
     const shareSlug = getPromptSlug(selectedPost);
-    const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/prompt/${shareSlug}` : '';
+    const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/${shareSlug}` : '';
     const shareData = {
       title: selectedPost.title,
       text: `Check out this photo prompt: ${selectedPost.title}`,
@@ -536,7 +542,7 @@ export const PromptDetailModal = () => {
     setSelectedPost(pin);
     if (typeof window !== 'undefined') {
       const pinSlug = getPromptSlug(pin);
-      window.history.pushState({ postId: pin.id }, '', `/prompt/${pinSlug}`);
+      window.history.pushState({ postId: pin.id }, '', `/${pinSlug}`);
     }
     setDisplayedCount(5);
   };
