@@ -4,13 +4,11 @@ import { ServerStorage } from '@/lib/server-storage';
 import fs from 'fs';
 import path from 'path';
 
-// Prioritized model fallback sequence: using current active Gemini 3 and latest generation models
+// Prioritized model fallback sequence
 const CANDIDATE_MODELS = [
-  'gemini-3.6-flash',
-  'gemini-3.5-flash',
-  'gemini-3.1-flash-lite',
-  'gemini-3.7-flash',
-  'gemini-flash-latest',
+  'gemini-2.0-flash',
+  'gemini-1.5-flash',
+  'gemini-1.5-pro',
 ];
 
 // Reusable executor that tries candidate models in sequence
@@ -143,14 +141,14 @@ export async function POST(req: NextRequest) {
 
       const settings = await ServerStorage.getSettings().catch(() => null);
       const customIns = settings?.geminiCustomInstructions || '';
-      const systemInstruction = `You are a world-class prompt engineer, photographer, and AI art director specializing in Midjourney v6.1, ChatGPT-4o, Flux.1 Schnell/Dev, Stable Diffusion XL, and Gemini.
-Your job is to generate comprehensive, production-grade, highly descriptive prompt packages formatted for a premier prompt directory (trendinggeminiprompts.com).
+      const systemInstruction = `You are a world-class prompt engineer and AI art director.
+Your job is to generate comprehensive, highly descriptive prompt packages formatted for a premier prompt directory.
 
 CRITICAL DIRECTIVES:
-- Every prompt MUST be 100% concrete, deeply specific, actionable, and ready to run immediately.
-- STRICTLY PROHIBITED: NEVER generate generic bracketed placeholders such as [subject], [camera_lens], [lighting_setup], [style], [mood], [location], or any brackets [...].
-- Fully describe actual tangible subjects (facial features, gaze, hair, detailed apparel, fabrics, physical postures), real lighting rigs (key light angle, soft fill, rim highlights, golden hour or neon reflections), exact optical camera characteristics (e.g. "shot on Sony A7R V with 85mm f/1.4 GM lens at f/1.8, shallow depth of field, natural bokeh"), authentic color grading (e.g. "warm filmic tones with rich amber highlights and deep clean shadows"), and realistic backgrounds.
-- For images: reverse-engineer what is visibly in the image. Give it a creative, unique title describing the subject and scene (DO NOT title it "Reverse engineer this image").
+- Every prompt MUST be written as a template utilizing [bracketed variables] for the user to fill in themselves (e.g. [subject], [location], [time_of_day], [colors]).
+- DO NOT hardcode specific subjects if they can be variables. Make it highly customizable!
+- Describe the lighting, camera optics, and style around the variables.
+- For images: reverse-engineer what is visibly in the image, but still convert the core subject and elements into [bracketed variables] for customization.
 ${customIns ? `\nUSER CUSTOM SYSTEM INSTRUCTIONS & GUIDELINES:\n${customIns}` : ''}`;
 
       let contentsPayload: any;

@@ -13,7 +13,7 @@ The uploaded image is the PRIMARY SOURCE OF TRUTH.
 Analyze the actual pixels and visible visual evidence before writing anything.
 
 IMPORTANT DIRECTIVES:
-- Never use generic placeholder brackets like [subject], [clothing], [lighting], [camera_lens], or [location]. Every single detail must be written out concretely.
+- Every prompt MUST be written as a template utilizing [bracketed variables] for the user to fill in themselves (e.g. [subject], [location], [time_of_day], [colors]).
 - Never invent details that are not visually supported by the image.
 - Never replace specific visible objects with generic descriptions.
 - Never produce a generic boilerplate prompt. Write a fully realized, copy-paste-ready master prompt.
@@ -418,12 +418,10 @@ QUALITY STANDARD:
 
 async function generateWithModel(ai: GoogleGenAI, preferredModel: string | undefined, payload: any) {
   const candidateModels = [
-    preferredModel && !preferredModel.includes('imagen') && !preferredModel.includes('2.5') ? preferredModel : 'gemini-3.6-flash',
-    'gemini-3.6-flash',
-    'gemini-3.5-flash',
-    'gemini-3.1-flash-lite',
-    'gemini-3.7-flash',
-    'gemini-flash-latest',
+    preferredModel && !preferredModel.includes('imagen') && !preferredModel.includes('2.5') ? preferredModel : 'gemini-2.0-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-1.5-pro',
   ];
 
   const uniqueModels = Array.from(new Set(candidateModels.filter(Boolean)));

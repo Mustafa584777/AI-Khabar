@@ -1373,29 +1373,7 @@ export const UserDashboard = () => {
                 </div>
               </div>
 
-              {/* Activity Guide */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 pt-2">
-                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1 text-center sm:text-left">
-                  <div className="font-bold text-neutral-900 dark:text-white">10 Likes</div>
-                  <div className="text-neutral-500">+1 Point</div>
-                </div>
-                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1 text-center sm:text-left">
-                  <div className="font-bold text-neutral-900 dark:text-white">5 Saves</div>
-                  <div className="text-neutral-500">+1 Point</div>
-                </div>
-                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1 text-center sm:text-left">
-                  <div className="font-bold text-neutral-900 dark:text-white">Prompt Generation</div>
-                  <div className="text-neutral-500">+1 Point</div>
-                </div>
-                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1 text-center sm:text-left">
-                  <div className="font-bold text-neutral-900 dark:text-white">Share with Friend</div>
-                  <div className="text-neutral-500">+2 Points</div>
-                </div>
-                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1 text-center sm:text-left col-span-2 sm:col-span-1">
-                  <div className="font-bold text-neutral-900 dark:text-white">Friend Login</div>
-                  <div className="text-neutral-500">+5 Points</div>
-                </div>
-              </div>
+
 
               {/* Request Form */}
               <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800 space-y-4">

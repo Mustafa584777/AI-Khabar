@@ -7,11 +7,7 @@ export const revalidate = 0;
 export async function GET(req: NextRequest) {
   try {
     const settings = await ServerStorage.getSettings().catch(() => null);
-    const configuredUrl = settings?.siteUrl?.trim();
-    // Default to configured site URL or geminipromptgenerator.online
-    const baseUrl = (configuredUrl && !configuredUrl.includes('localhost'))
-      ? configuredUrl.replace(/\/+$/, '')
-      : 'https://geminipromptgenerator.online';
+    const baseUrl = 'https://geminipromptgenerator.online';
 
     // Fetch all live posts directly from database / storage
     const publishedPosts = await ServerStorage.getAllPosts(false).catch(() => []);
@@ -43,7 +39,7 @@ export async function GET(req: NextRequest) {
 
       xmlEntries.push(
         `  <url>`,
-        `    <loc>${baseUrl}/prompt/${postSlug}</loc>`,
+        `    <loc>${baseUrl}/${postSlug}</loc>`,
         `    <lastmod>${postDate}</lastmod>`,
         `    <changefreq>weekly</changefreq>`,
         `    <priority>0.9</priority>`,
