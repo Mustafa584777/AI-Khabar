@@ -23,11 +23,13 @@ export const RequestedPromptsManager = () => {
       sessionStorage.setItem('promptcms_new_post_is_requested', 'true');
       sessionStorage.setItem('promptcms_new_post_requested_by_name', req.userName || '');
       sessionStorage.setItem('promptcms_new_post_requested_by_email', req.userEmail || '');
+      sessionStorage.setItem('promptcms_new_post_requested_by_avatar', req.userAvatar || '');
       sessionStorage.setItem('promptcms_new_post_requested_prompt_desc', req.requestText || '');
+      sessionStorage.setItem('promptcms_fulfill_request_id', req.id);
     }
     setEditingPostId(null);
     setAdminSubView('new-post');
-    showToast(`Converted request from ${req.userName || 'user'} into new prompt editor!`);
+    showToast(`Request from ${req.userName || req.userEmail || 'user'} loaded with email attached!`);
   };
 
   return (

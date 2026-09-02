@@ -1,10 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { Lock, Mail, Key, X, ArrowRight, ShieldCheck } from 'lucide-react';
 
 export const AdminLoginModal = () => {
+  const router = useRouter();
+  const pathname = usePathname();
   const { showLoginModal, setShowLoginModal, login, setCurrentView, setAdminSubView } = useApp();
   const [email, setEmail] = useState('admin@trendinggeminiprompts.com');
   const [password, setPassword] = useState('admin123');
@@ -12,13 +15,21 @@ export const AdminLoginModal = () => {
 
   if (!showLoginModal) return null;
 
+  const handleSuccessfulLogin = () => {
+    setError('');
+    setShowLoginModal(false);
+    setAdminSubView('dashboard');
+    setCurrentView('admin');
+    if (pathname !== '/') {
+      router.push('/');
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const ok = login(email, password);
     if (ok) {
-      setError('');
-      setAdminSubView('dashboard');
-      setCurrentView('admin');
+      handleSuccessfulLogin();
     } else {
       setError('Invalid credentials. You can use the Demo Admin button below.');
     }
@@ -28,8 +39,7 @@ export const AdminLoginModal = () => {
     setEmail('admin@trendinggeminiprompts.com');
     setPassword('admin123');
     login('admin@trendinggeminiprompts.com', 'admin123');
-    setAdminSubView('dashboard');
-    setCurrentView('admin');
+    handleSuccessfulLogin();
   };
 
   return (

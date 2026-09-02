@@ -64,3 +64,37 @@ export async function PATCH(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    let decodedId = id;
+    try {
+      decodedId = decodeURIComponent(id);
+    } catch {}
+
+    const existing =
+      (await ServerStorage.getPostById(id)) ||
+      (await ServerStorage.getPostById(decodedId)) ||
+      (await ServerStorage.getPostBySlug(decodedId)) ||
+      (await ServerStorage.getPostBySlug(id));
+
+    const targetId = existing?.id || id;
+    await ServerStorage.deletePost(targetId);
+    const allPosts = await ServerStorage.getAllPosts(true);
+
+    return NextResponse.json(
+      { success: true, posts: allPosts },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+        },
+      }
+    );
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}

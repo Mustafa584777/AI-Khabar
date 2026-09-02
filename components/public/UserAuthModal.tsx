@@ -14,7 +14,6 @@ import {
   Zap,
 } from 'lucide-react';
 import { CARTOON_AVATARS } from '@/lib/avatar-constants';
-import { supabase } from '@/lib/supabase';
 
 declare global {
   interface Window {
@@ -26,8 +25,16 @@ declare global {
           renderButton: (parent: HTMLElement, options: any) => void;
           disableAutoSelect: () => void;
         };
-        oauth2?: {
-          initTokenClient: (config: any) => { requestAccessToken: () => void };
+        oauth2: {
+          initTokenClient: (config: {
+            client_id: string;
+            scope: string;
+            prompt?: string;
+            callback: (response: any) => void;
+            error_callback?: (error: any) => void;
+          }) => {
+            requestAccessToken: (overrideConfig?: { prompt?: string }) => void;
+          };
         };
       };
     };
@@ -71,32 +78,9 @@ export const UserAuthModal = () => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const googleBtnContainerRef = useRef<HTMLDivElement>(null);
 
-  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
-
-  // Listen for popup messages from OAuth callback
-  useEffect(() => {
-    const handleAuthMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
-        const user = event.data.user;
-        if (user) {
-          loginWithGoogle({
-            name: user.name || user.email?.split('@')[0],
-            email: user.email,
-            avatar: user.avatar || CARTOON_AVATARS[0].url,
-          });
-          showToast(`Welcome ${user.name || user.email}! Signed in with Google.`);
-          setIsGoogleLoading(false);
-          setIsUserAuthModalOpen(false);
-        }
-      } else if (event.data?.type === 'GOOGLE_AUTH_ERROR') {
-        setIsGoogleLoading(false);
-        showToast('Google sign-in was cancelled or failed.');
-      }
-    };
-
-    window.addEventListener('message', handleAuthMessage);
-    return () => window.removeEventListener('message', handleAuthMessage);
-  }, [loginWithGoogle, showToast, setIsUserAuthModalOpen]);
+  const googleClientId =
+    process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
+    '1081734975765-a8sduvj8dsk72348.apps.googleusercontent.com';
 
   // Initialize Google Identity Services if client ID is present
   useEffect(() => {
@@ -117,6 +101,7 @@ export const UserAuthModal = () => {
                 });
                 showToast(`Signed in as ${payload.email}`);
                 setIsUserAuthModalOpen(false);
+                setIsGoogleLoading(false);
               }
             }
           },
@@ -134,7 +119,7 @@ export const UserAuthModal = () => {
           });
         }
       } catch (gErr) {
-        console.warn('Google One Tap init note:', gErr);
+        console.warn('Google Identity Services init note:', gErr);
       }
     }
   }, [isUserAuthModalOpen, googleClientId, loginWithGoogle, showToast, setIsUserAuthModalOpen]);
@@ -178,83 +163,90 @@ export const UserAuthModal = () => {
     }, 400);
   };
 
-  const handleGoogleSignInClick = async () => {
+  const handleGoogleSignInClick = () => {
     setIsGoogleLoading(true);
 
-    // 1. If Google Identity Services (One Tap) is loaded, prompt account selector
-    if (typeof window !== 'undefined' && window.google?.accounts?.id && googleClientId) {
+    // 1. Try Google Identity Services OAuth2 Token Client (opens Google account selection popup directly)
+    if (typeof window !== 'undefined' && window.google?.accounts?.oauth2) {
       try {
-        window.google.accounts.id.prompt();
-      } catch {}
-    }
-
-    // 2. Open official Google OAuth account selection popup window
-    try {
-      // If Supabase OAuth is configured with Google provider
-      const callbackUrl = `${window.location.origin}/auth/callback`;
-      
-      let oauthUrl = '';
-      if (googleClientId) {
-        // Direct Google OAuth authorization endpoint with account chooser prompt
-        const params = new URLSearchParams({
+        const tokenClient = window.google.accounts.oauth2.initTokenClient({
           client_id: googleClientId,
-          redirect_uri: callbackUrl,
-          response_type: 'token id_token',
           scope: 'email profile openid',
           prompt: 'select_account',
-          nonce: Math.random().toString(36).substring(2),
-        });
-        oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
-      } else {
-        // Supabase Google OAuth endpoint with prompt=select_account
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: callbackUrl,
-            queryParams: {
-              prompt: 'select_account',
-              access_type: 'offline',
-            },
-            skipBrowserRedirect: true,
+          callback: async (tokenResponse: any) => {
+            if (tokenResponse && tokenResponse.access_token) {
+              try {
+                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+                });
+                const userData = await res.json();
+                if (userData && userData.email) {
+                  loginWithGoogle({
+                    name: userData.name || userData.email.split('@')[0],
+                    email: userData.email,
+                    avatar: userData.picture || CARTOON_AVATARS[0].url,
+                  });
+                  showToast(`Signed in as ${userData.email}`);
+                  setIsUserAuthModalOpen(false);
+                }
+              } catch (err) {
+                console.error('Failed to fetch Google user profile:', err);
+                showToast('Signed in with Google!');
+                setIsUserAuthModalOpen(false);
+              } finally {
+                setIsGoogleLoading(false);
+              }
+            } else {
+              setIsGoogleLoading(false);
+            }
+          },
+          error_callback: () => {
+            setIsGoogleLoading(false);
           },
         });
 
-        if (data?.url) {
-          oauthUrl = data.url;
-        } else if (error) {
-          console.warn('Supabase OAuth notice:', error.message);
-        }
+        tokenClient.requestAccessToken({ prompt: 'select_account' });
+        return;
+      } catch (tokenErr) {
+        console.warn('OAuth2 Token client prompt failed, trying OneTap:', tokenErr);
       }
+    }
 
-      if (oauthUrl) {
-        const width = 500;
-        const height = 650;
-        const left = window.screenX + (window.outerWidth - width) / 2;
-        const top = window.screenY + (window.outerHeight - height) / 2;
-
-        const popup = window.open(
-          oauthUrl,
-          'google_signin_popup',
-          `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,location=no,status=no`
-        );
-
-        if (!popup) {
-          showToast('Please allow popups to sign in with your Google account.');
-          setIsGoogleLoading(false);
-        }
-      } else {
-        // Direct fallback: prompt Google One Tap
-        if (typeof window !== 'undefined' && window.google?.accounts?.id) {
-          window.google.accounts.id.prompt();
-        } else {
-          showToast('Connecting to Google sign-in service...');
-        }
-        setTimeout(() => setIsGoogleLoading(false), 2000);
+    // 2. Try Google One Tap / Accounts ID prompt
+    if (typeof window !== 'undefined' && window.google?.accounts?.id) {
+      try {
+        window.google.accounts.id.prompt((notification: any) => {
+          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            setIsGoogleLoading(false);
+          }
+        });
+        return;
+      } catch (idErr) {
+        console.warn('Google One Tap prompt failed:', idErr);
       }
-    } catch (err) {
-      console.error('Google Sign-in popup error:', err);
+    }
+
+    // 3. Fallback: Direct Google OAuth popup window
+    try {
+      const redirectUri = typeof window !== 'undefined' ? window.location.origin : '';
+      const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(
+        googleClientId
+      )}&redirect_uri=${encodeURIComponent(
+        redirectUri
+      )}&response_type=token&scope=email%20profile%20openid&prompt=select_account`;
+
+      const popup = window.open(
+        googleAuthUrl,
+        'google_oauth_popup',
+        'width=500,height=600,menubar=no,toolbar=no,status=no'
+      );
+      if (!popup) {
+        showToast('Please allow popups to open Google account selector.');
+      }
+    } catch (popupErr) {
+      console.error('Popup error:', popupErr);
+    } finally {
       setIsGoogleLoading(false);
-      showToast('Could not open Google sign-in window.');
     }
   };
 
@@ -269,7 +261,6 @@ export const UserAuthModal = () => {
           <button
             onClick={() => {
               setIsUserAuthModalOpen(false);
-              setIsGoogleLoading(false);
             }}
             className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white transition-colors"
             title="Close"
@@ -313,39 +304,35 @@ export const UserAuthModal = () => {
 
         {/* Form Body */}
         <div className="p-6 space-y-4">
-          {/* Official Google Sign In Button */}
+          {/* Google Sign In Option */}
           <div className="space-y-3">
-            <div ref={googleBtnContainerRef} className="w-full">
+            <div ref={googleBtnContainerRef} className="w-full min-h-[44px]">
               <button
                 type="button"
                 onClick={handleGoogleSignInClick}
-                disabled={isGoogleLoading || isLoading}
-                className="w-full py-3 px-4 rounded-2xl bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700/80 text-neutral-800 dark:text-neutral-100 text-xs sm:text-sm font-bold border border-neutral-300 dark:border-neutral-700 shadow-xs flex items-center justify-center gap-3 transition-all transform active:scale-95 disabled:opacity-50 cursor-pointer"
+                disabled={isLoading || isGoogleLoading}
+                className="w-full py-3 px-4 rounded-2xl bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700/80 text-neutral-800 dark:text-neutral-100 text-xs sm:text-sm font-bold border border-neutral-300 dark:border-neutral-700 shadow-xs flex items-center justify-center gap-3 transition-all transform active:scale-95 disabled:opacity-50"
                 id="google-signin-btn"
               >
-                {isGoogleLoading ? (
-                  <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
-                    <path
-                      fill="#4285F4"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                    />
-                  </svg>
-                )}
-                <span>{isGoogleLoading ? 'Connecting to Google...' : 'Continue with Google'}</span>
+                <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+                  <path
+                    fill="#4285F4"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                  />
+                </svg>
+                <span>{isGoogleLoading ? 'Opening Google...' : 'Continue with Google'}</span>
               </button>
             </div>
 
@@ -363,7 +350,7 @@ export const UserAuthModal = () => {
             <button
               type="button"
               onClick={() => setMode('signup')}
-              className={`py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+              className={`py-2 text-xs font-bold rounded-xl transition-all ${
                 mode === 'signup'
                   ? 'bg-white dark:bg-neutral-900 text-[#E60023] shadow-xs'
                   : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
@@ -374,7 +361,7 @@ export const UserAuthModal = () => {
             <button
               type="button"
               onClick={() => setMode('login')}
-              className={`py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+              className={`py-2 text-xs font-bold rounded-xl transition-all ${
                 mode === 'login'
                   ? 'bg-white dark:bg-neutral-900 text-[#E60023] shadow-xs'
                   : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
@@ -458,7 +445,7 @@ export const UserAuthModal = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs sm:text-sm font-bold shadow-md shadow-red-500/25 flex items-center justify-center gap-2 transition-all transform active:scale-95 disabled:opacity-50 cursor-pointer"
+              className="w-full py-3 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs sm:text-sm font-bold shadow-md shadow-red-500/25 flex items-center justify-center gap-2 transition-all transform active:scale-95 disabled:opacity-50"
             >
               {isLoading ? (
                 <span>Processing...</span>

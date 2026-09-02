@@ -1,83 +1,74 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { ServerStorage } from '@/lib/server-storage';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export async function GET(req: NextRequest) {
+export async function GET() {
+  const baseUrl = 'https://geminipromptgenerator.online';
+
+  const staticUrls = [
+    { loc: `${baseUrl}`, priority: '1.0', changefreq: 'daily', lastmod: new Date().toISOString() },
+    { loc: `${baseUrl}/blog`, priority: '0.8', changefreq: 'daily', lastmod: new Date().toISOString() },
+    { loc: `${baseUrl}/privacy-policy`, priority: '0.3', changefreq: 'monthly', lastmod: new Date().toISOString() },
+    { loc: `${baseUrl}/terms`, priority: '0.3', changefreq: 'monthly', lastmod: new Date().toISOString() },
+    { loc: `${baseUrl}/about`, priority: '0.3', changefreq: 'monthly', lastmod: new Date().toISOString() },
+    { loc: `${baseUrl}/contact`, priority: '0.3', changefreq: 'monthly', lastmod: new Date().toISOString() },
+  ];
+
   try {
-    const settings = await ServerStorage.getSettings().catch(() => null);
-    const configuredUrl = settings?.siteUrl?.trim();
-    // Default to configured site URL or geminipromptgenerator.online
-    const baseUrl = (configuredUrl && !configuredUrl.includes('localhost'))
-      ? configuredUrl.replace(/\/+$/, '')
-      : 'https://geminipromptgenerator.online';
+    const posts = await ServerStorage.getAllPosts();
+    const publishedPosts = (posts || []).filter(
+      (p) => p && (p.status === 'published' || !p.status)
+    );
 
-    // Fetch all live posts directly from database / storage
-    const publishedPosts = await ServerStorage.getAllPosts(false).catch(() => []);
+    const postUrls = publishedPosts.map((post) => {
+      const slugOrId = post.slug || post.id;
+      const lastModified = post.updatedAt
+        ? new Date(post.updatedAt).toISOString()
+        : post.createdAt
+        ? new Date(post.createdAt).toISOString()
+        : new Date().toISOString();
 
-    const currentDate = new Date().toISOString().split('T')[0];
+      return {
+        loc: `${baseUrl}/post/${encodeURIComponent(slugOrId)}`,
+        priority: '0.8',
+        changefreq: 'weekly',
+        lastmod: lastModified,
+      };
+    });
 
-    // Build XML string
-    const xmlEntries: string[] = [
-      `  <url>`,
-      `    <loc>${baseUrl}</loc>`,
-      `    <lastmod>${currentDate}</lastmod>`,
-      `    <changefreq>daily</changefreq>`,
-      `    <priority>1.0</priority>`,
-      `  </url>`,
-      `  <url>`,
-      `    <loc>${baseUrl}/blog</loc>`,
-      `    <lastmod>${currentDate}</lastmod>`,
-      `    <changefreq>daily</changefreq>`,
-      `    <priority>0.8</priority>`,
-      `  </url>`,
-    ];
+    const allUrls = [...staticUrls, ...postUrls];
 
-    // Dynamically include every prompt URL
-    for (const post of publishedPosts) {
-      const postSlug = encodeURIComponent(post.slug.trim());
-      const postDate = post.createdAt
-        ? new Date(post.createdAt).toISOString().split('T')[0]
-        : currentDate;
-
-      xmlEntries.push(
-        `  <url>`,
-        `    <loc>${baseUrl}/prompt/${postSlug}</loc>`,
-        `    <lastmod>${postDate}</lastmod>`,
-        `    <changefreq>weekly</changefreq>`,
-        `    <priority>0.9</priority>`,
-        `  </url>`
-      );
-    }
-
-    const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${xmlEntries.join('\n')}
-</urlset>`.trim();
+${allUrls
+  .map(
+    (item) => `  <url>
+    <loc>${item.loc}</loc>
+    <lastmod>${item.lastmod}</lastmod>
+    <changefreq>${item.changefreq}</changefreq>
+    <priority>${item.priority}</priority>
+  </url>`
+  )
+  .join('\n')}
+</urlset>`;
 
-    return new NextResponse(sitemapXml, {
+    return new NextResponse(xml, {
       status: 200,
       headers: {
         'Content-Type': 'application/xml; charset=utf-8',
         'Cache-Control': 'public, max-age=0, must-revalidate',
       },
     });
-  } catch (error) {
-    console.error('Error generating dynamic sitemap.xml:', error);
-    const fallbackXml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://geminipromptgenerator.online</loc>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
-</urlset>`;
-    return new NextResponse(fallbackXml, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/xml; charset=utf-8',
-      },
-    });
+  } catch (err: any) {
+    console.error('Error generating dynamic sitemap.xml:', err);
+    return new NextResponse(
+      `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>${baseUrl}</loc></url></urlset>`,
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/xml; charset=utf-8' },
+      }
+    );
   }
 }
