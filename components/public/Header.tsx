@@ -121,7 +121,7 @@ export const Header = () => {
           </button>
         </div>
 
-        {/* Right: Saved & Account Actions */}
+        {/* Right: Saved, Account & Admin Actions */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Saved Prompts (Pinterest Red Pill) */}
           <button

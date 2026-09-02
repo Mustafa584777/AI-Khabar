@@ -791,18 +791,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const deletePost = async (id: string): Promise<boolean> => {
     isSavingRef.current = true;
-    setPosts((prev) => {
-      const next = prev.filter((p) => p.id !== id);
-      StorageService.saveCachedPosts(next);
-      return next;
-    });
-
+    setPosts((prev) => prev.filter((p) => p.id !== id));
     setBookmarkedIds((prev) => {
       if (prev.includes(id)) {
         const updated = prev.filter((item) => item !== id);
         if (typeof window !== 'undefined') {
           try {
-            localStorage.setItem('promptcms_user_bookmarks', JSON.stringify(updated));
+            localStorage.setItem('auraprompt_user_bookmarks', JSON.stringify(updated));
           } catch (e) {
             console.error(e);
           }
@@ -815,14 +810,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       const res = await fetch(`/api/posts?id=${encodeURIComponent(id)}`, {
         method: 'DELETE',
-        headers: { 'Cache-Control': 'no-store' },
       });
       const data = await res.json();
       if (data.success && Array.isArray(data.posts)) {
         setPosts(data.posts);
-        StorageService.saveCachedPosts(data.posts);
       }
-      showToast('Prompt deleted successfully');
+      showToast('Prompt removed from server');
       return true;
     } catch (err) {
       console.error('Failed to delete post on server:', err);
@@ -831,7 +824,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setTimeout(() => {
         isSavingRef.current = false;
-      }, 500);
+      }, 1500);
     }
   };
 

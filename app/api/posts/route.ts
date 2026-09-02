@@ -83,16 +83,9 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Post ID is required' }, { status: 400 });
     }
 
-    await ServerStorage.deletePost(id);
+    const deleted = await ServerStorage.deletePost(id);
     const allPosts = await ServerStorage.getAllPosts(true);
-    return NextResponse.json(
-      { success: true, posts: allPosts },
-      {
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate',
-        },
-      }
-    );
+    return NextResponse.json({ success: deleted, posts: allPosts });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

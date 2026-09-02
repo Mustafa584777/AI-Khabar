@@ -62,13 +62,12 @@ let memoryPromptRequests: PromptRequestItem[] | null = null;
 
 // Helpers to map Supabase snake_case rows to PromptPost
 function mapSupabasePost(row: any): PromptPost {
-  const params = typeof row.parameters === 'object' && row.parameters !== null ? row.parameters : {};
   return {
     id: row.id,
     title: row.title,
     slug: row.slug,
     category: row.category,
-    aiTool: row.ai_tool || 'ChatGPT',
+    aiTool: row.ai_tool || 'Midjourney',
     promptText: row.prompt_text,
     negativePrompt: row.negative_prompt || undefined,
     imageUrl: row.image_url,
@@ -76,18 +75,18 @@ function mapSupabasePost(row: any): PromptPost {
     imageWidth: row.image_width || 1024,
     imageHeight: row.image_height || 1536,
     additionalImages: Array.isArray(row.additional_images) ? row.additional_images : [],
-    parameters: params,
+    parameters: typeof row.parameters === 'object' && row.parameters !== null ? row.parameters : {},
     variables: Array.isArray(row.variables) ? row.variables : [],
     articleContent: row.article_content || '',
     tags: Array.isArray(row.tags) ? row.tags : [],
     status: row.status || 'published',
     isFeatured: Boolean(row.is_featured),
     isTrending: Boolean(row.is_trending),
-    isRequested: Boolean(row.is_requested || row.isRequested || params.isRequested),
-    requestedByName: row.requested_by_name || row.requestedByName || params.requestedByName || undefined,
-    requestedByEmail: row.requested_by_email || row.requestedByEmail || params.requestedByEmail || undefined,
-    requestedByAvatar: row.requested_by_avatar || row.requestedByAvatar || params.requestedByAvatar || undefined,
-    requestedPromptDescription: row.requested_prompt_description || row.requestedPromptDescription || params.requestedPromptDescription || undefined,
+    isRequested: Boolean(row.is_requested || row.isRequested),
+    requestedByName: row.requested_by_name || row.requestedByName || undefined,
+    requestedByEmail: row.requested_by_email || row.requestedByEmail || undefined,
+    requestedByAvatar: row.requested_by_avatar || row.requestedByAvatar || undefined,
+    requestedPromptDescription: row.requested_prompt_description || row.requestedPromptDescription || undefined,
     viewsCount: Number(row.views_count) || 0,
     copiesCount: Number(row.copies_count) || 0,
     likesCount: Number(row.likes_count) || 0,
@@ -111,22 +110,12 @@ function mapSupabasePost(row: any): PromptPost {
 }
 
 function mapPostToSupabase(post: PromptPost) {
-  // Store custom fields in parameters JSON column to guarantee 100% compatibility with Supabase schema
-  const parameters = {
-    ...(typeof post.parameters === 'object' && post.parameters !== null ? post.parameters : {}),
-    isRequested: Boolean(post.isRequested),
-    requestedByName: post.requestedByName || null,
-    requestedByEmail: post.requestedByEmail || null,
-    requestedByAvatar: post.requestedByAvatar || null,
-    requestedPromptDescription: post.requestedPromptDescription || null,
-  };
-
   return {
     id: post.id,
     title: post.title,
     slug: post.slug,
     category: post.category,
-    ai_tool: post.aiTool || 'ChatGPT',
+    ai_tool: post.aiTool || 'Midjourney',
     prompt_text: post.promptText,
     negative_prompt: post.negativePrompt || null,
     image_url: post.imageUrl,
@@ -134,13 +123,17 @@ function mapPostToSupabase(post: PromptPost) {
     image_width: post.imageWidth || 1024,
     image_height: post.imageHeight || 1536,
     additional_images: post.additionalImages || [],
-    parameters,
+    parameters: post.parameters || {},
     variables: post.variables || [],
     article_content: post.articleContent || '',
     tags: post.tags || [],
     status: post.status || 'published',
     is_featured: Boolean(post.isFeatured),
     is_trending: Boolean(post.isTrending),
+    is_requested: Boolean(post.isRequested),
+    requested_by_name: post.requestedByName || null,
+    requested_by_email: post.requestedByEmail || null,
+    requested_prompt_description: post.requestedPromptDescription || null,
     views_count: Number(post.viewsCount) || 0,
     copies_count: Number(post.copiesCount) || 0,
     likes_count: Number(post.likesCount) || 0,
@@ -189,23 +182,24 @@ export const ServerStorage = {
             return mapped;
           });
 
-          // If Supabase is active, it is the primary authority for posts
-          if (supabasePosts.length > 0 || localPosts.length === 0) {
-            memoryPosts = supabasePosts;
-            writeJsonFile(POSTS_FILE, supabasePosts);
-            return includeDrafts ? supabasePosts : supabasePosts.filter((p) => p.status === 'published');
-          } else {
-            // First-time seed: upload local posts to Supabase
-            const map = new Map<string, PromptPost>();
-            localPosts.forEach(p => map.set(p.id, p));
-            supabasePosts.forEach(p => map.set(p.id, p));
-            const merged = Array.from(map.values()).sort((a, b) => 
-              new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-            );
-            memoryPosts = merged;
-            writeJsonFile(POSTS_FILE, merged);
-            return includeDrafts ? merged : merged.filter((p) => p.status === 'published');
-          }
+          // Merge localPosts and supabasePosts by ID, prioritizing the most recent updatedAt/createdAt
+          const map = new Map<string, PromptPost>();
+          // Put local posts first, then overwrite/merge with Supabase posts
+          localPosts.forEach(p => map.set(p.id, p));
+          supabasePosts.forEach(p => {
+            const existing = map.get(p.id);
+            if (!existing || new Date(p.updatedAt || p.createdAt || 0).getTime() >= new Date(existing.updatedAt || existing.createdAt || 0).getTime()) {
+              map.set(p.id, p);
+            }
+          });
+
+          const merged = Array.from(map.values()).sort((a, b) => 
+            new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+          );
+
+          memoryPosts = merged;
+          writeJsonFile(POSTS_FILE, merged);
+          return includeDrafts ? merged : merged.filter((p) => p.status === 'published');
         }
       } catch (err) {
         console.warn('Supabase getAllPosts fallback:', err);
@@ -347,28 +341,16 @@ export const ServerStorage = {
     if (isSupabaseConfigured()) {
       try {
         const payload = mapPostToSupabase(savedPost);
-        let { error } = await db().from('posts').upsert(payload, { onConflict: 'id' });
-        
-        // If the table doesn't have the newly requested columns, retry without them
-        if (error && error.message && error.message.includes('column')) {
-          console.warn('Supabase savePost column error detected, retrying without request fields...', error.message);
-          const safePayload = { ...payload };
-          delete (safePayload as any).is_requested;
-          delete (safePayload as any).requested_by_name;
-          delete (safePayload as any).requested_by_email;
-          delete (safePayload as any).requested_prompt_description;
-          
-          const retryRes = await db().from('posts').upsert(safePayload, { onConflict: 'id' });
-          error = retryRes.error;
-        }
-
+        const { error } = await db().from('posts').upsert(payload, { onConflict: 'id' });
         if (error) {
-          console.warn('Supabase savePost error (falling back to local JSON):', error.message);
+          console.error('Supabase savePost error:', error.message, error.details);
+          throw new Error(`Supabase database error: ${error.message}`);
         } else {
           console.log(`Saved post ${savedPost.id} to Supabase successfully.`);
         }
       } catch (err: any) {
-        console.warn('Supabase savePost exception (falling back to local JSON):', err);
+        console.error('Supabase savePost exception:', err);
+        throw err;
       }
     }
 
@@ -418,25 +400,22 @@ export const ServerStorage = {
     return savedPost;
   },
 
-  deletePost: async (id: string): Promise<boolean> => {
+  deletePost: async (id: string): Promise<void> => {
     if (isSupabaseConfigured()) {
       try {
         const { error } = await db().from('posts').delete().eq('id', id);
         if (error) {
           console.error('Supabase deletePost error:', error.message);
-        } else {
-          console.log(`Deleted post ${id} from Supabase successfully.`);
         }
       } catch (err) {
         console.error('Supabase deletePost exception:', err);
       }
     }
 
-    const currentLocal = readJsonFile<PromptPost[]>(POSTS_FILE, []);
-    const filtered = currentLocal.filter((p) => p.id !== id);
+    const posts = await ServerStorage.getAllPosts(true);
+    const filtered = posts.filter((p) => p.id !== id);
     memoryPosts = filtered;
     writeJsonFile(POSTS_FILE, filtered);
-    return true;
   },
 
   restorePosts: async (incomingPosts: PromptPost[], mode: 'replace' | 'merge'): Promise<PromptPost[]> => {

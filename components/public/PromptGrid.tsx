@@ -41,9 +41,7 @@ export const PromptGrid = () => {
   const filteredPosts = useMemo(() => {
     let list = posts.filter((p) => p.status === 'published');
 
-    if (selectedCategory === 'requested') {
-      list = list.filter((p) => Boolean(p.isRequested));
-    } else if (selectedCategory && selectedCategory !== 'all') {
+    if (selectedCategory && selectedCategory !== 'all') {
       list = list.filter(
         (p) => p.category.toLowerCase() === selectedCategory.toLowerCase()
       );
