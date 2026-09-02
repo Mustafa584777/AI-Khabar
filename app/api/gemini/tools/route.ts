@@ -12,11 +12,12 @@ The uploaded image is the PRIMARY SOURCE OF TRUTH.
 
 Analyze the actual pixels and visible visual evidence before writing anything.
 
-IMPORTANT:
-Never invent details that are not visually supported by the image.
-Never replace specific visible objects with generic descriptions.
-Never produce a generic photography prompt.
-Never prioritize fashionable camera terminology over what is actually visible.
+IMPORTANT DIRECTIVES:
+- Never use generic placeholder brackets like [subject], [clothing], [lighting], [camera_lens], or [location]. Every single detail must be written out concretely.
+- Never invent details that are not visually supported by the image.
+- Never replace specific visible objects with generic descriptions.
+- Never produce a generic boilerplate prompt. Write a fully realized, copy-paste-ready master prompt.
+- Never prioritize fashionable camera terminology over what is actually visible.
 
 Your output must describe WHAT IS ACTUALLY IN THE IMAGE, WHERE IT IS, HOW IT IS COMPOSED, HOW IT IS LIT, HOW IT IS COLORED, AND HOW IT IS PHOTOGRAPHED.
 
@@ -417,11 +418,11 @@ QUALITY STANDARD:
 
 async function generateWithModel(ai: GoogleGenAI, preferredModel: string | undefined, payload: any) {
   const candidateModels = [
-    preferredModel && preferredModel !== 'imagen-3.0-generate-002' && preferredModel !== 'gemini-2.5-flash' ? preferredModel : 'gemini-3.1-flash-lite',
-    'gemini-3.1-flash-lite',
-    'gemini-flash-latest',
+    preferredModel && !preferredModel.includes('imagen') && !preferredModel.includes('2.5') ? preferredModel : 'gemini-3.7-flash',
     'gemini-3.7-flash',
-    'gemini-2.5-pro',
+    'gemini-flash-latest',
+    'gemini-3.1-flash-lite',
+    'gemini-3.1-pro-preview',
   ];
 
   const uniqueModels = Array.from(new Set(candidateModels.filter(Boolean)));

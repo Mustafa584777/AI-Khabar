@@ -533,7 +533,7 @@ export const PostEditor = () => {
         body: JSON.stringify({
           action: 'generate_full_post',
           mode: autoFillMode,
-          topic: effectiveTopic || (autoFillMode === 'image' ? 'Reverse engineer this image' : 'Photorealistic Artwork Recreation'),
+          topic: effectiveTopic || (autoFillMode === 'image' ? '' : 'Photorealistic Studio Portrait'),
           image: autoFillMode === 'image' ? (rawBase64Image || imageUrl) : undefined,
           tool: 'Gemini',
           category,
