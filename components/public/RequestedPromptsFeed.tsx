@@ -148,11 +148,7 @@ export const RequestedPromptsFeed = () => {
           <div className="pt-2 flex flex-wrap items-center gap-3">
             <button
               onClick={() => {
-                if (!userAccount) {
-                  openAuthModal('Sign in to submit and track your custom prompt requests');
-                } else {
-                  setIsRequestModalOpen(true);
-                }
+                setIsRequestModalOpen(true);
               }}
               id="submit-prompt-request-btn"
               className="px-5 py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs sm:text-sm font-bold shadow-lg shadow-red-500/30 flex items-center gap-2 transition-all transform active:scale-95"
@@ -319,13 +315,9 @@ export const RequestedPromptsFeed = () => {
 
             <button
               onClick={() => {
-                if (!userAccount) {
-                  openAuthModal('Sign in to submit your prompt request');
-                } else {
-                  setIsRequestModalOpen(true);
-                  if (searchQuery) {
-                    setRequestText(searchQuery);
-                  }
+                setIsRequestModalOpen(true);
+                if (searchQuery) {
+                  setRequestText(searchQuery);
                 }
               }}
               className="px-5 py-2.5 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-md shadow-red-500/25 flex items-center justify-center gap-2 transition-all"

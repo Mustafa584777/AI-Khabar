@@ -76,24 +76,11 @@ export async function DELETE(
       decodedId = decodeURIComponent(id);
     } catch {}
 
-    const existing =
-      (await ServerStorage.getPostById(id)) ||
-      (await ServerStorage.getPostById(decodedId)) ||
-      (await ServerStorage.getPostBySlug(decodedId)) ||
-      (await ServerStorage.getPostBySlug(id));
-
-    const targetId = existing?.id || id;
-    await ServerStorage.deletePost(targetId);
-    const allPosts = await ServerStorage.getAllPosts(true);
-
-    return NextResponse.json(
-      { success: true, posts: allPosts },
-      {
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate',
-        },
-      }
-    );
+    const success = await ServerStorage.deletePost(id) || await ServerStorage.deletePost(decodedId);
+    if (!success) {
+      return NextResponse.json({ error: 'Post not found or could not be deleted' }, { status: 404 });
+    }
+    return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
