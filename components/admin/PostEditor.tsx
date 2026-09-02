@@ -117,7 +117,6 @@ export const PostEditor = () => {
   const [imageUrl, setImageUrl] = useState(
     () => existingPost?.imageUrl || ''
   );
-  const [rawBase64Image, setRawBase64Image] = useState<string>('');
   const [imageAlt, setImageAlt] = useState(
     () => existingPost?.imageAlt || (existingPost?.title || '')
   );
@@ -165,8 +164,110 @@ export const PostEditor = () => {
     }
     return '';
   });
-  const [requestedByAvatar, setRequestedByAvatar] = useState<string>(() => existingPost?.requestedByAvatar || '');
-  const [requestedPromptDescription, setRequestedPromptDescription] = useState<string>(() => existingPost?.requestedPromptDescription || '');
+  const [requestedPromptDescription, setRequestedPromptDescription] = useState<string>(() => {
+    if (existingPost?.requestedPromptDescription) return existingPost.requestedPromptDescription;
+    if (typeof window !== 'undefined') {
+      const val = sessionStorage.getItem('promptcms_new_post_requested_prompt_desc');
+      if (val) {
+        sessionStorage.removeItem('promptcms_new_post_requested_prompt_desc');
+        return val;
+      }
+    }
+    return '';
+  });
+  const [requestedByAvatar, setRequestedByAvatar] = useState<string>(() => {
+    if (existingPost?.requestedByAvatar) return existingPost.requestedByAvatar;
+    if (typeof window !== 'undefined') {
+      const val = sessionStorage.getItem('promptcms_new_post_requested_by_avatar');
+      if (val) {
+        sessionStorage.removeItem('promptcms_new_post_requested_by_avatar');
+        return val;
+      }
+    }
+    return '';
+  });
+  const [isUploadingRequesterAvatar, setIsUploadingRequesterAvatar] = useState(false);
+  const requesterAvatarInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const handleRequesterAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select a valid image file (PNG, JPG, WEBP)');
+      return;
+    }
+
+    setIsUploadingRequesterAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.url) {
+          setRequestedByAvatar(data.url);
+          showToast('Requester profile photo uploaded successfully!');
+        } else {
+          // Fallback to local DataURL
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            if (ev.target?.result) {
+              setRequestedByAvatar(ev.target.result as string);
+              showToast('Requester profile photo saved!');
+            }
+          };
+          reader.readAsDataURL(file);
+        }
+      } else {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          if (ev.target?.result) {
+            setRequestedByAvatar(ev.target.result as string);
+            showToast('Requester profile photo saved!');
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        if (ev.target?.result) {
+          setRequestedByAvatar(ev.target.result as string);
+          showToast('Requester profile photo saved!');
+        }
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setIsUploadingRequesterAvatar(false);
+    }
+  };
+
+  const handleSelectAutofillRequest = (requestId: string) => {
+    if (!requestId) return;
+    const req = promptRequests.find((r) => r.id === requestId);
+    if (!req) return;
+
+    setIsRequested(true);
+    setRequestedByName(req.userName || '');
+    setRequestedByEmail(req.userEmail || '');
+    setRequestedPromptDescription(req.requestText || '');
+    if (req.userAvatar) {
+      setRequestedByAvatar(req.userAvatar);
+    }
+    if (req.category) {
+      const matchedCat = categories.find((c) => c.name.toLowerCase() === req.category?.toLowerCase());
+      if (matchedCat) {
+        setCategory(matchedCat.name);
+      }
+    }
+    showToast(`Autofilled request by ${req.userName}!`);
+  };
   const [articleContent, setArticleContent] = useState(
     () =>
       existingPost?.articleContent ||
@@ -386,7 +487,6 @@ export const PostEditor = () => {
     try {
       const optimized = await optimizeImageFile(file);
       if (optimized) {
-        setRawBase64Image(optimized);
         let finalImageUrl = optimized;
         try {
           const cleanPublicId = slug || slugify(title) || `prompt-${Date.now()}`;
@@ -533,8 +633,8 @@ export const PostEditor = () => {
         body: JSON.stringify({
           action: 'generate_full_post',
           mode: autoFillMode,
-          topic: effectiveTopic || (autoFillMode === 'image' ? 'Reverse engineer this image' : 'Photorealistic Artwork Recreation'),
-          image: autoFillMode === 'image' ? (rawBase64Image || imageUrl) : undefined,
+          topic: effectiveTopic || 'Photorealistic Artwork Recreation',
+          image: autoFillMode === 'image' ? imageUrl : undefined,
           tool: 'Gemini',
           category,
           categories: categories.map((c) => c.name),
@@ -1378,19 +1478,11 @@ export const PostEditor = () => {
 
           {/* Prompt Request Status Card */}
           <div className="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#E60023]" />
-                <span>Requested Prompt Settings</span>
-              </h3>
-              {isRequested && requestedByEmail && (
-                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-red-100 text-[#E60023] dark:bg-red-950/60 dark:text-red-300">
-                  User Linked
-                </span>
-              )}
-            </div>
-
-            <label className="flex items-center gap-3 cursor-pointer select-none">
+            <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#E60023]" />
+              <span>Prompt Request Fulfillment</span>
+            </h3>
+            <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={isRequested}
@@ -1398,24 +1490,194 @@ export const PostEditor = () => {
                 className="w-4 h-4 rounded border-neutral-300 text-[#E60023] focus:ring-[#E60023]"
               />
               <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200">
-                Mark as Requested Prompt
+                Mark as Requested Prompt (Fulfilled Community Request)
               </span>
             </label>
             <p className="text-[11px] text-neutral-500">
-              When checked, this prompt will be tagged as a community requested prompt and appear in the &apos;Requested&apos; tab.
+              When checked, this prompt displays in the &apos;Requested&apos; tab and is searchable by the requester&apos;s name, email, or prompt description.
             </p>
 
-            {isRequested && requestedByEmail && (
-              <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800 space-y-3.5 animate-in fade-in duration-200">
+            {isRequested && (
+              <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800 space-y-4 animate-in fade-in duration-200">
+                {/* 1. Quick Autofill from Pending Community Requests */}
+                {promptRequests && promptRequests.length > 0 && (
+                  <div className="p-3 bg-red-50/60 dark:bg-red-950/30 rounded-2xl border border-red-200/80 dark:border-red-900/60 space-y-1.5">
+                    <label className="block text-[11px] font-extrabold text-red-800 dark:text-red-300">
+                      ⚡ Quick Autofill from Community Requests ({promptRequests.length} available)
+                    </label>
+                    <select
+                      onChange={(e) => handleSelectAutofillRequest(e.target.value)}
+                      defaultValue=""
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-neutral-900 border border-red-200 dark:border-red-800 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-[#E60023] focus:outline-none"
+                    >
+                      <option value="" disabled>
+                        Select a user request to autofill...
+                      </option>
+                      {promptRequests.map((req) => (
+                        <option key={req.id} value={req.id}>
+                          {req.userName || 'Anonymous'} ({req.userEmail || 'No email'}) - &quot;{req.requestText.slice(0, 45)}...&quot;
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* 2. Requester Profile Preview Badge */}
+                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex items-center gap-3">
+                  <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-red-200 dark:border-red-900 bg-neutral-200 dark:bg-neutral-800 shrink-0 flex items-center justify-center shadow-xs">
+                    {requestedByAvatar ? (
+                      <Image
+                        src={requestedByAvatar}
+                        alt={requestedByName || 'Requester'}
+                        fill
+                        sizes="48px"
+                        className="object-cover rounded-full"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <User className="w-6 h-6 text-neutral-400" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-neutral-900 dark:text-white truncate">
+                      {requestedByName || 'Requester Name (Not set)'}
+                    </p>
+                    <p className="text-[11px] text-neutral-500 truncate">
+                      {requestedByEmail || 'No email address specified'}
+                    </p>
+                    <span className="inline-block mt-0.5 text-[10px] font-semibold text-[#E60023]">
+                      Will appear on card: &quot;Req by {requestedByName || 'User'}&quot;
+                    </span>
+                  </div>
+                </div>
+
+                {/* 3. Requester Profile Image Upload / Avatar Selector */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                    Requester Profile Photo / Avatar (Shown on cards)
+                  </label>
+                  
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      type="file"
+                      ref={requesterAvatarInputRef}
+                      onChange={handleRequesterAvatarFileChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => requesterAvatarInputRef.current?.click()}
+                      disabled={isUploadingRequesterAvatar}
+                      className="px-3.5 py-2 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-bold hover:opacity-90 transition-all flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+                    >
+                      {isUploadingRequesterAvatar ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Upload className="w-3.5 h-3.5" />
+                      )}
+                      <span>Upload Profile Image</span>
+                    </button>
+
+                    {requestedByAvatar && (
+                      <button
+                        type="button"
+                        onClick={() => setRequestedByAvatar('')}
+                        className="px-3 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 transition-colors"
+                      >
+                        Remove Photo
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Quick 2D/3D Cartoon Avatars Selection */}
+                  <div className="pt-1.5">
+                    <span className="text-[10px] font-bold text-neutral-400 block mb-1.5">
+                      Or pick a 3D/2D Cartoon Avatar:
+                    </span>
+                    <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-none">
+                      {CARTOON_AVATARS.slice(0, 8).map((av) => (
+                        <button
+                          key={av.id}
+                          type="button"
+                          onClick={() => setRequestedByAvatar(av.url)}
+                          className={`w-9 h-9 rounded-full border-2 overflow-hidden transition-all shrink-0 relative ${
+                            requestedByAvatar === av.url
+                              ? 'border-[#E60023] ring-2 ring-red-400 scale-110'
+                              : 'border-neutral-200 dark:border-neutral-700 hover:scale-105'
+                          }`}
+                          title={av.name}
+                        >
+                          <Image
+                            src={av.url}
+                            alt={av.name}
+                            width={36}
+                            height={36}
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Or Manual Avatar URL input */}
+                  <div className="pt-1">
+                    <input
+                      type="url"
+                      value={requestedByAvatar}
+                      onChange={(e) => setRequestedByAvatar(e.target.value)}
+                      placeholder="Or paste external avatar image URL (https://...)"
+                      className="w-full px-3 py-1.5 text-[11px] rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 focus:ring-1 focus:ring-[#E60023] focus:outline-none font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* 4. Requester Name */}
                 <div>
                   <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
-                    Requestor Email Address
+                    Requester User Name
                   </label>
-                  <div className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-neutral-100 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium">
-                    {requestedByEmail}
-                  </div>
-                  <span className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1 block">
-                    This prompt will appear in the dashboard of this user once published.
+                  <input
+                    type="text"
+                    value={requestedByName}
+                    onChange={(e) => setRequestedByName(e.target.value)}
+                    placeholder="e.g. Rahul Sharma"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-[#E60023] focus:outline-none"
+                  />
+                </div>
+
+                {/* 5. Requester Email */}
+                <div>
+                  <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                    Requester Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={requestedByEmail}
+                    onChange={(e) => setRequestedByEmail(e.target.value)}
+                    placeholder="e.g. rahul@example.com"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-[#E60023] focus:outline-none"
+                  />
+                  <span className="text-[10px] text-neutral-400 mt-1 block">
+                    Used to automatically display this fulfilled prompt in the user&apos;s dashboard after login.
+                  </span>
+                </div>
+
+                {/* 6. Original Prompt Request Description */}
+                <div>
+                  <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                    User&apos;s Original Prompt Request Description
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={requestedPromptDescription}
+                    onChange={(e) => setRequestedPromptDescription(e.target.value)}
+                    placeholder="e.g. Traditional Indian red saree portrait in cinematic golden hour lighting..."
+                    className="w-full p-3 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-[#E60023] focus:outline-none"
+                  />
+                  <span className="text-[10px] text-neutral-400 mt-0.5 block">
+                    Users can search using any keywords from their submitted request.
                   </span>
                 </div>
               </div>

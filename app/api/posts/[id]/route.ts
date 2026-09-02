@@ -64,24 +64,3 @@ export async function PATCH(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
-
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params;
-    let decodedId = id;
-    try {
-      decodedId = decodeURIComponent(id);
-    } catch {}
-
-    const success = await ServerStorage.deletePost(id) || await ServerStorage.deletePost(decodedId);
-    if (!success) {
-      return NextResponse.json({ error: 'Post not found or could not be deleted' }, { status: 404 });
-    }
-    return NextResponse.json({ success: true });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
