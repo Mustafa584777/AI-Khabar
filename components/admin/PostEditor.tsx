@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { PromptPost, Category } from '@/types/prompt';
+import { CARTOON_AVATARS } from '@/lib/avatar-constants';
 import {
   Save,
   Globe,
@@ -23,28 +24,26 @@ import {
   Plus,
   X,
   Check,
+  User,
 } from 'lucide-react';
 import Image from 'next/image';
+import { cleanTagsArray, canonicalizeTag, slugify } from '@/lib/utils';
 
 const generateImageFileNameFromTitle = (titleText: string, currentFileName?: string): string => {
   const fallback = 'photo-prompt.webp';
   if (!titleText || !titleText.trim()) {
-    return currentFileName || fallback;
+    if (currentFileName) {
+      const base = currentFileName.replace(/\.[^/.]+$/, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+      return `${base || 'photo-prompt'}.webp`;
+    }
+    return fallback;
   }
   const cleanSlug = titleText
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)+/g, '');
 
-  let ext = 'webp';
-  if (currentFileName && currentFileName.includes('.')) {
-    const parts = currentFileName.split('.');
-    const detectedExt = parts[parts.length - 1].toLowerCase();
-    if (['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif'].includes(detectedExt)) {
-      ext = detectedExt === 'jpeg' ? 'jpg' : detectedExt;
-    }
-  }
-  return `${cleanSlug || 'photo-prompt'}.${ext}`;
+  return `${cleanSlug || 'photo-prompt'}.webp`;
 };
 
 const detectCategoryFromText = (text: string): string => {
@@ -68,6 +67,7 @@ export const PostEditor = () => {
     savePost,
     categories,
     saveCategory,
+    promptRequests,
     editingPostId,
     setEditingPostId,
     setAdminSubView,
@@ -80,12 +80,40 @@ export const PostEditor = () => {
   const existingPost = editingPostId ? posts.find((p) => p.id === editingPostId) : null;
 
   // Form State
-  const [title, setTitle] = useState(() => existingPost?.title || '');
+  const [title, setTitle] = useState(() => {
+    if (existingPost?.title) return existingPost.title;
+    if (typeof window !== 'undefined') {
+      const val = sessionStorage.getItem('promptcms_new_post_title');
+      if (val) {
+        sessionStorage.removeItem('promptcms_new_post_title');
+        return val;
+      }
+    }
+    return '';
+  });
   const [slug, setSlug] = useState(() => existingPost?.slug || '');
-  const [category, setCategory] = useState(
-    () => existingPost?.category || (existingPost?.title ? detectCategoryFromText(existingPost.title) : (categories[0]?.name || 'Photorealistic & Portraits'))
-  );
-  const [promptText, setPromptText] = useState(() => existingPost?.promptText || '');
+  const [category, setCategory] = useState(() => {
+    if (existingPost?.category) return existingPost.category;
+    if (typeof window !== 'undefined') {
+      const val = sessionStorage.getItem('promptcms_new_post_category');
+      if (val) {
+        sessionStorage.removeItem('promptcms_new_post_category');
+        return val;
+      }
+    }
+    return categories[0]?.name || 'Photorealistic & Portraits';
+  });
+  const [promptText, setPromptText] = useState(() => {
+    if (existingPost?.promptText) return existingPost.promptText;
+    if (typeof window !== 'undefined') {
+      const val = sessionStorage.getItem('promptcms_new_post_prompt');
+      if (val) {
+        sessionStorage.removeItem('promptcms_new_post_prompt');
+        return val;
+      }
+    }
+    return '';
+  });
   const [imageUrl, setImageUrl] = useState(
     () => existingPost?.imageUrl || ''
   );
@@ -103,6 +131,143 @@ export const PostEditor = () => {
   const [status, setStatus] = useState<'published' | 'draft'>(
     () => (existingPost?.status === 'draft' ? 'draft' : 'published')
   );
+  const [isRequested, setIsRequested] = useState<boolean>(() => {
+    if (existingPost?.isRequested) return true;
+    if (typeof window !== 'undefined') {
+      const val = sessionStorage.getItem('promptcms_new_post_is_requested');
+      if (val === 'true') {
+        sessionStorage.removeItem('promptcms_new_post_is_requested');
+        return true;
+      }
+    }
+    return false;
+  });
+  const [requestedByName, setRequestedByName] = useState<string>(() => {
+    if (existingPost?.requestedByName) return existingPost.requestedByName;
+    if (typeof window !== 'undefined') {
+      const val = sessionStorage.getItem('promptcms_new_post_requested_by_name');
+      if (val) {
+        sessionStorage.removeItem('promptcms_new_post_requested_by_name');
+        return val;
+      }
+    }
+    return '';
+  });
+  const [requestedByEmail, setRequestedByEmail] = useState<string>(() => {
+    if (existingPost?.requestedByEmail) return existingPost.requestedByEmail;
+    if (typeof window !== 'undefined') {
+      const val = sessionStorage.getItem('promptcms_new_post_requested_by_email');
+      if (val) {
+        sessionStorage.removeItem('promptcms_new_post_requested_by_email');
+        return val;
+      }
+    }
+    return '';
+  });
+  const [requestedPromptDescription, setRequestedPromptDescription] = useState<string>(() => {
+    if (existingPost?.requestedPromptDescription) return existingPost.requestedPromptDescription;
+    if (typeof window !== 'undefined') {
+      const val = sessionStorage.getItem('promptcms_new_post_requested_prompt_desc');
+      if (val) {
+        sessionStorage.removeItem('promptcms_new_post_requested_prompt_desc');
+        return val;
+      }
+    }
+    return '';
+  });
+  const [requestedByAvatar, setRequestedByAvatar] = useState<string>(() => {
+    if (existingPost?.requestedByAvatar) return existingPost.requestedByAvatar;
+    if (typeof window !== 'undefined') {
+      const val = sessionStorage.getItem('promptcms_new_post_requested_by_avatar');
+      if (val) {
+        sessionStorage.removeItem('promptcms_new_post_requested_by_avatar');
+        return val;
+      }
+    }
+    return '';
+  });
+  const [isUploadingRequesterAvatar, setIsUploadingRequesterAvatar] = useState(false);
+  const requesterAvatarInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const handleRequesterAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select a valid image file (PNG, JPG, WEBP)');
+      return;
+    }
+
+    setIsUploadingRequesterAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.url) {
+          setRequestedByAvatar(data.url);
+          showToast('Requester profile photo uploaded successfully!');
+        } else {
+          // Fallback to local DataURL
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            if (ev.target?.result) {
+              setRequestedByAvatar(ev.target.result as string);
+              showToast('Requester profile photo saved!');
+            }
+          };
+          reader.readAsDataURL(file);
+        }
+      } else {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          if (ev.target?.result) {
+            setRequestedByAvatar(ev.target.result as string);
+            showToast('Requester profile photo saved!');
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        if (ev.target?.result) {
+          setRequestedByAvatar(ev.target.result as string);
+          showToast('Requester profile photo saved!');
+        }
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setIsUploadingRequesterAvatar(false);
+    }
+  };
+
+  const handleSelectAutofillRequest = (requestId: string) => {
+    if (!requestId) return;
+    const req = promptRequests.find((r) => r.id === requestId);
+    if (!req) return;
+
+    setIsRequested(true);
+    setRequestedByName(req.userName || '');
+    setRequestedByEmail(req.userEmail || '');
+    setRequestedPromptDescription(req.requestText || '');
+    if (req.userAvatar) {
+      setRequestedByAvatar(req.userAvatar);
+    }
+    if (req.category) {
+      const matchedCat = categories.find((c) => c.name.toLowerCase() === req.category?.toLowerCase());
+      if (matchedCat) {
+        setCategory(matchedCat.name);
+      }
+    }
+    showToast(`Autofilled request by ${req.userName}!`);
+  };
   const [articleContent, setArticleContent] = useState(
     () =>
       existingPost?.articleContent ||
@@ -216,27 +381,16 @@ export const PostEditor = () => {
         }
         if (Array.isArray(detectedTags) && detectedTags.length > 0) {
           const activeCatLower = (detectedCat || category).trim().toLowerCase();
-          setTags((prev) => {
-            const seen = new Set<string>();
-            const result: string[] = [];
-            for (const t of [...detectedTags, ...prev]) {
-              const trimmed = String(t).trim().replace(/^#/, '');
-              if (!trimmed) continue;
-              const lower = trimmed.toLowerCase();
-              if (lower === activeCatLower) continue;
-              if (!seen.has(lower)) {
-                seen.add(lower);
-                result.push(trimmed);
-              }
-            }
-            return result.slice(0, 12);
-          });
-          setAiSuggestedTags(detectedTags);
+          const cleanDetected = cleanTagsArray(detectedTags).filter(
+            (t) => t.toLowerCase() !== activeCatLower
+          );
+          setTags((prev) => cleanTagsArray([...cleanDetected, ...prev]).slice(0, 12));
+          setAiSuggestedTags(cleanDetected);
         }
         if (detectedDesc && !metaDescription) {
           setMetaDescription(detectedDesc);
         }
-        showToast(`AI Auto-Assigned Category "${detectedCat}" & ${detectedTags?.length || 0} tags`);
+        showToast(`AI Auto-Assigned Category "${detectedCat}" & ${detectedTags?.length || 0} unique tags`);
       }
     } catch (err) {
       console.error('Auto taxonomy failed:', err);
@@ -246,16 +400,14 @@ export const PostEditor = () => {
   };
 
   const handleAddTag = (tagToAdd: string) => {
-    const trimmed = tagToAdd.trim().replace(/^#/, '');
-    const lower = trimmed.toLowerCase();
-    if (trimmed && !tags.some((t) => t.toLowerCase() === lower)) {
-      setTags((prev) => [...prev, trimmed]);
-      setNewTagInput('');
-    }
+    const canonical = canonicalizeTag(tagToAdd);
+    if (!canonical) return;
+    setTags((prev) => cleanTagsArray([...prev, canonical]));
+    setNewTagInput('');
   };
 
   const handleRemoveTag = (tagToRemove: string) => {
-    setTags((prev) => prev.filter((t) => t !== tagToRemove));
+    setTags((prev) => prev.filter((t) => t.toLowerCase() !== tagToRemove.toLowerCase()));
   };
 
   // AI Generator state
@@ -300,8 +452,15 @@ export const PostEditor = () => {
             return;
           }
           ctx.drawImage(img, 0, 0, width, height);
-          const compressed = canvas.toDataURL('image/jpeg', 0.88);
-          resolve(compressed);
+          try {
+            const webpData = canvas.toDataURL('image/webp', 0.90);
+            if (webpData && webpData.startsWith('data:image/webp')) {
+              resolve(webpData);
+              return;
+            }
+          } catch {}
+          const fallback = canvas.toDataURL('image/jpeg', 0.88);
+          resolve(fallback);
         };
         img.onerror = () => resolve(dataUrl);
         img.src = dataUrl;
@@ -330,16 +489,21 @@ export const PostEditor = () => {
       if (optimized) {
         let finalImageUrl = optimized;
         try {
+          const cleanPublicId = slug || slugify(title) || `prompt-${Date.now()}`;
           const uploadRes = await fetch('/api/upload', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image: optimized }),
+            body: JSON.stringify({
+              image: optimized,
+              folder: 'prompts',
+              publicId: cleanPublicId,
+            }),
           });
           const uploadData = await uploadRes.json();
           if (uploadData && uploadData.url) {
             finalImageUrl = uploadData.url;
             if (uploadData.provider === 'cloudinary') {
-              showToast('Image uploaded to Cloudinary CDN successfully!');
+              showToast('Image uploaded & saved to Cloudinary CDN successfully!');
             } else {
               showToast('Image optimized and attached to prompt!');
             }
@@ -598,8 +762,13 @@ export const PostEditor = () => {
       imageFileName: finalFileName,
       variables: [],
       articleContent,
-      tags: tags.length > 0 ? tags : [chosenCat || 'AI Prompt'],
+      tags: cleanTagsArray(tags.length > 0 ? tags : [chosenCat || 'AI Prompt']),
       status: publishStatus,
+      isRequested,
+      requestedByName: isRequested ? (requestedByName.trim() || undefined) : undefined,
+      requestedByEmail: isRequested ? (requestedByEmail.trim() || undefined) : undefined,
+      requestedByAvatar: isRequested ? (requestedByAvatar.trim() || undefined) : undefined,
+      requestedPromptDescription: isRequested ? (requestedPromptDescription.trim() || undefined) : undefined,
       viewsCount: existingPost?.viewsCount || 0,
       copiesCount: existingPost?.copiesCount || 0,
       likesCount: existingPost?.likesCount || 0,
@@ -1305,6 +1474,214 @@ export const PostEditor = () => {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Prompt Request Status Card */}
+          <div className="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
+            <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#E60023]" />
+              <span>Prompt Request Fulfillment</span>
+            </h3>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isRequested}
+                onChange={(e) => setIsRequested(e.target.checked)}
+                className="w-4 h-4 rounded border-neutral-300 text-[#E60023] focus:ring-[#E60023]"
+              />
+              <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200">
+                Mark as Requested Prompt (Fulfilled Community Request)
+              </span>
+            </label>
+            <p className="text-[11px] text-neutral-500">
+              When checked, this prompt displays in the &apos;Requested&apos; tab and is searchable by the requester&apos;s name, email, or prompt description.
+            </p>
+
+            {isRequested && (
+              <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800 space-y-4 animate-in fade-in duration-200">
+                {/* 1. Quick Autofill from Pending Community Requests */}
+                {promptRequests && promptRequests.length > 0 && (
+                  <div className="p-3 bg-red-50/60 dark:bg-red-950/30 rounded-2xl border border-red-200/80 dark:border-red-900/60 space-y-1.5">
+                    <label className="block text-[11px] font-extrabold text-red-800 dark:text-red-300">
+                      ⚡ Quick Autofill from Community Requests ({promptRequests.length} available)
+                    </label>
+                    <select
+                      onChange={(e) => handleSelectAutofillRequest(e.target.value)}
+                      defaultValue=""
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-neutral-900 border border-red-200 dark:border-red-800 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-[#E60023] focus:outline-none"
+                    >
+                      <option value="" disabled>
+                        Select a user request to autofill...
+                      </option>
+                      {promptRequests.map((req) => (
+                        <option key={req.id} value={req.id}>
+                          {req.userName || 'Anonymous'} ({req.userEmail || 'No email'}) - &quot;{req.requestText.slice(0, 45)}...&quot;
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* 2. Requester Profile Preview Badge */}
+                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex items-center gap-3">
+                  <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-red-200 dark:border-red-900 bg-neutral-200 dark:bg-neutral-800 shrink-0 flex items-center justify-center shadow-xs">
+                    {requestedByAvatar ? (
+                      <Image
+                        src={requestedByAvatar}
+                        alt={requestedByName || 'Requester'}
+                        fill
+                        sizes="48px"
+                        className="object-cover rounded-full"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <User className="w-6 h-6 text-neutral-400" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-neutral-900 dark:text-white truncate">
+                      {requestedByName || 'Requester Name (Not set)'}
+                    </p>
+                    <p className="text-[11px] text-neutral-500 truncate">
+                      {requestedByEmail || 'No email address specified'}
+                    </p>
+                    <span className="inline-block mt-0.5 text-[10px] font-semibold text-[#E60023]">
+                      Will appear on card: &quot;Req by {requestedByName || 'User'}&quot;
+                    </span>
+                  </div>
+                </div>
+
+                {/* 3. Requester Profile Image Upload / Avatar Selector */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                    Requester Profile Photo / Avatar (Shown on cards)
+                  </label>
+                  
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      type="file"
+                      ref={requesterAvatarInputRef}
+                      onChange={handleRequesterAvatarFileChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => requesterAvatarInputRef.current?.click()}
+                      disabled={isUploadingRequesterAvatar}
+                      className="px-3.5 py-2 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-bold hover:opacity-90 transition-all flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+                    >
+                      {isUploadingRequesterAvatar ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Upload className="w-3.5 h-3.5" />
+                      )}
+                      <span>Upload Profile Image</span>
+                    </button>
+
+                    {requestedByAvatar && (
+                      <button
+                        type="button"
+                        onClick={() => setRequestedByAvatar('')}
+                        className="px-3 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 transition-colors"
+                      >
+                        Remove Photo
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Quick 2D/3D Cartoon Avatars Selection */}
+                  <div className="pt-1.5">
+                    <span className="text-[10px] font-bold text-neutral-400 block mb-1.5">
+                      Or pick a 3D/2D Cartoon Avatar:
+                    </span>
+                    <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-none">
+                      {CARTOON_AVATARS.slice(0, 8).map((av) => (
+                        <button
+                          key={av.id}
+                          type="button"
+                          onClick={() => setRequestedByAvatar(av.url)}
+                          className={`w-9 h-9 rounded-full border-2 overflow-hidden transition-all shrink-0 relative ${
+                            requestedByAvatar === av.url
+                              ? 'border-[#E60023] ring-2 ring-red-400 scale-110'
+                              : 'border-neutral-200 dark:border-neutral-700 hover:scale-105'
+                          }`}
+                          title={av.name}
+                        >
+                          <Image
+                            src={av.url}
+                            alt={av.name}
+                            width={36}
+                            height={36}
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Or Manual Avatar URL input */}
+                  <div className="pt-1">
+                    <input
+                      type="url"
+                      value={requestedByAvatar}
+                      onChange={(e) => setRequestedByAvatar(e.target.value)}
+                      placeholder="Or paste external avatar image URL (https://...)"
+                      className="w-full px-3 py-1.5 text-[11px] rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 focus:ring-1 focus:ring-[#E60023] focus:outline-none font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* 4. Requester Name */}
+                <div>
+                  <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                    Requester User Name
+                  </label>
+                  <input
+                    type="text"
+                    value={requestedByName}
+                    onChange={(e) => setRequestedByName(e.target.value)}
+                    placeholder="e.g. Rahul Sharma"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-[#E60023] focus:outline-none"
+                  />
+                </div>
+
+                {/* 5. Requester Email */}
+                <div>
+                  <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                    Requester Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={requestedByEmail}
+                    onChange={(e) => setRequestedByEmail(e.target.value)}
+                    placeholder="e.g. rahul@example.com"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-[#E60023] focus:outline-none"
+                  />
+                  <span className="text-[10px] text-neutral-400 mt-1 block">
+                    Used to automatically display this fulfilled prompt in the user&apos;s dashboard after login.
+                  </span>
+                </div>
+
+                {/* 6. Original Prompt Request Description */}
+                <div>
+                  <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                    User&apos;s Original Prompt Request Description
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={requestedPromptDescription}
+                    onChange={(e) => setRequestedPromptDescription(e.target.value)}
+                    placeholder="e.g. Traditional Indian red saree portrait in cinematic golden hour lighting..."
+                    className="w-full p-3 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-[#E60023] focus:outline-none"
+                  />
+                  <span className="text-[10px] text-neutral-400 mt-0.5 block">
+                    Users can search using any keywords from their submitted request.
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* SEO Meta Box */}

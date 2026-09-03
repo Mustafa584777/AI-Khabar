@@ -10,8 +10,6 @@ import {
   User,
   Sparkles,
   Search,
-  Shield,
-  ShieldCheck,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -28,9 +26,7 @@ export const Header = () => {
     searchQuery,
     setSearchQuery,
     setIsSearchModalOpen,
-    isAuthenticated,
-    setShowLoginModal,
-    setAdminSubView,
+    settings,
   } = useApp();
 
   const handleHomeClick = () => {
@@ -39,18 +35,6 @@ export const Header = () => {
     setSearchQuery('');
     if (pathname !== '/') {
       router.push('/');
-    }
-  };
-
-  const handleAdminClick = () => {
-    if (isAuthenticated) {
-      setAdminSubView('dashboard');
-      setCurrentView('admin');
-      if (pathname !== '/') {
-        router.push('/');
-      }
-    } else {
-      setShowLoginModal(true);
     }
   };
 
@@ -65,14 +49,15 @@ export const Header = () => {
             id="brand-logo-btn"
             title="Trending Copy Paste Photo Prompts"
           >
-            <div className="w-10 h-10 rounded-full overflow-hidden shadow-sm group-hover:scale-105 transition-transform shrink-0 relative bg-gradient-to-tr from-[#E60023] via-[#ff3b56] to-[#E60023] flex items-center justify-center p-0.5">
+            <div className="w-10 h-10 rounded-full overflow-hidden shadow-xs group-hover:scale-105 transition-transform shrink-0 relative flex items-center justify-center">
               <Image
-                src="/logo.png"
-                alt="tool.reelz"
-                width={38}
-                height={38}
+                src={settings.logoUrl || '/logo.png'}
+                alt={settings.siteName || 'Logo'}
+                width={40}
+                height={40}
                 className="w-full h-full object-cover rounded-full"
                 priority
+                referrerPolicy="no-referrer"
               />
             </div>
           </button>
@@ -172,29 +157,6 @@ export const Header = () => {
           >
             <User className="w-4 h-4" />
             <span className="hidden md:inline">Dashboard</span>
-          </button>
-
-          {/* Admin Panel Login Button */}
-          <button
-            onClick={handleAdminClick}
-            className={`p-2 sm:px-3 sm:py-2 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 border ${
-              currentView === 'admin'
-                ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 border-neutral-900 dark:border-white shadow-sm'
-                : isAuthenticated
-                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border-emerald-300/80 dark:border-emerald-700/80'
-                : 'bg-[#efefef] dark:bg-neutral-800 hover:bg-[#e2e2e2] dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 border-neutral-200/70 dark:border-neutral-700/70'
-            }`}
-            title={isAuthenticated ? 'Open Admin Panel' : 'Admin Panel Login'}
-            id="header-admin-btn"
-          >
-            {isAuthenticated ? (
-              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            ) : (
-              <Shield className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
-            )}
-            <span className="hidden lg:inline">
-              {isAuthenticated ? 'Admin' : 'Admin Login'}
-            </span>
           </button>
         </div>
       </div>
