@@ -17,9 +17,12 @@ import {
   Tag,
 } from 'lucide-react';
 import { Category, PromptPost } from '@/types/prompt';
-import { getPromptSlug } from '@/lib/utils';
+import { getPromptSlug, getOptimizedImageUrl } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
+import { semanticSearchPosts } from '@/lib/semantic-search';
 
 export const SearchExploreModal = () => {
+  const router = useRouter();
   const {
     isSearchModalOpen,
     setIsSearchModalOpen,
@@ -116,21 +119,15 @@ export const SearchExploreModal = () => {
     return catWithStats.sort((a, b) => b.totalViews - a.totalViews || b.postCount - a.postCount);
   }, [categories, posts]);
 
-  // Live Instant Search Filter Results
+  // Live Instant Search Filter Results with Semantic Engine
   const liveResults = useMemo(() => {
-    const query = localInput.trim().toLowerCase();
+    const query = localInput.trim();
     if (!query || query.length < 2) return [];
 
     const published = posts.filter((p) => p.status === 'published');
-    return published.filter((post) => {
-      const titleMatch = post.title?.toLowerCase().includes(query);
-      const promptMatch = post.promptText?.toLowerCase().includes(query);
-      const catMatch = post.category?.toLowerCase().includes(query);
-      const tagMatch = Array.isArray(post.tags) && post.tags.some((t) => t.toLowerCase().includes(query));
-      const toolMatch = post.aiTool?.toLowerCase().includes(query);
-      return titleMatch || promptMatch || catMatch || tagMatch || toolMatch;
-    });
+    return semanticSearchPosts(published, query);
   }, [localInput, posts]);
+
 
   const handleCopyPrompt = (e: React.MouseEvent, post: PromptPost) => {
     e.stopPropagation();
@@ -255,7 +252,7 @@ export const SearchExploreModal = () => {
                       onClick={() => {
                         setSelectedPost(post);
                         if (typeof window !== 'undefined') {
-                          window.history.pushState({ postId: post.id }, '', `/prompt/${getPromptSlug(post)}`);
+                          window.history.pushState({ postId: post.id }, '', `/${getPromptSlug(post)}`);
                         }
                         setIsSearchModalOpen(false);
                       }}
@@ -264,9 +261,10 @@ export const SearchExploreModal = () => {
                       {/* Image Thumbnail */}
                       <div className="relative aspect-square w-full overflow-hidden bg-neutral-800">
                         <Image
-                          src={post.imageUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'}
+                          src={getOptimizedImageUrl(post.imageUrl, 250) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'}
                           alt={post.title}
                           fill
+                          sizes="(max-width: 640px) 50vw, 25vw"
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
                           referrerPolicy="no-referrer"
                         />
@@ -347,9 +345,10 @@ export const SearchExploreModal = () => {
                 >
                   {/* Category Image from its Most Viewed Prompt */}
                   <Image
-                    src={cat.topImage}
+                    src={getOptimizedImageUrl(cat.topImage, 300)}
                     alt={cat.name}
                     fill
+                    sizes="(max-width: 640px) 50vw, 25vw"
                     className="object-cover group-hover:scale-110 transition-transform duration-500"
                     referrerPolicy="no-referrer"
                   />

@@ -1,27 +1,41 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const SUPABASE_PROJECT_ID = 'kigytienokbvwetbemac';
+const DEFAULT_SUPABASE_URL = `https://${SUPABASE_PROJECT_ID}.supabase.co`;
+const DEFAULT_ANON_KEY = 'sb_publishable_oTJSJYwT3r03WELyu9L3uw_JjtCLqa7';
 
-// Client-side / standard client
-export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co', 
-  supabaseAnonKey || 'placeholder-anon-key'
-);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_ANON_KEY;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey;
 
-// Server-side admin client with service role key if available
+// Standard Supabase client (client & server)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+  },
+});
+
+// Admin Supabase client with service role key if provided, else fallback to anon key
 export const supabaseAdmin = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseServiceKey || supabaseAnonKey || 'placeholder-service-key',
+  supabaseUrl,
+  supabaseServiceKey,
   {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
-    }
+    },
   }
 );
 
 export function isSupabaseConfigured(): boolean {
-  return Boolean(supabaseUrl && (supabaseAnonKey || supabaseServiceKey));
+  return Boolean(supabaseUrl && supabaseAnonKey);
+}
+
+export function getSupabaseDetails() {
+  return {
+    url: supabaseUrl,
+    projectId: SUPABASE_PROJECT_ID,
+    hasKey: Boolean(supabaseAnonKey),
+  };
 }
