@@ -65,13 +65,6 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
         style={{ aspectRatio }}
         onContextMenu={(e) => e.preventDefault()}
       >
-        {/* Requested Badge */}
-        {post.isRequested && (
-          <div className="absolute top-2.5 left-2.5 z-20 bg-white text-red-600 font-extrabold px-2.5 py-0.5 rounded-full text-[10px] shadow-md border border-red-200 flex items-center gap-1 select-none">
-            <span>Requested</span>
-          </div>
-        )}
-
         {/* Full-Height Shimmer Skeleton Placeholder */}
         {!imageLoaded && post.imageUrl && (
           <div className="absolute inset-0 z-0 bg-neutral-200 dark:bg-neutral-800 animate-pulse flex flex-col items-center justify-center p-4">

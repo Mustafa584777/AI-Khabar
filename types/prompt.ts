@@ -72,9 +72,6 @@ export interface PromptPost {
   isFeatured?: boolean;
   isTrending?: boolean;
   isRequested?: boolean;
-  requestedByName?: string;
-  requestedByEmail?: string;
-  requestedPromptDescription?: string;
   viewsCount: number;
   copiesCount: number;
   likesCount: number;

@@ -16,8 +16,6 @@ export const SettingsView = () => {
   const [footerText, setFooterText] = useState(
     settings.footerText || '© 2026 Trending Copy Paste Photo Prompts. All prompts are free to copy and modify.'
   );
-  const [logoUrl, setLogoUrl] = useState(settings.logoUrl || '/logo.png');
-  const [faviconUrl, setFaviconUrl] = useState(settings.faviconUrl || '/favicon.ico');
   const [popularTags, setPopularTags] = useState<string[]>(settings.popularTags || []);
   const [newTag, setNewTag] = useState('');
 
@@ -123,8 +121,6 @@ export const SettingsView = () => {
       siteUrl,
       adminEmail,
       footerText,
-      logoUrl: logoUrl.trim(),
-      faviconUrl: faviconUrl.trim(),
       popularTags,
       cloudinaryCloudName: cloudinaryCloudName.trim(),
       cloudinaryApiKey: cloudinaryApiKey.trim(),
@@ -233,121 +229,6 @@ export const SettingsView = () => {
               onChange={(e) => setAdminEmail(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-          </div>
-
-          {/* Logo & Favicon Upload / URL */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-neutral-100 dark:border-neutral-800">
-            <div>
-              <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
-                Logo URL / Image
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={logoUrl}
-                  onChange={(e) => setLogoUrl(e.target.value)}
-                  placeholder="/logo.png or https://..."
-                  className="flex-1 px-3.5 py-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <label className="px-3.5 py-2.5 rounded-xl bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-bold cursor-pointer flex items-center gap-1.5 shrink-0">
-                  <span>Upload</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = async () => {
-                        const base64 = reader.result as string;
-                        try {
-                          const res = await fetch('/api/upload', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              image: base64,
-                              folder: 'branding',
-                              publicId: `logo-${Date.now()}`,
-                            }),
-                          });
-                          const data = await res.json();
-                          if (data.success && data.url) {
-                            setLogoUrl(data.url);
-                            if (data.provider === 'cloudinary') {
-                              showToast('Logo uploaded & saved to Cloudinary successfully!');
-                            } else {
-                              showToast('Logo uploaded successfully!');
-                            }
-                          } else {
-                            showToast('Logo upload failed');
-                          }
-                        } catch {
-                          showToast('Logo upload error');
-                        }
-                      };
-                      reader.readAsDataURL(file);
-                    }}
-                  />
-                </label>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
-                Favicon URL / Icon
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={faviconUrl}
-                  onChange={(e) => setFaviconUrl(e.target.value)}
-                  placeholder="/favicon.ico or https://..."
-                  className="flex-1 px-3.5 py-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <label className="px-3.5 py-2.5 rounded-xl bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-bold cursor-pointer flex items-center gap-1.5 shrink-0">
-                  <span>Upload</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = async () => {
-                        const base64 = reader.result as string;
-                        try {
-                          const res = await fetch('/api/upload', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              image: base64,
-                              folder: 'branding',
-                              publicId: `favicon-${Date.now()}`,
-                            }),
-                          });
-                          const data = await res.json();
-                          if (data.success && data.url) {
-                            setFaviconUrl(data.url);
-                            if (data.provider === 'cloudinary') {
-                              showToast('Favicon uploaded & saved to Cloudinary successfully!');
-                            } else {
-                              showToast('Favicon uploaded successfully!');
-                            }
-                          } else {
-                            showToast('Favicon upload failed');
-                          }
-                        } catch {
-                          showToast('Favicon upload error');
-                        }
-                      };
-                      reader.readAsDataURL(file);
-                    }}
-                  />
-                </label>
-              </div>
-            </div>
           </div>
 
           <div>

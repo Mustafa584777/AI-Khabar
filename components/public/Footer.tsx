@@ -20,7 +20,7 @@ export const Footer = () => {
           {/* Col 1: Brand */}
           <div className="space-y-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full overflow-hidden shrink-0">
+              <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-[#E60023]/30">
                 <Image
                   src="/logo.png"
                   alt="tool.reelz"

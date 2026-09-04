@@ -83,9 +83,6 @@ function mapSupabasePost(row: any): PromptPost {
     isFeatured: Boolean(row.is_featured),
     isTrending: Boolean(row.is_trending),
     isRequested: Boolean(row.is_requested || row.isRequested),
-    requestedByName: row.requested_by_name || row.requestedByName || undefined,
-    requestedByEmail: row.requested_by_email || row.requestedByEmail || undefined,
-    requestedPromptDescription: row.requested_prompt_description || row.requestedPromptDescription || undefined,
     viewsCount: Number(row.views_count) || 0,
     copiesCount: Number(row.copies_count) || 0,
     likesCount: Number(row.likes_count) || 0,
@@ -130,9 +127,6 @@ function mapPostToSupabase(post: PromptPost) {
     is_featured: Boolean(post.isFeatured),
     is_trending: Boolean(post.isTrending),
     is_requested: Boolean(post.isRequested),
-    requested_by_name: post.requestedByName || null,
-    requested_by_email: post.requestedByEmail || null,
-    requested_prompt_description: post.requestedPromptDescription || null,
     views_count: Number(post.viewsCount) || 0,
     copies_count: Number(post.copiesCount) || 0,
     likes_count: Number(post.likesCount) || 0,
@@ -156,17 +150,6 @@ const db = () => supabaseAdmin || supabase;
 export const ServerStorage = {
   // Posts
   getAllPosts: async (includeDrafts = true): Promise<PromptPost[]> => {
-    let localPosts: PromptPost[] = [];
-    try {
-      const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
-      localPosts = rawPosts.map((p) => ({
-        ...p,
-        tags: cleanTagsArray(p.tags || []),
-      }));
-    } catch (e) {
-      localPosts = INITIAL_POSTS || [];
-    }
-
     if (isSupabaseConfigured()) {
       try {
         let query = db().from('posts').select('*').order('created_at', { ascending: false });
@@ -175,40 +158,18 @@ export const ServerStorage = {
         }
         const { data, error } = await query;
         if (!error && data && Array.isArray(data)) {
-          const supabasePosts = data.map((d) => {
+          const posts = data.map((d) => {
             const mapped = mapSupabasePost(d);
             mapped.tags = cleanTagsArray(mapped.tags || []);
             return mapped;
           });
-
-          // Merge localPosts, memoryPosts, and supabasePosts by ID, prioritizing the most recent updatedAt/createdAt
-          const map = new Map<string, PromptPost>();
-          // Put local disk posts first
-          localPosts.forEach(p => map.set(p.id, p));
-          // Merge in-memory posts if present
-          if (Array.isArray(memoryPosts)) {
-            memoryPosts.forEach(p => {
-              const existing = map.get(p.id);
-              if (!existing || new Date(p.updatedAt || p.createdAt || 0).getTime() >= new Date(existing.updatedAt || existing.createdAt || 0).getTime()) {
-                map.set(p.id, p);
-              }
-            });
+          if (posts.length > 0) {
+            memoryPosts = posts;
+            writeJsonFile(POSTS_FILE, posts);
+            return posts;
           }
-          // Merge Supabase posts
-          supabasePosts.forEach(p => {
-            const existing = map.get(p.id);
-            if (!existing || new Date(p.updatedAt || p.createdAt || 0).getTime() >= new Date(existing.updatedAt || existing.createdAt || 0).getTime()) {
-              map.set(p.id, p);
-            }
-          });
-
-          const merged = Array.from(map.values()).sort((a, b) => 
-            new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-          );
-
-          memoryPosts = merged;
-          writeJsonFile(POSTS_FILE, merged);
-          return includeDrafts ? merged : merged.filter((p) => p.status === 'published');
+        } else if (error) {
+          console.warn('Supabase getAllPosts notice:', error.message);
         }
       } catch (err) {
         console.warn('Supabase getAllPosts fallback:', err);
@@ -216,20 +177,11 @@ export const ServerStorage = {
     }
 
     if (memoryPosts === null) {
-      memoryPosts = localPosts;
-    } else if (Array.isArray(memoryPosts)) {
-      // Merge memory posts with local disk posts
-      const map = new Map<string, PromptPost>();
-      localPosts.forEach(p => map.set(p.id, p));
-      memoryPosts.forEach(p => {
-        const existing = map.get(p.id);
-        if (!existing || new Date(p.updatedAt || p.createdAt || 0).getTime() >= new Date(existing.updatedAt || existing.createdAt || 0).getTime()) {
-          map.set(p.id, p);
-        }
-      });
-      memoryPosts = Array.from(map.values()).sort((a, b) => 
-        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-      );
+      const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
+      memoryPosts = rawPosts.map((p) => ({
+        ...p,
+        tags: cleanTagsArray(p.tags || []),
+      }));
     }
     return includeDrafts ? memoryPosts : memoryPosts.filter((p) => p.status === 'published');
   },

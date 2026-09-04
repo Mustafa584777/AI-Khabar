@@ -77,40 +77,12 @@ export const PostEditor = () => {
   const existingPost = editingPostId ? posts.find((p) => p.id === editingPostId) : null;
 
   // Form State
-  const [title, setTitle] = useState(() => {
-    if (existingPost?.title) return existingPost.title;
-    if (typeof window !== 'undefined') {
-      const val = sessionStorage.getItem('promptcms_new_post_title');
-      if (val) {
-        sessionStorage.removeItem('promptcms_new_post_title');
-        return val;
-      }
-    }
-    return '';
-  });
+  const [title, setTitle] = useState(() => existingPost?.title || '');
   const [slug, setSlug] = useState(() => existingPost?.slug || '');
-  const [category, setCategory] = useState(() => {
-    if (existingPost?.category) return existingPost.category;
-    if (typeof window !== 'undefined') {
-      const val = sessionStorage.getItem('promptcms_new_post_category');
-      if (val) {
-        sessionStorage.removeItem('promptcms_new_post_category');
-        return val;
-      }
-    }
-    return categories[0]?.name || 'Photorealistic & Portraits';
-  });
-  const [promptText, setPromptText] = useState(() => {
-    if (existingPost?.promptText) return existingPost.promptText;
-    if (typeof window !== 'undefined') {
-      const val = sessionStorage.getItem('promptcms_new_post_prompt');
-      if (val) {
-        sessionStorage.removeItem('promptcms_new_post_prompt');
-        return val;
-      }
-    }
-    return '';
-  });
+  const [category, setCategory] = useState(
+    () => existingPost?.category || (existingPost?.title ? detectCategoryFromText(existingPost.title) : (categories[0]?.name || 'Photorealistic & Portraits'))
+  );
+  const [promptText, setPromptText] = useState(() => existingPost?.promptText || '');
   const [imageUrl, setImageUrl] = useState(
     () => existingPost?.imageUrl || ''
   );
@@ -128,50 +100,6 @@ export const PostEditor = () => {
   const [status, setStatus] = useState<'published' | 'draft'>(
     () => (existingPost?.status === 'draft' ? 'draft' : 'published')
   );
-  const [isRequested, setIsRequested] = useState<boolean>(() => {
-    if (existingPost?.isRequested) return true;
-    if (typeof window !== 'undefined') {
-      const val = sessionStorage.getItem('promptcms_new_post_is_requested');
-      if (val === 'true') {
-        sessionStorage.removeItem('promptcms_new_post_is_requested');
-        return true;
-      }
-    }
-    return false;
-  });
-  const [requestedByName, setRequestedByName] = useState<string>(() => {
-    if (existingPost?.requestedByName) return existingPost.requestedByName;
-    if (typeof window !== 'undefined') {
-      const val = sessionStorage.getItem('promptcms_new_post_requested_by_name');
-      if (val) {
-        sessionStorage.removeItem('promptcms_new_post_requested_by_name');
-        return val;
-      }
-    }
-    return '';
-  });
-  const [requestedByEmail, setRequestedByEmail] = useState<string>(() => {
-    if (existingPost?.requestedByEmail) return existingPost.requestedByEmail;
-    if (typeof window !== 'undefined') {
-      const val = sessionStorage.getItem('promptcms_new_post_requested_by_email');
-      if (val) {
-        sessionStorage.removeItem('promptcms_new_post_requested_by_email');
-        return val;
-      }
-    }
-    return '';
-  });
-  const [requestedPromptDescription, setRequestedPromptDescription] = useState<string>(() => {
-    if (existingPost?.requestedPromptDescription) return existingPost.requestedPromptDescription;
-    if (typeof window !== 'undefined') {
-      const val = sessionStorage.getItem('promptcms_new_post_requested_prompt_desc');
-      if (val) {
-        sessionStorage.removeItem('promptcms_new_post_requested_prompt_desc');
-        return val;
-      }
-    }
-    return '';
-  });
   const [articleContent, setArticleContent] = useState(
     () =>
       existingPost?.articleContent ||
@@ -668,10 +596,6 @@ export const PostEditor = () => {
       articleContent,
       tags: cleanTagsArray(tags.length > 0 ? tags : [chosenCat || 'AI Prompt']),
       status: publishStatus,
-      isRequested,
-      requestedByName: isRequested ? (requestedByName.trim() || undefined) : undefined,
-      requestedByEmail: isRequested ? (requestedByEmail.trim() || undefined) : undefined,
-      requestedPromptDescription: isRequested ? (requestedPromptDescription.trim() || undefined) : undefined,
       viewsCount: existingPost?.viewsCount || 0,
       copiesCount: existingPost?.copiesCount || 0,
       likesCount: existingPost?.likesCount || 0,
@@ -695,13 +619,11 @@ export const PostEditor = () => {
 
     setIsSavingPost(true);
     try {
-      await savePost(postPayload);
+      const saved = await savePost(postPayload);
       setEditingPostId(null);
       setAdminSubView('posts');
     } catch (err: any) {
-      console.error('Post save handler exception:', err);
-      setEditingPostId(null);
-      setAdminSubView('posts');
+      showToast(err.message || 'Failed to save prompt');
     } finally {
       setIsSavingPost(false);
     }
@@ -1379,77 +1301,6 @@ export const PostEditor = () => {
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Prompt Request Status Card */}
-          <div className="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
-            <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#E60023]" />
-              <span>Prompt Request Fulfillment</span>
-            </h3>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={isRequested}
-                onChange={(e) => setIsRequested(e.target.checked)}
-                className="w-4 h-4 rounded border-neutral-300 text-[#E60023] focus:ring-[#E60023]"
-              />
-              <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200">
-                Mark as Requested Prompt (Fulfilled Community Request)
-              </span>
-            </label>
-            <p className="text-[11px] text-neutral-500">
-              When checked, this prompt displays in the &apos;Requested&apos; tab and is searchable by the requester&apos;s name, email, or prompt description.
-            </p>
-
-            {isRequested && (
-              <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800 space-y-3.5 animate-in fade-in duration-200">
-                <div>
-                  <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
-                    Requester User Name
-                  </label>
-                  <input
-                    type="text"
-                    value={requestedByName}
-                    onChange={(e) => setRequestedByName(e.target.value)}
-                    placeholder="e.g. Rahul Sharma"
-                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-[#E60023] focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
-                    Requester Email Address
-                  </label>
-                  <input
-                    type="email"
-                    value={requestedByEmail}
-                    onChange={(e) => setRequestedByEmail(e.target.value)}
-                    placeholder="e.g. rahul@example.com"
-                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-[#E60023] focus:outline-none"
-                  />
-                  <span className="text-[10px] text-neutral-400 mt-1 block">
-                    Used to automatically display this fulfilled prompt in the user&apos;s dashboard after login.
-                  </span>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
-                    User&apos;s Original Prompt Request Description
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={requestedPromptDescription}
-                    onChange={(e) => setRequestedPromptDescription(e.target.value)}
-                    placeholder="e.g. Traditional Indian red saree portrait in cinematic golden hour lighting..."
-                    className="w-full p-3 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-[#E60023] focus:outline-none"
-                  />
-                  <span className="text-[10px] text-neutral-400 mt-0.5 block">
-                    Users can search using any keywords from their submitted request.
-                  </span>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* SEO Meta Box */}

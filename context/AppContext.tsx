@@ -17,8 +17,8 @@ interface AppContextType {
   // Navigation & Views
   currentView: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you';
   setCurrentView: (view: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you') => void;
-  adminSubView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'requested-prompts' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history';
-  setAdminSubView: (subView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'requested-prompts' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history') => void;
+  adminSubView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'requested-prompts' | 'ai-generator' | 'settings' | 'backup-restore';
+  setAdminSubView: (subView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'requested-prompts' | 'ai-generator' | 'settings' | 'backup-restore') => void;
   editingPostId: string | null;
   setEditingPostId: (id: string | null) => void;
   selectedPost: PromptPost | null;
@@ -50,7 +50,6 @@ interface AppContextType {
   openAuthModal: (message?: string) => void;
   loginUser: (email: string, pass: string, username?: string, avatar?: string) => boolean;
   signupUser: (name: string, username: string, email: string, pass: string, avatar?: string) => UserAccount;
-  loginWithGoogle: (googleUser?: { name?: string; email?: string; avatar?: string }) => UserAccount;
   logoutUser: () => void;
   awardPoints: (amount: number, type: 'like' | 'save' | 'generation' | 'share' | 'referral') => void;
 
@@ -125,7 +124,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Navigation
   const [currentView, setCurrentView] = useState<'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you'>('public');
   const [adminSubView, setAdminSubView] = useState<
-    'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'requested-prompts' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history'
+    'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore'
   >('dashboard');
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [selectedPost, setSelectedPost] = useState<PromptPost | null>(null);
@@ -164,7 +163,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Prompt Requests State
   const [promptRequests, setPromptRequests] = useState<PromptRequestItem[]>([]);
 
-  const refreshPromptRequests = async () => {
+  const refreshPromptRequests = React.useCallback(async () => {
     try {
       const res = await fetch('/api/prompt-requests', { cache: 'no-store' });
       if (res.ok) {
@@ -177,7 +176,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } catch (err) {
       console.warn('Network sync prompt requests notice:', err);
     }
-  };
+  }, []);
 
   const addPromptRequest = async (requestText: string, category?: string, userEmail?: string): Promise<boolean> => {
     if (!requestText.trim()) {
@@ -352,35 +351,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     };
     StorageService.saveUserAccount(account);
     setUserAccount(account);
-    return account;
-  };
-
-  const loginWithGoogle = (googleUser?: { name?: string; email?: string; avatar?: string }): UserAccount => {
-    const defaultEmail = googleUser?.email || 'creator.google@gmail.com';
-    const defaultName = googleUser?.name || defaultEmail.split('@')[0];
-    const defaultAvatar = googleUser?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80';
-    const userHandle = '@' + defaultName.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-    const existing = StorageService.getUserAccount();
-    const account: UserAccount = {
-      id: existing?.id || 'google_user_' + Date.now(),
-      name: defaultName,
-      username: userHandle,
-      email: defaultEmail.toLowerCase(),
-      joinedDate: existing?.joinedDate || new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-      isLoggedIn: true,
-      avatar: defaultAvatar,
-      points: existing ? Math.max(existing.points, 10) : 10,
-      requestsMade: existing?.requestsMade || 0,
-      likesCountForPoints: existing?.likesCountForPoints || 0,
-      savesCountForPoints: existing?.savesCountForPoints || 0,
-      generationsCountForPoints: existing?.generationsCountForPoints || 0,
-      sharesCountForPoints: existing?.sharesCountForPoints || 0,
-      referralsCountForPoints: existing?.referralsCountForPoints || 0,
-    };
-    StorageService.saveUserAccount(account);
-    setUserAccount(account);
-    showToast(`Signed in as ${defaultName} via Google!`);
     return account;
   };
 
@@ -728,47 +698,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const savePost = async (post: PromptPost): Promise<PromptPost> => {
     isSavingRef.current = true;
 
-    // 1. Immediate optimistic local update & localStorage persistence
-    let updatedLocalPosts: PromptPost[] = [];
+    // Immediate optimistic local update
     setPosts((prev) => {
       const idx = prev.findIndex((p) => p.id === post.id);
       if (idx >= 0) {
-        updatedLocalPosts = [...prev];
-        updatedLocalPosts[idx] = post;
-      } else {
-        updatedLocalPosts = [post, ...prev];
+        const updated = [...prev];
+        updated[idx] = post;
+        return updated;
       }
-      StorageService.saveCachedPosts(updatedLocalPosts);
-      return updatedLocalPosts;
+      return [post, ...prev];
     });
 
-    // 2. Auto-link fulfilled prompt request if requested
-    if (post.isRequested) {
-      try {
-        const matchingReq = promptRequests.find((r) => {
-          if (r.status === 'completed') return false;
-          if (post.requestedByEmail && r.userEmail && r.userEmail.toLowerCase() === post.requestedByEmail.toLowerCase()) {
-            return true;
-          }
-          if (post.requestedByName && r.userName && r.userName.toLowerCase() === post.requestedByName.toLowerCase()) {
-            return true;
-          }
-          if (post.requestedPromptDescription && r.requestText && r.requestText.toLowerCase().includes(post.requestedPromptDescription.toLowerCase().slice(0, 20))) {
-            return true;
-          }
-          return false;
-        });
-
-        if (matchingReq) {
-          void updatePromptRequestStatus(matchingReq.id, 'completed', post.id);
-        }
-      } catch (reqErr) {
-        console.warn('Auto link prompt request notice:', reqErr);
-      }
-    }
-
-    // 3. Send to server database
     try {
+      // Send to server database
       const res = await fetch('/api/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -778,31 +720,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const data = await res.json();
       if (data.success && Array.isArray(data.posts)) {
         setPosts(data.posts);
-        StorageService.saveCachedPosts(data.posts);
         const savedPost = data.post || post;
         showToast(
           savedPost.status === 'published'
             ? 'Prompt published live to server & homepage!'
-            : 'Prompt saved as draft'
+            : 'Prompt saved as draft on server'
         );
         return savedPost;
       } else {
-        console.warn('Server sync notice (kept local copy):', data?.error);
-        showToast(
-          post.status === 'published'
-            ? 'Prompt published & saved locally!'
-            : 'Prompt saved as draft'
-        );
-        return post;
+        throw new Error(data.error || 'Failed to save post to server');
       }
     } catch (err: any) {
-      console.warn('Network sync notice during savePost (persisted locally):', err);
-      showToast(
-        post.status === 'published'
-          ? 'Prompt published & saved locally!'
-          : 'Prompt saved as draft'
-      );
-      return post;
+      console.error('Failed to save post on server:', err);
+      showToast(err.message || 'Error saving to server database');
+      throw err;
     } finally {
       setTimeout(() => {
         isSavingRef.current = false;
@@ -1128,16 +1059,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         openAuthModal,
         loginUser,
         signupUser,
-        loginWithGoogle,
         logoutUser,
         awardPoints,
         persistentRefImage,
         setPersistentRefImage,
         promptRequests,
         addPromptRequest,
-        refreshPromptRequests,
-        updatePromptRequestStatus,
-        deletePromptRequest,
         aiHistory,
         saveAiHistoryItem,
         deleteAiHistoryItem,
