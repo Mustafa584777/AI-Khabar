@@ -74,7 +74,6 @@ export interface PromptPost {
   isRequested?: boolean;
   requestedByName?: string;
   requestedByEmail?: string;
-  requestedByAvatar?: string;
   requestedPromptDescription?: string;
   viewsCount: number;
   copiesCount: number;
@@ -120,7 +119,6 @@ export interface SiteSettings {
   cloudinaryApiKey?: string;
   cloudinaryApiSecret?: string;
   cloudinaryUploadPreset?: string;
-  geminiCustomInstructions?: string;
 }
 
 export interface AdminUser {

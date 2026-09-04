@@ -52,7 +52,6 @@ interface AppContextType {
   signupUser: (name: string, username: string, email: string, pass: string, avatar?: string) => UserAccount;
   loginWithGoogle: (googleUser?: { name?: string; email?: string; avatar?: string }) => UserAccount;
   logoutUser: () => void;
-  updateUserProfile: (updates: Partial<UserAccount>) => void;
   awardPoints: (amount: number, type: 'like' | 'save' | 'generation' | 'share' | 'referral') => void;
 
   // Persistent Reference Photo & Prompt Requests
@@ -389,18 +388,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     StorageService.logoutUserAccount();
     setUserAccount(null);
     showToast('Signed out successfully');
-  };
-
-  const updateUserProfile = (updates: Partial<UserAccount>) => {
-    const current = userAccount || StorageService.getUserAccount();
-    if (!current) return;
-    const updated: UserAccount = {
-      ...current,
-      ...updates,
-    };
-    StorageService.saveUserAccount(updated);
-    setUserAccount(updated);
-    showToast('Profile updated successfully!');
   };
 
   const saveAiHistoryItem = (item: AIHistoryItem) => {
@@ -741,23 +728,47 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const savePost = async (post: PromptPost): Promise<PromptPost> => {
     isSavingRef.current = true;
 
-    // Immediate optimistic local update
-    let nextPosts: PromptPost[] = [];
+    // 1. Immediate optimistic local update & localStorage persistence
+    let updatedLocalPosts: PromptPost[] = [];
     setPosts((prev) => {
       const idx = prev.findIndex((p) => p.id === post.id);
       if (idx >= 0) {
-        const updated = [...prev];
-        updated[idx] = post;
-        nextPosts = updated;
+        updatedLocalPosts = [...prev];
+        updatedLocalPosts[idx] = post;
       } else {
-        nextPosts = [post, ...prev];
+        updatedLocalPosts = [post, ...prev];
       }
-      StorageService.saveCachedPosts(nextPosts);
-      return nextPosts;
+      StorageService.saveCachedPosts(updatedLocalPosts);
+      return updatedLocalPosts;
     });
 
+    // 2. Auto-link fulfilled prompt request if requested
+    if (post.isRequested) {
+      try {
+        const matchingReq = promptRequests.find((r) => {
+          if (r.status === 'completed') return false;
+          if (post.requestedByEmail && r.userEmail && r.userEmail.toLowerCase() === post.requestedByEmail.toLowerCase()) {
+            return true;
+          }
+          if (post.requestedByName && r.userName && r.userName.toLowerCase() === post.requestedByName.toLowerCase()) {
+            return true;
+          }
+          if (post.requestedPromptDescription && r.requestText && r.requestText.toLowerCase().includes(post.requestedPromptDescription.toLowerCase().slice(0, 20))) {
+            return true;
+          }
+          return false;
+        });
+
+        if (matchingReq) {
+          void updatePromptRequestStatus(matchingReq.id, 'completed', post.id);
+        }
+      } catch (reqErr) {
+        console.warn('Auto link prompt request notice:', reqErr);
+      }
+    }
+
+    // 3. Send to server database
     try {
-      // Send to server database
       const res = await fetch('/api/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -772,16 +783,26 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         showToast(
           savedPost.status === 'published'
             ? 'Prompt published live to server & homepage!'
-            : 'Prompt saved as draft on server'
+            : 'Prompt saved as draft'
         );
         return savedPost;
       } else {
-        throw new Error(data.error || 'Failed to save post to server');
+        console.warn('Server sync notice (kept local copy):', data?.error);
+        showToast(
+          post.status === 'published'
+            ? 'Prompt published & saved locally!'
+            : 'Prompt saved as draft'
+        );
+        return post;
       }
     } catch (err: any) {
-      console.error('Failed to save post on server:', err);
-      showToast(err.message || 'Error saving to server database');
-      throw err;
+      console.warn('Network sync notice during savePost (persisted locally):', err);
+      showToast(
+        post.status === 'published'
+          ? 'Prompt published & saved locally!'
+          : 'Prompt saved as draft'
+      );
+      return post;
     } finally {
       setTimeout(() => {
         isSavingRef.current = false;
@@ -1109,7 +1130,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         signupUser,
         loginWithGoogle,
         logoutUser,
-        updateUserProfile,
         awardPoints,
         persistentRefImage,
         setPersistentRefImage,

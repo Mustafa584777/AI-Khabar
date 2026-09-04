@@ -7,7 +7,6 @@ import { AIPersonalizedBanner } from './AIPersonalizedBanner';
 import { SearchX, Filter, Loader2 } from 'lucide-react';
 import { PromptPost } from '@/types/prompt';
 import { PersonalizationEngine } from '@/lib/personalization';
-import { semanticSearchPosts } from '@/lib/semantic-search';
 
 const INITIAL_BATCH_SIZE = 10;
 const SCROLL_BATCH_SIZE = 6;
@@ -54,26 +53,33 @@ export const PromptGrid = () => {
     }
 
     if (searchQuery.trim()) {
-      // Use intelligent AI & multilingual semantic fuzzy search
-      list = semanticSearchPosts(list, searchQuery.trim());
-    } else {
-      if (selectedCategory === 'all' && selectedSort === 'trending') {
-        list = [...list].sort((a, b) => {
-          const scoreA = PersonalizationEngine.scorePrompt(a, tasteProfile, bookmarkedIds).score;
-          const scoreB = PersonalizationEngine.scorePrompt(b, tasteProfile, bookmarkedIds).score;
-          return (scoreB - scoreA) || a.id.localeCompare(b.id);
-        });
-      } else if (selectedSort === 'trending') {
-        list = [...list].sort((a, b) => ((b.copiesCount || 0) + (b.viewsCount || 0)) - ((a.copiesCount || 0) + (a.viewsCount || 0)) || a.id.localeCompare(b.id));
-      } else if (selectedSort === 'most-popular') {
-        list = [...list].sort((a, b) => (b.viewsCount || 0) - (a.viewsCount || 0) || a.id.localeCompare(b.id));
-      } else if (selectedSort === 'most-liked') {
-        list = [...list].sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0) || a.id.localeCompare(b.id));
-      } else if (selectedSort === 'most-copied') {
-        list = [...list].sort((a, b) => (b.copiesCount || 0) - (a.copiesCount || 0) || a.id.localeCompare(b.id));
-      } else if (selectedSort === 'newest') {
-        list = [...list].sort((a, b) => (new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) || a.id.localeCompare(b.id));
-      }
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter(
+        (p) =>
+          p.title.toLowerCase().includes(q) ||
+          p.promptText.toLowerCase().includes(q) ||
+          p.category.toLowerCase().includes(q) ||
+          p.aiTool.toLowerCase().includes(q) ||
+          p.tags?.some((t) => t.toLowerCase().includes(q))
+      );
+    }
+
+    if (selectedCategory === 'all' && !searchQuery.trim() && selectedSort === 'trending') {
+      list = [...list].sort((a, b) => {
+        const scoreA = PersonalizationEngine.scorePrompt(a, tasteProfile, bookmarkedIds).score;
+        const scoreB = PersonalizationEngine.scorePrompt(b, tasteProfile, bookmarkedIds).score;
+        return (scoreB - scoreA) || a.id.localeCompare(b.id);
+      });
+    } else if (selectedSort === 'trending') {
+      list = [...list].sort((a, b) => ((b.copiesCount || 0) + (b.viewsCount || 0)) - ((a.copiesCount || 0) + (a.viewsCount || 0)) || a.id.localeCompare(b.id));
+    } else if (selectedSort === 'most-popular') {
+      list = [...list].sort((a, b) => (b.viewsCount || 0) - (a.viewsCount || 0) || a.id.localeCompare(b.id));
+    } else if (selectedSort === 'most-liked') {
+      list = [...list].sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0) || a.id.localeCompare(b.id));
+    } else if (selectedSort === 'most-copied') {
+      list = [...list].sort((a, b) => (b.copiesCount || 0) - (a.copiesCount || 0) || a.id.localeCompare(b.id));
+    } else if (selectedSort === 'newest') {
+      list = [...list].sort((a, b) => (new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) || a.id.localeCompare(b.id));
     }
 
     const seenIds = new Set<string>();
@@ -88,7 +94,6 @@ export const PromptGrid = () => {
 
     return uniqueList;
   }, [posts, selectedCategory, selectedTool, searchQuery, selectedSort, tasteProfile, bookmarkedIds]);
-
 
   const visiblePosts = useMemo(() => {
     return filteredPosts.slice(0, displayedCount);

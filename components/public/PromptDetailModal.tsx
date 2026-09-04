@@ -221,7 +221,7 @@ export const PromptDetailModal = () => {
       setSelectedPost(prevPost);
       if (typeof window !== 'undefined') {
         const prevSlug = getPromptSlug(prevPost);
-        window.history.pushState({ postId: prevPost.id }, '', `/${prevSlug}`);
+        window.history.pushState({ postId: prevPost.id }, '', `/prompt/${prevSlug}`);
       }
       setDisplayedCount(5);
     } else {
@@ -536,7 +536,7 @@ export const PromptDetailModal = () => {
     setSelectedPost(pin);
     if (typeof window !== 'undefined') {
       const pinSlug = getPromptSlug(pin);
-      window.history.pushState({ postId: pin.id }, '', `/${pinSlug}`);
+      window.history.pushState({ postId: pin.id }, '', `/prompt/${pinSlug}`);
     }
     setDisplayedCount(5);
   };
@@ -769,22 +769,9 @@ export const PromptDetailModal = () => {
                   {/* Requested Prompt Metadata Card */}
                   {selectedPost.isRequested && (
                     <div className="mt-3.5 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-red-500/10 via-amber-500/10 to-red-500/10 border border-red-200/80 dark:border-red-900/60 flex items-start gap-3">
-                      {selectedPost.requestedByAvatar ? (
-                        <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-red-200 shadow-sm relative mt-0.5">
-                          <Image
-                            src={selectedPost.requestedByAvatar}
-                            alt={selectedPost.requestedByName || 'User'}
-                            fill
-                            sizes="32px"
-                            className="object-cover rounded-full"
-                            referrerPolicy="no-referrer"
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-[#E60023] text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
-                          <Sparkles className="w-4 h-4" />
-                        </div>
-                      )}
+                      <div className="w-7 h-7 rounded-full bg-[#E60023] text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                        <Sparkles className="w-3.5 h-3.5" />
+                      </div>
                       <div className="space-y-1 flex-1 text-xs">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-extrabold text-[#E60023] tracking-wide uppercase text-[10px]">

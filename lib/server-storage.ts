@@ -85,7 +85,6 @@ function mapSupabasePost(row: any): PromptPost {
     isRequested: Boolean(row.is_requested || row.isRequested),
     requestedByName: row.requested_by_name || row.requestedByName || undefined,
     requestedByEmail: row.requested_by_email || row.requestedByEmail || undefined,
-    requestedByAvatar: row.requested_by_avatar || row.requestedByAvatar || undefined,
     requestedPromptDescription: row.requested_prompt_description || row.requestedPromptDescription || undefined,
     viewsCount: Number(row.views_count) || 0,
     copiesCount: Number(row.copies_count) || 0,
@@ -182,10 +181,20 @@ export const ServerStorage = {
             return mapped;
           });
 
-          // Merge localPosts and supabasePosts by ID, prioritizing the most recent updatedAt/createdAt
+          // Merge localPosts, memoryPosts, and supabasePosts by ID, prioritizing the most recent updatedAt/createdAt
           const map = new Map<string, PromptPost>();
-          // Put local posts first, then overwrite/merge with Supabase posts
+          // Put local disk posts first
           localPosts.forEach(p => map.set(p.id, p));
+          // Merge in-memory posts if present
+          if (Array.isArray(memoryPosts)) {
+            memoryPosts.forEach(p => {
+              const existing = map.get(p.id);
+              if (!existing || new Date(p.updatedAt || p.createdAt || 0).getTime() >= new Date(existing.updatedAt || existing.createdAt || 0).getTime()) {
+                map.set(p.id, p);
+              }
+            });
+          }
+          // Merge Supabase posts
           supabasePosts.forEach(p => {
             const existing = map.get(p.id);
             if (!existing || new Date(p.updatedAt || p.createdAt || 0).getTime() >= new Date(existing.updatedAt || existing.createdAt || 0).getTime()) {
@@ -208,6 +217,19 @@ export const ServerStorage = {
 
     if (memoryPosts === null) {
       memoryPosts = localPosts;
+    } else if (Array.isArray(memoryPosts)) {
+      // Merge memory posts with local disk posts
+      const map = new Map<string, PromptPost>();
+      localPosts.forEach(p => map.set(p.id, p));
+      memoryPosts.forEach(p => {
+        const existing = map.get(p.id);
+        if (!existing || new Date(p.updatedAt || p.createdAt || 0).getTime() >= new Date(existing.updatedAt || existing.createdAt || 0).getTime()) {
+          map.set(p.id, p);
+        }
+      });
+      memoryPosts = Array.from(map.values()).sort((a, b) => 
+        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+      );
     }
     return includeDrafts ? memoryPosts : memoryPosts.filter((p) => p.status === 'published');
   },
@@ -344,13 +366,11 @@ export const ServerStorage = {
         const { error } = await db().from('posts').upsert(payload, { onConflict: 'id' });
         if (error) {
           console.error('Supabase savePost error:', error.message, error.details);
-          throw new Error(`Supabase database error: ${error.message}`);
         } else {
           console.log(`Saved post ${savedPost.id} to Supabase successfully.`);
         }
-      } catch (err: any) {
+      } catch (err) {
         console.error('Supabase savePost exception:', err);
-        throw err;
       }
     }
 

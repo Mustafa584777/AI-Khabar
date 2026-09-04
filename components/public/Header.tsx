@@ -75,6 +75,28 @@ export const Header = () => {
               Home
             </button>
 
+            {/* Requested Prompts Tab */}
+            <button
+              onClick={() => {
+                setCurrentView('for-you');
+                setSelectedCategory('all');
+                setSearchQuery('');
+                if (pathname !== '/') {
+                  router.push('/');
+                }
+              }}
+              className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 flex items-center gap-1.5 ${
+                currentView === 'for-you'
+                  ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 shadow-sm'
+                  : 'text-neutral-700 dark:text-neutral-300 hover:bg-[#efefef] dark:hover:bg-neutral-800'
+              }`}
+              id="header-requested-tab-btn"
+              title="Community Requested Prompts"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#E60023]" />
+              <span>Requested</span>
+            </button>
+
             {/* AI Studio / Create Tool Button */}
             <button
               onClick={() => {
