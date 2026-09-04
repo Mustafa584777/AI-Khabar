@@ -821,6 +821,114 @@ export const UserDashboard = () => {
           </div>
         )}
 
+        {/* TAB 4: Request a Prompt */}
+        {activeTab === 'request' && (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
+              <div>
+                <h3 className="text-base font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                  <Target className="w-5 h-5 text-[#E60023]" />
+                  <span>Submit Prompt Request</span>
+                </h3>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                  Describe what you want to see, and our AI or community creators will fulfill it!
+                </p>
+              </div>
+              
+              <form onSubmit={handleRequestSubmit} className="space-y-4">
+                <textarea
+                  required
+                  rows={4}
+                  value={requestText}
+                  onChange={(e) => setRequestText(e.target.value)}
+                  placeholder="e.g. A futuristic cyberpunk city with neon lights reflecting on wet streets, 8k resolution, photorealistic..."
+                  className="w-full p-4 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-sm focus:ring-2 focus:ring-[#E60023] focus:border-[#E60023] outline-none transition-all resize-none text-neutral-900 dark:text-white"
+                />
+                <button
+                  type="submit"
+                  disabled={!requestText.trim()}
+                  className="px-6 py-3 rounded-xl bg-[#E60023] hover:bg-[#ad081b] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold shadow-md flex items-center gap-2 transition-all"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>Submit Request</span>
+                </button>
+              </form>
+            </div>
+
+            {/* User's Previous Requests */}
+            {promptRequests && promptRequests.length > 0 && (
+              <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
+                <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
+                  Your Submitted Requests
+                </h3>
+                <div className="space-y-3">
+                  {promptRequests.map((req) => {
+                    const matchedPost = posts.find(
+                      (p) =>
+                        p.id === req.fulfilledPostId ||
+                        (p.isRequested &&
+                          p.requestedPromptDescription &&
+                          p.requestedPromptDescription.toLowerCase() === req.requestText.toLowerCase())
+                    );
+
+                    return (
+                      <div
+                        key={req.id}
+                        className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-950/60 text-[#E60023]">
+                              {req.category}
+                            </span>
+                            <span className="text-[10px] text-neutral-400">
+                              {formatTimestamp(req.createdAt)}
+                            </span>
+                          </div>
+                          <p className="text-xs font-medium text-neutral-800 dark:text-neutral-200">
+                            {req.requestText}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                          {matchedPost ? (
+                            <button
+                              onClick={() => {
+                                setSelectedPost(matchedPost);
+                                if (typeof window !== 'undefined') {
+                                  window.history.pushState(
+                                    { postId: matchedPost.id },
+                                    '',
+                                    `/${getPromptSlug(matchedPost)}`
+                                  );
+                                }
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm transition-colors"
+                            >
+                              <span>View Live Prompt</span>
+                              <ArrowUpRight className="w-3.5 h-3.5" />
+                            </button>
+                          ) : (
+                            <span
+                              className={`text-[11px] font-bold px-2.5 py-1 rounded-xl ${
+                                req.status === 'completed'
+                                  ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50'
+                                  : 'text-amber-600 bg-amber-50 dark:bg-amber-950/50'
+                              }`}
+                            >
+                              {req.status === 'completed' ? 'Fulfilled' : 'Under Creation'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* TAB 3: AI Taste Profile Controls */}
         {activeTab === 'taste' && (
           <div className="space-y-6">
@@ -914,77 +1022,7 @@ export const UserDashboard = () => {
 
             
 
-            {/* User's Previous Requests */}
-            {promptRequests && promptRequests.length > 0 && (
-              <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
-                <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
-                  Your Submitted Requests
-                </h3>
-                <div className="space-y-3">
-                  {promptRequests.map((req) => {
-                    const matchedPost = posts.find(
-                      (p) =>
-                        p.id === req.fulfilledPostId ||
-                        (p.isRequested &&
-                          p.requestedPromptDescription &&
-                          p.requestedPromptDescription.toLowerCase() === req.requestText.toLowerCase())
-                    );
 
-                    return (
-                      <div
-                        key={req.id}
-                        className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                      >
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-950/60 text-[#E60023]">
-                              {req.category}
-                            </span>
-                            <span className="text-[10px] text-neutral-400">
-                              {formatTimestamp(req.createdAt)}
-                            </span>
-                          </div>
-                          <p className="text-xs font-medium text-neutral-800 dark:text-neutral-200">
-                            {req.requestText}
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
-                          {matchedPost ? (
-                            <button
-                              onClick={() => {
-                                setSelectedPost(matchedPost);
-                                if (typeof window !== 'undefined') {
-                                  window.history.pushState(
-                                    { postId: matchedPost.id },
-                                    '',
-                                    `/${getPromptSlug(matchedPost)}`
-                                  );
-                                }
-                              }}
-                              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm transition-colors"
-                            >
-                              <span>View Live Prompt</span>
-                              <ArrowUpRight className="w-3.5 h-3.5" />
-                            </button>
-                          ) : (
-                            <span
-                              className={`text-[11px] font-bold px-2.5 py-1 rounded-xl ${
-                                req.status === 'completed'
-                                  ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50'
-                                  : 'text-amber-600 bg-amber-50 dark:bg-amber-950/50'
-                              }`}
-                            >
-                              {req.status === 'completed' ? 'Fulfilled' : 'Under Creation'}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
