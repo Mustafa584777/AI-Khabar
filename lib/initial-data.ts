@@ -1,5 +1,4 @@
 import { Category, PromptPost, SiteSettings } from '@/types/prompt';
-import defaultPostsData from '@/data/posts.json';
 
 export const INITIAL_CATEGORIES: Category[] = [
   {
@@ -76,15 +75,13 @@ export const INITIAL_CATEGORIES: Category[] = [
   }
 ];
 
-export const INITIAL_POSTS: PromptPost[] = (Array.isArray(defaultPostsData) ? defaultPostsData : []) as unknown as PromptPost[];
+export const INITIAL_POSTS: PromptPost[] = [];
 
 export const INITIAL_SETTINGS: SiteSettings = {
   siteName: 'Trending Copy Paste Photo Prompts',
   siteTagline: 'Free Copy-Paste AI Photo Prompts, Codes & Creative Guides',
   siteUrl: 'https://trendinggeminiprompts.com',
   logoText: 'Trending Copy Paste Photo Prompts',
-  logoUrl: '/logo.png',
-  faviconUrl: '/favicon.ico',
   heroHeadline: 'Trending Copy Paste Photo Prompts',
   heroSubheadline: 'Explore curated photo prompts for Gemini, Midjourney and ChatGPT. Copy with 1 click.',
   defaultTool: 'Gemini',
@@ -100,5 +97,4 @@ export const INITIAL_SETTINGS: SiteSettings = {
     'Vintage 35mm',
     'Hyperrealistic',
   ],
-  geminiCustomInstructions: '',
 };

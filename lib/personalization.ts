@@ -420,12 +420,10 @@ export const PersonalizationEngine = {
       .sort((a, b) => b[1] - a[1])
       .map(([name, score]) => ({ name, score }));
 
-    const rawEngagementScore =
+    const totalEngagementScore =
       Object.values(profile.categoryAffinities).reduce((acc, v) => acc + v, 0) +
       Object.values(profile.tagAffinities).reduce((acc, v) => acc + v, 0) +
       Object.values(profile.toolAffinities).reduce((acc, v) => acc + v, 0);
-
-    const totalEngagementScore = Math.max(1, Math.round(rawEngagementScore / 5));
 
     return {
       topCategories: sortedCategories.slice(0, 3),

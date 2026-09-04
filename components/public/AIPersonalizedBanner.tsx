@@ -6,7 +6,7 @@ import { Sparkles, Copy, Check, Loader2, X } from 'lucide-react';
 import { PersonalizationEngine } from '@/lib/personalization';
 
 export const AIPersonalizedBanner = () => {
-  const { tasteProfile, copyPromptToClipboard, setCurrentView } = useApp();
+  const { tasteProfile, copyPromptToClipboard } = useApp();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedPrompt, setGeneratedPrompt] = useState<{
     title: string;
@@ -56,7 +56,7 @@ export const AIPersonalizedBanner = () => {
         <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 rounded-full bg-blue-600/10 blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          {/* Left: Requested Title & Info */}
+          {/* Left: AI Inspire Title & Info */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#E60023] to-[#ff4763] flex items-center justify-center text-white shadow-md shrink-0">
               <Sparkles className="w-5 h-5" />
@@ -64,29 +64,34 @@ export const AIPersonalizedBanner = () => {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-black uppercase tracking-wider text-[#ff5c75]">
-                  Requested Prompts Hub
+                  AI Inspiration Hub
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-neutral-300 font-medium mt-0.5">
-                Explore community-requested photo prompts or submit your own custom prompt request.
+                Generate fresh, creative prompt ideas tailored to trending photographic styles with 1 click.
               </p>
             </div>
           </div>
 
-          {/* Right: Request a Prompt Button */}
+          {/* Right: AI Inspire Me Button */}
           <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
             <button
-              onClick={() => {
-                if (typeof window !== 'undefined') {
-                  sessionStorage.setItem('promptcms_dashboard_tab', 'request');
-                }
-                setCurrentView('user-dashboard');
-              }}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold transition-all shadow-md shadow-[#E60023]/25 flex items-center justify-center gap-2 transform active:scale-95 shrink-0"
-              id="request-a-prompt-btn"
+              onClick={handleGeneratePersonalizedPrompt}
+              disabled={isGenerating}
+              className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold transition-all shadow-md shadow-[#E60023]/25 flex items-center justify-center gap-2 disabled:opacity-75 transform active:scale-95 shrink-0"
+              id="ai-inspire-btn"
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Request a Prompt</span>
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Generating for You...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>AI Inspire Me</span>
+                </>
+              )}
             </button>
           </div>
         </div>
