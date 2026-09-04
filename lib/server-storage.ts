@@ -1,4 +1,4 @@
-import { Category, PromptPost, SiteSettings, SearchQueryItem, PromptRequestItem } from '@/types/prompt';
+import { Category, PromptPost, SiteSettings, SearchQueryItem } from '@/types/prompt';
 import { INITIAL_CATEGORIES, INITIAL_SETTINGS, INITIAL_POSTS } from './initial-data';
 import { supabase, supabaseAdmin, isSupabaseConfigured } from './supabase';
 import { cleanTagsArray, canonicalizeTag } from './tag-utils';
@@ -12,7 +12,6 @@ const CATEGORIES_FILE = path.join(DATA_DIR, 'categories.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const TAGS_FILE = path.join(DATA_DIR, 'tags.json');
 const SEARCH_QUERIES_FILE = path.join(DATA_DIR, 'search_queries.json');
-const PROMPT_REQUESTS_FILE = path.join(DATA_DIR, 'prompt_requests.json');
 
 const DEFAULT_TAGS = [
   'Portrait', '35mm', 'Cinematic', 'Street Photography', 'Fashion',
@@ -58,7 +57,6 @@ let memoryCategories: Category[] | null = null;
 let memorySettings: SiteSettings | null = null;
 let memoryTags: string[] | null = null;
 let memorySearchQueries: SearchQueryItem[] | null = null;
-let memoryPromptRequests: PromptRequestItem[] | null = null;
 
 // Helpers to map Supabase snake_case rows to PromptPost
 function mapSupabasePost(row: any): PromptPost {
@@ -82,7 +80,6 @@ function mapSupabasePost(row: any): PromptPost {
     status: row.status || 'published',
     isFeatured: Boolean(row.is_featured),
     isTrending: Boolean(row.is_trending),
-    isRequested: Boolean(row.is_requested || row.isRequested),
     viewsCount: Number(row.views_count) || 0,
     copiesCount: Number(row.copies_count) || 0,
     likesCount: Number(row.likes_count) || 0,
@@ -126,7 +123,6 @@ function mapPostToSupabase(post: PromptPost) {
     status: post.status || 'published',
     is_featured: Boolean(post.isFeatured),
     is_trending: Boolean(post.isTrending),
-    is_requested: Boolean(post.isRequested),
     views_count: Number(post.viewsCount) || 0,
     copies_count: Number(post.copiesCount) || 0,
     likes_count: Number(post.likesCount) || 0,
@@ -730,166 +726,6 @@ export const ServerStorage = {
 
     memoryTags = filtered;
     writeJsonFile(TAGS_FILE, filtered);
-    return filtered;
-  },
-
-  // Prompt Requests (User-submitted custom prompt requests)
-  getAllPromptRequests: async (): Promise<PromptRequestItem[]> => {
-    if (isSupabaseConfigured()) {
-      try {
-        const { data, error } = await db()
-          .from('prompt_requests')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (!error && data && Array.isArray(data)) {
-          const mapped: PromptRequestItem[] = data.map((d: any) => ({
-            id: d.id,
-            userId: d.user_id || 'anonymous',
-            userName: d.user_name || 'Community Creator',
-            userEmail: d.user_email || undefined,
-            userAvatar: d.user_avatar || undefined,
-            requestText: d.request_text || d.prompt_description || '',
-            category: d.category || 'Photorealistic & Portraits',
-            aiTool: d.ai_tool || 'Midjourney',
-            status: (d.status as 'pending' | 'in_progress' | 'completed') || 'pending',
-            fulfilledPostId: d.fulfilled_post_id || undefined,
-            createdAt: d.created_at ? (typeof d.created_at === 'number' ? d.created_at : new Date(d.created_at).getTime()) : Date.now(),
-            likesCount: Number(d.likes_count) || 0,
-          }));
-
-          memoryPromptRequests = mapped;
-          writeJsonFile(PROMPT_REQUESTS_FILE, mapped);
-          return mapped;
-        }
-      } catch (err) {
-        console.warn('Supabase getAllPromptRequests notice:', err);
-      }
-    }
-
-    if (memoryPromptRequests === null) {
-      memoryPromptRequests = readJsonFile<PromptRequestItem[]>(PROMPT_REQUESTS_FILE, [
-        {
-          id: 'req_1',
-          userId: 'u_mock1',
-          userName: 'Alex Visuals',
-          userEmail: 'alex.creator@example.com',
-          userAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
-          requestText: 'Cinematic 8K portrait of a neon cyberpunk geisha with intricate golden kintsugi porcelain skin in rainy Shibuya alleyway',
-          category: 'Photorealistic & Portraits',
-          aiTool: 'Midjourney',
-          status: 'completed',
-          createdAt: Date.now() - 3600000 * 24,
-          likesCount: 18,
-        },
-        {
-          id: 'req_2',
-          userId: 'u_mock2',
-          userName: 'Elena Art',
-          userEmail: 'elena.designs@gmail.com',
-          userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80',
-          requestText: 'Ethereal floating bioluminescent island with crystal waterfalls, volumetric golden hour haze, and ancient glowing runes',
-          category: 'Fantasy & Concept Art',
-          aiTool: 'Flux',
-          status: 'pending',
-          createdAt: Date.now() - 3600000 * 5,
-          likesCount: 9,
-        },
-      ]);
-    }
-    return memoryPromptRequests;
-  },
-
-  savePromptRequest: async (req: Partial<PromptRequestItem> & { requestText: string }): Promise<PromptRequestItem> => {
-    const current = await ServerStorage.getAllPromptRequests();
-    const id = req.id || `req_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-    const now = Date.now();
-
-    const newRequest: PromptRequestItem = {
-      id,
-      userId: req.userId || 'anonymous',
-      userName: req.userName || 'Community Creator',
-      userEmail: req.userEmail || '',
-      userAvatar: req.userAvatar || undefined,
-      requestText: req.requestText,
-      category: req.category || 'Photorealistic & Portraits',
-      aiTool: req.aiTool || 'Midjourney',
-      status: req.status || 'pending',
-      fulfilledPostId: req.fulfilledPostId || undefined,
-      createdAt: req.createdAt || now,
-      likesCount: req.likesCount || 0,
-    };
-
-    if (isSupabaseConfigured()) {
-      try {
-        await db().from('prompt_requests').upsert({
-          id: newRequest.id,
-          user_id: newRequest.userId,
-          user_name: newRequest.userName,
-          user_email: newRequest.userEmail,
-          user_avatar: newRequest.userAvatar,
-          request_text: newRequest.requestText,
-          category: newRequest.category,
-          ai_tool: newRequest.aiTool,
-          status: newRequest.status,
-          fulfilled_post_id: newRequest.fulfilledPostId,
-          created_at: new Date(newRequest.createdAt).toISOString(),
-          likes_count: newRequest.likesCount,
-        }, { onConflict: 'id' });
-      } catch (err) {
-        console.warn('Supabase savePromptRequest fallback:', err);
-      }
-    }
-
-    const filtered = current.filter((r) => r.id !== id);
-    const updated = [newRequest, ...filtered];
-    memoryPromptRequests = updated;
-    writeJsonFile(PROMPT_REQUESTS_FILE, updated);
-    return newRequest;
-  },
-
-  updatePromptRequestStatus: async (id: string, status: 'pending' | 'in_progress' | 'completed', fulfilledPostId?: string): Promise<PromptRequestItem[]> => {
-    const current = await ServerStorage.getAllPromptRequests();
-    const target = current.find((r) => r.id === id);
-    if (!target) return current;
-
-    const updatedItem: PromptRequestItem = {
-      ...target,
-      status,
-      fulfilledPostId: fulfilledPostId !== undefined ? fulfilledPostId : target.fulfilledPostId,
-    };
-
-    if (isSupabaseConfigured()) {
-      try {
-        await db().from('prompt_requests').update({
-          status,
-          fulfilled_post_id: updatedItem.fulfilledPostId || null,
-        }).eq('id', id);
-      } catch (err) {
-        console.warn('Supabase updatePromptRequestStatus exception:', err);
-      }
-    }
-
-    const updatedList = current.map((r) => (r.id === id ? updatedItem : r));
-    memoryPromptRequests = updatedList;
-    writeJsonFile(PROMPT_REQUESTS_FILE, updatedList);
-    return updatedList;
-  },
-
-  deletePromptRequest: async (id: string): Promise<PromptRequestItem[]> => {
-    const current = await ServerStorage.getAllPromptRequests();
-    const filtered = current.filter((r) => r.id !== id);
-
-    if (isSupabaseConfigured()) {
-      try {
-        await db().from('prompt_requests').delete().eq('id', id);
-      } catch (err) {
-        console.warn('Supabase deletePromptRequest exception:', err);
-      }
-    }
-
-    memoryPromptRequests = filtered;
-    writeJsonFile(PROMPT_REQUESTS_FILE, filtered);
     return filtered;
   },
 };
