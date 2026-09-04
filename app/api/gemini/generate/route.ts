@@ -1,16 +1,13 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
-import { ServerStorage } from '@/lib/server-storage';
-import fs from 'fs';
-import path from 'path';
 
-// Prioritized model fallback sequence: using current active Gemini 3 and latest generation models
+// Prioritized model fallback sequence: if one model fails or is unavailable, switch to the next
 const CANDIDATE_MODELS = [
-  'gemini-1.5-pro',
-  'gemini-1.5-flash',
-  'gemini-1.5-flash-8b',
-  'gemini-2.0-flash',
   'gemini-2.5-flash',
+  'gemini-3.7-flash',
+  'gemini-3.1-flash-lite',
+  'gemini-flash-latest',
+  'gemini-2.5-pro',
 ];
 
 // Reusable executor that tries candidate models in sequence
@@ -53,7 +50,7 @@ function determineDynamicCategory(topic: string, defaultCat?: string) {
 }
 
 function generateFallbackPost(topic: string, tool: string, category: string, isFromImage = false) {
-  const cleanTitle = (topic || 'Photorealistic Studio Portrait')
+  const cleanTitle = (topic || 'Cinematic Photo Composition')
     .trim()
     .replace(/^["']|["']$/g, '');
   const cleanSlug = cleanTitle
@@ -64,15 +61,15 @@ function generateFallbackPost(topic: string, tool: string, category: string, isF
   const dynamicCategory = determineDynamicCategory(cleanTitle, category);
 
   const promptText = isFromImage
-    ? `Masterful hyper-realistic photograph capturing authentic physical presence with crisp skin micro-textures, natural eye contact, and relaxed posture. Shot on Sony A7R V with 85mm f/1.4 G-Master lens at f/1.8, soft volumetric golden hour key lighting with subtle cool fill light, shallow depth of field, authentic film color grade with deep blacks and rich tonal range, 8K ultra high detail, aesthetic studio art direction --ar 16:9 --v 6.1 --style raw`
-    : `Editorial portrait of a striking subject in sophisticated contemporary styling, featuring natural facial textures, intense emotive gaze, atmospheric rim lighting with soft ambient shadows, captured on Hasselblad H6D-100c with 100mm lens, natural color grade, photorealistic textures, 8K masterpiece --ar 16:9 --v 6.1 --style raw`;
+    ? `Masterpiece photograph of [subject], captured with [camera_lens], cinematic [lighting_setup], natural color grade, photorealistic textures, shallow depth of field, 8K ultra high detail, aesthetic studio art direction --ar 16:9 --v 6.1`
+    : `Editorial portrait of [subject], atmospheric [lighting], rich cinematic contrast, shot on [camera_angle], 85mm f/1.4 lens, hyper-detailed skin texture and fabrics, masterpiece quality --ar 16:9 --v 6.1`;
 
   return {
     title: cleanTitle,
     slug: cleanSlug || 'cinematic-photo-prompt',
     category: dynamicCategory,
     promptText,
-    negativePrompt: 'blurry, low quality, deformed anatomy, extra fingers, cartoonish, oversaturated, plastic skin, watermark, bad lighting, grainy artifacts',
+    negativePrompt: 'blurry, low quality, deformed anatomy, extra fingers, cartoonish, oversaturated, watermark, bad lighting, grainy artifacts',
     suggestedParameters: {
       aspectRatio: '16:9',
       model: 'v6.1',
@@ -98,7 +95,7 @@ function generateFallbackPost(topic: string, tool: string, category: string, isF
     },
     articleContent: `## About This Prompt
 
-This prompt is engineered to produce clean, hyper-realistic imagery on **${tool || 'Midjourney'}**. By specifying lighting dynamics, lens physics, and realistic textures, you achieve studio-grade results without artificial plastic finishes.
+This prompt is crafted to produce clean, hyper-realistic imagery on **${tool || 'Midjourney'}**. By specifying lighting dynamics, lens physics, and realistic textures, you achieve studio-grade results without artificial plastic finishes.
 
 ### Composition & Optics Breakdown
 - **Subject Framing**: High-definition focus on ${cleanTitle} with authentic surface micro-details.
@@ -141,12 +138,9 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      const settings = await ServerStorage.getSettings().catch(() => null);
-      const customIns = settings?.geminiCustomInstructions || '';
-      const systemInstruction = `You are a helpful AI prompt engineer.
-Your job is to generate high-quality AI image generation prompts for Midjourney, ChatGPT, etc.
-Provide a structured JSON output as requested.
-${customIns ? `\nUSER CUSTOM SYSTEM INSTRUCTIONS:\n${customIns}` : ''}`;
+      const systemInstruction = `You are a world-class prompt engineer and AI art director specializing in Midjourney v6, ChatGPT-4o, Flux.1, Stable Diffusion XL, Claude 3.5, and Gemini.
+Generate a comprehensive, high-quality prompt package formatted for a prompt directory article like trendinggeminiprompts.com.
+Ensure the prompt includes dynamic variable placeholders like [subject], [lighting], [style] so users can customize them.`;
 
       let contentsPayload: any;
 
@@ -169,18 +163,6 @@ ${customIns ? `\nUSER CUSTOM SYSTEM INSTRUCTIONS:\n${customIns}` : ''}`;
             mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
           } catch (fetchErr) {
             console.warn('Failed to fetch remote image for multimodal analysis:', fetchErr);
-          }
-        } else if (image.startsWith('/')) {
-          try {
-            const filePath = path.join(process.cwd(), 'public', image);
-            if (fs.existsSync(filePath)) {
-              const fileBuffer = fs.readFileSync(filePath);
-              base64Data = fileBuffer.toString('base64');
-              const ext = path.extname(image).toLowerCase();
-              mimeType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : ext === '.gif' ? 'image/gif' : 'image/jpeg';
-            }
-          } catch (localErr) {
-            console.warn('Failed to read local image for multimodal analysis:', localErr);
           }
         }
 
@@ -209,7 +191,7 @@ Provide a structured JSON output with:
 - "seo": metaTitle, metaDescription, focusKeyword
 - "articleContent": rich markdown guide explaining how the prompt works, lighting/camera breakdowns, parameter settings, and pro tips.`,
           };
-          contentsPayload = [imagePart, textPart];
+          contentsPayload = { parts: [imagePart, textPart] };
         } else {
           // Fallback to text prompt
           contentsPayload = `Create a complete prompt post based on image concept: "${topic || 'Photorealistic Artwork'}" for ${tool || 'Midjourney'}. Available Categories: [${existingCatsList}].`;

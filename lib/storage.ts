@@ -1,5 +1,5 @@
 import { Category, PromptPost, SiteSettings, UserAccount, AIHistoryItem } from '@/types/prompt';
-import { INITIAL_CATEGORIES, INITIAL_SETTINGS, INITIAL_POSTS } from './initial-data';
+import { INITIAL_CATEGORIES, INITIAL_SETTINGS } from './initial-data';
 
 const STORAGE_KEY_BOOKMARKS = 'promptcms_user_bookmarks';
 const STORAGE_KEY_LIKES = 'promptcms_user_likes';
@@ -18,15 +18,13 @@ export const StorageService = {
         const saved = localStorage.getItem(STORAGE_KEY_CACHED_POSTS);
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed;
-          }
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
         }
       } catch (e) {
         console.error('Error reading cached posts:', e);
       }
     }
-    return INITIAL_POSTS || [];
+    return [];
   },
 
   saveCachedPosts: (posts: PromptPost[]): void => {
@@ -34,22 +32,7 @@ export const StorageService = {
       try {
         localStorage.setItem(STORAGE_KEY_CACHED_POSTS, JSON.stringify(posts));
       } catch (e) {
-        console.warn('Direct localStorage quota warning, attempting sanitized storage:', e);
-        try {
-          // If storage full due to base64 images, save with trimmed image data for cache
-          const sanitized = posts.map((p) => {
-            if (typeof p.imageUrl === 'string' && p.imageUrl.startsWith('data:image/') && p.imageUrl.length > 5000) {
-              return {
-                ...p,
-                imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80',
-              };
-            }
-            return p;
-          });
-          localStorage.setItem(STORAGE_KEY_CACHED_POSTS, JSON.stringify(sanitized));
-        } catch (innerErr) {
-          console.error('Failed to save cached posts to localStorage:', innerErr);
-        }
+        console.error('Error saving cached posts:', e);
       }
     }
   },
@@ -369,12 +352,6 @@ export const StorageService = {
       localStorage.setItem('promptcms_prompt_requests', JSON.stringify(updated));
     }
     return updated;
-  },
-
-  savePromptRequests: (requests: any[]): void => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('promptcms_prompt_requests', JSON.stringify(requests));
-    }
   },
 
   getLeaderboardUsers: (): any[] => {

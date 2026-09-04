@@ -7,9 +7,8 @@ import { AIPersonalizedBanner } from './AIPersonalizedBanner';
 import { SearchX, Filter, Loader2 } from 'lucide-react';
 import { PromptPost } from '@/types/prompt';
 import { PersonalizationEngine } from '@/lib/personalization';
-import { semanticSearchPosts } from '@/lib/semantic-search';
 
-const INITIAL_BATCH_SIZE = 10;
+const INITIAL_BATCH_SIZE = 6;
 const SCROLL_BATCH_SIZE = 6;
 
 export const PromptGrid = () => {
@@ -38,6 +37,7 @@ export const PromptGrid = () => {
     setDisplayedCount(INITIAL_BATCH_SIZE);
   }
 
+  // Filter only published posts for the public directory and strictly deduplicate
   const filteredPosts = useMemo(() => {
     let list = posts.filter((p) => p.status === 'published');
 
@@ -54,28 +54,37 @@ export const PromptGrid = () => {
     }
 
     if (searchQuery.trim()) {
-      // Use intelligent AI & multilingual semantic fuzzy search
-      list = semanticSearchPosts(list, searchQuery.trim());
-    } else {
-      if (selectedCategory === 'all' && selectedSort === 'trending') {
-        list = [...list].sort((a, b) => {
-          const scoreA = PersonalizationEngine.scorePrompt(a, tasteProfile, bookmarkedIds).score;
-          const scoreB = PersonalizationEngine.scorePrompt(b, tasteProfile, bookmarkedIds).score;
-          return (scoreB - scoreA) || a.id.localeCompare(b.id);
-        });
-      } else if (selectedSort === 'trending') {
-        list = [...list].sort((a, b) => ((b.copiesCount || 0) + (b.viewsCount || 0)) - ((a.copiesCount || 0) + (a.viewsCount || 0)) || a.id.localeCompare(b.id));
-      } else if (selectedSort === 'most-popular') {
-        list = [...list].sort((a, b) => (b.viewsCount || 0) - (a.viewsCount || 0) || a.id.localeCompare(b.id));
-      } else if (selectedSort === 'most-liked') {
-        list = [...list].sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0) || a.id.localeCompare(b.id));
-      } else if (selectedSort === 'most-copied') {
-        list = [...list].sort((a, b) => (b.copiesCount || 0) - (a.copiesCount || 0) || a.id.localeCompare(b.id));
-      } else if (selectedSort === 'newest') {
-        list = [...list].sort((a, b) => (new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) || a.id.localeCompare(b.id));
-      }
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter(
+        (p) =>
+          p.title.toLowerCase().includes(q) ||
+          p.promptText.toLowerCase().includes(q) ||
+          p.category.toLowerCase().includes(q) ||
+          p.aiTool.toLowerCase().includes(q) ||
+          p.tags?.some((t) => t.toLowerCase().includes(q))
+      );
     }
 
+    // Sort: If on "For You" (all category and trending/default), apply AI personalization scoring
+    if (selectedCategory === 'all' && !searchQuery.trim() && selectedSort === 'trending') {
+      list = [...list].sort((a, b) => {
+        const scoreA = PersonalizationEngine.scorePrompt(a, tasteProfile, bookmarkedIds).score;
+        const scoreB = PersonalizationEngine.scorePrompt(b, tasteProfile, bookmarkedIds).score;
+        return scoreB - scoreA;
+      });
+    } else if (selectedSort === 'trending') {
+      list = [...list].sort((a, b) => (b.copiesCount || 0) + (b.viewsCount || 0) - ((a.copiesCount || 0) + (a.viewsCount || 0)));
+    } else if (selectedSort === 'most-popular') {
+      list = [...list].sort((a, b) => (b.viewsCount || 0) - (a.viewsCount || 0));
+    } else if (selectedSort === 'most-liked') {
+      list = [...list].sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0));
+    } else if (selectedSort === 'most-copied') {
+      list = [...list].sort((a, b) => (b.copiesCount || 0) - (a.copiesCount || 0));
+    } else if (selectedSort === 'newest') {
+      list = [...list].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+
+    // Deduplication by post ID
     const seenIds = new Set<string>();
     const uniqueList: PromptPost[] = [];
 
@@ -89,13 +98,6 @@ export const PromptGrid = () => {
     return uniqueList;
   }, [posts, selectedCategory, selectedTool, searchQuery, selectedSort, tasteProfile, bookmarkedIds]);
 
-
-  const visiblePosts = useMemo(() => {
-    return filteredPosts.slice(0, displayedCount);
-  }, [filteredPosts, displayedCount]);
-
-  const hasMore = displayedCount < filteredPosts.length;
-
   // Infinite Scroll Observer
   useEffect(() => {
     const sentinel = bottomSentinelRef.current;
@@ -107,12 +109,15 @@ export const PromptGrid = () => {
           setDisplayedCount((prev) => Math.min(prev + SCROLL_BATCH_SIZE, filteredPosts.length));
         }
       },
-      { rootMargin: '250px' }
+      { rootMargin: '400px' }
     );
 
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, [filteredPosts.length]);
+
+  const visiblePosts = filteredPosts.slice(0, displayedCount);
+  const hasMore = displayedCount < filteredPosts.length;
 
   const totalPublishedCount = useMemo(() => {
     return posts.filter((p) => p.status === 'published').length;
@@ -129,8 +134,8 @@ export const PromptGrid = () => {
       {filteredPosts.length > 0 ? (
         <>
           <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4 [column-fill:_balance]">
-            {visiblePosts.map((post, idx) => (
-              <PromptCard key={post.id} post={post} priority={idx < 4} />
+            {visiblePosts.map((post) => (
+              <PromptCard key={post.id} post={post} />
             ))}
           </div>
 
@@ -152,7 +157,7 @@ export const PromptGrid = () => {
           )}
         </>
       ) : isLoadingPosts ? (
-        /* Pinterest-Style Shimmer Skeleton Loading Grid for Viewport */
+        /* Pinterest-Style Shimmer Skeleton Loading Grid for Slow Internet */
         <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4 [column-fill:_balance]">
           {[
             'aspect-[3/4]',
@@ -165,6 +170,8 @@ export const PromptGrid = () => {
             'aspect-[9/16]',
             'aspect-[4/5]',
             'aspect-[3/4]',
+            'aspect-[1/1]',
+            'aspect-[4/5]',
           ].map((aspect, idx) => (
             <div
               key={idx}

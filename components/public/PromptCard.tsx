@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { PromptPost } from '@/types/prompt';
 import { useApp } from '@/context/AppContext';
 import Image from 'next/image';
 import { Sparkles, Bookmark } from 'lucide-react';
-import { getPromptSlug, getOptimizedImageUrl } from '@/lib/utils';
+import { getPromptSlug } from '@/lib/utils';
 
-export const PromptCard = ({ post, priority = false }: { post: PromptPost; priority?: boolean }) => {
+export const PromptCard = ({ post }: { post: PromptPost }) => {
   const {
     setSelectedPost,
     toggleBookmark,
@@ -19,17 +19,14 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   const [imageLoaded, setImageLoaded] = useState(false);
   const isBookmarked = bookmarkedIds.includes(post.id);
   const promptSlug = getPromptSlug(post);
-  const optimizedImgUrl = getOptimizedImageUrl(post.imageUrl, 550);
-  const imageWidth = post.imageWidth || 600;
-  const imageHeight = post.imageHeight || 800;
-  const aspectRatio = `${imageWidth} / ${imageHeight}`;
 
   const handleCardClick = (e: React.MouseEvent) => {
+    // If user clicked with Cmd/Ctrl or middle click, let browser handle new tab
     if (e.metaKey || e.ctrlKey || e.button === 1) return;
     e.preventDefault();
     setSelectedPost(post);
     if (typeof window !== 'undefined') {
-      window.history.pushState({ postId: post.id }, '', `/${promptSlug}`);
+      window.history.pushState({ postId: post.id }, '', `/prompt/${promptSlug}`);
     }
   };
 
@@ -37,6 +34,16 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
     e.preventDefault();
     e.stopPropagation();
     toggleBookmark(post.id);
+  };
+
+  const handleGenerateImagePrompt = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('promptcms_studio_preload', post.promptText);
+    }
+    setCurrentView('studio-tool');
+    showToast('Loaded prompt into AI Studio Image Generator!');
   };
 
   const handleDeconstructImagePrompt = (e: React.MouseEvent) => {
@@ -59,71 +66,46 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
       style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
     >
       <a
-        href={`/${promptSlug}`}
+        href={`/prompt/${promptSlug}`}
         onClick={handleCardClick}
-        className="block relative w-full overflow-hidden bg-neutral-100 dark:bg-neutral-800 focus:outline-none"
-        style={{ aspectRatio }}
+        className="block relative w-full overflow-hidden bg-neutral-100 dark:bg-neutral-800 focus:outline-none min-h-[180px] sm:min-h-[220px]"
         onContextMenu={(e) => e.preventDefault()}
       >
-        {/* Requested Badge */}
-        {post.isRequested && (
-          <div className="absolute top-2.5 left-2.5 z-20 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md text-neutral-900 dark:text-white font-extrabold px-2.5 py-1 rounded-full text-[10px] shadow-md border border-red-200 dark:border-red-900/60 flex items-center gap-1.5 select-none">
-            {post.requestedByAvatar ? (
-              <div className="w-4 h-4 rounded-full overflow-hidden relative shrink-0 border border-neutral-200">
-                <Image
-                  src={post.requestedByAvatar}
-                  alt={post.requestedByName || 'User'}
-                  width={16}
-                  height={16}
-                  className="w-full h-full object-cover rounded-full"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
-            ) : (
-              <span className="w-2 h-2 rounded-full bg-[#E60023]" />
-            )}
-            <span className="truncate max-w-[120px] font-bold">
-              {post.requestedByName ? `Req by ${post.requestedByName}` : 'Requested'}
-            </span>
-          </div>
-        )}
-
-        {/* Full-Height Shimmer Skeleton Placeholder */}
+        {/* Shimmer Skeleton Placeholder for Slow Internet */}
         {!imageLoaded && post.imageUrl && (
-          <div className="absolute inset-0 z-0 bg-neutral-200 dark:bg-neutral-800 animate-pulse flex flex-col items-center justify-center p-4">
-            <div className="w-10 h-10 rounded-full bg-neutral-300 dark:bg-neutral-700 mb-2 flex items-center justify-center shadow-xs">
-              <Sparkles className="w-5 h-5 text-neutral-400 dark:text-neutral-500 animate-spin" style={{ animationDuration: '4s' }} />
+          <div className="absolute inset-0 z-0 bg-neutral-200/90 dark:bg-neutral-800/90 animate-pulse flex flex-col items-center justify-center p-4">
+            <div className="w-9 h-9 rounded-full bg-neutral-300/80 dark:bg-neutral-700/80 mb-2 flex items-center justify-center shadow-xs">
+              <Sparkles className="w-4 h-4 text-neutral-400 dark:text-neutral-500 animate-spin" style={{ animationDuration: '4s' }} />
             </div>
-            <div className="w-20 h-2 rounded-full bg-neutral-300 dark:bg-neutral-700" />
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 dark:via-white/5 to-transparent animate-shimmer pointer-events-none" />
+            <div className="w-16 h-2 rounded-full bg-neutral-300/80 dark:bg-neutral-700/80" />
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 dark:via-white/5 to-transparent animate-shimmer pointer-events-none" />
           </div>
         )}
 
-        {optimizedImgUrl ? (
+        {post.imageUrl ? (
           <Image
-            src={optimizedImgUrl}
+            src={post.imageUrl}
             alt={post.imageAlt || post.title}
-            width={imageWidth}
-            height={imageHeight}
+            width={600}
+            height={800}
             draggable={false}
-            priority={priority}
             onLoad={() => setImageLoaded(true)}
-            className={`w-full h-full object-cover group-hover:scale-102 transition-all duration-500 ease-out select-none pointer-events-none relative z-1 ${
+            className={`w-full h-auto object-cover group-hover:scale-102 transition-all duration-500 ease-out select-none pointer-events-none relative z-1 ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
             referrerPolicy="no-referrer"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-            loading={priority ? 'eager' : 'lazy'}
-            decoding="async"
+            loading="lazy"
           />
-        ) : !post.imageUrl ? (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-tr from-neutral-800 to-neutral-900 text-neutral-400">
+        ) : (
+          <div className="w-full aspect-[3/4] flex items-center justify-center bg-gradient-to-tr from-neutral-800 to-neutral-900 text-neutral-400">
             <Sparkles className="w-8 h-8 opacity-40" />
           </div>
-        ) : null}
+        )}
 
         {/* Pinterest Dark Semi-Transparent Overlay with White Popup Action Buttons */}
         <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto flex items-center justify-center gap-3.5 z-10">
+          {/* Popup Save Button in Pure White */}
           <button
             type="button"
             onClick={handleBookmark}
@@ -140,6 +122,18 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
             )}
           </button>
 
+          {/* Popup Generate Button in Pure White */}
+          <button
+            type="button"
+            onClick={handleGenerateImagePrompt}
+            className="w-12 h-12 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl flex items-center justify-center transition-all duration-300 ease-out transform scale-75 group-hover:scale-100 hover:scale-110 active:scale-95"
+            title="Generate Image in AI Studio"
+            aria-label="Generate Image in AI Studio"
+          >
+            <Sparkles className="w-5 h-5 text-[#E60023]" />
+          </button>
+
+          {/* Popup Deconstruct / Decide Button in Pure White */}
           <button
             type="button"
             onClick={handleDeconstructImagePrompt}
@@ -154,4 +148,3 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
     </article>
   );
 };
-
