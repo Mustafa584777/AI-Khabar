@@ -4,7 +4,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useApp } from '@/context/AppContext';
 import { PromptCard } from './PromptCard';
 import { AIPersonalizedBanner } from './AIPersonalizedBanner';
-import { SearchX, Filter, Loader2 } from 'lucide-react';
+import { SearchX, Filter, Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { PromptPost } from '@/types/prompt';
 import { PersonalizationEngine } from '@/lib/personalization';
 
@@ -17,6 +17,8 @@ export const PromptGrid = () => {
     isLoadingPosts,
     searchQuery,
     setSearchQuery,
+    aiSearchResults,
+    isAiSearching,
     selectedCategory,
     setSelectedCategory,
     selectedTool,
@@ -55,14 +57,55 @@ export const PromptGrid = () => {
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
-      list = list.filter(
-        (p) =>
-          p.title.toLowerCase().includes(q) ||
-          p.promptText.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q) ||
-          p.aiTool.toLowerCase().includes(q) ||
-          p.tags?.some((t) => t.toLowerCase().includes(q))
-      );
+      const hasAiMatches = aiSearchResults && aiSearchResults.query.toLowerCase() === q;
+      const matchedIds = hasAiMatches ? new Set(aiSearchResults.matchedPostIds) : new Set<string>();
+      const expandedTerms = hasAiMatches
+        ? [
+            aiSearchResults.correctedQuery.toLowerCase(),
+            ...aiSearchResults.expandedKeywords.map((k) => k.toLowerCase()),
+          ]
+        : [];
+
+      list = list.filter((p) => {
+        // Direct ID match from Gemini AI semantic search
+        if (matchedIds.has(p.id)) return true;
+
+        // Exact query match on title, prompt text, category, tool, or tags
+        const titleMatch = p.title?.toLowerCase().includes(q);
+        const promptMatch = p.promptText?.toLowerCase().includes(q);
+        const catMatch = p.category?.toLowerCase().includes(q);
+        const toolMatch = p.aiTool?.toLowerCase().includes(q);
+        const tagMatch = p.tags?.some((t) => t.toLowerCase().includes(q));
+
+        if (titleMatch || promptMatch || catMatch || toolMatch || tagMatch) {
+          return true;
+        }
+
+        // Expanded semantic synonyms from Gemini
+        if (expandedTerms.length > 0) {
+          const title = p.title?.toLowerCase() || '';
+          const prompt = p.promptText?.toLowerCase() || '';
+          const tags = Array.isArray(p.tags) ? p.tags.map((t) => t.toLowerCase()) : [];
+          return expandedTerms.some(
+            (term) =>
+              term.length >= 3 &&
+              (title.includes(term) || prompt.includes(term) || tags.some((t) => t.includes(term)))
+          );
+        }
+
+        return false;
+      });
+
+      // If AI produced ordered matchedPostIds, sort by relevance ranking
+      if (hasAiMatches && aiSearchResults.matchedPostIds.length > 0) {
+        const orderMap = new Map<string, number>();
+        aiSearchResults.matchedPostIds.forEach((id, index) => orderMap.set(id, index));
+        list = [...list].sort((a, b) => {
+          const rankA = orderMap.has(a.id) ? orderMap.get(a.id)! : 9999;
+          const rankB = orderMap.has(b.id) ? orderMap.get(b.id)! : 9999;
+          return rankA - rankB;
+        });
+      }
     }
 
     // Sort: If on "For You" (all category and trending/default), apply AI personalization scoring
@@ -72,16 +115,18 @@ export const PromptGrid = () => {
         const scoreB = PersonalizationEngine.scorePrompt(b, tasteProfile, bookmarkedIds).score;
         return scoreB - scoreA;
       });
-    } else if (selectedSort === 'trending') {
-      list = [...list].sort((a, b) => (b.copiesCount || 0) + (b.viewsCount || 0) - ((a.copiesCount || 0) + (a.viewsCount || 0)));
-    } else if (selectedSort === 'most-popular') {
-      list = [...list].sort((a, b) => (b.viewsCount || 0) - (a.viewsCount || 0));
-    } else if (selectedSort === 'most-liked') {
-      list = [...list].sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0));
-    } else if (selectedSort === 'most-copied') {
-      list = [...list].sort((a, b) => (b.copiesCount || 0) - (a.copiesCount || 0));
-    } else if (selectedSort === 'newest') {
-      list = [...list].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else if (!searchQuery.trim()) {
+      if (selectedSort === 'trending') {
+        list = [...list].sort((a, b) => (b.copiesCount || 0) + (b.viewsCount || 0) - ((a.copiesCount || 0) + (a.viewsCount || 0)));
+      } else if (selectedSort === 'most-popular') {
+        list = [...list].sort((a, b) => (b.viewsCount || 0) - (a.viewsCount || 0));
+      } else if (selectedSort === 'most-liked') {
+        list = [...list].sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0));
+      } else if (selectedSort === 'most-copied') {
+        list = [...list].sort((a, b) => (b.copiesCount || 0) - (a.copiesCount || 0));
+      } else if (selectedSort === 'newest') {
+        list = [...list].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      }
     }
 
     // Deduplication by post ID
@@ -96,7 +141,7 @@ export const PromptGrid = () => {
     }
 
     return uniqueList;
-  }, [posts, selectedCategory, selectedTool, searchQuery, selectedSort, tasteProfile, bookmarkedIds]);
+  }, [posts, selectedCategory, selectedTool, searchQuery, selectedSort, tasteProfile, bookmarkedIds, aiSearchResults]);
 
   // Infinite Scroll Observer
   useEffect(() => {
@@ -128,6 +173,87 @@ export const PromptGrid = () => {
       {/* AI Personalized Smart Feed Banner (When on "For You" Feed) */}
       {selectedCategory === 'all' && !searchQuery.trim() && (
         <AIPersonalizedBanner />
+      )}
+
+      {/* Gemini AI Smart Search Results Header */}
+      {searchQuery.trim() && (
+        <div className="mb-6 p-4 sm:p-5 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#E60023] via-rose-500 to-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-red-500/20">
+              {isAiSearching ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Sparkles className="w-5 h-5" />
+              )}
+            </div>
+
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[11px] font-black uppercase tracking-wider text-[#E60023] dark:text-red-400">
+                  Gemini AI Visual Search
+                </span>
+                {aiSearchResults?.isAiPowered && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/70 dark:border-blue-800">
+                    Semantic Match
+                  </span>
+                )}
+                {isAiSearching && (
+                  <span className="text-[11px] text-neutral-400 dark:text-neutral-500 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#E60023] animate-ping" />
+                    Analyzing concepts...
+                  </span>
+                )}
+              </div>
+
+              <div className="text-sm sm:text-base font-bold text-neutral-900 dark:text-white">
+                {aiSearchResults?.correctedQuery &&
+                aiSearchResults.correctedQuery.toLowerCase() !== searchQuery.trim().toLowerCase() ? (
+                  <div className="flex flex-wrap items-baseline gap-1.5">
+                    <span>Showing results for</span>
+                    <span className="text-[#E60023] font-extrabold">
+                      &ldquo;{aiSearchResults.correctedQuery}&rdquo;
+                    </span>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400 font-normal">
+                      (interpreted from &ldquo;{searchQuery}&rdquo;)
+                    </span>
+                  </div>
+                ) : (
+                  <span>
+                    Results for &ldquo;{searchQuery}&rdquo; ({filteredPosts.length} prompts)
+                  </span>
+                )}
+              </div>
+
+              {aiSearchResults?.explanation && (
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-2xl">
+                  {aiSearchResults.explanation}
+                </p>
+              )}
+
+              {aiSearchResults?.expandedKeywords && aiSearchResults.expandedKeywords.length > 1 && (
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] font-bold text-neutral-400">Concepts:</span>
+                  {aiSearchResults.expandedKeywords.slice(0, 5).map((kw) => (
+                    <span
+                      key={kw}
+                      className="px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-[10px] font-medium text-neutral-600 dark:text-neutral-400"
+                    >
+                      {kw}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setSearchQuery('')}
+            className="self-end sm:self-center px-4 py-2 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-bold transition-all shrink-0"
+          >
+            Clear Search
+          </button>
+        </div>
       )}
 
       {/* Masonry Image Grid */}

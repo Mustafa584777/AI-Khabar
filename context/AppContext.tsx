@@ -2,9 +2,9 @@
 /* eslint-disable react-hooks/purity */
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
-import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem } from '@/types/prompt';
+import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem, AiSearchResult } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
 import { INITIAL_POSTS, INITIAL_CATEGORIES, INITIAL_SETTINGS } from '@/lib/initial-data';
 import {
@@ -17,8 +17,8 @@ interface AppContextType {
   // Navigation & Views
   currentView: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you';
   setCurrentView: (view: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you') => void;
-  adminSubView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore';
-  setAdminSubView: (subView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore') => void;
+  adminSubView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history';
+  setAdminSubView: (subView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history') => void;
   editingPostId: string | null;
   setEditingPostId: (id: string | null) => void;
   selectedPost: PromptPost | null;
@@ -84,6 +84,10 @@ interface AppContextType {
   setIsSearchModalOpen: (open: boolean) => void;
   popularSearchQueries: string[];
   recordSearchQuery: (query: string) => void;
+  aiSearchResults: AiSearchResult | null;
+  isAiSearching: boolean;
+  performAiSearch: (query: string) => Promise<AiSearchResult | null>;
+  clearAiSearch: () => void;
   selectedCategory: string;
   setSelectedCategory: (cat: string) => void;
   selectedTool: string;
@@ -121,7 +125,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Navigation
   const [currentView, setCurrentView] = useState<'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you'>('public');
   const [adminSubView, setAdminSubView] = useState<
-    'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore'
+    'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history'
   >('dashboard');
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [selectedPost, setSelectedPost] = useState<PromptPost | null>(null);
@@ -338,20 +342,90 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSearchModalOpen, setIsSearchModalOpen] = useState<boolean>(false);
   const [popularSearchQueries, setPopularSearchQueries] = useState<string[]>([
+    'Traditional saree',
     'Cyberpunk neon portrait',
     'Cinematic golden hour',
     'Vintage 35mm film',
     'Anime masterpiece',
     'Minimalist aesthetic logo',
     'Hyperrealistic 8K model',
-    'Moody luxury portrait',
-    'Unreal Engine 3D render',
+    'Indian fashion portrait',
   ]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedTool, setSelectedTool] = useState<string>('all');
   const [selectedSort, setSelectedSort] = useState<
     'trending' | 'most-popular' | 'most-liked' | 'most-copied' | 'newest'
   >('trending');
+
+  // Gemini AI Search State & Cache
+  const [aiSearchResults, setAiSearchResults] = useState<AiSearchResult | null>(null);
+  const [isAiSearching, setIsAiSearching] = useState<boolean>(false);
+  const aiSearchCacheRef = useRef<Map<string, AiSearchResult>>(new Map());
+
+  const performAiSearch = useCallback(async (query: string): Promise<AiSearchResult | null> => {
+    const clean = query.trim();
+    if (!clean || clean.length < 2) {
+      setAiSearchResults(null);
+      setIsAiSearching(false);
+      return null;
+    }
+
+    const cacheKey = clean.toLowerCase();
+    if (aiSearchCacheRef.current.has(cacheKey)) {
+      const cached = aiSearchCacheRef.current.get(cacheKey)!;
+      setAiSearchResults(cached);
+      return cached;
+    }
+
+    setIsAiSearching(true);
+    try {
+      const res = await fetch('/api/search/semantic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: clean }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          const result: AiSearchResult = {
+            query: clean,
+            correctedQuery: data.correctedQuery || clean,
+            expandedKeywords: Array.isArray(data.expandedKeywords) ? data.expandedKeywords : [clean],
+            matchedPostIds: Array.isArray(data.matchedPostIds) ? data.matchedPostIds : [],
+            explanation: data.explanation || '',
+            isAiPowered: Boolean(data.isAiPowered),
+          };
+          aiSearchCacheRef.current.set(cacheKey, result);
+          setAiSearchResults(result);
+          setIsAiSearching(false);
+          return result;
+        }
+      }
+    } catch (e) {
+      console.warn('AI Semantic Search error:', e);
+    } finally {
+      setIsAiSearching(false);
+    }
+    return null;
+  }, []);
+
+  const clearAiSearch = useCallback(() => {
+    setAiSearchResults(null);
+    setIsAiSearching(false);
+  }, []);
+
+  // Whenever searchQuery updates, trigger performAiSearch (debounced 300ms)
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q || q.length < 2) {
+      setAiSearchResults(null);
+      return;
+    }
+    const timer = setTimeout(() => {
+      void performAiSearch(q);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, performAiSearch]);
 
   const fetchSearchQueries = async () => {
     try {
@@ -996,6 +1070,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setIsSearchModalOpen,
         popularSearchQueries,
         recordSearchQuery,
+        aiSearchResults,
+        isAiSearching,
+        performAiSearch,
+        clearAiSearch,
         selectedCategory,
         setSelectedCategory,
         selectedTool,

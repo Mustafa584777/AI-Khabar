@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Zap,
   Database,
+  Search,
 } from 'lucide-react';
 
 export const AdminSidebar = () => {
@@ -66,6 +67,11 @@ export const AdminSidebar = () => {
       id: 'categories',
       label: 'Categories & Tags',
       icon: FolderTree,
+    },
+    {
+      id: 'search-history',
+      label: 'User Search History',
+      icon: Search,
     },
     {
       id: 'backup-restore',

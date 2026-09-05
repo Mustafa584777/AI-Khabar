@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
@@ -31,6 +32,7 @@ export const SearchExploreModal = () => {
     posts,
     popularSearchQueries,
     recordSearchQuery,
+    performAiSearch,
     setSelectedCategory,
     setSelectedPost,
     copyPromptToClipboard,
@@ -39,6 +41,8 @@ export const SearchExploreModal = () => {
 
   const [localInput, setLocalInput] = useState(searchQuery || '');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [modalAiResult, setModalAiResult] = useState<any>(null);
+  const [isModalSearching, setIsModalSearching] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [prevIsOpen, setPrevIsOpen] = useState(isSearchModalOpen);
@@ -48,6 +52,24 @@ export const SearchExploreModal = () => {
       setLocalInput(searchQuery || '');
     }
   }
+
+  // Debounced AI Search for Modal
+  useEffect(() => {
+    const q = localInput.trim();
+    if (q.length < 2) {
+      setModalAiResult(null);
+      setIsModalSearching(false);
+      return;
+    }
+    setIsModalSearching(true);
+    const timer = setTimeout(() => {
+      performAiSearch(q).then((res) => {
+        setModalAiResult(res);
+        setIsModalSearching(false);
+      });
+    }, 280);
+    return () => clearTimeout(timer);
+  }, [localInput, performAiSearch]);
 
   // Handle focus and body scroll lock when modal opens
   useEffect(() => {
@@ -118,21 +140,60 @@ export const SearchExploreModal = () => {
     return catWithStats.sort((a, b) => b.totalViews - a.totalViews || b.postCount - a.postCount);
   }, [categories, posts]);
 
-  // Live Instant Search Filter Results
+  // Live Instant Search Filter Results (with Gemini AI semantic fallback & sorting)
   const liveResults = useMemo(() => {
     const query = localInput.trim().toLowerCase();
     if (!query || query.length < 2) return [];
 
     const published = posts.filter((p) => p.status === 'published');
-    return published.filter((post) => {
+    const hasAiMatches = modalAiResult && modalAiResult.query?.toLowerCase() === query;
+    const matchedIds = hasAiMatches ? new Set<string>(modalAiResult.matchedPostIds || []) : new Set<string>();
+    const expandedTerms = hasAiMatches
+      ? [
+          (modalAiResult.correctedQuery || '').toLowerCase(),
+          ...(Array.isArray(modalAiResult.expandedKeywords) ? modalAiResult.expandedKeywords : []).map((k: string) => k.toLowerCase()),
+        ].filter(Boolean)
+      : [];
+
+    const matches = published.filter((post) => {
+      // Direct ID match from Gemini AI
+      if (matchedIds.has(post.id)) return true;
+
+      // Exact keyword match
       const titleMatch = post.title?.toLowerCase().includes(query);
       const promptMatch = post.promptText?.toLowerCase().includes(query);
       const catMatch = post.category?.toLowerCase().includes(query);
       const tagMatch = Array.isArray(post.tags) && post.tags.some((t) => t.toLowerCase().includes(query));
       const toolMatch = post.aiTool?.toLowerCase().includes(query);
-      return titleMatch || promptMatch || catMatch || tagMatch || toolMatch;
+      if (titleMatch || promptMatch || catMatch || tagMatch || toolMatch) return true;
+
+      // Semantic expanded terms
+      if (expandedTerms.length > 0) {
+        const title = post.title?.toLowerCase() || '';
+        const prompt = post.promptText?.toLowerCase() || '';
+        const tags = Array.isArray(post.tags) ? post.tags.map((t) => t.toLowerCase()) : [];
+        return expandedTerms.some(
+          (term) =>
+            term.length >= 3 &&
+            (title.includes(term) || prompt.includes(term) || tags.some((t) => t.includes(term)))
+        );
+      }
+
+      return false;
     });
-  }, [localInput, posts]);
+
+    if (hasAiMatches && matchedIds.size > 0) {
+      const orderMap = new Map<string, number>();
+      (modalAiResult.matchedPostIds || []).forEach((id: string, idx: number) => orderMap.set(id, idx));
+      return [...matches].sort((a, b) => {
+        const rankA = orderMap.has(a.id) ? orderMap.get(a.id)! : 9999;
+        const rankB = orderMap.has(b.id) ? orderMap.get(b.id)! : 9999;
+        return rankA - rankB;
+      });
+    }
+
+    return matches;
+  }, [localInput, posts, modalAiResult]);
 
   const handleCopyPrompt = (e: React.MouseEvent, post: PromptPost) => {
     e.stopPropagation();
@@ -218,24 +279,57 @@ export const SearchExploreModal = () => {
           {/* A. If user typed a search query: Show Live Results */}
           {localInput.trim().length >= 2 ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Sparkles className="w-4 h-4 text-[#E60023]" />
                   <h3 className="text-sm font-black text-neutral-900 dark:text-white">
                     Live Search Results ({liveResults.length})
                   </h3>
+                  {modalAiResult?.isAiPowered && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
+                      Gemini AI Powered
+                    </span>
+                  )}
+                  {isModalSearching && (
+                    <span className="text-xs text-neutral-400 animate-pulse">
+                      Analyzing semantics...
+                    </span>
+                  )}
                 </div>
                 {liveResults.length > 0 && (
                   <button
                     type="button"
                     onClick={() => handleExecuteSearch(localInput)}
-                    className="text-xs font-bold text-[#E60023] hover:underline flex items-center gap-1"
+                    className="text-xs font-bold text-[#E60023] hover:underline flex items-center gap-1 self-start sm:self-auto"
                   >
                     <span>View all in feed</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
+
+              {/* AI Semantic query interpretation banner */}
+              {modalAiResult?.correctedQuery &&
+                modalAiResult.correctedQuery.toLowerCase() !== localInput.trim().toLowerCase() && (
+                  <div className="px-3.5 py-2 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 text-xs border border-amber-200/80 dark:border-amber-900/60 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-3.5 h-3.5 text-[#E60023] shrink-0" />
+                      <span>
+                        Showing visual results for <strong className="text-[#E60023]">&ldquo;{modalAiResult.correctedQuery}&rdquo;</strong> (understood from &ldquo;{localInput}&rdquo;)
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLocalInput(modalAiResult.correctedQuery);
+                        handleExecuteSearch(modalAiResult.correctedQuery);
+                      }}
+                      className="text-[11px] font-bold underline shrink-0 hover:text-black dark:hover:text-white"
+                    >
+                      Use this query
+                    </button>
+                  </div>
+                )}
 
               {liveResults.length === 0 ? (
                 <div className="py-12 text-center space-y-3">

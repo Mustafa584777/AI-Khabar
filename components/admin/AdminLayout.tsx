@@ -10,6 +10,7 @@ import { PostEditor } from './PostEditor';
 import { CategoriesManager } from './CategoriesManager';
 import { SettingsView } from './SettingsView';
 import { BackupRestoreView } from './BackupRestoreView';
+import { SearchHistoryManager } from './SearchHistoryManager';
 import { X } from 'lucide-react';
 
 export const AdminLayout = () => {
@@ -46,6 +47,8 @@ export const AdminLayout = () => {
         return <PostEditor key={editingPostId || 'new-post'} />;
       case 'categories':
         return <CategoriesManager key={settings.popularTags?.join(',') || 'categories'} />;
+      case 'search-history':
+        return <SearchHistoryManager />;
       case 'backup-restore':
         return <BackupRestoreView />;
       case 'settings':

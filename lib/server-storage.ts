@@ -571,22 +571,26 @@ export const ServerStorage = {
   },
 
   getTopSearchQueries: async (limitCount = 12): Promise<SearchQueryItem[]> => {
+    return (await ServerStorage.getAllSearchQueries()).slice(0, limitCount);
+  },
+
+  getAllSearchQueries: async (): Promise<SearchQueryItem[]> => {
     if (isSupabaseConfigured()) {
       try {
         const { data, error } = await db()
           .from('search_queries')
           .select('*')
-          .order('count', { ascending: false })
-          .limit(limitCount);
+          .order('count', { ascending: false });
         if (!error && data && data.length > 0) {
           return data.map((d) => ({
+            id: d.id,
             query: d.query,
             count: d.count,
             lastSearched: new Date(d.last_searched_at || Date.now()).getTime(),
           }));
         }
       } catch (e) {
-        console.warn('Supabase getTopSearchQueries error:', e);
+        console.warn('Supabase getAllSearchQueries error:', e);
       }
     }
 
@@ -594,29 +598,57 @@ export const ServerStorage = {
       memorySearchQueries = readJsonFile<SearchQueryItem[]>(SEARCH_QUERIES_FILE, []);
     }
     if (memorySearchQueries && memorySearchQueries.length > 0) {
-      return [...memorySearchQueries]
-        .sort((a, b) => b.count - a.count)
-        .slice(0, limitCount);
+      return [...memorySearchQueries].sort((a, b) => b.count - a.count);
     }
 
-    const defaultQueries = [
-      'Cyberpunk neon portrait',
-      'Cinematic golden hour',
-      'Vintage 35mm film',
-      'Anime masterpiece',
-      'Minimalist aesthetic logo',
-      'Hyperrealistic 8K model',
-      'Moody luxury portrait',
-      'Unreal Engine 3D render',
-      'Japandi aesthetic living room',
-      'Dark academia aesthetic',
-    ].map((q, i) => ({
-      query: q,
-      count: 50 - i * 3,
-      lastSearched: Date.now(),
-    }));
+    const defaultQueries: SearchQueryItem[] = [
+      { query: 'Traditional saree', count: 42, lastSearched: Date.now() - 1000 * 60 * 15 },
+      { query: 'Cyberpunk neon portrait', count: 38, lastSearched: Date.now() - 1000 * 60 * 45 },
+      { query: 'Cinematic golden hour', count: 31, lastSearched: Date.now() - 1000 * 60 * 90 },
+      { query: 'Vintage 35mm film', count: 27, lastSearched: Date.now() - 1000 * 60 * 120 },
+      { query: 'Anime masterpiece', count: 24, lastSearched: Date.now() - 1000 * 60 * 180 },
+      { query: 'Minimalist aesthetic logo', count: 21, lastSearched: Date.now() - 1000 * 60 * 240 },
+      { query: 'Hyperrealistic 8K model', count: 18, lastSearched: Date.now() - 1000 * 60 * 300 },
+      { query: 'Indian fashion portrait', count: 16, lastSearched: Date.now() - 1000 * 60 * 360 },
+      { query: 'Moody luxury portrait', count: 14, lastSearched: Date.now() - 1000 * 60 * 420 },
+      { query: 'Unreal Engine 3D render', count: 12, lastSearched: Date.now() - 1000 * 60 * 480 },
+      { query: 'Japandi aesthetic living room', count: 9, lastSearched: Date.now() - 1000 * 60 * 600 },
+      { query: 'Dark academia aesthetic', count: 7, lastSearched: Date.now() - 1000 * 60 * 720 },
+    ];
 
-    return defaultQueries.slice(0, limitCount);
+    memorySearchQueries = defaultQueries;
+    writeJsonFile(SEARCH_QUERIES_FILE, defaultQueries);
+    return defaultQueries;
+  },
+
+  deleteSearchQuery: async (queryText: string): Promise<SearchQueryItem[]> => {
+    const clean = queryText.trim();
+    if (isSupabaseConfigured()) {
+      try {
+        const id = `q_${clean.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+        await db().from('search_queries').delete().or(`id.eq.${id},query.ilike.${clean}`);
+      } catch (e) {
+        console.error('Supabase deleteSearchQuery error:', e);
+      }
+    }
+
+    const current = await ServerStorage.getAllSearchQueries();
+    const updated = current.filter((q) => q.query.toLowerCase() !== clean.toLowerCase());
+    memorySearchQueries = updated;
+    writeJsonFile(SEARCH_QUERIES_FILE, updated);
+    return updated;
+  },
+
+  clearAllSearchQueries: async (): Promise<void> => {
+    if (isSupabaseConfigured()) {
+      try {
+        await db().from('search_queries').delete().neq('id', '___guard___');
+      } catch (e) {
+        console.error('Supabase clearAllSearchQueries error:', e);
+      }
+    }
+    memorySearchQueries = [];
+    writeJsonFile(SEARCH_QUERIES_FILE, []);
   },
 
   // Settings

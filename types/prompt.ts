@@ -180,3 +180,13 @@ export interface SearchQueryItem {
   lastSearched: number;
 }
 
+export interface AiSearchResult {
+  query: string;
+  correctedQuery: string;
+  expandedKeywords: string[];
+  matchedPostIds: string[];
+  explanation: string;
+  isAiPowered: boolean;
+}
+
+

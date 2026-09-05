@@ -631,23 +631,23 @@ export const PromptDetailModal = () => {
           className="bg-white dark:bg-neutral-900 rounded-[28px] sm:rounded-[36px] shadow-2xl border border-neutral-200/80 dark:border-neutral-800 overflow-hidden animate-fade-in transition-all duration-150"
         >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
-            {/* Left Column: Natural High-Resolution Photo Showcase */}
+            {/* Left Column: Edge-to-Edge High-Resolution Photo Showcase */}
             <div
               onContextMenu={(e) => e.preventDefault()}
-              className="lg:col-span-7 bg-neutral-950 flex flex-col justify-center items-center p-3 sm:p-6 lg:p-8 relative group min-h-[360px] sm:min-h-[480px] select-none"
+              className="lg:col-span-7 bg-neutral-950 flex flex-col justify-center items-stretch p-0 relative group min-h-[380px] sm:min-h-[500px] lg:min-h-[640px] select-none overflow-hidden"
             >
               {selectedPost.imageUrl ? (
                 <div
                   onContextMenu={(e) => e.preventDefault()}
-                  className="relative w-full h-full min-h-[340px] sm:min-h-[460px] max-h-[720px] rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center select-none"
+                  className="relative w-full h-full min-h-[380px] sm:min-h-[500px] lg:min-h-[640px] overflow-hidden flex items-center justify-center select-none"
                 >
                   <Image
-                    src={getOptimizedImageUrl(selectedPost.imageUrl, 1000)}
+                    src={getOptimizedImageUrl(selectedPost.imageUrl, 1200)}
                     alt={selectedPost.imageAlt || selectedPost.title}
                     width={1200}
-                    height={1200}
+                    height={1600}
                     draggable={false}
-                    className="w-full h-auto max-h-[720px] object-contain rounded-2xl sm:rounded-3xl select-none pointer-events-none"
+                    className="w-full h-full object-cover select-none pointer-events-none"
                     referrerPolicy="no-referrer"
                     priority
                   />
