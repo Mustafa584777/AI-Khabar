@@ -5,7 +5,7 @@ import { PromptPost } from '@/types/prompt';
 import { useApp } from '@/context/AppContext';
 import Image from 'next/image';
 import { Sparkles, Bookmark } from 'lucide-react';
-import { getPromptSlug, getOptimizedImageUrl, detectPostAspectRatio } from '@/lib/utils';
+import { getPromptSlug, getOptimizedImageUrl } from '@/lib/utils';
 
 export const PromptCard = ({ post, priority = false }: { post: PromptPost; priority?: boolean }) => {
   const {
@@ -17,21 +17,19 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   } = useApp();
 
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [measuredRatio, setMeasuredRatio] = useState<string | null>(null);
   const isBookmarked = bookmarkedIds.includes(post.id);
   const promptSlug = getPromptSlug(post);
   const optimizedImgUrl = getOptimizedImageUrl(post.imageUrl, 550);
-
-  // Dynamic aspect ratio: detected from parameters/prompt text, or dynamically measured from real image
-  const initialAspectRatio = detectPostAspectRatio(post);
-  const activeAspectRatio = measuredRatio || initialAspectRatio;
+  const imageWidth = post.imageWidth || 600;
+  const imageHeight = post.imageHeight || 800;
+  const aspectRatio = `${imageWidth} / ${imageHeight}`;
 
   const handleCardClick = (e: React.MouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.button === 1) return;
     e.preventDefault();
     setSelectedPost(post);
     if (typeof window !== 'undefined') {
-      window.history.pushState({ postId: post.id }, '', `/prompt/${promptSlug}`);
+      window.history.pushState({ postId: post.id }, '', `/${promptSlug}`);
     }
   };
 
@@ -61,10 +59,9 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
       style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
     >
       <a
-        href={`/prompt/${promptSlug}`}
+        href={`/${promptSlug}`}
         onClick={handleCardClick}
         className="block relative w-full overflow-hidden bg-neutral-100 dark:bg-neutral-800 focus:outline-none"
-        style={{ aspectRatio: activeAspectRatio }}
         onContextMenu={(e) => e.preventDefault()}
       >
         {/* Full-Height Shimmer Skeleton Placeholder */}
@@ -82,27 +79,22 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
           <Image
             src={optimizedImgUrl}
             alt={post.imageAlt || post.title}
-            width={600}
-            height={800}
+            width={0}
+            height={0}
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+            style={{ width: '100%', height: 'auto' }}
             draggable={false}
             priority={priority}
-            onLoad={(e) => {
-              setImageLoaded(true);
-              const img = e.currentTarget;
-              if (img.naturalWidth && img.naturalHeight) {
-                setMeasuredRatio(`${img.naturalWidth} / ${img.naturalHeight}`);
-              }
-            }}
-            className={`w-full h-full object-cover group-hover:scale-102 transition-all duration-500 ease-out select-none pointer-events-none relative z-1 ${
+            onLoad={() => setImageLoaded(true)}
+            className={`w-full h-auto object-contain group-hover:scale-102 transition-all duration-500 ease-out select-none pointer-events-none relative z-1 ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
             referrerPolicy="no-referrer"
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
             loading={priority ? 'eager' : 'lazy'}
             decoding="async"
           />
         ) : !post.imageUrl ? (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-tr from-neutral-800 to-neutral-900 text-neutral-400">
+          <div className="w-full aspect-square flex items-center justify-center bg-gradient-to-tr from-neutral-800 to-neutral-900 text-neutral-400">
             <Sparkles className="w-8 h-8 opacity-40" />
           </div>
         ) : null}

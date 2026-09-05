@@ -123,8 +123,6 @@ function MainApp() {
 
 export default function Page() {
   return (
-    <AppProvider>
-      <MainApp />
-    </AppProvider>
+    <MainApp />
   );
 }

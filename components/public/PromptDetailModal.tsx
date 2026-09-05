@@ -84,16 +84,17 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
         <Image
           src={getOptimizedImageUrl(pin.imageUrl, 500)}
           alt={pin.imageAlt || pin.title}
-          width={600}
-          height={800}
+          width={0}
+          height={0}
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+          style={{ width: '100%', height: 'auto' }}
           onLoad={() => setLoaded(true)}
-          className={`w-full h-auto object-cover group-hover:scale-105 transition-all duration-500 ${
+          className={`w-full h-auto object-contain group-hover:scale-105 transition-all duration-500 ${
             loaded ? 'opacity-100' : 'opacity-0 absolute inset-0'
           }`}
           referrerPolicy="no-referrer"
           loading="lazy"
           decoding="async"
-          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
         />
       )}
 
@@ -203,7 +204,8 @@ export const PromptDetailModal = () => {
     setHistoryStack([]);
     if (typeof window !== 'undefined') {
       window.history.pushState(null, '', '/');
-      if (window.location.pathname.startsWith('/prompt')) {
+      const path = window.location.pathname;
+      if (path !== '/' && path !== '/dashboard') {
         router.push('/');
       }
     }
@@ -221,7 +223,7 @@ export const PromptDetailModal = () => {
       setSelectedPost(prevPost);
       if (typeof window !== 'undefined') {
         const prevSlug = getPromptSlug(prevPost);
-        window.history.pushState({ postId: prevPost.id }, '', `/prompt/${prevSlug}`);
+        window.history.pushState({ postId: prevPost.id }, '', `/${prevSlug}`);
       }
       setDisplayedCount(5);
     } else {
@@ -234,11 +236,11 @@ export const PromptDetailModal = () => {
     const handlePopState = () => {
       if (typeof window !== 'undefined') {
         const path = window.location.pathname;
-        if (path === '/' || path === '' || !path.startsWith('/prompt')) {
+        if (path === '/' || path === '' || path === '/dashboard' || path.startsWith('/admin') || path.startsWith('/blog')) {
           setSelectedPost(null);
           setHistoryStack([]);
-        } else if (path.startsWith('/prompt/')) {
-          const rawSlug = path.replace('/prompt/', '').split('/')[0];
+        } else if (path.length > 1) {
+          const rawSlug = path.replace('/', '').split('/')[0];
           const targetSlug = decodeURIComponent(rawSlug).toLowerCase().trim();
           const matched = posts.find((p) => {
             if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
@@ -502,7 +504,7 @@ export const PromptDetailModal = () => {
 
   const handleShare = async () => {
     const shareSlug = getPromptSlug(selectedPost);
-    const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/prompt/${shareSlug}` : '';
+    const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/${shareSlug}` : '';
     const shareData = {
       title: selectedPost.title,
       text: `Check out this photo prompt: ${selectedPost.title}`,
@@ -536,7 +538,7 @@ export const PromptDetailModal = () => {
     setSelectedPost(pin);
     if (typeof window !== 'undefined') {
       const pinSlug = getPromptSlug(pin);
-      window.history.pushState({ postId: pin.id }, '', `/prompt/${pinSlug}`);
+      window.history.pushState({ postId: pin.id }, '', `/${pinSlug}`);
     }
     setDisplayedCount(5);
   };
@@ -631,30 +633,25 @@ export const PromptDetailModal = () => {
           className="bg-white dark:bg-neutral-900 rounded-[28px] sm:rounded-[36px] shadow-2xl border border-neutral-200/80 dark:border-neutral-800 overflow-hidden animate-fade-in transition-all duration-150"
         >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
-            {/* Left Column: Responsive Aspect-Ratio Photo Showcase */}
+            {/* Left Column: Edge-to-Edge High-Resolution Photo Showcase */}
             <div
               onContextMenu={(e) => e.preventDefault()}
-              className="lg:col-span-7 bg-neutral-950 flex flex-col justify-center items-center p-0 relative group min-h-[340px] sm:min-h-[460px] select-none overflow-hidden"
+              className="lg:col-span-7 bg-neutral-950 flex flex-col justify-center items-stretch p-0 relative group min-h-[380px] sm:min-h-[500px] lg:min-h-[640px] select-none overflow-hidden"
             >
               {selectedPost.imageUrl ? (
                 <div
                   onContextMenu={(e) => e.preventDefault()}
-                  className="relative w-full h-full flex items-center justify-center overflow-hidden select-none"
+                  className="relative w-full h-full min-h-[380px] sm:min-h-[500px] lg:min-h-[640px] overflow-hidden flex items-center justify-center select-none"
                 >
-                  {/* Subtle ambient blurred background so different aspect ratios blend seamlessly without stark harsh black bars */}
-                  <div
-                    className="absolute inset-0 bg-cover bg-center blur-3xl opacity-35 dark:opacity-45 scale-125 pointer-events-none"
-                    style={{ backgroundImage: `url(${selectedPost.imageUrl})` }}
-                  />
-
-                  {/* Full image uncropped with proper natural aspect ratio display */}
                   <Image
-                    src={getOptimizedImageUrl(selectedPost.imageUrl, 1400)}
+                    src={getOptimizedImageUrl(selectedPost.imageUrl, 1200)}
                     alt={selectedPost.imageAlt || selectedPost.title}
-                    width={1200}
-                    height={1600}
+                    width={0}
+                    height={0}
+                    sizes="100vw"
+                    style={{ width: '100%', height: 'auto', maxHeight: '100%' }}
                     draggable={false}
-                    className="w-full h-auto max-h-[82vh] object-contain relative z-1 select-none pointer-events-none"
+                    className="object-contain select-none pointer-events-none"
                     referrerPolicy="no-referrer"
                     priority
                   />

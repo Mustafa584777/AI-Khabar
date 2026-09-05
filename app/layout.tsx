@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Script from 'next/script';
 import { Poppins } from 'next/font/google';
 import './globals.css';
+import { AppProvider } from '@/context/AppContext';
 
 const poppins = Poppins({
   weight: ['300', '400', '500', '600', '700', '800'],
@@ -60,7 +61,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </Script>
       </head>
       <body className={`${poppins.variable} ${poppins.className} font-sans antialiased selection:bg-[#E60023] selection:text-white`} suppressHydrationWarning>
-        {children}
+        <AppProvider>
+          {children}
+        </AppProvider>
       </body>
     </html>
   );

@@ -3,15 +3,19 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
+import { supabase } from '@/lib/supabase';
 import {
   X,
   Sparkles,
   Mail,
   Lock,
+  User,
   ArrowRight,
+  ShieldCheck,
   Zap,
   Bookmark,
   History,
+  CheckCircle,
 } from 'lucide-react';
 
 export const UserAuthModal = () => {
@@ -41,6 +45,25 @@ export const UserAuthModal = () => {
 
   if (!isUserAuthModalOpen) return null;
 
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+      if (error) {
+        showToast(error.message);
+        setIsLoading(false);
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Google login failed');
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !email.includes('@')) {
@@ -56,12 +79,12 @@ export const UserAuthModal = () => {
 
     setTimeout(() => {
       if (mode === 'signup') {
-        const cleanName = email.split('@')[0];
-        const userHandle = '@' + cleanName.toLowerCase().replace(/[^a-z0-9]/g, '');
-        signupUser(cleanName, userHandle, email, password, selectedAvatar);
-        showToast('Account created successfully!');
+        const userName = email.split('@')[0];
+        const userHandle = '@' + userName.toLowerCase().replace(/[^a-z0-9]/g, '');
+        signupUser(userName, userHandle, email, password, selectedAvatar);
+        showToast(`Welcome ${userName}! Account created successfully.`);
       } else {
-        loginUser(email, password, undefined, selectedAvatar);
+        loginUser(email, password, '', selectedAvatar);
         showToast('Welcome back! You are now logged in.');
       }
       setIsLoading(false);
@@ -123,6 +146,42 @@ export const UserAuthModal = () => {
 
         {/* Form Body */}
         <div className="p-6 space-y-5">
+          {/* Google OAuth Login Button */}
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={isLoading}
+              className="w-full py-3 px-4 rounded-xl bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-100 text-xs sm:text-sm font-bold shadow-sm flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.19v3.15C3.17 21.36 7.22 24 12 24z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.19C.43 8.1 0 9.99 0 12s.43 3.9 1.19 5.42l4.09-3.15z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.22 0 3.17 2.64 1.19 6.58l4.09 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                />
+              </svg>
+              <span>Continue with Google (Gmail)</span>
+            </button>
+
+            <div className="flex items-center my-2">
+              <div className="flex-grow border-t border-neutral-200 dark:border-neutral-800"></div>
+              <span className="px-3 text-[10px] text-neutral-400 uppercase tracking-wider">or with email</span>
+              <div className="flex-grow border-t border-neutral-200 dark:border-neutral-800"></div>
+            </div>
+          </div>
+
           {/* Mode Switcher Pills */}
           <div className="grid grid-cols-2 p-1 bg-neutral-100 dark:bg-neutral-800 rounded-2xl">
             <button
@@ -151,27 +210,29 @@ export const UserAuthModal = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'signup' && (
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1.5">
-                  Choose Your Avatar
-                </label>
-                <div className="flex items-center gap-3">
-                  {AVATAR_OPTIONS.map((av) => (
-                    <button
-                      key={av}
-                      type="button"
-                      onClick={() => setSelectedAvatar(av)}
-                      className={`relative w-12 h-12 rounded-full overflow-hidden border-2 transition-all ${
-                        selectedAvatar === av
-                          ? 'border-[#E60023] ring-2 ring-red-500/30 scale-105'
-                          : 'border-transparent opacity-70 hover:opacity-100'
-                      }`}
-                    >
-                      <Image src={av} alt="Avatar option" fill sizes="48px" className="object-cover" />
-                    </button>
-                  ))}
+              <>
+                <div>
+                  <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1.5">
+                    Choose Your Avatar
+                  </label>
+                  <div className="flex items-center gap-3">
+                    {AVATAR_OPTIONS.map((av) => (
+                      <button
+                        key={av}
+                        type="button"
+                        onClick={() => setSelectedAvatar(av)}
+                        className={`relative w-12 h-12 rounded-full overflow-hidden border-2 transition-all ${
+                          selectedAvatar === av
+                            ? 'border-[#E60023] ring-2 ring-red-500/30 scale-105'
+                            : 'border-transparent opacity-70 hover:opacity-100'
+                        }`}
+                      >
+                        <Image src={av} alt="Avatar option" fill sizes="48px" className="object-cover" />
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              </>
             )}
 
             <div>
@@ -224,16 +285,10 @@ export const UserAuthModal = () => {
             </button>
           </form>
 
-          <div className="pt-2 text-center">
-            <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
-              {mode === 'signup' ? 'Already have an account?' : "Don't have an account yet?"}{' '}
-              <button
-                type="button"
-                onClick={() => setMode(mode === 'signup' ? 'login' : 'signup')}
-                className="font-bold text-[#E60023] hover:underline"
-              >
-                {mode === 'signup' ? 'Sign In' : 'Create Account'}
-              </button>
+          {/* Quick 1-Click Access Removed */}
+          <div className="pt-3 border-t border-neutral-200 dark:border-neutral-800 text-center">
+            <span className="text-[10px] text-neutral-400 block mt-2">
+              Free forever. No credit card required.
             </span>
           </div>
         </div>

@@ -92,22 +92,6 @@ function DirectPromptLoader({ id }: { id: string }) {
     );
   }
 
-  if (currentView === 'user-dashboard') {
-    return (
-      <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col">
-        <UserDashboard />
-        <PromptDetailModal />
-        <BookmarksDrawer />
-        <SearchExploreModal />
-        <TasteProfileModal />
-        <UserAuthModal />
-        <AdminLoginModal />
-        <ToastNotification />
-        <BottomNav />
-      </div>
-    );
-  }
-
   if (currentView === 'studio-tool') {
     return (
       <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col">
@@ -148,8 +132,6 @@ function DirectPromptLoader({ id }: { id: string }) {
 export default function SinglePromptDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   return (
-    <AppProvider>
-      <DirectPromptLoader id={resolvedParams.id} />
-    </AppProvider>
+    <DirectPromptLoader id={resolvedParams.id} />
   );
 }

@@ -6,6 +6,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useRe
 import confetti from 'canvas-confetti';
 import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem, AiSearchResult } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
+import { supabase } from '@/lib/supabase';
 import { INITIAL_POSTS, INITIAL_CATEGORIES, INITIAL_SETTINGS } from '@/lib/initial-data';
 import {
   UserTasteProfile,
@@ -596,6 +597,55 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     // 2. Background sync from server API
     void syncFromRemote();
+
+    // Check Supabase Auth Session (Google OAuth login return)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const u = session.user;
+        const account: UserAccount = {
+          id: u.id,
+          name: u.user_metadata?.full_name || u.email?.split('@')[0] || 'Google User',
+          username: '@' + (u.email?.split('@')[0] || 'user'),
+          email: u.email || '',
+          joinedDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+          isLoggedIn: true,
+          avatar: u.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
+          points: 10,
+          requestsMade: 0,
+          likesCountForPoints: 0,
+          savesCountForPoints: 0,
+          generationsCountForPoints: 0,
+          sharesCountForPoints: 0,
+          referralsCountForPoints: 0,
+        };
+        setUserAccount(account);
+        StorageService.saveUserAccount(account);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        const u = session.user;
+        const account: UserAccount = {
+          id: u.id,
+          name: u.user_metadata?.full_name || u.email?.split('@')[0] || 'Google User',
+          username: '@' + (u.email?.split('@')[0] || 'user'),
+          email: u.email || '',
+          joinedDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+          isLoggedIn: true,
+          avatar: u.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
+          points: 10,
+          requestsMade: 0,
+          likesCountForPoints: 0,
+          savesCountForPoints: 0,
+          generationsCountForPoints: 0,
+          sharesCountForPoints: 0,
+          referralsCountForPoints: 0,
+        };
+        setUserAccount(account);
+        StorageService.saveUserAccount(account);
+      }
+    });
 
     const handleFocus = () => {
       if (!isSavingRef.current) {

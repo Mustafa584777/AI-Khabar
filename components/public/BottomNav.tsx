@@ -12,6 +12,7 @@ interface BottomNavProps {
 export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
   const router = useRouter();
   const pathname = usePathname();
+  
   const {
     selectedCategory,
     setSelectedCategory,
@@ -65,7 +66,6 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
   };
 
   const handleAccountClick = () => {
-    setCurrentView('user-dashboard');
     router.push('/dashboard');
   };
 
@@ -142,14 +142,14 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
       <button
         onClick={handleAccountClick}
         className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 ${
-          pathname === '/dashboard' || currentView === 'user-dashboard'
+          pathname === '/dashboard'
             ? 'text-[#E60023] font-bold'
             : 'text-neutral-500 hover:text-[#E60023] dark:hover:text-white'
         }`}
         title="My Creative Dashboard"
         id="bottom-nav-account"
       >
-        <User className={`w-6 h-6 ${pathname === '/dashboard' || currentView === 'user-dashboard' ? 'fill-current' : ''}`} />
+        <User className={`w-6 h-6 ${pathname === '/dashboard' ? 'fill-current' : ''}`} />
         <span className="text-[10px] mt-0.5 font-medium">Dashboard</span>
       </button>
     </nav>
