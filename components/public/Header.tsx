@@ -141,12 +141,10 @@ export const Header = () => {
           <button
             onClick={() => {
               setCurrentView('user-dashboard');
-              if (pathname !== '/') {
-                router.push('/');
-              }
+              router.push('/dashboard');
             }}
             className={`p-2 sm:px-3.5 sm:py-2 rounded-full text-xs font-bold transition-colors flex items-center gap-1.5 ${
-              currentView === 'user-dashboard'
+              pathname === '/dashboard' || currentView === 'user-dashboard'
                 ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950'
                 : 'bg-[#efefef] dark:bg-neutral-800 hover:bg-[#e2e2e2] dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200'
             }`}

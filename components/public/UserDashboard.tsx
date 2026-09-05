@@ -138,7 +138,10 @@ export const UserDashboard = () => {
       <div className="sticky top-0 z-30 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border-b border-neutral-200 dark:border-neutral-800 px-4 sm:px-8 py-3.5">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <button
-            onClick={() => setCurrentView('public')}
+            onClick={() => {
+              setCurrentView('public');
+              router.push('/');
+            }}
             className="flex items-center gap-2 text-xs sm:text-sm font-bold text-neutral-600 dark:text-neutral-300 hover:text-[#E60023] dark:hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -147,7 +150,10 @@ export const UserDashboard = () => {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setCurrentView('studio-tool')}
+              onClick={() => {
+                setCurrentView('studio-tool');
+                router.push('/');
+              }}
               className="px-3.5 py-1.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
             >
               <Sparkles className="w-3.5 h-3.5" />

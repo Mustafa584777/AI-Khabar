@@ -5,7 +5,7 @@ import { PromptPost } from '@/types/prompt';
 import { useApp } from '@/context/AppContext';
 import Image from 'next/image';
 import { Sparkles, Bookmark } from 'lucide-react';
-import { getPromptSlug, getOptimizedImageUrl } from '@/lib/utils';
+import { getPromptSlug, getOptimizedImageUrl, detectPostAspectRatio } from '@/lib/utils';
 
 export const PromptCard = ({ post, priority = false }: { post: PromptPost; priority?: boolean }) => {
   const {
@@ -17,12 +17,14 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   } = useApp();
 
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [measuredRatio, setMeasuredRatio] = useState<string | null>(null);
   const isBookmarked = bookmarkedIds.includes(post.id);
   const promptSlug = getPromptSlug(post);
   const optimizedImgUrl = getOptimizedImageUrl(post.imageUrl, 550);
-  const imageWidth = post.imageWidth || 600;
-  const imageHeight = post.imageHeight || 800;
-  const aspectRatio = `${imageWidth} / ${imageHeight}`;
+
+  // Dynamic aspect ratio: detected from parameters/prompt text, or dynamically measured from real image
+  const initialAspectRatio = detectPostAspectRatio(post);
+  const activeAspectRatio = measuredRatio || initialAspectRatio;
 
   const handleCardClick = (e: React.MouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.button === 1) return;
@@ -62,7 +64,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
         href={`/prompt/${promptSlug}`}
         onClick={handleCardClick}
         className="block relative w-full overflow-hidden bg-neutral-100 dark:bg-neutral-800 focus:outline-none"
-        style={{ aspectRatio }}
+        style={{ aspectRatio: activeAspectRatio }}
         onContextMenu={(e) => e.preventDefault()}
       >
         {/* Full-Height Shimmer Skeleton Placeholder */}
@@ -80,11 +82,17 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
           <Image
             src={optimizedImgUrl}
             alt={post.imageAlt || post.title}
-            width={imageWidth}
-            height={imageHeight}
+            width={600}
+            height={800}
             draggable={false}
             priority={priority}
-            onLoad={() => setImageLoaded(true)}
+            onLoad={(e) => {
+              setImageLoaded(true);
+              const img = e.currentTarget;
+              if (img.naturalWidth && img.naturalHeight) {
+                setMeasuredRatio(`${img.naturalWidth} / ${img.naturalHeight}`);
+              }
+            }}
             className={`w-full h-full object-cover group-hover:scale-102 transition-all duration-500 ease-out select-none pointer-events-none relative z-1 ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}

@@ -3,12 +3,15 @@
 import React from 'react';
 import { useApp } from '@/context/AppContext';
 import { Home, Search, Plus, User, Sparkles } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
 
 interface BottomNavProps {
   onSearchClick?: () => void;
 }
 
 export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
+  const router = useRouter();
+  const pathname = usePathname();
   const {
     selectedCategory,
     setSelectedCategory,
@@ -25,7 +28,11 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
     setCurrentView('public');
     setSelectedCategory('all');
     setSearchQuery('');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (pathname !== '/') {
+      router.push('/');
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleSearchClick = () => {
@@ -41,16 +48,25 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
     setSelectedCategory('all');
     setSelectedSort('trending');
     setSearchQuery('');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (pathname !== '/') {
+      router.push('/');
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleCreateStudioClick = () => {
     setCurrentView('studio-tool');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (pathname !== '/') {
+      router.push('/');
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleAccountClick = () => {
     setCurrentView('user-dashboard');
+    router.push('/dashboard');
   };
 
   return (
@@ -126,14 +142,14 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
       <button
         onClick={handleAccountClick}
         className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 ${
-          currentView === 'user-dashboard'
+          pathname === '/dashboard' || currentView === 'user-dashboard'
             ? 'text-[#E60023] font-bold'
             : 'text-neutral-500 hover:text-[#E60023] dark:hover:text-white'
         }`}
         title="My Creative Dashboard"
         id="bottom-nav-account"
       >
-        <User className={`w-6 h-6 ${currentView === 'user-dashboard' ? 'fill-current' : ''}`} />
+        <User className={`w-6 h-6 ${pathname === '/dashboard' || currentView === 'user-dashboard' ? 'fill-current' : ''}`} />
         <span className="text-[10px] mt-0.5 font-medium">Dashboard</span>
       </button>
     </nav>

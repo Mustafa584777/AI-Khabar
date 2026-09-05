@@ -631,23 +631,30 @@ export const PromptDetailModal = () => {
           className="bg-white dark:bg-neutral-900 rounded-[28px] sm:rounded-[36px] shadow-2xl border border-neutral-200/80 dark:border-neutral-800 overflow-hidden animate-fade-in transition-all duration-150"
         >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
-            {/* Left Column: Edge-to-Edge High-Resolution Photo Showcase */}
+            {/* Left Column: Responsive Aspect-Ratio Photo Showcase */}
             <div
               onContextMenu={(e) => e.preventDefault()}
-              className="lg:col-span-7 bg-neutral-950 flex flex-col justify-center items-stretch p-0 relative group min-h-[380px] sm:min-h-[500px] lg:min-h-[640px] select-none overflow-hidden"
+              className="lg:col-span-7 bg-neutral-950 flex flex-col justify-center items-center p-0 relative group min-h-[340px] sm:min-h-[460px] select-none overflow-hidden"
             >
               {selectedPost.imageUrl ? (
                 <div
                   onContextMenu={(e) => e.preventDefault()}
-                  className="relative w-full h-full min-h-[380px] sm:min-h-[500px] lg:min-h-[640px] overflow-hidden flex items-center justify-center select-none"
+                  className="relative w-full h-full flex items-center justify-center overflow-hidden select-none"
                 >
+                  {/* Subtle ambient blurred background so different aspect ratios blend seamlessly without stark harsh black bars */}
+                  <div
+                    className="absolute inset-0 bg-cover bg-center blur-3xl opacity-35 dark:opacity-45 scale-125 pointer-events-none"
+                    style={{ backgroundImage: `url(${selectedPost.imageUrl})` }}
+                  />
+
+                  {/* Full image uncropped with proper natural aspect ratio display */}
                   <Image
-                    src={getOptimizedImageUrl(selectedPost.imageUrl, 1200)}
+                    src={getOptimizedImageUrl(selectedPost.imageUrl, 1400)}
                     alt={selectedPost.imageAlt || selectedPost.title}
                     width={1200}
                     height={1600}
                     draggable={false}
-                    className="w-full h-full object-cover select-none pointer-events-none"
+                    className="w-full h-auto max-h-[82vh] object-contain relative z-1 select-none pointer-events-none"
                     referrerPolicy="no-referrer"
                     priority
                   />

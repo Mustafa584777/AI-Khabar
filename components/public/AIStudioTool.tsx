@@ -17,6 +17,7 @@ import {
   Zap,
 } from 'lucide-react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 const SAMPLE_IMAGES = [
   {
@@ -70,6 +71,7 @@ interface ExtractedPromptData {
 }
 
 export const AIStudioTool = () => {
+  const router = useRouter();
   const {
     setCurrentView,
     setSelectedCategory,
@@ -214,7 +216,10 @@ export const AIStudioTool = () => {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setCurrentView('user-dashboard')}
+              onClick={() => {
+                setCurrentView('user-dashboard');
+                router.push('/dashboard');
+              }}
               className="flex items-center gap-1.5 text-xs font-bold text-neutral-600 dark:text-neutral-300 hover:text-[#E60023] px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
             >
               <History className="w-3.5 h-3.5 text-[#E60023]" />
