@@ -110,10 +110,19 @@ export const Footer = () => {
           </div>
         </div>
 
-        {/* Copyright */}
+        {/* Copyright & Legal Links */}
         <div className="pt-6 border-t border-neutral-100 dark:border-neutral-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-neutral-400">
           <p>© {new Date().getFullYear()} Trending Copy Paste Photo Prompts. All rights reserved.</p>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+            <Link href="/contact" className="hover:text-neutral-600 dark:hover:text-neutral-200">
+              Contact Us
+            </Link>
+            <Link href="/privacy-policy" className="hover:text-neutral-600 dark:hover:text-neutral-200">
+              Privacy Policy
+            </Link>
+            <Link href="/disclaimer" className="hover:text-neutral-600 dark:hover:text-neutral-200">
+              Disclaimer
+            </Link>
             <Link href="/blog" className="hover:text-neutral-600 dark:hover:text-neutral-200">
               Blog
             </Link>

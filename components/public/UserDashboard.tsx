@@ -25,7 +25,6 @@ import {
   LogIn,
   Search,
   Filter,
-  Trophy,
   Target,
   Send,
   Upload,
@@ -58,7 +57,7 @@ export const UserDashboard = () => {
     awardPoints,
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'saved' | 'history' | 'taste' | 'request' | 'leaderboard'>('saved');
+  const [activeTab, setActiveTab] = useState<'saved' | 'history' | 'taste' | 'request'>('saved');
   const [historyFilter, setHistoryFilter] = useState<'all' | 'image_to_prompt'>('all');
   const [historySearch, setHistorySearch] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -317,18 +316,6 @@ export const UserDashboard = () => {
           </button>
 
           <button
-            onClick={() => setActiveTab('leaderboard')}
-            className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shrink-0 ${
-              activeTab === 'leaderboard'
-                ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-sm'
-                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-            }`}
-          >
-            <Trophy className="w-4 h-4 text-amber-500" />
-            <span>Points Leaderboard</span>
-          </button>
-
-          <button
             onClick={() => setActiveTab('taste')}
             className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shrink-0 ${
               activeTab === 'taste'
@@ -373,7 +360,7 @@ export const UserDashboard = () => {
                     onClick={() => {
                       setSelectedPost(post);
                       if (typeof window !== 'undefined') {
-                        window.history.pushState({ postId: post.id }, '', `/prompt/${getPromptSlug(post)}`);
+                        window.history.pushState({ postId: post.id }, '', `/${getPromptSlug(post)}`);
                       }
                     }}
                     className="break-inside-avoid group relative rounded-2xl overflow-hidden bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer"
@@ -918,67 +905,6 @@ export const UserDashboard = () => {
                 </div>
               </div>
             )}
-          </div>
-        )}
-
-        {/* TAB 5: Points Leaderboard */}
-        {activeTab === 'leaderboard' && (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-black text-neutral-900 dark:text-white flex items-center gap-2">
-                    <Trophy className="w-5 h-5 text-amber-500" />
-                    <span>Global Points Leaderboard</span>
-                  </h3>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                    Top creators ranked by total earned activity points across AI generations, likes, and saves.
-                  </p>
-                </div>
-              </div>
-
-              {/* Leaderboard Table */}
-              <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
-                {StorageService.getLeaderboardUsers().map((u, index) => {
-                  const isTop3 = index < 3;
-                  const rankColors = index === 0 ? 'bg-amber-500 text-white' : index === 1 ? 'bg-neutral-400 text-white' : index === 2 ? 'bg-amber-700 text-white' : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300';
-                  return (
-                    <div key={u.id} className="py-4 flex items-center justify-between gap-4 first:pt-0 last:pb-0">
-                      <div className="flex items-center gap-4">
-                        <div className={`w-8 h-8 rounded-xl font-black text-xs flex items-center justify-center shrink-0 ${rankColors}`}>
-                          #{index + 1}
-                        </div>
-                        <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-700 overflow-hidden shrink-0 relative">
-                          {u.avatar ? (
-                            <Image src={u.avatar} alt={u.name} fill sizes="40px" className="object-cover" referrerPolicy="no-referrer" />
-                          ) : (
-                            <User className="w-full h-full p-2 text-neutral-500" />
-                          )}
-                        </div>
-                        <div>
-                          <div className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                            <span>{u.name}</span>
-                            {u.email === userAccount?.email && (
-                              <span className="px-2 py-0.5 rounded-full bg-red-50 text-[#E60023] text-[9px] font-black">
-                                You
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-[11px] text-neutral-500">{u.email}</span>
-                        </div>
-                      </div>
-
-                      <div className="text-right">
-                        <div className="text-sm sm:text-base font-black text-neutral-900 dark:text-white">
-                          {u.points} pts
-                        </div>
-                        <span className="text-[10px] text-neutral-400 font-semibold">Rank {index + 1}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
           </div>
         )}
       </div>

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { supabase } from '@/lib/supabase';
 import {
@@ -31,17 +30,9 @@ export const UserAuthModal = () => {
   const [mode, setMode] = useState<'login' | 'signup'>('signup');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [selectedAvatar, setSelectedAvatar] = useState(
-    'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80'
-  );
   const [isLoading, setIsLoading] = useState(false);
 
-  const AVATAR_OPTIONS = [
-    'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80',
-  ];
+  const defaultAvatar = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80';
 
   if (!isUserAuthModalOpen) return null;
 
@@ -81,10 +72,10 @@ export const UserAuthModal = () => {
       if (mode === 'signup') {
         const userName = email.split('@')[0];
         const userHandle = '@' + userName.toLowerCase().replace(/[^a-z0-9]/g, '');
-        signupUser(userName, userHandle, email, password, selectedAvatar);
+        signupUser(userName, userHandle, email, password, defaultAvatar);
         showToast(`Welcome ${userName}! Account created successfully.`);
       } else {
-        loginUser(email, password, '', selectedAvatar);
+        loginUser(email, password, '', defaultAvatar);
         showToast('Welcome back! You are now logged in.');
       }
       setIsLoading(false);
@@ -209,32 +200,6 @@ export const UserAuthModal = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === 'signup' && (
-              <>
-                <div>
-                  <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1.5">
-                    Choose Your Avatar
-                  </label>
-                  <div className="flex items-center gap-3">
-                    {AVATAR_OPTIONS.map((av) => (
-                      <button
-                        key={av}
-                        type="button"
-                        onClick={() => setSelectedAvatar(av)}
-                        className={`relative w-12 h-12 rounded-full overflow-hidden border-2 transition-all ${
-                          selectedAvatar === av
-                            ? 'border-[#E60023] ring-2 ring-red-500/30 scale-105'
-                            : 'border-transparent opacity-70 hover:opacity-100'
-                        }`}
-                      >
-                        <Image src={av} alt="Avatar option" fill sizes="48px" className="object-cover" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-
             <div>
               <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
                 Email Address
