@@ -23,7 +23,7 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { PersonalizationEngine } from '@/lib/personalization';
-import { getPromptSlug, slugify, getOptimizedImageUrl } from '@/lib/utils';
+import { getPromptSlug, slugify, getOptimizedImageUrl, detectPostAspectRatio } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
 interface RecommendedPinCardProps {
@@ -48,6 +48,7 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
   const [inView, setInView] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const detectedRatio = detectPostAspectRatio(pin);
 
   useEffect(() => {
     const el = cardRef.current;
@@ -59,7 +60,7 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
           observer.disconnect();
         }
       },
-      { rootMargin: '60px 0px', threshold: 0.01 }
+      { rootMargin: '80px 0px', threshold: 0.01 }
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -69,7 +70,8 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
     <div
       ref={cardRef}
       onClick={() => onSelect(pin)}
-      className="group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-neutral-200 dark:bg-neutral-900 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-300 border border-neutral-200/60 dark:border-neutral-800/80 w-full aspect-[3/4]"
+      style={{ aspectRatio: detectedRatio }}
+      className="group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-neutral-200 dark:bg-neutral-900 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-300 border border-neutral-200/60 dark:border-neutral-800/80 w-full"
       id={`masonry-pin-${pin.id}`}
     >
       {/* Shimmer Placeholder */}
@@ -197,17 +199,20 @@ export const PromptDetailModal = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
 
-  const closeModal = useCallback(() => {
+  const closeModal = useCallback((e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setSelectedPost(null);
     setHistoryStack([]);
     if (typeof window !== 'undefined') {
-      window.history.pushState(null, '', '/');
       const path = window.location.pathname;
-      if (path !== '/' && path !== '/dashboard') {
-        router.push('/');
+      if (path !== '/' && path !== '/dashboard' && path !== '/create' && !path.startsWith('/admin') && !path.startsWith('/blog')) {
+        window.history.replaceState(null, '', '/');
       }
     }
-  }, [setSelectedPost, router]);
+  }, [setSelectedPost]);
 
   const handleGoBack = useCallback(() => {
     if (historyStack.length > 1) {
@@ -221,7 +226,7 @@ export const PromptDetailModal = () => {
       setSelectedPost(prevPost);
       if (typeof window !== 'undefined') {
         const prevSlug = getPromptSlug(prevPost);
-        window.history.pushState({ postId: prevPost.id }, '', `/${prevSlug}`);
+        window.history.replaceState({ postId: prevPost.id }, '', `/${prevSlug}`);
       }
       setDisplayedCount(5);
     } else {
@@ -234,7 +239,7 @@ export const PromptDetailModal = () => {
     const handlePopState = () => {
       if (typeof window !== 'undefined') {
         const path = window.location.pathname;
-        if (path === '/' || path === '' || path === '/dashboard' || path.startsWith('/admin') || path.startsWith('/blog')) {
+        if (path === '/' || path === '' || path === '/dashboard' || path === '/create' || path.startsWith('/admin') || path.startsWith('/blog')) {
           setSelectedPost(null);
           setHistoryStack([]);
         } else if (path.length > 1) {
@@ -307,10 +312,14 @@ export const PromptDetailModal = () => {
     if (!selectedPost) return;
     if (typeof window !== 'undefined') {
       sessionStorage.setItem('auraprompt_studio_preload', selectedPost.promptText);
+      sessionStorage.setItem('promptcms_studio_preload', selectedPost.promptText);
+      if (selectedPost.imageUrl) {
+        sessionStorage.setItem('promptcms_studio_image_preload', selectedPost.imageUrl);
+      }
     }
-    closeModal();
-    setCurrentView('studio-tool');
-    showToast('Loaded prompt into AI Studio Image Generator!');
+    setSelectedPost(null);
+    router.push('/create');
+    showToast('Loaded prompt into Create Studio!');
   };
 
   const handleDownloadImage = async (e?: React.MouseEvent) => {
@@ -483,6 +492,39 @@ export const PromptDetailModal = () => {
     return () => observer.disconnect();
   }, [selectedPost, loadMorePins, displayedCount, hasMorePins]);
 
+  const visiblePins = useMemo(() => {
+    return allRecommendedPins.slice(0, displayedCount);
+  }, [allRecommendedPins, displayedCount]);
+
+  const [columnCount, setColumnCount] = useState<number>(2);
+
+  useEffect(() => {
+    const updateColumnCount = () => {
+      const width = window.innerWidth;
+      if (width >= 1280) {
+        setColumnCount(5);
+      } else if (width >= 1024) {
+        setColumnCount(4);
+      } else if (width >= 640) {
+        setColumnCount(3);
+      } else {
+        setColumnCount(2);
+      }
+    };
+
+    updateColumnCount();
+    window.addEventListener('resize', updateColumnCount);
+    return () => window.removeEventListener('resize', updateColumnCount);
+  }, []);
+
+  const recommendedColumns = useMemo(() => {
+    const cols: PromptPost[][] = Array.from({ length: columnCount }, () => []);
+    visiblePins.forEach((pin, idx) => {
+      cols[idx % columnCount].push(pin);
+    });
+    return cols;
+  }, [visiblePins, columnCount]);
+
   if (!selectedPost) return null;
 
   const isBookmarked = bookmarkedIds.includes(selectedPost.id);
@@ -536,7 +578,7 @@ export const PromptDetailModal = () => {
     setSelectedPost(pin);
     if (typeof window !== 'undefined') {
       const pinSlug = getPromptSlug(pin);
-      window.history.pushState({ postId: pin.id }, '', `/${pinSlug}`);
+      window.history.replaceState({ postId: pin.id }, '', `/${pinSlug}`);
     }
     setDisplayedCount(5);
   };
@@ -544,18 +586,16 @@ export const PromptDetailModal = () => {
   const handleDeconstructImage = () => {
     if (!selectedPost) return;
     if (typeof window !== 'undefined') {
+      sessionStorage.setItem('auraprompt_studio_preload', selectedPost.promptText);
       sessionStorage.setItem('promptcms_studio_preload', selectedPost.promptText);
       if (selectedPost.imageUrl) {
         sessionStorage.setItem('promptcms_studio_image_preload', selectedPost.imageUrl);
       }
     }
     setSelectedPost(null);
-    setCurrentView('studio-tool');
-    showToast('Loaded image & prompt into Image-to-Prompt Studio!');
+    router.push('/create');
+    showToast('Loaded image & prompt into Create Studio!');
   };
-
-  // Strictly non-repeating visible pins list
-  const visiblePins = allRecommendedPins.slice(0, displayedCount);
 
   return (
     <div
@@ -639,19 +679,18 @@ export const PromptDetailModal = () => {
               {selectedPost.imageUrl ? (
                 <div
                   onContextMenu={(e) => e.preventDefault()}
-                  className="relative w-full h-full min-h-[380px] sm:min-h-[500px] lg:min-h-[640px] overflow-hidden flex items-center justify-center select-none"
+                  className="relative w-full h-full min-h-[380px] sm:min-h-[500px] lg:min-h-[640px] overflow-hidden flex items-center justify-center select-none bg-neutral-950"
                 >
                   <Image
-                    src={getOptimizedImageUrl(selectedPost.imageUrl, 1200)}
+                    src={getOptimizedImageUrl(selectedPost.imageUrl, 600)}
                     alt={selectedPost.imageAlt || selectedPost.title}
-                    width={0}
-                    height={0}
-                    sizes="100vw"
-                    style={{ width: '100%', height: 'auto', maxHeight: '100%' }}
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 60vw"
                     draggable={false}
                     className="object-contain select-none pointer-events-none"
                     referrerPolicy="no-referrer"
                     priority
+                    decoding="async"
                   />
 
                   {/* Action Icons Overlay: Download + Enlarge */}
@@ -875,30 +914,38 @@ export const PromptDetailModal = () => {
             </span>
           </div>
 
-          {/* Responsive Visual Pins Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
-            {visiblePins.map((pin) => (
-              <RecommendedPinCard
-                key={pin.id}
-                pin={pin}
-                isPinBookmarked={bookmarkedIds.includes(pin.id)}
-                isCopied={copiedPinId === pin.id}
-                onSelect={handleSelectPin}
-                onGenerate={(e, p) => {
-                  e.stopPropagation();
-                  if (typeof window !== 'undefined') {
-                    sessionStorage.setItem('auraprompt_studio_preload', p.promptText);
-                  }
-                  setSelectedPost(null);
-                  setCurrentView('studio-tool');
-                  showToast('Loaded prompt into AI Studio Image Generator!');
-                }}
-                onCopy={(e, p) => handleQuickCopyPin(e, p)}
-                onToggleBookmark={(e, p) => {
-                  e.stopPropagation();
-                  toggleBookmark(p.id);
-                }}
-              />
+          {/* Responsive Visual Pins Stable Flex Columns */}
+          <div className="flex gap-3 sm:gap-4 items-start w-full" id="more-explore-masonry">
+            {recommendedColumns.map((colPins, colIdx) => (
+              <div key={colIdx} className="flex-1 flex flex-col gap-3 sm:gap-4 min-w-0">
+                {colPins.map((pin) => (
+                  <RecommendedPinCard
+                    key={pin.id}
+                    pin={pin}
+                    isPinBookmarked={bookmarkedIds.includes(pin.id)}
+                    isCopied={copiedPinId === pin.id}
+                    onSelect={handleSelectPin}
+                    onGenerate={(e, p) => {
+                      e.stopPropagation();
+                      if (typeof window !== 'undefined') {
+                        sessionStorage.setItem('auraprompt_studio_preload', p.promptText);
+                        sessionStorage.setItem('promptcms_studio_preload', p.promptText);
+                        if (p.imageUrl) {
+                          sessionStorage.setItem('promptcms_studio_image_preload', p.imageUrl);
+                        }
+                      }
+                      setSelectedPost(null);
+                      router.push('/create');
+                      showToast('Loaded prompt into Create Studio!');
+                    }}
+                    onCopy={(e, p) => handleQuickCopyPin(e, p)}
+                    onToggleBookmark={(e, p) => {
+                      e.stopPropagation();
+                      toggleBookmark(p.id);
+                    }}
+                  />
+                ))}
+              </div>
             ))}
           </div>
 

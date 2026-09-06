@@ -57,12 +57,7 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
   };
 
   const handleCreateStudioClick = () => {
-    setCurrentView('studio-tool');
-    if (pathname !== '/') {
-      router.push('/');
-    } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    router.push('/create');
   };
 
   const handleAccountClick = () => {
@@ -100,25 +95,25 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
         <span className="text-[10px] mt-0.5 font-medium">Explore</span>
       </button>
 
-      {/* 3. AI Studio / Create (+) Button (Prominent Center/Action) */}
+      {/* 3. Create (+) Button (Prominent Center/Action) */}
       <button
         onClick={handleCreateStudioClick}
         className={`flex flex-col items-center justify-center p-1.5 transition-all duration-200 ${
-          currentView === 'studio-tool' ? 'scale-110' : 'hover:scale-105'
+          pathname === '/create' ? 'scale-110' : 'hover:scale-105'
         }`}
-        title="AI Studio - Image to Prompt & Prompt to Image"
+        title="Create - Image to Prompt & Text to Image"
         id="bottom-nav-create-tool"
       >
         <div
           className={`w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-colors ${
-            currentView === 'studio-tool'
+            pathname === '/create'
               ? 'bg-[#E60023] text-white shadow-red-500/40 ring-2 ring-red-400'
               : 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:bg-[#E60023]'
           }`}
         >
           <Plus className="w-6 h-6 stroke-[2.5]" />
         </div>
-        <span className={`text-[10px] mt-0.5 font-black ${currentView === 'studio-tool' ? 'text-[#E60023]' : 'text-neutral-600 dark:text-neutral-400'}`}>
+        <span className={`text-[10px] mt-0.5 font-black ${pathname === '/create' ? 'text-[#E60023]' : 'text-neutral-600 dark:text-neutral-400'}`}>
           Create
         </span>
       </button>

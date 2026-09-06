@@ -189,6 +189,38 @@ export const PromptGrid = () => {
   const visiblePosts = filteredPosts.slice(0, displayedCount);
   const hasMore = displayedCount < filteredPosts.length;
 
+  const [columnCount, setColumnCount] = useState<number>(2);
+
+  useEffect(() => {
+    const updateColumnCount = () => {
+      const width = window.innerWidth;
+      if (width >= 1280) {
+        setColumnCount(5);
+      } else if (width >= 1024) {
+        setColumnCount(4);
+      } else if (width >= 640) {
+        setColumnCount(3);
+      } else {
+        setColumnCount(2);
+      }
+    };
+
+    updateColumnCount();
+    window.addEventListener('resize', updateColumnCount);
+    return () => window.removeEventListener('resize', updateColumnCount);
+  }, []);
+
+  // Partition visible posts into columns strictly by index modulo columnCount.
+  // This guarantees that newly loaded posts are strictly appended to the bottom of the columns
+  // without shuffling existing cards or jumping horizontally.
+  const columns = useMemo(() => {
+    const cols: PromptPost[][] = Array.from({ length: columnCount }, () => []);
+    visiblePosts.forEach((post, idx) => {
+      cols[idx % columnCount].push(post);
+    });
+    return cols;
+  }, [visiblePosts, columnCount]);
+
   const totalPublishedCount = useMemo(() => {
     return posts.filter((p) => p.status === 'published').length;
   }, [posts]);
@@ -284,9 +316,17 @@ export const PromptGrid = () => {
       {/* Visual Prompt Grid */}
       {filteredPosts.length > 0 ? (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
-            {visiblePosts.map((post, idx) => (
-              <PromptCard key={post.id} post={post} priority={idx < 6} />
+          <div className="flex gap-3 sm:gap-4 items-start w-full" id="pinterest-vertical-masonry-feed">
+            {columns.map((colPosts, colIdx) => (
+              <div key={colIdx} className="flex-1 flex flex-col gap-3 sm:gap-4 min-w-0">
+                {colPosts.map((post, postIdx) => (
+                  <PromptCard
+                    key={post.id}
+                    post={post}
+                    priority={colIdx < 2 && postIdx < 2}
+                  />
+                ))}
+              </div>
             ))}
           </div>
 

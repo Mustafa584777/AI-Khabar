@@ -73,24 +73,21 @@ export const Header = () => {
               Home
             </button>
 
-            {/* AI Studio / Create Tool Button */}
+            {/* Create / AI Studio Route Link */}
             <button
               onClick={() => {
-                setCurrentView('studio-tool');
-                if (pathname !== '/') {
-                  router.push('/');
-                }
+                router.push('/create');
               }}
               className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 flex items-center gap-1.5 ${
-                currentView === 'studio-tool'
+                pathname === '/create'
                   ? 'bg-[#E60023] text-white shadow-sm'
                   : 'text-neutral-700 dark:text-neutral-300 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-[#E60023]'
               }`}
               id="header-create-tool-btn"
-              title="AI Studio - Create Prompt from Image & Image from Prompt"
+              title="Create - Image to Prompt & Text to Image"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>AI Studio</span>
+              <span>Create</span>
             </button>
 
             <Link

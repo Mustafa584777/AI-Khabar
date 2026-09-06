@@ -1,28 +1,50 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { PromptPost } from '@/types/prompt';
 import { useApp } from '@/context/AppContext';
 import Image from 'next/image';
 import { Sparkles, Bookmark } from 'lucide-react';
-import { getPromptSlug, getOptimizedImageUrl } from '@/lib/utils';
+import { getPromptSlug, getOptimizedImageUrl, detectPostAspectRatio } from '@/lib/utils';
 
 export const PromptCard = ({ post, priority = false }: { post: PromptPost; priority?: boolean }) => {
   const {
     setSelectedPost,
     toggleBookmark,
     bookmarkedIds,
-    setCurrentView,
     showToast,
   } = useApp();
 
+  const router = useRouter();
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [inView, setInView] = useState(() => priority || typeof window === 'undefined' || !('IntersectionObserver' in window));
+  const cardRef = useRef<HTMLElement>(null);
+
   const isBookmarked = bookmarkedIds.includes(post.id);
   const promptSlug = getPromptSlug(post);
-  const optimizedImgUrl = getOptimizedImageUrl(post.imageUrl, 550);
-  const imageWidth = post.imageWidth || 600;
-  const imageHeight = post.imageHeight || 800;
-  const aspectRatio = `${imageWidth} / ${imageHeight}`;
+  const detectedRatio = detectPostAspectRatio(post);
+  const optimizedImgUrl = getOptimizedImageUrl(post.imageUrl, 600);
+
+  // Viewport IntersectionObserver: strictly loads images only when entering or near viewport
+  useEffect(() => {
+    if (inView) return;
+    const el = cardRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '150px 0px', threshold: 0.01 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [inView]);
 
   const handleCardClick = (e: React.MouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.button === 1) return;
@@ -43,17 +65,19 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
     e.preventDefault();
     e.stopPropagation();
     if (typeof window !== 'undefined') {
+      sessionStorage.setItem('auraprompt_studio_preload', post.promptText);
       sessionStorage.setItem('promptcms_studio_preload', post.promptText);
       if (post.imageUrl) {
         sessionStorage.setItem('promptcms_studio_image_preload', post.imageUrl);
       }
     }
-    setCurrentView('studio-tool');
-    showToast('Loaded image & prompt into Image-to-Prompt Studio!');
+    router.push('/create');
+    showToast('Loaded image & prompt into Create Studio!');
   };
 
   return (
     <article
+      ref={cardRef}
       className="group relative rounded-[20px] sm:rounded-[24px] overflow-hidden bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800/80 cursor-pointer shadow-xs hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 select-none w-full"
       id={`prompt-pin-${post.id}`}
       style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
@@ -61,11 +85,12 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
       <a
         href={`/${promptSlug}`}
         onClick={handleCardClick}
-        className="block relative w-full aspect-[3/4] overflow-hidden bg-neutral-100 dark:bg-neutral-800 focus:outline-none"
+        style={{ aspectRatio: detectedRatio }}
+        className="block relative w-full overflow-hidden bg-neutral-100 dark:bg-neutral-800 focus:outline-none"
         onContextMenu={(e) => e.preventDefault()}
       >
         {/* Full-Height Shimmer Skeleton Placeholder */}
-        {!imageLoaded && post.imageUrl && (
+        {(!imageLoaded || !inView) && post.imageUrl && (
           <div className="absolute inset-0 z-0 bg-neutral-200 dark:bg-neutral-800 animate-pulse flex flex-col items-center justify-center p-4">
             <div className="w-10 h-10 rounded-full bg-neutral-300 dark:bg-neutral-700 mb-2 flex items-center justify-center shadow-xs">
               <Sparkles className="w-5 h-5 text-neutral-400 dark:text-neutral-500 animate-spin" style={{ animationDuration: '4s' }} />
@@ -75,7 +100,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
           </div>
         )}
 
-        {optimizedImgUrl ? (
+        {inView && optimizedImgUrl ? (
           <Image
             src={optimizedImgUrl}
             alt={post.imageAlt || post.title}
@@ -119,8 +144,8 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
             type="button"
             onClick={handleDeconstructImagePrompt}
             className="w-12 h-12 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl flex items-center justify-center transition-all duration-300 ease-out transform scale-75 group-hover:scale-100 hover:scale-110 active:scale-95"
-            title="Deconstruct & Select Image in Image-to-Prompt Tool"
-            aria-label="Deconstruct & Select Image"
+            title="Open in Create Studio"
+            aria-label="Open in Create Studio"
           >
             <Sparkles className="w-5 h-5 text-amber-600" />
           </button>
@@ -129,4 +154,3 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
     </article>
   );
 };
-

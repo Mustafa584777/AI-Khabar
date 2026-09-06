@@ -150,8 +150,7 @@ export const UserDashboard = () => {
           <div className="flex items-center gap-3">
             <button
               onClick={() => {
-                setCurrentView('studio-tool');
-                router.push('/');
+                router.push('/create');
               }}
               className="px-3.5 py-1.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
             >
@@ -507,7 +506,7 @@ export const UserDashboard = () => {
                   </p>
                 </div>
                 <button
-                  onClick={() => setCurrentView('studio-tool')}
+                  onClick={() => router.push('/create')}
                   className="px-5 py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold transition-all inline-flex items-center gap-1.5 shadow-md shadow-red-500/20"
                 >
                   <Sparkles className="w-4 h-4" />
