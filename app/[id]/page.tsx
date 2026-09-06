@@ -19,6 +19,7 @@ import { UserAuthModal } from '@/components/public/UserAuthModal';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminLoginModal } from '@/components/admin/AdminLoginModal';
 import { SearchExploreModal } from '@/components/public/SearchExploreModal';
+import { RazorpayCheckoutModal } from '@/components/public/RazorpayCheckoutModal';
 import { slugify } from '@/lib/utils';
 import { Sparkles } from 'lucide-react';
 
@@ -88,6 +89,7 @@ function DirectPromptLoader({ id }: { id: string }) {
         <UserAuthModal />
         <AdminLoginModal />
         <ToastNotification />
+        <RazorpayCheckoutModal />
       </div>
     );
   }
@@ -105,6 +107,7 @@ function DirectPromptLoader({ id }: { id: string }) {
         <AdminLoginModal />
         <ToastNotification />
         <BottomNav />
+        <RazorpayCheckoutModal />
       </div>
     );
   }
@@ -125,6 +128,7 @@ function DirectPromptLoader({ id }: { id: string }) {
       <UserAuthModal />
       <AdminLoginModal />
       <ToastNotification />
+      <RazorpayCheckoutModal />
     </div>
   );
 }

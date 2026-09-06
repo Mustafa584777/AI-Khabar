@@ -61,6 +61,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             gtag('config', 'G-28QHB2KNZC');
           `}
         </Script>
+        {/* Razorpay Standard Web Checkout Script */}
+        <Script
+          src="https://checkout.razorpay.com/v1/checkout.js"
+          strategy="lazyOnload"
+        />
       </head>
       <body className={`${poppins.variable} ${poppins.className} font-sans antialiased selection:bg-[#E60023] selection:text-white`} suppressHydrationWarning>
         <AppProvider>

@@ -29,9 +29,12 @@ import {
   Send,
   Upload,
   Camera,
+  Crown,
+  ShieldCheck,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { RazorpayCheckoutButton } from './RazorpayCheckoutButton';
 
 export const UserDashboard = () => {
   const router = useRouter();
@@ -55,6 +58,8 @@ export const UserDashboard = () => {
     promptRequests,
     addPromptRequest,
     awardPoints,
+    isProUser,
+    setIsProCheckoutModalOpen,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'saved' | 'history' | 'taste' | 'request'>('saved');
@@ -273,6 +278,57 @@ export const UserDashboard = () => {
             </button>
           </div>
         )}
+
+        {/* Razorpay Pro Membership Banner */}
+        <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-amber-500/10 text-amber-500 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20">
+              <Crown className="w-6 h-6" />
+            </div>
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm sm:text-base font-black text-neutral-900 dark:text-white">
+                  {isProUser ? 'VIP Pro Membership Active' : 'Upgrade to Creator Pro with Razorpay'}
+                </h3>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 text-[10px] font-mono font-bold">
+                  Verified
+                </span>
+              </div>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                {isProUser
+                  ? 'Enjoy unlimited AI Studio prompt reverse-engineering and priority high-resolution generations.'
+                  : 'Get unlimited photo deconstructions, Midjourney stacks, and priority prompt downloads.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 self-start md:self-auto">
+            {!isProUser ? (
+              <>
+                <RazorpayCheckoutButton
+                  amount={19900}
+                  planName="Pro Creator"
+                  buttonText="Get Pro (₹199)"
+                  variant="pill"
+                  size="sm"
+                />
+                <button
+                  onClick={() => setIsProCheckoutModalOpen(true)}
+                  className="px-3.5 py-2 rounded-full border border-neutral-300 dark:border-neutral-700 hover:border-neutral-400 text-xs font-bold text-neutral-700 dark:text-neutral-200 transition-colors"
+                >
+                  All Plans
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => router.push('/checkout')}
+                className="px-4 py-2 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 text-xs font-bold hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+              >
+                Manage Billing
+              </button>
+            )}
+          </div>
+        </div>
 
 
 

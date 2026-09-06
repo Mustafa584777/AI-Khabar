@@ -22,6 +22,7 @@ const UserAuthModal = dynamic(() => import('@/components/public/UserAuthModal').
 const AdminLayout = dynamic(() => import('@/components/admin/AdminLayout').then((m) => m.AdminLayout), { ssr: false });
 const AdminLoginModal = dynamic(() => import('@/components/admin/AdminLoginModal').then((m) => m.AdminLoginModal), { ssr: false });
 const SearchExploreModal = dynamic(() => import('@/components/public/SearchExploreModal').then((m) => m.SearchExploreModal), { ssr: false });
+const RazorpayCheckoutModal = dynamic(() => import('@/components/public/RazorpayCheckoutModal').then((m) => m.RazorpayCheckoutModal), { ssr: false });
 
 function MainApp() {
   const { currentView } = useApp();
@@ -60,6 +61,7 @@ function MainApp() {
         <UserAuthModal />
         <AdminLoginModal />
         <ToastNotification />
+        <RazorpayCheckoutModal />
       </div>
     );
   }
@@ -76,6 +78,7 @@ function MainApp() {
         <AdminLoginModal />
         <ToastNotification />
         <BottomNav />
+        <RazorpayCheckoutModal />
       </div>
     );
   }
@@ -93,6 +96,7 @@ function MainApp() {
         <AdminLoginModal />
         <ToastNotification />
         <BottomNav />
+        <RazorpayCheckoutModal />
       </div>
     );
   }
@@ -117,6 +121,7 @@ function MainApp() {
       <UserAuthModal />
       <AdminLoginModal />
       <ToastNotification />
+      <RazorpayCheckoutModal />
     </div>
   );
 }

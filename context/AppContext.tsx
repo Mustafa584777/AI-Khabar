@@ -118,6 +118,12 @@ interface AppContextType {
   resetAllData: () => void;
   showToast: (msg: string) => void;
   toastMessage: string | null;
+
+  // Razorpay Pro Membership & Checkout
+  isProCheckoutModalOpen: boolean;
+  setIsProCheckoutModalOpen: (open: boolean) => void;
+  isProUser: boolean;
+  setIsProUser: (isPro: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -140,6 +146,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [userAccount, setUserAccount] = useState<UserAccount | null>(null);
   const [isUserAuthModalOpen, setIsUserAuthModalOpen] = useState<boolean>(false);
   const [authModalMessage, setAuthModalMessage] = useState<string | null>(null);
+
+  // Razorpay Pro Membership & Checkout State
+  const [isProCheckoutModalOpen, setIsProCheckoutModalOpen] = useState<boolean>(false);
+  const [isProUser, setIsProUserState] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('auraprompt_pro_member') === 'true';
+    }
+    return false;
+  });
+
+  const setIsProUser = useCallback((isPro: boolean) => {
+    setIsProUserState(isPro);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auraprompt_pro_member', isPro ? 'true' : 'false');
+    }
+  }, []);
 
   // AI Studio History State
   const [aiHistory, setAiHistory] = useState<AIHistoryItem[]>([]);
@@ -1146,6 +1168,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         resetAllData,
         showToast,
         toastMessage,
+        isProCheckoutModalOpen,
+        setIsProCheckoutModalOpen,
+        isProUser,
+        setIsProUser,
       }}
     >
       {children}

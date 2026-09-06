@@ -14,6 +14,7 @@ const TasteProfileModal = dynamic(() => import('@/components/public/TasteProfile
 const SearchExploreModal = dynamic(() => import('@/components/public/SearchExploreModal').then((m) => m.SearchExploreModal), { ssr: false });
 const UserAuthModal = dynamic(() => import('@/components/public/UserAuthModal').then((m) => m.UserAuthModal), { ssr: false });
 const AdminLoginModal = dynamic(() => import('@/components/admin/AdminLoginModal').then((m) => m.AdminLoginModal), { ssr: false });
+const RazorpayCheckoutModal = dynamic(() => import('@/components/public/RazorpayCheckoutModal').then((m) => m.RazorpayCheckoutModal), { ssr: false });
 
 export default function CreatePage() {
   return (
@@ -33,6 +34,7 @@ export default function CreatePage() {
       <UserAuthModal />
       <AdminLoginModal />
       <ToastNotification />
+      <RazorpayCheckoutModal />
     </div>
   );
 }
