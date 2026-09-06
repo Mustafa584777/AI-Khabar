@@ -142,6 +142,11 @@ export interface UserAccount {
   generationsCountForPoints: number;
   sharesCountForPoints: number;
   referralsCountForPoints: number;
+  isPremium?: boolean;
+  membershipPlan?: 'free' | 'starter' | 'pro' | 'vip';
+  credits?: number;
+  lastCreditRefresh?: string;
+  promptRequestsAllowed?: number;
 }
 
 export interface PromptRequestItem {

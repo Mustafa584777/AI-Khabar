@@ -39,15 +39,43 @@ export const UserAuthModal = () => {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: window.location.origin,
+          skipBrowserRedirect: true,
         },
       });
       if (error) {
         showToast(error.message);
         setIsLoading(false);
+        return;
+      }
+      if (data?.url) {
+        const width = 500;
+        const height = 600;
+        const left = window.screenX + (window.outerWidth - width) / 2;
+        const top = window.screenY + (window.outerHeight - height) / 2;
+        const popup = window.open(
+          data.url,
+          'SupabaseOAuth',
+          `width=${width},height=${height},left=${left},top=${top},toolbar=0,scrollbars=1,status=1,resizable=1,location=1,menuBar=0`
+        );
+        
+        if (!popup) {
+          showToast('Popup blocked. Please allow popups to sign in with Google, or open the app in a new tab.');
+          setIsLoading(false);
+          return;
+        }
+
+        // Check if popup closed
+        const checkClosed = setInterval(() => {
+          if (popup.closed) {
+            clearInterval(checkClosed);
+            setIsLoading(false);
+            setIsUserAuthModalOpen(false);
+          }
+        }, 1000);
       }
     } catch (err: any) {
       showToast(err.message || 'Google login failed');

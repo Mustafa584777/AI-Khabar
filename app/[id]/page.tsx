@@ -20,6 +20,7 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminLoginModal } from '@/components/admin/AdminLoginModal';
 import { SearchExploreModal } from '@/components/public/SearchExploreModal';
 import { RazorpayCheckoutModal } from '@/components/public/RazorpayCheckoutModal';
+import { UnlockPremiumModal } from '@/components/public/UnlockPremiumModal';
 import { slugify } from '@/lib/utils';
 import { Sparkles } from 'lucide-react';
 
@@ -129,6 +130,7 @@ function DirectPromptLoader({ id }: { id: string }) {
       <AdminLoginModal />
       <ToastNotification />
       <RazorpayCheckoutModal />
+      <UnlockPremiumModal />
     </div>
   );
 }

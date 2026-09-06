@@ -60,6 +60,9 @@ export const UserDashboard = () => {
     awardPoints,
     isProUser,
     setIsProCheckoutModalOpen,
+    planTier,
+    toolCredits,
+    promptRequestsRemaining,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'saved' | 'history' | 'taste' | 'request'>('saved');
@@ -288,16 +291,16 @@ export const UserDashboard = () => {
             <div className="space-y-0.5">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm sm:text-base font-black text-neutral-900 dark:text-white">
-                  {isProUser ? 'VIP Pro Membership Active' : 'Upgrade to Creator Pro with Razorpay'}
+                  {isProUser ? `${(planTier || 'pro').toUpperCase()} Membership Active` : 'Upgrade to Creator Pro with Razorpay'}
                 </h3>
                 <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 text-[10px] font-mono font-bold">
-                  Verified
+                  {isProUser ? 'PRO MEMBER' : 'FREE TIER'}
                 </span>
               </div>
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
                 {isProUser
-                  ? 'Enjoy unlimited AI Studio prompt reverse-engineering and priority high-resolution generations.'
-                  : 'Get unlimited photo deconstructions, Midjourney stacks, and priority prompt downloads.'}
+                  ? `${toolCredits} prompt tools credits available • ${promptRequestsRemaining} prompt requests remaining • All premium prompts unlocked.`
+                  : `${toolCredits} daily credits available (2 free credits/day). Upgrade to unlock all premium prompts & extra credits.`}
               </p>
             </div>
           </div>
@@ -313,7 +316,7 @@ export const UserDashboard = () => {
                   size="sm"
                 />
                 <button
-                  onClick={() => setIsProCheckoutModalOpen(true)}
+                  onClick={() => router.push('/pricing')}
                   className="px-3.5 py-2 rounded-full border border-neutral-300 dark:border-neutral-700 hover:border-neutral-400 text-xs font-bold text-neutral-700 dark:text-neutral-200 transition-colors"
                 >
                   All Plans
@@ -321,10 +324,10 @@ export const UserDashboard = () => {
               </>
             ) : (
               <button
-                onClick={() => router.push('/checkout')}
+                onClick={() => router.push('/pricing')}
                 className="px-4 py-2 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 text-xs font-bold hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
               >
-                Manage Billing
+                View Plans & Upgrade
               </button>
             )}
           </div>
@@ -830,25 +833,36 @@ export const UserDashboard = () => {
                   </p>
                 </div>
 
-                {/* Progress Bar Badge */}
+                {/* Progress Bar Badge / Plan Request Badge */}
                 <div className="px-4 py-2 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-right">
-                  <div className="text-xs font-bold text-neutral-500">Current Cycle Points</div>
-                  <div className="text-lg font-black text-[#E60023]">
-                    {userAccount?.points || 0} / 10 Points
-                  </div>
+                  {promptRequestsRemaining > 0 ? (
+                    <>
+                      <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Plan Requests Included</div>
+                      <div className="text-lg font-black text-[#E60023]">
+                        {promptRequestsRemaining} Available
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-xs font-bold text-neutral-500">Current Cycle Points</div>
+                      <div className="text-lg font-black text-[#E60023]">
+                        {userAccount?.points || 0} / 10 Points
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
               {/* Progress Bar */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs font-bold">
-                  <span>Progress to Request</span>
-                  <span>{Math.min(100, ((userAccount?.points || 0) % 10) * 10)}%</span>
+                  <span>{promptRequestsRemaining > 0 ? 'Plan Request Active' : 'Progress to Request'}</span>
+                  <span>{promptRequestsRemaining > 0 ? 'Ready to submit' : `${Math.min(100, ((userAccount?.points || 0) % 10) * 10)}%`}</span>
                 </div>
                 <div className="w-full h-3 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-[#E60023] to-amber-500 transition-all duration-500 rounded-full"
-                    style={{ width: `${Math.min(100, ((userAccount?.points || 0) % 10) * 10)}%` }}
+                    style={{ width: promptRequestsRemaining > 0 ? '100%' : `${Math.min(100, ((userAccount?.points || 0) % 10) * 10)}%` }}
                   />
                 </div>
               </div>
@@ -889,7 +903,7 @@ export const UserDashboard = () => {
               {/* Request Form */}
               <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800 space-y-4">
                 <h4 className="text-sm font-bold text-neutral-900 dark:text-white">
-                  Submit Prompt Request {((userAccount?.points || 0) < 10) && '(Requires 10 Points)'}
+                  Submit Prompt Request {promptRequestsRemaining > 0 ? `(${promptRequestsRemaining} Plan Request${promptRequestsRemaining > 1 ? 's' : ''} Included)` : ((userAccount?.points || 0) < 10) ? '(Requires 10 Points)' : '(10 Points will be used)'}
                 </h4>
 
                 <form onSubmit={handleRequestSubmit} className="space-y-4">

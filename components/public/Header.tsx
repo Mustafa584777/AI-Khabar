@@ -37,7 +37,7 @@ export const Header = () => {
     setSelectedCategory('all');
     setSearchQuery('');
     if (pathname !== '/') {
-      router.push('/');
+      window.location.href = '/';
     }
   };
 
@@ -78,10 +78,8 @@ export const Header = () => {
             </button>
 
             {/* Create / AI Studio Route Link */}
-            <button
-              onClick={() => {
-                router.push('/create');
-              }}
+            <a
+              href="/create"
               className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 flex items-center gap-1.5 ${
                 pathname === '/create'
                   ? 'bg-[#E60023] text-white shadow-sm'
@@ -92,7 +90,7 @@ export const Header = () => {
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Create</span>
-            </button>
+            </a>
 
             <Link
               href="/blog"
@@ -154,7 +152,7 @@ export const Header = () => {
           </Link>
 
           {/* User Profile / Dashboard Button */}
-          <Link
+          <a
             href="/dashboard"
             className={`p-2 sm:px-3.5 sm:py-2 rounded-full text-xs font-bold transition-colors flex items-center gap-1.5 ${
               pathname === '/dashboard'
@@ -166,7 +164,7 @@ export const Header = () => {
           >
             <User className="w-4 h-4" />
             <span className="hidden md:inline">Dashboard</span>
-          </Link>
+          </a>
         </div>
       </div>
     </header>

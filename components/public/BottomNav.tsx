@@ -30,7 +30,7 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
     setSelectedCategory('all');
     setSearchQuery('');
     if (pathname !== '/') {
-      router.push('/');
+      window.location.href = '/';
     } else {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -57,11 +57,11 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
   };
 
   const handleCreateStudioClick = () => {
-    router.push('/create');
+    window.location.href = '/create';
   };
 
   const handleAccountClick = () => {
-    router.push('/dashboard');
+    window.location.href = '/dashboard';
   };
 
   return (

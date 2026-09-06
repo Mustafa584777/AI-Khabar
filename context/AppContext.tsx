@@ -132,6 +132,12 @@ interface AppContextType {
   addToolCredits: (amount: number) => void;
   promptRequestsRemaining: number;
   upgradePlan: (tier: 'starter' | 'pro' | 'vip') => void;
+
+  isUnlockPremiumModalOpen: boolean;
+  setIsUnlockPremiumModalOpen: (open: boolean) => void;
+  lockedPromptContext: PromptPost | null;
+  setLockedPromptContext: (post: PromptPost | null) => void;
+  applyPlan: (planTier: 'starter' | 'pro' | 'vip') => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -209,6 +215,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
     return 0;
   });
+
+  const [isUnlockPremiumModalOpen, setIsUnlockPremiumModalOpen] = useState<boolean>(false);
+  const [lockedPromptContext, setLockedPromptContext] = useState<PromptPost | null>(null);
 
   // Daily 2 Free Credits Grant Logic
   useEffect(() => {
@@ -613,6 +622,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setToastMessage((prev) => (prev === msg ? null : prev));
     }, 3000);
   };
+
+  const applyPlan = useCallback((tier: 'starter' | 'pro' | 'vip') => {
+    upgradePlan(tier);
+    showToast(`Success! You have unlocked the ${tier.toUpperCase()} plan.`);
+  }, [upgradePlan]);
 
   const isSavingRef = React.useRef(false);
 
@@ -1312,6 +1326,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         addToolCredits,
         promptRequestsRemaining,
         upgradePlan,
+        isUnlockPremiumModalOpen,
+        setIsUnlockPremiumModalOpen,
+        lockedPromptContext,
+        setLockedPromptContext,
+        applyPlan,
       }}
     >
       {children}
