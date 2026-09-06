@@ -28,6 +28,7 @@ export const AdminSidebar = () => {
     setEditingPostId,
     logout,
     posts,
+    promptRequests,
     currentUser,
   } = useApp();
 
@@ -55,6 +56,12 @@ export const AdminSidebar = () => {
       badge: posts.length,
     },
     {
+      id: 'requested-prompts',
+      label: 'Requested Prompts',
+      icon: Sparkles,
+      badge: promptRequests?.length || 0,
+    },
+    {
       id: 'new-post',
       label: 'Add New Prompt',
       icon: PlusCircle,
@@ -72,6 +79,7 @@ export const AdminSidebar = () => {
       id: 'search-history',
       label: 'User Search History',
       icon: Search,
+      badge: null,
     },
     {
       id: 'backup-restore',

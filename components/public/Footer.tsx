@@ -20,7 +20,7 @@ export const Footer = () => {
           {/* Col 1: Brand */}
           <div className="space-y-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-[#E60023]/30">
+              <div className="w-8 h-8 rounded-full overflow-hidden shrink-0">
                 <Image
                   src="/logo.png"
                   alt="tool.reelz"
@@ -110,19 +110,10 @@ export const Footer = () => {
           </div>
         </div>
 
-        {/* Copyright & Legal Links */}
+        {/* Copyright */}
         <div className="pt-6 border-t border-neutral-100 dark:border-neutral-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-neutral-400">
           <p>© {new Date().getFullYear()} Trending Copy Paste Photo Prompts. All rights reserved.</p>
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
-            <Link href="/contact" className="hover:text-neutral-600 dark:hover:text-neutral-200">
-              Contact Us
-            </Link>
-            <Link href="/privacy-policy" className="hover:text-neutral-600 dark:hover:text-neutral-200">
-              Privacy Policy
-            </Link>
-            <Link href="/disclaimer" className="hover:text-neutral-600 dark:hover:text-neutral-200">
-              Disclaimer
-            </Link>
+          <div className="flex items-center gap-4">
             <Link href="/blog" className="hover:text-neutral-600 dark:hover:text-neutral-200">
               Blog
             </Link>

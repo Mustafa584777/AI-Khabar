@@ -19,14 +19,11 @@ import {
   ChevronRight,
   Maximize2,
   Download,
-  Crown,
-  Lock,
-  ArrowRight,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { PersonalizationEngine } from '@/lib/personalization';
-import { getPromptSlug, slugify, getOptimizedImageUrl, detectPostAspectRatio } from '@/lib/utils';
+import { getPromptSlug, slugify, getOptimizedImageUrl } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
 interface RecommendedPinCardProps {
@@ -51,7 +48,6 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
   const [inView, setInView] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-  const detectedRatio = detectPostAspectRatio(pin);
 
   useEffect(() => {
     const el = cardRef.current;
@@ -63,7 +59,7 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
           observer.disconnect();
         }
       },
-      { rootMargin: '80px 0px', threshold: 0.01 }
+      { rootMargin: '60px 0px', threshold: 0.01 }
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -73,22 +69,13 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
     <div
       ref={cardRef}
       onClick={() => onSelect(pin)}
-      style={{ aspectRatio: detectedRatio }}
-      className="group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-neutral-200 dark:bg-neutral-900 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-300 border border-neutral-200/60 dark:border-neutral-800/80 w-full"
+      className="break-inside-avoid group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-neutral-200 dark:bg-neutral-900 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-300 border border-neutral-200/60 dark:border-neutral-800/80 min-h-[160px]"
       id={`masonry-pin-${pin.id}`}
     >
       {/* Shimmer Placeholder */}
       {(!loaded || !inView) && pin.imageUrl && (
-        <div className="absolute inset-0 bg-neutral-200 dark:bg-neutral-800 animate-pulse flex items-center justify-center">
+        <div className="w-full aspect-[3/4] bg-neutral-200 dark:bg-neutral-800 animate-pulse flex items-center justify-center">
           <Sparkles className="w-4 h-4 text-neutral-400 dark:text-neutral-500 animate-spin" style={{ animationDuration: '4s' }} />
-        </div>
-      )}
-
-      {/* Premium Badge */}
-      {pin.isPremium && (
-        <div className="absolute top-2 left-2 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/85 backdrop-blur-md border border-amber-400/60 text-amber-300 text-[9px] font-black uppercase shadow-md pointer-events-none">
-          <Crown className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
-          <span>PRO</span>
         </div>
       )}
 
@@ -97,15 +84,16 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
         <Image
           src={getOptimizedImageUrl(pin.imageUrl, 500)}
           alt={pin.imageAlt || pin.title}
-          fill
-          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+          width={600}
+          height={800}
           onLoad={() => setLoaded(true)}
-          className={`object-cover group-hover:scale-105 transition-all duration-500 ${
-            loaded ? 'opacity-100' : 'opacity-0'
+          className={`w-full h-auto object-cover group-hover:scale-105 transition-all duration-500 ${
+            loaded ? 'opacity-100' : 'opacity-0 absolute inset-0'
           }`}
           referrerPolicy="no-referrer"
           loading="lazy"
           decoding="async"
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
         />
       )}
 
@@ -177,7 +165,6 @@ export const PromptDetailModal = () => {
     tasteProfile,
     showToast,
     setCurrentView,
-    isProUser,
   } = useApp();
 
   const [copiedPrompt, setCopiedPrompt] = useState(false);
@@ -186,7 +173,6 @@ export const PromptDetailModal = () => {
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [showFullImageModal, setShowFullImageModal] = useState<boolean>(false);
   const [isDownloadingImage, setIsDownloadingImage] = useState<boolean>(false);
-  const [isUnlockModalOpen, setIsUnlockModalOpen] = useState<boolean>(false);
   const [historyStack, setHistoryStack] = useState<PromptPost[]>(() => (selectedPost ? [selectedPost] : []));
   const [prevSelectedId, setPrevSelectedId] = useState<string | null>(selectedPost?.id || null);
 
@@ -212,20 +198,16 @@ export const PromptDetailModal = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
 
-  const closeModal = useCallback((e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+  const closeModal = useCallback(() => {
     setSelectedPost(null);
     setHistoryStack([]);
     if (typeof window !== 'undefined') {
-      const path = window.location.pathname;
-      if (path !== '/' && path !== '/dashboard' && path !== '/create' && !path.startsWith('/admin') && !path.startsWith('/blog')) {
-        window.history.replaceState(null, '', '/');
+      window.history.pushState(null, '', '/');
+      if (window.location.pathname.startsWith('/prompt')) {
+        router.push('/');
       }
     }
-  }, [setSelectedPost]);
+  }, [setSelectedPost, router]);
 
   const handleGoBack = useCallback(() => {
     if (historyStack.length > 1) {
@@ -239,7 +221,7 @@ export const PromptDetailModal = () => {
       setSelectedPost(prevPost);
       if (typeof window !== 'undefined') {
         const prevSlug = getPromptSlug(prevPost);
-        window.history.replaceState({ postId: prevPost.id }, '', `/${prevSlug}`);
+        window.history.pushState({ postId: prevPost.id }, '', `/prompt/${prevSlug}`);
       }
       setDisplayedCount(5);
     } else {
@@ -252,11 +234,11 @@ export const PromptDetailModal = () => {
     const handlePopState = () => {
       if (typeof window !== 'undefined') {
         const path = window.location.pathname;
-        if (path === '/' || path === '' || path === '/dashboard' || path === '/create' || path.startsWith('/admin') || path.startsWith('/blog')) {
+        if (path === '/' || path === '' || !path.startsWith('/prompt')) {
           setSelectedPost(null);
           setHistoryStack([]);
-        } else if (path.length > 1) {
-          const rawSlug = path.replace('/', '').split('/')[0];
+        } else if (path.startsWith('/prompt/')) {
+          const rawSlug = path.replace('/prompt/', '').split('/')[0];
           const targetSlug = decodeURIComponent(rawSlug).toLowerCase().trim();
           const matched = posts.find((p) => {
             if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
@@ -323,20 +305,12 @@ export const PromptDetailModal = () => {
 
   const handleGenerateImage = () => {
     if (!selectedPost) return;
-    if (selectedPost.isPremium && !isProUser) {
-      setIsUnlockModalOpen(true);
-      return;
-    }
     if (typeof window !== 'undefined') {
       sessionStorage.setItem('auraprompt_studio_preload', selectedPost.promptText);
-      sessionStorage.setItem('promptcms_studio_preload', selectedPost.promptText);
-      if (selectedPost.imageUrl) {
-        sessionStorage.setItem('promptcms_studio_image_preload', selectedPost.imageUrl);
-      }
     }
-    setSelectedPost(null);
-    router.push('/create');
-    showToast('Loaded prompt into Create Studio!');
+    closeModal();
+    setCurrentView('studio-tool');
+    showToast('Loaded prompt into AI Studio Image Generator!');
   };
 
   const handleDownloadImage = async (e?: React.MouseEvent) => {
@@ -509,49 +483,11 @@ export const PromptDetailModal = () => {
     return () => observer.disconnect();
   }, [selectedPost, loadMorePins, displayedCount, hasMorePins]);
 
-  const visiblePins = useMemo(() => {
-    return allRecommendedPins.slice(0, displayedCount);
-  }, [allRecommendedPins, displayedCount]);
-
-  const [columnCount, setColumnCount] = useState<number>(2);
-
-  useEffect(() => {
-    const updateColumnCount = () => {
-      const width = window.innerWidth;
-      if (width >= 1280) {
-        setColumnCount(5);
-      } else if (width >= 1024) {
-        setColumnCount(4);
-      } else if (width >= 640) {
-        setColumnCount(3);
-      } else {
-        setColumnCount(2);
-      }
-    };
-
-    updateColumnCount();
-    window.addEventListener('resize', updateColumnCount);
-    return () => window.removeEventListener('resize', updateColumnCount);
-  }, []);
-
-  const recommendedColumns = useMemo(() => {
-    const cols: PromptPost[][] = Array.from({ length: columnCount }, () => []);
-    visiblePins.forEach((pin, idx) => {
-      cols[idx % columnCount].push(pin);
-    });
-    return cols;
-  }, [visiblePins, columnCount]);
-
   if (!selectedPost) return null;
 
   const isBookmarked = bookmarkedIds.includes(selectedPost.id);
-  const isPromptGated = Boolean(selectedPost.isPremium && !isProUser);
 
   const handleCopyMasterPrompt = () => {
-    if (isPromptGated) {
-      setIsUnlockModalOpen(true);
-      return;
-    }
     copyPromptToClipboard(selectedPost.promptText, selectedPost.id);
     setCopiedPrompt(true);
     setTimeout(() => setCopiedPrompt(false), 2000);
@@ -559,10 +495,6 @@ export const PromptDetailModal = () => {
 
   const handleQuickCopyPin = (e: React.MouseEvent, pin: PromptPost) => {
     e.stopPropagation();
-    if (pin.isPremium && !isProUser) {
-      setIsUnlockModalOpen(true);
-      return;
-    }
     copyPromptToClipboard(pin.promptText, pin.id);
     setCopiedPinId(pin.id);
     setTimeout(() => setCopiedPinId(null), 2000);
@@ -570,7 +502,7 @@ export const PromptDetailModal = () => {
 
   const handleShare = async () => {
     const shareSlug = getPromptSlug(selectedPost);
-    const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/${shareSlug}` : '';
+    const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/prompt/${shareSlug}` : '';
     const shareData = {
       title: selectedPost.title,
       text: `Check out this photo prompt: ${selectedPost.title}`,
@@ -604,28 +536,26 @@ export const PromptDetailModal = () => {
     setSelectedPost(pin);
     if (typeof window !== 'undefined') {
       const pinSlug = getPromptSlug(pin);
-      window.history.replaceState({ postId: pin.id }, '', `/${pinSlug}`);
+      window.history.pushState({ postId: pin.id }, '', `/prompt/${pinSlug}`);
     }
     setDisplayedCount(5);
   };
 
   const handleDeconstructImage = () => {
     if (!selectedPost) return;
-    if (isPromptGated) {
-      setIsUnlockModalOpen(true);
-      return;
-    }
     if (typeof window !== 'undefined') {
-      sessionStorage.setItem('auraprompt_studio_preload', selectedPost.promptText);
       sessionStorage.setItem('promptcms_studio_preload', selectedPost.promptText);
       if (selectedPost.imageUrl) {
         sessionStorage.setItem('promptcms_studio_image_preload', selectedPost.imageUrl);
       }
     }
     setSelectedPost(null);
-    router.push('/create');
-    showToast('Loaded image & prompt into Create Studio!');
+    setCurrentView('studio-tool');
+    showToast('Loaded image & prompt into Image-to-Prompt Studio!');
   };
+
+  // Strictly non-repeating visible pins list
+  const visiblePins = allRecommendedPins.slice(0, displayedCount);
 
   return (
     <div
@@ -701,26 +631,25 @@ export const PromptDetailModal = () => {
           className="bg-white dark:bg-neutral-900 rounded-[28px] sm:rounded-[36px] shadow-2xl border border-neutral-200/80 dark:border-neutral-800 overflow-hidden animate-fade-in transition-all duration-150"
         >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
-            {/* Left Column: Edge-to-Edge High-Resolution Photo Showcase */}
+            {/* Left Column: Natural High-Resolution Photo Showcase */}
             <div
               onContextMenu={(e) => e.preventDefault()}
-              className="lg:col-span-7 bg-neutral-950 flex flex-col justify-center items-stretch p-0 relative group min-h-[380px] sm:min-h-[500px] lg:min-h-[640px] select-none overflow-hidden"
+              className="lg:col-span-7 bg-neutral-950 flex flex-col justify-center items-center p-0 relative group min-h-[420px] sm:min-h-[540px] select-none overflow-hidden"
             >
               {selectedPost.imageUrl ? (
                 <div
                   onContextMenu={(e) => e.preventDefault()}
-                  className="relative w-full h-full min-h-[380px] sm:min-h-[500px] lg:min-h-[640px] overflow-hidden flex items-center justify-center select-none bg-neutral-950"
+                  className="relative w-full h-full min-h-[420px] sm:min-h-[540px] max-h-[760px] overflow-hidden flex items-center justify-center select-none"
                 >
                   <Image
-                    src={getOptimizedImageUrl(selectedPost.imageUrl, 600)}
+                    src={getOptimizedImageUrl(selectedPost.imageUrl, 1200)}
                     alt={selectedPost.imageAlt || selectedPost.title}
-                    fill
-                    sizes="(max-width: 1024px) 100vw, 60vw"
+                    width={1200}
+                    height={1200}
                     draggable={false}
-                    className="object-contain select-none pointer-events-none"
+                    className="w-full h-full max-h-[760px] object-cover select-none pointer-events-none"
                     referrerPolicy="no-referrer"
                     priority
-                    decoding="async"
                   />
 
                   {/* Action Icons Overlay: Download + Enlarge */}
@@ -764,12 +693,6 @@ export const PromptDetailModal = () => {
                 {/* Author Section Replacement: Category & AI Tool Badges + Like, Copy, and Generate Buttons */}
                 <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-neutral-100 dark:border-neutral-800">
                   <div className="flex items-center flex-wrap gap-2">
-                    {selectedPost.isPremium && (
-                      <span className="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-black tracking-wider uppercase flex items-center gap-1">
-                        <Crown className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                        <span>PRO PREVIEW</span>
-                      </span>
-                    )}
                     <span className="px-3 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 text-xs font-bold text-neutral-800 dark:text-neutral-200 border border-neutral-200/60 dark:border-neutral-700/60">
                       {selectedPost.category}
                     </span>
@@ -843,6 +766,45 @@ export const PromptDetailModal = () => {
                     {selectedPost.title}
                   </h1>
 
+                  {/* Requested Prompt Metadata Card */}
+                  {selectedPost.isRequested && (
+                    <div className="mt-3.5 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-red-500/10 via-amber-500/10 to-red-500/10 border border-red-200/80 dark:border-red-900/60 flex items-start gap-3">
+                      {selectedPost.requestedByAvatar ? (
+                        <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-red-200 shadow-sm relative mt-0.5">
+                          <Image
+                            src={selectedPost.requestedByAvatar}
+                            alt={selectedPost.requestedByName || 'User'}
+                            fill
+                            sizes="32px"
+                            className="object-cover rounded-full"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-[#E60023] text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                          <Sparkles className="w-4 h-4" />
+                        </div>
+                      )}
+                      <div className="space-y-1 flex-1 text-xs">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-extrabold text-[#E60023] tracking-wide uppercase text-[10px]">
+                            Community Requested Prompt
+                          </span>
+                          {selectedPost.requestedByName && (
+                            <span className="px-2 py-0.5 rounded-full bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 font-bold text-[10px]">
+                              Requested by: {selectedPost.requestedByName}
+                            </span>
+                          )}
+                        </div>
+                        {selectedPost.requestedPromptDescription && (
+                          <p className="text-neutral-700 dark:text-neutral-300 italic">
+                            &quot;{selectedPost.requestedPromptDescription}&quot;
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Metadata Stats - Genuine Counts */}
                   <div className="flex flex-wrap items-center gap-4 text-xs text-neutral-500 dark:text-neutral-400 mt-3 pt-2 border-t border-neutral-100 dark:border-neutral-800">
                     <span className="flex items-center gap-1">
@@ -873,96 +835,43 @@ export const PromptDetailModal = () => {
                       <Sparkles className="w-4 h-4 text-red-600 dark:text-red-400" />
                       <span>Master Copy-Paste Prompt</span>
                     </div>
-                    {selectedPost.isPremium && (
-                      <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[10px] font-black tracking-wider uppercase flex items-center gap-1">
-                        <Crown className="w-3 h-3 fill-amber-500" />
-                        <span>PRO PROMPT</span>
-                      </span>
-                    )}
                   </div>
 
-                  {isPromptGated ? (
-                    <div className="relative rounded-2xl bg-gradient-to-b from-neutral-900 to-neutral-950 text-neutral-100 p-6 border border-amber-500/40 shadow-xl overflow-hidden text-center">
-                      {/* Obscured blurred placeholder lines */}
-                      <div className="filter blur-md select-none opacity-20 pointer-events-none space-y-2 font-mono text-xs leading-relaxed">
-                        <p>Cinematic hyperrealistic photography shot on Hasselblad 50mm f/1.2 lens, photorealistic studio lighting, delicate cinematic color grading, 8k resolution...</p>
-                        <p>--ar 16:9 --style raw --v 6.1 --s 250 --quality 2</p>
-                      </div>
+                  <div className="relative rounded-2xl bg-neutral-950 text-neutral-100 p-4 sm:p-5 font-mono text-xs sm:text-sm leading-relaxed border border-neutral-800 shadow-inner group">
+                    <p className="whitespace-pre-wrap select-all selection:bg-red-600 selection:text-white max-h-[220px] overflow-y-auto">
+                      {selectedPost.promptText}
+                    </p>
 
-                      {/* Centered Unlock Prompt Message Popup Trigger */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center p-5 bg-black/60 backdrop-blur-xs">
-                        <div className="w-11 h-11 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-2.5 border border-amber-500/40 shadow-md">
-                          <Lock className="w-5 h-5" />
-                        </div>
-                        <h3 className="text-sm sm:text-base font-black text-white flex items-center gap-2">
-                          <span>Prompt Locked for Subscribers</span>
-                          <span className="px-2 py-0.5 rounded-full bg-amber-500 text-black text-[9px] font-black uppercase">
-                            PRO
-                          </span>
-                        </h3>
-                        <p className="text-[11px] sm:text-xs text-neutral-300 max-w-sm mt-1 mb-4 leading-relaxed font-sans">
-                          Unlock this exclusive prompt along with all premium prompts, 10-200 AI tools credits, and priority prompt requests.
-                        </p>
-                        <div className="flex flex-wrap items-center justify-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setIsUnlockModalOpen(true)}
-                            className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs shadow-lg shadow-amber-500/25 transition-all active:scale-95 font-sans cursor-pointer"
-                          >
-                            <Crown className="w-3.5 h-3.5 fill-black" />
-                            <span>Unlock Premium Prompts</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              closeModal();
-                              router.push('/pricing');
-                            }}
-                            className="px-4 py-2.5 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold border border-neutral-700 transition-colors font-sans cursor-pointer"
-                          >
-                            View Plans
-                          </button>
-                        </div>
+                    <div className="mt-4 pt-3 border-t border-neutral-800 flex items-center justify-between gap-3">
+                      <span className="text-[11px] text-neutral-400 font-sans">
+                        {selectedPost.promptText.length} chars
+                      </span>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleCopyMasterPrompt}
+                          className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold shadow-md transition-all ${
+                            copiedPrompt
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-[#E60023] hover:bg-[#ad081b] text-white shadow-[#E60023]/30'
+                          }`}
+                          id="modal-copy-prompt-btn-inner"
+                        >
+                          {copiedPrompt ? (
+                            <>
+                              <Check className="w-3.5 h-3.5" />
+                              <span>Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>Copy Prompt</span>
+                            </>
+                          )}
+                        </button>
                       </div>
                     </div>
-                  ) : (
-                    <div className="relative rounded-2xl bg-neutral-950 text-neutral-100 p-4 sm:p-5 font-mono text-xs sm:text-sm leading-relaxed border border-neutral-800 shadow-inner group">
-                      <p className="whitespace-pre-wrap select-all selection:bg-red-600 selection:text-white max-h-[220px] overflow-y-auto">
-                        {selectedPost.promptText}
-                      </p>
-
-                      <div className="mt-4 pt-3 border-t border-neutral-800 flex items-center justify-between gap-3">
-                        <span className="text-[11px] text-neutral-400 font-sans">
-                          {selectedPost.promptText.length} chars
-                        </span>
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={handleCopyMasterPrompt}
-                            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold shadow-md transition-all ${
-                              copiedPrompt
-                                ? 'bg-emerald-600 text-white'
-                                : 'bg-[#E60023] hover:bg-[#ad081b] text-white shadow-[#E60023]/30'
-                            }`}
-                            id="modal-copy-prompt-btn-inner"
-                          >
-                            {copiedPrompt ? (
-                              <>
-                                <Check className="w-3.5 h-3.5" />
-                                <span>Copied!</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="w-3.5 h-3.5" />
-                                <span>Copy Prompt</span>
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  </div>
                 </div>
 
                 {/* Tags */}
@@ -1003,42 +912,30 @@ export const PromptDetailModal = () => {
             </span>
           </div>
 
-          {/* Responsive Visual Pins Stable Flex Columns */}
-          <div className="flex gap-3 sm:gap-4 items-start w-full" id="more-explore-masonry">
-            {recommendedColumns.map((colPins, colIdx) => (
-              <div key={colIdx} className="flex-1 flex flex-col gap-3 sm:gap-4 min-w-0">
-                {colPins.map((pin) => (
-                  <RecommendedPinCard
-                    key={pin.id}
-                    pin={pin}
-                    isPinBookmarked={bookmarkedIds.includes(pin.id)}
-                    isCopied={copiedPinId === pin.id}
-                    onSelect={handleSelectPin}
-                    onGenerate={(e, p) => {
-                      e.stopPropagation();
-                      if (p.isPremium && !isProUser) {
-                        setIsUnlockModalOpen(true);
-                        return;
-                      }
-                      if (typeof window !== 'undefined') {
-                        sessionStorage.setItem('auraprompt_studio_preload', p.promptText);
-                        sessionStorage.setItem('promptcms_studio_preload', p.promptText);
-                        if (p.imageUrl) {
-                          sessionStorage.setItem('promptcms_studio_image_preload', p.imageUrl);
-                        }
-                      }
-                      setSelectedPost(null);
-                      router.push('/create');
-                      showToast('Loaded prompt into Create Studio!');
-                    }}
-                    onCopy={(e, p) => handleQuickCopyPin(e, p)}
-                    onToggleBookmark={(e, p) => {
-                      e.stopPropagation();
-                      toggleBookmark(p.id);
-                    }}
-                  />
-                ))}
-              </div>
+          {/* Pinterest Responsive Masonry Columns (Images Only) */}
+          <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4 space-y-4">
+            {visiblePins.map((pin) => (
+              <RecommendedPinCard
+                key={pin.id}
+                pin={pin}
+                isPinBookmarked={bookmarkedIds.includes(pin.id)}
+                isCopied={copiedPinId === pin.id}
+                onSelect={handleSelectPin}
+                onGenerate={(e, p) => {
+                  e.stopPropagation();
+                  if (typeof window !== 'undefined') {
+                    sessionStorage.setItem('auraprompt_studio_preload', p.promptText);
+                  }
+                  setSelectedPost(null);
+                  setCurrentView('studio-tool');
+                  showToast('Loaded prompt into AI Studio Image Generator!');
+                }}
+                onCopy={(e, p) => handleQuickCopyPin(e, p)}
+                onToggleBookmark={(e, p) => {
+                  e.stopPropagation();
+                  toggleBookmark(p.id);
+                }}
+              />
             ))}
           </div>
 
@@ -1112,101 +1009,9 @@ export const PromptDetailModal = () => {
               width={1600}
               height={1600}
               draggable={false}
-              className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl select-none pointer-events-auto"
+              className="w-full h-full max-w-full max-h-[90vh] object-cover rounded-2xl shadow-2xl select-none pointer-events-auto"
               referrerPolicy="no-referrer"
             />
-          </div>
-        </div>
-      )}
-
-      {/* Unlock Premium Prompts Popup Modal */}
-      {isUnlockModalOpen && (
-        <div
-          onClick={() => setIsUnlockModalOpen(false)}
-          className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
-          id="unlock-premium-prompt-modal"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-md bg-white dark:bg-neutral-900 rounded-[32px] border border-amber-300 dark:border-amber-700/60 shadow-2xl p-6 sm:p-8 space-y-6 text-center animate-scale-in"
-          >
-            {/* Close */}
-            <button
-              type="button"
-              onClick={() => setIsUnlockModalOpen(false)}
-              className="absolute top-4 right-4 p-2 rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-white transition-colors cursor-pointer"
-              title="Close"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {/* Crown Icon */}
-            <div className="w-16 h-16 rounded-3xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto border border-amber-500/30 shadow-inner">
-              <Crown className="w-8 h-8 fill-amber-500" />
-            </div>
-
-            {/* Header Text */}
-            <div className="space-y-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-black uppercase tracking-wider">
-                PRO MEMBERSHIP REQUIRED
-              </span>
-              <h3 className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white tracking-tight">
-                Unlock Premium Prompts
-              </h3>
-              <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                This prompt is exclusive to Pro members. Upgrade to any plan to reveal prompt text, copy instantly, and receive daily AI tools credits.
-              </p>
-            </div>
-
-            {/* 3 Plans Quick Comparison */}
-            <div className="grid grid-cols-3 gap-2 text-left pt-1">
-              <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-700 text-center">
-                <div className="text-[10px] font-bold text-neutral-500 uppercase">Starter</div>
-                <div className="text-base font-black text-neutral-900 dark:text-white">₹49</div>
-                <div className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold mt-0.5">10 Credits</div>
-                <div className="text-[9px] text-neutral-400">1 Request</div>
-              </div>
-              <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-400 dark:border-amber-600 text-center relative shadow-sm">
-                <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full bg-amber-500 text-[8px] font-black text-white uppercase">
-                  Popular
-                </span>
-                <div className="text-[10px] font-bold text-amber-700 dark:text-amber-300 uppercase">Pro</div>
-                <div className="text-base font-black text-neutral-900 dark:text-white">₹199</div>
-                <div className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold mt-0.5">50 Credits</div>
-                <div className="text-[9px] text-neutral-400">3 Requests</div>
-              </div>
-              <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-700 text-center">
-                <div className="text-[10px] font-bold text-neutral-500 uppercase">VIP</div>
-                <div className="text-base font-black text-neutral-900 dark:text-white">₹499</div>
-                <div className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold mt-0.5">200 Credits</div>
-                <div className="text-[9px] text-neutral-400">10 Requests</div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="space-y-3 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsUnlockModalOpen(false);
-                  closeModal();
-                  router.push('/pricing');
-                }}
-                className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-black text-sm shadow-lg shadow-amber-500/30 flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer font-sans"
-              >
-                <Crown className="w-4 h-4 fill-black" />
-                <span>View Pricing & Unlock (From ₹49/mo)</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsUnlockModalOpen(false)}
-                className="text-xs font-semibold text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 cursor-pointer"
-              >
-                Maybe Later
-              </button>
-            </div>
           </div>
         </div>
       )}
