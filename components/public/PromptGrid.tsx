@@ -8,8 +8,8 @@ import { SearchX, Filter, Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { PromptPost } from '@/types/prompt';
 import { PersonalizationEngine } from '@/lib/personalization';
 
-const INITIAL_BATCH_SIZE = 10;
-const SCROLL_BATCH_SIZE = 6;
+const INITIAL_BATCH_SIZE = 12;
+const SCROLL_BATCH_SIZE = 12;
 
 export const PromptGrid = () => {
   const {
@@ -113,19 +113,44 @@ export const PromptGrid = () => {
       list = [...list].sort((a, b) => {
         const scoreA = PersonalizationEngine.scorePrompt(a, tasteProfile, bookmarkedIds).score;
         const scoreB = PersonalizationEngine.scorePrompt(b, tasteProfile, bookmarkedIds).score;
-        return scoreB - scoreA;
+        if (scoreB !== scoreA) {
+          return scoreB - scoreA;
+        }
+        return (b.createdAt || '').localeCompare(a.createdAt || '') || a.id.localeCompare(b.id);
       });
     } else if (!searchQuery.trim()) {
       if (selectedSort === 'trending') {
-        list = [...list].sort((a, b) => (b.copiesCount || 0) + (b.viewsCount || 0) - ((a.copiesCount || 0) + (a.viewsCount || 0)));
+        list = [...list].sort((a, b) => {
+          const metricB = (b.copiesCount || 0) + (b.viewsCount || 0);
+          const metricA = (a.copiesCount || 0) + (a.viewsCount || 0);
+          if (metricB !== metricA) return metricB - metricA;
+          return (b.createdAt || '').localeCompare(a.createdAt || '') || a.id.localeCompare(b.id);
+        });
       } else if (selectedSort === 'most-popular') {
-        list = [...list].sort((a, b) => (b.viewsCount || 0) - (a.viewsCount || 0));
+        list = [...list].sort((a, b) => {
+          const diff = (b.viewsCount || 0) - (a.viewsCount || 0);
+          if (diff !== 0) return diff;
+          return (b.createdAt || '').localeCompare(a.createdAt || '') || a.id.localeCompare(b.id);
+        });
       } else if (selectedSort === 'most-liked') {
-        list = [...list].sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0));
+        list = [...list].sort((a, b) => {
+          const diff = (b.likesCount || 0) - (a.likesCount || 0);
+          if (diff !== 0) return diff;
+          return (b.createdAt || '').localeCompare(a.createdAt || '') || a.id.localeCompare(b.id);
+        });
       } else if (selectedSort === 'most-copied') {
-        list = [...list].sort((a, b) => (b.copiesCount || 0) - (a.copiesCount || 0));
+        list = [...list].sort((a, b) => {
+          const diff = (b.copiesCount || 0) - (a.copiesCount || 0);
+          if (diff !== 0) return diff;
+          return (b.createdAt || '').localeCompare(a.createdAt || '') || a.id.localeCompare(b.id);
+        });
       } else if (selectedSort === 'newest') {
-        list = [...list].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        list = [...list].sort((a, b) => {
+          const timeB = new Date(b.createdAt).getTime();
+          const timeA = new Date(a.createdAt).getTime();
+          if (timeB !== timeA) return timeB - timeA;
+          return a.id.localeCompare(b.id);
+        });
       }
     }
 
@@ -256,12 +281,12 @@ export const PromptGrid = () => {
         </div>
       )}
 
-      {/* Masonry Image Grid */}
+      {/* Visual Prompt Grid */}
       {filteredPosts.length > 0 ? (
         <>
-          <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4 [column-fill:_balance]">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
             {visiblePosts.map((post, idx) => (
-              <PromptCard key={post.id} post={post} priority={idx < 4} />
+              <PromptCard key={post.id} post={post} priority={idx < 6} />
             ))}
           </div>
 
@@ -284,24 +309,13 @@ export const PromptGrid = () => {
         </>
       ) : isLoadingPosts ? (
         /* Pinterest-Style Shimmer Skeleton Loading Grid for Viewport */
-        <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4 [column-fill:_balance]">
-          {[
-            'aspect-[3/4]',
-            'aspect-[4/5]',
-            'aspect-[9/16]',
-            'aspect-[3/4]',
-            'aspect-[1/1]',
-            'aspect-[4/5]',
-            'aspect-[3/4]',
-            'aspect-[9/16]',
-            'aspect-[4/5]',
-            'aspect-[3/4]',
-          ].map((aspect, idx) => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+          {Array.from({ length: 10 }).map((_, idx) => (
             <div
               key={idx}
-              className="break-inside-avoid mb-4 rounded-[20px] sm:rounded-[24px] overflow-hidden bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800/80 shadow-xs relative select-none animate-pulse"
+              className="rounded-[20px] sm:rounded-[24px] overflow-hidden bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800/80 shadow-xs relative select-none animate-pulse w-full aspect-[3/4]"
             >
-              <div className={`w-full ${aspect} bg-neutral-200 dark:bg-neutral-800 relative overflow-hidden flex flex-col justify-between p-3.5`}>
+              <div className="w-full h-full bg-neutral-200 dark:bg-neutral-800 relative overflow-hidden flex flex-col justify-between p-3.5">
                 <div className="flex items-center justify-between">
                   <div className="w-12 h-4 rounded-full bg-neutral-300/80 dark:bg-neutral-700/80" />
                   <div className="w-7 h-7 rounded-full bg-neutral-300/80 dark:bg-neutral-700/80" />

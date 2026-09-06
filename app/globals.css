@@ -1,7 +1,11 @@
 @import "tailwindcss";
 
 @layer base {
-  html, body, button, input, select, textarea, span, p, h1, h2, h3, h4, h5, h6, div, article, section {
+  html {
+    zoom: 67%;
+  }
+
+  body, button, input, select, textarea, span, p, h1, h2, h3, h4, h5, h6, div, article, section {
     font-family: var(--font-poppins), 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   }
 

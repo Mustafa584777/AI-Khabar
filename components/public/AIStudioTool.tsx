@@ -94,7 +94,7 @@ export const AIStudioTool = () => {
     return null;
   });
 
-  const [styleFocus, setStyleFocus] = useState<string>('Photorealistic & 8K Portrait');
+  const [customInstructions, setCustomInstructions] = useState<string>('');
   const [isExtractingPrompt, setIsExtractingPrompt] = useState<boolean>(false);
   const [extractedData, setExtractedData] = useState<ExtractedPromptData | null>(null);
   const [isSavedExtracted, setIsSavedExtracted] = useState<boolean>(false);
@@ -149,7 +149,7 @@ export const AIStudioTool = () => {
         body: JSON.stringify({
           action: 'image_to_prompt',
           image: uploadedImage,
-          styleFocus,
+          customInstructions,
         }),
       });
 
@@ -326,7 +326,6 @@ export const AIStudioTool = () => {
                       key={sample.name}
                       onClick={() => {
                         setUploadedImage(sample.url);
-                        setStyleFocus(sample.style);
                         setExtractedData(null);
                         setIsSavedExtracted(false);
                       }}
@@ -348,31 +347,65 @@ export const AIStudioTool = () => {
               </div>
             </div>
 
-            {/* Tuning Options */}
+            {/* Custom Instructions */}
             <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
-              <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-[#E60023]" />
-                <span>Aesthetic Style Focus</span>
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                  <Sliders className="w-4 h-4 text-[#E60023]" />
+                  <span>Custom Instructions</span>
+                </h3>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400">
+                  Optional
+                </span>
+              </div>
 
               <div>
                 <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-1.5">
-                  Target Aesthetic & Lens Mood
+                  Custom prompt instructions & constraints
                 </label>
-                <select
-                  value={styleFocus}
-                  onChange={(e) => setStyleFocus(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-bold focus:ring-2 focus:ring-red-500 focus:outline-none"
-                >
-                  <option value="Photorealistic & 8K Portrait">Photorealistic & 8K Portrait</option>
-                  <option value="Cinematic Film & 35mm Optics">Cinematic Film & 35mm Optics</option>
-                  <option value="Studio Editorial & Fashion">Studio Editorial & Fashion</option>
-                  <option value="Cyberpunk & Sci-Fi Neon">Cyberpunk & Sci-Fi Neon</option>
-                  <option value="Anime & Manga Masterpiece">Anime & Manga Masterpiece</option>
-                  <option value="3D Unreal Engine 5 Render">3D Unreal Engine 5 Render</option>
-                  <option value="Minimalist Graphic Vector">Minimalist Graphic Vector</option>
-                  <option value="Dark Luxury & Moody Lighting">Dark Luxury & Moody Lighting</option>
-                </select>
+                <textarea
+                  rows={3}
+                  value={customInstructions}
+                  onChange={(e) => setCustomInstructions(e.target.value)}
+                  placeholder="remove watermark, 250 words minimum length, remove text or add something"
+                  className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:ring-2 focus:ring-[#E60023] focus:outline-none resize-none leading-relaxed transition-all"
+                />
+
+                {/* Quick Instruction Presets */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-2">
+                  <span className="text-[10px] font-semibold text-neutral-400">Add rule:</span>
+                  {[
+                    'remove watermark',
+                    '250 words minimum length',
+                    'remove text',
+                    'add cinematic lighting',
+                  ].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => {
+                        setCustomInstructions((prev) => {
+                          const trimmed = prev.trim();
+                          if (!trimmed) return preset;
+                          if (trimmed.toLowerCase().includes(preset.toLowerCase())) return prev;
+                          return `${trimmed}, ${preset}`;
+                        });
+                      }}
+                      className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition-colors"
+                    >
+                      +{preset}
+                    </button>
+                  ))}
+                  {customInstructions && (
+                    <button
+                      type="button"
+                      onClick={() => setCustomInstructions('')}
+                      className="text-[10px] font-bold text-red-500 hover:underline ml-auto"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
 
               <button

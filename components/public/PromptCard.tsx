@@ -54,14 +54,14 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
 
   return (
     <article
-      className="group relative mb-4 break-inside-avoid rounded-[20px] sm:rounded-[24px] overflow-hidden bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800/80 cursor-pointer shadow-xs hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 select-none"
+      className="group relative rounded-[20px] sm:rounded-[24px] overflow-hidden bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800/80 cursor-pointer shadow-xs hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 select-none w-full"
       id={`prompt-pin-${post.id}`}
       style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
     >
       <a
         href={`/${promptSlug}`}
         onClick={handleCardClick}
-        className="block relative w-full overflow-hidden bg-neutral-100 dark:bg-neutral-800 focus:outline-none"
+        className="block relative w-full aspect-[3/4] overflow-hidden bg-neutral-100 dark:bg-neutral-800 focus:outline-none"
         onContextMenu={(e) => e.preventDefault()}
       >
         {/* Full-Height Shimmer Skeleton Placeholder */}
@@ -79,14 +79,12 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
           <Image
             src={optimizedImgUrl}
             alt={post.imageAlt || post.title}
-            width={0}
-            height={0}
+            fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-            style={{ width: '100%', height: 'auto' }}
             draggable={false}
             priority={priority}
             onLoad={() => setImageLoaded(true)}
-            className={`w-full h-auto object-contain group-hover:scale-102 transition-all duration-500 ease-out select-none pointer-events-none relative z-1 ${
+            className={`object-cover group-hover:scale-105 transition-all duration-500 ease-out select-none pointer-events-none relative z-1 ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
             referrerPolicy="no-referrer"
@@ -94,7 +92,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
             decoding="async"
           />
         ) : !post.imageUrl ? (
-          <div className="w-full aspect-square flex items-center justify-center bg-gradient-to-tr from-neutral-800 to-neutral-900 text-neutral-400">
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-tr from-neutral-800 to-neutral-900 text-neutral-400">
             <Sparkles className="w-8 h-8 opacity-40" />
           </div>
         ) : null}

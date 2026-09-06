@@ -353,7 +353,7 @@ export const UserDashboard = () => {
                 </button>
               </div>
             ) : (
-              <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-4 space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
                 {savedPosts.map((post) => (
                   <div
                     key={post.id}
@@ -363,7 +363,7 @@ export const UserDashboard = () => {
                         window.history.pushState({ postId: post.id }, '', `/${getPromptSlug(post)}`);
                       }
                     }}
-                    className="break-inside-avoid group relative rounded-2xl overflow-hidden bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer"
+                    className="group relative rounded-2xl overflow-hidden bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer w-full"
                   >
                     {/* Image */}
                     <div className="relative w-full aspect-[3/4] bg-neutral-100 dark:bg-neutral-800 overflow-hidden">

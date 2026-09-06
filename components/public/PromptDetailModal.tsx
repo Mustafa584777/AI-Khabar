@@ -69,12 +69,12 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
     <div
       ref={cardRef}
       onClick={() => onSelect(pin)}
-      className="break-inside-avoid group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-neutral-200 dark:bg-neutral-900 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-300 border border-neutral-200/60 dark:border-neutral-800/80 min-h-[160px]"
+      className="group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-neutral-200 dark:bg-neutral-900 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-300 border border-neutral-200/60 dark:border-neutral-800/80 w-full aspect-[3/4]"
       id={`masonry-pin-${pin.id}`}
     >
       {/* Shimmer Placeholder */}
       {(!loaded || !inView) && pin.imageUrl && (
-        <div className="w-full aspect-[3/4] bg-neutral-200 dark:bg-neutral-800 animate-pulse flex items-center justify-center">
+        <div className="absolute inset-0 bg-neutral-200 dark:bg-neutral-800 animate-pulse flex items-center justify-center">
           <Sparkles className="w-4 h-4 text-neutral-400 dark:text-neutral-500 animate-spin" style={{ animationDuration: '4s' }} />
         </div>
       )}
@@ -84,13 +84,11 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
         <Image
           src={getOptimizedImageUrl(pin.imageUrl, 500)}
           alt={pin.imageAlt || pin.title}
-          width={0}
-          height={0}
+          fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-          style={{ width: '100%', height: 'auto' }}
           onLoad={() => setLoaded(true)}
-          className={`w-full h-auto object-contain group-hover:scale-105 transition-all duration-500 ${
-            loaded ? 'opacity-100' : 'opacity-0 absolute inset-0'
+          className={`object-cover group-hover:scale-105 transition-all duration-500 ${
+            loaded ? 'opacity-100' : 'opacity-0'
           }`}
           referrerPolicy="no-referrer"
           loading="lazy"
@@ -877,8 +875,8 @@ export const PromptDetailModal = () => {
             </span>
           </div>
 
-          {/* Pinterest Responsive Masonry Columns (Images Only) */}
-          <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4 space-y-4">
+          {/* Responsive Visual Pins Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
             {visiblePins.map((pin) => (
               <RecommendedPinCard
                 key={pin.id}
