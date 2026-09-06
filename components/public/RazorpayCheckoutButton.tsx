@@ -10,6 +10,7 @@ export interface RazorpayCheckoutButtonProps {
   amount?: number; // in paise (e.g. 100 = ₹1.00, 19900 = ₹199.00)
   currency?: string;
   planName?: string;
+  planTier?: 'starter' | 'pro' | 'vip';
   description?: string;
   buttonText?: string;
   className?: string;
@@ -25,6 +26,7 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
   amount = 19900, // default ₹199
   currency = 'INR',
   planName = 'Pro Creator Pass',
+  planTier = 'pro',
   description = 'Unlimited AI Studio Generations & VIP Prompts',
   buttonText,
   className = '',
@@ -37,7 +39,7 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const { showToast, setIsProUser, userAccount } = useApp();
+  const { showToast, setIsProUser, upgradePlan, userAccount } = useApp();
 
   const handleCheckout = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -66,6 +68,7 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
           setIsLoading(false);
           setIsSuccess(true);
           setIsProUser(true);
+          upgradePlan(planTier);
 
           try {
             confetti({

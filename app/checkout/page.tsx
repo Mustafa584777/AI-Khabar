@@ -20,7 +20,7 @@ import {
 import { useApp } from '@/context/AppContext';
 
 export default function CheckoutPage() {
-  const { isProUser, setIsProCheckoutModalOpen } = useApp();
+  const { isProUser, planTier, toolCredits, promptRequestsRemaining, setIsProCheckoutModalOpen } = useApp();
   const [testAmount, setTestAmount] = useState<number>(1); // ₹1 = 100 paise
   const [testLogs, setTestLogs] = useState<Array<{ step: string; status: 'pending' | 'success' | 'error'; detail: string }>>([]);
 
@@ -63,20 +63,24 @@ export default function CheckoutPage() {
           </h1>
 
           <p className="text-xs sm:text-base text-neutral-600 dark:text-neutral-400">
-            Support the prompt directory, generate unlimited AI photo prompts with reverse-engineering DNA, and unlock high-res studio downloads.
+            Unlock exclusive copyable prompts, generate with AI Studio tools using bonus credits, and submit custom prompt requests.
           </p>
 
           {isProUser && (
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold">
+            <div className="inline-flex flex-wrap items-center justify-center gap-3 px-5 py-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold">
               <CheckCircle2 className="w-4 h-4" />
-              <span>You currently have active PRO Member access on this device!</span>
+              <span>Active Plan: <span className="uppercase font-black text-amber-600 dark:text-amber-400">{planTier || 'Pro'}</span></span>
+              <span>•</span>
+              <span>Tool Credits: <span className="font-black">{toolCredits}</span></span>
+              <span>•</span>
+              <span>Prompt Requests: <span className="font-black">{promptRequestsRemaining}</span></span>
             </div>
           )}
         </div>
 
         {/* Pricing Tiers Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {/* Tier 1: Supporter */}
+          {/* Tier 1: Starter */}
           <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col justify-between space-y-6 hover:shadow-md transition-shadow">
             <div className="space-y-4">
               <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-500 flex items-center justify-center">
@@ -84,42 +88,43 @@ export default function CheckoutPage() {
               </div>
 
               <div>
-                <h3 className="text-lg font-black text-neutral-900 dark:text-white">Supporter Pass</h3>
-                <p className="text-xs text-neutral-500">Perfect for casual creators & hobbyists</p>
+                <h3 className="text-lg font-black text-neutral-900 dark:text-white">Starter</h3>
+                <p className="text-xs text-neutral-500">Essential access for creators</p>
               </div>
 
               <div className="flex items-baseline gap-1">
                 <span className="text-3xl sm:text-4xl font-black text-neutral-900 dark:text-white">₹49</span>
-                <span className="text-xs text-neutral-400">/ one-time</span>
+                <span className="text-xs text-neutral-400">/ month</span>
               </div>
 
               <ul className="space-y-2.5 text-xs text-neutral-600 dark:text-neutral-300">
                 <li className="flex items-center gap-2">
                   <span className="text-emerald-500 font-bold">✓</span>
-                  <span>Supporter Profile Badge</span>
+                  <span className="font-bold">Unlock premium prompts</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-emerald-500 font-bold">✓</span>
-                  <span>Unlimited Bookmark Collections</span>
+                  <span><strong>10</strong> prompt tools credits</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-emerald-500 font-bold">✓</span>
-                  <span>Direct prompt text copies</span>
+                  <span><strong>1</strong> custom prompt request</span>
                 </li>
               </ul>
             </div>
 
             <RazorpayCheckoutButton
               amount={4900}
-              planName="Supporter Pass"
-              description="One-time supporter contribution"
-              buttonText="Pay ₹49 with Razorpay"
+              planTier="starter"
+              planName="Starter"
+              description="Monthly Starter Plan - Unlock Premium Prompts & Credits"
+              buttonText="Get Starter for ₹49/mo"
               variant="secondary"
               className="w-full"
             />
           </div>
 
-          {/* Tier 2: Pro Creator (Featured) */}
+          {/* Tier 2: Pro (Featured) */}
           <div className="relative p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border-2 border-[#E60023] shadow-xl shadow-red-500/10 flex flex-col justify-between space-y-6 transform md:-translate-y-2">
             <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-gradient-to-r from-[#E60023] to-[#ff3b56] text-white text-[11px] font-black uppercase tracking-wider shadow-md">
               Most Popular
@@ -131,47 +136,48 @@ export default function CheckoutPage() {
               </div>
 
               <div>
-                <h3 className="text-lg font-black text-neutral-900 dark:text-white">Pro Creator</h3>
-                <p className="text-xs text-neutral-500">For active digital artists & AI creators</p>
+                <h3 className="text-lg font-black text-neutral-900 dark:text-white">Pro</h3>
+                <p className="text-xs text-neutral-500">For active digital artists & creators</p>
               </div>
 
               <div className="flex items-baseline gap-1">
                 <span className="text-3xl sm:text-4xl font-black text-neutral-900 dark:text-white">₹199</span>
-                <span className="text-xs text-neutral-400">/ 6 months</span>
+                <span className="text-xs text-neutral-400">/ month</span>
               </div>
 
               <ul className="space-y-2.5 text-xs text-neutral-600 dark:text-neutral-300">
                 <li className="flex items-center gap-2">
                   <span className="text-[#E60023] font-bold">✓</span>
-                  <span className="font-bold">Unlimited AI Studio Image Reverses</span>
+                  <span className="font-bold">Unlock premium prompts</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-[#E60023] font-bold">✓</span>
-                  <span>Full Photographic DNA Extraction</span>
+                  <span><strong>50</strong> prompt tools credits</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-[#E60023] font-bold">✓</span>
-                  <span>High-Resolution Prompt Previews</span>
+                  <span><strong>3</strong> custom prompt requests</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-[#E60023] font-bold">✓</span>
-                  <span>Exclusive Midjourney v6 & Flux Prompts</span>
+                  <span>Priority generation queue</span>
                 </li>
               </ul>
             </div>
 
             <RazorpayCheckoutButton
               amount={19900}
-              planName="Pro Creator"
-              description="6-Month Pro Creator Access"
-              buttonText="Get Pro Creator for ₹199"
+              planTier="pro"
+              planName="Pro"
+              description="Monthly Pro Plan - Unlock Premium Prompts & 50 Credits"
+              buttonText="Get Pro for ₹199/mo"
               variant="pill"
               size="lg"
               className="w-full"
             />
           </div>
 
-          {/* Tier 3: Studio VIP */}
+          {/* Tier 3: VIP */}
           <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col justify-between space-y-6 hover:shadow-md transition-shadow">
             <div className="space-y-4">
               <div className="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-950/50 text-purple-500 flex items-center justify-center">
@@ -179,40 +185,41 @@ export default function CheckoutPage() {
               </div>
 
               <div>
-                <h3 className="text-lg font-black text-neutral-900 dark:text-white">VIP Studio Lifetime</h3>
-                <p className="text-xs text-neutral-500">Commercial usage & lifetime updates</p>
+                <h3 className="text-lg font-black text-neutral-900 dark:text-white">VIP</h3>
+                <p className="text-xs text-neutral-500">Power creators & commercial studios</p>
               </div>
 
               <div className="flex items-baseline gap-1">
                 <span className="text-3xl sm:text-4xl font-black text-neutral-900 dark:text-white">₹499</span>
-                <span className="text-xs text-neutral-400">/ lifetime</span>
+                <span className="text-xs text-neutral-400">/ month</span>
               </div>
 
               <ul className="space-y-2.5 text-xs text-neutral-600 dark:text-neutral-300">
                 <li className="flex items-center gap-2">
                   <span className="text-purple-500 font-bold">✓</span>
-                  <span className="font-bold">Lifetime Unlimited Studio Access</span>
+                  <span className="font-bold">Unlock premium prompts</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-purple-500 font-bold">✓</span>
-                  <span>Full Commercial Prompt Rights</span>
+                  <span><strong>200</strong> prompt tools credits</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-purple-500 font-bold">✓</span>
-                  <span>Custom Prompt Instruction Tuning</span>
+                  <span><strong>10</strong> custom prompt requests</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-purple-500 font-bold">✓</span>
-                  <span>Direct Priority Developer Support</span>
+                  <span>VIP 1-on-1 priority support</span>
                 </li>
               </ul>
             </div>
 
             <RazorpayCheckoutButton
               amount={49900}
-              planName="VIP Studio Lifetime"
-              description="Lifetime VIP Studio Access"
-              buttonText="Get VIP Lifetime for ₹499"
+              planTier="vip"
+              planName="VIP"
+              description="Monthly VIP Plan - Unlock Premium Prompts & 200 Credits"
+              buttonText="Get VIP for ₹499/mo"
               variant="primary"
               className="w-full"
             />

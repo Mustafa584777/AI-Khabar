@@ -39,7 +39,7 @@ export const PromptGrid = () => {
     setDisplayedCount(INITIAL_BATCH_SIZE);
   }
 
-  // Filter only published posts for the public directory and strictly deduplicate
+  // Filter only published posts for the public directory and strictly deduplicate with deterministic ordering
   const filteredPosts = useMemo(() => {
     let list = posts.filter((p) => p.status === 'published');
 
@@ -106,23 +106,12 @@ export const PromptGrid = () => {
           return rankA - rankB;
         });
       }
-    }
-
-    // Sort: If on "For You" (all category and trending/default), apply AI personalization scoring
-    if (selectedCategory === 'all' && !searchQuery.trim() && selectedSort === 'trending') {
-      list = [...list].sort((a, b) => {
-        const scoreA = PersonalizationEngine.scorePrompt(a, tasteProfile, bookmarkedIds).score;
-        const scoreB = PersonalizationEngine.scorePrompt(b, tasteProfile, bookmarkedIds).score;
-        if (scoreB !== scoreA) {
-          return scoreB - scoreA;
-        }
-        return (b.createdAt || '').localeCompare(a.createdAt || '') || a.id.localeCompare(b.id);
-      });
-    } else if (!searchQuery.trim()) {
+    } else {
+      // Deterministic Stable Sort: Never shuffle or change on user click/bookmark events
       if (selectedSort === 'trending') {
         list = [...list].sort((a, b) => {
-          const metricB = (b.copiesCount || 0) + (b.viewsCount || 0);
-          const metricA = (a.copiesCount || 0) + (a.viewsCount || 0);
+          const metricB = (b.copiesCount || 0) * 3 + (b.likesCount || 0) * 2 + (b.viewsCount || 0);
+          const metricA = (a.copiesCount || 0) * 3 + (a.likesCount || 0) * 2 + (a.viewsCount || 0);
           if (metricB !== metricA) return metricB - metricA;
           return (b.createdAt || '').localeCompare(a.createdAt || '') || a.id.localeCompare(b.id);
         });
@@ -166,7 +155,7 @@ export const PromptGrid = () => {
     }
 
     return uniqueList;
-  }, [posts, selectedCategory, selectedTool, searchQuery, selectedSort, tasteProfile, bookmarkedIds, aiSearchResults]);
+  }, [posts, selectedCategory, selectedTool, searchQuery, selectedSort, aiSearchResults]);
 
   // Infinite Scroll Observer
   useEffect(() => {
@@ -189,7 +178,16 @@ export const PromptGrid = () => {
   const visiblePosts = filteredPosts.slice(0, displayedCount);
   const hasMore = displayedCount < filteredPosts.length;
 
-  const [columnCount, setColumnCount] = useState<number>(2);
+  const [columnCount, setColumnCount] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const width = window.innerWidth;
+      if (width >= 1280) return 5;
+      if (width >= 1024) return 4;
+      if (width >= 640) return 3;
+      return 2;
+    }
+    return 4;
+  });
 
   useEffect(() => {
     const updateColumnCount = () => {
@@ -210,14 +208,34 @@ export const PromptGrid = () => {
     return () => window.removeEventListener('resize', updateColumnCount);
   }, []);
 
-  // Partition visible posts into columns strictly by index modulo columnCount.
-  // This guarantees that newly loaded posts are strictly appended to the bottom of the columns
-  // without shuffling existing cards or jumping horizontally.
+  // Partition visible posts into columns strictly by shortest-column-first vertical balancing.
+  // This guarantees that:
+  // 1. Both columns (on mobile) or all columns (on desktop) maintain balanced heights.
+  // 2. Existing cards are NEVER moved or shuffled when new cards load below.
+  // 3. New cards are strictly appended at the bottom vertically, eliminating the gap in the right column.
   const columns = useMemo(() => {
     const cols: PromptPost[][] = Array.from({ length: columnCount }, () => []);
-    visiblePosts.forEach((post, idx) => {
-      cols[idx % columnCount].push(post);
-    });
+    const colHeights: number[] = Array.from({ length: columnCount }, () => 0);
+
+    for (let i = 0; i < visiblePosts.length; i++) {
+      const post = visiblePosts[i];
+      // Pick column with smallest accumulated height
+      let targetCol = 0;
+      let minH = colHeights[0];
+      for (let c = 1; c < columnCount; c++) {
+        if (colHeights[c] < minH) {
+          minH = colHeights[c];
+          targetCol = c;
+        }
+      }
+
+      cols[targetCol].push(post);
+
+      // Estimate card height: card has aspect ratio (height / width)
+      const ratio = post.imageHeight && post.imageWidth ? post.imageHeight / post.imageWidth : 1.33;
+      colHeights[targetCol] += ratio;
+    }
+
     return cols;
   }, [visiblePosts, columnCount]);
 

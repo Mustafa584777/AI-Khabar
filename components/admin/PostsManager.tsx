@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Clock,
   Sparkles,
+  Crown,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -285,15 +286,23 @@ export const PostsManager = () => {
                             </div>
                           )}
                           <div className="min-w-0">
-                            <h4
-                              onClick={() => {
-                                setEditingPostId(post.id);
-                                setAdminSubView('edit-post');
-                              }}
-                              className="font-bold text-neutral-900 dark:text-white text-xs hover:text-blue-600 cursor-pointer line-clamp-1"
-                            >
-                              {post.title}
-                            </h4>
+                            <div className="flex items-center gap-1.5">
+                              <h4
+                                onClick={() => {
+                                  setEditingPostId(post.id);
+                                  setAdminSubView('edit-post');
+                                }}
+                                className="font-bold text-neutral-900 dark:text-white text-xs hover:text-blue-600 cursor-pointer line-clamp-1"
+                              >
+                                {post.title}
+                              </h4>
+                              {post.isPremium && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[9px] font-black tracking-wider uppercase shrink-0">
+                                  <Crown className="w-2.5 h-2.5 fill-amber-500" />
+                                  <span>PRO</span>
+                                </span>
+                              )}
+                            </div>
                             <p className="text-[11px] text-neutral-400 font-mono truncate">
                               /{post.slug}
                             </p>

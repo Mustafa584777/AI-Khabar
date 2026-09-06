@@ -4,7 +4,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
-import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem, AiSearchResult } from '@/types/prompt';
+import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem, AiSearchResult, PlanTier } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import { INITIAL_POSTS, INITIAL_CATEGORIES, INITIAL_SETTINGS } from '@/lib/initial-data';
@@ -124,6 +124,14 @@ interface AppContextType {
   setIsProCheckoutModalOpen: (open: boolean) => void;
   isProUser: boolean;
   setIsProUser: (isPro: boolean) => void;
+  planTier: PlanTier;
+  setPlanTier: (tier: PlanTier) => void;
+  toolCredits: number;
+  deductToolCredit: () => boolean;
+  useToolCredit: () => boolean;
+  addToolCredits: (amount: number) => void;
+  promptRequestsRemaining: number;
+  upgradePlan: (tier: 'starter' | 'pro' | 'vip') => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -147,7 +155,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [isUserAuthModalOpen, setIsUserAuthModalOpen] = useState<boolean>(false);
   const [authModalMessage, setAuthModalMessage] = useState<string | null>(null);
 
-  // Razorpay Pro Membership & Checkout State
+  // Razorpay Pro Membership & Plan Tier State
   const [isProCheckoutModalOpen, setIsProCheckoutModalOpen] = useState<boolean>(false);
   const [isProUser, setIsProUserState] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
@@ -160,6 +168,120 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setIsProUserState(isPro);
     if (typeof window !== 'undefined') {
       localStorage.setItem('auraprompt_pro_member', isPro ? 'true' : 'false');
+    }
+  }, []);
+
+  const [planTier, setPlanTierState] = useState<PlanTier>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('auraprompt_plan_tier') as PlanTier;
+      if (['starter', 'pro', 'vip', 'free'].includes(saved)) return saved;
+      if (localStorage.getItem('auraprompt_pro_member') === 'true') return 'pro';
+    }
+    return 'free';
+  });
+
+  const setPlanTier = useCallback((tier: PlanTier) => {
+    setPlanTierState(tier);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auraprompt_plan_tier', tier);
+    }
+  }, []);
+
+  // Tool Credits (Daily 2 free credits per user, 1 credit per tool result)
+  const [toolCredits, setToolCreditsState] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('auraprompt_tool_credits');
+      if (saved !== null) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed)) return parsed;
+      }
+    }
+    return 2;
+  });
+
+  const [promptRequestsRemaining, setPromptRequestsRemainingState] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('auraprompt_prompt_requests');
+      if (saved !== null) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed)) return parsed;
+      }
+    }
+    return 0;
+  });
+
+  // Daily 2 Free Credits Grant Logic
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const today = new Date().toISOString().split('T')[0];
+    const lastDate = localStorage.getItem('auraprompt_last_credit_date');
+    if (lastDate !== today) {
+      const currentSaved = parseInt(localStorage.getItem('auraprompt_tool_credits') || '0', 10);
+      // Give at least 2 credits every new day, or add 2 bonus if user has a balance
+      const newCredits = Math.max(currentSaved, 0) < 2 ? 2 : currentSaved + 2;
+      setToolCreditsState(newCredits);
+      localStorage.setItem('auraprompt_tool_credits', newCredits.toString());
+      localStorage.setItem('auraprompt_last_credit_date', today);
+    }
+  }, []);
+
+  const deductToolCredit = useCallback((): boolean => {
+    let success = false;
+    setToolCreditsState((prev) => {
+      if (prev > 0) {
+        const next = prev - 1;
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('auraprompt_tool_credits', next.toString());
+        }
+        success = true;
+        return next;
+      }
+      return prev;
+    });
+    return success;
+  }, []);
+
+  const useToolCredit = deductToolCredit;
+
+  const addToolCredits = useCallback((amount: number) => {
+    setToolCreditsState((prev) => {
+      const next = prev + amount;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auraprompt_tool_credits', next.toString());
+      }
+      return next;
+    });
+  }, []);
+
+  const upgradePlan = useCallback((tier: 'starter' | 'pro' | 'vip') => {
+    const creditsMap = { starter: 10, pro: 50, vip: 200 };
+    const requestsMap = { starter: 1, pro: 3, vip: 10 };
+
+    setIsProUserState(true);
+    setPlanTierState(tier);
+
+    const addedCredits = creditsMap[tier];
+    const addedRequests = requestsMap[tier];
+
+    setToolCreditsState((prev) => {
+      const next = prev + addedCredits;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auraprompt_tool_credits', next.toString());
+      }
+      return next;
+    });
+
+    setPromptRequestsRemainingState((prev) => {
+      const next = prev + addedRequests;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auraprompt_prompt_requests', next.toString());
+      }
+      return next;
+    });
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auraprompt_pro_member', 'true');
+      localStorage.setItem('auraprompt_plan_tier', tier);
     }
   }, []);
 
@@ -503,7 +625,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           if (res.ok && !isSavingRef.current) {
             const data = await res.json();
             if (data.success && Array.isArray(data.posts)) {
-              setPosts(data.posts);
+              setPosts((prevPosts) => {
+                if (!prevPosts || prevPosts.length === 0) return data.posts;
+                const remoteMap = new Map<string, PromptPost>(data.posts.map((p: PromptPost) => [p.id, p]));
+                const updated = prevPosts.map((p) => {
+                  const remote = remoteMap.get(p.id);
+                  return remote ? { ...p, ...remote } : p;
+                });
+                const existingIds = new Set(prevPosts.map((p) => p.id));
+                const brandNew = data.posts.filter((p: PromptPost) => !existingIds.has(p.id));
+                return [...updated, ...brandNew];
+              });
               StorageService.saveCachedPosts(data.posts);
             }
           }
@@ -1172,6 +1304,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setIsProCheckoutModalOpen,
         isProUser,
         setIsProUser,
+        planTier,
+        setPlanTier,
+        toolCredits,
+        deductToolCredit,
+        useToolCredit,
+        addToolCredits,
+        promptRequestsRemaining,
+        upgradePlan,
       }}
     >
       {children}

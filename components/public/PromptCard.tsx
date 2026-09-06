@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { PromptPost } from '@/types/prompt';
 import { useApp } from '@/context/AppContext';
 import Image from 'next/image';
-import { Sparkles, Bookmark } from 'lucide-react';
+import { Sparkles, Bookmark, Crown } from 'lucide-react';
 import { getPromptSlug, getOptimizedImageUrl, detectPostAspectRatio } from '@/lib/utils';
 
 export const PromptCard = ({ post, priority = false }: { post: PromptPost; priority?: boolean }) => {
@@ -89,6 +89,14 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
         className="block relative w-full overflow-hidden bg-neutral-100 dark:bg-neutral-800 focus:outline-none"
         onContextMenu={(e) => e.preventDefault()}
       >
+        {/* Premium Badge */}
+        {post.isPremium && (
+          <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/85 backdrop-blur-md border border-amber-400/60 text-amber-300 text-[10px] font-black tracking-wider uppercase shadow-xl pointer-events-none">
+            <Crown className="w-3 h-3 fill-amber-400 text-amber-400" />
+            <span>PRO</span>
+          </div>
+        )}
+
         {/* Full-Height Shimmer Skeleton Placeholder */}
         {(!imageLoaded || !inView) && post.imageUrl && (
           <div className="absolute inset-0 z-0 bg-neutral-200 dark:bg-neutral-800 animate-pulse flex flex-col items-center justify-center p-4">

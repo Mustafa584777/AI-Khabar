@@ -23,6 +23,7 @@ import {
   Plus,
   X,
   Check,
+  Crown,
 } from 'lucide-react';
 import Image from 'next/image';
 import { cleanTagsArray, canonicalizeTag, slugify } from '@/lib/utils';
@@ -99,6 +100,9 @@ export const PostEditor = () => {
 
   const [status, setStatus] = useState<'published' | 'draft'>(
     () => (existingPost?.status === 'draft' ? 'draft' : 'published')
+  );
+  const [isPremium, setIsPremium] = useState<boolean>(
+    () => Boolean(existingPost?.isPremium)
   );
   const [articleContent, setArticleContent] = useState(
     () =>
@@ -596,6 +600,7 @@ export const PostEditor = () => {
       articleContent,
       tags: cleanTagsArray(tags.length > 0 ? tags : [chosenCat || 'AI Prompt']),
       status: publishStatus,
+      isPremium: Boolean(isPremium),
       viewsCount: existingPost?.viewsCount || 0,
       copiesCount: existingPost?.copiesCount || 0,
       likesCount: existingPost?.likesCount || 0,
@@ -1098,6 +1103,55 @@ export const PostEditor = () => {
 
         {/* Right 1 Column: Categories & Taxonomy, SEO Meta Settings */}
         <div className="space-y-6">
+          {/* Premium Prompt Toggle Card */}
+          <div className="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-amber-300/80 dark:border-amber-700/60 shadow-sm space-y-4 bg-gradient-to-br from-amber-500/5 via-transparent to-transparent">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/20">
+                  <Crown className="w-5 h-5 fill-amber-500/20" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                    <span>Premium Prompt</span>
+                    {isPremium ? (
+                      <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[9px] font-black tracking-wider uppercase">
+                        PRO ONLY
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500 text-[9px] font-semibold">
+                        FREE
+                      </span>
+                    )}
+                  </h3>
+                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    Gate prompt text for Starter, Pro & VIP subscribers
+                  </p>
+                </div>
+              </div>
+
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="toggle-is-premium-prompt"
+                  checked={isPremium}
+                  onChange={(e) => setIsPremium(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer dark:bg-neutral-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+              </label>
+            </div>
+
+            {isPremium ? (
+              <div className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-300 bg-amber-100/70 dark:bg-amber-950/40 p-3 rounded-2xl border border-amber-300/60 dark:border-amber-800/60">
+                ✨ <strong>Premium Protected:</strong> This prompt card will display a PRO badge on the home page. Visitors can view full image, tags, and category, but prompt text will be locked with an upgrade CTA leading to the pricing page.
+              </div>
+            ) : (
+              <p className="text-[11px] text-neutral-500">
+                Standard prompt: public and free to copy for everyone.
+              </p>
+            )}
+          </div>
+
           {/* Category & AI Taxonomy Manager */}
           <div className="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-5">
             <div className="flex items-center justify-between">

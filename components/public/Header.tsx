@@ -28,6 +28,7 @@ export const Header = () => {
     setSearchQuery,
     setIsSearchModalOpen,
     isProUser,
+    planTier,
     setIsProCheckoutModalOpen,
   } = useApp();
 
@@ -137,20 +138,20 @@ export const Header = () => {
             )}
           </button>
 
-          {/* Razorpay Pro Upgrade Button */}
-          <button
-            onClick={() => setIsProCheckoutModalOpen(true)}
+          {/* Razorpay Pro Upgrade Button -> Navigates to /pricing */}
+          <Link
+            href="/pricing"
             className={`px-3 py-2 rounded-full text-xs font-black transition-all flex items-center gap-1.5 ${
               isProUser
                 ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
                 : 'bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 shadow-xs'
             }`}
-            title="Upgrade with Razorpay"
+            title="Upgrade to Pro - View Pricing Plans"
             id="header-pro-upgrade-btn"
           >
             <Crown className={`w-3.5 h-3.5 ${isProUser ? 'text-amber-500 fill-amber-500' : 'text-amber-400'}`} />
-            <span>{isProUser ? 'PRO VIP' : 'PRO'}</span>
-          </button>
+            <span>{isProUser ? (planTier ? planTier.toUpperCase() : 'PRO') : 'PRO'}</span>
+          </Link>
 
           {/* User Profile / Dashboard Button */}
           <Link

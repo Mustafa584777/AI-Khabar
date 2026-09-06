@@ -71,6 +71,7 @@ export interface PromptPost {
   status: 'published' | 'draft' | 'scheduled';
   isFeatured?: boolean;
   isTrending?: boolean;
+  isPremium?: boolean;
   viewsCount: number;
   copiesCount: number;
   likesCount: number;
@@ -83,6 +84,8 @@ export interface PromptPost {
   updatedAt: string;
   publishedAt?: string;
 }
+
+export type PlanTier = 'free' | 'starter' | 'pro' | 'vip';
 
 export interface Category {
   id: string;

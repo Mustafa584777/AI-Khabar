@@ -18,10 +18,11 @@ import { useApp } from '@/context/AppContext';
 import { startRazorpayCheckout } from '@/lib/razorpay';
 
 interface PlanOption {
-  id: string;
+  id: 'starter' | 'pro' | 'vip';
   name: string;
   amountPaise: number; // in paise
   displayPrice: string;
+  period: string;
   badge?: string;
   features: string[];
   icon: React.ReactNode;
@@ -29,48 +30,41 @@ interface PlanOption {
 
 const PLANS: PlanOption[] = [
   {
-    id: 'supporter',
-    name: 'Supporter Pass',
+    id: 'starter',
+    name: 'Starter',
     amountPaise: 4900, // ₹49
     displayPrice: '₹49',
-    features: ['Verified Supporter Badge', 'Unlimited Bookmarks', 'No Download Limits'],
+    period: '/ month',
+    features: ['Unlock premium prompts', '10 prompt tools credits', '1 prompt request'],
     icon: <Sparkles className="w-5 h-5 text-amber-500" />,
   },
   {
-    id: 'pro-creator',
-    name: 'Pro Creator',
+    id: 'pro',
+    name: 'Pro',
     amountPaise: 19900, // ₹199
     displayPrice: '₹199',
+    period: '/ month',
     badge: 'Most Popular',
-    features: [
-      'Unlimited High-Res AI Studio Generations',
-      'Instant Image-to-Prompt Deconstruction',
-      'Exclusive Midjourney & Flux Prompt Stacks',
-      'Priority VIP Support',
-    ],
+    features: ['Unlock premium prompts', '50 prompt tools credits', '3 prompt requests'],
     icon: <Zap className="w-5 h-5 text-[#E60023]" />,
   },
   {
-    id: 'vip-studio',
-    name: 'Studio VIP Lifetime',
+    id: 'vip',
+    name: 'VIP',
     amountPaise: 49900, // ₹499
     displayPrice: '₹499',
+    period: '/ month',
     badge: 'Best Value',
-    features: [
-      'Everything in Pro Creator',
-      'Commercial Prompt Licensing',
-      'Custom Instructions Engine Unlocked',
-      'Early Access to New Generative Models',
-    ],
+    features: ['Unlock premium prompts', '200 prompt tools credits', '10 prompt requests'],
     icon: <Crown className="w-5 h-5 text-purple-500" />,
   },
 ];
 
 export const RazorpayCheckoutModal: React.FC = () => {
-  const { isProCheckoutModalOpen, setIsProCheckoutModalOpen, isProUser, setIsProUser, userAccount, showToast } =
+  const { isProCheckoutModalOpen, setIsProCheckoutModalOpen, isProUser, setIsProUser, upgradePlan, userAccount, showToast } =
     useApp();
 
-  const [selectedPlanId, setSelectedPlanId] = useState<string>('pro-creator');
+  const [selectedPlanId, setSelectedPlanId] = useState<'starter' | 'pro' | 'vip'>('pro');
   const [customAmountRupees, setCustomAmountRupees] = useState<string>('1'); // ₹1 = 100 paise minimum
   const [isCustom, setIsCustom] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -143,6 +137,7 @@ export const RazorpayCheckoutModal: React.FC = () => {
         onSuccess: (data) => {
           setIsProcessing(false);
           setIsProUser(true);
+          upgradePlan(selectedPlanId);
           setPaymentResult({
             success: true,
             orderId: data.order_id,
