@@ -6,7 +6,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useRe
 import confetti from 'canvas-confetti';
 import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem, AiSearchResult, PlanTier } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseUserToUserAccount } from '@/lib/supabase';
 import { INITIAL_POSTS, INITIAL_CATEGORIES, INITIAL_SETTINGS } from '@/lib/initial-data';
 import {
   UserTasteProfile,
@@ -424,7 +424,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return account;
   };
 
-  const logoutUser = () => {
+  const logoutUser = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn('Supabase signOut error:', e);
+    }
     StorageService.logoutUserAccount();
     setUserAccount(null);
     showToast('Signed out successfully');
@@ -766,26 +771,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     // 2. Background sync from server API
     void syncFromRemote();
 
-    // Check Supabase Auth Session (Google OAuth login return)
+    // Check Supabase Auth Session (Google OAuth login return or existing session)
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        const u = session.user;
-        const account: UserAccount = {
-          id: u.id,
-          name: u.user_metadata?.full_name || u.email?.split('@')[0] || 'Google User',
-          username: '@' + (u.email?.split('@')[0] || 'user'),
-          email: u.email || '',
-          joinedDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-          isLoggedIn: true,
-          avatar: u.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
-          points: 10,
-          requestsMade: 0,
-          likesCountForPoints: 0,
-          savesCountForPoints: 0,
-          generationsCountForPoints: 0,
-          sharesCountForPoints: 0,
-          referralsCountForPoints: 0,
-        };
+        const existing = StorageService.getUserAccount();
+        const account = supabaseUserToUserAccount(session.user, existing);
         setUserAccount(account);
         StorageService.saveUserAccount(account);
       }
@@ -793,27 +783,31 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        const u = session.user;
-        const account: UserAccount = {
-          id: u.id,
-          name: u.user_metadata?.full_name || u.email?.split('@')[0] || 'Google User',
-          username: '@' + (u.email?.split('@')[0] || 'user'),
-          email: u.email || '',
-          joinedDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-          isLoggedIn: true,
-          avatar: u.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
-          points: 10,
-          requestsMade: 0,
-          likesCountForPoints: 0,
-          savesCountForPoints: 0,
-          generationsCountForPoints: 0,
-          sharesCountForPoints: 0,
-          referralsCountForPoints: 0,
-        };
+        const existing = StorageService.getUserAccount();
+        const account = supabaseUserToUserAccount(session.user, existing);
         setUserAccount(account);
         StorageService.saveUserAccount(account);
+      } else if (_event === 'SIGNED_OUT') {
+        setUserAccount(null);
+        StorageService.logoutUserAccount();
       }
     });
+
+    const handleAuthMessage = (event: MessageEvent) => {
+      if (typeof window !== 'undefined' && event.origin === window.location.origin) {
+        if (event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
+          supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session?.user) {
+              const existing = StorageService.getUserAccount();
+              const account = supabaseUserToUserAccount(session.user, existing);
+              setUserAccount(account);
+              StorageService.saveUserAccount(account);
+            }
+          });
+        }
+      }
+    };
+    window.addEventListener('message', handleAuthMessage);
 
     const handleFocus = () => {
       if (!isSavingRef.current) {
@@ -843,6 +837,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     window.addEventListener('storage', handleStorage);
     window.addEventListener('taste_profile_updated', handleTasteProfileEvent);
     return () => {
+      subscription?.unsubscribe();
+      window.removeEventListener('message', handleAuthMessage);
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('taste_profile_updated', handleTasteProfileEvent);

@@ -30,6 +30,7 @@ export const Header = () => {
     isProUser,
     planTier,
     setIsProCheckoutModalOpen,
+    userAccount,
   } = useApp();
 
   const handleHomeClick = () => {
@@ -78,7 +79,7 @@ export const Header = () => {
             </button>
 
             {/* Create / AI Studio Route Link */}
-            <a
+            <Link
               href="/create"
               className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 flex items-center gap-1.5 ${
                 pathname === '/create'
@@ -90,7 +91,7 @@ export const Header = () => {
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Create</span>
-            </a>
+            </Link>
 
             <Link
               href="/blog"
@@ -152,7 +153,7 @@ export const Header = () => {
           </Link>
 
           {/* User Profile / Dashboard Button */}
-          <a
+          <Link
             href="/dashboard"
             className={`p-2 sm:px-3.5 sm:py-2 rounded-full text-xs font-bold transition-colors flex items-center gap-1.5 ${
               pathname === '/dashboard'
@@ -162,9 +163,22 @@ export const Header = () => {
             title="My Creative Dashboard"
             id="header-user-dashboard-btn"
           >
-            <User className="w-4 h-4" />
-            <span className="hidden md:inline">Dashboard</span>
-          </a>
+            {userAccount?.isLoggedIn && userAccount.avatar ? (
+              <Image
+                src={userAccount.avatar}
+                alt={userAccount.name || 'User'}
+                width={18}
+                height={18}
+                className="w-4 h-4 rounded-full object-cover border border-emerald-500/50"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <User className="w-4 h-4" />
+            )}
+            <span className="hidden md:inline">
+              {userAccount?.isLoggedIn ? userAccount.name.split(' ')[0] : 'Dashboard'}
+            </span>
+          </Link>
         </div>
       </div>
     </header>
