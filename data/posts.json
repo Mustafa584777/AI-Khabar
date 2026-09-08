@@ -11,7 +11,9 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {},
+    "parameters": {
+      "isPremium": true
+    },
     "variables": [],
     "articleContent": "### Overview\nThis prompt recreates a vibrant, sun-drenched outdoor summer portrait with a selfie perspective.\n\n### Key Elements\n- **Subject & Attire**: A smiling woman in a yellow off-the-shoulder dress with white lace and matching wide-brim hat with daisy accents.\n- **Perspective**: Low-angle POV / selfie capture looking up toward the clear atmosphere.\n- **Lighting & Backdrop**: Direct sunny daylight with high-contrast blue sky and cumulus clouds.\n\n### Customization Options\n- Swap `yellow` for other vibrant hues like lavender, turquoise, or crimson.\n- Alter the accessory from `daisy flower` to sunflowers or cherries for different seasonal aesthetics.",
     "tags": [
@@ -25,7 +27,7 @@
     "status": "published",
     "isFeatured": false,
     "isTrending": false,
-    "isPremium": false,
+    "isPremium": true,
     "viewsCount": 0,
     "copiesCount": 0,
     "likesCount": 0,
@@ -43,7 +45,7 @@
       "metaDescription": "Generate bright summer portraits featuring a yellow sundress, straw hat, and blue sky using this Midjourney and Flux prompt."
     },
     "createdAt": "2026-09-06T05:17:24.944+00:00",
-    "updatedAt": "2026-09-06T05:17:26.483+00:00",
+    "updatedAt": "2026-09-08T04:28:58.92+00:00",
     "publishedAt": "2026-09-06T05:17:24.944+00:00"
   },
   {
@@ -4230,6 +4232,7 @@
     "imageHeight": 1536,
     "additionalImages": [],
     "parameters": {
+      "isPremium": true,
       "isRequested": true,
       "requestedByName": "Alex Visuals",
       "requestedByEmail": "alex.creator@example.com",
@@ -4249,7 +4252,7 @@
     "status": "published",
     "isFeatured": false,
     "isTrending": false,
-    "isPremium": false,
+    "isPremium": true,
     "viewsCount": 7,
     "copiesCount": 5,
     "likesCount": 0,
@@ -5253,6 +5256,7 @@
     "imageHeight": 1536,
     "additionalImages": [],
     "parameters": {
+      "isPremium": false,
       "isRequested": false,
       "requestedByName": null,
       "requestedByEmail": null,
@@ -5274,7 +5278,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 14,
+    "viewsCount": 16,
     "copiesCount": 8,
     "likesCount": 1,
     "bookmarksCount": 0,
@@ -5291,7 +5295,7 @@
       "metaDescription": "Learn how to generate stunning cinematic moonlit portraits using this professional photography prompt optimized for Midjourney and Gemini."
     },
     "createdAt": "2026-08-23T05:47:43.235+00:00",
-    "updatedAt": "2026-09-06T05:17:23.014+00:00",
+    "updatedAt": "2026-09-06T23:34:26.554+00:00",
     "publishedAt": "2026-08-23T05:47:43.235+00:00"
   },
   {
@@ -6018,7 +6022,9 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {},
+    "parameters": {
+      "isPremium": true
+    },
     "variables": [],
     "articleContent": "### How to use this prompt\nThis prompt is engineered to capture a blend of high-end lifestyle photography and authentic adventure vibes. By focusing on a shallow depth of field (f/2.8), it ensures the subject pops against the background, while the 85mm focal length provides a flattering, portrait-centric compression.\n\n### Lighting & Camera Breakdown\n- **Lighting:** The prompt specifies 'bright morning sun' to create a soft, flattering natural look that eliminates harsh shadows while maintaining bright highlights on the chrome parts of the bike.\n- **Lens:** An 85mm lens is chosen for its classic portrait aesthetic, which helps to isolate the subject from the busy highway background.\n- **Aesthetic:** The 'cinematic color grading' keyword ensures the AI produces a professional, polished finish reminiscent of high-end automotive magazine shoots.\n\n### Pro-Tips\n- To change the location, swap 'country highway' with 'coastal road' or 'urban cityscape' for a different vibe.\n- Experiment with the subject's outfit color to complement the bike's paint job (e.g., 'black leather jacket' for a moodier look).\n- If you are using this in Midjourney, add '--v 6.0' at the end to ensure the latest realism improvements are utilized.",
     "tags": [
@@ -6034,7 +6040,7 @@
     "status": "published",
     "isFeatured": false,
     "isTrending": false,
-    "isPremium": false,
+    "isPremium": true,
     "viewsCount": 2,
     "copiesCount": 0,
     "likesCount": 0,

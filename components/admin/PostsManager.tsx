@@ -23,6 +23,7 @@ export const PostsManager = () => {
     categories,
     deletePost,
     togglePublishStatus,
+    togglePremiumStatus,
     setAdminSubView,
     setEditingPostId,
     setCurrentView,
@@ -296,12 +297,22 @@ export const PostsManager = () => {
                               >
                                 {post.title}
                               </h4>
-                              {post.isPremium && (
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[9px] font-black tracking-wider uppercase shrink-0">
-                                  <Crown className="w-2.5 h-2.5 fill-amber-500" />
-                                  <span>PRO</span>
-                                </span>
-                              )}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  togglePremiumStatus(post.id);
+                                }}
+                                title={post.isPremium ? 'Currently PRO Premium (Click to change to Free)' : 'Currently Free (Click to upgrade to PRO Premium)'}
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase shrink-0 transition-all cursor-pointer ${
+                                  post.isPremium
+                                    ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-xs'
+                                    : 'bg-neutral-100 hover:bg-amber-100 dark:bg-neutral-800 dark:hover:bg-amber-950/60 text-neutral-400 hover:text-amber-600'
+                                }`}
+                              >
+                                <Crown className={`w-2.5 h-2.5 ${post.isPremium ? 'fill-white' : ''}`} />
+                                <span>{post.isPremium ? 'PRO' : 'FREE'}</span>
+                              </button>
                             </div>
                             <p className="text-[11px] text-neutral-400 font-mono truncate">
                               /{post.slug}

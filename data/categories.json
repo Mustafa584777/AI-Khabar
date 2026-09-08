@@ -1,27 +1,5 @@
 [
   {
-    "id": "cat-digital-illustration-art-mt5d6mi5",
-    "name": "Digital Illustration & Art",
-    "slug": "digital-illustration-art",
-    "iconName": "Sparkles",
-    "description": "Curated collection of Digital Illustration & Art copy-paste AI photo prompts.",
-    "color": "#E60023",
-    "badgeBg": "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-300 dark:border-red-800",
-    "count": 1,
-    "sortOrder": 0
-  },
-  {
-    "id": "cat-lifestyle-photography-mt5d7n2t",
-    "name": "Lifestyle Photography",
-    "slug": "lifestyle-photography",
-    "iconName": "Sparkles",
-    "description": "Curated collection of Lifestyle Photography copy-paste AI photo prompts.",
-    "color": "#E60023",
-    "badgeBg": "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-300 dark:border-red-800",
-    "count": 1,
-    "sortOrder": 0
-  },
-  {
     "id": "cat-digital-art-creative-portraiture-mt5d8lc5",
     "name": "Digital Art & Creative Portraiture",
     "slug": "digital-art-creative-portraiture",
@@ -38,6 +16,28 @@
     "slug": "fashion-editorial-photography",
     "iconName": "Sparkles",
     "description": "Curated collection of Fashion & Editorial Photography copy-paste AI photo prompts.",
+    "color": "#E60023",
+    "badgeBg": "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-300 dark:border-red-800",
+    "count": 1,
+    "sortOrder": 0
+  },
+  {
+    "id": "cat-digital-illustration-art-mt5d6mi5",
+    "name": "Digital Illustration & Art",
+    "slug": "digital-illustration-art",
+    "iconName": "Sparkles",
+    "description": "Curated collection of Digital Illustration & Art copy-paste AI photo prompts.",
+    "color": "#E60023",
+    "badgeBg": "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-300 dark:border-red-800",
+    "count": 1,
+    "sortOrder": 0
+  },
+  {
+    "id": "cat-lifestyle-photography-mt5d7n2t",
+    "name": "Lifestyle Photography",
+    "slug": "lifestyle-photography",
+    "iconName": "Sparkles",
+    "description": "Curated collection of Lifestyle Photography copy-paste AI photo prompts.",
     "color": "#E60023",
     "badgeBg": "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-300 dark:border-red-800",
     "count": 1,
@@ -71,6 +71,39 @@
     "slug": "photorealistic-portraits",
     "iconName": "Sparkles",
     "description": "Curated collection of Photorealistic & Portraits copy-paste AI photo prompts.",
+    "color": "#E60023",
+    "badgeBg": "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-300 dark:border-red-800",
+    "count": 1,
+    "sortOrder": 0
+  },
+  {
+    "id": "cat-lifestyle-travel-photography-mtmmmqxd",
+    "name": "Lifestyle & Travel Photography",
+    "slug": "lifestyle-travel-photography",
+    "iconName": "Sparkles",
+    "description": "Curated collection of Lifestyle & Travel Photography copy-paste AI photo prompts.",
+    "color": "#E60023",
+    "badgeBg": "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-300 dark:border-red-800",
+    "count": 1,
+    "sortOrder": 0
+  },
+  {
+    "id": "cat-lifestyle-fitness-photography-mtmn0e8q",
+    "name": "Lifestyle & Fitness Photography",
+    "slug": "lifestyle-fitness-photography",
+    "iconName": "Sparkles",
+    "description": "Curated collection of Lifestyle & Fitness Photography copy-paste AI photo prompts.",
+    "color": "#E60023",
+    "badgeBg": "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-300 dark:border-red-800",
+    "count": 1,
+    "sortOrder": 0
+  },
+  {
+    "id": "cat-digital-art-creative-illustration-mto732a8",
+    "name": "Digital Art & Creative Illustration",
+    "slug": "digital-art-creative-illustration",
+    "iconName": "Sparkles",
+    "description": "Curated collection of Digital Art & Creative Illustration copy-paste AI photo prompts.",
     "color": "#E60023",
     "badgeBg": "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-300 dark:border-red-800",
     "count": 1,

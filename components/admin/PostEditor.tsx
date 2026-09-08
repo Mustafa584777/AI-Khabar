@@ -102,8 +102,14 @@ export const PostEditor = () => {
     () => (existingPost?.status === 'draft' ? 'draft' : 'published')
   );
   const [isPremium, setIsPremium] = useState<boolean>(
-    () => Boolean(existingPost?.isPremium)
+    () => Boolean(existingPost?.isPremium || existingPost?.parameters?.isPremium)
   );
+
+  useEffect(() => {
+    if (existingPost) {
+      setIsPremium(Boolean(existingPost.isPremium || existingPost.parameters?.isPremium));
+    }
+  }, [existingPost?.id, existingPost?.isPremium, existingPost?.parameters?.isPremium]);
   const [articleContent, setArticleContent] = useState(
     () =>
       existingPost?.articleContent ||
@@ -601,6 +607,10 @@ export const PostEditor = () => {
       tags: cleanTagsArray(tags.length > 0 ? tags : [chosenCat || 'AI Prompt']),
       status: publishStatus,
       isPremium: Boolean(isPremium),
+      parameters: {
+        ...(existingPost?.parameters || {}),
+        isPremium: Boolean(isPremium),
+      },
       viewsCount: existingPost?.viewsCount || 0,
       copiesCount: existingPost?.copiesCount || 0,
       likesCount: existingPost?.likesCount || 0,

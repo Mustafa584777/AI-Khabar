@@ -60,6 +60,30 @@ let memorySearchQueries: SearchQueryItem[] | null = null;
 
 // Helpers to map Supabase snake_case rows to PromptPost
 function mapSupabasePost(row: any): PromptPost {
+  let parsedParams: any = {};
+  if (typeof row.parameters === 'object' && row.parameters !== null) {
+    parsedParams = { ...row.parameters };
+  } else if (typeof row.parameters === 'string') {
+    try {
+      parsedParams = JSON.parse(row.parameters);
+    } catch {
+      parsedParams = {};
+    }
+  }
+
+  const isPremium = Boolean(
+    row.is_premium === true ||
+    row.is_premium === 'true' ||
+    row.isPremium === true ||
+    row.isPremium === 'true' ||
+    parsedParams.isPremium === true ||
+    parsedParams.isPremium === 'true' ||
+    parsedParams.is_premium === true ||
+    parsedParams.is_premium === 'true'
+  );
+
+  parsedParams.isPremium = isPremium;
+
   return {
     id: row.id,
     title: row.title,
@@ -73,14 +97,14 @@ function mapSupabasePost(row: any): PromptPost {
     imageWidth: row.image_width || 1024,
     imageHeight: row.image_height || 1536,
     additionalImages: Array.isArray(row.additional_images) ? row.additional_images : [],
-    parameters: typeof row.parameters === 'object' && row.parameters !== null ? row.parameters : {},
+    parameters: parsedParams,
     variables: Array.isArray(row.variables) ? row.variables : [],
     articleContent: row.article_content || '',
     tags: Array.isArray(row.tags) ? row.tags : [],
     status: row.status || 'published',
     isFeatured: Boolean(row.is_featured),
     isTrending: Boolean(row.is_trending),
-    isPremium: Boolean(row.is_premium ?? row.isPremium ?? (row.parameters?.isPremium)),
+    isPremium,
     viewsCount: Number(row.views_count) || 0,
     copiesCount: Number(row.copies_count) || 0,
     likesCount: Number(row.likes_count) || 0,
@@ -104,6 +128,15 @@ function mapSupabasePost(row: any): PromptPost {
 }
 
 function mapPostToSupabase(post: PromptPost) {
+  const isPremium = Boolean(
+    post.isPremium === true ||
+    (post.parameters && (post.parameters.isPremium === true || post.parameters.isPremium === 'true'))
+  );
+  const parameters = {
+    ...(post.parameters || {}),
+    isPremium,
+  };
+
   return {
     id: post.id,
     title: post.title,
@@ -117,7 +150,7 @@ function mapPostToSupabase(post: PromptPost) {
     image_width: post.imageWidth || 1024,
     image_height: post.imageHeight || 1536,
     additional_images: post.additionalImages || [],
-    parameters: { ...(post.parameters || {}), isPremium: Boolean(post.isPremium) },
+    parameters,
     variables: post.variables || [],
     article_content: post.articleContent || '',
     tags: post.tags || [],
@@ -232,12 +265,26 @@ export const ServerStorage = {
     const posts = await ServerStorage.getAllPosts(true);
     const existing = posts.find((p) => p.id === id);
 
+    const isPremium = Boolean(
+      post.isPremium !== undefined
+        ? post.isPremium
+        : (post.parameters?.isPremium ?? existing?.isPremium ?? existing?.parameters?.isPremium)
+    );
+
+    const mergedParameters = {
+      ...(existing?.parameters || {}),
+      ...(post.parameters || {}),
+      isPremium,
+    };
+
     let savedPost: PromptPost;
     if (existing) {
       savedPost = {
         ...existing,
         ...post,
         id,
+        isPremium,
+        parameters: mergedParameters,
         tags: cleanTagsArray(post.tags || existing.tags || []),
         author: post.author || {
           name: 'tool.reelz',
@@ -253,6 +300,8 @@ export const ServerStorage = {
       savedPost = {
         ...post,
         id,
+        isPremium,
+        parameters: mergedParameters,
         tags: cleanTagsArray(post.tags || []),
         author: post.author || {
           name: 'tool.reelz',

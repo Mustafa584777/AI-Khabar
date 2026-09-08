@@ -101,6 +101,7 @@ interface AppContextType {
   savePost: (post: PromptPost) => Promise<PromptPost>;
   deletePost: (id: string) => Promise<boolean>;
   togglePublishStatus: (id: string) => void;
+  togglePremiumStatus: (id: string) => Promise<void>;
   copyPromptToClipboard: (text: string, postId?: string) => void;
   toggleLike: (id: string) => void;
   toggleBookmark: (id: string) => void;
@@ -432,6 +433,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
     StorageService.logoutUserAccount();
     setUserAccount(null);
+    supabase.auth.signOut().catch(() => {});
     showToast('Signed out successfully');
   };
 
@@ -988,6 +990,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     showToast(`Status changed to ${newStatus}`);
   };
 
+  const togglePremiumStatus = async (id: string) => {
+    const post = posts.find((p) => p.id === id);
+    if (!post) return;
+    const newIsPremium = !post.isPremium;
+    const updated: PromptPost = {
+      ...post,
+      isPremium: newIsPremium,
+      parameters: {
+        ...(post.parameters || {}),
+        isPremium: newIsPremium,
+      },
+    };
+    await savePost(updated);
+    showToast(newIsPremium ? 'Prompt upgraded to PRO Premium' : 'Prompt changed to Free');
+  };
+
   const copyPromptToClipboard = (text: string, postId?: string) => {
     navigator.clipboard.writeText(text);
     if (postId) {
@@ -1298,6 +1316,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         savePost,
         deletePost,
         togglePublishStatus,
+        togglePremiumStatus,
         copyPromptToClipboard,
         toggleLike,
         toggleBookmark,
