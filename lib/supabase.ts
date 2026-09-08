@@ -11,8 +11,6 @@ export const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || supab
 
 const isBrowser = typeof window !== 'undefined';
 
-const isBrowser = typeof window !== 'undefined';
-
 // Standard Supabase client (client & server)
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
