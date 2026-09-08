@@ -145,7 +145,7 @@ function mapPostToSupabase(post: PromptPost) {
     ai_tool: post.aiTool || 'Midjourney',
     prompt_text: post.promptText,
     negative_prompt: post.negativePrompt || null,
-    image_url: post.imageUrl,
+    image_url: post.imageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe',
     image_alt: post.imageAlt || null,
     image_width: post.imageWidth || 1024,
     image_height: post.imageHeight || 1536,
@@ -157,7 +157,6 @@ function mapPostToSupabase(post: PromptPost) {
     status: post.status || 'published',
     is_featured: Boolean(post.isFeatured),
     is_trending: Boolean(post.isTrending),
-    is_premium: isPremium,
     views_count: Number(post.viewsCount) || 0,
     copies_count: Number(post.copiesCount) || 0,
     likes_count: Number(post.likesCount) || 0,
@@ -177,6 +176,8 @@ function mapPostToSupabase(post: PromptPost) {
 }
 
 const db = (token?: string) => {
+  // On the server, supabaseAdmin has the service role key and full database access.
+  if (supabaseAdmin) return supabaseAdmin;
   if (token) {
     const { createClient } = require('@supabase/supabase-js');
     const { supabaseUrl, supabaseAnonKey } = require('./supabase');
@@ -188,7 +189,7 @@ const db = (token?: string) => {
       }
     });
   }
-  return supabaseAdmin || supabase;
+  return supabase;
 };
 
 export const ServerStorage = {

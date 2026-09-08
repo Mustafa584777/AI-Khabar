@@ -319,6 +319,24 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Prompt Requests State
   const [promptRequests, setPromptRequests] = useState<any[]>([]);
 
+  const syncUserDataToRemote = useCallback(async (updates: Record<string, any>) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      fetch('/api/user/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(updates),
+      }).catch((e) => console.warn('Background syncUserDataToRemote notice:', e));
+    } catch (err) {
+      console.warn('syncUserDataToRemote error:', err);
+    }
+  }, []);
+
   const addPromptRequest = (requestText: string, category?: string): boolean => {
     if (!userAccount || !userAccount.isLoggedIn) {
       openAuthModal('Please sign in to request a prompt.');
@@ -353,6 +371,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const updatedRequests = StorageService.savePromptRequest(newReq);
     setPromptRequests(updatedRequests);
+    void syncUserDataToRemote({
+      points: updatedAccount.points,
+      requestsMade: updatedAccount.requestsMade,
+      promptRequests: updatedRequests,
+    });
     confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
     showToast('Prompt request submitted successfully! 10 points reset.');
     return true;
@@ -375,6 +398,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     setUserAccount(updatedAccount);
     StorageService.saveUserAccount(updatedAccount);
+    void syncUserDataToRemote({
+      points: newPoints,
+      requestsMade: updatedAccount.requestsMade,
+      likesCountForPoints: updatedAccount.likesCountForPoints,
+      savesCountForPoints: updatedAccount.savesCountForPoints,
+      generationsCountForPoints: updatedAccount.generationsCountForPoints,
+      sharesCountForPoints: updatedAccount.sharesCountForPoints,
+      referralsCountForPoints: updatedAccount.referralsCountForPoints,
+    });
   };
 
   const loginUser = (email: string, _pass: string, username?: string, avatar?: string): boolean => {
@@ -387,7 +419,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       joinedDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
       isLoggedIn: true,
       avatar: avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
-      points: 5,
+      points: 10,
       requestsMade: 0,
       likesCountForPoints: 0,
       savesCountForPoints: 0,
@@ -412,7 +444,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       joinedDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
       isLoggedIn: true,
       avatar: avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
-      points: 5,
+      points: 10,
       requestsMade: 0,
       likesCountForPoints: 0,
       savesCountForPoints: 0,
@@ -433,7 +465,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
     StorageService.logoutUserAccount();
     setUserAccount(null);
-    supabase.auth.signOut().catch(() => {});
     showToast('Signed out successfully');
   };
 
@@ -444,17 +475,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     };
     const updated = StorageService.saveAiHistoryItem(itemWithUser);
     setAiHistory(updated);
+    void syncUserDataToRemote({ aiHistory: updated });
   };
 
   const deleteAiHistoryItem = (id: string) => {
     const updated = StorageService.deleteAiHistoryItem(id);
     setAiHistory(updated);
+    void syncUserDataToRemote({ aiHistory: updated });
     showToast('Item deleted from history');
   };
 
   const clearAiHistory = () => {
     StorageService.clearAiHistory();
     setAiHistory([]);
+    void syncUserDataToRemote({ aiHistory: [] });
     showToast('AI Generation history cleared');
   };
 
@@ -773,22 +807,70 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     // 2. Background sync from server API
     void syncFromRemote();
 
+    const syncUserFromSession = (user: any) => {
+      if (!user) return;
+      const meta = user.user_metadata || {};
+
+      const existing = StorageService.getUserAccount();
+      const account = supabaseUserToUserAccount(user, existing);
+      setUserAccount(account);
+      StorageService.saveUserAccount(account);
+
+      // Restore and merge bookmarks from user account
+      const localBookmarks = StorageService.getBookmarkedIds();
+      if (Array.isArray(meta.bookmarks)) {
+        const merged = Array.from(new Set([...meta.bookmarks, ...localBookmarks]));
+        setBookmarkedIds(merged);
+        StorageService.setBookmarkedIds(merged);
+        if (merged.length !== meta.bookmarks.length) {
+          void syncUserDataToRemote({ bookmarks: merged });
+        }
+      } else if (localBookmarks.length > 0) {
+        void syncUserDataToRemote({ bookmarks: localBookmarks });
+      }
+
+      // Restore and merge likes
+      const localLikes = StorageService.getLikedIds();
+      if (Array.isArray(meta.likes)) {
+        const merged = Array.from(new Set([...meta.likes, ...localLikes]));
+        setLikedIds(merged);
+        StorageService.setLikedIds(merged);
+        if (merged.length !== meta.likes.length) {
+          void syncUserDataToRemote({ likes: merged });
+        }
+      } else if (localLikes.length > 0) {
+        void syncUserDataToRemote({ likes: localLikes });
+      }
+
+      // Restore AI generation history
+      if (Array.isArray(meta.aiHistory) && meta.aiHistory.length > 0) {
+        setAiHistory(meta.aiHistory);
+        StorageService.setAiHistory(meta.aiHistory);
+      }
+
+      // Restore prompt requests
+      if (Array.isArray(meta.promptRequests) && meta.promptRequests.length > 0) {
+        setPromptRequests(meta.promptRequests);
+        StorageService.setPromptRequests(meta.promptRequests);
+      }
+
+      // Restore personalization taste profile
+      if (meta.tasteProfile && typeof meta.tasteProfile === 'object') {
+        setTasteProfile(meta.tasteProfile);
+        PersonalizationEngine.saveProfile(meta.tasteProfile);
+      }
+    };
+
     // Check Supabase Auth Session (Google OAuth login return or existing session)
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        const existing = StorageService.getUserAccount();
-        const account = supabaseUserToUserAccount(session.user, existing);
-        setUserAccount(account);
-        StorageService.saveUserAccount(account);
+        syncUserFromSession(session.user);
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        const existing = StorageService.getUserAccount();
-        const account = supabaseUserToUserAccount(session.user, existing);
-        setUserAccount(account);
-        StorageService.saveUserAccount(account);
+        syncUserFromSession(session.user);
       } else if (_event === 'SIGNED_OUT') {
         setUserAccount(null);
         StorageService.logoutUserAccount();
@@ -800,10 +882,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
           supabase.auth.getSession().then(({ data: { session } }) => {
             if (session?.user) {
-              const existing = StorageService.getUserAccount();
-              const account = supabaseUserToUserAccount(session.user, existing);
-              setUserAccount(account);
-              StorageService.saveUserAccount(account);
+              syncUserFromSession(session.user);
             }
           });
         }
@@ -845,7 +924,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('taste_profile_updated', handleTasteProfileEvent);
     };
-  }, [syncFromRemote]);
+  }, [syncFromRemote, syncUserDataToRemote]);
 
   const updateTasteProfile = (updates: Partial<UserTasteProfile>) => {
     const current = PersonalizationEngine.getProfile();
@@ -856,6 +935,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     };
     PersonalizationEngine.saveProfile(updated);
     setTasteProfile(updated);
+    void syncUserDataToRemote({ tasteProfile: updated });
     showToast('Feed taste profile updated!');
   };
 
@@ -1059,7 +1139,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const toggleLike = async (id: string) => {
     const isNowLiked = StorageService.toggleLikeLocal(id);
-    setLikedIds(StorageService.getLikedIds());
+    const updatedLikes = StorageService.getLikedIds();
+    setLikedIds(updatedLikes);
+    void syncUserDataToRemote({ likes: updatedLikes });
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -1092,6 +1174,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const isNowSaved = StorageService.toggleBookmark(id);
     const updatedBookmarks = StorageService.getBookmarkedIds();
     setBookmarkedIds(updatedBookmarks);
+    void syncUserDataToRemote({ bookmarks: updatedBookmarks });
 
     const post = posts.find((p) => p.id === id);
     if (post) {

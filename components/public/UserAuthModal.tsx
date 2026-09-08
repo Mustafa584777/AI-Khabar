@@ -60,20 +60,14 @@ export const UserAuthModal = () => {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     try {
-      // Use standard Supabase OAuth without skipBrowserRedirect to avoid popup blocked issues
-      // and redirect URI issues if the current origin isn't whitelisted. 
-      // If we are on localhost, we can specify redirectTo. Otherwise let Supabase use default.
-      const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost';
-      const redirectUrl = isLocal 
-        ? `${window.location.origin}/auth/callback` 
-        : 'https://geminipromptgenerator.online/auth/callback';
+      const redirectUrl = typeof window !== 'undefined'
+        ? `${window.location.origin}/auth/callback`
+        : '/auth/callback';
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
-          // Using standard redirect flow instead of popup to avoid "requested path is invalid" 
-          // or popup blockers. This will navigate the main window.
         },
       });
 
@@ -83,7 +77,6 @@ export const UserAuthModal = () => {
         setIsLoading(false);
         return;
       }
-      // If it doesn't automatically redirect (e.g. if we still used skipBrowserRedirect), do it manually:
       if (data?.url) {
         window.location.href = data.url;
       }
@@ -121,19 +114,31 @@ export const UserAuthModal = () => {
     try {
       if (mode === 'signup') {
         const userName = email.split('@')[0];
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: userName,
-            },
-          },
+        // 1. Create auto-verified user via secure server API
+        const regRes = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            password,
+            name: userName,
+          }),
         });
 
-        if (error) throw error;
+        const regData = await regRes.json();
+        if (!regRes.ok || regData.error) {
+          throw new Error(regData.error || 'Failed to create account');
+        }
+
+        // 2. Immediately sign in to establish active session
+        const { data: signinData, error: signinError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signinError) throw signinError;
         
-        showToast(`Welcome ${userName}! Account created successfully.`);
+        showToast(`Welcome ${userName}! Account created and signed in.`);
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,

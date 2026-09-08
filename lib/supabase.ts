@@ -49,8 +49,8 @@ export function supabaseUserToUserAccount(u: any, existing?: UserAccount | null)
   const email = u.email || existing?.email || '';
   const emailPrefix = email ? email.split('@')[0] : 'Creator';
   const name = meta.full_name || meta.name || existing?.name || emailPrefix;
-  const username = existing?.username || ('@' + (meta.user_name || emailPrefix.toLowerCase().replace(/[^a-z0-9]/g, '') || 'creator'));
-  const avatar = meta.avatar_url || meta.picture || existing?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80';
+  const username = meta.user_name ? ('@' + meta.user_name.replace(/[^a-z0-9]/g, '')) : (existing?.username || ('@' + emailPrefix.toLowerCase().replace(/[^a-z0-9]/g, '') || '@creator'));
+  const avatar = meta.avatar_url || meta.picture || meta.avatar || existing?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80';
 
   return {
     id: u.id,
@@ -60,12 +60,12 @@ export function supabaseUserToUserAccount(u: any, existing?: UserAccount | null)
     joinedDate: existing?.joinedDate || (u.created_at ? new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })),
     isLoggedIn: true,
     avatar,
-    points: existing?.points !== undefined ? existing.points : 10,
-    requestsMade: existing?.requestsMade || 0,
-    likesCountForPoints: existing?.likesCountForPoints || 0,
-    savesCountForPoints: existing?.savesCountForPoints || 0,
-    generationsCountForPoints: existing?.generationsCountForPoints || 0,
-    sharesCountForPoints: existing?.sharesCountForPoints || 0,
-    referralsCountForPoints: existing?.referralsCountForPoints || 0,
+    points: meta.points !== undefined ? Number(meta.points) : (existing?.points !== undefined ? existing.points : 10),
+    requestsMade: meta.requestsMade !== undefined ? Number(meta.requestsMade) : (existing?.requestsMade || 0),
+    likesCountForPoints: meta.likesCountForPoints !== undefined ? Number(meta.likesCountForPoints) : (existing?.likesCountForPoints || 0),
+    savesCountForPoints: meta.savesCountForPoints !== undefined ? Number(meta.savesCountForPoints) : (existing?.savesCountForPoints || 0),
+    generationsCountForPoints: meta.generationsCountForPoints !== undefined ? Number(meta.generationsCountForPoints) : (existing?.generationsCountForPoints || 0),
+    sharesCountForPoints: meta.sharesCountForPoints !== undefined ? Number(meta.sharesCountForPoints) : (existing?.sharesCountForPoints || 0),
+    referralsCountForPoints: meta.referralsCountForPoints !== undefined ? Number(meta.referralsCountForPoints) : (existing?.referralsCountForPoints || 0),
   };
 }
