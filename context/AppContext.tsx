@@ -2,12 +2,11 @@
 /* eslint-disable react-hooks/purity */
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
-import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem, PromptRequestItem } from '@/types/prompt';
+import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem, AiSearchResult, PlanTier } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
-import { CARTOON_AVATARS } from '@/lib/avatar-constants';
 import { INITIAL_POSTS, INITIAL_CATEGORIES, INITIAL_SETTINGS } from '@/lib/initial-data';
 import {
   UserTasteProfile,
@@ -19,8 +18,8 @@ interface AppContextType {
   // Navigation & Views
   currentView: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you';
   setCurrentView: (view: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you') => void;
-  adminSubView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'requested-prompts' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history';
-  setAdminSubView: (subView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'requested-prompts' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history') => void;
+  adminSubView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history';
+  setAdminSubView: (subView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history') => void;
   editingPostId: string | null;
   setEditingPostId: (id: string | null) => void;
   selectedPost: PromptPost | null;
@@ -42,7 +41,7 @@ interface AppContextType {
   showLoginModal: boolean;
   setShowLoginModal: (show: boolean) => void;
 
-  // End-User Account & Authentication (Supabase Auth: Email & Google)
+  // End-User Account & Authentication
   userAccount: UserAccount | null;
   setUserAccount: (account: UserAccount | null) => void;
   isUserAuthModalOpen: boolean;
@@ -50,23 +49,16 @@ interface AppContextType {
   authModalMessage: string | null;
   setAuthModalMessage: (msg: string | null) => void;
   openAuthModal: (message?: string) => void;
-  loginUser: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
-  signupUser: (name: string, username: string, email: string, pass: string, avatar?: string) => Promise<{ success: boolean; error?: string; requiresEmailConfirmation?: boolean }>;
-  loginWithGoogle: () => Promise<{ success: boolean; error?: string }>;
-  logoutUser: () => Promise<void>;
-  resetPasswordForEmail: (email: string) => Promise<{ success: boolean; error?: string }>;
-  resendConfirmationEmail: (email: string) => Promise<{ success: boolean; error?: string }>;
-  updateUserProfile: (updates: Partial<UserAccount>) => Promise<void>;
+  loginUser: (email: string, pass: string, username?: string, avatar?: string) => boolean;
+  signupUser: (name: string, username: string, email: string, pass: string, avatar?: string) => UserAccount;
+  logoutUser: () => void;
   awardPoints: (amount: number, type: 'like' | 'save' | 'generation' | 'share' | 'referral') => void;
 
   // Persistent Reference Photo & Prompt Requests
   persistentRefImage: string | null;
   setPersistentRefImage: (url: string | null) => void;
-  promptRequests: PromptRequestItem[];
-  addPromptRequest: (requestText: string, category?: string, userEmail?: string) => Promise<boolean>;
-  updatePromptRequestStatus: (id: string, status: 'pending' | 'in_progress' | 'completed', fulfilledPostId?: string) => Promise<void>;
-  deletePromptRequest: (id: string) => Promise<void>;
-  refreshPromptRequests: () => Promise<void>;
+  promptRequests: any[];
+  addPromptRequest: (requestText: string, category?: string) => boolean;
 
   // AI Studio History (Image to Prompt & Prompt to Image)
   aiHistory: AIHistoryItem[];
@@ -93,6 +85,10 @@ interface AppContextType {
   setIsSearchModalOpen: (open: boolean) => void;
   popularSearchQueries: string[];
   recordSearchQuery: (query: string) => void;
+  aiSearchResults: AiSearchResult | null;
+  isAiSearching: boolean;
+  performAiSearch: (query: string) => Promise<AiSearchResult | null>;
+  clearAiSearch: () => void;
   selectedCategory: string;
   setSelectedCategory: (cat: string) => void;
   selectedTool: string;
@@ -122,6 +118,26 @@ interface AppContextType {
   resetAllData: () => void;
   showToast: (msg: string) => void;
   toastMessage: string | null;
+
+  // Razorpay Pro Membership & Checkout
+  isProCheckoutModalOpen: boolean;
+  setIsProCheckoutModalOpen: (open: boolean) => void;
+  isProUser: boolean;
+  setIsProUser: (isPro: boolean) => void;
+  planTier: PlanTier;
+  setPlanTier: (tier: PlanTier) => void;
+  toolCredits: number;
+  deductToolCredit: () => boolean;
+  useToolCredit: () => boolean;
+  addToolCredits: (amount: number) => void;
+  promptRequestsRemaining: number;
+  upgradePlan: (tier: 'starter' | 'pro' | 'vip') => void;
+
+  isUnlockPremiumModalOpen: boolean;
+  setIsUnlockPremiumModalOpen: (open: boolean) => void;
+  lockedPromptContext: PromptPost | null;
+  setLockedPromptContext: (post: PromptPost | null) => void;
+  applyPlan: (planTier: 'starter' | 'pro' | 'vip') => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -130,7 +146,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Navigation
   const [currentView, setCurrentView] = useState<'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you'>('public');
   const [adminSubView, setAdminSubView] = useState<
-    'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'requested-prompts' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history'
+    'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history'
   >('dashboard');
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [selectedPost, setSelectedPost] = useState<PromptPost | null>(null);
@@ -144,6 +160,139 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [userAccount, setUserAccount] = useState<UserAccount | null>(null);
   const [isUserAuthModalOpen, setIsUserAuthModalOpen] = useState<boolean>(false);
   const [authModalMessage, setAuthModalMessage] = useState<string | null>(null);
+
+  // Razorpay Pro Membership & Plan Tier State
+  const [isProCheckoutModalOpen, setIsProCheckoutModalOpen] = useState<boolean>(false);
+  const [isProUser, setIsProUserState] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('auraprompt_pro_member') === 'true';
+    }
+    return false;
+  });
+
+  const setIsProUser = useCallback((isPro: boolean) => {
+    setIsProUserState(isPro);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auraprompt_pro_member', isPro ? 'true' : 'false');
+    }
+  }, []);
+
+  const [planTier, setPlanTierState] = useState<PlanTier>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('auraprompt_plan_tier') as PlanTier;
+      if (['starter', 'pro', 'vip', 'free'].includes(saved)) return saved;
+      if (localStorage.getItem('auraprompt_pro_member') === 'true') return 'pro';
+    }
+    return 'free';
+  });
+
+  const setPlanTier = useCallback((tier: PlanTier) => {
+    setPlanTierState(tier);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auraprompt_plan_tier', tier);
+    }
+  }, []);
+
+  // Tool Credits (Daily 2 free credits per user, 1 credit per tool result)
+  const [toolCredits, setToolCreditsState] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('auraprompt_tool_credits');
+      if (saved !== null) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed)) return parsed;
+      }
+    }
+    return 2;
+  });
+
+  const [promptRequestsRemaining, setPromptRequestsRemainingState] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('auraprompt_prompt_requests');
+      if (saved !== null) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed)) return parsed;
+      }
+    }
+    return 0;
+  });
+
+  const [isUnlockPremiumModalOpen, setIsUnlockPremiumModalOpen] = useState<boolean>(false);
+  const [lockedPromptContext, setLockedPromptContext] = useState<PromptPost | null>(null);
+
+  // Daily 2 Free Credits Grant Logic
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const today = new Date().toISOString().split('T')[0];
+    const lastDate = localStorage.getItem('auraprompt_last_credit_date');
+    if (lastDate !== today) {
+      const currentSaved = parseInt(localStorage.getItem('auraprompt_tool_credits') || '0', 10);
+      // Give at least 2 credits every new day, or add 2 bonus if user has a balance
+      const newCredits = Math.max(currentSaved, 0) < 2 ? 2 : currentSaved + 2;
+      setToolCreditsState(newCredits);
+      localStorage.setItem('auraprompt_tool_credits', newCredits.toString());
+      localStorage.setItem('auraprompt_last_credit_date', today);
+    }
+  }, []);
+
+  const deductToolCredit = useCallback((): boolean => {
+    let success = false;
+    setToolCreditsState((prev) => {
+      if (prev > 0) {
+        const next = prev - 1;
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('auraprompt_tool_credits', next.toString());
+        }
+        success = true;
+        return next;
+      }
+      return prev;
+    });
+    return success;
+  }, []);
+
+  const useToolCredit = deductToolCredit;
+
+  const addToolCredits = useCallback((amount: number) => {
+    setToolCreditsState((prev) => {
+      const next = prev + amount;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auraprompt_tool_credits', next.toString());
+      }
+      return next;
+    });
+  }, []);
+
+  const upgradePlan = useCallback((tier: 'starter' | 'pro' | 'vip') => {
+    const creditsMap = { starter: 10, pro: 50, vip: 200 };
+    const requestsMap = { starter: 1, pro: 3, vip: 10 };
+
+    setIsProUserState(true);
+    setPlanTierState(tier);
+
+    const addedCredits = creditsMap[tier];
+    const addedRequests = requestsMap[tier];
+
+    setToolCreditsState((prev) => {
+      const next = prev + addedCredits;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auraprompt_tool_credits', next.toString());
+      }
+      return next;
+    });
+
+    setPromptRequestsRemainingState((prev) => {
+      const next = prev + addedRequests;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auraprompt_prompt_requests', next.toString());
+      }
+      return next;
+    });
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auraprompt_pro_member', 'true');
+      localStorage.setItem('auraprompt_plan_tier', tier);
+    }
+  }, []);
 
   // AI Studio History State
   const [aiHistory, setAiHistory] = useState<AIHistoryItem[]>([]);
@@ -167,130 +316,45 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Prompt Requests State
-  const [promptRequests, setPromptRequests] = useState<PromptRequestItem[]>([]);
+  const [promptRequests, setPromptRequests] = useState<any[]>([]);
 
-  const refreshPromptRequests = async () => {
-    try {
-      const res = await fetch('/api/prompt-requests', { cache: 'no-store' });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && Array.isArray(data.data)) {
-          setPromptRequests(data.data);
-          StorageService.savePromptRequests(data.data);
-        }
-      }
-    } catch (err) {
-      console.warn('Network sync prompt requests notice:', err);
+  const addPromptRequest = (requestText: string, category?: string): boolean => {
+    if (!userAccount || !userAccount.isLoggedIn) {
+      openAuthModal('Please sign in to request a prompt.');
+      return false;
     }
-  };
-
-  const addPromptRequest = async (requestText: string, category?: string, userEmail?: string): Promise<boolean> => {
-    if (!requestText.trim()) {
-      showToast('Please enter your prompt description');
+    const currentPoints = userAccount.points || 0;
+    if (currentPoints < 10) {
+      showToast(`You need 10 points to request a prompt! Current points: ${currentPoints}/10`);
       return false;
     }
 
-    // If user is logged in, optionally deduct points if they have any, or allow submission
-    if (userAccount && userAccount.isLoggedIn) {
-      const currentPoints = userAccount.points || 0;
-      const updatedAccount: UserAccount = {
-        ...userAccount,
-        points: Math.max(0, currentPoints - 10),
-        requestsMade: (userAccount.requestsMade || 0) + 1,
-      };
-      setUserAccount(updatedAccount);
-      StorageService.saveUserAccount(updatedAccount);
-    }
+    // Deduct 10 points and increment requestsMade
+    const updatedAccount: UserAccount = {
+      ...userAccount,
+      points: currentPoints - 10,
+      requestsMade: (userAccount.requestsMade || 0) + 1,
+    };
+    setUserAccount(updatedAccount);
+    StorageService.saveUserAccount(updatedAccount);
 
-    const emailToUse = userEmail || userAccount?.email || '';
-    const nameToUse = userAccount?.name || (emailToUse ? emailToUse.split('@')[0] : 'Community Creator');
-
-    const tempReq: PromptRequestItem = {
+    const newReq = {
       id: 'req_' + Date.now(),
-      userId: userAccount?.id || 'anonymous',
-      userName: nameToUse,
-      userEmail: emailToUse,
-      userAvatar: userAccount?.avatar,
-      requestText: requestText.trim(),
-      category: category || 'Photorealistic & Portraits',
-      status: 'pending',
+      userId: userAccount.id,
+      userName: userAccount.name,
+      userAvatar: userAccount.avatar,
+      requestText,
+      category: category || 'General',
+      status: 'pending' as const,
       createdAt: Date.now(),
       likesCount: 0,
     };
 
-    // Optimistic local update
-    setPromptRequests((prev) => [tempReq, ...prev]);
-
-    try {
-      const res = await fetch('/api/prompt-requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: tempReq.userId,
-          userName: tempReq.userName,
-          userEmail: emailToUse,
-          userAvatar: tempReq.userAvatar,
-          requestText: tempReq.requestText,
-          category: tempReq.category,
-          status: 'pending',
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && data.data) {
-          setPromptRequests((prev) => [data.data, ...prev.filter((r) => r.id !== tempReq.id)]);
-        }
-      }
-    } catch (err) {
-      console.warn('Error saving request to server:', err);
-    }
-
-    try {
-      confetti({ particleCount: 70, spread: 65, origin: { y: 0.6 } });
-    } catch {}
-    showToast('Prompt request submitted successfully! Admin will create it soon.');
+    const updatedRequests = StorageService.savePromptRequest(newReq);
+    setPromptRequests(updatedRequests);
+    confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+    showToast('Prompt request submitted successfully! 10 points reset.');
     return true;
-  };
-
-  const updatePromptRequestStatus = async (id: string, status: 'pending' | 'in_progress' | 'completed', fulfilledPostId?: string): Promise<void> => {
-    setPromptRequests((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status, fulfilledPostId: fulfilledPostId ?? r.fulfilledPostId } : r))
-    );
-
-    try {
-      const res = await fetch('/api/prompt-requests', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status, fulfilledPostId }),
-      });
-      const data = await res.json();
-      if (data.success && Array.isArray(data.data)) {
-        setPromptRequests(data.data);
-      }
-      showToast(`Request marked as ${status}`);
-    } catch (err) {
-      console.error('Failed to update prompt request:', err);
-      showToast('Failed to update prompt request');
-    }
-  };
-
-  const deletePromptRequest = async (id: string): Promise<void> => {
-    setPromptRequests((prev) => prev.filter((r) => r.id !== id));
-
-    try {
-      const res = await fetch(`/api/prompt-requests?id=${encodeURIComponent(id)}`, {
-        method: 'DELETE',
-      });
-      const data = await res.json();
-      if (data.success && Array.isArray(data.data)) {
-        setPromptRequests(data.data);
-      }
-      showToast('Prompt request deleted');
-    } catch (err) {
-      console.error('Failed to delete prompt request:', err);
-      showToast('Failed to delete request');
-    }
   };
 
   const awardPoints = (amount: number, type: 'like' | 'save' | 'generation' | 'share' | 'referral') => {
@@ -312,271 +376,58 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     StorageService.saveUserAccount(updatedAccount);
   };
 
-  // Helper to map Supabase User entity to application UserAccount
-  const mapSupabaseUserToAccount = (user: any, existingLocal?: UserAccount | null): UserAccount => {
-    const meta = user.user_metadata || {};
-    const email = (user.email || meta.email || '').toLowerCase();
-    const name = meta.full_name || meta.name || (email ? email.split('@')[0] : 'Creator');
-    const rawUsername = meta.username || meta.preferred_username;
-    const username = rawUsername
-      ? rawUsername.startsWith('@')
-        ? rawUsername
-        : '@' + rawUsername
-      : '@' + (email ? email.split('@')[0] : 'creator').toLowerCase().replace(/[^a-z0-9]/g, '');
-
-    const avatar =
-      meta.avatar_url ||
-      meta.picture ||
-      meta.avatar ||
-      existingLocal?.avatar ||
-      CARTOON_AVATARS[0].url;
-
-    const existing = existingLocal || StorageService.getUserAccount();
-    const joinedDate =
-      existing?.joinedDate ||
-      (user.created_at
-        ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-        : 'Recently');
-
-    return {
-      id: user.id,
-      name,
-      username,
-      email,
-      avatar,
-      joinedDate,
+  const loginUser = (email: string, _pass: string, username?: string, avatar?: string): boolean => {
+    const existing = StorageService.getUserAccount();
+    const account: UserAccount = existing || {
+      id: 'user_' + Date.now(),
+      name: email.split('@')[0],
+      username: username || '@' + email.split('@')[0].toLowerCase(),
+      email: email.toLowerCase(),
+      joinedDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
       isLoggedIn: true,
-      points: existing ? Math.max(existing.points || 0, 10) : 10,
-      requestsMade: existing?.requestsMade || 0,
-      likesCountForPoints: existing?.likesCountForPoints || 0,
-      savesCountForPoints: existing?.savesCountForPoints || 0,
-      generationsCountForPoints: existing?.generationsCountForPoints || 0,
-      sharesCountForPoints: existing?.sharesCountForPoints || 0,
-      referralsCountForPoints: existing?.referralsCountForPoints || 0,
+      avatar: avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
+      points: 5,
+      requestsMade: 0,
+      likesCountForPoints: 0,
+      savesCountForPoints: 0,
+      generationsCountForPoints: 0,
+      sharesCountForPoints: 0,
+      referralsCountForPoints: 0,
     };
+    account.isLoggedIn = true;
+    if (username) account.username = username;
+    if (avatar) account.avatar = avatar;
+    StorageService.saveUserAccount(account);
+    setUserAccount(account);
+    return true;
   };
 
-  // Supabase Email & Password Sign In
-  const loginUser = async (email: string, pass: string): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password: pass,
-      });
-
-      if (error) {
-        return { success: false, error: error.message };
-      }
-
-      if (data?.user) {
-        const account = mapSupabaseUserToAccount(data.user);
-        StorageService.saveUserAccount(account);
-        setUserAccount(account);
-        showToast(`Welcome back, ${account.name}!`);
-        return { success: true };
-      }
-
-      return { success: false, error: 'Could not sign in with provided credentials.' };
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Sign in failed';
-      return { success: false, error: msg };
-    }
+  const signupUser = (name: string, username: string, email: string, _pass: string, avatar?: string): UserAccount => {
+    const account: UserAccount = {
+      id: 'user_' + Date.now(),
+      name: name || email.split('@')[0],
+      username: username || '@' + (name || email.split('@')[0]).toLowerCase().replace(/[^a-z0-9]/g, ''),
+      email: email.toLowerCase(),
+      joinedDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      isLoggedIn: true,
+      avatar: avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
+      points: 5,
+      requestsMade: 0,
+      likesCountForPoints: 0,
+      savesCountForPoints: 0,
+      generationsCountForPoints: 0,
+      sharesCountForPoints: 0,
+      referralsCountForPoints: 0,
+    };
+    StorageService.saveUserAccount(account);
+    setUserAccount(account);
+    return account;
   };
 
-  // Supabase Email & Password Sign Up
-  const signupUser = async (
-    name: string,
-    username: string,
-    email: string,
-    pass: string,
-    avatar?: string
-  ): Promise<{ success: boolean; error?: string; requiresEmailConfirmation?: boolean }> => {
-    try {
-      const cleanEmail = email.trim().toLowerCase();
-      const cleanName = name.trim() || cleanEmail.split('@')[0];
-      const cleanHandle = username.trim()
-        ? username.startsWith('@')
-          ? username
-          : '@' + username
-        : '@' + cleanName.toLowerCase().replace(/[^a-z0-9]/g, '');
-      const cleanAvatar = avatar || CARTOON_AVATARS[0].url;
-
-      const redirectUrl = typeof window !== 'undefined'
-        ? `${window.location.origin}/auth/callback`
-        : undefined;
-
-      const { data, error } = await supabase.auth.signUp({
-        email: cleanEmail,
-        password: pass,
-        options: {
-          data: {
-            name: cleanName,
-            full_name: cleanName,
-            username: cleanHandle,
-            avatar: cleanAvatar,
-            avatar_url: cleanAvatar,
-          },
-          emailRedirectTo: redirectUrl,
-        },
-      });
-
-      if (error) {
-        return { success: false, error: error.message };
-      }
-
-      if (data?.session && data?.user) {
-        // Immediate active session
-        const account = mapSupabaseUserToAccount(data.user);
-        StorageService.saveUserAccount(account);
-        setUserAccount(account);
-        try {
-          confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
-        } catch {}
-        showToast(`Welcome ${cleanName}! Account created.`);
-        return { success: true };
-      } else if (data?.user) {
-        // Email confirmation is required by Supabase project settings
-        return {
-          success: true,
-          requiresEmailConfirmation: true,
-        };
-      }
-
-      return { success: false, error: 'Registration could not be completed.' };
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Sign up failed';
-      return { success: false, error: msg };
-    }
-  };
-
-  // Supabase Google OAuth Sign In
-  const loginWithGoogle = async (): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const redirectUrl = typeof window !== 'undefined'
-        ? `${window.location.origin}/auth/callback`
-        : undefined;
-
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          skipBrowserRedirect: true,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'select_account',
-          },
-        },
-      });
-
-      if (error) {
-        showToast(`Google Sign-In: ${error.message}`);
-        return { success: false, error: error.message };
-      }
-
-      if (data?.url) {
-        // Open in popup window (crucial for iframe preview compatibility)
-        const width = 500;
-        const height = 650;
-        const left = window.screenX + (window.outerWidth - width) / 2;
-        const top = window.screenY + (window.outerHeight - height) / 2;
-        const popup = window.open(
-          data.url,
-          'supabase_google_auth',
-          `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,status=no`
-        );
-
-        if (!popup || popup.closed) {
-          // If popup blocker intervened:
-          if (typeof window !== 'undefined' && window.self === window.top) {
-            window.location.assign(data.url);
-          } else {
-            window.open(data.url, '_blank');
-          }
-        }
-        return { success: true };
-      }
-
-      return { success: false, error: 'Could not generate Google authentication URL.' };
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Google Sign-In failed';
-      showToast(msg);
-      return { success: false, error: msg };
-    }
-  };
-
-  // Supabase Sign Out
-  const logoutUser = async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (e) {
-      console.warn('Supabase sign out error:', e);
-    }
+  const logoutUser = () => {
     StorageService.logoutUserAccount();
     setUserAccount(null);
     showToast('Signed out successfully');
-  };
-
-  // Password reset email via Supabase
-  const resetPasswordForEmail = async (email: string): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const redirectUrl = typeof window !== 'undefined'
-        ? `${window.location.origin}/auth/callback?type=recovery`
-        : undefined;
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-        redirectTo: redirectUrl,
-      });
-      if (error) return { success: false, error: error.message };
-      return { success: true };
-    } catch (err: unknown) {
-      return { success: false, error: err instanceof Error ? err.message : 'Failed to send reset email' };
-    }
-  };
-
-  // Resend confirmation email via Supabase
-  const resendConfirmationEmail = async (email: string): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const redirectUrl = typeof window !== 'undefined'
-        ? `${window.location.origin}/auth/callback`
-        : undefined;
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: email.trim().toLowerCase(),
-        options: {
-          emailRedirectTo: redirectUrl,
-        },
-      });
-      if (error) return { success: false, error: error.message };
-      return { success: true };
-    } catch (err: unknown) {
-      return { success: false, error: err instanceof Error ? err.message : 'Failed to resend confirmation' };
-    }
-  };
-
-  const updateUserProfile = async (updates: Partial<UserAccount>) => {
-    const current = userAccount || StorageService.getUserAccount();
-    if (!current) return;
-    const updated: UserAccount = {
-      ...current,
-      ...updates,
-    };
-    StorageService.saveUserAccount(updated);
-    setUserAccount(updated);
-
-    try {
-      await supabase.auth.updateUser({
-        data: {
-          name: updated.name,
-          full_name: updated.name,
-          username: updated.username,
-          avatar: updated.avatar,
-          avatar_url: updated.avatar,
-        },
-      });
-    } catch (e) {
-      console.warn('Could not sync user profile updates to Supabase:', e);
-    }
-
-    showToast('Profile updated successfully!');
   };
 
   const saveAiHistoryItem = (item: AIHistoryItem) => {
@@ -645,20 +496,90 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSearchModalOpen, setIsSearchModalOpen] = useState<boolean>(false);
   const [popularSearchQueries, setPopularSearchQueries] = useState<string[]>([
+    'Traditional saree',
     'Cyberpunk neon portrait',
     'Cinematic golden hour',
     'Vintage 35mm film',
     'Anime masterpiece',
     'Minimalist aesthetic logo',
     'Hyperrealistic 8K model',
-    'Moody luxury portrait',
-    'Unreal Engine 3D render',
+    'Indian fashion portrait',
   ]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedTool, setSelectedTool] = useState<string>('all');
   const [selectedSort, setSelectedSort] = useState<
     'trending' | 'most-popular' | 'most-liked' | 'most-copied' | 'newest'
   >('trending');
+
+  // Gemini AI Search State & Cache
+  const [aiSearchResults, setAiSearchResults] = useState<AiSearchResult | null>(null);
+  const [isAiSearching, setIsAiSearching] = useState<boolean>(false);
+  const aiSearchCacheRef = useRef<Map<string, AiSearchResult>>(new Map());
+
+  const performAiSearch = useCallback(async (query: string): Promise<AiSearchResult | null> => {
+    const clean = query.trim();
+    if (!clean || clean.length < 2) {
+      setAiSearchResults(null);
+      setIsAiSearching(false);
+      return null;
+    }
+
+    const cacheKey = clean.toLowerCase();
+    if (aiSearchCacheRef.current.has(cacheKey)) {
+      const cached = aiSearchCacheRef.current.get(cacheKey)!;
+      setAiSearchResults(cached);
+      return cached;
+    }
+
+    setIsAiSearching(true);
+    try {
+      const res = await fetch('/api/search/semantic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: clean }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          const result: AiSearchResult = {
+            query: clean,
+            correctedQuery: data.correctedQuery || clean,
+            expandedKeywords: Array.isArray(data.expandedKeywords) ? data.expandedKeywords : [clean],
+            matchedPostIds: Array.isArray(data.matchedPostIds) ? data.matchedPostIds : [],
+            explanation: data.explanation || '',
+            isAiPowered: Boolean(data.isAiPowered),
+          };
+          aiSearchCacheRef.current.set(cacheKey, result);
+          setAiSearchResults(result);
+          setIsAiSearching(false);
+          return result;
+        }
+      }
+    } catch (e) {
+      console.warn('AI Semantic Search error:', e);
+    } finally {
+      setIsAiSearching(false);
+    }
+    return null;
+  }, []);
+
+  const clearAiSearch = useCallback(() => {
+    setAiSearchResults(null);
+    setIsAiSearching(false);
+  }, []);
+
+  // Whenever searchQuery updates, trigger performAiSearch (debounced 300ms)
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q || q.length < 2) {
+      setAiSearchResults(null);
+      return;
+    }
+    const timer = setTimeout(() => {
+      void performAiSearch(q);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, performAiSearch]);
 
   const fetchSearchQueries = async () => {
     try {
@@ -702,6 +623,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }, 3000);
   };
 
+  const applyPlan = useCallback((tier: 'starter' | 'pro' | 'vip') => {
+    upgradePlan(tier);
+    showToast(`Success! You have unlocked the ${tier.toUpperCase()} plan.`);
+  }, [upgradePlan]);
+
   const isSavingRef = React.useRef(false);
 
   const syncFromRemote = React.useCallback(async () => {
@@ -713,7 +639,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           if (res.ok && !isSavingRef.current) {
             const data = await res.json();
             if (data.success && Array.isArray(data.posts)) {
-              setPosts(data.posts);
+              setPosts((prevPosts) => {
+                if (!prevPosts || prevPosts.length === 0) return data.posts;
+                const remoteMap = new Map<string, PromptPost>(data.posts.map((p: PromptPost) => [p.id, p]));
+                const updated = prevPosts.map((p) => {
+                  const remote = remoteMap.get(p.id);
+                  return remote ? { ...p, ...remote } : p;
+                });
+                const existingIds = new Set(prevPosts.map((p) => p.id));
+                const brandNew = data.posts.filter((p: PromptPost) => !existingIds.has(p.id));
+                return [...updated, ...brandNew];
+              });
               StorageService.saveCachedPosts(data.posts);
             }
           }
@@ -766,7 +702,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         });
 
       fetchSearchQueries();
-      void refreshPromptRequests();
       await Promise.allSettled([fetchPosts, fetchCats, fetchTags, fetchSettings]);
     } catch (err) {
       console.warn('Network sync notice (using cache):', err);
@@ -831,6 +766,55 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     // 2. Background sync from server API
     void syncFromRemote();
 
+    // Check Supabase Auth Session (Google OAuth login return)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const u = session.user;
+        const account: UserAccount = {
+          id: u.id,
+          name: u.user_metadata?.full_name || u.email?.split('@')[0] || 'Google User',
+          username: '@' + (u.email?.split('@')[0] || 'user'),
+          email: u.email || '',
+          joinedDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+          isLoggedIn: true,
+          avatar: u.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
+          points: 10,
+          requestsMade: 0,
+          likesCountForPoints: 0,
+          savesCountForPoints: 0,
+          generationsCountForPoints: 0,
+          sharesCountForPoints: 0,
+          referralsCountForPoints: 0,
+        };
+        setUserAccount(account);
+        StorageService.saveUserAccount(account);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        const u = session.user;
+        const account: UserAccount = {
+          id: u.id,
+          name: u.user_metadata?.full_name || u.email?.split('@')[0] || 'Google User',
+          username: '@' + (u.email?.split('@')[0] || 'user'),
+          email: u.email || '',
+          joinedDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+          isLoggedIn: true,
+          avatar: u.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
+          points: 10,
+          requestsMade: 0,
+          likesCountForPoints: 0,
+          savesCountForPoints: 0,
+          generationsCountForPoints: 0,
+          sharesCountForPoints: 0,
+          referralsCountForPoints: 0,
+        };
+        setUserAccount(account);
+        StorageService.saveUserAccount(account);
+      }
+    });
+
     const handleFocus = () => {
       if (!isSavingRef.current) {
         void syncFromRemote();
@@ -858,52 +842,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     window.addEventListener('focus', handleFocus);
     window.addEventListener('storage', handleStorage);
     window.addEventListener('taste_profile_updated', handleTasteProfileEvent);
-
-    // 3. Supabase Auth Session Initialization & Real-time Listener
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (!error && session?.user) {
-        const account = mapSupabaseUserToAccount(session.user);
-        StorageService.saveUserAccount(account);
-        setUserAccount(account);
-      }
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if ((event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') && session?.user) {
-        const account = mapSupabaseUserToAccount(session.user);
-        StorageService.saveUserAccount(account);
-        setUserAccount(account);
-      } else if (event === 'SIGNED_OUT') {
-        StorageService.logoutUserAccount();
-        setUserAccount(null);
-      }
-    });
-
-    const handleAuthMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-          if (session?.user) {
-            const account = mapSupabaseUserToAccount(session.user);
-            StorageService.saveUserAccount(account);
-            setUserAccount(account);
-            showToast(`Signed in as ${account.name} via Google!`);
-            try {
-              confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
-            } catch {}
-          }
-        });
-      }
-    };
-    window.addEventListener('message', handleAuthMessage);
-
     return () => {
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('taste_profile_updated', handleTasteProfileEvent);
-      subscription.unsubscribe();
-      window.removeEventListener('message', handleAuthMessage);
     };
   }, [syncFromRemote]);
 
@@ -960,18 +902,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     isSavingRef.current = true;
 
     // Immediate optimistic local update
-    let nextPosts: PromptPost[] = [];
     setPosts((prev) => {
       const idx = prev.findIndex((p) => p.id === post.id);
       if (idx >= 0) {
         const updated = [...prev];
         updated[idx] = post;
-        nextPosts = updated;
-      } else {
-        nextPosts = [post, ...prev];
+        return updated;
       }
-      StorageService.saveCachedPosts(nextPosts);
-      return nextPosts;
+      return [post, ...prev];
     });
 
     try {
@@ -985,7 +923,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const data = await res.json();
       if (data.success && Array.isArray(data.posts)) {
         setPosts(data.posts);
-        StorageService.saveCachedPosts(data.posts);
         const savedPost = data.post || post;
         showToast(
           savedPost.status === 'published'
@@ -1325,19 +1262,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         openAuthModal,
         loginUser,
         signupUser,
-        loginWithGoogle,
         logoutUser,
-        resetPasswordForEmail,
-        resendConfirmationEmail,
-        updateUserProfile,
         awardPoints,
         persistentRefImage,
         setPersistentRefImage,
         promptRequests,
         addPromptRequest,
-        refreshPromptRequests,
-        updatePromptRequestStatus,
-        deletePromptRequest,
         aiHistory,
         saveAiHistoryItem,
         deleteAiHistoryItem,
@@ -1358,6 +1288,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setIsSearchModalOpen,
         popularSearchQueries,
         recordSearchQuery,
+        aiSearchResults,
+        isAiSearching,
+        performAiSearch,
+        clearAiSearch,
         selectedCategory,
         setSelectedCategory,
         selectedTool,
@@ -1380,6 +1314,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         resetAllData,
         showToast,
         toastMessage,
+        isProCheckoutModalOpen,
+        setIsProCheckoutModalOpen,
+        isProUser,
+        setIsProUser,
+        planTier,
+        setPlanTier,
+        toolCredits,
+        deductToolCredit,
+        useToolCredit,
+        addToolCredits,
+        promptRequestsRemaining,
+        upgradePlan,
+        isUnlockPremiumModalOpen,
+        setIsUnlockPremiumModalOpen,
+        lockedPromptContext,
+        setLockedPromptContext,
+        applyPlan,
       }}
     >
       {children}

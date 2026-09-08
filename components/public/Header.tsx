@@ -10,6 +10,7 @@ import {
   User,
   Sparkles,
   Search,
+  Crown,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -26,7 +27,9 @@ export const Header = () => {
     searchQuery,
     setSearchQuery,
     setIsSearchModalOpen,
-    settings,
+    isProUser,
+    planTier,
+    setIsProCheckoutModalOpen,
   } = useApp();
 
   const handleHomeClick = () => {
@@ -34,7 +37,7 @@ export const Header = () => {
     setSelectedCategory('all');
     setSearchQuery('');
     if (pathname !== '/') {
-      router.push('/');
+      window.location.href = '/';
     }
   };
 
@@ -49,15 +52,14 @@ export const Header = () => {
             id="brand-logo-btn"
             title="Trending Copy Paste Photo Prompts"
           >
-            <div className="w-10 h-10 rounded-full overflow-hidden shadow-xs group-hover:scale-105 transition-transform shrink-0 relative flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full overflow-hidden shadow-sm group-hover:scale-105 transition-transform shrink-0 relative bg-gradient-to-tr from-[#E60023] via-[#ff3b56] to-[#E60023] flex items-center justify-center p-0.5">
               <Image
-                src={settings.logoUrl || '/logo.png'}
-                alt={settings.siteName || 'Logo'}
-                width={40}
-                height={40}
+                src="/logo.png"
+                alt="tool.reelz"
+                width={38}
+                height={38}
                 className="w-full h-full object-cover rounded-full"
                 priority
-                referrerPolicy="no-referrer"
               />
             </div>
           </button>
@@ -75,25 +77,20 @@ export const Header = () => {
               Home
             </button>
 
-            {/* AI Studio / Create Tool Button */}
-            <button
-              onClick={() => {
-                setCurrentView('studio-tool');
-                if (pathname !== '/') {
-                  router.push('/');
-                }
-              }}
+            {/* Create / AI Studio Route Link */}
+            <a
+              href="/create"
               className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 flex items-center gap-1.5 ${
-                currentView === 'studio-tool'
+                pathname === '/create'
                   ? 'bg-[#E60023] text-white shadow-sm'
                   : 'text-neutral-700 dark:text-neutral-300 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-[#E60023]'
               }`}
               id="header-create-tool-btn"
-              title="AI Studio - Create Prompt from Image & Image from Prompt"
+              title="Create - Image to Prompt & Text to Image"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>AI Studio</span>
-            </button>
+              <span>Create</span>
+            </a>
 
             <Link
               href="/blog"
@@ -139,16 +136,26 @@ export const Header = () => {
             )}
           </button>
 
+          {/* Razorpay Pro Upgrade Button -> Navigates to /pricing */}
+          <Link
+            href="/pricing"
+            className={`px-3 py-2 rounded-full text-xs font-black transition-all flex items-center gap-1.5 ${
+              isProUser
+                ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
+                : 'bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 shadow-xs'
+            }`}
+            title="Upgrade to Pro - View Pricing Plans"
+            id="header-pro-upgrade-btn"
+          >
+            <Crown className={`w-3.5 h-3.5 ${isProUser ? 'text-amber-500 fill-amber-500' : 'text-amber-400'}`} />
+            <span>{isProUser ? (planTier ? planTier.toUpperCase() : 'PRO') : 'PRO'}</span>
+          </Link>
+
           {/* User Profile / Dashboard Button */}
-          <button
-            onClick={() => {
-              setCurrentView('user-dashboard');
-              if (pathname !== '/') {
-                router.push('/');
-              }
-            }}
+          <a
+            href="/dashboard"
             className={`p-2 sm:px-3.5 sm:py-2 rounded-full text-xs font-bold transition-colors flex items-center gap-1.5 ${
-              currentView === 'user-dashboard'
+              pathname === '/dashboard'
                 ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950'
                 : 'bg-[#efefef] dark:bg-neutral-800 hover:bg-[#e2e2e2] dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200'
             }`}
@@ -157,7 +164,7 @@ export const Header = () => {
           >
             <User className="w-4 h-4" />
             <span className="hidden md:inline">Dashboard</span>
-          </button>
+          </a>
         </div>
       </div>
     </header>

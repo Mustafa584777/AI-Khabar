@@ -83,8 +83,6 @@ export const INITIAL_SETTINGS: SiteSettings = {
   siteTagline: 'Free Copy-Paste AI Photo Prompts, Codes & Creative Guides',
   siteUrl: 'https://trendinggeminiprompts.com',
   logoText: 'Trending Copy Paste Photo Prompts',
-  logoUrl: '/logo.png',
-  faviconUrl: '/favicon.ico',
   heroHeadline: 'Trending Copy Paste Photo Prompts',
   heroSubheadline: 'Explore curated photo prompts for Gemini, Midjourney and ChatGPT. Copy with 1 click.',
   defaultTool: 'Gemini',
@@ -100,5 +98,4 @@ export const INITIAL_SETTINGS: SiteSettings = {
     'Vintage 35mm',
     'Hyperrealistic',
   ],
-  geminiCustomInstructions: '',
 };

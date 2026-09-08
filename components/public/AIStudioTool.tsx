@@ -15,8 +15,12 @@ import {
   Bookmark,
   History,
   Zap,
+  Coins,
+  X,
 } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const SAMPLE_IMAGES = [
   {
@@ -70,6 +74,7 @@ interface ExtractedPromptData {
 }
 
 export const AIStudioTool = () => {
+  const router = useRouter();
   const {
     setCurrentView,
     setSelectedCategory,
@@ -78,6 +83,8 @@ export const AIStudioTool = () => {
     userAccount,
     openAuthModal,
     saveAiHistoryItem,
+    toolCredits,
+    deductToolCredit,
   } = useApp();
 
   const [uploadedImage, setUploadedImage] = useState<string | null>(() => {
@@ -92,21 +99,11 @@ export const AIStudioTool = () => {
     return null;
   });
 
-  const [customInstructions, setCustomInstructions] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('promptcms_custom_instructions') || '';
-    }
-    return '';
-  });
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('promptcms_custom_instructions', customInstructions);
-    }
-  }, [customInstructions]);
+  const [customInstructions, setCustomInstructions] = useState<string>('');
   const [isExtractingPrompt, setIsExtractingPrompt] = useState<boolean>(false);
   const [extractedData, setExtractedData] = useState<ExtractedPromptData | null>(null);
   const [isSavedExtracted, setIsSavedExtracted] = useState<boolean>(false);
+  const [isOutOfCreditsModalOpen, setIsOutOfCreditsModalOpen] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -147,6 +144,12 @@ export const AIStudioTool = () => {
       return;
     }
 
+    if (toolCredits <= 0) {
+      setIsOutOfCreditsModalOpen(true);
+      showToast('No tool credits remaining. Daily 2 free credits reset tomorrow, or upgrade your plan for instant credits!');
+      return;
+    }
+
     setIsExtractingPrompt(true);
     setExtractedData(null);
     setIsSavedExtracted(false);
@@ -158,14 +161,15 @@ export const AIStudioTool = () => {
         body: JSON.stringify({
           action: 'image_to_prompt',
           image: uploadedImage,
-          customInstructions: customInstructions.trim(),
+          customInstructions,
         }),
       });
 
       const json = await res.json();
       if (json.success && json.data) {
+        deductToolCredit();
         setExtractedData(json.data);
-        showToast('Prompt successfully reverse-engineered!');
+        showToast(`Prompt reverse-engineered! 1 credit used (${Math.max(0, toolCredits - 1)} left)`);
       } else {
         showToast(json.error || 'Failed to extract prompt from image');
       }
@@ -224,12 +228,28 @@ export const AIStudioTool = () => {
           </button>
 
           <div className="flex items-center gap-3">
+            {/* Tool Credits Indicator */}
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 text-xs font-bold shadow-xs">
+              <Coins className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+              <span>{toolCredits} Credits</span>
+              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium hidden sm:inline">• 1 / run</span>
+              <Link
+                href="/pricing"
+                className="text-[11px] font-black text-[#E60023] hover:underline ml-1"
+              >
+                + Get More
+              </Link>
+            </div>
+
             <button
-              onClick={() => setCurrentView('user-dashboard')}
+              onClick={() => {
+                setCurrentView('user-dashboard');
+                router.push('/dashboard');
+              }}
               className="flex items-center gap-1.5 text-xs font-bold text-neutral-600 dark:text-neutral-300 hover:text-[#E60023] px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
             >
               <History className="w-3.5 h-3.5 text-[#E60023]" />
-              <span>View History in Dashboard</span>
+              <span>View History</span>
             </button>
             <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800 text-[#E60023] text-xs font-black">
               <Zap className="w-3.5 h-3.5 fill-current" />
@@ -358,62 +378,59 @@ export const AIStudioTool = () => {
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
                   <Sliders className="w-4 h-4 text-[#E60023]" />
-                  <span>Custom Instructions (Optional)</span>
+                  <span>Custom Instructions</span>
                 </h3>
-                {customInstructions && (
-                  <button
-                    type="button"
-                    onClick={() => setCustomInstructions('')}
-                    className="text-[11px] font-semibold text-neutral-400 hover:text-red-500 transition-colors"
-                  >
-                    Clear
-                  </button>
-                )}
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400">
+                  Optional
+                </span>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-1.5">
-                  Tailor prompt extraction & reverse modifications:
+                  Custom prompt instructions & constraints
                 </label>
                 <textarea
+                  rows={3}
                   value={customInstructions}
                   onChange={(e) => setCustomInstructions(e.target.value)}
-                  placeholder="remove watermark, text or add something..."
-                  rows={4}
-                  className="w-full px-3.5 py-2.5 text-xs rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-[#E60023] focus:outline-none resize-none placeholder:text-neutral-400 dark:placeholder:text-neutral-500 leading-relaxed"
+                  placeholder="remove watermark, 250 words minimum length, remove text or add something"
+                  className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:ring-2 focus:ring-[#E60023] focus:outline-none resize-none leading-relaxed transition-all"
                 />
-              </div>
 
-              {/* Quick suggestion chips */}
-              <div className="space-y-1.5 pt-0.5">
-                <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider block">
-                  Quick Add Suggestions:
-                </span>
-                <div className="flex flex-wrap gap-1.5">
+                {/* Quick Instruction Presets */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-2">
+                  <span className="text-[10px] font-semibold text-neutral-400">Add rule:</span>
                   {[
-                    'remove watermark & logos',
-                    'remove text & overlays',
-                    'clean background',
-                    'add golden hour lighting',
-                    'cinematic film 35mm grain',
-                    'photorealistic 8K portrait',
-                  ].map((suggestion) => (
+                    'remove watermark',
+                    '250 words minimum length',
+                    'remove text',
+                    'add cinematic lighting',
+                  ].map((preset) => (
                     <button
-                      key={suggestion}
+                      key={preset}
                       type="button"
                       onClick={() => {
                         setCustomInstructions((prev) => {
                           const trimmed = prev.trim();
-                          if (!trimmed) return suggestion;
-                          if (trimmed.toLowerCase().includes(suggestion.toLowerCase())) return trimmed;
-                          return `${trimmed}, ${suggestion}`;
+                          if (!trimmed) return preset;
+                          if (trimmed.toLowerCase().includes(preset.toLowerCase())) return prev;
+                          return `${trimmed}, ${preset}`;
                         });
                       }}
-                      className="px-2.5 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 hover:bg-red-50 dark:hover:bg-red-950/60 hover:text-[#E60023] hover:border-red-300 dark:hover:border-red-800 text-neutral-600 dark:text-neutral-300 text-[11px] font-medium transition-colors border border-neutral-200 dark:border-neutral-700"
+                      className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition-colors"
                     >
-                      + {suggestion}
+                      +{preset}
                     </button>
                   ))}
+                  {customInstructions && (
+                    <button
+                      type="button"
+                      onClick={() => setCustomInstructions('')}
+                      className="text-[10px] font-bold text-red-500 hover:underline ml-auto"
+                    >
+                      Clear
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -421,7 +438,7 @@ export const AIStudioTool = () => {
                 type="button"
                 disabled={!uploadedImage || isExtractingPrompt}
                 onClick={handleExtractPrompt}
-                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#E60023] to-[#ff3b56] hover:from-red-700 hover:to-red-600 text-white text-xs sm:text-sm font-black shadow-md shadow-red-500/25 flex items-center justify-center gap-2 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#E60023] to-[#ff3b56] hover:from-red-700 hover:to-red-600 text-white text-xs sm:text-sm font-black shadow-md shadow-red-500/25 flex items-center justify-center gap-2 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isExtractingPrompt ? (
                   <>
@@ -431,7 +448,7 @@ export const AIStudioTool = () => {
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4" />
-                    <span>Extract AI Prompt from Image</span>
+                    <span>Extract AI Prompt from Image (1 Credit)</span>
                   </>
                 )}
               </button>
@@ -597,6 +614,63 @@ export const AIStudioTool = () => {
           </div>
         </div>
       </div>
+
+      {/* Out of Credits Modal */}
+      {isOutOfCreditsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-white dark:bg-neutral-900 rounded-3xl p-6 sm:p-7 shadow-2xl border border-neutral-200 dark:border-neutral-800 space-y-5 text-center relative">
+            <button
+              onClick={() => setIsOutOfCreditsModalOpen(false)}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 hover:text-neutral-700 dark:hover:text-white transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-500 mx-auto flex items-center justify-center shadow-inner">
+              <Coins className="w-7 h-7" />
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-xl font-black text-neutral-900 dark:text-white">
+                Out of Tool Credits
+              </h3>
+              <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                You have used your free credits. Every user receives <strong className="text-neutral-900 dark:text-white">2 free credits daily</strong>, which reset tomorrow at midnight.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-left space-y-1.5 text-xs text-neutral-700 dark:text-neutral-300">
+              <div className="font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>Instant Upgrade Options:</span>
+              </div>
+              <ul className="space-y-1 text-[11px] text-neutral-600 dark:text-neutral-400">
+                <li>• <strong>Starter (₹49/mo)</strong>: 10 tool credits + 1 prompt request</li>
+                <li>• <strong>Pro (₹199/mo)</strong>: 50 tool credits + 3 prompt requests</li>
+                <li>• <strong>VIP (₹499/mo)</strong>: 200 tool credits + 10 prompt requests</li>
+              </ul>
+            </div>
+
+            <div className="flex flex-col gap-2 pt-1">
+              <button
+                onClick={() => {
+                  setIsOutOfCreditsModalOpen(false);
+                  router.push('/pricing');
+                }}
+                className="w-full py-3 rounded-full bg-gradient-to-r from-[#E60023] to-[#ff3b56] hover:from-red-700 hover:to-red-600 text-white text-xs sm:text-sm font-black shadow-md shadow-red-500/20 transition-all"
+              >
+                View Pricing Plans & Get Credits
+              </button>
+              <button
+                onClick={() => setIsOutOfCreditsModalOpen(false)}
+                className="w-full py-2.5 rounded-full text-xs font-semibold text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              >
+                Wait for Daily Free Credits
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 };

@@ -282,7 +282,14 @@ export const PersonalizationEngine = {
     const viewCount = profile.clickedPostIds[post.id] || 0;
 
     // 1. Category Affinity (0 - 35 points)
-    const catScore = profile.categoryAffinities[post.category] || 0;
+    let catScore = profile.categoryAffinities[post.category] || 0;
+    
+    // Check if category is in user's favorite styles (now storing both categories and tags)
+    if (profile.favoriteStyles.some((s) => post.category.toLowerCase().includes(s.toLowerCase()) || s.toLowerCase().includes(post.category.toLowerCase()))) {
+      catScore += 15;
+      badges.push(post.category);
+    }
+    
     if (catScore > 0) {
       score += Math.min(catScore * 2, 35);
       if (catScore >= 6) {

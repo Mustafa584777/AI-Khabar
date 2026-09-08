@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Script from 'next/script';
 import { Poppins } from 'next/font/google';
 import './globals.css';
+import { AppProvider } from '@/context/AppContext';
 
 const poppins = Poppins({
   weight: ['300', '400', '500', '600', '700', '800'],
@@ -44,11 +45,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           name="google-site-verification"
           content="uh9o8y5P0cVpFtJIJXovv8RSzxSxcRkOYLK6ZthiZDg"
         />
-      </head>
-      <body className={`${poppins.variable} ${poppins.className} font-sans antialiased selection:bg-[#E60023] selection:text-white`} suppressHydrationWarning>
         {/* Google tag (gtag.js) */}
         <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-28QHB2KNZC"
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-Y6H3B2LY6D"
           strategy="afterInteractive"
         />
         <Script id="google-analytics" strategy="afterInteractive">
@@ -57,10 +57,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
 
+            gtag('config', 'G-Y6H3B2LY6D');
             gtag('config', 'G-28QHB2KNZC');
           `}
         </Script>
-        {children}
+        {/* Razorpay Standard Web Checkout Script */}
+        <Script
+          src="https://checkout.razorpay.com/v1/checkout.js"
+          strategy="lazyOnload"
+        />
+      </head>
+      <body className={`${poppins.variable} ${poppins.className} font-sans antialiased selection:bg-[#E60023] selection:text-white`} suppressHydrationWarning>
+        <AppProvider>
+          {children}
+        </AppProvider>
       </body>
     </html>
   );

@@ -3,12 +3,16 @@
 import React from 'react';
 import { useApp } from '@/context/AppContext';
 import { Home, Search, Plus, User, Sparkles } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
 
 interface BottomNavProps {
   onSearchClick?: () => void;
 }
 
 export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
+  const router = useRouter();
+  const pathname = usePathname();
+  
   const {
     selectedCategory,
     setSelectedCategory,
@@ -25,7 +29,11 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
     setCurrentView('public');
     setSelectedCategory('all');
     setSearchQuery('');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (pathname !== '/') {
+      window.location.href = '/';
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleSearchClick = () => {
@@ -41,16 +49,19 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
     setSelectedCategory('all');
     setSelectedSort('trending');
     setSearchQuery('');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (pathname !== '/') {
+      router.push('/');
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleCreateStudioClick = () => {
-    setCurrentView('studio-tool');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.location.href = '/create';
   };
 
   const handleAccountClick = () => {
-    setCurrentView('user-dashboard');
+    window.location.href = '/dashboard';
   };
 
   return (
@@ -84,56 +95,56 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
         <span className="text-[10px] mt-0.5 font-medium">Explore</span>
       </button>
 
-      {/* 3. AI Studio / Create (+) Button (Prominent Center/Action) */}
+      {/* 3. Create (+) Button (Prominent Center/Action) */}
       <button
         onClick={handleCreateStudioClick}
         className={`flex flex-col items-center justify-center p-1.5 transition-all duration-200 ${
-          currentView === 'studio-tool' ? 'scale-110' : 'hover:scale-105'
+          pathname === '/create' ? 'scale-110' : 'hover:scale-105'
         }`}
-        title="AI Studio - Image to Prompt & Prompt to Image"
+        title="Create - Image to Prompt & Text to Image"
         id="bottom-nav-create-tool"
       >
         <div
           className={`w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-colors ${
-            currentView === 'studio-tool'
+            pathname === '/create'
               ? 'bg-[#E60023] text-white shadow-red-500/40 ring-2 ring-red-400'
               : 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:bg-[#E60023]'
           }`}
         >
           <Plus className="w-6 h-6 stroke-[2.5]" />
         </div>
-        <span className={`text-[10px] mt-0.5 font-black ${currentView === 'studio-tool' ? 'text-[#E60023]' : 'text-neutral-600 dark:text-neutral-400'}`}>
+        <span className={`text-[10px] mt-0.5 font-black ${pathname === '/create' ? 'text-[#E60023]' : 'text-neutral-600 dark:text-neutral-400'}`}>
           Create
         </span>
       </button>
 
-      {/* 4. Requested Prompts Feed Button */}
+      {/* 4. For You Personalized Feed Button */}
       <button
         onClick={handleForYouClick}
-        id="bottom-nav-requested"
+        id="bottom-nav-for-you"
         className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 ${
           currentView === 'for-you'
             ? 'text-[#E60023] scale-105 font-bold'
             : 'text-neutral-500 hover:text-[#E60023] dark:hover:text-white'
         }`}
-        title="Community Requested Prompts"
+        title="Personalized For You Feed"
       >
         <Sparkles className="w-6 h-6 text-[#E60023]" />
-        <span className="text-[10px] mt-0.5 font-medium">Requested</span>
+        <span className="text-[10px] mt-0.5 font-medium">For You</span>
       </button>
 
       {/* 5. Account / Profile Button */}
       <button
         onClick={handleAccountClick}
         className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 ${
-          currentView === 'user-dashboard'
+          pathname === '/dashboard'
             ? 'text-[#E60023] font-bold'
             : 'text-neutral-500 hover:text-[#E60023] dark:hover:text-white'
         }`}
         title="My Creative Dashboard"
         id="bottom-nav-account"
       >
-        <User className={`w-6 h-6 ${currentView === 'user-dashboard' ? 'fill-current' : ''}`} />
+        <User className={`w-6 h-6 ${pathname === '/dashboard' ? 'fill-current' : ''}`} />
         <span className="text-[10px] mt-0.5 font-medium">Dashboard</span>
       </button>
     </nav>
