@@ -911,10 +911,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
       // Send to server database
       const res = await fetch('/api/posts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(post),
       });
 
@@ -961,8 +967,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = {};
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
       const res = await fetch(`/api/posts?id=${encodeURIComponent(id)}`, {
         method: 'DELETE',
+        headers,
       });
       const data = await res.json();
       if (data.success && Array.isArray(data.posts)) {
@@ -1006,14 +1019,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     showToast(newIsPremium ? 'Prompt upgraded to PRO Premium' : 'Prompt changed to Free');
   };
 
-  const copyPromptToClipboard = (text: string, postId?: string) => {
+  const copyPromptToClipboard = async (text: string, postId?: string) => {
     navigator.clipboard.writeText(text);
     if (postId) {
-      fetch(`/api/posts/${encodeURIComponent(postId)}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'copy' }),
-      }).catch(() => {});
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+        fetch(`/api/posts/${encodeURIComponent(postId)}`, {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify({ action: 'copy' }),
+        }).catch(() => {});
+      } catch (e) {}
+
       setPosts((prev) =>
         prev.map((p) => (p.id === postId ? { ...p, copiesCount: (p.copiesCount || 0) + 1 } : p))
       );
@@ -1036,14 +1057,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     showToast('Prompt copied to clipboard!');
   };
 
-  const toggleLike = (id: string) => {
+  const toggleLike = async (id: string) => {
     const isNowLiked = StorageService.toggleLikeLocal(id);
     setLikedIds(StorageService.getLikedIds());
-    fetch(`/api/posts/${encodeURIComponent(id)}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'like' }),
-    }).catch(() => {});
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      fetch(`/api/posts/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ action: 'like' }),
+      }).catch(() => {});
+    } catch (e) {}
+
     setPosts((prev) =>
       prev.map((p) =>
         p.id === id

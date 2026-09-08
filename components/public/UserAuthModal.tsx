@@ -60,15 +60,20 @@ export const UserAuthModal = () => {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     try {
-      const redirectUrl = typeof window !== 'undefined'
-        ? `${window.location.origin}/auth/callback`
+      // Use standard Supabase OAuth without skipBrowserRedirect to avoid popup blocked issues
+      // and redirect URI issues if the current origin isn't whitelisted. 
+      // If we are on localhost, we can specify redirectTo. Otherwise let Supabase use default.
+      const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+      const redirectUrl = isLocal 
+        ? `${window.location.origin}/auth/callback` 
         : 'https://geminipromptgenerator.online/auth/callback';
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
-          skipBrowserRedirect: true,
+          // Using standard redirect flow instead of popup to avoid "requested path is invalid" 
+          // or popup blockers. This will navigate the main window.
         },
       });
 
@@ -78,40 +83,9 @@ export const UserAuthModal = () => {
         setIsLoading(false);
         return;
       }
-
+      // If it doesn't automatically redirect (e.g. if we still used skipBrowserRedirect), do it manually:
       if (data?.url) {
-        const width = 520;
-        const height = 640;
-        const left = window.screenX + (window.outerWidth - width) / 2;
-        const top = window.screenY + (window.outerHeight - height) / 2;
-
-        let popup: Window | null = null;
-        try {
-          popup = window.open(
-            data.url,
-            'SupabaseOAuth',
-            `width=${width},height=${height},left=${left},top=${top},toolbar=0,scrollbars=1,status=1,resizable=1,location=1,menuBar=0`
-          );
-        } catch {
-          popup = null;
-        }
-
-        // If popup was blocked by browser
-        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-          // Fallback to direct window redirect so user is never blocked
-          window.location.href = data.url;
-          return;
-        }
-
-        // Check if popup closed
-        const checkClosed = setInterval(() => {
-          if (popup && popup.closed) {
-            clearInterval(checkClosed);
-            setTimeout(() => {
-              setIsLoading(false);
-            }, 1000);
-          }
-        }, 1000);
+        window.location.href = data.url;
       }
     } catch (err: any) {
       showToast(err.message || 'Google login failed');
@@ -120,6 +94,7 @@ export const UserAuthModal = () => {
   };
 
   const handleInstantGoogleDemo = () => {
+    // Local mock for instant demo
     const demoGoogleUser = {
       name: 'Google Creator',
       email: 'creator.studio@gmail.com',
@@ -130,7 +105,7 @@ export const UserAuthModal = () => {
     setIsUserAuthModalOpen(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !email.includes('@')) {
       showToast('Please enter a valid email address');
@@ -143,21 +118,41 @@ export const UserAuthModal = () => {
 
     setIsLoading(true);
 
-    setTimeout(() => {
+    try {
       if (mode === 'signup') {
         const userName = email.split('@')[0];
-        const userHandle = '@' + userName.toLowerCase().replace(/[^a-z0-9]/g, '');
-        signupUser(userName, userHandle, email, password, defaultAvatar);
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: userName,
+            },
+          },
+        });
+
+        if (error) throw error;
+        
         showToast(`Welcome ${userName}! Account created successfully.`);
       } else {
-        loginUser(email, password, '', defaultAvatar);
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+        
         showToast('Welcome back! You are now logged in.');
       }
       setIsLoading(false);
       setIsUserAuthModalOpen(false);
       setEmail('');
       setPassword('');
-    }, 400);
+    } catch (err: any) {
+      console.error('Auth error:', err);
+      showToast(err.message || 'Authentication failed');
+      setIsLoading(false);
+    }
   };
 
   return (

@@ -220,6 +220,7 @@ export const AIStudioTool = () => {
               setCurrentView('public');
               if (setSelectedCategory) setSelectedCategory('all');
               if (setSearchQuery) setSearchQuery('');
+              router.push('/');
             }}
             className="flex items-center gap-2 text-xs sm:text-sm font-bold text-neutral-600 dark:text-neutral-300 hover:text-[#E60023] dark:hover:text-white transition-colors"
           >

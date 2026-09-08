@@ -59,7 +59,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const saved = await ServerStorage.savePost(body);
+    const authHeader = req.headers.get('Authorization');
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : undefined;
+
+    const saved = await ServerStorage.savePost(body, token);
     const allPosts = await ServerStorage.getAllPosts(true);
 
     return NextResponse.json(
@@ -83,9 +86,12 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Post ID is required' }, { status: 400 });
     }
 
-    const deleted = await ServerStorage.deletePost(id);
+    const authHeader = req.headers.get('Authorization');
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : undefined;
+
+    await ServerStorage.deletePost(id, token);
     const allPosts = await ServerStorage.getAllPosts(true);
-    return NextResponse.json({ success: deleted, posts: allPosts });
+    return NextResponse.json({ success: true, posts: allPosts });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

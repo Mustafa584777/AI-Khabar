@@ -403,7 +403,10 @@ export const UserDashboard = () => {
                   </p>
                 </div>
                 <button
-                  onClick={() => setCurrentView('public')}
+                  onClick={() => {
+                    setCurrentView('public');
+                    router.push('/');
+                  }}
                   className="px-5 py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold transition-all inline-flex items-center gap-1.5 shadow-md shadow-red-500/20"
                 >
                   <Compass className="w-4 h-4" />
