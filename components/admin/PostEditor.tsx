@@ -598,7 +598,7 @@ export const PostEditor = () => {
       title,
       slug: slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       category: chosenCat,
-      aiTool: existingPost?.aiTool || 'Midjourney',
+      aiTool: 'ChatGPT',
       promptText,
       imageUrl: imageUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80',
       imageAlt: finalAlt,

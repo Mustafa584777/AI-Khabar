@@ -134,16 +134,6 @@ export const StorageService = {
     return [];
   },
 
-  setBookmarkedIds: (ids: string[]): void => {
-    if (typeof window !== 'undefined' && Array.isArray(ids)) {
-      try {
-        localStorage.setItem(STORAGE_KEY_BOOKMARKS, JSON.stringify(ids));
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  },
-
   toggleBookmark: (id: string): boolean => {
     const current = StorageService.getBookmarkedIds();
     let updated: string[];
@@ -174,16 +164,6 @@ export const StorageService = {
       }
     }
     return [];
-  },
-
-  setLikedIds: (ids: string[]): void => {
-    if (typeof window !== 'undefined' && Array.isArray(ids)) {
-      try {
-        localStorage.setItem(STORAGE_KEY_LIKES, JSON.stringify(ids));
-      } catch (e) {
-        console.error(e);
-      }
-    }
   },
 
   toggleLikeLocal: (id: string): boolean => {
@@ -296,16 +276,6 @@ export const StorageService = {
     return [];
   },
 
-  setAiHistory: (items: AIHistoryItem[]): void => {
-    if (typeof window !== 'undefined' && Array.isArray(items)) {
-      try {
-        localStorage.setItem(STORAGE_KEY_AI_HISTORY, JSON.stringify(items));
-      } catch (e) {
-        console.error('Error saving AI history:', e);
-      }
-    }
-  },
-
   saveAiHistoryItem: (item: AIHistoryItem): AIHistoryItem[] => {
     const current = StorageService.getAiHistory();
     // Prepend new item and keep up to 100 entries
@@ -392,16 +362,6 @@ export const StorageService = {
       localStorage.setItem('promptcms_prompt_requests', JSON.stringify(updated));
     }
     return updated;
-  },
-
-  setPromptRequests: (reqs: any[]): void => {
-    if (typeof window !== 'undefined' && Array.isArray(reqs)) {
-      try {
-        localStorage.setItem('promptcms_prompt_requests', JSON.stringify(reqs));
-      } catch (e) {
-        console.error('Error saving prompt requests:', e);
-      }
-    }
   },
 
   getLeaderboardUsers: (): any[] => {

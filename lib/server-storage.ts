@@ -145,7 +145,7 @@ function mapPostToSupabase(post: PromptPost) {
     ai_tool: post.aiTool || 'Midjourney',
     prompt_text: post.promptText,
     negative_prompt: post.negativePrompt || null,
-    image_url: post.imageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe',
+    image_url: post.imageUrl,
     image_alt: post.imageAlt || null,
     image_width: post.imageWidth || 1024,
     image_height: post.imageHeight || 1536,
@@ -175,22 +175,7 @@ function mapPostToSupabase(post: PromptPost) {
   };
 }
 
-const db = (token?: string) => {
-  // On the server, supabaseAdmin has the service role key and full database access.
-  if (supabaseAdmin) return supabaseAdmin;
-  if (token) {
-    const { createClient } = require('@supabase/supabase-js');
-    const { supabaseUrl, supabaseAnonKey } = require('./supabase');
-    return createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    });
-  }
-  return supabase;
-};
+const db = () => supabaseAdmin || supabase;
 
 export const ServerStorage = {
   // Posts
@@ -274,7 +259,7 @@ export const ServerStorage = {
     return posts.find((p) => p.id === id);
   },
 
-  savePost: async (post: PromptPost, token?: string): Promise<PromptPost> => {
+  savePost: async (post: PromptPost): Promise<PromptPost> => {
     const now = new Date().toISOString();
     const id = post.id || `prompt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
     const posts = await ServerStorage.getAllPosts(true);
@@ -376,10 +361,9 @@ export const ServerStorage = {
     if (isSupabaseConfigured()) {
       try {
         const payload = mapPostToSupabase(savedPost);
-        const { error } = await db(token).from('posts').upsert(payload, { onConflict: 'id' });
+        const { error } = await db().from('posts').upsert(payload, { onConflict: 'id' });
         if (error) {
           console.error('Supabase savePost error:', error.message, error.details);
-          throw new Error('Supabase savePost error: ' + error.message);
         } else {
           console.log(`Saved post ${savedPost.id} to Supabase successfully.`);
         }
@@ -434,10 +418,10 @@ export const ServerStorage = {
     return savedPost;
   },
 
-  deletePost: async (id: string, token?: string): Promise<void> => {
+  deletePost: async (id: string): Promise<void> => {
     if (isSupabaseConfigured()) {
       try {
-        const { error } = await db(token).from('posts').delete().eq('id', id);
+        const { error } = await db().from('posts').delete().eq('id', id);
         if (error) {
           console.error('Supabase deletePost error:', error.message);
         }
@@ -471,35 +455,35 @@ export const ServerStorage = {
     return ServerStorage.getAllPosts(true);
   },
 
-  incrementViews: async (id: string, token?: string): Promise<void> => {
+  incrementViews: async (id: string): Promise<void> => {
     const post = await ServerStorage.getPostById(id);
     if (post) {
       post.viewsCount = (post.viewsCount || 0) + 1;
-      await ServerStorage.savePost(post, token);
+      await ServerStorage.savePost(post);
     }
   },
 
-  incrementCopies: async (id: string, token?: string): Promise<void> => {
+  incrementCopies: async (id: string): Promise<void> => {
     const post = await ServerStorage.getPostById(id);
     if (post) {
       post.copiesCount = (post.copiesCount || 0) + 1;
-      await ServerStorage.savePost(post, token);
+      await ServerStorage.savePost(post);
     }
   },
 
-  incrementCopyCount: async (id: string, token?: string): Promise<void> => {
-    return await ServerStorage.incrementCopies(id, token);
+  incrementCopyCount: async (id: string): Promise<void> => {
+    return await ServerStorage.incrementCopies(id);
   },
 
-  incrementViewCount: async (id: string, token?: string): Promise<void> => {
-    return await ServerStorage.incrementViews(id, token);
+  incrementViewCount: async (id: string): Promise<void> => {
+    return await ServerStorage.incrementViews(id);
   },
 
-  toggleLike: async (id: string, token?: string): Promise<void> => {
+  toggleLike: async (id: string): Promise<void> => {
     const post = await ServerStorage.getPostById(id);
     if (post) {
       post.likesCount = (post.likesCount || 0) + 1;
-      await ServerStorage.savePost(post, token);
+      await ServerStorage.savePost(post);
     }
   },
 
@@ -648,7 +632,7 @@ export const ServerStorage = {
           .select('*')
           .order('count', { ascending: false });
         if (!error && data && data.length > 0) {
-          return data.map((d: any) => ({
+          return data.map((d) => ({
             id: d.id,
             query: d.query,
             count: d.count,

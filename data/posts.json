@@ -1,54 +1,5 @@
 [
   {
-    "id": "prompt-1788841781686",
-    "title": "Editorial Magazine Portrait in Sunlit Yellow Dress",
-    "slug": "editorial-magazine-portrait-sunlit-yellow-dress",
-    "category": "Fashion & Editorial Photography",
-    "aiTool": "ChatGPT",
-    "promptText": "IMPORTANT — FACE & IDENTITY LOCK:\n\nUse the uploaded user's image as the ONLY identity reference.\n\nPreserve the user's exact recognizable facial identity, facial proportions, eyes, eyebrows, nose, lips, jawline, skin tone, natural skin texture, clothes, facial structure and authentic imperfections.\n\nDo not replace the user with another person.\nDo not beautify, reshape, smooth, age, de-age or modify facial identity.\n\nTRANSFORM THE IMAGE INTO A MINIMAL MODERN EDITORIAL MAGAZINE POSTER.\n\nSUBJECT:\n\nPlace the uploaded user as the central photographic subject.\n\nThe user with relaxed face and spontaneous body language.\n\nThe expression must look like an authentic moment captured by a photographer rather than a posed studio smile.\n\nUse realistic human anatomy and photographic skin texture.\n\nCOMPOSITION:\n\nVertical editorial poster composition.\n\nThe subject occupies the central portion of the frame.\n\nUse a medium portrait framing, approximately from waist/chest upward.\n\nPlace the subject slightly below the main title.\n\nThe composition should feel like a premium contemporary lifestyle magazine cover.\n\nBACKGROUND:\n\nUse a realistic warm indoor environment similar to the reference.\n\nMuted beige, warm brown and deep charcoal tones.\n\nThe background should contain subtle architectural/interior details but remain visually secondary to the subject.\n\nUse natural environmental depth.\n\nDo NOT create a completely artificial studio background.\n\nLIGHTING:\n\nNatural low-intensity indoor ambient lighting.\n\nWarm tungsten-like illumination from the surrounding environment.\n\nThe subject's face should have soft natural highlights.\n\nThe background should contain darker areas and warm shadow gradients.\n\nThe image should retain realistic photographic dynamic range.\n\nNo artificial HDR.\n\nNo excessive cinematic glow.\n\nNo dramatic studio spotlight.\n\nThe result should look like a real candid photograph taken indoors.\n\nCOLOUR GRADING:\n\nWarm vintage editorial colour grade.\n\nDominant tones:\n\nwarm beige,\nmuted brown,\nsoft orange,\ndeep charcoal,\ncream,\nsubtle skin-tone warmth.\n\nSlightly desaturated overall palette.\n\nVery subtle film-grain texture.\n\nNatural contrast with slightly lifted warm midtones and deep neutral shadows.\n\nThe final photograph should feel nostalgic, intimate and authentic.\n\nGRAPHIC GRID:\n\nOverlay a thin white editorial grid across the entire poster.\n\nCreate precise thin white vertical and horizontal lines.\n\nThe grid should intersect the composition without hiding the subject's face.\n\nUse:\n\ntwo strong vertical guide lines,\nseveral horizontal guide lines,\na large rounded/arched geometric outline surrounding the subject's head and upper body.\n\nThe lines must be extremely thin, clean and elegant.\n\nThey should look like professional Swiss/editorial graphic design.\n\nKeep the grid white with slight transparency.\n\nHEART ELEMENT:\n\nNear the subject's raised hand, add a hand-drawn white outline heart.\n\nThe heart should look like it was drawn with a thin white marker/pen.\n\nIt should connect visually with a thin flowing line extending from the heart.\n\nKeep it imperfect and hand-drawn rather than perfectly geometric.\n\nMAIN TYPOGRAPHY:\n\nAt the TOP CENTER, write:\n\n“ALIVE”\n\nUse a very bold geometric sans-serif display font.\n\nExtremely heavy font weight.\n\nLarge uppercase letters.\n\nClean modern editorial typography.\n\nWhite colour.\n\nThe word should occupy a substantial portion of the upper width.\n\nLetters should have strong geometric construction, tight-to-moderate spacing and crisp edges.\n\nNo shadows.\nNo outline.\nNo gradient.\nNo 3D extrusion.\n\nThe typography must be perfectly horizontal and precisely aligned.\n\nSmall editorial information:\n\nTOP LEFT:\n\n“SEP 2026”\n\nUse a small condensed uppercase sans-serif font.\n\nWhite colour.\n\nTwo separate lines with tight line spacing.\n\nTOP RIGHT:\n\n“35.6895° N”\n“139.6917° E”\n\nUse the same small condensed sans-serif typography.\n\nWhite colour.\n\nAlign precisely to the upper-right corner.\n\nMID-RIGHT:\n\nAdd a small handwritten signature-style text:\n\n“zeena_designs”\n\nUse a delicate white handwritten/script font.\n\nKeep it subtle and relatively small.\n\nThe bottom typography should sit over the darker lower part of the photograph so it remains clearly readable.\n\nIMPORTANT TEXT ACCURACY:\n\nAll typography must be correctly spelled.\n\nDo not invent additional words.\n\nDo not distort letters.\n\nDo not replace the text with random symbols.\n\nDo not overlap typography unnecessarily with the face.\n\nOVERALL DESIGN:\n\nMinimalist contemporary editorial photography poster.\n\nReal photograph + thin Swiss-style graphic grid + hand-drawn heart + strong magazine typography.\n\nThe photograph must remain completely realistic.\n\nThe graphic elements should look like they were professionally designed on top of a real photograph, not generated as part of a fantasy scene.\n\nCAMERA:\n\nProfessional lifestyle photography.\nNatural lens perspective.\nRealistic skin texture.\nNatural facial details.\nNatural hair.\nRealistic exposure.\nSubtle authentic film grain.\nNo artificial depth blur.\n\nAspect ratio: 4:5 vertical.\n\nNEGATIVE PROMPT:\n\ncartoon, anime, illustration, CGI, 3D render, plastic skin, artificial face, changed identity, beauty filter, excessive skin smoothing, fake expression, studio portrait, neon lighting, HDR, excessive orange grading, excessive cinematic glow, distorted typography, misspelled text, random text, warped letters, thick grid lines, excessive graphic elements, blurry face, artificial bokeh, low resolution, unrealistic anatomy.",
-    "imageUrl": "https://res.cloudinary.com/idbpgaqz/image/upload/v1788841737/prompts/prompt-1788841734254.webp",
-    "imageAlt": "Editorial Magazine Portrait in Sunlit Yellow Dress",
-    "imageWidth": 1024,
-    "imageHeight": 1536,
-    "additionalImages": [],
-    "parameters": {
-      "isPremium": true
-    },
-    "variables": [],
-    "articleContent": "# Editorial Magazine Portrait Prompt Guide\n\nRecreate the clean, vibrant aesthetic of modern editorial fashion portraits featuring soft natural lighting, candid expressions, and vivid summer apparel.\n\n### Core Aesthetics\n- **Subject**: Candid, relaxed posing with authentic expressions.\n- **Wardrobe**: Contrast-rich bright colors (such as sunshine yellow) with textured details like lace trim and ruffles.\n- **Depth of Field**: Shallow depth using wide apertures (f/1.8–f/2.2) to cleanly separate the subject from warm interior architectural backgrounds.\n\n### Camera & Lighting Setup\n- **Lens**: 85mm prime lens for flattering portrait compression without perspective distortion.\n- **Lighting**: Diffused directional natural light from a large side window providing soft highlights and gentle shadows.\n\n### Customization Tips\n1. **Swap Outfits**: Change `yellow ruffle dress` to modern linen suits, silk slips, or casual knitwear.\n2. **Adjust Setting**: Shift the background from warm interior arches to minimalist studio backdrops or outdoor Parisian balconies.",
-    "tags": [
-      "Fashion Portrait",
-      "Yellow Summer Dress",
-      "Editorial Style",
-      "Natural Light Portrait",
-      "Candid Photography",
-      "Magazine Cover Look"
-    ],
-    "status": "published",
-    "isFeatured": false,
-    "isTrending": false,
-    "isPremium": true,
-    "viewsCount": 1,
-    "copiesCount": 0,
-    "likesCount": 0,
-    "bookmarksCount": 0,
-    "seoTitle": "Editorial Portrait AI Prompt - Yellow Lace Summer Dress",
-    "seoDescription": "Generate high-fashion magazine style portraits featuring natural indoor lighting and vivid styling with this AI prompt guide.",
-    "author": {
-      "name": "tool.reelz",
-      "role": "Author",
-      "avatar": "/logo.png"
-    },
-    "seo": {
-      "metaTitle": "Editorial Portrait AI Prompt - Yellow Lace Summer Dress",
-      "focusKeyword": "editorial fashion portrait prompt",
-      "metaDescription": "Generate high-fashion magazine style portraits featuring natural indoor lighting and vivid styling with this AI prompt guide."
-    },
-    "createdAt": "2026-09-08T04:29:41.687+00:00",
-    "updatedAt": "2026-09-08T04:38:33.598+00:00",
-    "publishedAt": "2026-09-08T04:29:41.687+00:00"
-  },
-  {
     "id": "prompt-1788671844943",
     "title": "Sunlit Yellow Sundress Summer Portrait",
     "slug": "sunlit-yellow-sundress-summer-portrait",
@@ -109,9 +60,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Mastering the Golden Hour Aesthetic\n\nThis prompt is engineered to capture the 'lifestyle editorial' look often seen in luxury clothing brand advertisements. The core of this aesthetic lies in the **low-angle composition**, which creates a sense of openness and scale by drawing the viewer's eye from the foreground fence up toward the dramatic sky. \n\n#### Lighting & Composition Tips\n* **The Low Angle:** By placing the subject high in the frame and shooting from below, you create a hero-like posture and emphasize the sprawling landscape.\n* **Golden Hour:** We leverage the soft, warm light of the late afternoon to eliminate harsh shadows, providing a clean, professional look.\n* **The Sky:** The prompt specifically calls for 'wispy cirrus clouds' to add dynamic movement and visual interest to the expansive negative space above the subject.\n\n#### Pro Tips for Customization\n* **Subject Swap:** Change the 'young man' for any [subject] to instantly adapt the prompt. \n* **Color Palette:** Modify the 'cream-colored chore jacket' to any color (e.g., 'deep navy linen shirt') to match a specific seasonal fashion palette.\n* **Lens Choice:** If you want a more compressed look, change the lens specification from 'wide-angle' to '85mm portrait lens'.",
     "tags": [
@@ -153,9 +102,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### How to Use This Prompt\nThis prompt is engineered to create a perfect fusion of cultural elegance and ethereal dreamscape photography. The key to the 'flow' of the fabric is the 'dynamic motion' descriptor, while the '85mm lens' setting ensures a flattering portrait compression with a creamy bokeh background.\n\n### Lighting & Camera Breakdown\n- **Backlighting:** The oversized full moon acts as the primary light source, creating a 'rim light' effect that separates the subject from the sky.\n- **Lens Choice:** The 85mm lens provides a shallow depth of field, keeping the subject's face sharp while softly blurring the distant moon and sky elements.\n- **Color Palette:** Focuses on the contrast between the deep burgundy and soft pastel pinks, balanced by the cool, desaturated blue tones of the twilight sky.\n\n### Pro-Tips\n- **Customization:** Swap the '[subject description]' to adjust hair color, age, or ethnic features to match your vision.\n- **Aspect Ratio:** If using Midjourney, append '--ar 4:5' for a portrait-style social media layout.\n- **Post-Processing:** Use a typography tool in Canva or Photoshop to add the elegant calligraphy text overlays as seen in the reference to complete the birthday card aesthetic.",
     "tags": [
@@ -197,9 +144,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Mastering the Ethereal Portrait\n\nThis prompt is designed to capture a blend of high-fashion editorial aesthetics with a soft, ethereal touch. The composition focuses on a central subject against a minimalist, symbolic backdrop (the red sun disc), which provides a high-contrast visual hook. \n\n#### Key Elements:\n- **Lighting:** The use of 'golden hour' and 'rim lighting' creates a halo effect around the subject, ensuring she stands out from the gradient background.\n- **Optics:** The 85mm lens setting is chosen for its classic portrait capability, providing a flattering perspective that compresses the background while keeping the subject tack-sharp.\n- **Styling:** The deep crimson embroidery adds texture and cultural depth, contrasting with the soft, dreamlike atmosphere created by the floating butterflies and pastel sky.\n\n#### Pro-Tips for Customization:\n- **Color Palette:** Swap 'crimson' for 'emerald' or 'royal blue' to change the entire mood of the piece.\n- **Subject:** Replace 'woman' with 'model' or 'goddess' for different facial structure results.\n- **Background:** Modify the 'red sun disc' to a 'geometric mandala' or 'soft focus botanical garden' for a completely different editorial vibe.",
     "tags": [
@@ -247,9 +192,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Overview\nThis prompt creates a photorealistic flatlay of hand-drawn ballpoint pen artwork on lined notebook paper, complete with the artist's hand in-frame.\n\n### Key Aesthetic Elements\n- **Medium**: Monochrome dark green ink drawing using cross-hatching and contour shading.\n- **Composition**: Flatlay / overhead perspective with spiral binding along the left border.\n- **Framing**: Human hand holding the drawing pen at the bottom edge adds realism and scale.\n\n### Customization Tips\n- **Subject**: Swap the portrait description with animals, architecture, or floral subjects.\n- **Ink Color**: Change 'dark green ink' to blue, black, or red ballpoint pen.\n- **Page Type**: Replace 'lined notebook' with grid paper, blank kraft paper, or parchment.",
     "tags": [
@@ -296,9 +239,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Master the Papercraft Aesthetic\nThis prompt utilizes a 'layered paper cut-out' style that creates a unique blend of 3D depth and flat graphic design. It is perfect for creating editorial-style portraits that feel handcrafted and high-end.\n\n### How to Customize the Prompt\n1. **The Subject:** Replace 'stylish man wearing a crisp white shirt' with your desired character description or outfit.\n2. **The Vehicle:** Swap 'luxury SUV' for a different vehicle type or even a landmark to change the narrative.\n3. **The Setting:** Change 'desert landscape' to 'urban cityscape' or 'mountain range' to shift the environmental mood.\n\n### Pro Tips for Success\n- **Lighting:** By specifying 'soft shadows,' you maintain the integrity of the papercraft effect. Avoid high-contrast harsh lighting as it can flatten the layers.\n- **Colors:** Use the color palette to anchor the image. Keeping to a 3-4 color scheme (as seen in the sand-and-black contrast) ensures the minimalist 'clean' look remains professional.\n- **Render Engine:** Works best with models that handle vector-like precision, such as Midjourney v6 or Flux.1.",
     "tags": [
@@ -346,9 +287,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Mastering the 'Magazine Editorial' Aesthetic\n\nThis prompt is engineered to replicate the trendy 'sticker-sheet' style commonly found in modern lifestyle magazines and social media campaigns. By using a clean background with die-cut white borders, you create a professional cutout look that feels polished and high-end.\n\n#### Lighting & Composition Breakdown\n- **Lighting:** We utilize 'high-key studio lighting' combined with a 'golden hour glow.' This combination softens shadows while maintaining a bright, energetic, and happy mood.\n- **Composition:** The prompt specifies three distinct poses, which mimics a 'lookbook' page. This provides visual variety while keeping the brand identity consistent.\n- **Camera Optics:** By focusing on crisp details and commercial-grade resolution, the prompt forces the AI to prioritize skin texture and fabric quality.\n\n#### Pro Tips for Customization\n- **Subject:** Replace 'young woman' with your specific subject description (e.g., 'a professional business woman' or 'a stylish streetwear influencer').\n- **Color Palette:** Change 'yellow' to any seasonal color (e.g., 'pastel pink', 'emerald green', or 'classic navy') to fit your specific design needs.\n- **Layout:** If you want fewer poses, adjust the prompt text to describe only 'two distinct poses' instead of three.",
     "tags": [
@@ -396,9 +335,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Bringing Two Worlds Together\nThis prompt is designed to create a 'fusion' effect, blending realistic photographic elements with high-quality anime character design. The key is the 'split-perspective' description which forces the AI to contrast two different artistic mediums within one coherent scene. \n\n### Lighting & Composition\n- **Lighting:** The prompt utilizes 'Golden Hour' lighting, which is perfect for skin textures on the realistic side and helps provide consistent highlights for the anime side.\n- **Composition:** The 'arm-around-the-shoulder' pose creates a tactile, physical connection that makes the unlikely pairing feel grounded and realistic.\n\n### Pro-Tips for Customization\n- **Subject Customization:** Replace 'handsome man' with 'adventurous woman' or specific character traits to change the narrative.\n- **Styling:** Add keywords like 'Studio Ghibli style' or 'Cyberpunk anime' to shift the artistic influence of the illustrated half.\n- **Vehicle Choice:** Change the luxury SUV to a 'vintage jeep' or 'futuristic hover-bike' to completely shift the tone of the image.",
     "tags": [
@@ -446,9 +383,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Style Breakdown\\nThis prompt blends classic 1970s Bollywood editorial aesthetics with modern botanical portraiture. The key visual anchors include the rich emerald green and gold textile, soft floral framing, and integrated retro typography.\\n\\n### Key Camera & Lighting Elements\\n- **Optics:** 85mm f/1.8 prime lens creating a shallow depth of field with sharp subject isolation.\\n- **Lighting:** Diffused ambient light with soft fill, avoiding harsh highlights on the gold embroidery.\\n- **Color Grading:** Earthy greens, warm gold, pastel pinks, and textured sage tones with subtle film grain.\\n\\n### Customization Tips\\n- Swap `emerald green silk saree` with `[garment type and color]` to alter regional style.\\n- Modify `pink peonies` to `[preferred floral elements]` for different thematic color palettes.\\n- Adjust or remove typography prompts based on whether your target AI engine handles text generation natively.",
     "tags": [
@@ -496,9 +431,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Overview\nThis prompt merges realistic editorial portraiture with whimsical 2D doodle shadow art, blending serious fashion styling with playful comic expressions.\n\n### Key Aesthetic Elements\n- **Subject Styling:** Modern casual contrast paired with traditional crimson ethnic attire.\n- **Shadow Transformation:** The key concept replaces realistic silhouetted shadows with animated, expressive comic line-art.\n- **Lighting:** Hard, directional direct sunlight creating clear wall projections.\n\n### Customization Tips\n- **Shadow Style:** Swap doodle styles to graffiti, manga, or minimalist chalk outlines.\n- **Attire:** Change outfits to streetwear, formal evening wear, or vintage fashion.\n- **Wall Texture:** Experiment with brick, concrete, or brightly painted stucco backdrops.",
     "tags": [
@@ -545,9 +478,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Overview\nThis prompt captures a cinematic travel portrait on a high mountain summit overlooking a valley of clouds bathed in sunset light.\n\n### Key Elements\n- **Subject**: Casual, stylish traveler in a linen button-up and aviators.\n- **Setting**: Mountain peak with low-hanging valley clouds during golden hour.\n- **Lighting**: Low-angle sunset creating natural rim lighting and warm contrast.\n\n### Customization Tips\n- Swap `sage-green linen shirt` for outerwear like a `leather jacket` or `puffer vest` for cold-weather styles.\n- Change `sunset` to `sunrise` for cooler blue-and-gold color palettes.\n- Replace `85mm lens` with `35mm lens` for a wider landscape perspective.",
     "tags": [
@@ -594,9 +525,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Master the Sports Portrait This prompt is designed to capture the intensity and prestige of professional athletics. By focusing on a combination of sharp, realistic skin textures and dramatic, high-contrast 'rim' lighting, you can achieve that commercial studio aesthetic often found in professional sports media. ### Lighting & Camera Breakdown - **Lighting:** We use a 'rim lighting' technique to separate the subject from the glowing background logo, creating a sharp outline that gives the image a 3D feel. - **Camera:** The 85mm lens choice is deliberate; it provides a flattering compression of facial features and a shallow depth of field, keeping the focus entirely on the subject's gaze. ### Pro Tips for Customization - **Subject:** You can replace the jersey style or team logo to fit any sport. - **Mood:** Adjust the 'lighting' parameter from 'dramatic' to 'warm golden hour' if you want a more sunset-field atmosphere. - **Resolution:** For best results, ensure your platform settings are set to high stylization values to catch the fine fabric textures of the jersey.",
     "tags": [
@@ -644,9 +573,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Unleash Your Creative Edge\\nThis prompt is engineered to capture the 'Dark Vengeance' aesthetic, characterized by high contrast, moody atmospheric effects, and sharp, character-driven composition. \\n\\n#### How it works:\\n- **Subject:** Defined as an anime-style character, allowing for easy customization of hair color, outfit, or weaponry.\\n- **Lighting:** The prompt specifies 'sharp red rim light,' which creates that iconic separation between the character and the dark, misty background. This technique adds depth and intensity to the composition.\\n- **Atmosphere:** By including 'floating embers and smoke,' we add a sense of dynamic energy, suggesting the aftermath of a conflict.\\n\\n#### Pro Tips:\\n- To change the mood, swap 'red rim light' for 'cool cyan light' or 'golden warm light.'\\n- Experiment with different [subject] descriptions, such as 'steampunk rogue' or 'cyberpunk mercenary,' to see how the style adapts to different genres.",
     "tags": [
@@ -694,9 +621,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Capturing the Candid Moment\nThis prompt is engineered to replicate the specific aesthetic of a high-quality smartphone portrait taken in a natural outdoor environment. The key to this look is the balance between the crisp subject focus and the soft, natural bokeh of the background park setting.\n\n### Why it works\n- **Lighting:** By specifying 'soft sunlight dappling,' we ensure the AI creates realistic highlights on the skin and fabric, mirroring the complex light patterns found under tree canopies.\n- **Subject Matter:** The inclusion of 'floral-print chiffon saree' provides the AI with specific texture cues, allowing for the translucent, elegant drape of the fabric.\n- **Camera Lens Simulation:** The 'shot on iPhone 15 Pro' constraint encourages the model to apply a slight mobile-style digital processing, including natural color science and realistic contrast.\n\n### Pro-Tips for Customization\n- **Background:** Swap 'public park' for 'cozy cafe' or 'home balcony' to change the context of the selfie.\n- **Subject:** You can modify the subject description (e.g., 'a woman with curly hair' or 'traditional gold jewelry') to tailor the ethnicity and style of the character.\n- **Lighting:** Use 'golden hour' for a warmer, more dramatic glow or 'overcast day' for soft, even skin tones.",
     "tags": [
@@ -712,7 +637,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 1,
+    "viewsCount": 0,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -729,7 +654,7 @@
       "metaDescription": "Learn how to generate hyper-realistic, candid mirror selfie portraits featuring traditional ethnic wear with this professional AI prompt guide."
     },
     "createdAt": "2026-09-04T07:34:29.455+00:00",
-    "updatedAt": "2026-09-08T06:09:13.393+00:00",
+    "updatedAt": "2026-09-06T05:14:09.356+00:00",
     "publishedAt": "2026-09-04T07:34:29.455+00:00"
   },
   {
@@ -744,9 +669,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Capturing Traditional Elegance with AI\nThis prompt is engineered to capture the perfect balance between cultural heritage and modern lifestyle aesthetics. By focusing on the texture of the silk saree and the softness of the lighting, the model generates a clean, editorial-style portrait.\n\n### Lighting & Camera Breakdown\n- **Lighting:** The setup mimics 'soft window light' combined with 'warm interior accent lights', which highlights the gold threads in the saree without harsh reflections on the smartphone.\n- **Camera Optics:** Utilizing an 85mm lens setting simulates a professional portrait lens, which flattens the image beautifully and separates the subject from the closet background with a creamy bokeh.\n\n### Pro Tips for Success\n- **Styling:** Feel free to swap 'maroon silk saree' for 'emerald green banarasi silk' or 'pastel floral chiffon' to change the mood completely.\n- **Composition:** The mirror reflection adds a personal, authentic touch. If you want a more cinematic feel, remove the 'holding smartphone' part and replace it with 'posing gracefully in a well-lit dressing room'.\n- **Skin Texture:** Adding 'high-resolution skin texture' in the prompt ensures the AI avoids the 'over-smoothed' digital look common in lower-tier generations.",
     "tags": [
@@ -794,9 +717,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Creating the Perfect Gym Selfie Aesthetic\nThis prompt is engineered to replicate the modern 'fitness influencer' look with high-definition clarity. By focusing on natural lighting and environmental detail, the output mimics a high-end smartphone capture.\n\n### Lighting & Composition Breakdown\n- **Natural Diffused Light:** We leverage the window light to create soft highlights on the skin, which enhances the appearance of muscle definition without harsh, artificial shadows.\n- **Depth of Field:** By emphasizing the mirror reflection, we create a sense of depth between the subject and the gym equipment in the background.\n- **Authenticity:** The prompt includes specific camera cues to ensure the AI reproduces the slightly 'raw' look of a real-life smartphone photo rather than an overly polished studio render.\n\n### Pro Tips for Best Results\n- **Lighting Variation:** Swap the 'daylight' keyword for 'dramatic artificial gym lights' if you want a grittier, high-contrast look.\n- **Subject Customization:** Feel free to change the subject's characteristics (e.g., 'a female athlete', 'a muscular man with tattoos') while keeping the core environmental descriptors intact.\n- **Stylizing:** To increase the photographic 'vibe,' adjust the stylize parameter to favor more cinematic grain.",
     "tags": [
@@ -845,9 +766,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Crafting the Perfect Gym Portrait This prompt captures the quintessential modern fitness influencer aesthetic. The key to this look is the balance between the subject's sharp definition and the clean, bright, and slightly blurred background of a modern gym. #### Lighting and Composition The lighting is designed to mimic natural daylight, which highlights muscle definition while keeping the overall mood optimistic and energetic. Using a wide aperture (f/2.8) ensures that the subject remains the focal point while providing a professional, creamy bokeh effect on the gym equipment behind them. #### Pro Tips for Customization - **Subject:** You can easily swap the [subject] to change the physique, ethnicity, or workout attire (e.g., 'a female athlete in a neon tank top'). - **Vibe:** To change the mood, alter the lighting description to 'dim, moody, high-contrast, dramatic gym lighting' for a more hardcore bodybuilding aesthetic. - **Setting:** Modify the background description to include specific equipment like 'squat racks' or 'a functional training rig' to add depth to your composition.",
     "tags": [
@@ -895,9 +814,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "This prompt is designed to capture the essence of a classic fantasy wizard while adding a modern, painterly twist. By utilizing keywords like 'impasto' and 'chiaroscuro,' the prompt forces the AI to focus on thick texture and high-contrast lighting. The vibrant 'vortex' background provides a powerful sense of energy that centers the viewer's focus on the character's expression. To customize this, you can swap the subject's description or change the color palette of the flames to reflect different magical elements (e.g., 'swirling blue and silver frost' instead of 'fiery red'). Aim for a 2:3 aspect ratio to emphasize the verticality and regal nature of the portrait.",
     "tags": [
@@ -945,9 +862,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "This prompt is meticulously crafted to replicate the aesthetic of a high-end social media fitness selfie. It focuses on 'hyper-realism' by incorporating details like skin sweat, fabric texture, and authentic lighting conditions. The key to this look is the use of specific camera terminology (24mm lens, f/1.8 aperture) which forces the AI to mimic the optical characteristics of a modern smartphone camera. To customize this, you can swap the subject's description for different body types or change the gym environment to a home garage gym or a luxury health club by adjusting the background descriptors.",
     "tags": [
@@ -996,9 +911,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "This prompt is designed to capture a high-fidelity, cinematic fantasy portrait. The key to the 'Magical Seeker' look lies in the balance between the sharp subject focus and the soft, organic background blur (bokeh). By specifying the 85mm lens, we ensure a flattering portrait focal length that separates the subject from the busy sports field background. The inclusion of 'motion blur' on the wings of the ball provides a sense of kinetic energy and realism, while the specific mention of textures like 'leather gauntlets' and 'metallic ball' forces the model to generate higher detail. For best results, use a model with strong photorealistic capabilities. Adjusting the lighting parameter to 'golden hour' or 'natural afternoon light' will further enhance the magical atmosphere.",
     "tags": [
@@ -1046,9 +959,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Creating the Chibi-Infused Lifestyle Look\n\nThis aesthetic blends high-fidelity photorealism with playful, 2D vector-style graphic overlays. To achieve this, the prompt forces the AI to contrast a realistic human subject with stylized chibi characters and handwritten typography.\n\n#### Key Elements of the Aesthetic\n* **The Mirror Selfie Technique:** By specifying the subject is taking a mirror selfie, you naturally trigger the compositional 'vibe' of contemporary social media photography.\n* **Character Consistency:** The prompt emphasizes that the chibi characters must share the same outfit and features as the main subject, creating a cohesive visual narrative.\n* **Doodle Overlays:** Terms like 'handwritten font', 'glowing doodles', and 'scattered around the frame' tell the model to treat the output like a finished digital collage rather than a raw photograph.\n\n#### Pro Tips for Customization\n- **Change the Vibe:** Swap 'boba tea' for other props like 'coffee', 'a basketball', or 'a sketchbook' to tell a different story about your subject.\n- **Adjust the Tone:** Change the floating words from 'happy' and 'bright day' to 'mysterious', 'moody', or 'late night' to shift the overall mood from cheerful to edgy.\n- **Lighting:** Since the reference is a bathroom mirror, 'soft diffused glow' is essential to keep the skin looking clean and the environment looking professional.",
     "tags": [
@@ -1096,9 +1007,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Mastering the Motion-Blur Editorial Effect\n\nThis prompt utilizes a sophisticated combination of 'sharp subject' and 'motion ghosting' techniques to create a high-fashion, surreal aesthetic. By specifying a static central figure contrasted against blurred, repeated motion trails, you simulate long-exposure photography combined with modern digital compositing. \n\n**Lighting Breakdown:** The prompt calls for 'afternoon sunlight' and 'backlighting.' This creates a separation between the subject and the background, giving the image depth and a premium look. \n\n**Technical Tips:**\n- **Lens Choice:** Using a 35mm focal length provides the perfect balance between the subject's environment and a flattering portrait perspective.\n- **Aperture:** An f/2.8 setting ensures the background remains soft enough to keep attention on the model, while maintaining enough detail to ground the image in reality.\n- **Styling:** The clean, monochromatic clothing choices prevent visual clutter, allowing the motion-blur effect to be the primary focus of the composition.",
     "tags": [
@@ -1146,9 +1055,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Achieve the Perfect Mirror Selfie Aesthetic\n\nThis prompt is engineered to capture the clean, high-fashion, and approachable vibe often seen on social media editorial feeds. The key to this look is the interaction between the subject's clothing contrast (black on white) and the ambient, recessed lighting of a premium bathroom environment.\n\n#### Key Elements:\n- **Lighting:** The prompt focuses on 'diffused LED strip lighting' which provides a soft, flattering glow without harsh shadows, perfect for portraiture.\n- **Composition:** The mirror selfie perspective creates an intimate, modern feeling that feels authentic rather than staged.\n- **Textures:** By specifying 'marble-tiled' and 'linen shirt,' you guide the AI to generate high-fidelity surface details that add realism to the output.\n\n#### How to Customize:\n- **Subject:** Replace 'handsome young man' with specific characteristics like 'Scandinavian model' or 'creative professional' to change the character archetype.\n- **Setting:** Switch 'marble-tiled' for 'industrial concrete loft' or 'minimalist Scandinavian studio' to instantly change the vibe of the environment.\n- **Attire:** Change 'black linen shirt' to 'oversized cashmere sweater' or 'tech-wear jacket' to experiment with different fashion aesthetics.",
     "tags": [
@@ -1196,9 +1103,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Master the Art of the Cinematic Selfie\nThis prompt is engineered to replicate high-end editorial photography often seen in luxury lifestyle magazines. \n\n#### Key Elements:\n- **Rim Lighting:** The secret to this look is the strong backlight behind the subject. It separates the subject from the dark background and adds a premium, glowing edge to the hair and silhouette.\n- **Depth & Composition:** The mirror-within-a-mirror effect creates an infinite hallway illusion, which adds an architectural layer to an otherwise simple portrait.\n- **Camera Settings:** We specify an 85mm lens, the golden standard for portrait photography, as it provides flattering compression and a beautiful, shallow depth of field.\n\n#### Pro Tips for Customization:\n- **Change the Attire:** Swap 'white undershirt and brown button-up' for 'tailored black blazer' or 'oversized knit sweater' for a different vibe.\n- **Adjust the Vibe:** Change 'luxurious hotel bathroom' to 'abandoned industrial loft' or 'modern neon-lit apartment' to completely shift the narrative.",
     "tags": [
@@ -1215,7 +1120,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 1,
+    "viewsCount": 0,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -1232,7 +1137,7 @@
       "metaDescription": "Learn how to recreate this high-end, moody mirror selfie portrait with rim lighting using our AI prompt guide for Midjourney and Flux."
     },
     "createdAt": "2026-09-04T07:30:11.118+00:00",
-    "updatedAt": "2026-09-08T06:09:10.465+00:00",
+    "updatedAt": "2026-09-06T05:14:30.658+00:00",
     "publishedAt": "2026-09-04T07:30:11.118+00:00"
   },
   {
@@ -1247,9 +1152,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Mastering the Noir Mirror Aesthetic\n\nThis prompt is engineered to capture a moody, editorial 'mirror selfie' look. The key to the composition is the balance between the high-contrast black and white palette and the 'pop' of the red text. \n\n**Lighting Breakdown:**\n- **God Rays:** Adds depth and volume to the empty space behind the subject.\n- **Rim Lighting:** Keeps the subject separated from the dark background.\n- **Spot Color:** Using color isolation (black and white with one accent color) is a professional trick to draw the viewer's eye to specific brand or textual elements.\n\n**Pro Tips:**\n1. **Text Customization:** If using Midjourney v6, replace 'ZEENA' in the prompt with your desired word or short name.\n2. **Atmosphere:** The mention of 'atmospheric fog' is crucial; it allows the light beams to become visible, turning a flat portrait into a volumetric masterpiece.\n3. **Post-Processing:** This style thrives on 'Clarity' and 'Dehaze' settings in Lightroom if you are editing the output further.",
     "tags": [
@@ -1297,9 +1200,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Mastering the Anime Streetwear Aesthetic\n\nThis prompt is engineered to capture a high-fashion, urban editorial look. By combining a contemporary fashion subject with a chaotic, visually textured 'manga wall' background, you create a powerful contrast between the clean subject and the busy environment.\n\n#### Lighting & Composition\n- **Lighting:** We specify 'soft shadows' to ensure the subject doesn't look cut-and-pasted against the background, maintaining a cohesive photographic depth.\n- **Camera:** The use of a 35mm lens is deliberate; it captures the subject and the immediate surroundings without the distortion of wider lenses, making it perfect for fashion-forward, full-body shots.\n- **Styling:** The layering of a denim shirt over a white tank top provides a versatile, masculine aesthetic that mimics high-end street fashion shoots.\n\n#### Pro Tips for Customization\n- **Vary the Subject:** You can replace 'young man' with 'fashion model' or 'street artist' to change the vibe.\n- **Customize the Background:** Change 'One Piece bounty posters' to 'cyberpunk neon signs' or 'vintage concert posters' to completely alter the narrative context.\n- **Color Grading:** If you want a more modern look, replace 'slight vintage film grain' with 'clean, vibrant colors' in the prompt.",
     "tags": [
@@ -1347,9 +1248,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Mastering the Anime-to-Real Hybrid Look\n\nThis prompt is engineered to bridge the gap between photography and stylized digital art. It uses a 'split-view' structural cue to force the AI to compare the source realism with the requested anime aesthetic.\n\n#### Lighting & Composition\n- **Composition:** The 'smartphone frame' acts as a framing device, creating a meta-layer that makes the image feel like a social media post.\n- **Lighting:** The prompt specifies a 'bright, minimalist modern bathroom,' which provides a high-key, clean lighting environment. This is crucial for keeping the anime portion from looking too dark or muddy.\n\n#### Pro Tips for Customization\n- **Subject:** Change 'woman with long wavy dark hair' to your specific character description to keep consistency.\n- **Style:** If you want a different anime aesthetic, replace 'soft cel-shaded' with 'Studio Ghibli style' or 'cyberpunk anime aesthetic'.\n- **Platform:** Works best in Midjourney v6.1 or DALL-E 3, as they handle multi-concept composition well.",
     "tags": [
@@ -1397,9 +1296,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### How to Use This Prompt\nThis prompt is engineered to capture the 'travel blogger' aesthetic using soft natural light and a crisp, shallow depth of field. The key to this look is the contrast between the sharp subject and the expansive, slightly soft background.\n\n### Lighting & Camera Breakdown\n- **Lighting:** The prompt specifically calls for 'golden hour,' which provides the flattering, warm glow visible on the subject's face. It minimizes harsh shadows and provides natural highlights.\n- **Camera Optics:** By utilizing a 35mm lens at f/2.8, we achieve a cinematic look that focuses on the person while keeping the environmental context of the mountains clear but not distracting.\n\n### Pro Tips for Customization\n- **Change the Clothing:** Swap the black crop top for 'a flowy linen sundress' or 'a textured cable-knit sweater' to change the season.\n- **Adjust the Environment:** Replace 'river valley and mountains' with 'bustling cityscape balcony' or 'seaside cliffside' to instantly change the travel location.\n- **Refining Skin Texture:** If using AI tools like Midjourney, ensure you use '--style raw' to maintain the authentic, non-plastic appearance of the skin.",
     "tags": [
@@ -1447,9 +1344,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Mastering the Luxury Urban Look\nThis prompt is engineered to capture the specific 'Instagram-luxury' aesthetic. The combination of a high-end vehicle and a minimalist, well-tailored outfit creates a high-status visual narrative. \n\n### Lighting & Camera Breakdown\n- **Lens Choice:** The 85mm lens is key here. It provides a flattering compression of the subject while maintaining a professional separation from the background.\n- **Lighting Setup:** The 'architectural ambient lighting' instruction tells the AI to utilize the existing warm glow of street lamps and building LEDs to illuminate the subject's face softly without harsh artificial flashes.\n- **Depth of Field:** By specifying f/1.8, we ensure the subject is the focal point while the background city lights create a beautiful, non-distracting bokeh effect.\n\n### Pro Tips for Customization\n- **Subject:** Replace '[young woman]' with specific character descriptions to customize the look.\n- **Environment:** Swap '[upscale shopping promenade]' for 'downtown Tokyo', 'Beverly Hills driveway', or 'rain-slicked London street' to change the context.\n- **Color Palette:** Add keywords like 'monochromatic styling' or 'warm gold accents' to adjust the color temperature of the final render.",
     "tags": [
@@ -1497,9 +1392,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Crafting Dark Elegance\nThis prompt is engineered to capture a high-contrast, atmospheric portrait that blends fashion photography with supernatural storytelling. The key to the 'Dark Elegance' aesthetic is the balance between sharp, clean-cut attire and the chaotic, fluid elements like rain and smoke.\n\n#### Lighting and Atmosphere\nWe utilize **chiaroscuro** to create dramatic depth, emphasizing the subject's jawline and intense gaze. The combination of 'volumetric fog' and 'heavy rain' provides texture, while the electric blue eyes serve as the focal point for the viewer.\n\n#### Camera Settings\nThe use of an **85mm lens** at **f/1.8** ensures a flattering portrait compression with a beautiful bokeh effect, separating the subject from the dark, swirling background elements.\n\n#### Pro-Tips for Customization\n- **Subject:** Swap the subject description (e.g., 'A rogue vampire' or 'A corporate demon') to shift the genre.\n- **Colors:** Change 'electric blue' to 'crimson red' or 'emerald green' to adjust the vibe of the smoke and eyes.\n- **Setting:** Change the 'pouring rain' to 'glowing embers' for a fiery, rather than watery, aesthetic.",
     "tags": [
@@ -1547,9 +1440,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### How to Master the Golden Hour Portrait\n\nThis prompt is designed to capture the quintessential summer aesthetic. It leverages a shallow depth of field (f/1.8) to separate the subject from the busy floral background, ensuring the viewer's focus remains on the portrait.\n\n#### Lighting Breakdown\n- **Golden Hour:** We specify the time of day to trigger the model's training data for warm, low-angled sunlight.\n- **Rim Light:** By requesting 'sun flares catching her hair,' we force the AI to create a high-contrast edge that adds a professional studio quality to a natural setting.\n\n#### Camera Settings\n- **85mm Lens:** This is the industry standard for portraits. It compresses the background nicely and prevents facial distortion.\n- **f/1.8:** Provides that signature 'creamy' background blur (bokeh) that makes the subject pop.\n\n#### Pro Tips\n- If using Midjourney, append '--v 6.0' to your prompt for the most photorealistic skin textures.\n- If the flowers look too messy, add 'minimalist field' to the prompt to control the density of the background elements.",
     "tags": [
@@ -1597,9 +1488,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "This prompt captures a modern editorial aesthetic by combining soft-focus studio photography with intentional light-trail overlays. The key to this look is the balance between the crisp, high-quality portrait of the subject and the dreamlike, abstract movement of the neon lines. The use of a 'sheer' fabric texture adds depth, while the 'split-tone' background creates a high-contrast color profile that pops. Pro Tip: Adjust the 'motion blur' intensity in your post-processing or prompt weights to emphasize the feeling of action in the frame.",
     "tags": [
@@ -1647,9 +1536,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Master the Art of Digital Dispersion\n\nThis prompt is designed to combine the crispness of high-fashion studio photography with the chaotic beauty of digital glitch art. The key to this aesthetic is the 'pixel sorting' technique, which simulates the image breaking down into data-like fibers.\n\n#### Why it works:\n- **Contrast:** The stark black and white clothing against the clean background isolates the subject, making the glitch effect pop.\n- **Technical Depth:** By focusing on 'motion smear' and 'pixel sorting,' we instruct the AI to process the edges of the subject as digital information rather than just photographic pixels.\n- **Lighting Breakdown:** The lighting is set to 'cinematic studio,' which implies soft key lights and subtle rim lighting to ensure the subject's face remains sharp while the background interacts with the digital noise.\n\n#### Pro-Tips for Customization:\n- **Subject:** Replace 'handsome male model' with any subject, such as 'a woman in a flowing silk dress' for a more elegant contrast.\n- **Color Palette:** Add 'monochromatic' or 'neon chromatic aberration' if you want to shift away from black-and-white.\n- **Intensity:** Increase the 'stylize' parameter to 750 or higher in Midjourney to push the glitch effect to be more aggressive.",
     "tags": [
@@ -1697,9 +1584,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "## Mastering the Long Exposure Aesthetic\n\nThis prompt is designed to replicate the trendy 'light painting' aesthetic often seen in artistic social media portraiture. By utilizing a specific combination of motion blur and long exposure simulation, the AI creates a dreamlike, hazy atmosphere that feels both candid and highly styled.\n\n### Lighting & Camera Breakdown\n- **Technique:** The prompt focuses on 'long exposure' to tell the AI to treat light sources as trails rather than static points.\n- **Optics:** Using keywords like '35mm film' and 'soft focus' prevents the AI from making the image look too sharp or digital, leaning into an authentic, artistic camera feel.\n- **Subject Matter:** The inclusion of specific clothing ('white hoodie') helps establish a modern, clean lifestyle base that contrasts well with the chaotic, beautiful energy of the light trails.\n\n### Pro Tips for Customization\n- **[subject]:** Swap this out for specific looks, e.g., 'a young woman with curly hair' or 'a man wearing a denim jacket'.\n- **Color Palette:** Add color keywords to the prompt like 'neon blue light trails' or 'warm golden hour glow' to change the mood of the streaks.\n- **Stylize:** If using Midjourney, use the --stylize parameter between 250-750 to balance between the prompt's instructions and the model's creative freedom.",
     "tags": [
@@ -1747,9 +1632,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Capture the Perfect Sunset Glow\n\nThis prompt is designed to emulate the soft, flattering look of a high-end lifestyle portrait taken during the 'Golden Hour.' The key to this aesthetic is the backlighting, which creates a halo effect around the subject and produces warm, glowing skin tones.\n\n#### Lighting & Camera Breakdown\n- **Lighting:** We utilize natural sunset backlighting to create depth and contrast, softening the subject while highlighting the silhouette.\n- **Optics:** The use of a 35mm lens at f/1.8 creates a shallow depth of field, keeping the focus sharp on the subject while creating a creamy, blurred ocean background.\n- **Composition:** A centered, medium shot that captures the subject's expression and their interaction with the environment, emphasizing the 'candid' lifestyle feel.\n\n#### Pro Tips for Customization\n- **Change the Clothing:** You can swap 'dark red blouse' for 'linen shirt' or 'summer dress' to shift the fashion style.\n- **Adjust the Location:** Try changing 'beach' to 'desert,' 'mountain peak,' or 'urban rooftop' to change the context while keeping the same warm, sunset aesthetic.\n- **Focus on Skin:** If using Midjourney, adding '--style raw' will help maintain the photorealistic skin textures without over-processing.",
     "tags": [
@@ -1797,9 +1680,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Mastering Cinematic Solitude\n\nThis prompt is designed to capture the essence of 'the traveler' archetype—a fusion of automotive photography and human portraiture. The aesthetic relies on **cool color temperature grading** and **high-contrast lighting** to emphasize the feeling of isolation.\n\n#### Lighting & Composition Setup\n- **Lens Choice:** The 85mm focal length is critical here; it provides a flattering compression of the background mountains while separating the subject from the road.\n- **Lighting:** We suggest 'overcast, soft natural light' settings to avoid harsh shadows, allowing the neon text to become the focal point of the image.\n- **Composition:** The subject is placed slightly off-center to allow the negative space of the road to draw the eye toward the horizon.\n\n#### Expert Tips\n- Use the **'Style Reference' (--sref)** feature in Midjourney if you want to apply specific desaturated color LUTs to the generated output.\n- Adjust the **--stylize** parameter to 250 for a perfect balance between hyper-realism and artistic mood.",
     "tags": [
@@ -1847,9 +1728,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### How to Use This Prompt\nThis prompt is designed to replicate high-end commercial fashion editorials that utilize clever lighting and post-production composite techniques. The key to the success of this prompt is the combination of 'multi-mirror effect' and 'neon lighting.' \n\n### Lighting & Camera Breakdown\n- **Lighting:** We use 'dramatic rim lighting' to separate the dark clothing from the dark background, ensuring the silhouette remains sharp.\n- **Composition:** The 'symmetrical multi-mirror effect' tells the AI to treat the subject as a repeating element, while the 'glowing neon frames' provide the primary light source for the composition.\n- **Optics:** Designed for a 35mm or 50mm lens feel to keep the subject centered and undistorted, maintaining the high-fashion editorial look.\n\n### Pro Tips for Customization\n- **Subject:** Replace [subject] with specific descriptions like 'a professional male model' or 'a woman in a flowing silk dress' to change the visual narrative.\n- **Accent Elements:** The 'glowing hand-drawn leaf sketches' can be replaced with 'glowing geometric shapes' or 'floating light particles' for a different thematic flavor.\n- **Color Palette:** While the style is monochrome, you can add 'accented cyan neon lights' to the prompt to introduce a splash of color into the black and white scene.",
     "tags": [
@@ -1866,7 +1745,7 @@
     "isTrending": false,
     "isPremium": false,
     "viewsCount": 0,
-    "copiesCount": 1,
+    "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
     "seoTitle": "Create Neon Mirror Fashion Portraits with AI",
@@ -1882,7 +1761,7 @@
       "metaDescription": "Learn how to generate professional editorial fashion photography with a multi-mirror, neon-frame aesthetic using this master-level AI prompt."
     },
     "createdAt": "2026-09-04T07:25:09.48+00:00",
-    "updatedAt": "2026-09-08T04:46:48.602+00:00",
+    "updatedAt": "2026-09-06T05:14:55.604+00:00",
     "publishedAt": "2026-09-04T07:25:09.48+00:00"
   },
   {
@@ -1897,9 +1776,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Creating Professional Travel Portraits\n\nThis prompt is engineered to capture the 'travel blogger' aesthetic, balancing a clear subject with a massive, recognizable landmark. \n\n**Lighting Breakdown:**\nThe prompt utilizes 'golden hour' lighting to provide a flattering, soft glow that reduces harsh shadows on the face, making it ideal for editorial-style portraits.\n\n**Compositional Strategy:**\nUsing an 85mm lens setting is key here. It provides a natural compression that separates the subject from the background while keeping the scale of the ferris wheel impressive yet non-distracting.\n\n**Pro Tips for Customization:**\n- **Change the landmark:** Replace 'Ain Dubai' with other locations like 'the Eiffel Tower' or 'the Sydney Opera House'.\n- **Adjust Tone:** Change 'golden hour' to 'blue hour' for a cooler, moody evening aesthetic.\n- **Wardrobe:** Swap the outfit description to match specific seasons or brand styles.",
     "tags": [
@@ -1947,9 +1824,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "This prompt is designed to capture a clean, professional lifestyle portrait set against a recognizable architectural structure. The key to the composition is the low-angle shot, which emphasizes the stature of the Dubai Frame while keeping the subject as the clear focal point. The lighting setup utilizes natural golden hour tones to achieve a warm, premium aesthetic. To customize this prompt, replace the location 'Dubai Frame' with any iconic monument, and swap the outfit descriptions to match your specific style goals. For best results, use a low aperture setting (f/2.8) to maintain a soft background bokeh that highlights the subject.",
     "tags": [
@@ -1997,9 +1872,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Capture the Essence of Luxury Travel Photography\n\nThis prompt is engineered to emulate the 'influencer luxury' aesthetic found in high-end travel magazines and lifestyle social media feeds. By focusing on the interplay between the crisp white outfit and the vibrant blue hues of the ocean and sky, this prompt creates a bright, optimistic, and expensive-looking image.\n\n#### Lighting and Camera Breakdown\n- **Lighting:** We specify natural, bright daylight to ensure the skin tones are even and the scene feels airy and inviting.\n- **Optics:** The use of a 35mm lens at f/2.8 is the 'golden setup' for lifestyle photography; it keeps the subject sharp while softly blurring the architectural complexities of the background.\n- **Composition:** The 'over-the-shoulder' gaze is a classic editorial technique that engages the viewer and adds a dynamic sense of movement.\n\n#### Pro Tips for Customization\n- **Change the Environment:** Replace 'Dubai skyline and Palm Jumeirah' with 'Santorini cliffside village' or 'Tokyo night cityscape' to change the vibe instantly.\n- **Adjust Fashion:** Change 'linen shirt' to 'designer turtleneck' for a moody winter look or 'pastel summer blazer' for a preppy aesthetic.\n- **Model Variation:** You can swap the subject description to match any specific look, such as 'a woman in a flowing silk dress' to maintain the luxurious travel theme.",
     "tags": [
@@ -2047,9 +1920,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Mastering the Dubai Marina Night Aesthetic\n\nThis prompt captures the essence of luxury travel and urban night photography. The key to this image is the **Prismatic Light Flare**, which adds a dreamlike, sophisticated texture to the subject's skin. \n\n#### Lighting & Composition\n- **The Flare:** By specifying 'prismatic light refraction,' you invite the AI to add realistic, subtle color bleeding, which mimics high-end optical lens flares.\n- **Depth of Field:** Using an f/1.8 aperture reference ensures the focus stays on the subject's face while keeping the intricate city lights in the background beautifully blurred (bokeh).\n- **Composition:** The subject is positioned off-center, typical of modern lifestyle photography, allowing the yacht docks to frame the scene naturally.\n\n#### Pro Tips for Customization\n- **Swap the Subject:** Change 'young woman' to 'professional businessman' or 'travel influencer' to fit your desired narrative.\n- **Adjust Atmosphere:** Change 'night lighting' to 'golden hour' or 'twilight' for a completely different color temperature palette.\n- **Camera Settings:** If you want a more cinematic look, add 'shot on Arri Alexa, 35mm lens, anamorphic style' to the prompt.",
     "tags": [
@@ -2097,9 +1968,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Master the Luxury Lifestyle Aesthetic\n\nThis prompt is engineered to capture the 'global traveler' aesthetic frequently seen in high-end lifestyle editorials. By leveraging specific architectural markers like the Dubai skyline and utilizing the 'golden hour' lighting effect, this prompt produces imagery that feels expensive, calm, and aspirational.\n\n### Lighting & Camera Breakdown\n\n- **Golden Hour:** We specify the sunset period to pull deep oranges and soft highlights, creating a natural rim light on the subject.\n- **Aperture (f/2.8):** This creates a shallow depth of field, keeping the subject razor-sharp while gently blurring the massive skyscrapers in the background for a cinematic feel.\n- **Lens Choice:** The 35mm lens is the gold standard for environmental portraiture, providing a natural look that isn't too wide or too compressed.\n\n### Pro Tips for Customization\n\n- **Subject Customization:** You can replace 'handsome young man' with 'elegant woman in a silk dress' or 'business professional in a slim-fit suit' to match your specific brand vision.\n- **Setting Adjustment:** If you want a different city, simply swap 'Dubai skyline' with 'Singapore skyline' or 'New York city skyline at sunset'.\n- **Color Palette:** To make the colors pop more, add 'vibrant sunset colors' or 'desaturated cinematic teal and orange' to the end of the prompt.",
     "tags": [
@@ -2147,9 +2016,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Mastering Cinematic Rim Lighting\nThis prompt is designed to recreate the high-impact look of professional editorial photography. The key to this image's success lies in the contrast between the dark background and the vibrant red rim light. \n\n**Lighting Setup:** We focus on 'rim lighting' (also known as backlight or hair light), which separates the subject from the background. By specifying a neon red color, we introduce an energetic, edgy vibe suitable for fashion photography.\n\n**Composition & Camera:** The 85mm lens choice is deliberate; it provides a flattering compression for portraits, ensuring facial features appear proportional while maintaining a shallow depth of field that keeps the focus entirely on the subject.\n\n**Pro Tips:** To customize this, try changing the color of the rim light to 'electric blue' for a cooler sci-fi feel, or 'golden hour orange' for a more naturalistic sunset look. Adjust the subject's clothing material in the prompt to experiment with how light reflects off different textures.",
     "tags": [
@@ -2197,9 +2064,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "This prompt is engineered to capture the perfect balance between traditional elegance and modern photographic style. The composition focuses on the 'golden hour' effect, utilizing the warm backlighting to create a rim-light glow around the subject, which separates her from the bokeh-rich autumn background. The use of a specific focal length (85mm) ensures flattering facial features and a shallow depth of field, characteristic of professional portraiture. When customizing, consider changing the [subject's attire color] to contrast with the background season, or swapping the [camera item] for other props to shift the narrative from a photographer to a traveler or artist.",
     "tags": [
@@ -2247,9 +2112,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Elevate Your Portraits with Luxury Lifestyle Aesthetics\nThis prompt is engineered to capture the 'High-End Editorial' look, reminiscent of luxury automotive magazines and fashion catalogs. By combining a specific color palette—yellow and navy blue—the contrast between the subject and the vehicle creates a visually striking composition.\n\n#### Lighting & Composition Breakdown\n- **Golden Hour Lighting:** This is key for the soft, glowing skin tones and the subtle highlights on the car's bodywork. It removes harsh shadows that occur during midday sun.\n- **Depth of Field:** Using an 85mm lens setting (in your prompt) tells the AI to create a shallow depth of field. This keeps the focus squarely on the subject while creating a smooth bokeh effect for the background.\n- **Composition:** The subject leans naturally against the car, which grounds the scene and adds a sense of relaxed luxury.\n\n#### Pro-Tips for Customization\n- **Subject:** Change '[subject]' to reflect different attire or age groups to vary the narrative.\n- **Vehicle:** Swap the car color to match the subject's outfit for a monochromatic or complementary color scheme.\n- **Environment:** If you want a different mood, change 'luxury dealership' to 'modern glass office complex' or 'coastal marina'.",
     "tags": [
@@ -2297,9 +2160,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Create Ethereal Romance with AI\n\nThis prompt is engineered to capture the quintessential 'romantic film poster' aesthetic. By utilizing an **85mm lens** focal length, the composition creates a flattering depth of field, keeping the focus squarely on the subjects while rendering the background cherry blossoms into a soft, dreamy bokeh.\n\n#### Why this prompt works:\n*   **Lighting Setup:** The use of 'Golden hour rim lighting' provides a separation between the subjects and the background, giving them a glowing, professional look.\n*   **Composition:** A 'back-to-back' pose is a classic storytelling element that implies intimacy without the need for physical touch.\n*   **Color Palette:** The contrast between the deep red attire and the soft pink/white sakura blossoms creates a visually striking image that draws the viewer's eye immediately.\n\n#### Pro Tips for Customization:\n*   **Change the Season:** Swap 'cherry blossom trees' for 'autumn maple leaves' or 'snow-covered pines' to change the mood entirely.\n*   **Adjust Lighting:** If you want a moodier look, change 'golden hour' to 'twilight' or 'moonlight' and add 'subtle cool blue highlights' to the prompt.\n*   **Outfit Swap:** You can replace the ethnic dress and black shirt with 'formal evening wear' or 'casual linen clothing' to suit different storytelling needs.",
     "tags": [
@@ -2348,9 +2209,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Creating the Perfect Mountain Portrait\nThis prompt is engineered to capture a moment of peace within nature. \n\n**Lighting Breakdown:**\nThe image relies on **diffused overcast daylight**. By specifying 'soft diffused daylight,' the AI avoids harsh shadows on the subject's face, creating a professional, flattering look often found in high-end lifestyle commercials.\n\n**Compositional Tips:**\n- **Rule of Thirds:** The subject is placed to suggest a connection with the sprawling landscape.\n- **Depth of Field:** Using a 35mm lens at f/2.8 creates a perfect balance, keeping the subject crisp while allowing the background hills to have a soft, natural depth that doesn't distract.\n\n**Pro Prompting Tip:**\nTo customize this, change the subject's outfit color to complement the background. Olive greens and creams (as seen here) are 'earth tones' that harmonize with the landscape, while bright colors like red or yellow would create a 'pop' effect, making the subject stand out more starkly against the greenery.",
     "tags": [
@@ -2398,9 +2257,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Elevating Fashion Portraits with Composite Imagery\n\nThis prompt is engineered to replicate high-end editorial layouts found in global fashion magazines. By leveraging a 'composite' approach, it forces the AI to generate a single cohesive canvas featuring multiple perspectives of a single subject, layered with modern graphic elements.\n\n### Lighting & Composition Breakdown\n\n- **Composition:** The layout uses a 3-part 'hero' structure. The central figure anchors the image, while the surrounding 'ghosted' portraits provide depth and narrative context.\n- **Lighting:** The aesthetic relies on dual-tone studio lighting (blue/purple) to create a futuristic, sleek vibe. Rim lighting is essential to separate the model from the colorful background.\n- **Graphic Overlays:** The prompt specifically calls for geometric vectors and grids. These act as architectural framing devices that prevent the background from feeling flat.\n\n### Pro Tips for Customization\n\n1. **Modify the Subject:** Replace 'handsome male model' with specific traits like 'androgynous street-style model' or 'woman in avant-garde haute couture' to shift the demographic.\n2. **Color Palette:** You can change the gradient colors (e.g., 'vibrant orange to deep teal') to alter the mood from cool and corporate to warm and energetic.\n3. **Post-Processing:** If your output has too much noise, run it through an image-to-image pipeline with a denoise strength of 0.2 to clean up the graphic lines.",
     "tags": [
@@ -2449,9 +2306,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "This prompt is meticulously engineered to capture a 'candid lifestyle' aesthetic. The focus is on the interplay between the sharp, detailed subject and the soft, atmospheric backdrop. To master this look, the '85mm lens' keyword is critical—it creates a flattering compression for portraits while isolating the subject from the sprawling background. The lighting is specified as 'overcast' to ensure soft, shadowless, and flattering illumination on the face, which mimics professional outdoor photography conditions during a cloudy day. Pro tip: For variations, adjust the 'white denim jacket' to other clothing textures like linen or wool to change the season of the shot.",
     "tags": [
@@ -2499,9 +2354,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Mastering the Sportbike Action Shot\nThis prompt is engineered to capture the intersection of human focus and machine performance. To achieve the 'Precision' look, the prompt utilizes a low-angle tracking shot technique, which artificially increases the perceived velocity of the subject.\n\n### Lighting & Camera Breakdown\n- **Golden Hour:** Provides the high-contrast highlights on the motorcycle's metallic surfaces while keeping the skin tones warm and natural.\n- **Depth of Field:** By specifying an f/2.8 aperture, we isolate the rider, drawing the viewer's eye to their focused expression while creating a soft bokeh effect in the background scenery.\n- **Motion Blur:** The text description of 'motion blur on the asphalt' is crucial for conveying movement without the need for post-processing.\n\n### Pro Tips for Customization\n- **Change the Bike:** Replace 'Yamaha YZF-R1' with 'Ducati Panigale' or 'Kawasaki Ninja' for a completely different visual silhouette.\n- **Environment Swap:** Modify 'coastal mountain road' to 'urban night city streets' for a neon-drenched, moody aesthetic.\n- **The Gear:** Experiment with different color schemes in the leather suit to match the bike's primary color profile for a cohesive, professional brand look.",
     "tags": [
@@ -2550,9 +2403,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "The 'Urban Beast' prompt is designed to emulate professional fashion and lifestyle editorial photography. The composition relies on the contrast between the sharp, well-lit subject and the soft, blurred 'bokeh' background of an urban environment. To get the best results, use a lens focal length of 85mm or 105mm in your mental framing; this compresses the background and keeps the subject's features flattering. The lighting is set to natural, bright daylight, which works best for high-contrast fashion shoots. Pro Tip: To modify this prompt, swap the 'motorcycle' for a different vehicle or change the subject's 'distressed black denim' to a different color palette like 'olive utility' or 'premium leather' to completely shift the vibe from edgy urban to rugged explorer.",
     "tags": [
@@ -2600,9 +2451,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### How to use this prompt\nThis prompt is designed for high-end editorial results. The focus is on clean, minimal fashion combined with natural, high-key environmental lighting. \n\n### Lighting & Camera Breakdown\n- **Lens choice**: Using an 85mm focal length provides the classic 'portrait compression' effect, which separates the subject from the background while keeping the facial features flattering.\n- **Lighting**: The prompt specifies 'natural golden hour' to ensure soft, warm highlights that catch the hair and the car's metallic surfaces without harsh shadows.\n- **Depth of Field**: An f/1.8 aperture is suggested to create a shallow depth of field, keeping the subject sharp while rendering the coastal landscape into a soft, professional-grade bokeh.",
     "tags": [
@@ -2650,9 +2499,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Bringing Summer to Life: The Sun-Drenched Meadow Prompt\n\nThis prompt is engineered to capture the quintessential 'summer day' aesthetic. By utilizing an 85mm lens focal length equivalent in the prompt, we simulate a professional portrait setup that separates the subject from the busy background, creating a pleasing bokeh effect.\n\n#### Lighting & Composition Breakdown:\n*   **Lighting:** The prompt specifies 'natural golden hour sunlight' to achieve that warm, high-key illumination that creates a flattering glow on the skin.\n*   **Composition:** The subject is placed centrally to emphasize the harmony between her attire and the surrounding yellow wildflowers, creating a monochromatic yet textured color palette.\n*   **Optics:** The 85mm lens specification ensures minimal distortion and beautiful compression, perfect for head-and-shoulder or waist-up portraits.\n\n#### Pro Tips for Customization:\n- **Change the outfit:** Swap 'butter-yellow summer dress' for 'vintage linen floral dress' or 'white bohemian blouse' to change the mood.\n- **Adjust the setting:** Replace 'wildflower meadow' with 'lavender field' or 'wheat farm' for a completely different seasonal look.\n- **Lighting control:** Use 'overcast soft light' instead of 'golden hour' if you prefer a cooler, more editorial look with less intense contrast.",
     "tags": [
@@ -2668,7 +2515,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 2,
+    "viewsCount": 1,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -2685,7 +2532,7 @@
       "metaDescription": "Create stunning, sun-drenched lifestyle portraits in wildflower fields with this optimized AI prompt for Midjourney and Flux."
     },
     "createdAt": "2026-09-04T07:16:47.007+00:00",
-    "updatedAt": "2026-09-08T06:07:57.786+00:00",
+    "updatedAt": "2026-09-06T05:15:27.979+00:00",
     "publishedAt": "2026-09-04T07:16:47.007+00:00"
   },
   {
@@ -2700,9 +2547,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "# Golden Hour Mountain Peak Portrait Guide## OverviewThis prompt captures a travel lifestyle portrait set atop a mountain summit above a natural cloud inversion layer during sunset.## Key Visual Elements- **Subject & Styling**: Confident pose seated on natural rocks, casual-chic maroon top, white trousers, and reflective sunglasses.- **Atmosphere**: Cloud inversion blanket below the peak with soft atmospheric haze.- **Lighting**: Warm directional golden hour backlighting with soft ambient fill to maintain facial detail.## Customization Variables- **[subject]**: Swap ethnicity, hairstyle, or attire for varied looks.- **[location]**: Change to alpine ridges, coastal cliffs, or desert peaks.- **[time of day]**: Try blue hour or sunrise for cooler tones.## Recommended Settings- **Aspect Ratio**: 4:5 or 3:4 for vertical portraits.- **Lens Model**: 50mm or 85mm prime at f/2.8 for gentle background softness.",
     "tags": [
@@ -2750,9 +2595,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "## Overview\nThis prompt crafts a cinematic travel portrait combining natural landscape photography with graphic typography integrated directly into the environmental mist and mountain background.\n\n## Visual Breakdown\n- **Subject & Pose:** Full-body stance on an elevated rock ledge, looking up into natural light, projecting freedom and contemplation.\n- **Wardrobe:** Casual outdoor styling featuring a textured quarter-zip pullover, neutral joggers, and minimalist sneakers.\n- **Environment:** High-altitude cloud inversion with layered peaks and soft ambient daylight.\n- **Text Integration:** Bold sans-serif lettering partially occluded by volumetric fog.\n\n## Customization Tips\n- Swap `ZEENA` for custom names or brand titles.\n- Modify wardrobe colors (e.g., `forest green jacket`, `earth-tone fleece`).\n- Shift time-of-day by changing `soft overcast daylight` to `golden hour glow` or `blue hour twilight`.",
     "tags": [
@@ -2799,9 +2642,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Creating the Perfect Mountain Peak Portrait\n\nThis prompt is designed to capture the essence of 'wanderlust' and 'serenity.' By utilizing the 85mm lens setting, we achieve a flattering portrait compression that emphasizes the subject while isolating them from the vast, epic background.\n\n#### Lighting Breakdown\n*   **Golden Hour:** The prompt relies on the low-angle sun to provide a natural, warm rim light around the subject, which separates her from the cloudy background.\n*   **Soft Fill:** The cloud layer acts as a natural softbox, bouncing light back up to fill in shadows on the subject's face.\n\n#### Camera & Composition Tips\n*   **Aperture (f/1.8):** We use a wide aperture to ensure the focus is strictly on the subject, creating a beautiful 'bokeh' effect on the distant peaks.\n*   **Subject Placement:** Placing the subject on the 'Rule of Thirds' intersection within the mountain landscape helps ground the composition and makes the viewer feel the scale of the environment.\n\n#### Pro Tips for Customization\n*   **Mood Shift:** Swap 'golden hour' for 'blue hour' to create a cooler, more mysterious atmosphere.\n*   **Attire:** Change the 'yellow sundress' to 'bohemian maxi dress' or 'hiking gear' to instantly change the narrative of the image.",
     "tags": [
@@ -2849,9 +2690,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### How to Master the Editorial Magazine Look\n\nThis prompt is engineered to replicate the clean, high-end look of lifestyle magazines like GQ or Kinfolk. The secret lies in the balance between the organic, messy nature of the sunflower field and the sharp, clean structure of the editorial typography and color grading.\n\n#### Lighting and Camera Breakdown\n- **Lighting:** We aim for 'Golden Hour' diffusion. The soft, backlit sun creates a halo effect around the subject, which is essential for that 'luxury lifestyle' glow.\n- **Optics:** The prompt implies a 50mm or 85mm lens. This focal length provides a pleasing compression of the sunflower field behind the subject while maintaining a professional bokeh (blurred background).\n\n#### Pro Tips for Customization\n- **Typography:** If using a tool that supports text generation (like Ideogram or DALL-E 3), feel free to adjust the word 'GROWTH' to any title you desire.\n- **Subject:** You can easily swap [Subject] to a woman in a flowy white dress or a different seasonal setting like a lavender field for a completely different aesthetic.\n- **Color Palette:** The 'Kodak Portra' mention ensures natural, warm skin tones and desaturated blues in the sky, providing a premium, film-like finish.",
     "tags": [
@@ -2899,9 +2738,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Visual Breakdown\nThis prompt merges casual lifestyle imagery (a smartphone mirror selfie) with high-fashion editorial design. The bold, saturated magenta background contrasts with white typography and clean studio styling to deliver a modern pop-editorial look.\n\n### Key Composition Elements\n- **Subject:** Contemporary model pose with a smartphone reflecting modern social media aesthetics.\n- **Wardrobe:** Tailored white trousers paired with a rich burgundy or maroon bow-tie top for balanced contrast.\n- **Typography & Background:** Solid color backdrop layered with oversized, tall condensed serif/sans-serif text.\n\n### Pro Customization Tips\n- Swap `hot pink` for deep navy, olive green, or bright mustard to shift the mood.\n- Replace the outfit colors to complement the chosen background hue.\n- Specify exact cover masthead text in tools like Flux.1 or Ideogram for accurate graphic generation.",
     "tags": [
@@ -2948,9 +2785,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### How to Master the Urban Motion Portrait\n\nThis prompt is designed to create a striking contrast between a stationary, sharp subject and the chaotic, blurred energy of a modern city. By utilizing a 'radial zoom' description combined with 'shallow depth of field,' you achieve a professional editorial look.\n\n#### Lighting & Camera Breakdown\n- **Lens Choice:** The 50mm lens selection provides a natural, flattering perspective that mimics human vision while keeping the focus strictly on the subject.\n- **Depth of Field:** Using a wide f/1.8 aperture ensures that the background is beautifully rendered into soft bokeh and kinetic light streaks, while the subject remains crisp.\n- **Motion Effect:** The prompt instructs the AI to simulate 'high-speed motion blur,' which effectively captures the feeling of a busy environment flowing around the subject.\n\n#### Pro Tips for Customization\n- **Change the Subject:** Swap the 'young man' for a [business woman], [street artist], or [tourist] to change the story.\n- **Adjust Atmosphere:** Modify the time of day by swapping 'twilight' for 'golden hour' or 'late-night neon' to adjust the color palette.\n- **Color Grading:** Add keywords like 'teal and orange grade' or 'monochrome' to adjust the mood.",
     "tags": [
@@ -2998,9 +2833,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Capture the Essence of Summer\n\nThis prompt is engineered to replicate the high-end, clean aesthetic of luxury fashion editorials. The key to achieving this look is the specific combination of a wide aperture (f/1.8) to isolate the subject from the background and the 'golden hour' lighting descriptor which ensures warm, flattering light.\n\n### Why it Works\n* **Lighting:** The 'golden hour' instruction forces the AI to simulate the soft, directional light that reduces harsh shadows and adds a glow to the skin.\n* **Optics:** Mentioning the 85mm lens tells the AI to create the classic compression effect typical of professional portrait photography.\n* **Composition:** By specifying the subject's clothing and the environment (tall grass), we define the depth of field and the 'airy' feel of the scene.\n\n### Pro-Tips for Customization\n* **Change the Color:** Swap 'yellow sundress' for 'pastel blue linen dress' or 'white lace bohemian dress' to instantly change the mood.\n* **Adjust the Setting:** Replace 'tall grass meadow' with 'lavender field' or 'sandy beach' to transport your subject to a new location while keeping the same photographic style.",
     "tags": [
@@ -3048,9 +2881,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Mastering the Emerald Editorial Look\n\nThis prompt is engineered to capture the essence of luxury fashion editorials. It focuses on the interplay between deep, monochromatic color palettes and sharp, tailored fashion textures.\n\n#### Key Elements:\n* **Lighting Setup:** The prompt uses a Rembrandt lighting approach to create depth and dimension on the face, coupled with a rim light that adds a professional studio sheen to the subject's silhouette.\n* **Color Palette:** Focusing on 'emerald green' creates a sense of sophistication and wealth. By using a monochromatic background, the subject becomes the immediate focal point.\n* **Styling Tips:** To customize this, replace [subject] with specific descriptors like 'a middle-aged man with silver hair' or 'a sharp-featured fashion model' to pivot the character archetype.\n\n#### Camera & Tech Specs:\n* **Lens Choice:** The 85mm lens is the gold standard for portrait photography, as it avoids distortion and provides a flattering compression of facial features.\n* **Aperture (f/1.8):** This settings creates a beautiful depth of field that separates the subject from the backdrop, emphasizing the intricate fabric texture of the blazer.",
     "tags": [
@@ -3098,9 +2929,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "# Editorial Graphic Portrait Guide\\n\\nCreate modern magazine-style editorial posters featuring stylized portraits, glowing contour outlines, eye doodles, and bold background typography.\\n\\n### Key Aesthetic Elements\\n- **Subject Stance:** Side-profile or three-quarter upward gaze.\\n- **Graphic Overlays:** White scribble over the eyes, glowing contour cutout effect.\\n- **Color Scheme:** Deep emerald green background contrasted by neon/lime green text.\\n- **Typography:** Giant condensed sans-serif background headline layered behind the subject.\\n\\n### Customization Tips\\n- Swap green for cyber red, royal blue, or monochrome.\\n- Replace the background typography text with words matching your theme.\\n- Adjust facial overlays from scribbles to geometric shapes or light streaks.",
     "tags": [
@@ -3147,9 +2976,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "This prompt is designed to capture the essence of luxury lifestyle photography by utilizing the perfect contrast between high-end automotive design and the natural textures of the desert. The 'Golden Hour' lighting is the core of this aesthetic, providing a natural warm backlight that separates the subject from the background. By using an 85mm lens specification, we ensure a flattering portrait focal length that creates a beautiful background blur (bokeh) while keeping the subject sharp and professional. Tips: To customize this, replace 'Range Rover' with your desired vehicle brand or change the clothing color to contrast with the warm desert sand for different editorial vibes.",
     "tags": [
@@ -3198,9 +3025,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "This prompt is engineered to capture the quintessential 'night urban' vibe. It focuses on the contrast between a dark, minimalist subject and a glowing, out-of-focus city background. The key to this image is the lighting: by specifying 'edge lighting' and 'rim light,' we force the AI to create depth so the subject doesn't blend into the dark surroundings. Using specific camera gear settings like '35mm f/1.4' ensures a professional shallow depth of field that keeps the focus strictly on the subject's expression while providing beautiful bokeh. To customize, swap the 'oversized black hoodie' for a different style of clothing or change the location from 'rooftop' to a 'neon-lit alleyway' for a completely different mood.",
     "tags": [
@@ -3248,9 +3073,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Mastering the Luxury Editorial Aesthetic This prompt is designed to capture the essence of high-fashion editorial photography. By blending a refined, sophisticated subject with the raw, untamed beauty of a cheetah, you create a visual juxtaposition that is both compelling and luxurious. #### Composition & Lighting Breakdown The composition follows a 'power posing' structure, centering the subject to convey confidence. The lighting is critical: use warm, ambient light sources (like table lamps) to highlight the texture of the silk shirt and the sheen of the gold jewelry. The dark wood background provides a high-contrast environment that makes the deep green sofa and the cheetah's fur pop. #### Pro Tips for Customization - **Subject:** Feel free to swap [man] for any character type to test different fashion styles. - **Setting:** Experiment with changing the background from a 'dark study' to an 'outdoor villa patio' for a different vibe. - **Lighting:** Try changing the [lighting] parameter to 'golden hour' for a warmer, more ethereal glow. #### Parameter Advice - For the best results, use a 4:5 or 2:3 aspect ratio to suit portrait photography standards. - Keep Stylize values between 250-500 for a balance between artistic flair and hyper-realism.",
     "tags": [
@@ -3298,9 +3121,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Overview\nThis prompt creates a nostalgic mixed-media scrapbook layout featuring a vertical triptych of cinematic portrait strips framed by vintage ephemera.\n\n### Core Elements\n- **Composition**: Three horizontal torn-paper strips stacked vertically over textured cream craft paper.\n- **Subject Variety**: Dynamic sequence showing varied expressions (candid gaze, warm smile, serene closed-eyes).\n- **Mixed-Media Accents**: Aged postage stamps, washi tape, dried pressed botanicals, and handwritten notes.\n\n### Lighting & Tone\n- **Lighting**: Direct natural sunlight with soft fill for high-contrast portrait clarity.\n- **Color Palette**: Earthy beige, floral pinks, deep black apparel, and subtle greens.\n\n### Customization Tips\n- Swap out the floral background for urban scenery or coastal views.\n- Customize handwritten text phrases or stamp motifs to tailor the theme.",
     "tags": [
@@ -3348,9 +3169,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Mastering the Monochromatic Noir Aesthetic\n\nThis prompt is engineered to capture the essence of a 'Noir Skyline' editorial. By utilizing a strictly controlled color palette, the image forces the viewer to focus on composition, silhouette, and the interaction between light and shadow. \n\n#### Lighting & Composition Breakdown:\n- **Monochromatic Shift:** By forcing a single color channel (ruby red), we eliminate visual noise and emphasize mood.\n- **Composition:** The rear-three-quarter perspective creates an immediate narrative hook, suggesting the subject has been interrupted or is reflecting on the city below.\n- **Texturing:** The film grain and comic-inspired line work mimic traditional 'noir' pulp illustrations, adding a tactile quality to the digital render.\n\n#### How to Customize:\n- **Subject:** Replace [subject] with specific character traits (e.g., 'a mysterious woman in a trench coat', 'a cyberpunk courier').\n- **Style:** Replace [clothing_style] to change the vibe (e.g., 'tactical streetwear', 'vintage 1940s suit').\n\n#### Pro Tip:\nIf the image is too bright, increase the 'contrast' parameter in your tool or add 'heavy ink splatter' and 'deep black shadows' to the prompt to push the noir factor.",
     "tags": [
@@ -3398,9 +3217,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Prompt Breakdown\\nThis prompt captures an authentic, high-fashion mirror selfie aesthetic featuring traditional Indian wear. The combination of intricate mirror embroidery and modern casual posing creates a relatable yet glamorous lifestyle visual.\\n\\n### Key Elements\\n- **Subject & Attire**: A smiling South Asian woman in a baby-pink lehenga choli with detailed silver mirror accents and delicate jhumka earrings.\\n- **Lighting & Scene**: Soft diffused natural daylight mixed with warm 2700K bedside ambient light inside a neutral-toned luxury bedroom.\\n- **Camera Dynamics**: Smartphone mirror selfie angle with authentic focal length and subtle background bokeh.\\n\\n### Customization Tips\\n- Swap `pastel pink` with `emerald green` or `royal blue` for alternative color palettes.\\n- Modify the setting to `luxury dressing room` or `hotel lobby` to change the mood.",
     "tags": [
@@ -3448,9 +3265,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Mastering the Glitch Motion Portrait\n\nThis prompt is engineered to blend high-end fashion photography with avant-garde digital processing. The key to this aesthetic is the contrast between the pristine, sharp focus of the subject and the deliberate digital distortion (pixel sorting/motion blur) on one side of the frame.\n\n#### Lighting & Camera Breakdown\n- **Lens:** 85mm focal length is crucial for that 'portrait' look, ensuring flattering facial proportions and depth of field.\n- **Lighting:** We utilize 'Soft Fill and Rim Highlights' to separate the subject from the dark burgundy background, giving a professional, three-dimensional studio feel.\n- **Style:** The 'glitch' element acts as a visual hook, transforming a standard studio headshot into an editorial art piece suitable for fashion magazines or digital portfolios.\n\n#### How to Customize\n- **Subject:** Change [subject] to 'a male model with sharp jawline' or 'a woman with elegant features'.\n- **Color Palette:** Modify 'burgundy background' to 'navy blue' or 'forest green' to shift the mood.\n- **Glitch Intensity:** If the AI makes the distortion too extreme, try adjusting the prompt to 'subtle motion-blur trailing' instead of 'digital glitch effect'.",
     "tags": [
@@ -3499,9 +3314,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "This prompt is designed to capture the essence of modern street-style commercial photography. By combining high-contrast grayscale portraits with vibrant, 'glitch-art' inspired red overlays, you can replicate professional marketing materials often seen in major sportswear campaigns. The key to this prompt is the balance between the neutral studio background and the aggressive, bold typography. To customize, swap the 'leather jacket and white tank top' for any [outfit] to match your brand. The 'glowing red bar' acts as a stylistic focal point that draws the eye directly to the subject's face.",
     "tags": [
@@ -3549,9 +3362,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "This prompt is designed to replicate the clean, high-impact aesthetic of modern streetwear lookbooks. The key to this look is the balance between the bold red graphic tee and the neutral beige background. By using an 85mm focal length, we achieve a flattering portrait compression that keeps the subject sharp while maintaining a professional 'depth of field' look. Pro Tip: To get the typography effect seen in the reference, you can use generative fill in Photoshop after the image is generated, or keep the background clean and minimal to add your own branding in Canva.",
     "tags": [
@@ -3600,9 +3411,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Mastering the Minimalist Editorial Look\n\nThis prompt is engineered to replicate the clean, high-impact aesthetic often found in luxury brand marketing and fashion lookbooks. By utilizing a strong, singular background color—in this case, a vivid royal blue—the subject becomes the undeniable focal point.\n\n#### Lighting & Composition Breakdown\n*   **Lighting:** The key is 'High-Key Studio Lighting'. This involves bright, even light that eliminates harsh shadows while maintaining just enough depth to prevent the image from looking flat. Aim for a soft-box setup.\n*   **Composition:** We use a full-body standing pose with 'hands in pockets' to convey confidence and relaxed authority, which is a staple in modern menswear editorials.\n*   **Typography:** The prompt mentions oversized background text, which is a stylistic choice common in modern 2026-style futuristic advertising.\n\n#### Pro-Tips for Customization\n- **Subject:** Replace '[subject]' with specific ethnicities or fashion styles to match your brand vision.\n- **Color Palette:** Swap 'royal blue' for 'charcoal grey' or 'muted pastels' for a completely different mood.\n- **Styling:** Feel free to describe specific fabric textures, like 'matte nylon' or 'heavy wool,' to give the AI more detail for material rendering.",
     "tags": [
@@ -3650,9 +3459,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Creating the 'Best Friends' Doodle Aesthetic\n\nThis prompt is designed to blend hyper-realistic human portraits with playful, hand-drawn digital graphics. It captures the 'social media' vibe often seen on platforms like Instagram and TikTok, where users enhance their photos with whimsical overlays.\n\n#### Lighting & Composition\n- **Lighting:** We specify 'bright, soft, and natural' to ensure the subjects look inviting and professional while preventing harsh shadows that might clash with the delicate nature of the doodles.\n- **Composition:** The 'selfie' angle is crucial to the authenticity of the shot, creating an intimate, relatable feel between the subjects and the viewer.\n\n#### Pro Tips for Customization\n- **Dynamic Subjects:** Change the [subject] to 'two brothers', 'a mother and daughter', or 'a group of coworkers' to change the narrative.\n- **Customizing Doodles:** Adjust the prompt to include specific themes, such as 'floral botanical doodles' for a spring vibe, or 'geometric neon doodles' for a modern tech-inspired look.\n- **Mood Shift:** Change the color palette from 'pastel' to 'bold and saturated' for a more energetic, pop-art style output.",
     "tags": [
@@ -3701,9 +3508,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### How to Master the Polaroid Aesthetic\nThis prompt is engineered to capture the 'candid, scrapbook' aesthetic popular in lifestyle photography. The secret lies in balancing the warm interior lighting with the specific, tactile elements of the polaroid border and hand-drawn doodles.\n\n### Lighting & Composition Breakdown\n*   **Lighting:** The prompt focuses on 'golden hour' and 'fairy lights,' which provide a high-key, soft-focus background that makes the subjects pop while maintaining a dreamy, intimate atmosphere.\n*   **Composition:** We use a medium-shot framing that emphasizes the physical closeness of the subjects, mimicking the style of an instant camera held at arm's length or by a friend.\n*   **Artistic Details:** The inclusion of 'handwritten doodles' and 'sticky notes' creates a layered storytelling effect, giving the image a personalized, authentic feel.\n\n### Pro Tips for Best Results\n*   **Aspect Ratio:** Always set your aspect ratio to a vertical polaroid format (e.g., --ar 4:5) to ensure the white border is generated correctly.\n*   **Customization:** You can easily swap the outfits in the prompt—try changing the colors to match different seasons or themes to create a unique series.\n*   **Stylization:** If using Midjourney, keep your --stylize value between 250 and 500 to maintain the balance between photorealism and that soft, film-like grain.",
     "tags": [
@@ -3752,9 +3557,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### The Urban Rebellious Chic Aesthetic\n\nThis prompt is engineered to capture the 'quiet confidence' aesthetic often seen in high-end editorial magazines like GQ or Vogue. By focusing on the juxtaposition between the nonchalant subject and the authoritative backdrop of city law enforcement, you create an instant narrative hook that tells a story without needing words.\n\n#### Lighting & Composition\n- **Lighting:** The prompt specifies 'natural golden hour daylight,' which provides soft, flattering highlights on the skin and warm, rich tones to the urban cityscape. This minimizes harsh shadows and gives the image a professional, polished finish.\n- **Composition:** We utilize a mid-shot framing, keeping the subject in the center to maintain focus while allowing the surrounding environment to add context. The 'soft bokeh' depth of field ensures the background police officers are recognizable but don't distract from the main subject.\n\n#### Pro Tips for Customization\n- **Changing the Vibe:** Swap 'white linen shirt' for 'leather biker jacket' to lean into a grittier, more rebellious aesthetic.\n- **Adjusting the Mood:** Change 'golden hour' to 'overcast blue hour' for a colder, more mysterious, and moody atmosphere.\n- **Focus:** If you want to emphasize the city, increase the focal length in your mind—use terms like 'wide angle' to capture more of the NYC architecture.",
     "tags": [
@@ -3804,9 +3607,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "# Scenic Lakeside Off-Road Adventure Portrait\n\nCapture the essence of summer travel and modern lifestyle with this outdoor travel portrait prompt.\n\n### Key Aesthetic Elements\n- **Subject**: Casual relaxed posture leaning against an off-road vehicle.\n- **Wardrobe**: Earth-toned linens and classic aviator sunglasses.\n- **Environment**: High-altitude lake with distant mountains for depth.\n- **Lighting**: Direct yet diffused natural midday sun providing realistic reflections.\n\n### Recommended Parameters\n- **Camera**: 85mm f/2.0 portrait lens for creamy bokeh while keeping the subject and vehicle sharply defined.\n- **Aspect Ratio**: 3:4 for vertical mobile or social lifestyle framing.\n\n### Customization Tips\nSwap the vehicle model, update the clothing palette, or change the time of day to golden hour for varied moods.",
     "tags": [
@@ -3855,9 +3656,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Capture the Essence of Balance\n\nThis prompt is engineered to replicate the clean, aspirational look of luxury lifestyle photography. By focusing on the interplay between the crisp white linen and the cool blue tones of the water, it creates a high-contrast, visually pleasing aesthetic.\n\n#### Lighting & Composition Breakdown\n- **Lighting:** The prompt utilizes 'Golden Hour' lighting to provide a warm, professional glow on the subject's face, creating soft shadows that add depth.\n- **Composition:** The subject is placed in the center of the frame, utilizing the lines of the wooden boat to draw the eye upward. The use of a shallow depth of field (f/2.8) keeps the focus strictly on the subject while softly blurring the background mountains.\n- **Style:** This is designed for clean, crisp, editorial-grade realism. \n\n#### Pro Tips for Customization\n- **Change the Subject:** Swap 'a handsome man' for 'a woman in a flowing silk dress' or 'a traveler with a backpack' to change the narrative.\n- **Adjust the Mood:** Change 'Golden Hour' to 'Overcast Sky' for a moody, melancholic feel.\n- **Refine the Gear:** For a more cinematic look, you can add 'shot on Kodak Portra 400' to the prompt to introduce subtle film grain and warmer color shifts.",
     "tags": [
@@ -3905,9 +3704,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Overview\nThis prompt merges photorealistic black-and-white subject rendering with retro comic-book pop art graphics. The combination of high-contrast monochrome photography and a saturated red halftone background creates an eye-catching YouTube thumbnail or avatar aesthetic.\n\n### Key Style Elements\n- **Monochrome Subject:** The subject is rendered entirely in grayscale, creating a distinct separation from the colorful background.\n- **Halftone Backdrop:** A circular red badge featuring comic-style halftone dot gradients adds graphic flair.\n- **3D Typography & Decals:** Bold extruded text and stylized comic accent marks deliver a modern social media PFP vibe.\n\n### Customization Tips\n- **Text Replacement:** Swap 'ZEENA' for any custom gamertag or name.\n- **Color Palette:** Change the red circular backdrop to neon purple, cyan, or yellow for different mood contrasts.\n- **Subject Props:** Replace the smartphone or sunglasses with headphones, cameras, or gaming controllers.",
     "tags": [
@@ -3955,9 +3752,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Prompt Breakdown\nThis prompt combines vibrant summer fashion with modern social avatar styling:\n- **Subject**: Cheerful portrait wearing a yellow sunhat with floral accents and a ruffled sundress.\n- **Framing**: Central golden neon circle overlay framing the subject against a dark backdrop.\n- **Color Palette**: High-contrast combination of bright sunflower yellow against deep magenta and violet tones.\n- **Lighting & Optics**: Soft key light on the face balanced with vivid neon rim lighting and horizontal anamorphic flares.\n\n### Customization Tips\n- Swap out the yellow outfit and hat color for pastel blue or emerald green.\n- Change the magenta estate background to a tropical beach or futuristic cityscape.\n- Adjust the glowing circular frame color to complement your primary subject palette.",
     "tags": [
@@ -4005,9 +3800,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Prompt Concept\nThis prompt captures an effortless, modern menswear aesthetic paired with a rugged vehicle and clean architectural background.\n\n### Key Elements\n- **Subject & Styling:** Oversized white crew-neck tee, light-wash denim, minimalist white sneakers, and dark sunglasses.\n- **Environment:** Urban outdoor setting with a graphic striped backdrop and clean asphalt ground.\n- **Lighting:** Soft, even overcast daylight that prevents harsh shadows and preserves garment texture.\n- **Composition:** Eye-level, full-body portrait framed diagonally beside the SUV for depth.\n\n### Customization Tips\n- Swap the vehicle type (e.g., vintage truck, sports car) for different themes.\n- Adjust the outfit colors or accessories to match specific streetwear brands.\n- Modify the background pattern to concrete, glass, or brick for varied urban backdrops.",
     "tags": [
@@ -4055,9 +3848,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Overview\\nThis prompt recreates a candid, golden hour lifestyle scene focusing on natural posture, soft backlighting, and warm ambient tones.\\n\\n### Key Elements\\n- **Subject**: Casual pose perched on a vehicle trunk, holding a tumbler to give the hands natural placement.\\n- **Lighting**: Low-angle sunset backlighting providing strong edge highlights and gentle lens flare.\\n- **Composition**: Medium-full profile view framing the subject against a low horizon and grassy field.\\n\\n### Customization Tips\\n- Swap the vehicle color or model to shift the vibe from everyday casual to vintage road trip.\\n- Adjust time-of-day tags between 'golden hour' and 'blue hour' for cooler, moodier lighting.",
     "tags": [
@@ -4103,9 +3894,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Overview\nThis prompt creates a surreal double-exposure portrait merging traditional portraiture with nature elements.\n\n### Key Elements\n- **Subject**: Indian woman in a powder blue saree with traditional silver jewelry.\n- **Double Exposure**: River landscape embedded within the fabric and forearm; sky and birds blended into the hair.\n- **Lighting & Backdrop**: Soft studio key lighting with an isolated, neutral off-white background.\n\n### Customization Tips\n- **Swap Environment**: Replace the pine forest and river with ocean waves, desert dunes, or a mountain range.\n- **Adjust Attire**: Change the blue saree to contemporary wear or cultural garments to shift the aesthetic.",
     "tags": [
@@ -4152,9 +3941,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "# Desert Sunset Horseback Rider Editorial Prompt\n\nRecreate this high-fashion, cinematic equestrian action portrait in desert dunes at sunset.\n\n### Key Aesthetic Elements\n- **Subject:** Fashion-forward rider in dark monochrome wardrobe atop a muscular black horse.\n- **Setting:** Vast desert sand dunes with dynamic motion dust.\n- **Lighting:** Golden hour sunset providing strong contrast, warm rim lighting, and a vibrant fiery sky.\n- **Optics:** Telephoto focal length (85mm) to compress the background dunes while keeping crisp focus on subject motion.\n\n### Customization Variables\n- **Rider Outfit:** Change from modern streetwear/formalwear to traditional equestrian or sci-fi nomad gear.\n- **Animal:** Swap the black horse for an Arabian white stallion, camel, or futuristic mount.\n- **Time of Day:** Shift from sunset to blue hour or midday desert glare.\n\n### Pro Tip\nUse fast shutter simulation terms (e.g., *'freeze-frame action', 'kicking up fine sand'*) to ensure sharp hoof definition and dynamic sand textures without motion blur.",
     "tags": [
@@ -4201,9 +3988,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "This prompt focuses on the interplay between reality and shadow. By utilizing 'chiaroscuro' lighting, you force the AI to prioritize high-contrast elements. The key to the 'interaction' effect is the specific mention of the silhouette casting onto the wall, which forces the model to calculate a secondary figure that isn't physically present in the scene. For best results, use models like Flux.1 or Midjourney v6. Pro-tip: If the shadow isn't clear enough, adjust the weight of the shadow description or increase your stylize parameter to enhance the artistic contrast.",
     "tags": [
@@ -4251,9 +4036,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "## Overview\nThis prompt recreates a bold, high-energy beverage advertisement aesthetic featuring dynamic perspective and outdoor adventure tones.\n\n## Lighting & Composition\n- **Composition**: Forced perspective foreground focus with medium close-up subject and blurred scenic background.\n- **Lighting**: Direct natural sunlight mixed with subtle fill light for crisp reflections on bottle condensation.\n- **Atmosphere**: Rugged, dusty outdoor environment with vibrant green color pop against earthy tones.\n\n## Customization Tips\n- Replace the beverage bottle with any branded product or object.\n- Swap the mountain pass and 4x4 for coastal or desert adventure settings.",
     "tags": [
@@ -4302,9 +4085,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "## Overview: Coastal Resort Aesthetic. This prompt captures a high-end summer lifestyle look featuring relaxed menswear on a wooden ocean pier. ### Key Elements: 1. **Subject & Styling:** Crisp white linen, neutral shorts, leather loafers, and classic sunglasses. 2. **Environment:** Sunlit wooden dock extending into serene tropical water under a blue sky. 3. **Lighting & Lens:** High-noon to mid-afternoon natural sun, captured on an 85mm portrait lens for natural proportions and gentle background separation. ### Customization Tips: Swap the shirt color or replace the wooden pier with a yacht deck or beach promenade.",
     "tags": [
@@ -4351,9 +4132,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Overview\nThis prompt recreates a trending social media portrait aesthetic that fuses high-end lifestyle photography with energetic anime/VFX-style power auras.\n\n### Key Aesthetic Elements\n- **Subject & Wardrobe:** Sharp white shirt, aviator sunglasses, modern grooming.\n- **Environment:** Open desert sand dunes under clear sky with a luxury SUV backdrop.\n- **Visual FX:** Electric cyan silhouette aura with a horizontal lens flare over the sunglasses.\n- **Lighting Balance:** Warm golden hour sunlight paired with cool neon rim effects.\n\n### Customization Tips\n- Swap the vehicle (e.g., sports car, vintage 4x4) or replace the desert with an urban rooftop.\n- Change aura colors to gold, crimson, or purple to alter the mood.",
     "tags": [
@@ -4405,8 +4184,7 @@
       "requestedByName": null,
       "requestedByEmail": null,
       "requestedByAvatar": null,
-      "requestedPromptDescription": null,
-      "isPremium": false
+      "requestedPromptDescription": null
     },
     "variables": [],
     "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
@@ -4507,9 +4285,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "# Vintage Countryside Picnic Couple Portrait Guide\n\nCapture timeless romantic warmth with this high-detail lifestyle portrait prompt inspired by mid-century nostalgic countryside scenes. This prompt balances soft natural daylight, retro fashion choices, and rich background depth.\n\n## Visual Elements Breakdown\n\n- **Subject & Pose:** A young couple sitting comfortably on a blanket in a field, exuding warmth and genuine affection.\n- **Wardrobe & Styling:** Classic retro attire featuring a vintage floral print sundress and a breathable neutral linen shirt to enhance the nostalgic mood.\n- **Environment:** An idyllic sunny meadow surrounded by rolling hills, ancient oak trees, and a classic wicker picnic basket setup.\n- **Color Palette & Lighting:** Sun-drenched natural lighting with warm skin tones, vibrant greens, soft blues, and subtle film grain texture.\n\n## Customization Options\n\n- **Subject:** Replace `South Asian young man and South Asian young woman` with `[ethnicity] [age group] couple` to change demographic.\n- **Outfit:** Modify `vintage floral print A-line sundress` or `light linen button-up shirt` to alter wardrobe styles.\n- **Setting:** Switch `open summer meadow` to `golden hour beach setting` or `autumn oak park` for different seasonal feelings.",
     "tags": [
@@ -4556,9 +4332,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Creating Cinematic Romance\nThis prompt is engineered to capture the 'Golden Hour' aesthetic, emphasizing soft, flattering light and natural textures. By using an 85mm lens specification, the AI focuses on a shallow depth of field, ensuring the couple pops against the beautifully blurred background of flowers. \n\n### Lighting & Composition Breakdown\n- **Golden Hour:** We specify warm, natural light to create that gentle glow on the skin tones.\n- **Depth of Field:** By mentioning a creamy bokeh and 85mm lens, the prompt forces the AI to separate the subjects from the busy meadow background, mimicking professional DSLR optics.\n- **Textural Detail:** The mention of specific fabrics like 'chiffon' and 'linen' helps the model generate high-fidelity material surfaces that look authentic.\n\n### Pro Tips for Best Results\n- **Aspect Ratio:** Use --ar 2:3 or --ar 4:5 to get that classic portrait photography look.\n- **Customization:** Swap the [subject] to change the ethnicities or clothing styles while keeping the core environmental description consistent.\n- **Lighting:** If you want a moodier look, replace 'golden hour' with 'soft overcast morning light' to achieve a different emotional resonance.",
     "tags": [
@@ -4606,9 +4380,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Capturing the Past: Vintage Scrapbook Aesthetics\n\nThis prompt is engineered to recreate the sentimental, tactile feel of a 1970s scrapbook. \n\n**Key Elements:**\n- **Composition:** The prompt uses a composite layout, layering a primary subject photo with secondary 'inset' photos to mimic physical print placement on aged paper.\n- **Lighting:** By specifying 'golden hour' and 'sun-drenched,' we ensure a warm, inviting glow that complements the sepia-adjacent tones of mid-70s film stock.\n- **Texture:** The addition of specific assets like 'lace tape,' 'torn edges,' and 'pressed wildflowers' forces the AI to move beyond a simple photograph into a multi-layered artistic collage.\n\n**Pro-Tips for Customization:**\n- Change the year in the text to shift the historical era (e.g., 1950s vs 1990s).\n- Replace the couple with different subjects like 'a grandmother gardening' or 'childhood friends' to change the narrative.\n- Adjust the color palette by adding terms like 'faded Polaroid aesthetic' or 'Kodachrome film' for different color saturation results.",
     "tags": [
@@ -4657,9 +4429,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Master the Traditional Indian Fashion Aesthetic\nThis prompt is engineered to capture the elegance and intricate detail of traditional Indian ethnic attire in a professional studio setting. \n\n#### Lighting & Camera Breakdown\n- **Lens:** We specify an 85mm lens, which is the industry standard for fashion portraiture as it provides flattering compression and soft background bokeh.\n- **Lighting:** The prompt uses 'soft, diffused light' to mimic a high-end fashion studio strobe setup, ensuring shadows are minimal and fabric colors (like the vibrant fuchsia) pop against the neutral backdrop.\n- **Composition:** By requesting a 'multi-view montage,' the AI is instructed to create a catalog-style layout that is perfect for fashion brands and designers looking to showcase all angles of a garment.\n\n#### Pro Tips for Customization\n- **Colors:** Swap 'fuchsia pink' for 'emerald green' or 'royal blue' to change the entire mood of the lookbook instantly.\n- **Details:** Add modifiers like 'intricate gold embroidery' or 'chiffon fabric texture' to adjust the material aesthetic.\n- **Model:** You can specify the 'model ethnicity' or 'hairstyle' at the beginning of the prompt to tailor the look to a specific campaign concept.",
     "tags": [
@@ -4708,9 +4478,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### How to Use This Prompt\nThis prompt is engineered to capture the clean, sophisticated look of modern studio fashion photography. By focusing on a single, strong subject against a monochromatic, vibrant background, you achieve a timeless look suitable for magazine spreads or professional portfolios.\n\n### Lighting & Camera Breakdown\n- **Lighting:** We use Rembrandt-style lighting to create a triangular light shape on the subject's shadowed cheek. This adds drama and a premium feel.\n- **Optics:** The 85mm lens choice is intentional; it provides the classic 'portrait length' compression that prevents distortion and separates the subject from the background perfectly.\n- **Composition:** The subject is seated slightly off-center to create a dynamic 'rule of thirds' look, which feels more professional than a static dead-center composition.\n\n### Pro Tips for Customization\n- **Swap the Backdrop:** Change 'crimson red' to 'deep navy blue' or 'forest green' to shift the mood from energetic to calm/serious.\n- **Change the Apparel:** Switch 'black button-down shirt' for 'oversized designer knitwear' or 'minimalist blazer' to fit different seasons or style concepts.\n- **Refine the Subject:** Define specific traits like age, ethnicity, or hairstyle to tailor the outcome to your creative vision.",
     "tags": [
@@ -4758,9 +4526,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Mastering the Mirror Selfie Aesthetic\n\nThis prompt captures the essence of a clean, 'quiet luxury' lifestyle photograph. The key to this aesthetic is the balance between the subject's outfit and the minimalist environment. \n\n#### Lighting & Composition\n- **Lighting:** The prompt relies on 'soft, natural, and diffuse' light. By specifying this, we ensure the image lacks harsh highlights or muddy shadows, mirroring the look of a bright morning scene.\n- **Composition:** The framing is centered on the reflection, allowing the environment to add context without overwhelming the subject. \n\n#### Camera & Optics\n- **Smartphone Aesthetic:** The prompt specifies 'professional smartphone camera' to maintain the realistic, slightly candid nature of a mirror selfie, avoiding overly cinematic or studio-flash looks.\n\n#### Pro Tips for Customization\n- **Swap the Outfit:** Replace 'deep maroon sleeveless top' with 'emerald green silk blouse' or 'chunky knit oversized sweater' to change the season or vibe.\n- **Adjust the Environment:** Modify 'modern ceramic sink' to 'vintage brass fixtures' or 'concrete minimalist basin' to change the interior design style of the background.",
     "tags": [
@@ -4809,9 +4575,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Visual Breakdown\\n\\nThis prompt captures an authentic lifestyle aesthetic centered on indoor ambient warmth and natural portrait composition.\\n\\n### Key Elements\\n- **Subject**: South Asian woman with natural wavy hair, minimal makeup, and satin clothing.\\n- **Setting**: Modern bathroom vanity with warm pendant background glow.\\n- **Optics & Composition**: Eye-level vertical orientation framing the smartphone and reflection.\\n\\n### Customization Tips\\n- Swap `emerald green satin wrap blouse` for other textures like `oversized knit sweater` or `linen shirt`.\\n- Change the setting by altering `bathroom vanity` to `hotel elevator` or `sunlit dressing room`.",
     "tags": [
@@ -4858,9 +4622,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Master the Art of Natural Portraits\n\nThis prompt is designed to capture the essence of a relaxed yet professional outdoor portrait. The key to achieving this look lies in the contrast between the subject and the blurred background.\n\n#### Lighting & Composition\n- **Lighting:** The shot utilizes soft, natural light, typical of late afternoon or 'golden hour'. This prevents harsh shadows and provides a flattering glow on the skin.\n- **Composition:** The subject is placed slightly off-center using the rule of thirds, with a shallow depth of field (f/1.8) to isolate them from the environment.\n- **Camera Settings:** We specify an 85mm lens, which is the gold standard for portrait photography because it compresses the background and produces minimal distortion on facial features.\n\n#### Pro Tips for Success\n- **Focus:** Ensure your model is sharp while the background is completely diffused. \n- **Attire:** Simple, monochromatic clothing helps the subject stand out against busy natural backgrounds.\n- **Pose:** The 'hand shielding eyes' gesture adds a layer of authentic, candid movement to the image.",
     "tags": [
@@ -4876,7 +4638,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 6,
+    "viewsCount": 5,
     "copiesCount": 1,
     "likesCount": 2,
     "bookmarksCount": 0,
@@ -4893,7 +4655,7 @@
       "metaDescription": "Learn how to recreate this stunning outdoor portrait look with professional lighting and camera techniques."
     },
     "createdAt": "2026-08-23T09:22:40.003+00:00",
-    "updatedAt": "2026-09-08T06:06:37.956+00:00",
+    "updatedAt": "2026-09-06T05:16:57.549+00:00",
     "publishedAt": "2026-08-23T09:22:40.003+00:00"
   },
   {
@@ -4908,9 +4670,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Crafting the Perfect Golden Hour Portrait\n\nThis prompt is designed to emulate professional lifestyle photography found in high-end fashion and lifestyle magazines. \n\n#### Lighting Breakdown\nThe core of this image is the **Golden Hour lighting**. By specifying this, we tell the AI to use low-angle, warm-toned sunlight that creates a soft glow on the subject's skin and adds a magical, ethereal quality to the background sunflowers. \n\n#### Camera Optics\nUsing an **85mm f/1.8 lens** simulation is key for portraiture. This focal length provides natural facial compression, while the wide aperture (f/1.8) ensures a creamy, smooth bokeh (blur) that separates the subject from the busy market background, keeping the focus entirely on the subject and the rose.\n\n#### Pro Tips for Customization\n- **Changing Subjects:** Swap 'South Asian woman' for any other cultural or descriptive identity.\n- **Adjusting Mood:** Replace 'Golden hour' with 'Cool morning mist' or 'Dusk twilight' for a completely different emotional tone.\n- **Outfit Control:** Feel free to change the fabric textures; for instance, 'linen bohemian top' will provide a different light-reflective quality than the current print style.",
     "tags": [
@@ -4963,9 +4723,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Unlocking the Golden Hour Aesthetic. This prompt leverages the power of backlighting to create a premium, magazine-quality portrait. The key to this image is the combination of the 'rim-light' effect and the shallow depth of field (f/1.8). By placing the subject against a sunset, we create a silhouette-like contour that makes the subject 'pop' from the background. **Lighting Setup:** The prompt forces a directional light source from behind the subject, which creates those beautiful sun rays and highlights on the hair and shoulders. **Pro Tip:** Use this prompt with a high '--stylize' value in Midjourney to enhance the atmospheric haze and cloud details. If you want a more urban feel, replace 'mountain valley' with 'city skyline'.",
     "tags": [
@@ -5013,9 +4771,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Creating the Perfect Golden Hour Portrait This guide breaks down the aesthetic of this high-end lifestyle portrait. The key to this look is the balance between the warm sunset backlight and the cool, soft tones of the lavender field. The contrast between the white linen and the purple flora creates a clean, premium visual hierarchy. ### Lighting & Composition The image utilizes 'rim lighting'—a technique where the sun is placed directly behind the subject to create a glowing halo effect. This separates the subject from the background. We use an 85mm focal length to ensure a flattering compression of features and a soft, creamy background bokeh that directs focus entirely to the subject. ### Expert Tips - Use a low aperture (f/1.8 to f/2.8) to maximize depth of field separation. - If the colors feel too saturated, adjust the 'vibrance' setting in post-production rather than overall saturation. - For the best results in AI generators, emphasize 'rim lighting' in your prompt to capture that signature sunset glow.",
     "tags": [
@@ -5063,9 +4819,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Mastering the Creative Collage Portrait\n\nThis prompt is designed to help you create a modern, social-media-friendly scrapbook collage using AI. It balances a high-quality central portrait with playful, hand-crafted aesthetic elements.\n\n#### Why this prompt works:\n*   **Compositional Balance:** By specifying the layout as a 'scrapbook collage,' the AI understands how to layer elements like stickers and secondary frames around a main subject.\n*   **Subject Focus:** We emphasize 'photorealistic' for the main subject to ensure high fidelity while allowing the surrounding elements to have a more stylized, graphic feel.\n\n#### Pro Tips for Customization:\n*   **Subject Variation:** Change the 'pink ethnic dress' to 'a modern business suit' or 'casual denim jacket' to match your specific brand or project.\n*   **Theming:** Update the 'sticker' list to match seasonal themes, such as 'snowflake stickers' for winter or 'floral stickers' for spring.\n*   **Color Palette:** You can replace 'vibrant pink' with any hex code or color palette to match your aesthetic mood board.",
     "tags": [
@@ -5118,8 +4872,7 @@
       "requestedByName": null,
       "requestedByEmail": null,
       "requestedByAvatar": null,
-      "requestedPromptDescription": null,
-      "isPremium": false
+      "requestedPromptDescription": null
     },
     "variables": [],
     "articleContent": "This prompt is meticulously designed to capture the essence of 'Golden Hour' portraiture. By focusing on the 85mm f/1.8 lens setting, the AI is instructed to create a shallow depth of field (bokeh) that mimics high-end professional camera gear. The key to the 'dreamy' feel is the combination of rim-lighting and a soft-focus background. To customize this, swap the dress color in the prompt or change the 'subject' description to alter the model's appearance while maintaining the aesthetic consistency.",
@@ -5167,9 +4920,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Overview\nThis prompt recreates a romantic, vintage scrapbook layout combining a full-color central portrait with black-and-white instant film accents, botanical elements, and calligraphic scraps.\n\n### Key Compositional Elements\n- **Centerpiece**: High-detail color studio portrait.\n- **Secondary Visuals**: Four monochrome polaroid-style sub-frames attached with translucent tape.\n- **Accents**: Pressed, dried tea roses and torn parchment with cursive writing.\n- **Backdrop**: Textured, off-white fine art paper.\n\n### Customization Variables\n- **Subject**: Replace ethnic attire or model identity by altering cultural and clothing keywords.\n- **Botanicals**: Swap dried roses with pressed lavender, autumn leaves, or eucalyptus.\n- **Color Scheme**: Adjust the central garment color to contrast the neutral paper.",
     "tags": [
@@ -5216,9 +4967,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Achieve the Perfect Cozy Fall Aesthetic\n\nThis prompt is engineered to capture the quintessential 'cozy fall' vibe that performs exceptionally well on social media. By leveraging specific descriptors like 'burnt-orange ribbed knit' and 'soft golden glow,' the AI understands the precise material textures and color temperature required.\n\n#### Lighting & Composition\n- **Lighting:** The prompt focuses on 'warm golden' light combined with fairy light bokeh, which mimics the real-life behavior of late afternoon or evening indoor photography.\n- **Optics:** By specifying a '35mm lens' at 'f/2.8,' we create a realistic sense of depth where the subject is sharp, but the background bedroom details remain slightly soft, maintaining the 'selfie' look without it appearing too flat.\n\n#### Pro Tips for Customization\n- **Subject:** Replace 'woman with voluminous curly hair' with specific traits (e.g., 'woman with blonde bob haircut') to tailor the subject.\n- **Setting:** Change 'bedroom' to 'coffee shop' or 'living room' for a different backdrop while keeping the autumn theme.\n- **Fashion:** Switch the color palette (e.g., 'deep forest green' instead of 'burnt orange') for a different seasonal mood.",
     "tags": [
@@ -5266,9 +5015,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Creating the Perfect Moody Portrait\n\nThis prompt is engineered to replicate high-end fashion editorial photography. The key to achieving this look is the specific combination of **rim lighting** (to separate the subject from the background) and **directional Rembrandt lighting** (to add depth and drama to the facial features).\n\n#### Lighting and Composition Breakdown\n- **Rim Lighting:** This is essential for the 'glow' around the hair and shoulders, which creates a premium, high-production look.\n- **Depth of Field:** By specifying an 85mm lens at f/1.8, the prompt instructs the AI to create a soft, blurred background that isolates the subject.\n- **Atmosphere:** The inclusion of 'rolling fog' adds texture to the dark background, preventing it from appearing flat or boring.\n\n#### Pro Tips for Customization\n- **Color Palette:** Swap 'dark grey studio' for 'deep navy' or 'burnt amber' to change the mood of the ambient light.\n- **Subject:** You can replace the leather jacket with a tailored suit or a distressed vintage coat to shift the character archetype.\n- **Facial Features:** Use modifiers like 'scruffy beard', 'short buzz cut', or 'piercing blue eyes' to customize the subject's identity.",
     "tags": [
@@ -5317,9 +5064,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Creating Cinematic Lifestyle Portraits\n\nThis prompt is engineered to capture the quintessential 'rugged wanderer' aesthetic. It balances the sharp, metallic details of a cafe racer motorcycle with the soft, organic textures of a pine forest background.\n\n#### Lighting & Composition\n- **Lens Choice:** The use of an 85mm lens in the prompt ensures a flattering compression of the subject's features, separating them effectively from the background.\n- **Depth of Field:** By specifying an f/1.8 aperture, we achieve the dreamy bokeh effect where the forest blurs, keeping the focus entirely on the rider.\n- **Color Grading:** The prompt emphasizes a 'muted color palette,' which creates a sophisticated, timeless feel rather than a high-saturation digital look.\n\n#### Tips for Customization\n- **Subject:** Swap 'young man' for 'woman' or 'professional athlete' to change the character's narrative.\n- **Motorcycle:** Change 'vintage cafe racer' to 'adventure touring motorcycle' for a completely different vibe.\n- **Environment:** Replace 'forest road' with 'coastal highway' or 'urban industrial alley' to shift the atmosphere from moody to gritty.",
     "tags": [
@@ -5366,9 +5111,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### The Aesthetic Breakdown\nThis prompt is engineered to replicate the modern 'social media influencer' aesthetic. Key components include:\n\n* **Lighting:** The LED strip perimeter lighting is the most critical element. It creates a soft, wrap-around glow that eliminates harsh shadows on the subject's face while highlighting the clothing.\n* **Composition:** The subject is centered, utilizing the mirror to provide depth. Including the shelving unit adds environmental storytelling (sneakers and magazines), which signals status and personal style.\n* **Camera Optics:** We simulate a high-end mobile camera using a 35mm focal length, which is standard for street-style photography to ensure minimal distortion.\n\n### Pro Tips for Customization\n* **Change the Look:** Replace 'black graphic hoodie' with 'oversized denim jacket' or 'luxury trench coat' to shift the fashion vibe instantly.\n* **Modify the Environment:** Add 'raw concrete walls' or 'neon wall decor' to make the background grittier.\n* **Fine-Tuning:** If the model makes the face too artificial, add 'hyper-realistic skin texture, subtle facial hair' to the prompt to maintain human-like authenticity.",
     "tags": [
@@ -5416,9 +5159,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "This prompt captures the popular 'gaming aesthetic' often seen on social media platforms like Instagram and TikTok. The key to this look is the contrast between the subject and the vibrant, saturated background lighting. The prompt specifically instructs the model to prioritize a 35mm look, which provides a natural, flattering depth of field commonly associated with premium smartphone or DSLR portrait photography. Pro tip: To customize this, change the 'red neon lighting' in the prompt to 'cyan and magenta vaporwave lighting' or 'warm gold studio lighting' to completely shift the mood from 'gamer' to 'urban lifestyle'. Ensure your output settings favor a 9:16 aspect ratio to maintain the authentic phone-selfie feel.",
     "tags": [
@@ -5466,9 +5207,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Capture the Essence of Luxury Travel\nThis prompt is engineered to emulate high-end lifestyle photography, perfect for creating visuals that convey success, travel, and professionalism. The focus is on clean lines, balanced natural lighting, and a shallow depth of field that separates the subject from the busy tarmac environment.\n\n### Lighting & Camera Breakdown\n- **Lighting**: The prompt specifies natural bright daylight, which prevents harsh shadows on the subject's face while maintaining a high-contrast, clean look typical of daylight outdoor photography.\n- **Camera Optics**: By using a 35mm lens designation, we achieve a natural field of view that feels human-eye compatible, striking the perfect balance between the subject's portrait and the environmental context of the private jet.\n\n### Pro Tips for Success\n- **Subject Customization**: You can modify the subject's attire (e.g., 'wearing a casual linen shirt' or 'wearing a pilot's uniform') to change the narrative.\n- **Setting Variations**: Swap the 'airport tarmac' for 'a luxury marina with a yacht' to adapt the prompt for different luxury lifestyle themes while maintaining the same compositional structure.",
     "tags": [
@@ -5539,8 +5278,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 20,
-    "copiesCount": 9,
+    "viewsCount": 16,
+    "copiesCount": 8,
     "likesCount": 1,
     "bookmarksCount": 0,
     "seoTitle": "Cinematic Moonlit Portrait Photography Prompt",
@@ -5556,7 +5295,7 @@
       "metaDescription": "Learn how to generate stunning cinematic moonlit portraits using this professional photography prompt optimized for Midjourney and Gemini."
     },
     "createdAt": "2026-08-23T05:47:43.235+00:00",
-    "updatedAt": "2026-09-08T07:00:02.674+00:00",
+    "updatedAt": "2026-09-06T23:34:26.554+00:00",
     "publishedAt": "2026-08-23T05:47:43.235+00:00"
   },
   {
@@ -5576,8 +5315,7 @@
       "requestedByName": null,
       "requestedByEmail": null,
       "requestedByAvatar": null,
-      "requestedPromptDescription": null,
-      "isPremium": false
+      "requestedPromptDescription": null
     },
     "variables": [],
     "articleContent": "### Master the Art of Storytelling Portraits\nThis prompt is engineered to capture a moment of profound introspection. By combining a crisp, sharp focal point on the subject with a blurred, cluttered background, you create a sense of 'memory' that feels tactile and alive. \n\n**Lighting Breakdown:**\n- **Natural Window Light:** The key to this look is unidirectional light. Position your light source at a 45-degree angle to the subject to create soft 'Rembrandt' style shadows that add volume to the face.\n\n**Camera Optics:**\n- **35mm or 50mm Lens:** Using a wider aperture (f/1.8 to f/2.8) ensures that the complex background of photos and notes doesn't distract from the emotional weight of the subject's expression.\n\n**Pro Tip:** \nIf you want to customize this, replace [subject] with specific attributes like 'a young woman with freckles' or 'an elderly man with silver hair' to drastically change the narrative arc of the portrait.",
@@ -5626,9 +5364,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "# Master the Lifestyle Editorial Collage Aesthetic\n\nThis prompt is designed to help you create a highly stylized, magazine-quality collage that blends portrait photography with graphic design elements. \n\n## How the Prompt Works\n\n- **Subject Consistency:** By defining the subject's outfit (denim jacket, beige sweater) and features (dark hair), the AI maintains a consistent look across the different frame cutouts.\n- **Texture Layering:** The mention of 'torn paper textures' and 'beige cream paper' creates a tactile, physical feel rather than a flat digital image.\n- **Compositional Direction:** By specifying 'multiple candid portrait shots,' you force the model to distribute the subject's actions, creating a dynamic visual flow.\n\n## Pro Tips for Customization\n\n- **Typography:** If you want specific phrases, replace the quotes in the prompt with your own custom branding or motivational slogans.\n- **Color Palette:** You can change the 'warm beige cream' to 'monochrome grey' or 'muted earth tones' to match your brand's specific aesthetic.\n- **Layout Complexity:** Use terms like 'asymmetrical grid' or 'organized layout' to shift how the frames overlap.",
     "tags": [
@@ -5677,9 +5413,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "This prompt combines the crisp precision of studio fashion photography with the chaotic beauty of fluid art. The core of this aesthetic lies in the contrast between the realistic subject matter (the model, clothing, and skin) and the surreal, abstract element (the melting paint). For the best results, use a model with strong photorealistic capabilities like Midjourney v6 or Flux.1. The secret to this look is the juxtaposition of 'linen textures' and 'liquid acrylic drips', which forces the AI to blend organic material with semi-solid fluid effects. Experiment with changing the clothing color and the paint color to match your subject's palette.",
     "tags": [
@@ -5732,8 +5466,7 @@
       "requestedByName": null,
       "requestedByEmail": null,
       "requestedByAvatar": null,
-      "requestedPromptDescription": null,
-      "isPremium": false
+      "requestedPromptDescription": null
     },
     "variables": [],
     "articleContent": "### Mastering the Urban Streetwear Aesthetic\n\nThis prompt is designed to replicate the high-energy, cinematic look of modern streetwear lookbooks. The key to this aesthetic lies in the combination of raw, industrial environments and highly stylized, directional lighting. \n\n#### Lighting Breakdown\n- **Crimson Rim Light:** Provides the sharp edge definition and color contrast that makes the subject pop against the desaturated background.\n- **Industrial Softbox:** A soft, neutral light on the face to maintain detail while keeping the mood 'gritty'.\n\n#### Composition Tips\n- **Low Angle:** By specifying a low-angle shot, we force the camera to prioritize the sneakers and creates a sense of scale, which is classic for streetwear photography.\n- **Foreground Interest:** Using a wide-angle lens (like a 24mm or 35mm equivalent) allows for the 'distorted' close-up look on the footwear, which adds depth and realism.\n\n#### Pro Tips for Customization\n- **Subject:** Replace [subject] with specific descriptors like 'a professional model with braided hair' or 'a stylish young man with a beanie'.\n- **Typography:** You can modify the typography prompt to change the text overlays, though AI models vary in their text-rendering accuracy. For perfect text, try generating the image without text and adding it later in Photoshop or Canva using a distressed font.",
@@ -5783,9 +5516,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "This prompt leverages the contrast between mundane urban life and supernatural entities to create a compelling visual narrative. The key to the 'photographic' look lies in the specific camera settings: a 35mm lens provides a wide but natural perspective, while the f/1.8 aperture creates the necessary depth of field to isolate the subject from the busy background. To customize this, replace the creature description to shift the genre from dark fantasy to sci-fi or ghost-based storytelling.",
     "tags": [
@@ -5835,9 +5566,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Master the Ethereal Hashira Aesthetic\n\nThis prompt is engineered to capture the perfect balance between high-end professional cosplay photography and the mystical atmosphere of anime. By focusing on specific texture keywords like 'butterfly-patterned haori' and lighting modifiers like 'volumetric lighting', you can achieve a professional-grade result.\n\n#### Lighting and Atmosphere\n- **Rim Lighting:** Crucial for separating the subject from the dark background, giving the hair and shoulders that subtle glow seen in high-end studio portraits.\n- **Volumetric Fog:** Adds depth and mystery, creating the 'magical' look that defines the aesthetic of the butterfly character.\n\n#### Pro Tips for Customization\n- **Subject:** Replace [subject] with different character descriptions to adapt this template for other anime archetypes.\n- **Color Palette:** You can shift the color scheme (e.g., swapping purple for ocean blue or fiery red) by modifying the butterfly and fog colors in the prompt to match specific element themes.",
     "tags": [
@@ -5886,9 +5615,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Master the Art of Cultural Editorial Photography\n\nThis prompt is engineered to capture the perfect balance between traditional elegance and modern minimalist aesthetics. By focusing on the texture of the silk saree and the interplay of natural lighting, you can achieve a high-end magazine look.\n\n#### Lighting & Composition Breakdown\n- **Lighting:** We specify 'soft natural side-lighting' to create depth. This adds volume to the subject and makes the gold embroidery pop against the dark blue fabric.\n- **Camera Optics:** The '85mm lens' is the gold standard for portraiture, providing a flattering compression of facial features and a shallow depth of field.\n- **Background:** The clean white background keeps the focus entirely on the subject and the typography, typical of modern luxury brand campaigns.\n\n#### Pro Tips for Customization\n- **Typography:** You can swap 'PRIYA' with any name or brand word to customize this for personal branding or client work.\n- **Color Palette:** Try changing 'navy blue' to 'emerald green' or 'crimson red' to alter the mood of the piece while keeping the elegant structure.",
     "tags": [
@@ -5941,8 +5668,7 @@
       "requestedByName": null,
       "requestedByEmail": null,
       "requestedByAvatar": null,
-      "requestedPromptDescription": null,
-      "isPremium": false
+      "requestedPromptDescription": null
     },
     "variables": [],
     "articleContent": "This prompt is meticulously designed to capture the authentic vibe of a mountain adventure. By focusing on the 'first-person selfie' perspective, the AI mimics the natural distortion and focal length of a smartphone camera. The lighting breakdown utilizes 'golden hour' logic—where the light source is placed behind the subject—to create that iconic, warm rim-lighting effect on the hair and jacket. To customize this, simply swap the subject's outfit or the type of mountain scenery. Use a higher stylize value if you want a more cinematic, idealized look, or keep it lower for a raw, realistic photographic result.",
@@ -5991,9 +5717,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "This prompt is designed to capture the quintessential 'luxury lifestyle' aesthetic seen in automotive commercial photography. The core of this image relies on the contrast between the sharp, masculine tailoring of the suit and the reflective, smooth surfaces of the luxury vehicle. By utilizing a wide-aperture setting (f/1.8), we create a shallow depth of field that keeps the subject as the clear focal point while allowing the busy showroom environment to fade into a clean, professional bokeh. To customize, swap the [subject] description (e.g., 'a woman in a red silk blouse') or the [setting] (e.g., 'an outdoor coastal road at sunset') to shift the narrative from showroom luxury to adventurous travel.",
     "tags": [
@@ -6042,9 +5766,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Unleashing Elemental Power in Your AI Art\n\nThis prompt is engineered to balance human portraiture with high-intensity VFX. By focusing on the 85mm focal length and an f/1.8 aperture, we achieve a professional 'bokeh' effect that separates the subject from the chaotic fire background. \n\n#### Key Lighting Breakdown:\n* **Rim Lighting:** The flames act as the primary light source, creating a warm rim light around the subject's silhouette.\n* **Subsurface Scattering:** Using terms like 'skin textures' and 'glowing eyes' ensures the AI simulates how light interacts with skin, preventing a plastic appearance.\n\n#### Pro Tips:\n* **Dynamic Customization:** Swap [subject] for archetypes like 'a warrior queen', 'an ethereal mage', or 'a rogue mercenary' to completely change the narrative of the image.\n* **Color Grading:** If you want a colder, darker tone, add 'blue magic' to the prompt and adjust the color temperature settings.",
     "tags": [
@@ -6097,8 +5819,7 @@
       "requestedByName": null,
       "requestedByEmail": null,
       "requestedByAvatar": null,
-      "requestedPromptDescription": null,
-      "isPremium": false
+      "requestedPromptDescription": null
     },
     "variables": [],
     "articleContent": "### Mastering the Serene Portrait Aesthetic\n\nThis prompt captures the essence of modern, minimalist lifestyle photography. The key to this look is the contrast between the sharp focus on the subject and the dreamlike, soft-focus background created by the mountain mist. \n\n#### Lighting & Composition\n- **Lighting:** We utilize soft, overcast lighting. This natural diffusion eliminates harsh shadows, providing a flattering light on the subject's face that feels introspective and calm.\n- **Composition:** The subject is positioned using a centered frame but with enough environmental context to establish a mood of solitude. \n\n#### Camera & Optics\n- **Lens:** Using an 85mm prime lens simulation is essential. It provides the perfect compression for portraiture, ensuring the face is undistorted while creating a creamy bokeh background.\n- **Depth of Field:** By setting the aperture to f/1.8, we isolate the subject from the complex mountain scenery, drawing all viewer attention to the subject's facial expression.\n\n#### Pro Tips for Customization\n- **Subject:** You can replace '[young man]' with any character description to fit your story.\n- **Clothing:** Swap the 'brown windbreaker' for other neutral tones like olive, charcoal, or navy to shift the color temperature.\n- **Mood:** To make it darker, add 'low key lighting' or 'stormy atmosphere' to the prompt.",
@@ -6153,8 +5874,7 @@
       "requestedByName": null,
       "requestedByEmail": null,
       "requestedByAvatar": null,
-      "requestedPromptDescription": null,
-      "isPremium": false
+      "requestedPromptDescription": null
     },
     "variables": [],
     "articleContent": "### Overview\nThis prompt captures an effortless outdoor male portrait blending streetwear fashion with automotive lifestyle aesthetics.\n\n### Key Aesthetic Elements\n- **Subject & Styling**: Layered look featuring a standard denim trucker jacket, open flannel, and graphic tee.\n- **Setting**: Urban daylight setting anchored by a high-end metallic blue sports car.\n- **Optics**: 85mm portrait focal length at f/2.8 to keep the subject sharp while softly defocusing the urban background.\n\n### Customization Tips\n- Swap `metallic blue luxury coupe` with any vehicle type or color.\n- Alter the subject's clothing layers to adapt the style from casual streetwear to smart casual.",
@@ -6204,9 +5924,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Overview This prompt captures a photorealistic, cinematic rendition of Kakashi Hatake activating his signature Chidori technique. It translates iconic anime traits into realistic live-action textures and lighting. ### Lighting & Composition The shot uses low-key key lighting dominated by the self-illuminating electric cyan lightning from the hand. A subtle red rim light accents the Sharingan eye. The subject is framed in a centered medium close-up with a shallow depth of field. ### Key Settings - Aspect Ratio: 3:4 or 4:5 for vertical portraits. - Camera: 85mm telephoto lens at f/1.8 for sharp facial detail and soft background falloff. - Engine: Midjourney v6 or Flux.1 for optimal skin and cloth rendering. ### Pro Tips To customize, replace the cyan lightning with other elemental jutsu effects or swap the tactical vest color palette for unique village variants.",
     "tags": [
@@ -6255,9 +5973,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Mastering the Authentic Mirror Selfie Look\n\nThis prompt is engineered to capture the specific 'lifestyle' aesthetic often found in high-end social media photography. The key to this look lies in the balance between the subject and the ambient environment.\n\n#### Lighting & Composition Breakdown\n- **Natural Daylight:** The prompt specifies 'soft natural daylight,' which is essential for flattering skin tones and avoiding harsh flash artifacts. The window placement provides a soft, wrap-around light that adds depth to the subject's face.\n- **Depth of Field:** By focusing on the 'minimalist bedroom' background, we encourage the AI to render a shallow depth of field, keeping the focus entirely on the subject while the environment adds context without distraction.\n- **Camera Optics:** By referencing a 'high-end smartphone camera,' we trick the AI into replicating the specific sensor characteristics of a modern flagship device, including its unique color science and slightly wider depth perception.\n\n#### How to Customize:\n- **Change the Attire:** Swap 'black linen button-down shirt' for 'oversized streetwear hoodie' or 'smart-casual blazer' to shift the tone.\n- **Adjust the Vibe:** Change the 'minimalist bedroom' to 'bustling city café' or 'dimly lit art studio' for a different atmospheric story.\n- **Refine the Subject:** Feel free to change the physical attributes like hair color, style, or specific accessories to match your desired character archetype.\n\n#### Pro Tips for Better Results:\n- If using Midjourney, append `--style raw` to keep the image looking less 'artistic' and more like a real photograph.\n- Use a low Stylize value (e.g., `--s 50`) if you want the image to look more like a raw camera capture and less like an edited digital masterpiece.",
     "tags": [
@@ -6357,9 +6073,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "This prompt is designed to capture the quintessential 'Urban Lifestyle' aesthetic, focusing on clean lines, sharp subject focus, and balanced natural lighting. The use of a 35mm lens at f/1.8 is critical to achieving that professional portrait look—it ensures the subject pops while creating a creamy, non-distracting bokeh in the city background. To customize this, swap the vehicle model, change the subject's outfit to match a specific brand identity, or adjust the city environment (e.g., 'industrial harbor' or 'neon-lit night street'). Pro tip: Ensure your negative prompt includes 'distorted hands' or 'extra limbs' to maintain perfect human anatomy during the render process.",
     "tags": [
@@ -6408,7 +6122,6 @@
     "imageHeight": 1536,
     "additionalImages": [],
     "parameters": {
-      "isPremium": false,
       "isRequested": false,
       "requestedByName": null,
       "requestedByEmail": null,
@@ -6430,7 +6143,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 6,
+    "viewsCount": 5,
     "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -6447,7 +6160,7 @@
       "metaDescription": "Create a warm, serene golden hour portrait of a woman reading in a park with this detailed AI photography prompt for Midjourney and Flux."
     },
     "createdAt": "2026-08-23T05:31:23.141+00:00",
-    "updatedAt": "2026-09-08T06:07:54.617+00:00",
+    "updatedAt": "2026-09-06T05:17:56.918+00:00",
     "publishedAt": "2026-08-23T05:31:23.141+00:00"
   },
   {
@@ -6462,9 +6175,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Concept Overview\nThis style combines realistic human photography with bold, cel-shaded 2D vector clothing. The contrast between realistic skin tones and clean line-art garments creates a distinct, modern editorial look.\n\n### Key Aesthetic Elements\n- **Hybrid Styling:** Real skin textures and hair paired with flat-colored, outlined apparel.\n- **Scenic Backdrop:** Bright natural environment with deep perspective, mountains, and water.\n- **Lighting:** Bright natural daylight producing subtle real-world cast shadows.\n\n### Customization Variables\n- **Subject:** Swap identity, pose, or expression.\n- **Garment Palette:** Change the vector apparel colors and cut.\n- **Setting:** Switch from an alpine lake to urban streets or architectural landmarks.",
     "tags": [
@@ -6516,8 +6227,7 @@
       "requestedByName": null,
       "requestedByEmail": null,
       "requestedByAvatar": null,
-      "requestedPromptDescription": null,
-      "isPremium": false
+      "requestedPromptDescription": null
     },
     "variables": [],
     "articleContent": "### Overview\nThis prompt captures an authentic travel lifestyle moment featuring an adventurer posing next to a 4x4 vehicle in a mountainous landscape.\n\n### Key Visual Elements\n- **Subject:** Young man leaning casually against an SUV, smiling, dressed in casual outdoor attire.\n- **Setting:** Rugged gravel shoulder within an arid mountain valley.\n- **Lighting:** Direct high-noon sunlight casting defined, sharp shadows.\n- **Composition:** 3:4 vertical frame balancing subject, vehicle front-quarter, and backdrop.\n\n### Customization Variables\n- **Subject:** Swap gender, ethnicity, or outdoor clothing styles.\n- **Vehicle:** Replace the SUV with a vintage truck, camper van, or motorcycle.\n- **Location:** Adjust the terrain to alpine forests, coastal cliffs, or desert dunes.",
@@ -6565,9 +6275,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Mastering the Minimalist Fashion Portrait\n\nThis prompt is engineered to capture the essence of a premium fashion editorial shoot. By focusing on a high-key white background, we allow the textures of the clothing and the pop of color from the autumn leaves to take center stage. \n\n#### Key Elements:\n*   **Subject:** A high-contrast, sharp-featured model dressed in layered, autumn-inspired tones.\n*   **Environment:** The 'path of leaves' creates an organic, leading line that draws the viewer's eye directly to the subject.\n*   **Lighting:** We use a soft, commercial studio setup. The lighting is diffused to ensure even skin tones while maintaining enough shadow to provide depth to the clothing fabric.\n\n#### Pro Tips for Customization:\n- **Change the Season:** Swap 'autumn ginkgo leaves' for 'white rose petals' or 'cherry blossom petals' for a spring or bridal aesthetic.\n- **Adjust the Style:** Modify the color palette of the shirt (e.g., 'emerald green to navy ombre') to match specific brand color stories.\n- **Camera Lens:** Keeping the 85mm lens parameter is crucial for achieving that flattering, professional portrait compression which keeps facial features proportionate.",
     "tags": [
@@ -6615,9 +6323,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Creating the Double Exposure Effect\nThis prompt utilizes a creative layering technique known as double exposure. By isolating the subject against a clean white background, the AI can treat the torso area as a canvas to map a secondary image—in this case, a high-energy stadium environment. \n\n### Lighting & Composition Tips\n* **Lighting:** The portrait portion relies on clean studio lighting (rim light) to separate the subject from the background, while the stadium scene utilizes high-intensity floodlighting to maintain vibrant color contrast.\n* **Composition:** This style works best with front-facing, neutral-expression subjects to ensure the 'overlay' doesn't distort important facial features.\n* **Pro Tip:** If the blend is too opaque, adjust your prompt to include terms like 'translucent blending' or 'gradient fade' to ensure the stadium seamlessly transitions into the subject's clothing.",
     "tags": [
@@ -6666,9 +6372,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### The Aesthetic of the Modern Mirror Selfie\nThis prompt captures the essence of social media lifestyle photography. The key to this look is the combination of 'Golden Hour' lighting and a shallow depth of field. By using out-of-focus foreground elements like flowers, you add depth that makes the digital image feel like a high-end editorial shot. \n\n### Lighting & Camera Breakdown\n- **Lighting:** Warm golden hour sunlight is the primary source, creating a 'glow' effect on the subject's face.\n- **Depth of Field:** By using a large aperture setting (f/1.8), we create a dreamy, blurred foreground that draws the eye directly to the subject in the mirror.\n- **UI Integration:** The mention of a 'semi-transparent frosted glass music player' gives the image that contemporary 'moody playlist' aesthetic common on platforms like Instagram and Pinterest.\n\n### Pro Tips for Best Results\n- **Aspect Ratio:** Use --ar 9:16 for a perfect mobile portrait fit.\n- **Lighting Variation:** If you prefer a cooler look, swap 'golden hour' for 'blue hour' or 'soft morning light'.\n- **Consistency:** Ensure you specify the subject's expression (e.g., 'genuine smile', 'contemplative look') to change the mood of the photo.",
     "tags": [
@@ -6716,9 +6420,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Master the Ethereal Watercolor Look\n\nThis prompt is engineered to blend high-fashion portraiture with the fluid, organic beauty of watercolor painting. The dual-composition layout allows for both facial expression capture and personality display, making it perfect for custom personalized gifts or branding materials.\n\n### Why This Prompt Works:\n- **Compositional Balance:** By specifying both a close-up and a mid-shot, the AI creates a dynamic visual flow that prevents the image from looking flat.\n- **Color Palette Strategy:** The inclusion of 'lavender, peach, and sky blue' forces the model to move away from harsh, high-contrast imagery into soft, trending pastel tones.\n- **Texture Application:** By calling for 'textured off-white paper', we mimic physical media, adding a layer of realism that separates this from a standard flat vector illustration.\n\n### Pro-Tips for Best Results:\n- **Aspect Ratio:** Use a vertical orientation like 3:4 or 9:16 to accommodate the double-figure layout.\n- **Stylizing:** If using Midjourney, use --s 250 to allow enough artistic interpretation while keeping the subject's features clear.\n- **Customization:** Swap the [subject] variable for specific clothing styles or distinct features to make your artwork unique.",
     "tags": [
@@ -6767,9 +6469,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Overview This prompt reverse-engineers a mixed-media digital scrapbook collage featuring a central portrait alongside dynamic candid photo cutouts. It blends photorealism with vintage scrapbooking elements like dried botanicals, lace borders, washi tape, and butterfly stickers. ### Key Composition Elements 1. **Photo Layout**: Multi-angle Polaroid-style frames displaying joyful candid expressions. 2. **Collage Layering**: Semi-translucent masking tape, textured cardstock, and lace edges create realistic tactile depth. 3. **Embellishments**: Pressed florals, pastel butterfly stickers, and delicate calligraphic handwriting accents. ### Customization Tips - Swap the subject or outfit by adjusting the core character description. - Customize the background paper tone (e.g., kraft paper, pastel linen, newspaper print). - Modify the text accents to personalize names or quotes.",
     "tags": [
@@ -6816,9 +6516,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### How to Master the Polaroid Aesthetic Collage\nThis prompt is engineered to replicate high-end social media editorial aesthetics. It utilizes a layered composition technique where multiple portrait angles are arranged in a dynamic collage.\n\n#### Lighting & Composition\n- **Lighting:** The prompt specifies 'golden hour' and 'soft-lit' to ensure skin tones appear luminous rather than harsh. The interaction of the white lilies adds a natural, soft contrast.\n- **Composition:** By describing 'scattered polaroid frames,' the AI creates a sense of depth. Placing objects (lilies) between frames provides the layered look characteristic of professional digital scrapbooking.\n\n#### Pro-Tips for Customization\n- **Subject:** Replace [subject] with 'a young professional woman', 'an elderly traveler', or any specific character description.\n- **Music Player:** You can modify the glass widget text to include different song names to personalize the sentiment.\n- **Mood:** Swap 'romantic' for 'nostalgic' or 'melancholic' to shift the tone of the color grading.",
     "tags": [
@@ -6867,9 +6565,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### How to Use This Prompt\nThis prompt is designed to generate a multi-frame scrapbook layout. The key is the integration of 'polaroid frames' combined with 'hand-drawn elements' and 'vintage textures'.\n\n### Lighting & Camera Breakdown\n- **Lighting:** We specified 'natural outdoor garden lighting' to achieve the soft, flattering highlights on the skin that make the subject pop against the cream background.\n- **Optics:** The prompt mimics a high-aperture portrait lens, which naturally creates the 'dreamy bokeh' behind the subject in the individual frames.\n\n### Pro Tips for Customization\n- **Change the Theme:** Swap 'butterfly illustrations' with 'pressed leaves' or 'celestial motifs' for a different vibe.\n- **Color Palette:** You can adjust the colors by modifying the prompt to say 'muted earth tones' or 'vibrant poppy aesthetic' to match a specific brand identity.\n- **Composition:** If you want fewer photos, simply adjust the phrase '6 distinct polaroid-style frames' to your desired count.",
     "tags": [
@@ -6918,9 +6614,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "This prompt creates a sophisticated, multi-panel collage effect that mimics high-end social media editorial photography. The aesthetic relies on the contrast between the sharp, photorealistic human subject and the soft, illustrative watercolor-style botanical elements. The 'golden hour' lighting is key to achieving the warm, dreamlike quality of the image. For best results, use a model capable of high-detail skin rendering. The prompt utilizes a structured composition instruction to ensure the AI understands the need for a layout with multiple frames and surrounding artistic elements.",
     "tags": [
@@ -6968,9 +6662,7 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "parameters": {},
     "variables": [],
     "articleContent": "### Mastering the Multi-Panel Aesthetic\nThis prompt is engineered to replicate the trending 'mood board' style seen in high-end social media editorials. By combining a large primary shot with supporting thumbnails, you create a narrative-driven image that feels curated and professional.\n\n### Lighting & Composition Breakdown\n- **Lighting:** The key is 'Golden Hour Rim Lighting'. It creates a soft halo effect around the subject's hair, separating her from the background.\n- **Subject:** The messy bun and casual layered clothing (t-shirt/jacket combo) provide an accessible, relatable fashion vibe.\n- **Depth:** Use a wide aperture setting to ensure the background remains creamy and soft (bokeh), keeping the focus entirely on the subject and the crisp details of the floating butterflies.\n\n### Pro Tips for Customization\n- **Change the butterflies:** Swap 'blue morpho' for 'glowing fireflies' or 'cherry blossom petals' to shift the seasonal theme.\n- **Typography:** To get the elegant text effect, use tools like Canva or Photoshop after generation, as AI often struggles with specific custom signatures.\n- **Ratio Tip:** Always shoot in vertical formats like 9:16 to best fit mobile-friendly aesthetic grids.",
     "tags": [
@@ -7028,8 +6720,7 @@
       "requestedByName": null,
       "requestedByEmail": null,
       "requestedByAvatar": null,
-      "requestedPromptDescription": null,
-      "isPremium": false
+      "requestedPromptDescription": null
     },
     "variables": [],
     "articleContent": "### How to Use This Prompt\nThis prompt is engineered to capture a high-end, commercial lifestyle aesthetic. It relies on a balanced combination of sharp subject focus and professional automotive placement. \n\n**Lighting Breakdown:**\n- The prompt utilizes 'bright natural afternoon sunlight' to create high-contrast, professional highlights on the metal surfaces of the car and the skin of the subject. \n\n**Camera & Optics:**\n- The usage of an '85mm lens' is crucial here; it provides a flattering compression for portraiture and allows for that signature depth of field (f/1.8), separating your subject from the busy highway background.\n\n**Pro Tips:**\n- If using Midjourney, use the '--ar 9:16' parameter to ensure the vertical portrait format is maintained.\n- Swap the vehicle model by changing 'Mercedes-Benz G-Wagon' to your preferred luxury car to customize the editorial look.\n- For a moodier vibe, change 'afternoon sunlight' to 'golden hour' or 'overcast soft light'.",
@@ -7084,8 +6775,7 @@
       "requestedByName": null,
       "requestedByEmail": null,
       "requestedByAvatar": null,
-      "requestedPromptDescription": null,
-      "isPremium": false
+      "requestedPromptDescription": null
     },
     "variables": [],
     "articleContent": "## About This Prompt\n\nThis prompt is crafted to produce clean, hyper-realistic imagery on **Gemini**. By specifying lighting dynamics, lens physics, and realistic textures, you achieve studio-grade results without artificial plastic finishes.\n\n### Composition & Optics Breakdown\n- **Subject Framing**: High-definition focus on Photorealistic Artwork Recreation with authentic surface micro-details.\n- **Lighting Dynamics**: Soft volumetric rim light with subtle warm highlights.\n- **Lens & Optics**: Sony A7R V with 85mm f/1.4 G-Master lens physics.\n\n### Pro Tips for Highest Quality\n1. **Focal Length**: Use 85mm or 50mm lenses for portraits to minimize distortion.\n2. **Aspect Ratio**: Keep `--ar 16:9` for landscapes and `--ar 4:5` for mobile-optimized social posts.\n3. **Stylize Value**: Set `--s 150` to `--s 300` for the optimal balance between prompt obedience and photorealism.",
