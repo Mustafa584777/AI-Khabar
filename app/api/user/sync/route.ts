@@ -1,127 +1,270 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabaseAdmin, supabase } from '@/lib/supabase';
 
-function getBearerToken(req: NextRequest): string | null {
-  const authHeader = req.headers.get('authorization') || '';
-  if (authHeader.startsWith('Bearer ')) {
-    return authHeader.substring(7).trim();
+export const dynamic = 'force-dynamic';
+
+function getSyncKey(userId?: string, email?: string): string {
+  if (userId) return `user_sync_${userId}`;
+  if (email) {
+    const clean = email.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+    return `user_sync_email_${clean}`;
   }
-  return null;
-}
-
-export async function GET(req: NextRequest) {
-  try {
-    const token = getBearerToken(req);
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized: missing bearer token' }, { status: 401 });
-    }
-
-    if (!supabaseAdmin) {
-      return NextResponse.json({ error: 'Supabase admin client not initialized' }, { status: 500 });
-    }
-
-    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
-    if (userError || !userData?.user) {
-      return NextResponse.json({ error: 'Unauthorized: invalid token' }, { status: 401 });
-    }
-
-    const user = userData.user;
-    const meta = user.user_metadata || {};
-
-    return NextResponse.json({
-      success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: meta.full_name || meta.name || user.email?.split('@')[0],
-        avatar: meta.avatar_url || meta.picture || meta.avatar || null,
-        points: meta.points !== undefined ? Number(meta.points) : 10,
-        bookmarks: Array.isArray(meta.bookmarks) ? meta.bookmarks : [],
-        likes: Array.isArray(meta.likes) ? meta.likes : [],
-        aiHistory: Array.isArray(meta.aiHistory) ? meta.aiHistory : [],
-        tasteProfile: meta.tasteProfile || null,
-        promptRequests: Array.isArray(meta.promptRequests) ? meta.promptRequests : [],
-        requestsMade: meta.requestsMade !== undefined ? Number(meta.requestsMade) : 0,
-      },
-    });
-  } catch (err: any) {
-    console.error('User sync GET error:', err);
-    return NextResponse.json({ error: err?.message || 'Server error syncing user data' }, { status: 500 });
-  }
+  return '';
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const token = getBearerToken(req);
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized: missing bearer token' }, { status: 401 });
+    const body = await req.json();
+    const { action, userId, email, data } = body;
+
+    const key = getSyncKey(userId, email);
+    if (!key) {
+      return NextResponse.json({ success: false, error: 'User ID or Email is required' }, { status: 400 });
     }
 
-    if (!supabaseAdmin) {
-      return NextResponse.json({ error: 'Supabase admin client not initialized' }, { status: 500 });
-    }
+    const client = supabaseAdmin || supabase;
 
-    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
-    if (userError || !userData?.user) {
-      return NextResponse.json({ error: 'Unauthorized: invalid token' }, { status: 401 });
-    }
+    // 1. PULL: Retrieve synced data for user
+    if (action === 'pull' || !action) {
+      const { data: row, error } = await client
+        .from('settings')
+        .select('*')
+        .eq('id', key)
+        .single();
 
-    const user = userData.user;
-    const currentMeta = user.user_metadata || {};
-    const updates = await req.json();
+      if (error && error.code !== 'PGRST116') {
+        // Fallback: If searched by userId, also check email key
+        if (email) {
+          const emailKey = getSyncKey(undefined, email);
+          const { data: emailRow } = await client
+            .from('settings')
+            .select('*')
+            .eq('id', emailKey)
+            .single();
 
-    const newMeta = {
-      ...currentMeta,
-    };
-
-    if (Array.isArray(updates.bookmarks)) {
-      newMeta.bookmarks = updates.bookmarks;
-    }
-    if (Array.isArray(updates.likes)) {
-      newMeta.likes = updates.likes;
-    }
-    if (updates.points !== undefined) {
-      newMeta.points = Number(updates.points);
-    }
-    if (Array.isArray(updates.aiHistory)) {
-      // Keep up to 100 recent AI history items in metadata
-      newMeta.aiHistory = updates.aiHistory.slice(0, 100);
-    }
-    if (updates.tasteProfile !== undefined) {
-      newMeta.tasteProfile = updates.tasteProfile;
-    }
-    if (Array.isArray(updates.promptRequests)) {
-      newMeta.promptRequests = updates.promptRequests.slice(0, 50);
-    }
-    if (updates.requestsMade !== undefined) {
-      newMeta.requestsMade = Number(updates.requestsMade);
-    }
-    if (updates.name) {
-      newMeta.full_name = updates.name;
-      newMeta.name = updates.name;
-    }
-    if (updates.avatar) {
-      newMeta.avatar = updates.avatar;
-      newMeta.avatar_url = updates.avatar;
-    }
-
-    const { data: updatedUser, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-      user.id,
-      {
-        user_metadata: newMeta,
+          if (emailRow?.data) {
+            return NextResponse.json({ success: true, syncData: emailRow.data });
+          }
+        }
+        return NextResponse.json({ success: true, syncData: null });
       }
-    );
 
-    if (updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 500 });
+      return NextResponse.json({
+        success: true,
+        syncData: row?.data || null,
+      });
     }
 
-    return NextResponse.json({
-      success: true,
-      user_metadata: updatedUser?.user?.user_metadata || newMeta,
-    });
+    // 2. PUSH: Save / update synced data for user
+    if (action === 'push') {
+      if (!data || typeof data !== 'object') {
+        return NextResponse.json({ success: false, error: 'Invalid data payload' }, { status: 400 });
+      }
+
+      // Fetch existing to merge
+      const { data: existingRow } = await client
+        .from('settings')
+        .select('*')
+        .eq('id', key)
+        .single();
+
+      const existingData = existingRow?.data || {};
+
+      // Merge arrays uniquely
+      const mergedBookmarks = Array.from(
+        new Set([...(existingData.bookmarkedIds || []), ...(data.bookmarkedIds || [])])
+      );
+      const mergedLikes = Array.from(
+        new Set([...(existingData.likedIds || []), ...(data.likedIds || [])])
+      );
+
+      // Merge tasteProfile if provided
+      let mergedTasteProfile = existingData.tasteProfile;
+      if (data.tasteProfile) {
+        if (!existingData.tasteProfile) {
+          mergedTasteProfile = data.tasteProfile;
+        } else {
+          // Merge taste profile settings and affinities
+          const existingTP = existingData.tasteProfile;
+          const incomingTP = data.tasteProfile;
+
+          mergedTasteProfile = {
+            ...existingTP,
+            ...incomingTP,
+            genderVibe: incomingTP.genderVibe || existingTP.genderVibe || 'all',
+            favoriteStyles: Array.isArray(incomingTP.favoriteStyles)
+              ? incomingTP.favoriteStyles
+              : existingTP.favoriteStyles || [],
+            favoriteTools: Array.isArray(incomingTP.favoriteTools)
+              ? incomingTP.favoriteTools
+              : existingTP.favoriteTools || [],
+            categoryAffinities: {
+              ...(existingTP.categoryAffinities || {}),
+              ...(incomingTP.categoryAffinities || {}),
+            },
+            tagAffinities: {
+              ...(existingTP.tagAffinities || {}),
+              ...(incomingTP.tagAffinities || {}),
+            },
+            toolAffinities: {
+              ...(existingTP.toolAffinities || {}),
+              ...(incomingTP.toolAffinities || {}),
+            },
+            clickedPostIds: {
+              ...(existingTP.clickedPostIds || {}),
+              ...(incomingTP.clickedPostIds || {}),
+            },
+            copiedPostIds: Array.from(
+              new Set([...(existingTP.copiedPostIds || []), ...(incomingTP.copiedPostIds || [])])
+            ).slice(0, 50),
+            lastUpdated: incomingTP.lastUpdated || new Date().toISOString(),
+          };
+        }
+      }
+
+      const mergedPayload = {
+        ...existingData,
+        ...data,
+        bookmarkedIds: data.bookmarkedIds !== undefined ? data.bookmarkedIds : mergedBookmarks,
+        likedIds: data.likedIds !== undefined ? data.likedIds : mergedLikes,
+        tasteProfile: mergedTasteProfile !== undefined ? mergedTasteProfile : existingData.tasteProfile,
+        userId: userId || existingData.userId,
+        email: email || existingData.email,
+        updatedAt: new Date().toISOString(),
+      };
+
+      const { error: upsertError } = await client
+        .from('settings')
+        .upsert({ id: key, data: mergedPayload });
+
+      if (upsertError) {
+        console.error('User sync upsert error:', upsertError);
+        return NextResponse.json({ success: false, error: upsertError.message }, { status: 500 });
+      }
+
+      // Also mirror to email key if available for multi-device cross-resolution
+      if (email) {
+        const emailKey = getSyncKey(undefined, email);
+        if (emailKey !== key) {
+          client.from('settings').upsert({ id: emailKey, data: mergedPayload }).catch(() => {});
+        }
+      }
+
+      return NextResponse.json({ success: true, syncData: mergedPayload });
+    }
+
+    // 3. BOOKMARK TOGGLE
+    if (action === 'toggle_bookmark') {
+      const { postId, isBookmarked } = data || {};
+      if (!postId) return NextResponse.json({ success: false, error: 'postId required' }, { status: 400 });
+
+      const { data: existingRow } = await client
+        .from('settings')
+        .select('*')
+        .eq('id', key)
+        .single();
+
+      const existingData = existingRow?.data || {};
+      const currentList: string[] = Array.isArray(existingData.bookmarkedIds) ? existingData.bookmarkedIds : [];
+
+      let updatedList: string[];
+      if (isBookmarked) {
+        updatedList = Array.from(new Set([...currentList, postId]));
+      } else {
+        updatedList = currentList.filter((id) => id !== postId);
+      }
+
+      const mergedPayload = {
+        ...existingData,
+        bookmarkedIds: updatedList,
+        userId: userId || existingData.userId,
+        email: email || existingData.email,
+        updatedAt: new Date().toISOString(),
+      };
+
+      await client.from('settings').upsert({ id: key, data: mergedPayload });
+
+      if (email) {
+        const emailKey = getSyncKey(undefined, email);
+        if (emailKey !== key) {
+          client.from('settings').upsert({ id: emailKey, data: mergedPayload }).catch(() => {});
+        }
+      }
+
+      return NextResponse.json({ success: true, bookmarkedIds: updatedList });
+    }
+
+    // 4. TASTE PROFILE UPDATE
+    if (action === 'update_taste_profile') {
+      const incomingProfile = data?.tasteProfile || data;
+      if (!incomingProfile || typeof incomingProfile !== 'object') {
+        return NextResponse.json({ success: false, error: 'tasteProfile data required' }, { status: 400 });
+      }
+
+      const { data: existingRow } = await client
+        .from('settings')
+        .select('*')
+        .eq('id', key)
+        .single();
+
+      const existingData = existingRow?.data || {};
+      const existingTP = existingData.tasteProfile || {};
+
+      const mergedTasteProfile = {
+        ...existingTP,
+        ...incomingProfile,
+        genderVibe: incomingProfile.genderVibe || existingTP.genderVibe || 'all',
+        favoriteStyles: Array.isArray(incomingProfile.favoriteStyles)
+          ? incomingProfile.favoriteStyles
+          : existingTP.favoriteStyles || [],
+        favoriteTools: Array.isArray(incomingProfile.favoriteTools)
+          ? incomingProfile.favoriteTools
+          : existingTP.favoriteTools || [],
+        categoryAffinities: {
+          ...(existingTP.categoryAffinities || {}),
+          ...(incomingProfile.categoryAffinities || {}),
+        },
+        tagAffinities: {
+          ...(existingTP.tagAffinities || {}),
+          ...(incomingProfile.tagAffinities || {}),
+        },
+        toolAffinities: {
+          ...(existingTP.toolAffinities || {}),
+          ...(incomingProfile.toolAffinities || {}),
+        },
+        clickedPostIds: {
+          ...(existingTP.clickedPostIds || {}),
+          ...(incomingProfile.clickedPostIds || {}),
+        },
+        copiedPostIds: Array.from(
+          new Set([...(existingTP.copiedPostIds || []), ...(incomingProfile.copiedPostIds || [])])
+        ).slice(0, 50),
+        lastUpdated: incomingProfile.lastUpdated || new Date().toISOString(),
+      };
+
+      const mergedPayload = {
+        ...existingData,
+        tasteProfile: mergedTasteProfile,
+        userId: userId || existingData.userId,
+        email: email || existingData.email,
+        updatedAt: new Date().toISOString(),
+      };
+
+      await client.from('settings').upsert({ id: key, data: mergedPayload });
+
+      if (email) {
+        const emailKey = getSyncKey(undefined, email);
+        if (emailKey !== key) {
+          client.from('settings').upsert({ id: emailKey, data: mergedPayload }).catch(() => {});
+        }
+      }
+
+      return NextResponse.json({ success: true, tasteProfile: mergedTasteProfile });
+    }
+
+    return NextResponse.json({ success: false, error: 'Unknown action' }, { status: 400 });
   } catch (err: any) {
-    console.error('User sync POST error:', err);
-    return NextResponse.json({ error: err?.message || 'Server error updating user data' }, { status: 500 });
+    console.error('User sync API error:', err);
+    return NextResponse.json({ success: false, error: err?.message || 'Server error' }, { status: 500 });
   }
 }

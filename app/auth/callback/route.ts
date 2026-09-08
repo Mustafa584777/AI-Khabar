@@ -155,6 +155,35 @@ export async function GET(request: Request) {
           descEl.innerText = 'Authentication complete. Redirecting...';
           loaderEl.style.display = 'none';
 
+          if (session.user) {
+            try {
+              const u = session.user;
+              const meta = u.user_metadata || {};
+              const email = u.email || '';
+              const name = meta.full_name || meta.name || (email ? email.split('@')[0] : 'Creator');
+              const username = '@' + (meta.user_name || name.toLowerCase().replace(/[^a-z0-9]/g, '') || 'creator');
+              const avatar = meta.avatar_url || meta.picture || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80';
+
+              const account = {
+                id: u.id,
+                name: name,
+                username: username,
+                email: email,
+                joinedDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+                isLoggedIn: true,
+                avatar: avatar,
+                points: 10,
+                requestsMade: 0,
+                likesCountForPoints: 0,
+                savesCountForPoints: 0,
+                generationsCountForPoints: 0,
+                sharesCountForPoints: 0,
+                referralsCountForPoints: 0
+              };
+              localStorage.setItem('promptcms_user_account', JSON.stringify(account));
+            } catch(e) {}
+          }
+
           if (window.opener) {
             try {
               window.opener.postMessage({

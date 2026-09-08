@@ -7,6 +7,7 @@ import confetti from 'canvas-confetti';
 import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem, AiSearchResult, PlanTier } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
 import { supabase, supabaseUserToUserAccount } from '@/lib/supabase';
+import { UserSyncService } from '@/lib/user-sync';
 import { INITIAL_POSTS, INITIAL_CATEGORIES, INITIAL_SETTINGS } from '@/lib/initial-data';
 import {
   UserTasteProfile,
@@ -119,6 +120,10 @@ interface AppContextType {
   resetAllData: () => void;
   showToast: (msg: string) => void;
   toastMessage: string | null;
+
+  // Cloud Sync for Cross-Device Persistence
+  syncUserCloudData: () => Promise<void>;
+  isSyncingUserData: boolean;
 
   // Razorpay Pro Membership & Checkout
   isProCheckoutModalOpen: boolean;
@@ -319,24 +324,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Prompt Requests State
   const [promptRequests, setPromptRequests] = useState<any[]>([]);
 
-  const syncUserDataToRemote = useCallback(async (updates: Record<string, any>) => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) return;
-
-      fetch('/api/user/sync', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify(updates),
-      }).catch((e) => console.warn('Background syncUserDataToRemote notice:', e));
-    } catch (err) {
-      console.warn('syncUserDataToRemote error:', err);
-    }
-  }, []);
-
   const addPromptRequest = (requestText: string, category?: string): boolean => {
     if (!userAccount || !userAccount.isLoggedIn) {
       openAuthModal('Please sign in to request a prompt.');
@@ -357,6 +344,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setUserAccount(updatedAccount);
     StorageService.saveUserAccount(updatedAccount);
 
+    // Sync deducted points to cloud
+    void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
+      points: currentPoints - 10,
+    });
+
     const newReq = {
       id: 'req_' + Date.now(),
       userId: userAccount.id,
@@ -371,11 +363,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const updatedRequests = StorageService.savePromptRequest(newReq);
     setPromptRequests(updatedRequests);
-    void syncUserDataToRemote({
-      points: updatedAccount.points,
-      requestsMade: updatedAccount.requestsMade,
-      promptRequests: updatedRequests,
-    });
     confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
     showToast('Prompt request submitted successfully! 10 points reset.');
     return true;
@@ -398,14 +385,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     setUserAccount(updatedAccount);
     StorageService.saveUserAccount(updatedAccount);
-    void syncUserDataToRemote({
+
+    // Sync updated points to cloud
+    void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
       points: newPoints,
-      requestsMade: updatedAccount.requestsMade,
-      likesCountForPoints: updatedAccount.likesCountForPoints,
-      savesCountForPoints: updatedAccount.savesCountForPoints,
-      generationsCountForPoints: updatedAccount.generationsCountForPoints,
-      sharesCountForPoints: updatedAccount.sharesCountForPoints,
-      referralsCountForPoints: updatedAccount.referralsCountForPoints,
     });
   };
 
@@ -432,6 +415,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (avatar) account.avatar = avatar;
     StorageService.saveUserAccount(account);
     setUserAccount(account);
+
+    // Reconcile and load all cloud data (bookmarks, likes, history, points, taste profile)
+    void UserSyncService.reconcileOnLogin(account).then((synced) => {
+      setBookmarkedIds(synced.bookmarkedIds);
+      setLikedIds(synced.likedIds);
+      if (synced.tasteProfile) {
+        setTasteProfile(synced.tasteProfile);
+        PersonalizationEngine.saveProfile(synced.tasteProfile);
+      }
+      if (synced.aiHistory?.length) setAiHistory(synced.aiHistory);
+      if (synced.points !== undefined) {
+        setUserAccount((prev) => (prev ? { ...prev, points: synced.points } : prev));
+      }
+    });
+
     return true;
   };
 
@@ -454,6 +452,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     };
     StorageService.saveUserAccount(account);
     setUserAccount(account);
+
+    // Push initial cloud data
+    void UserSyncService.reconcileOnLogin(account).then((synced) => {
+      setBookmarkedIds(synced.bookmarkedIds);
+      setLikedIds(synced.likedIds);
+      if (synced.tasteProfile) {
+        setTasteProfile(synced.tasteProfile);
+        PersonalizationEngine.saveProfile(synced.tasteProfile);
+      }
+      if (synced.aiHistory?.length) setAiHistory(synced.aiHistory);
+    });
+
     return account;
   };
 
@@ -465,6 +475,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
     StorageService.logoutUserAccount();
     setUserAccount(null);
+    supabase.auth.signOut().catch(() => {});
     showToast('Signed out successfully');
   };
 
@@ -475,20 +486,33 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     };
     const updated = StorageService.saveAiHistoryItem(itemWithUser);
     setAiHistory(updated);
-    void syncUserDataToRemote({ aiHistory: updated });
+
+    if (userAccount) {
+      void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
+        aiHistory: updated,
+      });
+    }
   };
 
   const deleteAiHistoryItem = (id: string) => {
     const updated = StorageService.deleteAiHistoryItem(id);
     setAiHistory(updated);
-    void syncUserDataToRemote({ aiHistory: updated });
+    if (userAccount) {
+      void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
+        aiHistory: updated,
+      });
+    }
     showToast('Item deleted from history');
   };
 
   const clearAiHistory = () => {
     StorageService.clearAiHistory();
     setAiHistory([]);
-    void syncUserDataToRemote({ aiHistory: [] });
+    if (userAccount) {
+      void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
+        aiHistory: [],
+      });
+    }
     showToast('AI Generation history cleared');
   };
 
@@ -532,6 +556,43 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Personalization Taste Profile (Pinterest AI Personalization)
   const [tasteProfile, setTasteProfile] = useState<UserTasteProfile>(INITIAL_TASTE_PROFILE);
   const [isTasteModalOpen, setIsTasteModalOpen] = useState<boolean>(false);
+
+  // Cloud sync state for cross-device synchronization
+  const [isSyncingUserData, setIsSyncingUserData] = useState<boolean>(false);
+  const tasteProfileDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  const debounceSyncTasteProfile = (userId?: string, email?: string, profile?: UserTasteProfile) => {
+    if ((!userId && !email) || !profile) return;
+    if (tasteProfileDebounceRef.current) {
+      clearTimeout(tasteProfileDebounceRef.current);
+    }
+    tasteProfileDebounceRef.current = setTimeout(() => {
+      void UserSyncService.pushUserData(userId, email, { tasteProfile: profile });
+    }, 1500);
+  };
+
+  const syncUserCloudData = async () => {
+    const acc = userAccount || StorageService.getUserAccount();
+    if (!acc || !acc.isLoggedIn) return;
+    try {
+      setIsSyncingUserData(true);
+      const synced = await UserSyncService.reconcileOnLogin(acc);
+      setBookmarkedIds(synced.bookmarkedIds);
+      setLikedIds(synced.likedIds);
+      if (synced.tasteProfile) {
+        setTasteProfile(synced.tasteProfile);
+        PersonalizationEngine.saveProfile(synced.tasteProfile);
+      }
+      if (synced.aiHistory?.length) setAiHistory(synced.aiHistory);
+      if (synced.points !== undefined) {
+        setUserAccount((prev) => (prev ? { ...prev, points: synced.points } : prev));
+      }
+    } catch (e) {
+      console.warn('Sync cloud data notice:', e);
+    } finally {
+      setIsSyncingUserData(false);
+    }
+  };
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -807,70 +868,64 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     // 2. Background sync from server API
     void syncFromRemote();
 
-    const syncUserFromSession = (user: any) => {
-      if (!user) return;
-      const meta = user.user_metadata || {};
-
-      const existing = StorageService.getUserAccount();
-      const account = supabaseUserToUserAccount(user, existing);
-      setUserAccount(account);
-      StorageService.saveUserAccount(account);
-
-      // Restore and merge bookmarks from user account
-      const localBookmarks = StorageService.getBookmarkedIds();
-      if (Array.isArray(meta.bookmarks)) {
-        const merged = Array.from(new Set([...meta.bookmarks, ...localBookmarks]));
-        setBookmarkedIds(merged);
-        StorageService.setBookmarkedIds(merged);
-        if (merged.length !== meta.bookmarks.length) {
-          void syncUserDataToRemote({ bookmarks: merged });
-        }
-      } else if (localBookmarks.length > 0) {
-        void syncUserDataToRemote({ bookmarks: localBookmarks });
-      }
-
-      // Restore and merge likes
-      const localLikes = StorageService.getLikedIds();
-      if (Array.isArray(meta.likes)) {
-        const merged = Array.from(new Set([...meta.likes, ...localLikes]));
-        setLikedIds(merged);
-        StorageService.setLikedIds(merged);
-        if (merged.length !== meta.likes.length) {
-          void syncUserDataToRemote({ likes: merged });
-        }
-      } else if (localLikes.length > 0) {
-        void syncUserDataToRemote({ likes: localLikes });
-      }
-
-      // Restore AI generation history
-      if (Array.isArray(meta.aiHistory) && meta.aiHistory.length > 0) {
-        setAiHistory(meta.aiHistory);
-        StorageService.setAiHistory(meta.aiHistory);
-      }
-
-      // Restore prompt requests
-      if (Array.isArray(meta.promptRequests) && meta.promptRequests.length > 0) {
-        setPromptRequests(meta.promptRequests);
-        StorageService.setPromptRequests(meta.promptRequests);
-      }
-
-      // Restore personalization taste profile
-      if (meta.tasteProfile && typeof meta.tasteProfile === 'object') {
-        setTasteProfile(meta.tasteProfile);
-        PersonalizationEngine.saveProfile(meta.tasteProfile);
-      }
-    };
-
     // Check Supabase Auth Session (Google OAuth login return or existing session)
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        syncUserFromSession(session.user);
+        const existing = StorageService.getUserAccount();
+        const account = supabaseUserToUserAccount(session.user, existing);
+        setUserAccount(account);
+        StorageService.saveUserAccount(account);
+
+        // Load all cloud bookmarks, likes, points, history, and taste profile
+        const synced = await UserSyncService.reconcileOnLogin(account);
+        setBookmarkedIds(synced.bookmarkedIds);
+        setLikedIds(synced.likedIds);
+        if (synced.tasteProfile) {
+          setTasteProfile(synced.tasteProfile);
+          PersonalizationEngine.saveProfile(synced.tasteProfile);
+        }
+        if (synced.aiHistory?.length) setAiHistory(synced.aiHistory);
+        if (synced.points !== undefined) {
+          setUserAccount((prev) => (prev ? { ...prev, points: synced.points } : prev));
+        }
+      } else {
+        // If not authenticated in Supabase, check if user was stored locally
+        const acc = StorageService.getUserAccount();
+        if (acc && acc.isLoggedIn) {
+          UserSyncService.reconcileOnLogin(acc).then((synced) => {
+            setBookmarkedIds(synced.bookmarkedIds);
+            setLikedIds(synced.likedIds);
+            if (synced.tasteProfile) {
+              setTasteProfile(synced.tasteProfile);
+              PersonalizationEngine.saveProfile(synced.tasteProfile);
+            }
+            if (synced.aiHistory?.length) setAiHistory(synced.aiHistory);
+            if (synced.points !== undefined) {
+              setUserAccount((prev) => (prev ? { ...prev, points: synced.points } : prev));
+            }
+          });
+        }
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        syncUserFromSession(session.user);
+        const existing = StorageService.getUserAccount();
+        const account = supabaseUserToUserAccount(session.user, existing);
+        setUserAccount(account);
+        StorageService.saveUserAccount(account);
+
+        const synced = await UserSyncService.reconcileOnLogin(account);
+        setBookmarkedIds(synced.bookmarkedIds);
+        setLikedIds(synced.likedIds);
+        if (synced.tasteProfile) {
+          setTasteProfile(synced.tasteProfile);
+          PersonalizationEngine.saveProfile(synced.tasteProfile);
+        }
+        if (synced.aiHistory?.length) setAiHistory(synced.aiHistory);
+        if (synced.points !== undefined) {
+          setUserAccount((prev) => (prev ? { ...prev, points: synced.points } : prev));
+        }
       } else if (_event === 'SIGNED_OUT') {
         setUserAccount(null);
         StorageService.logoutUserAccount();
@@ -880,9 +935,24 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const handleAuthMessage = (event: MessageEvent) => {
       if (typeof window !== 'undefined' && event.origin === window.location.origin) {
         if (event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
-          supabase.auth.getSession().then(({ data: { session } }) => {
+          supabase.auth.getSession().then(async ({ data: { session } }) => {
             if (session?.user) {
-              syncUserFromSession(session.user);
+              const existing = StorageService.getUserAccount();
+              const account = supabaseUserToUserAccount(session.user, existing);
+              setUserAccount(account);
+              StorageService.saveUserAccount(account);
+
+              const synced = await UserSyncService.reconcileOnLogin(account);
+              setBookmarkedIds(synced.bookmarkedIds);
+              setLikedIds(synced.likedIds);
+              if (synced.tasteProfile) {
+                setTasteProfile(synced.tasteProfile);
+                PersonalizationEngine.saveProfile(synced.tasteProfile);
+              }
+              if (synced.aiHistory?.length) setAiHistory(synced.aiHistory);
+              if (synced.points !== undefined) {
+                setUserAccount((prev) => (prev ? { ...prev, points: synced.points } : prev));
+              }
             }
           });
         }
@@ -896,6 +966,26 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       }
       setBookmarkedIds(StorageService.getBookmarkedIds());
       setLikedIds(StorageService.getLikedIds());
+      setTasteProfile(PersonalizationEngine.getProfile());
+
+      // Check if user is logged in and pull latest cross-device bookmarks and taste profile
+      const acc = StorageService.getUserAccount();
+      if (acc && acc.isLoggedIn) {
+        UserSyncService.pullUserData(acc.id, acc.email).then((remote) => {
+          if (remote) {
+            if (remote.bookmarkedIds) {
+              setBookmarkedIds(remote.bookmarkedIds);
+              try {
+                localStorage.setItem('promptcms_user_bookmarks', JSON.stringify(remote.bookmarkedIds));
+              } catch {}
+            }
+            if (remote.tasteProfile) {
+              setTasteProfile(remote.tasteProfile);
+              PersonalizationEngine.saveProfile(remote.tasteProfile);
+            }
+          }
+        }).catch(() => {});
+      }
     };
 
     const handleStorage = (e: StorageEvent) => {
@@ -924,7 +1014,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('taste_profile_updated', handleTasteProfileEvent);
     };
-  }, [syncFromRemote, syncUserDataToRemote]);
+  }, [syncFromRemote]);
 
   const updateTasteProfile = (updates: Partial<UserTasteProfile>) => {
     const current = PersonalizationEngine.getProfile();
@@ -935,13 +1025,32 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     };
     PersonalizationEngine.saveProfile(updated);
     setTasteProfile(updated);
-    void syncUserDataToRemote({ tasteProfile: updated });
     showToast('Feed taste profile updated!');
+
+    // Persist to Supabase database for logged-in user
+    if (userAccount && userAccount.isLoggedIn) {
+      void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
+        tasteProfile: updated,
+      });
+    }
+  };
+
+  const handleSetTasteProfile = (newProfile: UserTasteProfile) => {
+    PersonalizationEngine.saveProfile(newProfile);
+    setTasteProfile(newProfile);
+    if (userAccount && userAccount.isLoggedIn) {
+      void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
+        tasteProfile: newProfile,
+      });
+    }
   };
 
   const recordPromptClick = (post: PromptPost) => {
     const updated = PersonalizationEngine.recordView(post);
     setTasteProfile(updated);
+    if (userAccount && userAccount.isLoggedIn) {
+      debounceSyncTasteProfile(userAccount.id, userAccount.email, updated);
+    }
   };
 
   const handleSelectPostWithTracking = (post: PromptPost | null) => {
@@ -949,6 +1058,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (post) {
       const updated = PersonalizationEngine.recordView(post);
       setTasteProfile(updated);
+      if (userAccount && userAccount.isLoggedIn) {
+        debounceSyncTasteProfile(userAccount.id, userAccount.email, updated);
+      }
     }
   };
 
@@ -991,16 +1103,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
-      }
-
       // Send to server database
       const res = await fetch('/api/posts', {
         method: 'POST',
-        headers,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(post),
       });
 
@@ -1036,10 +1142,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const updated = prev.filter((item) => item !== id);
         if (typeof window !== 'undefined') {
           try {
-            localStorage.setItem('auraprompt_user_bookmarks', JSON.stringify(updated));
+            localStorage.setItem('promptcms_user_bookmarks', JSON.stringify(updated));
           } catch (e) {
             console.error(e);
           }
+        }
+        if (userAccount && userAccount.isLoggedIn) {
+          void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
+            bookmarkedIds: updated,
+          });
         }
         return updated;
       }
@@ -1047,15 +1158,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const headers: Record<string, string> = {};
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
-      }
-
       const res = await fetch(`/api/posts?id=${encodeURIComponent(id)}`, {
         method: 'DELETE',
-        headers,
       });
       const data = await res.json();
       if (data.success && Array.isArray(data.posts)) {
@@ -1099,22 +1203,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     showToast(newIsPremium ? 'Prompt upgraded to PRO Premium' : 'Prompt changed to Free');
   };
 
-  const copyPromptToClipboard = async (text: string, postId?: string) => {
+  const copyPromptToClipboard = (text: string, postId?: string) => {
     navigator.clipboard.writeText(text);
     if (postId) {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (session?.access_token) {
-          headers['Authorization'] = `Bearer ${session.access_token}`;
-        }
-        fetch(`/api/posts/${encodeURIComponent(postId)}`, {
-          method: 'PATCH',
-          headers,
-          body: JSON.stringify({ action: 'copy' }),
-        }).catch(() => {});
-      } catch (e) {}
-
+      fetch(`/api/posts/${encodeURIComponent(postId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'copy' }),
+      }).catch(() => {});
       setPosts((prev) =>
         prev.map((p) => (p.id === postId ? { ...p, copiesCount: (p.copiesCount || 0) + 1 } : p))
       );
@@ -1122,6 +1218,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (post) {
         const updated = PersonalizationEngine.recordCopy(post);
         setTasteProfile(updated);
+        if (userAccount && userAccount.isLoggedIn) {
+          void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
+            tasteProfile: updated,
+          });
+        }
       }
     }
     try {
@@ -1137,25 +1238,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     showToast('Prompt copied to clipboard!');
   };
 
-  const toggleLike = async (id: string) => {
+  const toggleLike = (id: string) => {
     const isNowLiked = StorageService.toggleLikeLocal(id);
     const updatedLikes = StorageService.getLikedIds();
     setLikedIds(updatedLikes);
-    void syncUserDataToRemote({ likes: updatedLikes });
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
-      }
-      fetch(`/api/posts/${encodeURIComponent(id)}`, {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify({ action: 'like' }),
-      }).catch(() => {});
-    } catch (e) {}
-
+    fetch(`/api/posts/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'like' }),
+    }).catch(() => {});
     setPosts((prev) =>
       prev.map((p) =>
         p.id === id
@@ -1164,9 +1255,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       )
     );
     const post = posts.find((p) => p.id === id);
+    let updatedProfile = tasteProfile;
     if (post) {
-      const updated = PersonalizationEngine.recordLike(post, isNowLiked);
-      setTasteProfile(updated);
+      updatedProfile = PersonalizationEngine.recordLike(post, isNowLiked);
+      setTasteProfile(updatedProfile);
+    }
+
+    // Push updated likes and taste profile to Supabase cloud
+    if (userAccount && userAccount.isLoggedIn) {
+      void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
+        likedIds: updatedLikes,
+        tasteProfile: updatedProfile,
+      });
     }
   };
 
@@ -1174,13 +1274,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const isNowSaved = StorageService.toggleBookmark(id);
     const updatedBookmarks = StorageService.getBookmarkedIds();
     setBookmarkedIds(updatedBookmarks);
-    void syncUserDataToRemote({ bookmarks: updatedBookmarks });
 
     const post = posts.find((p) => p.id === id);
+    let updatedProfile = tasteProfile;
     if (post) {
-      const updatedProfile = PersonalizationEngine.recordSave(post, isNowSaved);
+      updatedProfile = PersonalizationEngine.recordSave(post, isNowSaved);
       setTasteProfile(updatedProfile);
     }
+
+    // Push updated bookmarks and taste profile to Supabase cloud
+    if (userAccount && userAccount.isLoggedIn) {
+      void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
+        bookmarkedIds: updatedBookmarks,
+        tasteProfile: updatedProfile,
+      });
+    }
+
     showToast(isNowSaved ? 'Saved to bookmarks' : 'Removed from bookmarks');
   };
 
@@ -1369,7 +1478,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         selectedPost,
         setSelectedPost: handleSelectPostWithTracking,
         tasteProfile,
-        setTasteProfile,
+        setTasteProfile: handleSetTasteProfile,
         updateTasteProfile,
         isTasteModalOpen,
         setIsTasteModalOpen,
@@ -1440,6 +1549,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         deleteTag,
         saveSettings,
         resetAllData,
+        syncUserCloudData,
+        isSyncingUserData,
         showToast,
         toastMessage,
         isProCheckoutModalOpen,
@@ -1480,3 +1591,62 @@ export const useApp = () => {
   }
   return context;
 };
+
+export const useBookmarks = () => {
+  const {
+    bookmarkedIds,
+    toggleBookmark,
+    isBookmarksDrawerOpen,
+    setIsBookmarksDrawerOpen,
+    posts,
+    userAccount,
+    syncUserCloudData,
+    isSyncingUserData,
+  } = useApp();
+
+  const isBookmarked = (id: string) => bookmarkedIds.includes(id);
+  const bookmarkedPosts = posts.filter((p) => bookmarkedIds.includes(p.id));
+
+  return {
+    bookmarkedIds,
+    isBookmarked,
+    toggleBookmark,
+    bookmarkedPosts,
+    isBookmarksDrawerOpen,
+    setIsBookmarksDrawerOpen,
+    isLoggedIn: !!userAccount?.isLoggedIn,
+    syncBookmarks: syncUserCloudData,
+    isSyncing: isSyncingUserData,
+  };
+};
+
+export const useTasteProfile = () => {
+  const {
+    tasteProfile,
+    setTasteProfile,
+    updateTasteProfile,
+    isTasteModalOpen,
+    setIsTasteModalOpen,
+    recordPromptClick,
+    userAccount,
+    syncUserCloudData,
+    isSyncingUserData,
+  } = useApp();
+
+  return {
+    tasteProfile,
+    setTasteProfile,
+    updateTasteProfile,
+    isTasteModalOpen,
+    setIsTasteModalOpen,
+    recordPromptClick,
+    genderVibe: tasteProfile.genderVibe || 'all',
+    favoriteStyles: tasteProfile.favoriteStyles || [],
+    favoriteTools: tasteProfile.favoriteTools || [],
+    tasteSummary: PersonalizationEngine.getTasteSummary(tasteProfile),
+    isLoggedIn: !!userAccount?.isLoggedIn,
+    syncTasteProfile: syncUserCloudData,
+    isSyncing: isSyncingUserData,
+  };
+};
+

@@ -31,6 +31,8 @@ import {
   Camera,
   Crown,
   ShieldCheck,
+  Cloud,
+  RefreshCw,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -63,6 +65,8 @@ export const UserDashboard = () => {
     planTier,
     toolCredits,
     promptRequestsRemaining,
+    syncUserCloudData,
+    isSyncingUserData,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'saved' | 'history' | 'taste' | 'request'>('saved');
@@ -220,6 +224,18 @@ export const UserDashboard = () => {
                   <span className="px-2.5 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-[11px] font-medium">
                     Guest Session
                   </span>
+                )}
+                {userAccount?.isLoggedIn && (
+                  <button
+                    onClick={() => void syncUserCloudData()}
+                    disabled={isSyncingUserData}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-[11px] font-medium transition-colors disabled:opacity-50"
+                    title="Synchronize bookmarks and taste profile with Supabase cloud"
+                  >
+                    <Cloud className="w-3 h-3 text-emerald-500" />
+                    <RefreshCw className={`w-3 h-3 ${isSyncingUserData ? 'animate-spin text-[#E60023]' : ''}`} />
+                    <span>{isSyncingUserData ? 'Syncing...' : 'Cloud Synced'}</span>
+                  </button>
                 )}
                 <span className="px-2.5 py-0.5 rounded-full bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800/60 text-[#E60023] text-[11px] font-bold">
                   {tasteProfile.genderVibe === 'all'
