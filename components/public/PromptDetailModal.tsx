@@ -180,10 +180,9 @@ export const PromptDetailModal = () => {
     isProUser,
   } = useApp();
 
-  const INITIAL_RECOMMENDED_COUNT = 15;
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [copiedPinId, setCopiedPinId] = useState<string | null>(null);
-  const [displayedCount, setDisplayedCount] = useState<number>(INITIAL_RECOMMENDED_COUNT);
+  const [displayedCount, setDisplayedCount] = useState<number>(5);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [showFullImageModal, setShowFullImageModal] = useState<boolean>(false);
   const [isDownloadingImage, setIsDownloadingImage] = useState<boolean>(false);
@@ -196,7 +195,6 @@ export const PromptDetailModal = () => {
   // Keep historyStack synchronized with selectedPost during render
   if (selectedPost && selectedPost.id !== prevSelectedId) {
     setPrevSelectedId(selectedPost.id);
-    setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
     if (historyStack.length === 0 || !historyStack.some((p) => p.id === selectedPost.id)) {
       setHistoryStack((prev) => (prev.length === 0 ? [selectedPost] : [...prev, selectedPost]));
     }
@@ -243,7 +241,7 @@ export const PromptDetailModal = () => {
         const prevSlug = getPromptSlug(prevPost);
         window.history.replaceState({ postId: prevPost.id }, '', `/${prevSlug}`);
       }
-      setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
+      setDisplayedCount(5);
     } else {
       closeModal();
     }
@@ -276,7 +274,7 @@ export const PromptDetailModal = () => {
               if (idx !== -1) return prev.slice(0, idx + 1);
               return [...prev, matched];
             });
-            setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
+            setDisplayedCount(5);
           } else {
             fetch(`/api/posts/${encodeURIComponent(targetSlug)}`)
               .then((res) => (res.ok ? res.json() : Promise.reject(res)))
@@ -291,7 +289,7 @@ export const PromptDetailModal = () => {
                     if (idx !== -1) return prev.slice(0, idx + 1);
                     return [...prev, data.post];
                   });
-                  setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
+                  setDisplayedCount(5);
                 }
               })
               .catch(() => {});
@@ -413,7 +411,7 @@ export const PromptDetailModal = () => {
     };
   }, [selectedPost]);
 
-  // Recommendation engine: Relevance Scoring & Matching Algorithm
+  // Recommendation engine: Personalized Category, Tag & Taste-based matching with strict deduplication
   const allRecommendedPins = useMemo(() => {
     if (!selectedPost) return [];
 
@@ -423,82 +421,72 @@ export const PromptDetailModal = () => {
     if (selectedPost.id) seenIds.add(selectedPost.id);
     if (selectedPost.imageUrl) seenUrls.add(selectedPost.imageUrl);
 
-    // 1. Filter all available posts excluding the current active post
     const otherPublished = posts.filter((p) => {
-      if (!p || p.id === selectedPost.id || p.status !== 'published') return false;
+      if (p.id === selectedPost.id || p.status !== 'published') return false;
       if (p.imageUrl && seenUrls.has(p.imageUrl)) return false;
       return true;
     });
 
-    // Target category & tags for matching
-    const targetCategory = selectedPost.category?.trim().toLowerCase();
-    const targetTags = new Set(
-      (selectedPost.tags || [])
-        .map((t) => (typeof t === 'string' ? t.trim().toLowerCase() : ''))
-        .filter(Boolean)
-    );
+    // 1. Scored matching based on content relevance + personalized taste profile
+    const targetTags = new Set((selectedPost.tags || []).map((t) => t.toLowerCase()));
+    const targetCategory = selectedPost.category?.toLowerCase();
 
-    // 2. Calculate relevance score for each remaining post based on:
-    //    - Category Match: +5 points if post.category matches current post's category
-    //    - Tag Overlap: +2 points for every matching tag in post.tags and current post's tags
     const scored = otherPublished.map((post) => {
       let score = 0;
-
-      // Category Match: +5 points
-      const postCategory = post.category?.trim().toLowerCase();
-      if (targetCategory && postCategory && postCategory === targetCategory) {
-        score += 5;
+      if (post.category?.toLowerCase() === targetCategory) {
+        score += 15;
       }
-
-      // Tag Overlap: +2 points for every matching tag
-      if (Array.isArray(post.tags)) {
+      if (post.tags) {
         post.tags.forEach((tag) => {
-          const cleanTag = typeof tag === 'string' ? tag.trim().toLowerCase() : '';
-          if (cleanTag && targetTags.has(cleanTag)) {
-            score += 2;
+          if (targetTags.has(tag.toLowerCase())) {
+            score += 8;
           }
         });
       }
+      if (post.aiTool === selectedPost.aiTool) {
+        score += 3;
+      }
+
+      // Add AI Taste Profile personalization score
+      const tasteScore = PersonalizationEngine.scorePrompt(post, tasteProfile, bookmarkedIds).score;
+      score += Math.round(tasteScore / 4);
+
+      // slight boost for popularity
+      score += Math.min((post.viewsCount || 0) / 2000, 5);
+      score += Math.min((post.copiesCount || 0) / 1000, 5);
 
       return { post, score };
     });
 
-    // 3. Sort posts descending by their total relevance score
-    scored.sort((a, b) => {
-      if (b.score !== a.score) {
-        return b.score - a.score;
-      }
-      // Stable secondary tie-breaker: newest first
-      const timeA = new Date(a.post.createdAt || 0).getTime();
-      const timeB = new Date(b.post.createdAt || 0).getTime();
-      return timeB - timeA;
-    });
+    // Sort by relevance score descending
+    scored.sort((a, b) => b.score - a.score);
+    const relevantList = scored.map((item) => item.post);
 
-    // 4. Arrange posts in descending score order with deduplication
+    // Combine relevant items and deduplicate strictly
     const combined: PromptPost[] = [];
 
-    scored.forEach(({ post }) => {
+    relevantList.forEach((p) => {
       if (
-        !seenIds.has(post.id) &&
-        (!post.imageUrl || !seenUrls.has(post.imageUrl))
+        !seenIds.has(p.id) &&
+        (!p.imageUrl || !seenUrls.has(p.imageUrl))
       ) {
-        seenIds.add(post.id);
-        if (post.imageUrl) seenUrls.add(post.imageUrl);
-        combined.push(post);
+        seenIds.add(p.id);
+        if (p.imageUrl) seenUrls.add(p.imageUrl);
+        combined.push(p);
       }
     });
 
     return combined;
-  }, [selectedPost, posts]);
+  }, [selectedPost, posts, tasteProfile, bookmarkedIds]);
 
   const hasMorePins = displayedCount < allRecommendedPins.length;
 
-  // Infinite scroll loader trigger (10 pins per batch)
+  // Infinite scroll loader trigger (5 pins per batch)
   const loadMorePins = useCallback(() => {
     if (isLoadingMore || !hasMorePins) return;
     setIsLoadingMore(true);
     setTimeout(() => {
-      setDisplayedCount((prev) => prev + 10);
+      setDisplayedCount((prev) => prev + 5);
       setIsLoadingMore(false);
     }, 250);
   }, [isLoadingMore, hasMorePins]);
@@ -618,7 +606,7 @@ export const PromptDetailModal = () => {
       const pinSlug = getPromptSlug(pin);
       window.history.replaceState({ postId: pin.id }, '', `/${pinSlug}`);
     }
-    setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
+    setDisplayedCount(5);
   };
 
   const handleDeconstructImage = () => {
