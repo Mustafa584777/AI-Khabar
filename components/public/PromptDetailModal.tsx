@@ -92,13 +92,12 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
 
       {/* Premium Badge */}
       {pin.isPremium && (
-        <div className={`absolute top-2 left-2 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full backdrop-blur-md text-[9px] font-black uppercase shadow-md pointer-events-none ${
+        <div className={`absolute top-2 left-2 z-10 flex items-center justify-center w-6 h-6 rounded-full backdrop-blur-md shadow-md pointer-events-none ${
           isUnlocked && !isProUser
             ? 'bg-emerald-950/85 border border-emerald-400/60 text-emerald-300'
             : 'bg-black/85 border border-amber-400/60 text-amber-300'
         }`}>
-          <Crown className={`w-2.5 h-2.5 ${isUnlocked && !isProUser ? 'fill-emerald-400 text-emerald-400' : 'fill-amber-400 text-amber-400'}`} />
-          <span>{isUnlocked && !isProUser ? 'UNLOCKED' : 'PRO'}</span>
+          <Crown className={`w-3 h-3 ${isUnlocked && !isProUser ? 'fill-emerald-400 text-emerald-400' : 'fill-amber-400 text-amber-400'}`} />
         </div>
       )}
 

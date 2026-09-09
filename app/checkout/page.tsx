@@ -38,9 +38,9 @@ const CREDIT_PACKS: CreditPack[] = [
     id: 'pack-100',
     name: 'Starter Pack',
     credits: 100,
-    priceRupees: 49,
-    amountPaise: 4900,
-    rateText: '₹0.49 / credit',
+    priceRupees: 1,
+    amountPaise: 100,
+    rateText: '₹0.01 / credit (Testing)',
     description: 'Perfect for quick unlocks and testing image extraction',
     badge: null,
     icon: <Coins className="w-6 h-6 text-amber-500" />,
@@ -56,9 +56,9 @@ const CREDIT_PACKS: CreditPack[] = [
     id: 'pack-250',
     name: 'Creator Pack',
     credits: 250,
-    priceRupees: 99,
-    amountPaise: 9900,
-    rateText: '₹0.39 / credit • Save 20%',
+    priceRupees: 1,
+    amountPaise: 100,
+    rateText: '₹0.004 / credit • Testing',
     description: 'Our most popular top-up for active visual designers',
     badge: 'Most Popular',
     icon: <Zap className="w-6 h-6 text-[#E60023]" />,
@@ -74,9 +74,9 @@ const CREDIT_PACKS: CreditPack[] = [
     id: 'pack-499',
     name: 'Mega Pack',
     credits: 499,
-    priceRupees: 199,
-    amountPaise: 19900,
-    rateText: '₹0.39 / credit • Best Value',
+    priceRupees: 1,
+    amountPaise: 100,
+    rateText: '₹0.002 / credit • Best Value',
     description: 'High-volume pack for content studios & power creators',
     badge: 'Best Value',
     icon: <Crown className="w-6 h-6 text-purple-500" />,
@@ -272,7 +272,7 @@ export default function CheckoutPage() {
 
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl sm:text-4xl font-black text-neutral-900 dark:text-white">
-                      ₹49
+                      ₹1
                     </span>
                     <span className="text-xs text-neutral-400">/ month</span>
                   </div>
@@ -298,11 +298,11 @@ export default function CheckoutPage() {
                 </div>
 
                 <RazorpayCheckoutButton
-                  amount={4900}
+                  amount={100}
                   planTier="starter"
                   planName="Starter"
                   description="Monthly Starter Membership - Unlock Prompts & 10 Credits"
-                  buttonText="Get Starter for ₹49/mo"
+                  buttonText="Get Starter for ₹1/mo"
                   variant="secondary"
                   className="w-full"
                 />
@@ -326,7 +326,7 @@ export default function CheckoutPage() {
 
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl sm:text-4xl font-black text-neutral-900 dark:text-white">
-                      ₹199
+                      ₹1
                     </span>
                     <span className="text-xs text-neutral-400">/ month</span>
                   </div>
@@ -352,11 +352,11 @@ export default function CheckoutPage() {
                 </div>
 
                 <RazorpayCheckoutButton
-                  amount={19900}
+                  amount={100}
                   planTier="pro"
                   planName="Pro"
                   description="Monthly Pro Membership - Unlock Prompts & 50 Credits"
-                  buttonText="Get Pro for ₹199/mo"
+                  buttonText="Get Pro for ₹1/mo"
                   variant="pill"
                   size="lg"
                   className="w-full"
@@ -377,7 +377,7 @@ export default function CheckoutPage() {
 
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl sm:text-4xl font-black text-neutral-900 dark:text-white">
-                      ₹499
+                      ₹1
                     </span>
                     <span className="text-xs text-neutral-400">/ month</span>
                   </div>
@@ -403,11 +403,11 @@ export default function CheckoutPage() {
                 </div>
 
                 <RazorpayCheckoutButton
-                  amount={49900}
+                  amount={100}
                   planTier="vip"
                   planName="VIP"
                   description="Monthly VIP Membership - Unlock Prompts & 200 Credits"
-                  buttonText="Get VIP for ₹499/mo"
+                  buttonText="Get VIP for ₹1/mo"
                   variant="primary"
                   className="w-full"
                 />

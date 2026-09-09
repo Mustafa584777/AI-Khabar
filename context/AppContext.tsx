@@ -1259,6 +1259,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const copyPromptToClipboard = (text: string, postId?: string) => {
+    if (postId) {
+      const post = posts.find((p) => p.id === postId);
+      if (post && post.isPremium) {
+        const unlocked = isPromptUnlocked(postId, post.isPremium);
+        if (!unlocked) {
+          setLockedPromptContext(post);
+          setIsUnlockPremiumModalOpen(true);
+          showToast('🔒 Access Denied: Premium prompt requires 1 credit or Pro subscription to copy/access!');
+          return;
+        }
+      }
+    }
     navigator.clipboard.writeText(text);
     if (postId) {
       fetch(`/api/posts/${encodeURIComponent(postId)}`, {

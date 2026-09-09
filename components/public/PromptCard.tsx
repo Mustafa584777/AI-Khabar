@@ -97,13 +97,12 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
         <span className="sr-only">{post.title} - {post.category} copy paste prompt</span>
         {/* Premium Badge */}
         {post.isPremium && (
-          <div className={`absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full backdrop-blur-md text-[10px] font-black tracking-wider uppercase shadow-xl pointer-events-none ${
+          <div className={`absolute top-2.5 left-2.5 z-20 flex items-center justify-center w-7 h-7 rounded-full backdrop-blur-md shadow-xl pointer-events-none ${
             isUnlocked && !isProUser
               ? 'bg-emerald-950/85 border border-emerald-400/60 text-emerald-300'
               : 'bg-black/85 border border-amber-400/60 text-amber-300'
           }`}>
-            <Crown className={`w-3 h-3 ${isUnlocked && !isProUser ? 'fill-emerald-400 text-emerald-400' : 'fill-amber-400 text-amber-400'}`} />
-            <span>{isUnlocked && !isProUser ? 'UNLOCKED' : 'PRO • 1 CR'}</span>
+            <Crown className={`w-3.5 h-3.5 ${isUnlocked && !isProUser ? 'fill-emerald-400 text-emerald-400' : 'fill-amber-400 text-amber-400'}`} />
           </div>
         )}
 
