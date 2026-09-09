@@ -4,8 +4,7 @@ import { ServerStorage } from '@/lib/server-storage';
 import { getPromptSlug } from '@/lib/utils';
 import { DirectPromptLoader } from '@/components/public/DirectPromptLoader';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 21600;
 
 interface PageProps {
   params: Promise<{ id: string }>;
