@@ -1,8 +1,7 @@
 import { ServerStorage } from '@/lib/server-storage';
 import { NextRequest, NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 21600;
 
 export async function GET(req: NextRequest) {
   try {
@@ -34,13 +33,15 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    const cacheHeader = includeDrafts
+      ? 'no-store, no-cache, must-revalidate'
+      : 'public, s-maxage=21600, stale-while-revalidate=43200';
+
     return NextResponse.json(
       { success: true, posts },
       {
         headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-          Pragma: 'no-cache',
-          Expires: '0',
+          'Cache-Control': cacheHeader,
         },
       }
     );
