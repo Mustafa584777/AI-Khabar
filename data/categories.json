@@ -108,5 +108,14 @@
     "badgeBg": "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-300 dark:border-red-800",
     "count": 1,
     "sortOrder": 0
+  },
+  {
+    "id": "cat-1788856797139",
+    "name": "Cyberpunk",
+    "slug": "cyberpunk",
+    "iconName": "Sparkles",
+    "description": "Cyberpunk AI image prompts and inspirations.",
+    "count": 1,
+    "sortOrder": 11
   }
 ]
