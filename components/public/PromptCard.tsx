@@ -82,13 +82,16 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
       id={`prompt-pin-${post.id}`}
       style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
     >
+      <h2 className="sr-only">{post.title}</h2>
       <a
         href={`/${promptSlug}`}
         onClick={handleCardClick}
         style={{ aspectRatio: detectedRatio }}
+        aria-label={`${post.title} - ${post.category} AI Photo Prompt`}
         className="block relative w-full overflow-hidden bg-neutral-100 dark:bg-neutral-800 focus:outline-none"
         onContextMenu={(e) => e.preventDefault()}
       >
+        <span className="sr-only">{post.title} - {post.category} copy paste prompt</span>
         {/* Premium Badge */}
         {post.isPremium && (
           <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/85 backdrop-blur-md border border-amber-400/60 text-amber-300 text-[10px] font-black tracking-wider uppercase shadow-xl pointer-events-none">

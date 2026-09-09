@@ -704,20 +704,21 @@ export const PromptDetailModal = () => {
             {/* Left Column: Edge-to-Edge High-Resolution Photo Showcase */}
             <div
               onContextMenu={(e) => e.preventDefault()}
-              className="lg:col-span-7 bg-neutral-950 flex flex-col justify-center items-stretch p-0 relative group min-h-[380px] sm:min-h-[500px] lg:min-h-[640px] select-none overflow-hidden"
+              className="lg:col-span-7 bg-neutral-100 dark:bg-neutral-900 flex flex-col justify-start items-center p-0 relative group select-none overflow-hidden"
             >
               {selectedPost.imageUrl ? (
                 <div
                   onContextMenu={(e) => e.preventDefault()}
-                  className="relative w-full h-full min-h-[380px] sm:min-h-[500px] lg:min-h-[640px] overflow-hidden flex items-center justify-center select-none bg-neutral-950"
+                  className="relative w-full overflow-hidden flex items-center justify-center select-none"
                 >
                   <Image
-                    src={getOptimizedImageUrl(selectedPost.imageUrl, 600)}
+                    src={getOptimizedImageUrl(selectedPost.imageUrl, 1200)}
                     alt={selectedPost.imageAlt || selectedPost.title}
-                    fill
+                    width={selectedPost.imageWidth || 1200}
+                    height={selectedPost.imageHeight || 1600}
                     sizes="(max-width: 1024px) 100vw, 60vw"
                     draggable={false}
-                    className="object-contain select-none pointer-events-none"
+                    className="w-full h-auto block select-none pointer-events-none"
                     referrerPolicy="no-referrer"
                     priority
                     decoding="async"
@@ -773,11 +774,6 @@ export const PromptDetailModal = () => {
                     <span className="px-3 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 text-xs font-bold text-neutral-800 dark:text-neutral-200 border border-neutral-200/60 dark:border-neutral-700/60">
                       {selectedPost.category}
                     </span>
-                    {selectedPost.aiTool && (
-                      <span className="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-semibold border border-blue-200/60 dark:border-blue-800/60">
-                        {selectedPost.aiTool}
-                      </span>
-                    )}
                   </div>
 
                   {/* Action Icons: Like, Copy, Generate Image */}
@@ -868,18 +864,14 @@ export const PromptDetailModal = () => {
 
                 {/* Master Copyable Prompt Box */}
                 <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-800 dark:text-neutral-200">
-                      <Sparkles className="w-4 h-4 text-red-600 dark:text-red-400" />
-                      <span>Master Copy-Paste Prompt</span>
-                    </div>
-                    {selectedPost.isPremium && (
+                  {selectedPost.isPremium && (
+                    <div className="flex items-center justify-end">
                       <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[10px] font-black tracking-wider uppercase flex items-center gap-1">
                         <Crown className="w-3 h-3 fill-amber-500" />
                         <span>PRO PROMPT</span>
                       </span>
-                    )}
-                  </div>
+                    </div>
+                  )}
 
                   {isPromptGated ? (
                     <div className="relative rounded-2xl bg-gradient-to-b from-neutral-900 to-neutral-950 text-neutral-100 p-6 border border-amber-500/40 shadow-xl overflow-hidden text-center">

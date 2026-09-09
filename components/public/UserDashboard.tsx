@@ -461,7 +461,7 @@ export const UserDashboard = () => {
                       {/* Top Overlay Badge */}
                       <div className="absolute top-2.5 left-2.5 z-10">
                         <span className="px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-bold">
-                          {post.aiTool}
+                          {post.category}
                         </span>
                       </div>
 
