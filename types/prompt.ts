@@ -198,4 +198,7 @@ export interface AiSearchResult {
   isAiPowered: boolean;
 }
 
+export type { UserTasteProfile, GenderVibe } from '@/lib/personalization';
+
+
 

@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
       if (email) {
         const emailKey = getSyncKey(undefined, email);
         if (emailKey !== key) {
-          client.from('settings').upsert({ id: emailKey, data: mergedPayload }).catch(() => {});
+          await client.from('settings').upsert({ id: emailKey, data: mergedPayload });
         }
       }
 
@@ -187,7 +187,7 @@ export async function POST(req: NextRequest) {
       if (email) {
         const emailKey = getSyncKey(undefined, email);
         if (emailKey !== key) {
-          client.from('settings').upsert({ id: emailKey, data: mergedPayload }).catch(() => {});
+          await client.from('settings').upsert({ id: emailKey, data: mergedPayload });
         }
       }
 
@@ -255,7 +255,7 @@ export async function POST(req: NextRequest) {
       if (email) {
         const emailKey = getSyncKey(undefined, email);
         if (emailKey !== key) {
-          client.from('settings').upsert({ id: emailKey, data: mergedPayload }).catch(() => {});
+          await client.from('settings').upsert({ id: emailKey, data: mergedPayload });
         }
       }
 
