@@ -22,7 +22,9 @@ import {
   Crown,
   Lock,
   ArrowRight,
+  Coins,
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import Image from 'next/image';
 import Link from 'next/link';
 import { PersonalizationEngine } from '@/lib/personalization';
@@ -33,6 +35,8 @@ interface RecommendedPinCardProps {
   pin: PromptPost;
   isPinBookmarked: boolean;
   isCopied: boolean;
+  isUnlocked?: boolean;
+  isProUser?: boolean;
   onSelect: (pin: PromptPost) => void;
   onGenerate: (e: React.MouseEvent, pin: PromptPost) => void;
   onCopy: (e: React.MouseEvent, pin: PromptPost) => void;
@@ -43,6 +47,8 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
   pin,
   isPinBookmarked,
   isCopied,
+  isUnlocked,
+  isProUser,
   onSelect,
   onGenerate,
   onCopy,
@@ -86,9 +92,13 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
 
       {/* Premium Badge */}
       {pin.isPremium && (
-        <div className="absolute top-2 left-2 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/85 backdrop-blur-md border border-amber-400/60 text-amber-300 text-[9px] font-black uppercase shadow-md pointer-events-none">
-          <Crown className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
-          <span>PRO</span>
+        <div className={`absolute top-2 left-2 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full backdrop-blur-md text-[9px] font-black uppercase shadow-md pointer-events-none ${
+          isUnlocked && !isProUser
+            ? 'bg-emerald-950/85 border border-emerald-400/60 text-emerald-300'
+            : 'bg-black/85 border border-amber-400/60 text-amber-300'
+        }`}>
+          <Crown className={`w-2.5 h-2.5 ${isUnlocked && !isProUser ? 'fill-emerald-400 text-emerald-400' : 'fill-amber-400 text-amber-400'}`} />
+          <span>{isUnlocked && !isProUser ? 'UNLOCKED' : 'PRO'}</span>
         </div>
       )}
 
@@ -178,6 +188,10 @@ export const PromptDetailModal = () => {
     showToast,
     setCurrentView,
     isProUser,
+    toolCredits,
+    unlockedPromptIds,
+    unlockPromptWithCredit,
+    isPromptUnlocked,
   } = useApp();
 
   const INITIAL_RECOMMENDED_COUNT = 15;
@@ -325,9 +339,27 @@ export const PromptDetailModal = () => {
 
   const handleGenerateImage = () => {
     if (!selectedPost) return;
-    if (selectedPost.isPremium && !isProUser) {
-      setIsUnlockModalOpen(true);
-      return;
+    const isUnlocked = isPromptUnlocked(selectedPost.id, selectedPost.isPremium);
+    if (!isUnlocked) {
+      if (toolCredits >= 1) {
+        const res = unlockPromptWithCredit(selectedPost.id);
+        if (!res.success) {
+          setIsUnlockModalOpen(true);
+          return;
+        }
+        try {
+          confetti({
+            particleCount: 60,
+            spread: 50,
+            origin: { y: 0.6 },
+            colors: ['#FFD700', '#FFA500', '#E60023'],
+          });
+        } catch {}
+        showToast('Prompt unlocked! 1 credit used 🎉');
+      } else {
+        setIsUnlockModalOpen(true);
+        return;
+      }
     }
     if (typeof window !== 'undefined') {
       sessionStorage.setItem('auraprompt_studio_preload', selectedPost.promptText);
@@ -557,10 +589,53 @@ export const PromptDetailModal = () => {
   if (!selectedPost) return null;
 
   const isBookmarked = bookmarkedIds.includes(selectedPost.id);
-  const isPromptGated = Boolean(selectedPost.isPremium && !isProUser);
+  const isUnlocked = isPromptUnlocked(selectedPost.id, selectedPost.isPremium);
+  const isPromptGated = Boolean(selectedPost.isPremium && !isUnlocked);
+
+  const handleUnlockWithOneCredit = () => {
+    if (!selectedPost) return;
+    if (toolCredits >= 1) {
+      const res = unlockPromptWithCredit(selectedPost.id);
+      if (res.success) {
+        try {
+          confetti({
+            particleCount: 80,
+            spread: 60,
+            origin: { y: 0.6 },
+            colors: ['#FFD700', '#FFA500', '#E60023'],
+          });
+        } catch {}
+        showToast('Prompt unlocked! 1 credit used 🎉');
+      } else {
+        showToast(res.message);
+        setIsUnlockModalOpen(true);
+      }
+    } else {
+      showToast(`You need 1 credit to unlock this prompt (Balance: ${toolCredits}). Top up credits or subscribe!`);
+      setIsUnlockModalOpen(true);
+    }
+  };
 
   const handleCopyMasterPrompt = () => {
     if (isPromptGated) {
+      if (toolCredits >= 1) {
+        const res = unlockPromptWithCredit(selectedPost.id);
+        if (res.success) {
+          copyPromptToClipboard(selectedPost.promptText, selectedPost.id);
+          setCopiedPrompt(true);
+          setTimeout(() => setCopiedPrompt(false), 2000);
+          try {
+            confetti({
+              particleCount: 80,
+              spread: 60,
+              origin: { y: 0.6 },
+              colors: ['#FFD700', '#FFA500', '#E60023'],
+            });
+          } catch {}
+          showToast('Prompt unlocked and copied! 1 credit used 🎉');
+          return;
+        }
+      }
       setIsUnlockModalOpen(true);
       return;
     }
@@ -571,7 +646,26 @@ export const PromptDetailModal = () => {
 
   const handleQuickCopyPin = (e: React.MouseEvent, pin: PromptPost) => {
     e.stopPropagation();
-    if (pin.isPremium && !isProUser) {
+    const isPinUnlocked = isPromptUnlocked(pin.id, pin.isPremium);
+    if (!isPinUnlocked) {
+      if (toolCredits >= 1) {
+        const res = unlockPromptWithCredit(pin.id);
+        if (res.success) {
+          copyPromptToClipboard(pin.promptText, pin.id);
+          setCopiedPinId(pin.id);
+          setTimeout(() => setCopiedPinId(null), 2000);
+          try {
+            confetti({
+              particleCount: 60,
+              spread: 50,
+              origin: { y: 0.6 },
+              colors: ['#FFD700', '#FFA500', '#E60023'],
+            });
+          } catch {}
+          showToast('Prompt unlocked and copied! 1 credit used 🎉');
+          return;
+        }
+      }
       setIsUnlockModalOpen(true);
       return;
     }
@@ -877,7 +971,13 @@ export const PromptDetailModal = () => {
                 {/* Master Copyable Prompt Box */}
                 <div className="space-y-2.5">
                   {selectedPost.isPremium && (
-                    <div className="flex items-center justify-end">
+                    <div className="flex items-center justify-end gap-2">
+                      {isUnlocked && !isProUser && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px] font-black tracking-wider uppercase flex items-center gap-1">
+                          <Check className="w-3 h-3" />
+                          <span>UNLOCKED</span>
+                        </span>
+                      )}
                       <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[10px] font-black tracking-wider uppercase flex items-center gap-1">
                         <Crown className="w-3 h-3 fill-amber-500" />
                         <span>PRO PROMPT</span>
@@ -894,38 +994,35 @@ export const PromptDetailModal = () => {
                       </div>
 
                       {/* Centered Unlock Prompt Message Popup Trigger */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center p-5 bg-black/60 backdrop-blur-xs">
-                        <div className="w-11 h-11 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-2.5 border border-amber-500/40 shadow-md">
+                      <div className="absolute inset-0 flex flex-col items-center justify-center p-5 bg-black/75 backdrop-blur-xs">
+                        <div className="w-11 h-11 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-2 border border-amber-500/40 shadow-md">
                           <Lock className="w-5 h-5" />
                         </div>
                         <h3 className="text-sm sm:text-base font-black text-white flex items-center gap-2">
-                          <span>Prompt Locked for Subscribers</span>
+                          <span>Premium Prompt Locked</span>
                           <span className="px-2 py-0.5 rounded-full bg-amber-500 text-black text-[9px] font-black uppercase">
-                            PRO
+                            1 Credit
                           </span>
                         </h3>
-                        <p className="text-[11px] sm:text-xs text-neutral-300 max-w-sm mt-1 mb-4 leading-relaxed font-sans">
-                          Unlock this exclusive prompt along with all premium prompts, 10-200 AI tools credits, and priority prompt requests.
+                        <p className="text-[11px] sm:text-xs text-neutral-300 max-w-sm mt-1 mb-3.5 leading-relaxed font-sans">
+                          Unlock this prompt permanently with <strong>1 credit</strong> (Balance: <strong className="text-amber-400">{toolCredits} Credits</strong>), or subscribe for unlimited access.
                         </p>
                         <div className="flex flex-wrap items-center justify-center gap-2">
                           <button
                             type="button"
-                            onClick={() => setIsUnlockModalOpen(true)}
+                            onClick={handleUnlockWithOneCredit}
                             className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs shadow-lg shadow-amber-500/25 transition-all active:scale-95 font-sans cursor-pointer"
                           >
-                            <Crown className="w-3.5 h-3.5 fill-black" />
-                            <span>Unlock Premium Prompts</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
+                            <Coins className="w-3.5 h-3.5 fill-black" />
+                            <span>{toolCredits >= 1 ? `Unlock for 1 Credit (${toolCredits} Left)` : 'Unlock for 1 Credit (0 Left)'}</span>
                           </button>
                           <button
                             type="button"
-                            onClick={() => {
-                              closeModal();
-                              router.push('/pricing');
-                            }}
-                            className="px-4 py-2.5 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold border border-neutral-700 transition-colors font-sans cursor-pointer"
+                            onClick={() => setIsUnlockModalOpen(true)}
+                            className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold border border-neutral-700 transition-colors font-sans cursor-pointer"
                           >
-                            View Plans
+                            <Crown className="w-3.5 h-3.5 text-amber-400" />
+                            <span>Get Credits / Pro</span>
                           </button>
                         </div>
                       </div>
@@ -1017,12 +1114,32 @@ export const PromptDetailModal = () => {
                     pin={pin}
                     isPinBookmarked={bookmarkedIds.includes(pin.id)}
                     isCopied={copiedPinId === pin.id}
+                    isUnlocked={isPromptUnlocked(pin.id, pin.isPremium)}
+                    isProUser={isProUser}
                     onSelect={handleSelectPin}
                     onGenerate={(e, p) => {
                       e.stopPropagation();
-                      if (p.isPremium && !isProUser) {
-                        setIsUnlockModalOpen(true);
-                        return;
+                      const isPinUnlocked = isPromptUnlocked(p.id, p.isPremium);
+                      if (!isPinUnlocked) {
+                        if (toolCredits >= 1) {
+                          const res = unlockPromptWithCredit(p.id);
+                          if (!res.success) {
+                            setIsUnlockModalOpen(true);
+                            return;
+                          }
+                          try {
+                            confetti({
+                              particleCount: 60,
+                              spread: 50,
+                              origin: { y: 0.6 },
+                              colors: ['#FFD700', '#FFA500', '#E60023'],
+                            });
+                          } catch {}
+                          showToast('Prompt unlocked! 1 credit used 🎉');
+                        } else {
+                          setIsUnlockModalOpen(true);
+                          return;
+                        }
                       }
                       if (typeof window !== 'undefined') {
                         sessionStorage.setItem('auraprompt_studio_preload', p.promptText);

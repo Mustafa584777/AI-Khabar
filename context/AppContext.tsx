@@ -133,11 +133,16 @@ interface AppContextType {
   planTier: PlanTier;
   setPlanTier: (tier: PlanTier) => void;
   toolCredits: number;
-  deductToolCredit: () => boolean;
-  useToolCredit: () => boolean;
+  deductToolCredit: (amount?: number) => boolean;
+  useToolCredit: (amount?: number) => boolean;
   addToolCredits: (amount: number) => void;
   promptRequestsRemaining: number;
   upgradePlan: (tier: 'starter' | 'pro' | 'vip') => void;
+
+  // Prompt Unlocking with Credits / Subscription
+  unlockedPromptIds: string[];
+  isPromptUnlocked: (promptId: string, isPremium?: boolean) => boolean;
+  unlockPromptWithCredit: (promptId: string) => { success: boolean; message: string };
 
   isUnlockPremiumModalOpen: boolean;
   setIsUnlockPremiumModalOpen: (open: boolean) => void;
@@ -240,11 +245,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const deductToolCredit = useCallback((): boolean => {
+  const deductToolCredit = useCallback((amount: number = 1): boolean => {
     let success = false;
     setToolCreditsState((prev) => {
-      if (prev > 0) {
-        const next = prev - 1;
+      if (prev >= amount) {
+        const next = prev - amount;
         if (typeof window !== 'undefined') {
           localStorage.setItem('auraprompt_tool_credits', next.toString());
         }
@@ -267,6 +272,56 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return next;
     });
   }, []);
+
+  // Unlocked Prompts (Unlocked via 1 credit per prompt or subscription)
+  const [unlockedPromptIds, setUnlockedPromptIds] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('auraprompt_unlocked_prompts');
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return [];
+  });
+
+  const isPromptUnlocked = useCallback(
+    (promptId: string, isPremium?: boolean): boolean => {
+      if (!isPremium) return true;
+      if (isProUser) return true;
+      return unlockedPromptIds.includes(promptId);
+    },
+    [isProUser, unlockedPromptIds]
+  );
+
+  const unlockPromptWithCredit = useCallback(
+    (promptId: string): { success: boolean; message: string } => {
+      if (isProUser) {
+        return { success: true, message: 'Included with Pro Membership!' };
+      }
+      if (unlockedPromptIds.includes(promptId)) {
+        return { success: true, message: 'Prompt is already unlocked!' };
+      }
+      if (toolCredits < 1) {
+        return {
+          success: false,
+          message: 'Insufficient credits. 1 credit is required to unlock this premium prompt.',
+        };
+      }
+      const deducted = deductToolCredit(1);
+      if (!deducted) {
+        return { success: false, message: 'Could not deduct credit. Insufficient balance.' };
+      }
+      setUnlockedPromptIds((prev) => {
+        const next = [...prev, promptId];
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(next));
+        }
+        return next;
+      });
+      return { success: true, message: 'Prompt unlocked! 1 credit used.' };
+    },
+    [isProUser, unlockedPromptIds, toolCredits, deductToolCredit]
+  );
 
   const upgradePlan = useCallback((tier: 'starter' | 'pro' | 'vip') => {
     const creditsMap = { starter: 10, pro: 50, vip: 200 };
@@ -1565,6 +1620,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         addToolCredits,
         promptRequestsRemaining,
         upgradePlan,
+        unlockedPromptIds,
+        isPromptUnlocked,
+        unlockPromptWithCredit,
         isUnlockPremiumModalOpen,
         setIsUnlockPremiumModalOpen,
         lockedPromptContext,
