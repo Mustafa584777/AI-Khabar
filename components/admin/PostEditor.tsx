@@ -663,6 +663,9 @@ export const PostEditor = () => {
             <h1 className="text-2xl font-extrabold text-neutral-900 dark:text-white">
               {isEditing ? 'Edit Prompt Article' : 'Create New Prompt Article'}
             </h1>
+            <p className="text-xs text-neutral-500 mt-0.5">
+              Author: <span className="font-semibold text-neutral-800 dark:text-neutral-200">tool.reelz</span>
+            </p>
           </div>
         </div>
 

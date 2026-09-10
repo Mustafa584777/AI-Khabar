@@ -11,6 +11,7 @@ import {
   Sparkles,
   Search,
   Crown,
+  Bell,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -31,6 +32,9 @@ export const Header = () => {
     planTier,
     setIsProCheckoutModalOpen,
     userAccount,
+    isNotificationsDrawerOpen,
+    setIsNotificationsDrawerOpen,
+    unreadNotificationsCount,
   } = useApp();
 
   const handleHomeClick = () => {
@@ -121,6 +125,21 @@ export const Header = () => {
 
         {/* Right: Saved, Account & Admin Actions */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Notifications Bell Button (Pinterest Style) */}
+          <button
+            onClick={() => setIsNotificationsDrawerOpen(true)}
+            className="relative p-2 sm:p-2.5 rounded-full bg-[#efefef] dark:bg-neutral-800 hover:bg-[#e2e2e2] dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 transition-colors"
+            title="Personalized Notifications"
+            id="header-notifications-btn"
+          >
+            <Bell className="w-4 h-4" />
+            {unreadNotificationsCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#E60023] text-white text-[9px] font-black flex items-center justify-center ring-2 ring-white dark:ring-neutral-950">
+                {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
+              </span>
+            )}
+          </button>
+
           {/* Saved Prompts (Pinterest Red Pill) */}
           <button
             onClick={() => setIsBookmarksDrawerOpen(true)}
@@ -152,10 +171,10 @@ export const Header = () => {
             <span>{isProUser ? (planTier ? planTier.toUpperCase() : 'PRO') : 'PRO'}</span>
           </Link>
 
-          {/* User Profile / Dashboard Button (Hidden on mobile devices) */}
+          {/* User Profile / Dashboard Button */}
           <Link
             href="/dashboard"
-            className={`hidden sm:flex px-3.5 py-2 rounded-full text-xs font-bold transition-colors items-center gap-1.5 ${
+            className={`p-2 sm:px-3.5 sm:py-2 rounded-full text-xs font-bold transition-colors flex items-center gap-1.5 ${
               pathname === '/dashboard'
                 ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950'
                 : 'bg-[#efefef] dark:bg-neutral-800 hover:bg-[#e2e2e2] dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200'

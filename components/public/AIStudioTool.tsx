@@ -144,10 +144,9 @@ export const AIStudioTool = () => {
       return;
     }
 
-    const IMAGE_TO_PROMPT_COST = 3;
-    if (toolCredits < IMAGE_TO_PROMPT_COST) {
+    if (toolCredits <= 0) {
       setIsOutOfCreditsModalOpen(true);
-      showToast(`Image-to-prompt requires 3 credits (You have ${toolCredits}). Top up credits or upgrade!`);
+      showToast('No tool credits remaining. Daily 2 free credits reset tomorrow, or upgrade your plan for instant credits!');
       return;
     }
 
@@ -168,9 +167,9 @@ export const AIStudioTool = () => {
 
       const json = await res.json();
       if (json.success && json.data) {
-        deductToolCredit(IMAGE_TO_PROMPT_COST);
+        deductToolCredit();
         setExtractedData(json.data);
-        showToast(`Prompt reverse-engineered! 3 credits used (${Math.max(0, toolCredits - IMAGE_TO_PROMPT_COST)} left)`);
+        showToast(`Prompt reverse-engineered! 1 credit used (${Math.max(0, toolCredits - 1)} left)`);
       } else {
         showToast(json.error || 'Failed to extract prompt from image');
       }
@@ -234,12 +233,12 @@ export const AIStudioTool = () => {
             <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 text-xs font-bold shadow-xs">
               <Coins className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
               <span>{toolCredits} Credits</span>
-              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium hidden sm:inline">• 3 cr / extraction</span>
+              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium hidden sm:inline">• 1 / run</span>
               <Link
                 href="/pricing"
                 className="text-[11px] font-black text-[#E60023] hover:underline ml-1"
               >
-                + Top Up
+                + Get More
               </Link>
             </div>
 
@@ -450,7 +449,7 @@ export const AIStudioTool = () => {
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4" />
-                    <span>Extract AI Prompt from Image (3 Credits)</span>
+                    <span>Extract AI Prompt from Image (1 Credit)</span>
                   </>
                 )}
               </button>
@@ -637,19 +636,19 @@ export const AIStudioTool = () => {
                 Out of Tool Credits
               </h3>
               <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                Image-to-prompt extraction requires <strong className="text-neutral-900 dark:text-white">3 credits</strong>. Every user receives <strong className="text-neutral-900 dark:text-white">2 free credits daily</strong>, or you can top up anytime.
+                You have used your free credits. Every user receives <strong className="text-neutral-900 dark:text-white">2 free credits daily</strong>, which reset tomorrow at midnight.
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-left space-y-2 text-xs text-neutral-700 dark:text-neutral-300">
+            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-left space-y-1.5 text-xs text-neutral-700 dark:text-neutral-300">
               <div className="font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
-                <Coins className="w-3.5 h-3.5 text-amber-500" />
-                <span>Instant Pay-As-You-Go Credits Packs:</span>
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>Instant Upgrade Options:</span>
               </div>
               <ul className="space-y-1 text-[11px] text-neutral-600 dark:text-neutral-400">
-                <li>• <strong>100 Credits (₹49)</strong>: ~33 image extractions or 100 prompt unlocks</li>
-                <li>• <strong>250 Credits (₹99)</strong>: ~83 image extractions (Most Popular)</li>
-                <li>• <strong>499 Credits (₹199)</strong>: ~166 image extractions (Best Value)</li>
+                <li>• <strong>Starter (₹49/mo)</strong>: 10 tool credits + 1 prompt request</li>
+                <li>• <strong>Pro (₹199/mo)</strong>: 50 tool credits + 3 prompt requests</li>
+                <li>• <strong>VIP (₹499/mo)</strong>: 200 tool credits + 10 prompt requests</li>
               </ul>
             </div>
 

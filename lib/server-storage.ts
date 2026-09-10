@@ -1,4 +1,4 @@
-import { Category, PromptPost, SiteSettings, SearchQueryItem } from '@/types/prompt';
+import { Category, PromptPost, SiteSettings, SearchQueryItem, AppNotification } from '@/types/prompt';
 import { INITIAL_CATEGORIES, INITIAL_SETTINGS, INITIAL_POSTS } from './initial-data';
 import { supabase, supabaseAdmin, isSupabaseConfigured } from './supabase';
 import { cleanTagsArray, canonicalizeTag } from './tag-utils';
@@ -12,6 +12,54 @@ const CATEGORIES_FILE = path.join(DATA_DIR, 'categories.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const TAGS_FILE = path.join(DATA_DIR, 'tags.json');
 const SEARCH_QUERIES_FILE = path.join(DATA_DIR, 'search_queries.json');
+const NOTIFICATIONS_FILE = path.join(DATA_DIR, 'notifications.json');
+
+const INITIAL_NOTIFICATIONS: AppNotification[] = [
+  {
+    id: 'notif_1',
+    title: '🔥 Trending: 8K Cyberpunk Street Portrait Formulas',
+    message: 'Top-voted neon rain aesthetics and camera parameters added for Midjourney & Flux.',
+    category: 'Cyberpunk',
+    targetUrl: '/',
+    imageUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=400&q=80',
+    createdAt: Date.now() - 1000 * 60 * 35, // 35 mins ago
+    read: false,
+    sentBy: 'Editor',
+  },
+  {
+    id: 'notif_2',
+    title: '📸 New in Portrait: 35mm Vintage Analog Looks',
+    message: 'Soft golden hour film grain prompts curated strictly for high-end fashion portraits.',
+    category: 'Portrait',
+    targetUrl: '/',
+    imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+    createdAt: Date.now() - 1000 * 60 * 60 * 2, // 2 hours ago
+    read: false,
+    sentBy: 'Editor',
+  },
+  {
+    id: 'notif_3',
+    title: '✨ 3D Render & Surreal Worlds Collection',
+    message: 'Unreal Engine 5 architectural renders and octane glass sculptures now live.',
+    category: '3D Render',
+    targetUrl: '/',
+    imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80',
+    createdAt: Date.now() - 1000 * 60 * 60 * 6, // 6 hours ago
+    read: true,
+    sentBy: 'Editor',
+  },
+  {
+    id: 'notif_4',
+    title: '🎨 Anime & Ghibli Watercolor Style Pack',
+    message: 'Dreamy pastel landscapes and hand-drawn character concepts ready to copy.',
+    category: 'Anime',
+    targetUrl: '/',
+    imageUrl: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=400&q=80',
+    createdAt: Date.now() - 1000 * 60 * 60 * 24, // 1 day ago
+    read: true,
+    sentBy: 'Editor',
+  },
+];
 
 const DEFAULT_TAGS = [
   'Portrait', '35mm', 'Cinematic', 'Street Photography', 'Fashion',
@@ -57,6 +105,7 @@ let memoryCategories: Category[] | null = null;
 let memorySettings: SiteSettings | null = null;
 let memoryTags: string[] | null = null;
 let memorySearchQueries: SearchQueryItem[] | null = null;
+let memoryNotifications: AppNotification[] | null = null;
 
 // Helpers to map Supabase snake_case rows to PromptPost
 function mapSupabasePost(row: any): PromptPost {
@@ -825,5 +874,87 @@ export const ServerStorage = {
     memoryTags = filtered;
     writeJsonFile(TAGS_FILE, filtered);
     return filtered;
+  },
+
+  getAllNotifications: async (): Promise<AppNotification[]> => {
+    if (memoryNotifications) return memoryNotifications;
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data, error } = await db()
+          .from('settings')
+          .select('*')
+          .eq('id', 'app_notifications')
+          .maybeSingle();
+
+        if (data && Array.isArray(data.data) && data.data.length > 0) {
+          memoryNotifications = data.data;
+          return memoryNotifications as AppNotification[];
+        }
+      } catch (err) {
+        console.error('Supabase getAllNotifications error:', err);
+      }
+    }
+
+    const fileNotifications = readJsonFile<AppNotification[]>(NOTIFICATIONS_FILE, INITIAL_NOTIFICATIONS);
+    memoryNotifications = fileNotifications;
+    return fileNotifications;
+  },
+
+  saveNotification: async (notification: AppNotification): Promise<AppNotification> => {
+    const current = await ServerStorage.getAllNotifications();
+    const updated = [notification, ...current.filter((n) => n.id !== notification.id)].slice(0, 100);
+
+    if (isSupabaseConfigured()) {
+      try {
+        await db().from('settings').upsert({
+          id: 'app_notifications',
+          data: updated,
+        }, { onConflict: 'id' });
+      } catch (err) {
+        console.error('Supabase saveNotification error:', err);
+      }
+    }
+
+    memoryNotifications = updated;
+    writeJsonFile(NOTIFICATIONS_FILE, updated);
+    return notification;
+  },
+
+  deleteNotification: async (id: string): Promise<boolean> => {
+    const current = await ServerStorage.getAllNotifications();
+    const filtered = current.filter((n) => n.id !== id);
+
+    if (isSupabaseConfigured()) {
+      try {
+        await db().from('settings').upsert({
+          id: 'app_notifications',
+          data: filtered,
+        }, { onConflict: 'id' });
+      } catch (err) {
+        console.error('Supabase deleteNotification error:', err);
+      }
+    }
+
+    memoryNotifications = filtered;
+    writeJsonFile(NOTIFICATIONS_FILE, filtered);
+    return true;
+  },
+
+  clearAllNotifications: async (): Promise<boolean> => {
+    if (isSupabaseConfigured()) {
+      try {
+        await db().from('settings').upsert({
+          id: 'app_notifications',
+          data: [],
+        }, { onConflict: 'id' });
+      } catch (err) {
+        console.error('Supabase clearAllNotifications error:', err);
+      }
+    }
+
+    memoryNotifications = [];
+    writeJsonFile(NOTIFICATIONS_FILE, []);
+    return true;
   },
 };

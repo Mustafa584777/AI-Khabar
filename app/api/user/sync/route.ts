@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, supabase } from '@/lib/supabase';
-import { getClientIp, checkRateLimit, createRateLimitResponse, sanitizePayload } from '@/lib/security';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,16 +13,8 @@ function getSyncKey(userId?: string, email?: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  // Security: Rate limiting protection (90 sync req/min per IP)
-  const clientIp = getClientIp(req);
-  const rateLimit = checkRateLimit('sync', clientIp);
-  if (!rateLimit.allowed) {
-    return createRateLimitResponse(rateLimit.resetInMs);
-  }
-
   try {
-    const rawBody = await req.json();
-    const body = sanitizePayload(rawBody);
+    const body = await req.json();
     const { action, userId, email, data } = body;
 
     const key = getSyncKey(userId, email);
@@ -86,41 +77,6 @@ export async function POST(req: NextRequest) {
       const mergedLikes = Array.from(
         new Set([...(existingData.likedIds || []), ...(data.likedIds || [])])
       );
-      const mergedUnlockedPromptIds = Array.from(
-        new Set([...(existingData.unlockedPromptIds || []), ...(data.unlockedPromptIds || [])])
-      );
-
-      // Safe Plan Tier resolution (vip > pro > starter > free)
-      const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3 };
-      const currentTier = existingData.planTier || (existingData.isProUser ? 'pro' : 'free');
-      const incomingTier = data.planTier;
-      let resolvedPlanTier = currentTier;
-      if (incomingTier && TIER_RANK[incomingTier] !== undefined) {
-        if (TIER_RANK[incomingTier] >= (TIER_RANK[currentTier] || 0) || !existingData.planTier) {
-          resolvedPlanTier = incomingTier;
-        }
-      }
-      const resolvedIsPro = resolvedPlanTier !== 'free' || Boolean(data.isProUser ?? existingData.isProUser);
-
-      // Safe Tool Credits (maintain balance, never drop to 0 unexpectedly)
-      const resolvedToolCredits = data.toolCredits !== undefined
-        ? data.toolCredits
-        : (existingData.toolCredits !== undefined ? existingData.toolCredits : 2);
-
-      // Merge aiHistory safely
-      let mergedAiHistory = existingData.aiHistory || [];
-      if (Array.isArray(data.aiHistory)) {
-        const historyMap = new Map();
-        for (const it of (existingData.aiHistory || [])) {
-          if (it && it.id) historyMap.set(it.id, it);
-        }
-        for (const it of data.aiHistory) {
-          if (it && it.id) historyMap.set(it.id, it);
-        }
-        mergedAiHistory = Array.from(historyMap.values())
-          .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
-          .slice(0, 100);
-      }
 
       // Merge tasteProfile if provided
       let mergedTasteProfile = existingData.tasteProfile;
@@ -171,11 +127,6 @@ export async function POST(req: NextRequest) {
         ...data,
         bookmarkedIds: data.bookmarkedIds !== undefined ? data.bookmarkedIds : mergedBookmarks,
         likedIds: data.likedIds !== undefined ? data.likedIds : mergedLikes,
-        unlockedPromptIds: data.unlockedPromptIds !== undefined ? data.unlockedPromptIds : mergedUnlockedPromptIds,
-        planTier: resolvedPlanTier,
-        isProUser: resolvedIsPro,
-        toolCredits: resolvedToolCredits,
-        aiHistory: mergedAiHistory,
         tasteProfile: mergedTasteProfile !== undefined ? mergedTasteProfile : existingData.tasteProfile,
         userId: userId || existingData.userId,
         email: email || existingData.email,
@@ -195,7 +146,7 @@ export async function POST(req: NextRequest) {
       if (email) {
         const emailKey = getSyncKey(undefined, email);
         if (emailKey !== key) {
-          await client.from('settings').upsert({ id: emailKey, data: mergedPayload });
+          client.from('settings').upsert({ id: emailKey, data: mergedPayload }).catch(() => {});
         }
       }
 
@@ -236,7 +187,7 @@ export async function POST(req: NextRequest) {
       if (email) {
         const emailKey = getSyncKey(undefined, email);
         if (emailKey !== key) {
-          await client.from('settings').upsert({ id: emailKey, data: mergedPayload });
+          client.from('settings').upsert({ id: emailKey, data: mergedPayload }).catch(() => {});
         }
       }
 
@@ -304,7 +255,7 @@ export async function POST(req: NextRequest) {
       if (email) {
         const emailKey = getSyncKey(undefined, email);
         if (emailKey !== key) {
-          await client.from('settings').upsert({ id: emailKey, data: mergedPayload });
+          client.from('settings').upsert({ id: emailKey, data: mergedPayload }).catch(() => {});
         }
       }
 

@@ -24,6 +24,8 @@ const AdminLoginModal = dynamic(() => import('@/components/admin/AdminLoginModal
 const SearchExploreModal = dynamic(() => import('@/components/public/SearchExploreModal').then((m) => m.SearchExploreModal), { ssr: false });
 const RazorpayCheckoutModal = dynamic(() => import('@/components/public/RazorpayCheckoutModal').then((m) => m.RazorpayCheckoutModal), { ssr: false });
 const UnlockPremiumModal = dynamic(() => import('@/components/public/UnlockPremiumModal').then((m) => m.UnlockPremiumModal), { ssr: false });
+const NotificationsDrawer = dynamic(() => import('@/components/public/NotificationsDrawer').then((m) => m.NotificationsDrawer), { ssr: false });
+const NotificationPreferencesModal = dynamic(() => import('@/components/public/NotificationPreferencesModal').then((m) => m.NotificationPreferencesModal), { ssr: false });
 
 function MainApp() {
   const { currentView } = useApp();
@@ -64,6 +66,8 @@ function MainApp() {
         <ToastNotification />
         <RazorpayCheckoutModal />
         <UnlockPremiumModal />
+        <NotificationsDrawer />
+        <NotificationPreferencesModal />
       </div>
     );
   }
@@ -82,6 +86,8 @@ function MainApp() {
         <BottomNav />
         <RazorpayCheckoutModal />
         <UnlockPremiumModal />
+        <NotificationsDrawer />
+        <NotificationPreferencesModal />
       </div>
     );
   }
@@ -101,6 +107,8 @@ function MainApp() {
         <BottomNav />
         <RazorpayCheckoutModal />
         <UnlockPremiumModal />
+        <NotificationsDrawer />
+        <NotificationPreferencesModal />
       </div>
     );
   }
@@ -127,6 +135,8 @@ function MainApp() {
       <ToastNotification />
       <RazorpayCheckoutModal />
       <UnlockPremiumModal />
+      <NotificationsDrawer />
+      <NotificationPreferencesModal />
     </div>
   );
 }
