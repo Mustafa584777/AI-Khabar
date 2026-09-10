@@ -18,33 +18,12 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
 
   const router = useRouter();
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [inView, setInView] = useState(() => priority || typeof window === 'undefined' || !('IntersectionObserver' in window));
   const cardRef = useRef<HTMLElement>(null);
 
   const isBookmarked = bookmarkedIds.includes(post.id);
   const promptSlug = getPromptSlug(post);
   const detectedRatio = detectPostAspectRatio(post);
   const optimizedImgUrl = getOptimizedImageUrl(post.imageUrl, 600);
-
-  // Viewport IntersectionObserver: strictly loads images only when entering or near viewport
-  useEffect(() => {
-    if (inView) return;
-    const el = cardRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setInView(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: '150px 0px', threshold: 0.01 }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [inView]);
 
   const handleCardClick = (e: React.MouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.button === 1) return;
@@ -98,7 +77,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
         )}
 
         {/* Full-Height Shimmer Skeleton Placeholder */}
-        {(!imageLoaded || !inView) && post.imageUrl && (
+        {!imageLoaded && post.imageUrl && (
           <div className="absolute inset-0 z-0 bg-neutral-200 dark:bg-neutral-800 animate-pulse flex flex-col items-center justify-center p-4">
             <div className="w-10 h-10 rounded-full bg-neutral-300 dark:bg-neutral-700 mb-2 flex items-center justify-center shadow-xs">
               <Sparkles className="w-5 h-5 text-neutral-400 dark:text-neutral-500 animate-spin" style={{ animationDuration: '4s' }} />
@@ -108,7 +87,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
           </div>
         )}
 
-        {inView && optimizedImgUrl ? (
+        {optimizedImgUrl ? (
           <Image
             src={optimizedImgUrl}
             alt={post.imageAlt || post.title}
