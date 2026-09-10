@@ -21,7 +21,30 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { AppNotification } from '@/types/prompt';
 
-const emptySubscribe = () => () => {};
+// Format relative timestamp
+function getRelativeTime(timestamp: number): string {
+  if (!timestamp) return 'Recently';
+  const now = Date.now();
+  const diff = Math.max(0, now - timestamp);
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'Yesterday';
+  return `${days}d ago`;
+}
+
+// Get icon for category
+function getCategoryIcon(category: string) {
+  const lower = category.toLowerCase();
+  if (lower.includes('cyber') || lower.includes('neon')) return Flame;
+  if (lower.includes('portrait') || lower.includes('photo')) return Camera;
+  if (lower.includes('3d') || lower.includes('render')) return Layers;
+  if (lower.includes('anime') || lower.includes('art')) return Palette;
+  return Sparkles;
+}
 
 export const NotificationsDrawer = () => {
   const router = useRouter();
@@ -42,33 +65,8 @@ export const NotificationsDrawer = () => {
 
   const [activeTab, setActiveTab] = useState<'for-you' | 'all'>('for-you');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
-  const now = React.useSyncExternalStore(emptySubscribe, () => Date.now(), () => 0);
 
   if (!isNotificationsDrawerOpen) return null;
-
-  // Format relative timestamp
-  const getRelativeTime = (timestamp: number) => {
-    if (!now) return 'Recently';
-    const diff = Math.max(0, now - timestamp);
-    const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    if (days === 1) return 'Yesterday';
-    return `${days}d ago`;
-  };
-
-  // Get icon for category
-  const getCategoryIcon = (category: string) => {
-    const lower = category.toLowerCase();
-    if (lower.includes('cyber') || lower.includes('neon')) return Flame;
-    if (lower.includes('portrait') || lower.includes('photo')) return Camera;
-    if (lower.includes('3d') || lower.includes('render')) return Layers;
-    if (lower.includes('anime') || lower.includes('art')) return Palette;
-    return Sparkles;
-  };
 
   // Filter notifications based on tab and category
   const filteredNotifications = notifications.filter((notif) => {
