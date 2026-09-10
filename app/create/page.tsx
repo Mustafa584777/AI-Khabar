@@ -16,6 +16,8 @@ const UserAuthModal = dynamic(() => import('@/components/public/UserAuthModal').
 const AdminLoginModal = dynamic(() => import('@/components/admin/AdminLoginModal').then((m) => m.AdminLoginModal), { ssr: false });
 const RazorpayCheckoutModal = dynamic(() => import('@/components/public/RazorpayCheckoutModal').then((m) => m.RazorpayCheckoutModal), { ssr: false });
 const UnlockPremiumModal = dynamic(() => import('@/components/public/UnlockPremiumModal').then((m) => m.UnlockPremiumModal), { ssr: false });
+const NotificationsDrawer = dynamic(() => import('@/components/public/NotificationsDrawer').then((m) => m.NotificationsDrawer), { ssr: false });
+const NotificationPreferencesModal = dynamic(() => import('@/components/public/NotificationPreferencesModal').then((m) => m.NotificationPreferencesModal), { ssr: false });
 
 export default function CreatePage() {
   return (
@@ -37,6 +39,8 @@ export default function CreatePage() {
       <ToastNotification />
       <RazorpayCheckoutModal />
       <UnlockPremiumModal />
+      <NotificationsDrawer />
+      <NotificationPreferencesModal />
     </div>
   );
 }

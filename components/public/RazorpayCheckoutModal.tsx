@@ -35,7 +35,13 @@ const PLANS: PlanOption[] = [
     amountPaise: 4900, // ₹49
     displayPrice: '₹49',
     period: '/ month',
-    features: ['Unlock premium prompts', '10 prompt tools credits', '1 prompt request'],
+    features: [
+      'Unlimited saved prompts',
+      'Unlimited history saves',
+      'Unlock premium prompts',
+      '10 prompt tools credits',
+      '1 prompt request',
+    ],
     icon: <Sparkles className="w-5 h-5 text-amber-500" />,
   },
   {
@@ -45,7 +51,13 @@ const PLANS: PlanOption[] = [
     displayPrice: '₹199',
     period: '/ month',
     badge: 'Most Popular',
-    features: ['Unlock premium prompts', '50 prompt tools credits', '3 prompt requests'],
+    features: [
+      'Unlimited saved prompts',
+      'Unlimited history saves',
+      'Unlock premium prompts',
+      '50 prompt tools credits',
+      '3 prompt requests',
+    ],
     icon: <Zap className="w-5 h-5 text-[#E60023]" />,
   },
   {
@@ -55,7 +67,13 @@ const PLANS: PlanOption[] = [
     displayPrice: '₹499',
     period: '/ month',
     badge: 'Best Value',
-    features: ['Unlock premium prompts', '200 prompt tools credits', '10 prompt requests'],
+    features: [
+      'Unlimited saved prompts',
+      'Unlimited history saves',
+      'Unlock premium prompts',
+      '200 prompt tools credits',
+      '10 prompt requests',
+    ],
     icon: <Crown className="w-5 h-5 text-purple-500" />,
   },
 ];
@@ -203,7 +221,7 @@ export const RazorpayCheckoutModal: React.FC = () => {
               </h2>
             </div>
             <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400">
-              Unlock unlimited AI image prompts, high-res generations, and verified Pro perks.
+              All monthly subscription plans include unlimited saved prompts & generation history saves!
             </p>
           </div>
 
