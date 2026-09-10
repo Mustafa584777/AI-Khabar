@@ -146,7 +146,11 @@ export async function POST(req: NextRequest) {
       if (email) {
         const emailKey = getSyncKey(undefined, email);
         if (emailKey !== key) {
-          client.from('settings').upsert({ id: emailKey, data: mergedPayload }).catch(() => {});
+          try {
+            await client.from('settings').upsert({ id: emailKey, data: mergedPayload });
+          } catch {
+            // Ignore mirror error
+          }
         }
       }
 
@@ -187,7 +191,11 @@ export async function POST(req: NextRequest) {
       if (email) {
         const emailKey = getSyncKey(undefined, email);
         if (emailKey !== key) {
-          client.from('settings').upsert({ id: emailKey, data: mergedPayload }).catch(() => {});
+          try {
+            await client.from('settings').upsert({ id: emailKey, data: mergedPayload });
+          } catch {
+            // Ignore mirror error
+          }
         }
       }
 
@@ -255,7 +263,11 @@ export async function POST(req: NextRequest) {
       if (email) {
         const emailKey = getSyncKey(undefined, email);
         if (emailKey !== key) {
-          client.from('settings').upsert({ id: emailKey, data: mergedPayload }).catch(() => {});
+          try {
+            await client.from('settings').upsert({ id: emailKey, data: mergedPayload });
+          } catch {
+            // Ignore mirror error
+          }
         }
       }
 
