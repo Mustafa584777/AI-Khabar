@@ -1,5 +1,5 @@
-import { UserAccount, AIHistoryItem, UserTasteProfile } from '@/types/prompt';
-import { INITIAL_TASTE_PROFILE } from './personalization';
+import { UserAccount, AIHistoryItem } from '@/types/prompt';
+import { UserTasteProfile, INITIAL_TASTE_PROFILE } from './personalization';
 
 export interface UserSyncData {
   userId?: string;
