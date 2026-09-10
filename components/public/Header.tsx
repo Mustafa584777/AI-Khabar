@@ -171,10 +171,10 @@ export const Header = () => {
             <span>{isProUser ? (planTier ? planTier.toUpperCase() : 'PRO') : 'PRO'}</span>
           </Link>
 
-          {/* User Profile / Dashboard Button */}
+          {/* User Profile / Dashboard Button (Hidden on mobile devices) */}
           <Link
             href="/dashboard"
-            className={`p-2 sm:px-3.5 sm:py-2 rounded-full text-xs font-bold transition-colors flex items-center gap-1.5 ${
+            className={`hidden sm:flex px-3.5 py-2 rounded-full text-xs font-bold transition-colors items-center gap-1.5 ${
               pathname === '/dashboard'
                 ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950'
                 : 'bg-[#efefef] dark:bg-neutral-800 hover:bg-[#e2e2e2] dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200'

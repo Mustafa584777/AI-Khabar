@@ -67,6 +67,7 @@ export const UserDashboard = () => {
     promptRequestsRemaining,
     syncUserCloudData,
     isSyncingUserData,
+    unlockedPromptIds,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'saved' | 'history' | 'taste' | 'request'>('saved');
@@ -251,7 +252,19 @@ export const UserDashboard = () => {
           </div>
 
           {/* Quick Metrics */}
-          <div className="grid grid-cols-3 gap-3 sm:gap-4 border-t md:border-t-0 md:border-l border-neutral-100 dark:border-neutral-800 pt-4 md:pt-0 md:pl-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 border-t md:border-t-0 md:border-l border-neutral-100 dark:border-neutral-800 pt-4 md:pt-0 md:pl-6">
+            <div className="text-center md:text-left">
+              <div className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400">
+                {toolCredits}
+              </div>
+              <div className="text-[11px] text-neutral-500 font-medium">Credits Available</div>
+            </div>
+            <div className="text-center md:text-left">
+              <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
+                {isProUser ? 'All (Pro)' : unlockedPromptIds.length}
+              </div>
+              <div className="text-[11px] text-neutral-500 font-medium">Unlocked Prompts</div>
+            </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
                 {savedPosts.length}
@@ -263,12 +276,6 @@ export const UserDashboard = () => {
                 {aiHistory.length}
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">AI Generations</div>
-            </div>
-            <div className="text-center md:text-left">
-              <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
-                {Object.values(tasteProfile.categoryAffinities || {}).reduce((a, b) => a + b, 0)}
-              </div>
-              <div className="text-[11px] text-neutral-500 font-medium">Taste Points</div>
             </div>
           </div>
         </div>
@@ -316,7 +323,7 @@ export const UserDashboard = () => {
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
                 {isProUser
                   ? `${toolCredits} prompt tools credits available • ${promptRequestsRemaining} prompt requests remaining • All premium prompts unlocked.`
-                  : `${toolCredits} daily credits available (2 free credits/day). Upgrade to unlock all premium prompts & extra credits.`}
+                  : `${toolCredits} credits available. 1 credit unlocks any premium prompt • 3 credits per image extraction. Top up credits anytime.`}
               </p>
             </div>
           </div>
@@ -461,7 +468,7 @@ export const UserDashboard = () => {
                       {/* Top Overlay Badge */}
                       <div className="absolute top-2.5 left-2.5 z-10">
                         <span className="px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-bold">
-                          {post.aiTool}
+                          {post.category}
                         </span>
                       </div>
 

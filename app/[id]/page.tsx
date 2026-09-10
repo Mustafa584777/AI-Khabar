@@ -1,143 +1,182 @@
-'use client';
+import type { Metadata } from 'next';
+import Image from 'next/image';
+import { ServerStorage } from '@/lib/server-storage';
+import { getPromptSlug } from '@/lib/utils';
+import { DirectPromptLoader } from '@/components/public/DirectPromptLoader';
 
-import React, { use, useEffect, useRef } from 'react';
-import { AppProvider, useApp } from '@/context/AppContext';
-import { Header } from '@/components/public/Header';
-import { HeroSection } from '@/components/public/HeroSection';
-import { ToolFilterBar } from '@/components/public/ToolFilterBar';
-import { PromptGrid } from '@/components/public/PromptGrid';
-import { PromptDetailModal } from '@/components/public/PromptDetailModal';
-import { BookmarksDrawer } from '@/components/public/BookmarksDrawer';
-import { Footer } from '@/components/public/Footer';
-import { SEOContentSection } from '@/components/public/SEOContentSection';
-import { ToastNotification } from '@/components/public/ToastNotification';
-import { BottomNav } from '@/components/public/BottomNav';
-import { TasteProfileModal } from '@/components/public/TasteProfileModal';
-import { UserDashboard } from '@/components/public/UserDashboard';
-import { AIStudioTool } from '@/components/public/AIStudioTool';
-import { UserAuthModal } from '@/components/public/UserAuthModal';
-import { AdminLayout } from '@/components/admin/AdminLayout';
-import { AdminLoginModal } from '@/components/admin/AdminLoginModal';
-import { SearchExploreModal } from '@/components/public/SearchExploreModal';
-import { RazorpayCheckoutModal } from '@/components/public/RazorpayCheckoutModal';
-import { UnlockPremiumModal } from '@/components/public/UnlockPremiumModal';
-import { slugify } from '@/lib/utils';
-import { Sparkles } from 'lucide-react';
+export const revalidate = 21600;
 
-function DirectPromptLoader({ id }: { id: string }) {
-  const { posts, setSelectedPost, currentView } = useApp();
-  const loadedPostIdRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    // Only attempt loading once for a given URL id param
-    if (loadedPostIdRef.current === id) return;
-
-    const targetSlug = decodeURIComponent(id).toLowerCase().trim();
-    const matched = posts.find((p) => {
-      if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
-      if (p.id && p.id.toLowerCase() === targetSlug) return true;
-      if (p.title && (p.title.toLowerCase() === targetSlug || slugify(p.title) === targetSlug)) return true;
-      return false;
-    });
-
-    if (matched) {
-      loadedPostIdRef.current = id;
-      setSelectedPost(matched);
-    } else {
-      fetch(`/api/posts/${encodeURIComponent(id)}`)
-        .then((res) => (res.ok ? res.json() : Promise.reject(res)))
-        .then((data) => {
-          if (data.success && data.post) {
-            loadedPostIdRef.current = id;
-            setSelectedPost(data.post);
-          }
-        })
-        .catch(() => {});
-    }
-  }, [id, posts, setSelectedPost]);
-
-  if (currentView === 'admin') {
-    return (
-      <>
-        <AdminLayout />
-        <AdminLoginModal />
-        <ToastNotification />
-      </>
-    );
-  }
-
-  if (currentView === 'for-you') {
-    return (
-      <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col pb-20 sm:pb-8">
-        <Header />
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="mb-6 bg-gradient-to-r from-red-500/10 via-amber-500/10 to-red-500/10 p-6 rounded-3xl border border-red-200/50 dark:border-red-900/40">
-            <h1 className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-[#E60023]" />
-              <span>Personalized For You Feed</span>
-            </h1>
-            <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-              Curated visual prompt cards tailored strictly to your creative taste profile, bookmark history, and aesthetic preferences.
-            </p>
-          </div>
-          <PromptGrid />
-        </div>
-        <BottomNav />
-        <SearchExploreModal />
-        <PromptDetailModal />
-        <BookmarksDrawer />
-        <TasteProfileModal />
-        <UserAuthModal />
-        <AdminLoginModal />
-        <ToastNotification />
-        <RazorpayCheckoutModal />
-      </div>
-    );
-  }
-
-  if (currentView === 'studio-tool') {
-    return (
-      <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col">
-        <Header />
-        <AIStudioTool />
-        <PromptDetailModal />
-        <BookmarksDrawer />
-        <SearchExploreModal />
-        <TasteProfileModal />
-        <UserAuthModal />
-        <AdminLoginModal />
-        <ToastNotification />
-        <BottomNav />
-        <RazorpayCheckoutModal />
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col pb-20 sm:pb-8">
-      <Header />
-      <HeroSection />
-      <ToolFilterBar />
-      <PromptGrid />
-      <SEOContentSection />
-      <Footer />
-      <BottomNav />
-      <SearchExploreModal />
-      <PromptDetailModal />
-      <BookmarksDrawer />
-      <TasteProfileModal />
-      <UserAuthModal />
-      <AdminLoginModal />
-      <ToastNotification />
-      <RazorpayCheckoutModal />
-      <UnlockPremiumModal />
-    </div>
-  );
+interface PageProps {
+  params: Promise<{ id: string }>;
 }
 
-export default function SinglePromptDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
+async function resolvePost(id: string) {
+  let decodedId = id;
+  try {
+    decodedId = decodeURIComponent(id);
+  } catch {}
+
+  const post =
+    (await ServerStorage.getPostBySlug(decodedId)) ||
+    (await ServerStorage.getPostById(decodedId)) ||
+    (await ServerStorage.getPostBySlug(id)) ||
+    (await ServerStorage.getPostById(id));
+
+  return post;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { id } = await params;
+  const post = await resolvePost(id);
+
+  if (!post) {
+    return {
+      title: 'Prompt Not Found | Trending Copy Paste Photo Prompts',
+      description: 'The requested AI photo prompt was not found.',
+    };
+  }
+
+  const slug = getPromptSlug(post);
+  const cleanTitle = `${post.title} - AI Photo Prompt & Settings`;
+  const cleanDesc =
+    post.seoDescription?.trim() ||
+    post.seo?.metaDescription?.trim() ||
+    post.promptText?.slice(0, 160).trim() ||
+    'Explore this curated copy-paste photo prompt for Midjourney, ChatGPT, Flux, and Gemini.';
+  const pageUrl = `https://geminipromptgenerator.online/${slug}`;
+
+  return {
+    title: cleanTitle,
+    description: cleanDesc,
+    keywords: [
+      post.title,
+      post.category,
+      ...(post.tags || []),
+      'ai photo prompt',
+      'copy paste prompt',
+      'midjourney prompt',
+      'chatgpt image prompt',
+      'flux prompt',
+      'gemini prompt',
+    ],
+    alternates: {
+      canonical: pageUrl,
+    },
+    openGraph: {
+      title: cleanTitle,
+      description: cleanDesc,
+      url: pageUrl,
+      siteName: 'Trending Copy Paste Photo Prompts',
+      type: 'article',
+      publishedTime: post.publishedAt || post.createdAt,
+      modifiedTime: post.updatedAt || post.publishedAt || post.createdAt,
+      images: post.imageUrl
+        ? [
+            {
+              url: post.imageUrl,
+              width: post.imageWidth || 1200,
+              height: post.imageHeight || 1600,
+              alt: post.imageAlt || post.title,
+            },
+          ]
+        : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: cleanTitle,
+      description: cleanDesc,
+      images: post.imageUrl ? [post.imageUrl] : undefined,
+    },
+    robots: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  };
+}
+
+export default async function SinglePromptDetailPage({ params }: PageProps) {
+  const { id } = await params;
+  const post = await resolvePost(id);
+
+  const slug = post ? getPromptSlug(post) : id;
+  const pageUrl = `https://geminipromptgenerator.online/${slug}`;
+
+  // Structured Data Schema for Google (JSON-LD) - Strict NO AUTHOR
+  const jsonLd = post
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'CreativeWork',
+        name: post.title,
+        headline: post.title,
+        description: post.seoDescription || post.seo?.metaDescription || post.promptText,
+        image: post.imageUrl,
+        datePublished: post.publishedAt || post.createdAt,
+        dateModified: post.updatedAt || post.publishedAt || post.createdAt,
+        genre: post.category,
+        keywords: post.tags ? post.tags.join(', ') : undefined,
+        mainEntityOfPage: {
+          '@type': 'WebPage',
+          '@id': pageUrl,
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Trending Copy Paste Photo Prompts',
+          logo: {
+            '@type': 'ImageObject',
+            url: 'https://geminipromptgenerator.online/logo.png',
+          },
+        },
+      }
+    : null;
+
+  const imageSchema = post?.imageUrl
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'ImageObject',
+        contentUrl: post.imageUrl,
+        name: post.title,
+        description: post.imageAlt || post.title,
+        caption: post.title,
+        representativeOfPage: true,
+      }
+    : null;
+
   return (
-    <DirectPromptLoader id={resolvedParams.id} />
+    <>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+      {imageSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(imageSchema) }}
+        />
+      )}
+      {/* Semantic Crawl-Friendly Content for Search Engines without Design Impact */}
+      {post && (
+        <article className="sr-only" aria-hidden="false">
+          <h1>{post.title}</h1>
+          <p>{post.seoDescription || post.seo?.metaDescription || post.promptText}</p>
+          <blockquote>{post.promptText}</blockquote>
+          <div>Category: {post.category}</div>
+          {post.tags && <div>Tags: {post.tags.join(', ')}</div>}
+          {post.imageUrl && (
+            <Image
+              src={post.imageUrl}
+              alt={post.imageAlt || post.title}
+              width={post.imageWidth || 600}
+              height={post.imageHeight || 800}
+              referrerPolicy="no-referrer"
+            />
+          )}
+        </article>
+      )}
+      <DirectPromptLoader id={id} initialPost={post} />
+    </>
   );
 }
