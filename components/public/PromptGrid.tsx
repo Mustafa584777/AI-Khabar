@@ -178,16 +178,9 @@ export const PromptGrid = () => {
   const visiblePosts = filteredPosts.slice(0, displayedCount);
   const hasMore = displayedCount < filteredPosts.length;
 
-  const [columnCount, setColumnCount] = useState<number>(() => {
-    if (typeof window !== 'undefined') {
-      const width = window.innerWidth;
-      if (width >= 1280) return 5;
-      if (width >= 1024) return 4;
-      if (width >= 640) return 3;
-      return 2;
-    }
-    return 4;
-  });
+  // Stable SSR & initial client hydration default (4 columns) to eliminate hydration mismatches.
+  // The client's exact screen width takes over cleanly in useEffect after initial hydration completes.
+  const [columnCount, setColumnCount] = useState<number>(4);
 
   useEffect(() => {
     const updateColumnCount = () => {
@@ -334,7 +327,7 @@ export const PromptGrid = () => {
       {/* Visual Prompt Grid */}
       {filteredPosts.length > 0 ? (
         <>
-          <div className="flex gap-3 sm:gap-4 items-start w-full" id="pinterest-vertical-masonry-feed">
+          <div className="flex gap-3 sm:gap-4 items-start w-full" id="pinterest-vertical-masonry-feed" suppressHydrationWarning>
             {columns.map((colPosts, colIdx) => (
               <div key={colIdx} className="flex-1 flex flex-col gap-3 sm:gap-4 min-w-0">
                 {colPosts.map((post, postIdx) => (

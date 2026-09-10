@@ -183,12 +183,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // Razorpay Pro Membership & Plan Tier State
   const [isProCheckoutModalOpen, setIsProCheckoutModalOpen] = useState<boolean>(false);
-  const [isProUser, setIsProUserState] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('auraprompt_pro_member') === 'true';
-    }
-    return false;
-  });
+  const [isProUser, setIsProUserState] = useState<boolean>(false);
 
   const setIsProUser = useCallback((isPro: boolean) => {
     setIsProUserState(isPro);
@@ -197,14 +192,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const [planTier, setPlanTierState] = useState<PlanTier>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('auraprompt_plan_tier') as PlanTier;
-      if (['starter', 'pro', 'vip', 'free'].includes(saved)) return saved;
-      if (localStorage.getItem('auraprompt_pro_member') === 'true') return 'pro';
-    }
-    return 'free';
-  });
+  const [planTier, setPlanTierState] = useState<PlanTier>('free');
 
   const setPlanTier = useCallback((tier: PlanTier) => {
     setPlanTierState(tier);
@@ -214,27 +202,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   // Tool Credits (Daily 2 free credits per user, 1 credit per tool result)
-  const [toolCredits, setToolCreditsState] = useState<number>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('auraprompt_tool_credits');
-      if (saved !== null) {
-        const parsed = parseInt(saved, 10);
-        if (!isNaN(parsed)) return parsed;
-      }
-    }
-    return 2;
-  });
+  const [toolCredits, setToolCreditsState] = useState<number>(2);
 
-  const [promptRequestsRemaining, setPromptRequestsRemainingState] = useState<number>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('auraprompt_prompt_requests');
-      if (saved !== null) {
-        const parsed = parseInt(saved, 10);
-        if (!isNaN(parsed)) return parsed;
-      }
-    }
-    return 0;
-  });
+  const [promptRequestsRemaining, setPromptRequestsRemainingState] = useState<number>(0);
 
   const [isUnlockPremiumModalOpen, setIsUnlockPremiumModalOpen] = useState<boolean>(false);
   const [lockedPromptContext, setLockedPromptContext] = useState<PromptPost | null>(null);
@@ -243,20 +213,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [isNotificationsDrawerOpen, setIsNotificationsDrawerOpen] = useState<boolean>(false);
   const [isNotificationPreferencesModalOpen, setIsNotificationPreferencesModalOpen] = useState<boolean>(false);
-  const [notificationPreferences, setNotificationPreferences] = useState<UserNotificationPreferences>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('auraprompt_notif_prefs');
-        if (saved) return JSON.parse(saved);
-      } catch (e) {
-        console.error('Error reading notif prefs:', e);
-      }
-    }
-    return {
-      enabledCategories: ['all'],
-      browserPushEnabled: false,
-      soundEnabled: true,
-    };
+  const [notificationPreferences, setNotificationPreferences] = useState<UserNotificationPreferences>({
+    enabledCategories: ['all'],
+    browserPushEnabled: false,
+    soundEnabled: true,
   });
 
   const loadNotifications = useCallback(async () => {
@@ -1018,6 +978,35 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setBookmarkedIds(StorageService.getBookmarkedIds());
       setLikedIds(StorageService.getLikedIds());
       setTasteProfile(PersonalizationEngine.getProfile());
+
+      const savedPro = localStorage.getItem('auraprompt_pro_member') === 'true';
+      if (savedPro) setIsProUserState(true);
+
+      const savedTier = localStorage.getItem('auraprompt_plan_tier') as PlanTier;
+      if (['starter', 'pro', 'vip', 'free'].includes(savedTier)) {
+        setPlanTierState(savedTier);
+      } else if (savedPro) {
+        setPlanTierState('pro');
+      }
+
+      const savedCredits = localStorage.getItem('auraprompt_tool_credits');
+      if (savedCredits !== null) {
+        const parsed = parseInt(savedCredits, 10);
+        if (!isNaN(parsed)) setToolCreditsState(parsed);
+      }
+
+      const savedReqs = localStorage.getItem('auraprompt_prompt_requests');
+      if (savedReqs !== null) {
+        const parsed = parseInt(savedReqs, 10);
+        if (!isNaN(parsed)) setPromptRequestsRemainingState(parsed);
+      }
+
+      const savedNotifPrefs = localStorage.getItem('auraprompt_notif_prefs');
+      if (savedNotifPrefs) {
+        try {
+          setNotificationPreferences(JSON.parse(savedNotifPrefs));
+        } catch {}
+      }
     } catch (e) {
       console.warn('Error reading local cache on mount:', e);
     }
