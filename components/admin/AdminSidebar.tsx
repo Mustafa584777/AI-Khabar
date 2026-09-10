@@ -18,6 +18,7 @@ import {
   Zap,
   Database,
   Search,
+  Users,
 } from 'lucide-react';
 
 export const AdminSidebar = () => {
@@ -67,6 +68,11 @@ export const AdminSidebar = () => {
       id: 'categories',
       label: 'Categories & Tags',
       icon: FolderTree,
+    },
+    {
+      id: 'users',
+      label: 'Registered Users',
+      icon: Users,
     },
     {
       id: 'search-history',

@@ -19,8 +19,8 @@ interface AppContextType {
   // Navigation & Views
   currentView: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you';
   setCurrentView: (view: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you') => void;
-  adminSubView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history';
-  setAdminSubView: (subView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history') => void;
+  adminSubView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users';
+  setAdminSubView: (subView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users') => void;
   editingPostId: string | null;
   setEditingPostId: (id: string | null) => void;
   selectedPost: PromptPost | null;
@@ -157,7 +157,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Navigation
   const [currentView, setCurrentView] = useState<'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you'>('public');
   const [adminSubView, setAdminSubView] = useState<
-    'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history'
+    'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users'
   >('dashboard');
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [selectedPost, setSelectedPost] = useState<PromptPost | null>(null);
@@ -254,6 +254,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           localStorage.setItem('auraprompt_tool_credits', next.toString());
         }
         success = true;
+        // Sync to cloud if user is logged in
+        const currentAcc = StorageService.getUserAccount();
+        if (currentAcc && currentAcc.isLoggedIn) {
+          void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, { toolCredits: next });
+        }
         return next;
       }
       return prev;
@@ -268,6 +273,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const next = prev + amount;
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_tool_credits', next.toString());
+      }
+      // Sync to cloud if user is logged in
+      const currentAcc = StorageService.getUserAccount();
+      if (currentAcc && currentAcc.isLoggedIn) {
+        void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, { toolCredits: next });
       }
       return next;
     });
@@ -316,6 +326,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (typeof window !== 'undefined') {
           localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(next));
         }
+        // Sync to cloud if user is logged in
+        const currentAcc = StorageService.getUserAccount();
+        if (currentAcc && currentAcc.isLoggedIn) {
+          void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, {
+            unlockedPromptIds: next,
+            toolCredits: Math.max(0, toolCredits - 1),
+          });
+        }
         return next;
       });
       return { success: true, message: 'Prompt unlocked! 1 credit used.' };
@@ -333,16 +351,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const addedCredits = creditsMap[tier];
     const addedRequests = requestsMap[tier];
 
+    let finalCredits = 0;
     setToolCreditsState((prev) => {
       const next = prev + addedCredits;
+      finalCredits = next;
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_tool_credits', next.toString());
       }
       return next;
     });
 
+    let finalRequests = 0;
     setPromptRequestsRemainingState((prev) => {
       const next = prev + addedRequests;
+      finalRequests = next;
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_prompt_requests', next.toString());
       }
@@ -352,6 +374,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('auraprompt_pro_member', 'true');
       localStorage.setItem('auraprompt_plan_tier', tier);
+    }
+
+    // Persist SaaS Plan upgrade immediately to Supabase cloud
+    const currentAcc = StorageService.getUserAccount();
+    if (currentAcc && currentAcc.isLoggedIn) {
+      void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, {
+        planTier: tier,
+        isProUser: true,
+        toolCredits: finalCredits,
+        promptRequestsRemaining: finalRequests,
+      });
     }
   }, []);
 
@@ -471,8 +504,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     StorageService.saveUserAccount(account);
     setUserAccount(account);
 
-    // Reconcile and load all cloud data (bookmarks, likes, history, points, taste profile)
-    void UserSyncService.reconcileOnLogin(account).then((synced) => {
+    // Reconcile and load all cloud data (bookmarks, likes, history, points, plans, credits, unlocks)
+    void UserSyncService.reconcileOnLogin(account, {
+      planTier,
+      isProUser,
+      toolCredits,
+      promptRequestsRemaining,
+      unlockedPromptIds,
+    }).then((synced) => {
       setBookmarkedIds(synced.bookmarkedIds);
       setLikedIds(synced.likedIds);
       if (synced.tasteProfile) {
@@ -482,6 +521,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (synced.aiHistory?.length) setAiHistory(synced.aiHistory);
       if (synced.points !== undefined) {
         setUserAccount((prev) => (prev ? { ...prev, points: synced.points } : prev));
+      }
+      if (synced.planTier) {
+        setPlanTierState(synced.planTier);
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_plan_tier', synced.planTier);
+      }
+      if (synced.isProUser !== undefined) {
+        setIsProUserState(synced.isProUser);
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_pro_member', String(synced.isProUser));
+      }
+      if (synced.toolCredits !== undefined) {
+        setToolCreditsState(synced.toolCredits);
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits));
+      }
+      if (synced.unlockedPromptIds) {
+        setUnlockedPromptIds(synced.unlockedPromptIds);
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds));
       }
     });
 
@@ -508,8 +563,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     StorageService.saveUserAccount(account);
     setUserAccount(account);
 
-    // Push initial cloud data
-    void UserSyncService.reconcileOnLogin(account).then((synced) => {
+    // Push initial cloud data and reconcile
+    void UserSyncService.reconcileOnLogin(account, {
+      planTier,
+      isProUser,
+      toolCredits,
+      promptRequestsRemaining,
+      unlockedPromptIds,
+    }).then((synced) => {
       setBookmarkedIds(synced.bookmarkedIds);
       setLikedIds(synced.likedIds);
       if (synced.tasteProfile) {
@@ -631,7 +692,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!acc || !acc.isLoggedIn) return;
     try {
       setIsSyncingUserData(true);
-      const synced = await UserSyncService.reconcileOnLogin(acc);
+      const synced = await UserSyncService.reconcileOnLogin(acc, {
+        planTier,
+        isProUser,
+        toolCredits,
+        promptRequestsRemaining,
+        unlockedPromptIds,
+      });
       setBookmarkedIds(synced.bookmarkedIds);
       setLikedIds(synced.likedIds);
       if (synced.tasteProfile) {
@@ -641,6 +708,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (synced.aiHistory?.length) setAiHistory(synced.aiHistory);
       if (synced.points !== undefined) {
         setUserAccount((prev) => (prev ? { ...prev, points: synced.points } : prev));
+      }
+      if (synced.planTier) {
+        setPlanTierState(synced.planTier);
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_plan_tier', synced.planTier);
+      }
+      if (synced.isProUser !== undefined) {
+        setIsProUserState(synced.isProUser);
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_pro_member', String(synced.isProUser));
+      }
+      if (synced.toolCredits !== undefined) {
+        setToolCreditsState(synced.toolCredits);
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits));
+      }
+      if (synced.unlockedPromptIds) {
+        setUnlockedPromptIds(synced.unlockedPromptIds);
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds));
       }
     } catch (e) {
       console.warn('Sync cloud data notice:', e);

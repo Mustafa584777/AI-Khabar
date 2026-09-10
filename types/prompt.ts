@@ -145,9 +145,41 @@ export interface UserAccount {
   referralsCountForPoints: number;
   isPremium?: boolean;
   membershipPlan?: 'free' | 'starter' | 'pro' | 'vip';
+  planTier?: PlanTier;
+  toolCredits?: number;
+  unlockedPromptIds?: string[];
   credits?: number;
   lastCreditRefresh?: string;
   promptRequestsAllowed?: number;
+}
+
+export interface RegisteredUserRecord {
+  id: string;
+  email: string;
+  name: string;
+  username?: string;
+  avatar?: string;
+  planTier: PlanTier;
+  isProUser: boolean;
+  toolCredits: number;
+  points: number;
+  unlockedPromptIds: string[];
+  promptRequestsRemaining?: number;
+  aiHistoryCount?: number;
+  bookmarksCount?: number;
+  likesCount?: number;
+  joinedDate: string;
+  lastSyncedAt?: string;
+  source: 'supabase_auth' | 'supabase_sync' | 'local_store';
+  rawSyncData?: any;
+}
+
+export interface UsersBackupPayload {
+  version: string;
+  exportedAt: string;
+  system: string;
+  totalUsers: number;
+  users: RegisteredUserRecord[];
 }
 
 export interface PromptRequestItem {
