@@ -125,10 +125,10 @@ export const Header = () => {
 
         {/* Right: Saved, Account & Admin Actions */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Notifications Bell Button (Desktop only, hidden on mobile header) */}
+          {/* Notifications Bell Button (Pinterest Style) */}
           <button
             onClick={() => setIsNotificationsDrawerOpen(true)}
-            className="hidden sm:flex relative p-2 sm:p-2.5 rounded-full bg-[#efefef] dark:bg-neutral-800 hover:bg-[#e2e2e2] dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 transition-colors"
+            className="relative p-2 sm:p-2.5 rounded-full bg-[#efefef] dark:bg-neutral-800 hover:bg-[#e2e2e2] dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 transition-colors"
             title="Personalized Notifications"
             id="header-notifications-btn"
           >
@@ -171,10 +171,10 @@ export const Header = () => {
             <span>{isProUser ? (planTier ? planTier.toUpperCase() : 'PRO') : 'PRO'}</span>
           </Link>
 
-          {/* User Profile / Dashboard Button (Desktop only, hidden on mobile header) */}
+          {/* User Profile / Dashboard Button */}
           <Link
             href="/dashboard"
-            className={`hidden sm:flex p-2 sm:px-3.5 sm:py-2 rounded-full text-xs font-bold transition-colors items-center gap-1.5 ${
+            className={`p-2 sm:px-3.5 sm:py-2 rounded-full text-xs font-bold transition-colors flex items-center gap-1.5 ${
               pathname === '/dashboard'
                 ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950'
                 : 'bg-[#efefef] dark:bg-neutral-800 hover:bg-[#e2e2e2] dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200'

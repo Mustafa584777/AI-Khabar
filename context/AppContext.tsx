@@ -597,11 +597,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const saveAiHistoryItem = (item: AIHistoryItem) => {
-    if (!isProUser) {
-      showToast('Generation history saving is a Premium feature. Upgrade to any monthly plan for unlimited saves!');
-      setIsProCheckoutModalOpen(true);
-      return;
-    }
     const itemWithUser: AIHistoryItem = {
       ...item,
       userId: userAccount?.id || 'guest',
@@ -1422,11 +1417,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const toggleBookmark = (id: string) => {
-    if (!isProUser) {
-      showToast('Saving prompts is a Premium feature. Upgrade to any monthly plan for unlimited saves!');
-      setIsProCheckoutModalOpen(true);
-      return;
-    }
     const isNowSaved = StorageService.toggleBookmark(id);
     const updatedBookmarks = StorageService.getBookmarkedIds();
     setBookmarkedIds(updatedBookmarks);
@@ -1446,7 +1436,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       });
     }
 
-    showToast(isNowSaved ? 'Saved to bookmarks (Unlimited saves active)' : 'Removed from bookmarks');
+    showToast(isNowSaved ? 'Saved to bookmarks' : 'Removed from bookmarks');
   };
 
   const restorePromptCards = async (
