@@ -100,7 +100,15 @@ export default function CheckoutPage() {
               <ul className="space-y-2.5 text-xs text-neutral-600 dark:text-neutral-300">
                 <li className="flex items-center gap-2">
                   <span className="text-emerald-500 font-bold">✓</span>
-                  <span className="font-bold">Unlock premium prompts</span>
+                  <span className="font-bold text-neutral-900 dark:text-white">Unlimited saved prompts</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-emerald-500 font-bold">✓</span>
+                  <span className="font-bold text-neutral-900 dark:text-white">Unlimited history saves</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-emerald-500 font-bold">✓</span>
+                  <span>Unlock premium prompts</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-emerald-500 font-bold">✓</span>
@@ -148,7 +156,15 @@ export default function CheckoutPage() {
               <ul className="space-y-2.5 text-xs text-neutral-600 dark:text-neutral-300">
                 <li className="flex items-center gap-2">
                   <span className="text-[#E60023] font-bold">✓</span>
-                  <span className="font-bold">Unlock premium prompts</span>
+                  <span className="font-bold text-neutral-900 dark:text-white">Unlimited saved prompts</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-[#E60023] font-bold">✓</span>
+                  <span className="font-bold text-neutral-900 dark:text-white">Unlimited history saves</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-[#E60023] font-bold">✓</span>
+                  <span>Unlock premium prompts</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-[#E60023] font-bold">✓</span>
@@ -197,7 +213,15 @@ export default function CheckoutPage() {
               <ul className="space-y-2.5 text-xs text-neutral-600 dark:text-neutral-300">
                 <li className="flex items-center gap-2">
                   <span className="text-purple-500 font-bold">✓</span>
-                  <span className="font-bold">Unlock premium prompts</span>
+                  <span className="font-bold text-neutral-900 dark:text-white">Unlimited saved prompts</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-purple-500 font-bold">✓</span>
+                  <span className="font-bold text-neutral-900 dark:text-white">Unlimited history saves</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-purple-500 font-bold">✓</span>
+                  <span>Unlock premium prompts</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-purple-500 font-bold">✓</span>

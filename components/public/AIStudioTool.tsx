@@ -17,6 +17,7 @@ import {
   Zap,
   Coins,
   X,
+  Crown,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -85,6 +86,8 @@ export const AIStudioTool = () => {
     saveAiHistoryItem,
     toolCredits,
     deductToolCredit,
+    isProUser,
+    setIsProCheckoutModalOpen,
   } = useApp();
 
   const [uploadedImage, setUploadedImage] = useState<string | null>(() => {
@@ -185,7 +188,13 @@ export const AIStudioTool = () => {
     if (!extractedData) return;
 
     if (!userAccount?.isLoggedIn) {
-      openAuthModal('Please sign in or create a free account to save extracted prompts to your history.');
+      openAuthModal('Please sign in or create an account to save extracted prompts to your history.');
+      return;
+    }
+
+    if (!isProUser) {
+      showToast('Generation history saving is a Premium feature. Upgrade to any monthly plan for unlimited saves!');
+      setIsProCheckoutModalOpen(true);
       return;
     }
 
@@ -207,7 +216,7 @@ export const AIStudioTool = () => {
 
     saveAiHistoryItem(historyItem);
     setIsSavedExtracted(true);
-    showToast('Saved to your AI Studio History!');
+    showToast('Saved to your AI Studio History (Unlimited saves active)!');
   };
 
   return (
@@ -511,22 +520,33 @@ export const AIStudioTool = () => {
 
                     <button
                       onClick={handleSaveExtractedToHistory}
-                      className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
+                      className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-xs ${
                         isSavedExtracted
                           ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400'
-                          : 'bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 hover:border-red-400'
+                          : isProUser
+                          ? 'bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 hover:border-red-400'
+                          : 'bg-red-50/80 dark:bg-red-950/40 border-red-200 dark:border-red-900/60 text-[#E60023] hover:bg-red-100 dark:hover:bg-red-900/50'
                       }`}
-                      title="Save to your personal generation history"
+                      title={
+                        isProUser
+                          ? 'Save to your personal generation history (Unlimited Saves)'
+                          : 'Save to History (Monthly Pro Subscription Feature)'
+                      }
                     >
                       {isSavedExtracted ? (
                         <>
                           <Check className="w-4 h-4 text-emerald-500" />
-                          <span>Saved to History</span>
+                          <span>Saved to History (Unlimited)</span>
+                        </>
+                      ) : isProUser ? (
+                        <>
+                          <Bookmark className="w-4 h-4 text-[#E60023]" />
+                          <span>Save to History</span>
                         </>
                       ) : (
                         <>
-                          <Bookmark className="w-4 h-4 text-[#E60023]" />
-                          <span>Save to My History</span>
+                          <Crown className="w-4 h-4 text-amber-500" />
+                          <span>Save to History (Pro)</span>
                         </>
                       )}
                     </button>

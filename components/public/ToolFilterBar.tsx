@@ -2,7 +2,6 @@
 
 import React, { useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
-import { Flame, Sliders, Sparkles, Bell } from 'lucide-react';
 import { getCategoryIcon } from '@/lib/icons';
 import { PersonalizationEngine } from '@/lib/personalization';
 
@@ -14,12 +13,7 @@ export const ToolFilterBar = () => {
     selectedCategory,
     setSelectedCategory,
     categories,
-    selectedSort,
-    setSelectedSort,
     tasteProfile,
-    setIsTasteModalOpen,
-    setIsNotificationsDrawerOpen,
-    unreadNotificationsCount,
   } = useApp();
 
   const isMounted = useIsMounted();
@@ -35,25 +29,7 @@ export const ToolFilterBar = () => {
       <div className="flex items-center gap-2">
         {/* Pinterest Style Pill Tabs Slider */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1.5 no-scrollbar flex-1 scroll-smooth">
-          {/* 1. Notifications Tab (Replaces For You as requested) */}
-          <button
-            onClick={() => {
-              setIsNotificationsDrawerOpen(true);
-            }}
-            id="filter-bar-notifications-tab"
-            className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 shrink-0 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-[#E60023] border border-red-200/80 dark:border-red-900/50 active:scale-95"
-            title="Personalized Updates & Push Notifications"
-          >
-            <Bell className="w-3.5 h-3.5 fill-current" />
-            <span>Notifications</span>
-            {unreadNotificationsCount > 0 && (
-              <span className="w-4 h-4 rounded-full bg-[#E60023] text-white text-[10px] font-black flex items-center justify-center">
-                {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
-              </span>
-            )}
-          </button>
-
-          {/* 2. All Feed Tab */}
+          {/* All Feed Tab */}
           <button
             onClick={() => {
               setSelectedCategory('all');
@@ -67,22 +43,7 @@ export const ToolFilterBar = () => {
             <span>All Prompts</span>
           </button>
 
-          {/* 3. "Trending" Tab */}
-          <button
-            onClick={() => {
-              setSelectedSort('trending');
-            }}
-            className={`flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 shrink-0 ${
-              selectedSort === 'trending' && selectedCategory === 'all'
-                ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
-                : 'bg-[#efefef] dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 hover:bg-[#e2e2e2] dark:hover:bg-neutral-700'
-            }`}
-          >
-            <Flame className="w-3.5 h-3.5 text-[#E60023]" />
-            <span>Trending</span>
-          </button>
-
-          {/* 3. AI Ranked Personalized Category Tabs */}
+          {/* AI Ranked Personalized Category Tabs */}
           {personalizedCategories.map((cat) => {
             const isSelected =
               selectedCategory.toLowerCase() === cat.name.toLowerCase();
