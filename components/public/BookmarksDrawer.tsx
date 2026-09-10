@@ -84,7 +84,7 @@ export const BookmarksDrawer = () => {
                 <div className="flex-1 min-w-0 flex flex-col justify-between">
                   <div>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#efefef] dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300">
-                      {post.category}
+                      {post.aiTool}
                     </span>
                     <h4
                       onClick={() => {

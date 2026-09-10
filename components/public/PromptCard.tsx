@@ -14,8 +14,6 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
     toggleBookmark,
     bookmarkedIds,
     showToast,
-    isPromptUnlocked,
-    isProUser,
   } = useApp();
 
   const router = useRouter();
@@ -24,7 +22,6 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   const cardRef = useRef<HTMLElement>(null);
 
   const isBookmarked = bookmarkedIds.includes(post.id);
-  const isUnlocked = isPromptUnlocked(post.id, post.isPremium);
   const promptSlug = getPromptSlug(post);
   const detectedRatio = detectPostAspectRatio(post);
   const optimizedImgUrl = getOptimizedImageUrl(post.imageUrl, 600);
@@ -85,24 +82,18 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
       id={`prompt-pin-${post.id}`}
       style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
     >
-      <h2 className="sr-only">{post.title}</h2>
       <a
         href={`/${promptSlug}`}
         onClick={handleCardClick}
         style={{ aspectRatio: detectedRatio }}
-        aria-label={`${post.title} - ${post.category} AI Photo Prompt`}
         className="block relative w-full overflow-hidden bg-neutral-100 dark:bg-neutral-800 focus:outline-none"
         onContextMenu={(e) => e.preventDefault()}
       >
-        <span className="sr-only">{post.title} - {post.category} copy paste prompt</span>
         {/* Premium Badge */}
         {post.isPremium && (
-          <div className={`absolute top-2.5 left-2.5 z-20 flex items-center justify-center w-7 h-7 rounded-full backdrop-blur-md shadow-xl pointer-events-none ${
-            isUnlocked && !isProUser
-              ? 'bg-emerald-950/85 border border-emerald-400/60 text-emerald-300'
-              : 'bg-black/85 border border-amber-400/60 text-amber-300'
-          }`}>
-            <Crown className={`w-3.5 h-3.5 ${isUnlocked && !isProUser ? 'fill-emerald-400 text-emerald-400' : 'fill-amber-400 text-amber-400'}`} />
+          <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/85 backdrop-blur-md border border-amber-400/60 text-amber-300 text-[10px] font-black tracking-wider uppercase shadow-xl pointer-events-none">
+            <Crown className="w-3 h-3 fill-amber-400 text-amber-400" />
+            <span>PRO</span>
           </div>
         )}
 

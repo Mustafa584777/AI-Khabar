@@ -13,7 +13,7 @@ export const BLOG_POSTS: BlogPost[] = [
     imageAlt: 'How to use AI photo prompts complete guide',
     author: {
       name: 'tool.reelz',
-      avatar: '/logo.png',
+      avatar: '/logo.webp',
       role: 'Prompt Specialist & Author',
     },
     publishedAt: '2026-08-15T10:00:00.000Z',
@@ -113,7 +113,7 @@ You don't have to keep every prompt identical! Easily swap variables:
     imageAlt: 'Camera settings and lens guide for AI photography',
     author: {
       name: 'tool.reelz',
-      avatar: '/logo.png',
+      avatar: '/logo.webp',
       role: 'Prompt Specialist & Author',
     },
     publishedAt: '2026-08-14T14:00:00.000Z',
@@ -165,7 +165,7 @@ By integrating **real camera bodies, lens focal lengths, and aperture settings**
     imageAlt: 'Common AI prompting mistakes and solutions',
     author: {
       name: 'tool.reelz',
-      avatar: '/logo.png',
+      avatar: '/logo.webp',
       role: 'Prompt Specialist & Author',
     },
     publishedAt: '2026-08-12T09:30:00.000Z',
@@ -207,7 +207,7 @@ Even with state-of-the-art AI generators, poor prompting structure can cause pla
     imageAlt: 'Flux versus Midjourney prompting guide',
     author: {
       name: 'tool.reelz',
-      avatar: '/logo.png',
+      avatar: '/logo.webp',
       role: 'Prompt Specialist & Author',
     },
     publishedAt: '2026-08-10T11:00:00.000Z',

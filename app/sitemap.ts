@@ -3,7 +3,8 @@ import { ServerStorage } from '@/lib/server-storage';
 import { getPromptSlug } from '@/lib/utils';
 import { BLOG_POSTS } from '@/lib/blog-data';
 
-export const revalidate = 86400;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://geminipromptgenerator.online';

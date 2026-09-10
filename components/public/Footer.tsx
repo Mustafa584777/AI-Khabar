@@ -37,6 +37,11 @@ export const Footer = () => {
               {settings.siteTagline ||
                 'The premier Pinterest-style copy-paste photo prompt directory for Midjourney, ChatGPT, Flux, and Gemini.'}
             </p>
+            <div className="pt-1">
+              <span className="text-[11px] font-semibold text-neutral-700 dark:text-neutral-300">
+                Author & Curation: <span className="text-[#E60023]">tool.reelz</span>
+              </span>
+            </div>
           </div>
 
           {/* Col 2: Categories */}
