@@ -18,6 +18,8 @@ import {
   Volume2,
   Trash2,
   Info,
+  ExternalLink,
+  AlertCircle,
 } from 'lucide-react';
 
 export const NotificationsView: React.FC = () => {
@@ -29,6 +31,7 @@ export const NotificationsView: React.FC = () => {
   const [isInterestModalOpen, setIsInterestModalOpen] = useState<boolean>(false);
   const [browserPushPermission, setBrowserPushPermission] = useState<NotificationPermission | 'unsupported'>('default');
   const [userInterests, setUserInterests] = useState<string[]>([]);
+  const [isInsideIframe, setIsInsideIframe] = useState<boolean>(false);
 
   // Load initial data & sync
   const loadNotifications = () => {
@@ -37,6 +40,7 @@ export const NotificationsView: React.FC = () => {
     const prefs = NotificationService.getPreferences();
     setUserInterests(prefs.selectedInterests || []);
     setBrowserPushPermission(NotificationService.getBrowserPermissionStatus());
+    setIsInsideIframe(NotificationService.isInsideIframe());
   };
 
   useEffect(() => {
@@ -61,10 +65,12 @@ export const NotificationsView: React.FC = () => {
   }, []);
 
   const handleEnableBrowserPush = async () => {
-    const granted = await NotificationService.requestPushPermission();
-    setBrowserPushPermission(NotificationService.getBrowserPermissionStatus());
-    if (granted) {
-      showToast('Browser notifications enabled! You will now receive instant drops.');
+    const res = await NotificationService.requestPushPermission();
+    const updatedStatus = NotificationService.getBrowserPermissionStatus();
+    setBrowserPushPermission(updatedStatus);
+
+    if (res.status === 'granted') {
+      showToast('Browser notifications allowed! You will now receive instant drops.');
       // Immediate real browser notification popup with sound chime
       await NotificationService.showNativeNotification({
         id: `notif-welcome-${Date.now()}`,
@@ -76,8 +82,12 @@ export const NotificationsView: React.FC = () => {
         url: '/notifications',
         sentAt: new Date().toISOString(),
       });
+    } else if (res.status === 'denied') {
+      showToast('Notifications are blocked in your browser. Click the lock 🔒 icon in the address bar to allow.');
+    } else if (res.isIframe) {
+      showToast('Notice: Browser security blocks native prompt inside preview iframe. Click "Open in New Tab" to allow!');
     } else {
-      showToast('Notification permission was not granted in your browser.');
+      showToast('Notification permission prompt was closed or dismissed.');
     }
   };
 
@@ -183,9 +193,86 @@ export const NotificationsView: React.FC = () => {
           </div>
         </div>
 
-        {/* Browser Push Permission Banner (if not granted) */}
-        {browserPushPermission !== 'granted' && browserPushPermission !== 'unsupported' && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[#E60023]/10 border border-[#E60023]/30">
+        {/* Case 1: Browser Push Permission Blocked/Denied in Browser Settings */}
+        {browserPushPermission === 'denied' && (
+          <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 space-y-3" id="banner-push-denied">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-neutral-900 dark:text-white">
+                  Notifications Blocked in Your Browser Settings
+                </p>
+                <p className="text-[11px] text-neutral-600 dark:text-neutral-300 leading-relaxed">
+                  Browser will not display the popup because notifications are set to Block for this domain. To see the prompt:
+                </p>
+                <ol className="text-[11px] text-neutral-700 dark:text-neutral-300 list-decimal pl-4 space-y-0.5">
+                  <li>Click the <strong>lock icon 🔒</strong> in your browser address bar.</li>
+                  <li>Go to <strong>Site settings</strong> or find <strong>Notifications</strong>.</li>
+                  <li>Change permission from <em>&apos;Block&apos;</em> to <em>&apos;Allow&apos;</em> (or &apos;Ask&apos;).</li>
+                </ol>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 pl-8">
+              <button
+                type="button"
+                onClick={() => {
+                  const s = NotificationService.getBrowserPermissionStatus();
+                  setBrowserPushPermission(s);
+                  if (s === 'granted') {
+                    showToast('Notifications are now allowed! 🎉');
+                  } else {
+                    showToast(`Current browser status: ${s}. Please allow in browser settings.`);
+                  }
+                }}
+                className="px-3.5 py-1.5 rounded-xl bg-white dark:bg-neutral-800 hover:bg-neutral-100 text-neutral-800 dark:text-neutral-200 border border-neutral-300 dark:border-neutral-700 text-xs font-bold cursor-pointer"
+                id="btn-recheck-permission"
+              >
+                🔄 Refresh Status
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Case 2: In Preview Iframe (Browser security prevents native popup dialog inside iframes) */}
+        {browserPushPermission !== 'granted' && browserPushPermission !== 'denied' && isInsideIframe && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30" id="banner-push-iframe">
+            <div className="flex items-start gap-3">
+              <BellRing className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5 animate-bounce" />
+              <div>
+                <p className="text-xs font-bold text-neutral-900 dark:text-white">
+                  Get Real Browser Notification Popup
+                </p>
+                <p className="text-[11px] text-neutral-600 dark:text-neutral-300">
+                  Browsers (Chrome/Safari) block native &apos;Allow / Block&apos; popups inside preview iframes. Open the app in a new tab to see your browser&apos;s real prompt box!
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <a
+                href={typeof window !== 'undefined' ? window.location.href : '/notifications'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2.5 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-md shadow-red-500/20 transition-all flex items-center gap-1.5"
+                id="btn-open-tab-for-prompt"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Open in New Tab</span>
+              </a>
+              <button
+                type="button"
+                onClick={handleEnableBrowserPush}
+                className="px-3 py-2.5 rounded-xl bg-white dark:bg-neutral-800 hover:bg-neutral-100 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-700 text-xs font-bold transition-all cursor-pointer"
+                id="btn-allow-push-notifications"
+              >
+                Try Here
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Case 3: Standalone Tab / Normal browser window - Ready to Prompt! */}
+        {browserPushPermission !== 'granted' && browserPushPermission !== 'denied' && !isInsideIframe && browserPushPermission !== 'unsupported' && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[#E60023]/10 border border-[#E60023]/30" id="banner-push-default">
             <div className="flex items-center gap-3">
               <BellRing className="w-5 h-5 text-[#E60023] shrink-0 animate-bounce" />
               <div>
@@ -193,7 +280,7 @@ export const NotificationsView: React.FC = () => {
                   Turn on Browser Push Notifications
                 </p>
                 <p className="text-[11px] text-neutral-600 dark:text-neutral-400">
-                  Receive instant lockscreen drops when viral prompts match your categories.
+                  Click below to trigger the browser prompt and receive lockscreen alerts.
                 </p>
               </div>
             </div>
@@ -203,12 +290,12 @@ export const NotificationsView: React.FC = () => {
               className="px-4 py-2.5 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-md shadow-red-500/20 transition-all shrink-0 cursor-pointer"
               id="btn-allow-push-notifications"
             >
-              🔔 Enable Browser Notifications
+              🔔 Allow Browser Notifications
             </button>
           </div>
         )}
 
-        {/* If granted: Show status & Test Popup button */}
+        {/* Case 4: Granted & Active */}
         {browserPushPermission === 'granted' && (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60">
             <div className="flex items-center gap-2.5">

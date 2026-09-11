@@ -164,45 +164,73 @@ export const NotificationService = {
     return Notification.permission;
   },
 
+  // Check if running inside an iframe (e.g. preview environment)
+  isInsideIframe: (): boolean => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return window.self !== window.top;
+    } catch {
+      return true;
+    }
+  },
+
   // Request browser permission and register subscriber with backend
-  requestPushPermission: async (): Promise<boolean> => {
+  requestPushPermission: async (): Promise<{
+    status: NotificationPermission | 'unsupported';
+    isIframe: boolean;
+  }> => {
     if (typeof window === 'undefined') {
-      return false;
+      return { status: 'unsupported', isIframe: false };
     }
 
-    let granted = false;
-    if ('Notification' in window) {
+    let isIframe = false;
+    try {
+      isIframe = window.self !== window.top;
+    } catch {
+      isIframe = true;
+    }
+
+    if (!('Notification' in window)) {
+      return { status: 'unsupported', isIframe };
+    }
+
+    let permission = Notification.permission;
+
+    // If permission is 'default' and not yet decided, invoke browser request
+    if (permission === 'default') {
       try {
-        const permission = await Notification.requestPermission();
-        granted = permission === 'granted';
-      } catch (e) {
-        console.warn('Native notification request error (iframe sandbox):', e);
+        permission = await Notification.requestPermission();
+      } catch {
+        try {
+          permission = await new Promise<NotificationPermission>((resolve) => {
+            Notification.requestPermission(resolve);
+          });
+        } catch (cbErr) {
+          console.warn('requestPermission callback error:', cbErr);
+        }
       }
     }
 
-    // Fallback: If sandbox iframe blocks native prompt, enable simulated push so the feature works seamlessly
-    if (!granted) {
-      granted = true;
-    }
+    const granted = permission === 'granted';
 
-    // Update preferences
+    // Update preferences with REAL permission state
     const prefs = NotificationService.getPreferences();
-    prefs.browserPushGranted = true;
+    prefs.browserPushGranted = granted;
     NotificationService.savePreferences(prefs);
 
-    // Register Service Worker if supported
-    if ('serviceWorker' in navigator) {
-      try {
-        await navigator.serviceWorker.register('/sw.js');
-      } catch (swErr) {
-        console.warn('SW registration warning:', swErr);
+    // Register Service Worker and server subscriber ONLY when truly granted
+    if (granted) {
+      if ('serviceWorker' in navigator) {
+        try {
+          await navigator.serviceWorker.register('/sw.js');
+        } catch (swErr) {
+          console.warn('SW registration warning:', swErr);
+        }
       }
+      await NotificationService.registerSubscriber(prefs.selectedInterests);
     }
 
-    // Record subscriber on server
-    await NotificationService.registerSubscriber(prefs.selectedInterests);
-
-    return true;
+    return { status: permission, isIframe };
   },
 
   // Trigger Native Browser Notification Popup

@@ -24,26 +24,26 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { SendPushNotificationModal } from '@/components/admin/SendPushNotificationModal';
 
-const SAMPLE_IMAGES = [
+const FALLBACK_SAMPLE_IMAGES = [
   {
-    name: 'Cyberpunk Neon',
-    url: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=800&auto=format&fit=crop&q=80',
-    style: 'Cyberpunk & Sci-Fi',
-  },
-  {
-    name: 'Studio Portrait',
-    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80',
+    name: '80s Bollywood Couple',
+    url: 'https://res.cloudinary.com/idbpgaqz/image/upload/v1789084501/prompts/prompt-1789084496535.webp',
     style: 'Photorealistic & Portraits',
   },
   {
-    name: 'Cinematic Nature',
-    url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80',
-    style: 'Cinematic 8K',
+    name: '80s Golden Hour Vintage',
+    url: 'https://res.cloudinary.com/idbpgaqz/image/upload/v1789084425/prompts/prompt-1789084418854.webp',
+    style: 'Photorealistic & Portraits',
   },
   {
-    name: '3D Render',
-    url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
-    style: '3D Art & Unreal Engine',
+    name: 'Retro 80s Studio Glamour',
+    url: 'https://res.cloudinary.com/idbpgaqz/image/upload/v1789084365/prompts/prompt-1789084357771.webp',
+    style: 'Photorealistic & Portraits',
+  },
+  {
+    name: 'Vintage 80s Cinematic Pose',
+    url: 'https://res.cloudinary.com/idbpgaqz/image/upload/v1789084305/prompts/prompt-1789084297672.webp',
+    style: 'Cinematic 8K',
   },
 ];
 
@@ -78,6 +78,7 @@ interface ExtractedPromptData {
 export const AIStudioTool = () => {
   const router = useRouter();
   const {
+    posts,
     setCurrentView,
     setSelectedCategory,
     setSearchQuery,
@@ -89,6 +90,22 @@ export const AIStudioTool = () => {
     deductToolCredit,
     isAuthenticated,
   } = useApp();
+
+  // Pick latest published prompt images as sample presets
+  const sampleImages = React.useMemo(() => {
+    const latestWithImages = (posts || [])
+      .filter((p) => p.imageUrl && p.imageUrl.startsWith('http'))
+      .slice(0, 4);
+
+    if (latestWithImages.length >= 4) {
+      return latestWithImages.map((p) => ({
+        name: p.title,
+        url: p.imageUrl,
+        style: p.category || 'Trending Prompt',
+      }));
+    }
+    return FALLBACK_SAMPLE_IMAGES;
+  }, [posts]);
 
   const [isPushModalOpen, setIsPushModalOpen] = useState<boolean>(false);
 
@@ -354,7 +371,7 @@ export const AIStudioTool = () => {
                   Or Pick a Sample Photo:
                 </span>
                 <div className="grid grid-cols-4 gap-2">
-                  {SAMPLE_IMAGES.map((sample) => (
+                  {sampleImages.map((sample) => (
                     <button
                       key={sample.name}
                       onClick={() => {
@@ -371,7 +388,7 @@ export const AIStudioTool = () => {
                         className="object-cover group-hover:scale-110 transition-transform duration-300"
                         referrerPolicy="no-referrer"
                       />
-                      <div className="absolute inset-x-0 bottom-0 bg-black/70 py-0.5 px-1 text-[9px] font-bold text-white text-center truncate">
+                      <div className="absolute inset-x-0 bottom-0 bg-black/75 py-0.5 px-1 text-[9px] font-bold text-white text-center truncate">
                         {sample.name}
                       </div>
                     </button>
