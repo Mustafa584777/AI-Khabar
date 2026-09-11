@@ -19,6 +19,7 @@ import {
   Database,
   Search,
   Users,
+  Bell,
 } from 'lucide-react';
 
 export const AdminSidebar = () => {
@@ -68,6 +69,11 @@ export const AdminSidebar = () => {
       id: 'categories',
       label: 'Categories & Tags',
       icon: FolderTree,
+    },
+    {
+      id: 'notifications',
+      label: 'Push Notifications',
+      icon: Bell,
     },
     {
       id: 'users',

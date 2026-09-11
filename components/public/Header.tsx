@@ -11,7 +11,9 @@ import {
   Sparkles,
   Search,
   Crown,
+  Bell,
 } from 'lucide-react';
+import { NotificationService } from '@/lib/notifications';
 import Link from 'next/link';
 
 export const Header = () => {
@@ -33,12 +35,33 @@ export const Header = () => {
     userAccount,
   } = useApp();
 
+  const [unreadNotifs, setUnreadNotifs] = React.useState(0);
+
+  React.useEffect(() => {
+    const update = () => {
+      const list = NotificationService.getNotifications();
+      setUnreadNotifs(list.filter((n) => !n.read).length);
+    };
+    update();
+    const timer = setInterval(update, 8000);
+    return () => clearInterval(timer);
+  }, []);
+
   const handleHomeClick = () => {
     setCurrentView('public');
     setSelectedCategory('all');
     setSearchQuery('');
     if (pathname !== '/') {
       window.location.href = '/';
+    }
+  };
+
+  const handleNotificationsClick = () => {
+    setCurrentView('notifications');
+    if (pathname !== '/') {
+      router.push('/');
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -121,6 +144,25 @@ export const Header = () => {
 
         {/* Right: Saved, Account & Admin Actions */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Notifications Button */}
+          <button
+            onClick={handleNotificationsClick}
+            className={`relative flex items-center justify-center p-2 rounded-full transition-colors ${
+              currentView === 'notifications'
+                ? 'bg-[#E60023] text-white shadow-xs'
+                : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+            }`}
+            title="Notifications & Updates"
+            id="header-notifications-btn"
+          >
+            <Bell className="w-4 h-4" />
+            {unreadNotifs > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#E60023] text-white text-[9px] font-black flex items-center justify-center ring-2 ring-white dark:ring-neutral-950 animate-pulse">
+                {unreadNotifs > 9 ? '9+' : unreadNotifs}
+              </span>
+            )}
+          </button>
+
           {/* Saved Prompts (Pinterest Red Pill) */}
           <button
             onClick={() => setIsBookmarksDrawerOpen(true)}

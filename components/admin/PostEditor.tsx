@@ -25,9 +25,11 @@ import {
   X,
   Check,
   Crown,
+  Bell,
 } from 'lucide-react';
 import Image from 'next/image';
 import { cleanTagsArray, canonicalizeTag, slugify } from '@/lib/utils';
+import { SendPushNotificationModal } from './SendPushNotificationModal';
 
 const generateImageFileNameFromTitle = (titleText: string, currentFileName?: string): string => {
   const fallback = 'photo-prompt.webp';
@@ -110,7 +112,7 @@ export const PostEditor = () => {
     if (existingPost) {
       setIsPremium(Boolean(existingPost.isPremium || existingPost.parameters?.isPremium));
     }
-  }, [existingPost?.id, existingPost?.isPremium, existingPost?.parameters?.isPremium]);
+  }, [existingPost]);
   const [articleContent, setArticleContent] = useState(
     () =>
       existingPost?.articleContent ||
@@ -130,6 +132,7 @@ export const PostEditor = () => {
   const [aiSuggestedTags, setAiSuggestedTags] = useState<string[]>([]);
   const [isAddingCustomCat, setIsAddingCustomCat] = useState(false);
   const [customCatInput, setCustomCatInput] = useState('');
+  const [isPushModalOpen, setIsPushModalOpen] = useState(false);
 
   const handleCreateAndAssignCategory = async (rawCatName: string) => {
     const trimmed = rawCatName.trim();
@@ -667,6 +670,23 @@ export const PostEditor = () => {
         </div>
 
         <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => {
+              if (!title.trim()) {
+                showToast('Please enter a title before sending notification.');
+                return;
+              }
+              setIsPushModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-lg shadow-red-500/20 transition-all transform active:scale-95"
+            id="btn-send-prompt-notification"
+            title="Broadcast Pinterest-style Push Notification for this Prompt"
+          >
+            <Bell className="w-4 h-4" />
+            <span>Send Notification</span>
+          </button>
+
           <button
             type="button"
             disabled={isSavingPost}
@@ -1429,6 +1449,16 @@ export const PostEditor = () => {
           </div>
         </div>
       </div>
+
+      <SendPushNotificationModal
+        isOpen={isPushModalOpen}
+        onClose={() => setIsPushModalOpen(false)}
+        defaultTitle={title}
+        defaultCategory={category}
+        defaultImageUrl={imageUrl}
+        defaultUrl={`/${slug || slugify(title) || 'explore'}`}
+        defaultPromptText={promptText}
+      />
     </div>
   );
 };
