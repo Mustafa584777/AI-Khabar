@@ -196,7 +196,14 @@ export const NotificationService = {
 
     let permission = Notification.permission;
 
-    // If permission is 'default' and not yet decided, invoke browser request
+    // CRITICAL: If inside an iframe, NEVER execute Notification.requestPermission()!
+    // Chromium / Chrome security policy automatically rejects with 'denied' inside cross-origin/sandboxed iframes
+    // without ever prompting the user, causing the permission to be auto-blocked!
+    if (isIframe) {
+      return { status: permission, isIframe: true };
+    }
+
+    // If permission is 'default' and we are in top-level window, invoke browser request
     if (permission === 'default') {
       try {
         permission = await Notification.requestPermission();

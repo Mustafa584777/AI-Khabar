@@ -20,6 +20,7 @@ import {
   Search,
   Users,
   Bell,
+  MessageSquarePlus,
 } from 'lucide-react';
 
 export const AdminSidebar = () => {
@@ -31,9 +32,13 @@ export const AdminSidebar = () => {
     logout,
     posts,
     currentUser,
+    promptRequests,
   } = useApp();
 
   const draftCount = posts.filter((p) => p.status === 'draft').length;
+  const pendingRequestsCount = Array.isArray(promptRequests)
+    ? promptRequests.filter((r: any) => r.status === 'pending').length
+    : 0;
 
   interface NavItem {
     id: string;
@@ -64,6 +69,12 @@ export const AdminSidebar = () => {
         setEditingPostId(null);
         setAdminSubView('new-post');
       },
+    },
+    {
+      id: 'requested-prompts',
+      label: 'Requested Prompts',
+      icon: MessageSquarePlus,
+      badge: pendingRequestsCount > 0 ? pendingRequestsCount : null,
     },
     {
       id: 'categories',
