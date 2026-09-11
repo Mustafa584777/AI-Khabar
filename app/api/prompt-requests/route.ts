@@ -8,10 +8,17 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get('userId');
+    const email = searchParams.get('email');
 
-    if (userId) {
-      const userRequests = await ServerStorage.getPromptRequestsByUserId(userId);
+    if (userId || email) {
+      const userRequests = await ServerStorage.getPromptRequestsByUserId(userId || '', email || undefined);
       return NextResponse.json({ success: true, requests: userRequests });
+    }
+
+    // Strict privacy: only return all requests if admin request header is present
+    const isAdmin = req.headers.get('x-admin-request') === 'true';
+    if (!isAdmin) {
+      return NextResponse.json({ success: true, requests: [] });
     }
 
     const allRequests = await ServerStorage.getAllPromptRequests();
@@ -31,6 +38,9 @@ export async function POST(req: NextRequest) {
       userEmail,
       userAvatar,
       userPlanTier,
+      planRequestsAllowed,
+      planRequestsRemaining,
+      requestedVia,
       requestText,
       category,
       aiToolPreference,
@@ -53,6 +63,9 @@ export async function POST(req: NextRequest) {
       userEmail: userEmail || undefined,
       userAvatar: userAvatar || undefined,
       userPlanTier: userPlanTier || 'free',
+      planRequestsAllowed: typeof planRequestsAllowed === 'number' ? planRequestsAllowed : (userPlanTier === 'vip' ? 10 : userPlanTier === 'pro' ? 3 : userPlanTier === 'starter' ? 1 : 0),
+      planRequestsRemaining: typeof planRequestsRemaining === 'number' ? planRequestsRemaining : undefined,
+      requestedVia: requestedVia || (userPlanTier && userPlanTier !== 'free' ? 'plan_quota' : 'points'),
       requestText: requestText.trim(),
       category: category || 'General',
       aiToolPreference: aiToolPreference || 'Midjourney v6.1',

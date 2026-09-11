@@ -11,9 +11,6 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   browserPushGranted: false,
   selectedInterests: [
     'Photorealistic & Portraits',
-    'Anime & Cyberpunk',
-    '3D Art & CGI Renders',
-    'Cinematic & Movie Still',
   ],
   frequency: 'instant',
   soundEnabled: true,
@@ -149,6 +146,7 @@ export const normalizeCategory = (cat: string): string => {
   return (cat || '')
     .toLowerCase()
     .replace(/&amp;/g, '&')
+    .replace(/&/g, ' and ')
     .replace(/[\s\-_+]+/g, ' ')
     .trim();
 };
@@ -162,7 +160,13 @@ export const isCategoryMatchingInterest = (
   const normNotif = normalizeCategory(notifCategory);
 
   // Global broadcast to all users
-  if (normNotif === 'all' || normNotif === 'global' || normNotif === 'broadcast' || normNotif === 'everyone') {
+  if (
+    normNotif === 'all' ||
+    normNotif === 'global' ||
+    normNotif === 'broadcast' ||
+    normNotif === 'everyone' ||
+    normNotif === 'all users'
+  ) {
     return true;
   }
 
@@ -170,29 +174,19 @@ export const isCategoryMatchingInterest = (
     return false;
   }
 
+  const slugNotif = normNotif.replace(/[^a-z0-9]/g, '');
+
   return userInterests.some((interest) => {
     if (!interest) return false;
     const normUserInt = normalizeCategory(interest);
     if (!normUserInt) return false;
 
-    // 1. Exact match
+    // 1. Exact normalized match (e.g. "anime & manga" === "anime and manga")
     if (normNotif === normUserInt) return true;
 
-    // 2. Contains (min 3 chars to prevent false positives)
-    if (normUserInt.length >= 3 && normNotif.includes(normUserInt)) return true;
-    if (normNotif.length >= 3 && normUserInt.includes(normNotif)) return true;
-
-    // 3. Sub-parts split by '&', 'and', '/', ','
-    const notifParts = normNotif.split(/\s*(?:&|\band\b|\/|,)\s*/).filter((p) => p.length >= 3);
-    const userParts = normUserInt.split(/\s*(?:&|\band\b|\/|,)\s*/).filter((p) => p.length >= 3);
-
-    for (const np of notifParts) {
-      for (const up of userParts) {
-        if (np === up || (np.length >= 4 && up.length >= 4 && (np.includes(up) || up.includes(np)))) {
-          return true;
-        }
-      }
-    }
+    // 2. Exact alphanumeric slug match (e.g. "animeandmanga" === "animeandmanga")
+    const slugUser = normUserInt.replace(/[^a-z0-9]/g, '');
+    if (slugNotif && slugUser && slugNotif === slugUser) return true;
 
     return false;
   });
@@ -305,7 +299,9 @@ export const NotificationService = {
 
       // Ensure 16:9 composite banner image (handles 4 collage images or 1 image in 16:9)
       let displayImage = item.imageUrl || '';
-      if (item.collageImages && item.collageImages.length > 1) {
+      if (displayImage && displayImage.startsWith('/collages/')) {
+        // Pre-rendered 16:9 static image ready!
+      } else if (item.collageImages && item.collageImages.length > 1) {
         if (item.id) {
           displayImage = `/api/notifications/collage?id=${encodeURIComponent(item.id)}`;
         } else {
@@ -482,10 +478,12 @@ export const NotificationService = {
       ? item.collageImages.filter((u) => u && typeof u === 'string' && u.trim().length > 0).slice(0, 4)
       : [];
 
-    const effectiveImageUrl =
-      validCollage.length > 1 || item.imageUrl
-        ? `/api/notifications/collage?id=${notifId}`
-        : item.imageUrl || '';
+    let effectiveImageUrl = item.imageUrl || '';
+    if (effectiveImageUrl && effectiveImageUrl.startsWith('/collages/')) {
+      // Pre-saved 16:9 composite already available
+    } else if (validCollage.length > 1 || effectiveImageUrl) {
+      effectiveImageUrl = `/api/notifications/collage?id=${notifId}`;
+    }
 
     const newItem: PushNotificationItem = {
       ...item,

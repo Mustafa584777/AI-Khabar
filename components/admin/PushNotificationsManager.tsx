@@ -25,8 +25,10 @@ import {
   Globe,
   Calendar,
   Laptop,
+  Upload,
 } from 'lucide-react';
 import Image from 'next/image';
+import { generate16x9Collage, saveCollageToServer } from '@/lib/collage-generator';
 
 export const PushNotificationsManager: React.FC = () => {
   const { posts, categories, showToast } = useApp();
@@ -59,6 +61,14 @@ export const PushNotificationsManager: React.FC = () => {
   const [sendNativePush, setSendNativePush] = useState<boolean>(true);
   const [isSending, setIsSending] = useState<boolean>(false);
 
+  // File upload input refs
+  const multiFileInputRef = React.useRef<HTMLInputElement>(null);
+  const singleInputRef0 = React.useRef<HTMLInputElement>(null);
+  const singleInputRef1 = React.useRef<HTMLInputElement>(null);
+  const singleInputRef2 = React.useRef<HTMLInputElement>(null);
+  const singleInputRef3 = React.useRef<HTMLInputElement>(null);
+  const singleInputRefs = [singleInputRef0, singleInputRef1, singleInputRef2, singleInputRef3];
+
   // Notification History & Real Stats
   const [history, setHistory] = useState<PushNotificationItem[]>([]);
   const [realSubscribers, setRealSubscribers] = useState<PushSubscriber[]>([]);
@@ -85,6 +95,60 @@ export const PushNotificationsManager: React.FC = () => {
   useEffect(() => {
     loadHistory();
   }, []);
+
+  // Multi-image file upload handler (Upload up to 4 images at once)
+  const handleMultipleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []).slice(0, 4);
+    if (files.length === 0) return;
+
+    const readPromises = files.map(
+      (file) =>
+        new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        })
+    );
+
+    Promise.all(readPromises).then((results) => {
+      const next = [...results];
+      while (next.length < 4) next.push('');
+      setCollageImages(next);
+      if (next[0]) setMainImageUrl(next[0]);
+      showToast(`Uploaded ${results.length} collage image${results.length > 1 ? 's' : ''}!`);
+    });
+
+    if (e.target) e.target.value = '';
+  };
+
+  // Single card file upload handler
+  const handleSingleFileChange = (idx: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const next = [...collageImages];
+      next[idx] = dataUrl;
+      setCollageImages(next);
+      if (idx === 0) setMainImageUrl(dataUrl);
+      showToast(`Image set for Pin Card #${idx + 1}`);
+    };
+    reader.readAsDataURL(file);
+
+    if (e.target) e.target.value = '';
+  };
+
+  const handleClearCard = (idx: number) => {
+    const next = [...collageImages];
+    next[idx] = '';
+    setCollageImages(next);
+    if (idx === 0) {
+      const firstAvailable = next.find((u) => u && u.trim().length > 0) || '';
+      setMainImageUrl(firstAvailable);
+    }
+  };
 
   // Quick helper: auto-populate 4 images from selected category
   const handleAutoFillCollage = () => {
@@ -151,13 +215,32 @@ export const PushNotificationsManager: React.FC = () => {
         actionButtons.push({ label: actionButton2Label, url: actionButton2Url });
       }
 
+      // Pre-composite into 16:9 widescreen canvas if images provided
+      let finalImageUrl = mainImageUrl;
+      const activeCollage = collageImages.filter((u) => u && u.trim().length > 0);
+      const imagesToComposite = activeCollage.length > 0 ? activeCollage : (mainImageUrl ? [mainImageUrl] : []);
+
+      if (imagesToComposite.length > 0) {
+        try {
+          const dataUrl = await generate16x9Collage(imagesToComposite);
+          if (dataUrl) {
+            const savedUrl = await saveCollageToServer(dataUrl);
+            if (savedUrl) {
+              finalImageUrl = savedUrl;
+            }
+          }
+        } catch (err) {
+          console.warn('[Push] Client-side 16:9 composite generation fallback:', err);
+        }
+      }
+
       const itemPayload = {
         title: title.trim(),
         subtitle: subtitle.trim(),
         body: body.trim(),
         category: targetCategory,
-        imageUrl: mainImageUrl,
-        collageImages: collageImages.filter((u) => u && u.trim().length > 0),
+        imageUrl: finalImageUrl || mainImageUrl,
+        collageImages: activeCollage,
         url: destinationUrl || '/',
         actionButtons,
         sentBy: 'admin',
@@ -367,45 +450,102 @@ export const PushNotificationsManager: React.FC = () => {
               </div>
             </div>
 
-            {/* 4-Card Collage Images Section (Pinterest Signature Look) */}
+            {/* 4-Card Collage Images Section (Pinterest Signature Look & 16:9 Format) */}
             <div className="space-y-3 pt-2 border-t border-neutral-100 dark:border-neutral-800">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <label className="block text-xs font-bold text-neutral-800 dark:text-neutral-200">
-                    Pinterest 4-Card Photo Collage Strip
-                  </label>
+                  <div className="flex items-center gap-2">
+                    <label className="block text-xs font-bold text-neutral-800 dark:text-neutral-200">
+                      Pinterest 4-Card Photo Collage Strip (16:9 Format)
+                    </label>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-red-100 dark:bg-red-950/60 text-[#E60023]">
+                      16:9 Widescreen
+                    </span>
+                  </div>
                   <span className="text-[11px] text-neutral-500">
-                    Provide up to 4 image URLs to render the 4-pin collage strip (as in Pinterest lockscreen notifications).
+                    Upload or paste up to 4 images. They are automatically composited into an authentic 16:9 widescreen card strip for mobile lockscreens.
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleAutoFillCollage}
-                  className="px-3 py-1.5 rounded-xl bg-red-50 dark:bg-red-950/50 text-[#E60023] hover:bg-red-100 text-xs font-bold transition-colors flex items-center gap-1 shrink-0"
-                >
-                  <RefreshCw className="w-3 h-3" />
-                  <span>Auto-Fill 4 Images</span>
-                </button>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={multiFileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleMultipleFilesChange}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => multiFileInputRef.current?.click()}
+                    className="px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-bold transition-colors flex items-center gap-1.5 shrink-0"
+                    title="Upload up to 4 images from device"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-[#E60023]" />
+                    <span>Upload 4 Photos</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleAutoFillCollage}
+                    className="px-3 py-1.5 rounded-xl bg-red-50 dark:bg-red-950/50 text-[#E60023] hover:bg-red-100 dark:hover:bg-red-900/50 text-xs font-bold transition-colors flex items-center gap-1 shrink-0"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    <span>Auto-Fill 4</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {[0, 1, 2, 3].map((idx) => (
-                  <div key={idx} className="space-y-1">
-                    <span className="text-[10px] font-bold text-neutral-400 block">Pin Card #{idx + 1}</span>
+                  <div key={idx} className="space-y-1.5 p-2 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-neutral-500">Pin #{idx + 1}</span>
+                      <div className="flex items-center gap-1">
+                        <input
+                          ref={singleInputRefs[idx]}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleSingleFileChange(idx, e)}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => singleInputRefs[idx].current?.click()}
+                          className="p-1 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-500 hover:text-[#E60023] transition-colors"
+                          title="Upload image file"
+                        >
+                          <Upload className="w-3 h-3" />
+                        </button>
+                        {collageImages[idx] && (
+                          <button
+                            type="button"
+                            onClick={() => handleClearCard(idx)}
+                            className="p-1 rounded-lg hover:bg-red-100 dark:hover:bg-red-950/50 text-neutral-400 hover:text-red-500 transition-colors"
+                            title="Remove image"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
                     <input
-                      type="url"
-                      value={collageImages[idx] || ''}
+                      type="text"
+                      value={collageImages[idx]?.startsWith('data:image') ? 'Uploaded Local File' : collageImages[idx] || ''}
                       onChange={(e) => {
                         const next = [...collageImages];
                         next[idx] = e.target.value;
                         setCollageImages(next);
                         if (idx === 0) setMainImageUrl(e.target.value);
                       }}
-                      placeholder={`https://...`}
-                      className="w-full px-2.5 py-1.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 text-[11px] font-mono text-neutral-900 dark:text-white truncate"
+                      placeholder={`URL or upload`}
+                      className="w-full px-2 py-1 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-[10px] font-mono text-neutral-900 dark:text-white truncate"
                     />
-                    {collageImages[idx] && (
-                      <div className="relative w-full h-14 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-neutral-100">
+
+                    {collageImages[idx] ? (
+                      <div className="relative w-full h-16 rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-neutral-100">
                         <Image
                           src={collageImages[idx]}
                           alt={`Collage ${idx}`}
@@ -413,6 +553,17 @@ export const PushNotificationsManager: React.FC = () => {
                           className="object-cover"
                           referrerPolicy="no-referrer"
                         />
+                        <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/60 text-[9px] font-bold text-white">
+                          #{idx + 1}
+                        </span>
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => singleInputRefs[idx].current?.click()}
+                        className="w-full h-16 rounded-xl border border-dashed border-neutral-300 dark:border-neutral-700 hover:border-[#E60023] bg-white/50 dark:bg-neutral-900/50 flex flex-col items-center justify-center cursor-pointer transition-colors"
+                      >
+                        <Upload className="w-4 h-4 text-neutral-400 mb-0.5" />
+                        <span className="text-[9px] text-neutral-400 font-medium">Add Photo</span>
                       </div>
                     )}
                   </div>
@@ -570,45 +721,50 @@ export const PushNotificationsManager: React.FC = () => {
               </p>
 
               {/* 16:9 Photo Collage Strip or Single 16:9 Image */}
-              {collageImages.filter((u) => u && u.trim()).length > 1 ? (
-                <div className="grid grid-cols-4 gap-1.5 rounded-2xl overflow-hidden aspect-[16/9] mt-2">
-                  {collageImages.slice(0, 4).map((img, i) => (
-                    <div key={i} className="relative w-full h-full bg-neutral-200 dark:bg-neutral-800 rounded-xl overflow-hidden shadow-2xs">
-                      {img ? (
-                        <Image
-                          src={img}
-                          alt={`Collage ${i}`}
-                          fill
-                          className="object-cover"
-                          referrerPolicy="no-referrer"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[10px] text-neutral-400">
-                          Img {i + 1}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (mainImageUrl || collageImages[0]) ? (
-                <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden bg-neutral-200 dark:bg-neutral-800 mt-2 shadow-2xs">
-                  <Image
-                    src={mainImageUrl || collageImages[0]}
-                    alt="Notification banner"
-                    fill
-                    className="object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                </div>
-              ) : (
-                <div className="grid grid-cols-4 gap-1.5 rounded-2xl overflow-hidden aspect-[16/9] mt-2">
-                  {[0, 1, 2, 3].map((i) => (
-                    <div key={i} className="relative w-full h-full bg-neutral-200 dark:bg-neutral-800 rounded-xl overflow-hidden flex items-center justify-center text-[10px] text-neutral-400">
-                      Img {i + 1}
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="relative">
+                <span className="absolute top-2 right-2 z-20 px-2 py-0.5 rounded-full text-[9px] font-black bg-black/70 text-white backdrop-blur-xs shadow-xs pointer-events-none">
+                  16:9 Widescreen
+                </span>
+                {collageImages.filter((u) => u && u.trim()).length > 1 ? (
+                  <div className="grid grid-cols-4 gap-1.5 rounded-2xl overflow-hidden aspect-[16/9] mt-2">
+                    {collageImages.slice(0, 4).map((img, i) => (
+                      <div key={i} className="relative w-full h-full bg-neutral-200 dark:bg-neutral-800 rounded-xl overflow-hidden shadow-2xs">
+                        {img ? (
+                          <Image
+                            src={img}
+                            alt={`Collage ${i}`}
+                            fill
+                            className="object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-[10px] text-neutral-400">
+                            Img {i + 1}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (mainImageUrl || collageImages[0]) ? (
+                  <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden bg-neutral-200 dark:bg-neutral-800 mt-2 shadow-2xs">
+                    <Image
+                      src={mainImageUrl || collageImages[0]}
+                      alt="Notification banner"
+                      fill
+                      className="object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-4 gap-1.5 rounded-2xl overflow-hidden aspect-[16/9] mt-2">
+                    {[0, 1, 2, 3].map((i) => (
+                      <div key={i} className="relative w-full h-full bg-neutral-200 dark:bg-neutral-800 rounded-xl overflow-hidden flex items-center justify-center text-[10px] text-neutral-400">
+                        Img {i + 1}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* Action Buttons in Lockscreen Card */}
               <div className="pt-2 flex items-center justify-end gap-2">

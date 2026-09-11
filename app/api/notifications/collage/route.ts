@@ -1,32 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
+import fs from 'fs';
+import path from 'path';
 import { NotificationServerStore } from '@/lib/notification-storage';
 
 // In-memory buffer cache to serve collages near instantly
 const collageCache = new Map<string, { buffer: Buffer; contentType: string; timestamp: number }>();
 const CACHE_TTL_MS = 1000 * 60 * 60 * 24; // 24 hours
 
-// Helper to fetch an image with timeout
-async function fetchImageBuffer(url: string, timeoutMs = 5000): Promise<Buffer | null> {
+// Helper to fetch an image buffer with timeout and support for data URLs and local files
+async function fetchImageBuffer(url: string, timeoutMs = 6000): Promise<Buffer | null> {
   try {
-    if (!url || !url.startsWith('http')) return null;
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    if (!url) return null;
 
-    const res = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; AuraPromptCollageBot/1.0)',
-        Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-      },
-    });
-    clearTimeout(timeout);
+    // 1. Data URL
+    if (url.startsWith('data:image/')) {
+      const match = url.match(/^data:image\/[a-zA-Z0-9-+]+;base64,(.+)$/);
+      if (match && match[1]) {
+        return Buffer.from(match[1], 'base64');
+      }
+      return null;
+    }
 
-    if (!res.ok) return null;
-    const arrayBuffer = await res.arrayBuffer();
-    return Buffer.from(arrayBuffer);
+    // 2. Local file
+    if (url.startsWith('/')) {
+      const localPath = path.join(process.cwd(), 'public', url);
+      if (fs.existsSync(localPath)) {
+        return fs.readFileSync(localPath);
+      }
+      return null;
+    }
+
+    // 3. Remote URL
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+      const res = await fetch(url, {
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36',
+          Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+        },
+      });
+      clearTimeout(timeout);
+
+      if (!res.ok) return null;
+      const arrayBuffer = await res.arrayBuffer();
+      return Buffer.from(arrayBuffer);
+    }
+
+    return null;
   } catch (err) {
-    console.warn(`[Collage] Failed to fetch image ${url}:`, err);
+    console.warn(`[Collage] Failed to fetch image ${url.slice(0, 50)}:`, err);
     return null;
   }
 }
@@ -95,9 +121,11 @@ export async function GET(req: NextRequest) {
       if (target) {
         notifTitle = target.title || notifTitle;
         if (Array.isArray(target.collageImages) && target.collageImages.length > 0) {
-          imagesToProcess = target.collageImages.filter((u) => u && typeof u === 'string' && u.startsWith('http'));
+          imagesToProcess = target.collageImages.filter(
+            (u) => u && typeof u === 'string' && (u.startsWith('http') || u.startsWith('data:image/') || u.startsWith('/'))
+          );
         }
-        if (imagesToProcess.length === 0 && target.imageUrl && target.imageUrl.startsWith('http')) {
+        if (imagesToProcess.length === 0 && target.imageUrl) {
           imagesToProcess = [target.imageUrl];
         }
       }
@@ -107,7 +135,7 @@ export async function GET(req: NextRequest) {
       imagesToProcess = rawUrls
         .split(',')
         .map((u) => u.trim())
-        .filter((u) => u.startsWith('http'));
+        .filter((u) => u.startsWith('http') || u.startsWith('data:image/') || u.startsWith('/'));
     }
 
     // Default fallback if no images provided
@@ -166,7 +194,7 @@ export async function GET(req: NextRequest) {
 
       const mask = createRoundedMask(CARD_WIDTH, CARD_HEIGHT, CORNER_RADIUS);
 
-      const compositeItems: sharp.OverlayOptions[] = [];
+      const compositeItems: Array<{ input: Buffer; left: number; top: number }> = [];
 
       for (let i = 0; i < count; i++) {
         const left = PADDING_X + i * (CARD_WIDTH + GAP);

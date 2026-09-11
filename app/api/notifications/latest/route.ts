@@ -1,11 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { NotificationServerStore } from '@/lib/notification-storage';
+import { isCategoryMatchingInterest } from '@/lib/notifications';
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const since = searchParams.get('since');
-    const allNotifications = NotificationServerStore.getNotifications();
+    const interestsParam = searchParams.get('interests');
+    let allNotifications = NotificationServerStore.getNotifications();
+
+    if (interestsParam) {
+      const userInterests = decodeURIComponent(interestsParam)
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      if (userInterests.length > 0) {
+        allNotifications = allNotifications.filter((n) =>
+          isCategoryMatchingInterest(n.category, userInterests)
+        );
+      }
+    }
 
     if (!since) {
       return NextResponse.json({

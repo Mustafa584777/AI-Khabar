@@ -68,7 +68,10 @@ export async function loadHtmlImage(url: string): Promise<HTMLImageElement> {
     }
 
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    // Only use crossOrigin for external HTTP/HTTPS images. Data URLs and local paths do not support crossOrigin
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      img.crossOrigin = 'anonymous';
+    }
 
     img.onload = () => resolve(img);
 
@@ -79,7 +82,7 @@ export async function loadHtmlImage(url: string): Promise<HTMLImageElement> {
         const fallbackImg = new Image();
         fallbackImg.crossOrigin = 'anonymous';
         fallbackImg.onload = () => resolve(fallbackImg);
-        fallbackImg.onerror = (e) => reject(new Error(`Failed to load image via proxy: ${url}`));
+        fallbackImg.onerror = () => reject(new Error(`Failed to load image via proxy: ${url}`));
         fallbackImg.src = proxyUrl;
       } else {
         reject(new Error(`Failed to load image: ${url}`));
@@ -140,8 +143,8 @@ export async function generate16x9Collage(imageUrls: string[]): Promise<string> 
   const count = loadedImages.length;
 
   if (count === 1) {
-    // Single image: perfectly framed in 16:9 widescreen format
-    drawImageCover(ctx, loadedImages[0], outerMargin, outerMargin, usableWidth, usableHeight, 20);
+    // Single image: full-bleed 16:9 widescreen format (1280x720)
+    drawImageCover(ctx, loadedImages[0], 0, 0, canvas.width, canvas.height, 0);
   } else {
     // Multi-image Pinterest strip: 2, 3, or 4 vertical cards side-by-side
     const gap = count === 4 ? 12 : count === 3 ? 16 : 20;

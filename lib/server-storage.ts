@@ -1,4 +1,4 @@
-import { Category, PromptPost, SiteSettings, SearchQueryItem, PromptRequestItem } from '@/types/prompt';
+import { Category, PromptPost, SiteSettings, SearchQueryItem, PromptRequestItem, AppNotification } from '@/types/prompt';
 import { INITIAL_CATEGORIES, INITIAL_SETTINGS, INITIAL_POSTS } from './initial-data';
 import { supabase, supabaseAdmin, isSupabaseConfigured } from './supabase';
 import { cleanTagsArray, canonicalizeTag } from './tag-utils';
@@ -13,6 +13,7 @@ const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const TAGS_FILE = path.join(DATA_DIR, 'tags.json');
 const SEARCH_QUERIES_FILE = path.join(DATA_DIR, 'search_queries.json');
 const PROMPT_REQUESTS_FILE = path.join(DATA_DIR, 'prompt_requests.json');
+const NOTIFICATIONS_FILE = path.join(DATA_DIR, 'notifications.json');
 
 const DEFAULT_TAGS = [
   'Portrait', '35mm', 'Cinematic', 'Street Photography', 'Fashion',
@@ -59,6 +60,7 @@ let memorySettings: SiteSettings | null = null;
 let memoryTags: string[] | null = null;
 let memorySearchQueries: SearchQueryItem[] | null = null;
 let memoryPromptRequests: PromptRequestItem[] | null = null;
+let memoryNotifications: AppNotification[] | null = null;
 
 // Helpers to map Supabase snake_case rows to PromptPost
 function mapSupabasePost(row: any): PromptPost {
@@ -829,7 +831,7 @@ export const ServerStorage = {
     return filtered;
   },
 
-  // Prompt Requests
+  // Prompt Requests (Private to user & visible in Admin Panel)
   getAllPromptRequests: async (): Promise<PromptRequestItem[]> => {
     if (isSupabaseConfigured()) {
       try {
@@ -837,122 +839,231 @@ export const ServerStorage = {
           .from('prompt_requests')
           .select('*')
           .order('created_at', { ascending: false });
+
         if (!error && data && Array.isArray(data)) {
           const mapped: PromptRequestItem[] = data.map((d: any) => ({
             id: d.id,
-            userId: d.user_id,
-            userName: d.user_name || 'Anonymous User',
-            userEmail: d.user_email || undefined,
-            userAvatar: d.user_avatar || undefined,
-            userPlanTier: d.user_plan_tier || undefined,
-            requestText: d.request_text,
-            category: d.category || undefined,
-            aiToolPreference: d.ai_tool_preference || undefined,
-            aspectRatio: d.aspect_ratio || undefined,
-            referenceImageUrl: d.reference_image_url || undefined,
+            userId: d.user_id || d.userId,
+            userName: d.user_name || d.userName || 'Anonymous User',
+            userEmail: d.user_email || d.userEmail,
+            userAvatar: d.user_avatar || d.userAvatar,
+            userPlanTier: d.user_plan_tier || d.userPlanTier || 'free',
+            planRequestsAllowed: d.plan_requests_allowed ?? d.planRequestsAllowed ?? (d.user_plan_tier === 'vip' ? 10 : d.user_plan_tier === 'pro' ? 3 : d.user_plan_tier === 'starter' ? 1 : 0),
+            planRequestsRemaining: d.plan_requests_remaining ?? d.planRequestsRemaining,
+            requestedVia: d.requested_via ?? d.requestedVia ?? (d.user_plan_tier && d.user_plan_tier !== 'free' ? 'plan_quota' : 'points'),
+            requestText: d.request_text || d.requestText,
+            category: d.category || 'General',
+            aiToolPreference: d.ai_tool_preference || d.aiToolPreference,
+            aspectRatio: d.aspect_ratio || d.aspectRatio,
+            referenceImageUrl: d.reference_image_url || d.referenceImageUrl,
             status: d.status || 'pending',
             createdAt: d.created_at ? new Date(d.created_at).getTime() : Date.now(),
-            likesCount: d.likes_count || 0,
-            fulfilledPrompt: d.fulfilled_prompt || undefined,
-            fulfilledImageUrl: d.fulfilled_image_url || undefined,
-            fulfilledAiTool: d.fulfilled_ai_tool || undefined,
-            fulfilledNotes: d.fulfilled_notes || undefined,
-            adminNotes: d.admin_notes || undefined,
+            likesCount: Number(d.likes_count) || 0,
+            fulfilledPrompt: d.fulfilled_prompt || d.fulfilledPrompt,
+            fulfilledImageUrl: d.fulfilled_image_url || d.fulfilledImageUrl,
+            fulfilledAiTool: d.fulfilled_ai_tool || d.fulfilledAiTool,
+            fulfilledNotes: d.fulfilled_notes || d.fulfilledNotes,
             fulfilledAt: d.fulfilled_at ? new Date(d.fulfilled_at).getTime() : undefined,
-            requestSource: d.request_source || undefined,
+            adminNotes: d.admin_notes || d.adminNotes,
           }));
           memoryPromptRequests = mapped;
           writeJsonFile(PROMPT_REQUESTS_FILE, mapped);
           return mapped;
         }
       } catch (err) {
-        console.warn('Supabase getAllPromptRequests fallback:', err);
+        console.warn('Supabase prompt_requests fallback to local JSON:', err);
       }
     }
 
     if (memoryPromptRequests === null) {
-      memoryPromptRequests = readJsonFile<PromptRequestItem[]>(PROMPT_REQUESTS_FILE, []);
+      const defaultRequests: PromptRequestItem[] = [
+        {
+          id: 'req_demo_1',
+          userId: 'user_demo_pro',
+          userName: 'Alex Creator',
+          userEmail: 'alex.creator@example.com',
+          userAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+          userPlanTier: 'pro',
+          planRequestsAllowed: 3,
+          planRequestsRemaining: 2,
+          requestedVia: 'plan_quota',
+          requestText: 'A high-fashion cyberpunk editorial portrait of a woman in Tokyo in rain, volumetric neon bokeh, shot on Hasselblad 80mm f/1.8 lens.',
+          category: 'Cyberpunk & Sci-Fi',
+          aiToolPreference: 'Midjourney v6.1',
+          aspectRatio: '16:9',
+          status: 'fulfilled',
+          createdAt: Date.now() - 3600000 * 24,
+          fulfilledPrompt: 'Cinematic cyberpunk high-fashion portrait of a woman in neo-Tokyo rain, neon sign reflections on wet translucent vinyl trenchcoat, volumetric teal and magenta atmospheric haze, shot on Hasselblad H6D-100c, HC 80mm f/2.8 lens, detailed facial pores, natural skin texture, masterpiece, 8k --ar 16:9 --v 6.1 --style raw --stylize 250',
+          fulfilledImageUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80',
+          fulfilledAiTool: 'Midjourney v6.1',
+          fulfilledNotes: 'Best results with Midjourney v6.1. Keep --style raw for organic skin realism.',
+          fulfilledAt: Date.now() - 3600000 * 12,
+        },
+      ];
+      memoryPromptRequests = readJsonFile<PromptRequestItem[]>(PROMPT_REQUESTS_FILE, defaultRequests);
     }
-    return memoryPromptRequests || [];
+
+    return memoryPromptRequests;
   },
 
-  getPromptRequestsByUserId: async (userId: string): Promise<PromptRequestItem[]> => {
+  getPromptRequestsByUserId: async (userId: string, email?: string): Promise<PromptRequestItem[]> => {
     const all = await ServerStorage.getAllPromptRequests();
-    return all.filter((r) => r.userId === userId);
+    const normalizedEmail = email?.trim().toLowerCase();
+    return all.filter((r) => {
+      if (r.userId === userId) return true;
+      if (normalizedEmail && r.userEmail?.trim().toLowerCase() === normalizedEmail) return true;
+      return false;
+    });
   },
 
   savePromptRequest: async (request: PromptRequestItem): Promise<PromptRequestItem> => {
+    const all = await ServerStorage.getAllPromptRequests();
+    const existingIndex = all.findIndex((r) => r.id === request.id);
+    let updated: PromptRequestItem[];
+
+    if (existingIndex >= 0) {
+      updated = [...all];
+      updated[existingIndex] = { ...updated[existingIndex], ...request };
+    } else {
+      updated = [request, ...all];
+    }
+
+    memoryPromptRequests = updated;
+    writeJsonFile(PROMPT_REQUESTS_FILE, updated);
+
     if (isSupabaseConfigured()) {
       try {
-        const payload: any = {
+        await db().from('prompt_requests').upsert({
           id: request.id,
           user_id: request.userId,
           user_name: request.userName,
-          user_email: request.userEmail || null,
-          user_avatar: request.userAvatar || null,
-          user_plan_tier: request.userPlanTier || null,
+          user_email: request.userEmail,
+          user_avatar: request.userAvatar,
+          user_plan_tier: request.userPlanTier,
+          plan_requests_allowed: request.planRequestsAllowed,
+          plan_requests_remaining: request.planRequestsRemaining,
+          requested_via: request.requestedVia,
           request_text: request.requestText,
-          category: request.category || null,
-          ai_tool_preference: request.aiToolPreference || null,
-          aspect_ratio: request.aspectRatio || null,
-          reference_image_url: request.referenceImageUrl || null,
+          category: request.category,
+          ai_tool_preference: request.aiToolPreference,
+          aspect_ratio: request.aspectRatio,
+          reference_image_url: request.referenceImageUrl,
           status: request.status,
           created_at: new Date(request.createdAt).toISOString(),
-          likes_count: request.likesCount || 0,
-          fulfilled_prompt: request.fulfilledPrompt || null,
-          fulfilled_image_url: request.fulfilledImageUrl || null,
-          fulfilled_ai_tool: request.fulfilledAiTool || null,
-          fulfilled_notes: request.fulfilledNotes || null,
-          admin_notes: request.adminNotes || null,
+          fulfilled_prompt: request.fulfilledPrompt,
+          fulfilled_image_url: request.fulfilledImageUrl,
+          fulfilled_ai_tool: request.fulfilledAiTool,
+          fulfilled_notes: request.fulfilledNotes,
           fulfilled_at: request.fulfilledAt ? new Date(request.fulfilledAt).toISOString() : null,
-          request_source: request.requestSource || null,
-        };
-        await db().from('prompt_requests').upsert(payload, { onConflict: 'id' });
+          admin_notes: request.adminNotes,
+        }, { onConflict: 'id' });
       } catch (err) {
-        console.error('Supabase savePromptRequest error:', err);
+        console.warn('Supabase savePromptRequest notice:', err);
       }
     }
 
-    const current = await ServerStorage.getAllPromptRequests();
-    const idx = current.findIndex((r) => r.id === request.id);
-    let updated: PromptRequestItem[];
-    if (idx >= 0) {
-      updated = [...current];
-      updated[idx] = request;
-    } else {
-      updated = [request, ...current];
-    }
-    memoryPromptRequests = updated;
-    writeJsonFile(PROMPT_REQUESTS_FILE, updated);
     return request;
   },
 
-  updatePromptRequest: async (
-    id: string,
-    updates: Partial<PromptRequestItem>
-  ): Promise<PromptRequestItem | null> => {
-    const current = await ServerStorage.getAllPromptRequests();
-    const existing = current.find((r) => r.id === id);
-    if (!existing) return null;
+  updatePromptRequest: async (id: string, updates: Partial<PromptRequestItem>): Promise<PromptRequestItem | null> => {
+    const all = await ServerStorage.getAllPromptRequests();
+    const index = all.findIndex((r) => r.id === id);
+    if (index === -1) return null;
 
-    const merged: PromptRequestItem = { ...existing, ...updates };
-    await ServerStorage.savePromptRequest(merged);
-    return merged;
+    const current = all[index];
+    const updatedItem: PromptRequestItem = {
+      ...current,
+      ...updates,
+    };
+
+    all[index] = updatedItem;
+    memoryPromptRequests = [...all];
+    writeJsonFile(PROMPT_REQUESTS_FILE, memoryPromptRequests);
+
+    if (isSupabaseConfigured()) {
+      try {
+        await db().from('prompt_requests').upsert({
+          id: updatedItem.id,
+          user_id: updatedItem.userId,
+          user_name: updatedItem.userName,
+          user_email: updatedItem.userEmail,
+          user_avatar: updatedItem.userAvatar,
+          user_plan_tier: updatedItem.userPlanTier,
+          plan_requests_allowed: updatedItem.planRequestsAllowed,
+          plan_requests_remaining: updatedItem.planRequestsRemaining,
+          requested_via: updatedItem.requestedVia,
+          request_text: updatedItem.requestText,
+          category: updatedItem.category,
+          ai_tool_preference: updatedItem.aiToolPreference,
+          aspect_ratio: updatedItem.aspectRatio,
+          reference_image_url: updatedItem.referenceImageUrl,
+          status: updatedItem.status,
+          fulfilled_prompt: updatedItem.fulfilledPrompt,
+          fulfilled_image_url: updatedItem.fulfilledImageUrl,
+          fulfilled_ai_tool: updatedItem.fulfilledAiTool,
+          fulfilled_notes: updatedItem.fulfilledNotes,
+          fulfilled_at: updatedItem.fulfilledAt ? new Date(updatedItem.fulfilledAt).toISOString() : null,
+          admin_notes: updatedItem.adminNotes,
+        }, { onConflict: 'id' });
+      } catch (err) {
+        console.warn('Supabase updatePromptRequest notice:', err);
+      }
+    }
+
+    return updatedItem;
   },
 
   deletePromptRequest: async (id: string): Promise<boolean> => {
+    const all = await ServerStorage.getAllPromptRequests();
+    const filtered = all.filter((r) => r.id !== id);
+    memoryPromptRequests = filtered;
+    writeJsonFile(PROMPT_REQUESTS_FILE, filtered);
+
     if (isSupabaseConfigured()) {
       try {
         await db().from('prompt_requests').delete().eq('id', id);
       } catch (err) {
-        console.error('Supabase deletePromptRequest error:', err);
+        console.warn('Supabase deletePromptRequest notice:', err);
       }
     }
 
-    const current = await ServerStorage.getAllPromptRequests();
-    const updated = current.filter((r) => r.id !== id);
-    memoryPromptRequests = updated;
-    writeJsonFile(PROMPT_REQUESTS_FILE, updated);
+    return true;
+  },
+
+  // Notifications
+  getAllNotifications: async (): Promise<AppNotification[]> => {
+    if (memoryNotifications === null) {
+      memoryNotifications = readJsonFile<AppNotification[]>(NOTIFICATIONS_FILE, []);
+    }
+    return memoryNotifications || [];
+  },
+
+  saveNotification: async (notif: AppNotification): Promise<AppNotification> => {
+    const list = await ServerStorage.getAllNotifications();
+    const existingIndex = list.findIndex((n) => n.id === notif.id);
+    let updated: AppNotification[];
+    if (existingIndex >= 0) {
+      updated = [...list];
+      updated[existingIndex] = notif;
+    } else {
+      updated = [notif, ...list];
+    }
+    memoryNotifications = updated;
+    writeJsonFile(NOTIFICATIONS_FILE, updated);
+    return notif;
+  },
+
+  deleteNotification: async (id: string): Promise<boolean> => {
+    const list = await ServerStorage.getAllNotifications();
+    const updated = list.filter((n) => n.id !== id);
+    memoryNotifications = updated;
+    writeJsonFile(NOTIFICATIONS_FILE, updated);
+    return true;
+  },
+
+  clearAllNotifications: async (): Promise<boolean> => {
+    memoryNotifications = [];
+    writeJsonFile(NOTIFICATIONS_FILE, []);
     return true;
   },
 };

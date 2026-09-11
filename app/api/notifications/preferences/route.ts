@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { UserNotificationPreferences } from '@/types/prompt';
+import { UserNotificationPreferences } from '@/types/notification';
 
 export const dynamic = 'force-dynamic';
 

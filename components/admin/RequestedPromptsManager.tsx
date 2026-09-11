@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
-import { PromptRequestItem } from '@/types/prompt';
+import { PromptRequestItem, PLAN_MONTHLY_REQUEST_LIMITS } from '@/types/prompt';
 import {
   Target,
   Sparkles,
@@ -25,6 +25,7 @@ import {
   Image as ImageIcon,
   MessageSquare,
   Lock,
+  Zap,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -187,6 +188,63 @@ export const RequestedPromptsManager = () => {
         </div>
       </div>
 
+      {/* Monthly Premium Users Plan Quota & Allowance Reference Banner */}
+      <div className="p-4 sm:p-5 rounded-3xl bg-neutral-900 text-white border border-neutral-800 shadow-sm space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-neutral-800">
+          <div className="flex items-center gap-2">
+            <Crown className="w-4 h-4 text-amber-400 fill-amber-400" />
+            <span className="text-xs font-black uppercase tracking-wider text-neutral-200">
+              Monthly Premium Users Plan Request Quotas & Limits
+            </span>
+          </div>
+          <span className="text-[11px] text-neutral-400">
+            Requests allocated each month per subscription plan tier
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="p-3 rounded-2xl bg-neutral-800/80 border border-neutral-700/60 space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-neutral-300">Starter Plan</span>
+              <span className="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 text-[10px] font-bold">1 / month</span>
+            </div>
+            <div className="text-lg font-black text-white">1 Request</div>
+            <p className="text-[10px] text-neutral-400">Included in Starter plan quota</p>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-gradient-to-br from-amber-500/15 to-red-500/15 border border-amber-500/30 space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-amber-300 flex items-center gap-1">
+                <Crown className="w-3 h-3 fill-amber-400" /> Pro Plan
+              </span>
+              <span className="px-1.5 py-0.5 rounded bg-amber-500/30 text-amber-300 text-[10px] font-bold">3 / month</span>
+            </div>
+            <div className="text-lg font-black text-amber-400">3 Requests</div>
+            <p className="text-[10px] text-neutral-400">Included in Pro plan quota</p>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-gradient-to-br from-purple-500/15 to-indigo-500/15 border border-purple-500/30 space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-purple-300 flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-purple-400" /> VIP Plan
+              </span>
+              <span className="px-1.5 py-0.5 rounded bg-purple-500/30 text-purple-300 text-[10px] font-bold">10 / month</span>
+            </div>
+            <div className="text-lg font-black text-purple-400">10 Requests</div>
+            <p className="text-[10px] text-neutral-400">Included in VIP plan quota</p>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-neutral-800/80 border border-neutral-700/60 space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-neutral-300">Free Members</span>
+              <span className="px-1.5 py-0.5 rounded bg-neutral-700 text-neutral-300 text-[10px] font-bold">Points Based</span>
+            </div>
+            <div className="text-lg font-black text-neutral-300">10 Points</div>
+            <p className="text-[10px] text-neutral-400">0 in plan • Earned via 10 pts</p>
+          </div>
+        </div>
+      </div>
+
       {/* Filter and Search Bar */}
       <div className="p-4 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         {/* Status Tabs */}
@@ -289,6 +347,7 @@ export const RequestedPromptsManager = () => {
             const isPending = req.status === 'pending';
             const isInProgress = req.status === 'in_progress';
             const isPremiumUser = req.userPlanTier && req.userPlanTier !== 'free';
+            const planAllowance = PLAN_MONTHLY_REQUEST_LIMITS[req.userPlanTier || 'free'] || 0;
 
             return (
               <div
@@ -321,23 +380,39 @@ export const RequestedPromptsManager = () => {
                     </div>
 
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="text-sm font-black text-neutral-900 dark:text-white">
                           {req.userName || 'Anonymous Creator'}
                         </span>
-                        {/* Plan Badge */}
+                        {/* Plan Badge & Quota in Plan */}
                         {isPremiumUser ? (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-500 to-red-500 text-white flex items-center gap-1 shadow-xs">
-                            <Crown className="w-2.5 h-2.5 fill-white" />
-                            <span>{req.userPlanTier} Plan</span>
-                          </span>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-500 to-red-500 text-white flex items-center gap-1 shadow-xs">
+                              <Crown className="w-2.5 h-2.5 fill-white" />
+                              <span>{req.userPlanTier} Plan</span>
+                            </span>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 flex items-center gap-1">
+                              <Zap className="w-2.5 h-2.5 fill-amber-500 text-amber-500" />
+                              <span>{planAllowance} Requests/mo in Plan</span>
+                            </span>
+                            {req.planRequestsRemaining !== undefined && (
+                              <span className="text-[10px] font-semibold text-neutral-500 dark:text-neutral-400">
+                                ({req.planRequestsRemaining} remaining)
+                              </span>
+                            )}
+                          </div>
                         ) : (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-neutral-100 dark:bg-neutral-800 text-neutral-500">
-                            Free Member
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-neutral-100 dark:bg-neutral-800 text-neutral-500">
+                              Free Member
+                            </span>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60">
+                              10 Points Redeemed
+                            </span>
+                          </div>
                         )}
                       </div>
-                      <div className="text-[11px] text-neutral-400 flex items-center gap-2">
+                      <div className="text-[11px] text-neutral-400 flex items-center gap-2 mt-0.5">
                         {req.userEmail && <span>{req.userEmail}</span>}
                         <span>•</span>
                         <span>{new Date(req.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
@@ -390,6 +465,22 @@ export const RequestedPromptsManager = () => {
                         Ratio: {req.aspectRatio}
                       </span>
                     )}
+
+                    {/* How request was funded */}
+                    <span className="px-2.5 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs font-bold flex items-center gap-1.5">
+                      {req.requestedVia === 'plan_quota' || (isPremiumUser && req.requestedVia !== 'points') ? (
+                        <>
+                          <Crown className="w-3 h-3 text-amber-500 fill-amber-500" />
+                          <span>Submitted via Monthly {req.userPlanTier ? req.userPlanTier.toUpperCase() : 'PRO'} Quota ({planAllowance} Req/mo)</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-3 h-3 text-emerald-500" />
+                          <span>Submitted via 10 Points Redeemed</span>
+                        </>
+                      )}
+                    </span>
+
                     <span className="px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-500 text-[10px] font-medium flex items-center gap-1">
                       <Lock className="w-2.5 h-2.5" />
                       <span>Private User Delivery</span>
