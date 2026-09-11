@@ -246,9 +246,12 @@ export const NotificationService = {
         playNotificationChime();
       }
 
-      const iconPath = '/logo.png';
-      const badgePath = '/logo.png';
-      const displayImage = item.imageUrl || item.collageImages?.[0] || '/logo.png';
+      const iconPath = typeof window !== 'undefined' ? `${window.location.origin}/logo.png` : '/logo.png';
+      const badgePath = typeof window !== 'undefined' ? `${window.location.origin}/logo.png` : '/logo.png';
+      let displayImage = item.imageUrl || item.collageImages?.[0] || '/logo.png';
+      if (displayImage && displayImage.startsWith('/') && typeof window !== 'undefined') {
+        displayImage = `${window.location.origin}${displayImage}`;
+      }
 
       let shown = false;
 
@@ -272,7 +275,10 @@ export const NotificationService = {
           } else if (navigator.serviceWorker.controller) {
             navigator.serviceWorker.controller.postMessage({
               type: 'SHOW_NOTIFICATION',
-              payload: item,
+              payload: {
+                ...item,
+                imageUrl: displayImage,
+              },
             });
             shown = true;
           }
@@ -295,6 +301,45 @@ export const NotificationService = {
     }
   },
 
+  // Helper to strictly check if an item category matches a user's selected interest list
+  isCategorySubscribed: (itemCategory: string | undefined, userInterests: string[]): boolean => {
+    if (!userInterests || userInterests.length === 0) return false;
+    if (!itemCategory) return false;
+
+    const catRaw = itemCategory.trim().toLowerCase();
+    if (!catRaw) return false;
+
+    // Explicit global broadcast to all users
+    if (catRaw === 'all' || catRaw === 'all categories' || catRaw === 'general' || catRaw === 'broadcast' || catRaw === 'global') {
+      return true;
+    }
+
+    // If user explicitly subscribed to all categories
+    const userWantsAll = userInterests.some((i) => {
+      const low = i.trim().toLowerCase();
+      return low === 'all' || low === 'all categories';
+    });
+    if (userWantsAll) return true;
+
+    // Normalization helper: strips '&', 'and', spaces, hyphens, and punctuation for exact matching
+    const normalize = (val: string): string => {
+      return val
+        .toLowerCase()
+        .replace(/&/g, '')
+        .replace(/\band\b/g, '')
+        .replace(/[^a-z0-9]/g, '')
+        .trim();
+    };
+
+    const normItemCat = normalize(catRaw);
+    if (!normItemCat) return false;
+
+    return userInterests.some((interest) => {
+      const normUser = normalize(interest);
+      return normUser === normItemCat;
+    });
+  },
+
   // Handle incoming real notification from server or BroadcastChannel
   handleIncomingRealNotification: async (item: PushNotificationItem) => {
     const list = NotificationService.getNotifications();
@@ -307,18 +352,9 @@ export const NotificationService = {
     // Check if user allows push and matches interests
     if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
       const prefs = NotificationService.getPreferences();
-      const catLower = (item.category || '').toLowerCase();
-      const userInterests = (prefs.selectedInterests || []).map(i => i.toLowerCase());
-      const matchesInterest =
-        !item.category ||
-        catLower === 'all' ||
-        catLower === 'general' ||
-        userInterests.length === 0 ||
-        userInterests.some(
-          (i) => catLower === i || catLower.includes(i) || i.includes(catLower)
-        );
+      const isSubscribed = NotificationService.isCategorySubscribed(item.category, prefs.selectedInterests);
 
-      if (matchesInterest) {
+      if (isSubscribed) {
         await NotificationService.showNativeNotification(item);
       }
     }

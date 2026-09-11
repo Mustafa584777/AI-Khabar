@@ -19,11 +19,16 @@ self.addEventListener('push', (event) => {
   }
 
   const title = data.title || 'tool.reelz: Trending Photo Prompts';
+  let notifImage = data.image || data.imageUrl || '';
+  if (notifImage && notifImage.startsWith('/')) {
+    notifImage = self.location.origin + notifImage;
+  }
+
   const options = {
     body: data.body || data.subtitle || 'New trending AI photo prompts curated for you!',
-    icon: '/logo.png',
-    badge: '/logo.png',
-    image: data.image || data.imageUrl,
+    icon: self.location.origin + '/logo.png',
+    badge: self.location.origin + '/logo.png',
+    image: notifImage || undefined,
     data: {
       url: data.url || '/',
     },
@@ -44,11 +49,16 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
     const data = event.data.payload || {};
     const title = data.title || 'tool.reelz: Trending Photo Prompts';
+    let notifImage = data.imageUrl || data.image || '';
+    if (notifImage && notifImage.startsWith('/')) {
+      notifImage = self.location.origin + notifImage;
+    }
+
     const options = {
       body: data.subtitle || data.body || 'New trending AI photo prompts curated for you!',
-      icon: '/logo.png',
-      badge: '/logo.png',
-      image: data.imageUrl || data.image || '/logo.png',
+      icon: self.location.origin + '/logo.png',
+      badge: self.location.origin + '/logo.png',
+      image: notifImage || undefined,
       data: {
         url: data.url || '/',
       },
