@@ -170,17 +170,25 @@ export const PushNotificationsManager: React.FC = () => {
         body: JSON.stringify({ ...itemPayload, sendBrowserPush: sendNativePush }),
       });
 
+      let returnedItem: PushNotificationItem | null = null;
       if (res.ok) {
         const data = await res.json();
         if (data.totalSent !== undefined) {
           setRealTotalSent(data.totalSent);
         }
+        if (data.notification) {
+          returnedItem = data.notification;
+        }
       }
 
-      await NotificationService.addNotification(itemPayload, sendNativePush);
+      await NotificationService.addNotification(returnedItem || itemPayload, sendNativePush);
 
       await loadHistory();
-      showToast('Push Notification sent and broadcasted to real users!');
+      showToast(
+        targetCategory === 'all'
+          ? 'Push Notification broadcasted to all users!'
+          : `Push Notification sent to ${targetCategory} subscribers!`
+      );
     } catch (err: any) {
       showToast(err.message || 'Failed to broadcast notification');
     } finally {
@@ -561,26 +569,46 @@ export const PushNotificationsManager: React.FC = () => {
                 {subtitle || 'You might like these searches'}
               </p>
 
-              {/* 4-Card Photo Collage Strip (Exact visual match) */}
-              <div className="grid grid-cols-4 gap-1.5 rounded-2xl overflow-hidden aspect-[16/9] mt-2">
-                {collageImages.slice(0, 4).map((img, i) => (
-                  <div key={i} className="relative w-full h-full bg-neutral-200 dark:bg-neutral-800 rounded-xl overflow-hidden shadow-2xs">
-                    {img ? (
-                      <Image
-                        src={img}
-                        alt={`Collage ${i}`}
-                        fill
-                        className="object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[10px] text-neutral-400">
-                        Img {i + 1}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+              {/* 16:9 Photo Collage Strip or Single 16:9 Image */}
+              {collageImages.filter((u) => u && u.trim()).length > 1 ? (
+                <div className="grid grid-cols-4 gap-1.5 rounded-2xl overflow-hidden aspect-[16/9] mt-2">
+                  {collageImages.slice(0, 4).map((img, i) => (
+                    <div key={i} className="relative w-full h-full bg-neutral-200 dark:bg-neutral-800 rounded-xl overflow-hidden shadow-2xs">
+                      {img ? (
+                        <Image
+                          src={img}
+                          alt={`Collage ${i}`}
+                          fill
+                          className="object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[10px] text-neutral-400">
+                          Img {i + 1}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (mainImageUrl || collageImages[0]) ? (
+                <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden bg-neutral-200 dark:bg-neutral-800 mt-2 shadow-2xs">
+                  <Image
+                    src={mainImageUrl || collageImages[0]}
+                    alt="Notification banner"
+                    fill
+                    className="object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+              ) : (
+                <div className="grid grid-cols-4 gap-1.5 rounded-2xl overflow-hidden aspect-[16/9] mt-2">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="relative w-full h-full bg-neutral-200 dark:bg-neutral-800 rounded-xl overflow-hidden flex items-center justify-center text-[10px] text-neutral-400">
+                      Img {i + 1}
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Action Buttons in Lockscreen Card */}
               <div className="pt-2 flex items-center justify-end gap-2">

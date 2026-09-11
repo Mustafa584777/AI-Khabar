@@ -144,6 +144,60 @@ if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
   }
 }
 
+// Category normalization helper
+export const normalizeCategory = (cat: string): string => {
+  return (cat || '')
+    .toLowerCase()
+    .replace(/&amp;/g, '&')
+    .replace(/[\s\-_+]+/g, ' ')
+    .trim();
+};
+
+// Strict check whether notification category matches user selected interests
+export const isCategoryMatchingInterest = (
+  notifCategory: string | undefined | null,
+  userInterests: string[]
+): boolean => {
+  if (!notifCategory) return false;
+  const normNotif = normalizeCategory(notifCategory);
+
+  // Global broadcast to all users
+  if (normNotif === 'all' || normNotif === 'global' || normNotif === 'broadcast' || normNotif === 'everyone') {
+    return true;
+  }
+
+  if (!userInterests || userInterests.length === 0) {
+    return false;
+  }
+
+  return userInterests.some((interest) => {
+    if (!interest) return false;
+    const normUserInt = normalizeCategory(interest);
+    if (!normUserInt) return false;
+
+    // 1. Exact match
+    if (normNotif === normUserInt) return true;
+
+    // 2. Contains (min 3 chars to prevent false positives)
+    if (normUserInt.length >= 3 && normNotif.includes(normUserInt)) return true;
+    if (normNotif.length >= 3 && normUserInt.includes(normNotif)) return true;
+
+    // 3. Sub-parts split by '&', 'and', '/', ','
+    const notifParts = normNotif.split(/\s*(?:&|\band\b|\/|,)\s*/).filter((p) => p.length >= 3);
+    const userParts = normUserInt.split(/\s*(?:&|\band\b|\/|,)\s*/).filter((p) => p.length >= 3);
+
+    for (const np of notifParts) {
+      for (const up of userParts) {
+        if (np === up || (np.length >= 4 && up.length >= 4 && (np.includes(up) || up.includes(np)))) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  });
+};
+
 export const NotificationService = {
   // Get subscriber client ID
   getClientSubscriberId: (): string => {
@@ -246,10 +300,30 @@ export const NotificationService = {
         playNotificationChime();
       }
 
-      const iconPath = typeof window !== 'undefined' ? `${window.location.origin}/logo.png` : '/logo.png';
-      const badgePath = typeof window !== 'undefined' ? `${window.location.origin}/logo.png` : '/logo.png';
-      let displayImage = item.imageUrl || item.collageImages?.[0] || '/logo.png';
-      if (displayImage && displayImage.startsWith('/') && typeof window !== 'undefined') {
+      const iconPath = `${window.location.origin}/logo.png`;
+      const badgePath = iconPath;
+
+      // Ensure 16:9 composite banner image (handles 4 collage images or 1 image in 16:9)
+      let displayImage = item.imageUrl || '';
+      if (item.collageImages && item.collageImages.length > 1) {
+        if (item.id) {
+          displayImage = `/api/notifications/collage?id=${encodeURIComponent(item.id)}`;
+        } else {
+          displayImage = `/api/notifications/collage?urls=${encodeURIComponent(item.collageImages.slice(0, 4).join(','))}`;
+        }
+      } else if (displayImage && !displayImage.includes('/api/notifications/collage')) {
+        // Route single image through 16:9 collage endpoint to enforce 16:9 aspect ratio
+        if (item.id) {
+          displayImage = `/api/notifications/collage?id=${encodeURIComponent(item.id)}`;
+        } else if (displayImage.startsWith('http')) {
+          displayImage = `/api/notifications/collage?urls=${encodeURIComponent(displayImage)}`;
+        }
+      }
+
+      // Guarantee absolute URL for service worker and browser notification engine
+      if (!displayImage) {
+        displayImage = iconPath;
+      } else if (displayImage.startsWith('/')) {
         displayImage = `${window.location.origin}${displayImage}`;
       }
 
@@ -278,6 +352,7 @@ export const NotificationService = {
               payload: {
                 ...item,
                 imageUrl: displayImage,
+                image: displayImage,
               },
             });
             shown = true;
@@ -290,7 +365,10 @@ export const NotificationService = {
       // Also dispatch in-app window event so floating banner notifications appear in the UI
       window.dispatchEvent(
         new CustomEvent('promptcms_native_popup', {
-          detail: item,
+          detail: {
+            ...item,
+            imageUrl: displayImage,
+          },
         })
       );
 
@@ -301,62 +379,27 @@ export const NotificationService = {
     }
   },
 
-  // Helper to strictly check if an item category matches a user's selected interest list
-  isCategorySubscribed: (itemCategory: string | undefined, userInterests: string[]): boolean => {
-    if (!userInterests || userInterests.length === 0) return false;
-    if (!itemCategory) return false;
-
-    const catRaw = itemCategory.trim().toLowerCase();
-    if (!catRaw) return false;
-
-    // Explicit global broadcast to all users
-    if (catRaw === 'all' || catRaw === 'all categories' || catRaw === 'general' || catRaw === 'broadcast' || catRaw === 'global') {
-      return true;
-    }
-
-    // If user explicitly subscribed to all categories
-    const userWantsAll = userInterests.some((i) => {
-      const low = i.trim().toLowerCase();
-      return low === 'all' || low === 'all categories';
-    });
-    if (userWantsAll) return true;
-
-    // Normalization helper: strips '&', 'and', spaces, hyphens, and punctuation for exact matching
-    const normalize = (val: string): string => {
-      return val
-        .toLowerCase()
-        .replace(/&/g, '')
-        .replace(/\band\b/g, '')
-        .replace(/[^a-z0-9]/g, '')
-        .trim();
-    };
-
-    const normItemCat = normalize(catRaw);
-    if (!normItemCat) return false;
-
-    return userInterests.some((interest) => {
-      const normUser = normalize(interest);
-      return normUser === normItemCat;
-    });
-  },
-
   // Handle incoming real notification from server or BroadcastChannel
   handleIncomingRealNotification: async (item: PushNotificationItem) => {
     const list = NotificationService.getNotifications();
     if (list.some((n) => n.id === item.id)) return; // Already have it
 
-    // Prepend to local feed
+    const prefs = NotificationService.getPreferences();
+    const matchesInterest = isCategoryMatchingInterest(item.category, prefs.selectedInterests);
+
+    // If notification category DOES NOT MATCH user's selected interests:
+    // Do NOT trigger browser push, do NOT pop up banner, do NOT pollute feed!
+    if (!matchesInterest) {
+      return;
+    }
+
+    // User is subscribed to this category: Prepend to local feed
     const updated = [item, ...list];
     NotificationService.saveNotifications(updated);
 
-    // Check if user allows push and matches interests
-    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      const prefs = NotificationService.getPreferences();
-      const isSubscribed = NotificationService.isCategorySubscribed(item.category, prefs.selectedInterests);
-
-      if (isSubscribed) {
-        await NotificationService.showNativeNotification(item);
-      }
+    // Check if user allows push and trigger native push
+    if (prefs.enabled && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      await NotificationService.showNativeNotification(item);
     }
 
     // Trigger UI refresh event
@@ -370,7 +413,9 @@ export const NotificationService = {
     if (typeof window === 'undefined') return;
     try {
       const lastSyncStr = localStorage.getItem(STORAGE_KEY_LAST_SYNC) || '0';
-      const res = await fetch(`/api/notifications/latest?since=${lastSyncStr}`);
+      const prefs = NotificationService.getPreferences();
+      const interestsParam = encodeURIComponent((prefs.selectedInterests || []).join(','));
+      const res = await fetch(`/api/notifications/latest?since=${lastSyncStr}&interests=${interestsParam}`);
       if (!res.ok) return;
 
       const data = await res.json();
@@ -424,23 +469,29 @@ export const NotificationService = {
 
     if (!interests || interests.length === 0) return all;
 
-    const lowerInterests = interests.map((i) => i.toLowerCase());
-
-    return all.filter((n) => {
-      if (!n.category || n.category === 'all') return true;
-      const catLower = n.category.toLowerCase();
-      return lowerInterests.some((i) => catLower.includes(i) || i.includes(catLower));
-    });
+    return all.filter((n) => isCategoryMatchingInterest(n.category, interests));
   },
 
   // Broadcast & Add notification (e.g. from Admin or Prompt creation)
   addNotification: async (
-    item: Omit<PushNotificationItem, 'id' | 'sentAt' | 'clicksCount' | 'read'>,
+    item: Omit<PushNotificationItem, 'id' | 'sentAt' | 'clicksCount' | 'read'> & { id?: string },
     sendNativePush = true
   ): Promise<PushNotificationItem> => {
+    const notifId = item.id || `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const validCollage = Array.isArray(item.collageImages)
+      ? item.collageImages.filter((u) => u && typeof u === 'string' && u.trim().length > 0).slice(0, 4)
+      : [];
+
+    const effectiveImageUrl =
+      validCollage.length > 1 || item.imageUrl
+        ? `/api/notifications/collage?id=${notifId}`
+        : item.imageUrl || '';
+
     const newItem: PushNotificationItem = {
       ...item,
-      id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: notifId,
+      imageUrl: effectiveImageUrl || item.imageUrl,
+      collageImages: validCollage.length > 0 ? validCollage : item.imageUrl ? [item.imageUrl] : [],
       sentAt: new Date().toISOString(),
       clicksCount: 0,
       read: false,
@@ -448,7 +499,7 @@ export const NotificationService = {
 
     // Save locally
     const current = NotificationService.getNotifications();
-    const updated = [newItem, ...current];
+    const updated = [newItem, ...current.filter((n) => n.id !== newItem.id)];
     NotificationService.saveNotifications(updated);
 
     // Broadcast across tabs on same device
@@ -460,9 +511,13 @@ export const NotificationService = {
       }
     }
 
-    // Show native push on current device if permitted
+    // STRICT CHECK: Only pop up native notification if this user has enabled push AND the notification category matches their selected interests!
     if (sendNativePush && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      await NotificationService.showNativeNotification(newItem);
+      const prefs = NotificationService.getPreferences();
+      const matches = isCategoryMatchingInterest(newItem.category, prefs.selectedInterests);
+      if (prefs.enabled && matches) {
+        await NotificationService.showNativeNotification(newItem);
+      }
     }
 
     // Trigger UI refresh event

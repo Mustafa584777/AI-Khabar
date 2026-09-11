@@ -97,13 +97,19 @@ export const SendPushNotificationModal: React.FC<SendPushNotificationModalProps>
         sentBy: 'admin',
       };
 
-      await fetch('/api/notifications/send', {
+      const res = await fetch('/api/notifications/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...payload, sendBrowserPush: true }),
       });
 
-      await NotificationService.addNotification(payload, true);
+      let returned: PushNotificationItem | null = null;
+      if (res.ok) {
+        const d = await res.json();
+        returned = d.notification;
+      }
+
+      await NotificationService.addNotification(returned || payload, true);
 
       showToast(`Push notification sent to ${category} subscribers!`);
       onClose();

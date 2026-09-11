@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { PushNotificationItem } from '@/types/notification';
-import { NotificationService } from '@/lib/notifications';
+import { NotificationService, isCategoryMatchingInterest } from '@/lib/notifications';
 import { PinterestNotificationCard } from './PinterestNotificationCard';
 import { InterestSelectionModal } from './InterestSelectionModal';
 import {
@@ -35,12 +35,15 @@ export const NotificationsView: React.FC = () => {
 
   // Load initial data & sync
   const loadNotifications = () => {
-    const list = NotificationService.getNotifications();
-    setNotifications(list);
     const prefs = NotificationService.getPreferences();
-    setUserInterests(prefs.selectedInterests || []);
+    const interests = prefs.selectedInterests || [];
+    setUserInterests(interests);
     setBrowserPushPermission(NotificationService.getBrowserPermissionStatus());
     setIsInsideIframe(NotificationService.isInsideIframe());
+
+    // Load personalized notifications matching user interests (or global broadcasts)
+    const list = NotificationService.getPersonalizedNotifications(interests);
+    setNotifications(list);
   };
 
   useEffect(() => {
@@ -139,7 +142,7 @@ export const NotificationsView: React.FC = () => {
     if (unreadOnly && item.read) return false;
     if (selectedCategoryFilter === 'all') return true;
     if (!item.category) return true;
-    return item.category.toLowerCase().includes(selectedCategoryFilter.toLowerCase());
+    return isCategoryMatchingInterest(item.category, [selectedCategoryFilter]);
   });
 
   const unreadCount = notifications.filter((n) => !n.read).length;

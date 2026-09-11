@@ -1,28 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { NotificationServerStore } from '@/lib/notification-storage';
 import { PushNotificationItem } from '@/types/notification';
-import fs from 'fs';
-import path from 'path';
-
-function saveCollageBase64(dataUrl: string, notifId: string): string | null {
-  try {
-    const matches = dataUrl.match(/^data:image\/([a-zA-Z0-9-+]+);base64,(.+)$/);
-    if (!matches || matches.length !== 3) return null;
-
-    const extension = matches[1] === 'jpeg' || matches[1] === 'jpg' ? 'jpg' : matches[1] === 'png' ? 'png' : 'webp';
-    const buffer = Buffer.from(matches[2], 'base64');
-    const collagesDir = path.join(process.cwd(), 'public', 'collages');
-    if (!fs.existsSync(collagesDir)) {
-      fs.mkdirSync(collagesDir, { recursive: true });
-    }
-    const filename = `collage-${notifId}-${Math.random().toString(36).slice(2, 7)}.${extension}`;
-    fs.writeFileSync(path.join(collagesDir, filename), buffer);
-    return `/collages/${filename}`;
-  } catch (err) {
-    console.error('Failed to save collage in send route:', err);
-    return null;
-  }
-}
 
 export async function GET() {
   try {
@@ -51,7 +29,6 @@ export async function POST(req: NextRequest) {
       category,
       imageUrl,
       collageImages,
-      collageDataUrl,
       url,
       actionButtons,
       sendBrowserPush,
@@ -65,14 +42,16 @@ export async function POST(req: NextRequest) {
     }
 
     const notifId = `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    let finalImageUrl = imageUrl || '';
+    const validCollage = Array.isArray(collageImages)
+      ? collageImages.filter((u: string) => typeof u === 'string' && u.trim().length > 0).slice(0, 4)
+      : [];
 
-    if (collageDataUrl && typeof collageDataUrl === 'string' && collageDataUrl.startsWith('data:image/')) {
-      const savedUrl = saveCollageBase64(collageDataUrl, notifId);
-      if (savedUrl) {
-        finalImageUrl = savedUrl;
-      }
-    }
+    // If 1 or more images are provided, route through 16:9 collage endpoint to guarantee 16:9 aspect ratio and 4-image collage strip
+    const primaryImg = (imageUrl || validCollage[0] || '').trim();
+    const effectiveImageUrl =
+      validCollage.length > 1 || primaryImg
+        ? `/api/notifications/collage?id=${notifId}`
+        : '';
 
     const newNotification: PushNotificationItem = {
       id: notifId,
@@ -80,8 +59,8 @@ export async function POST(req: NextRequest) {
       subtitle: subtitle?.trim() || 'Trending AI Photo Prompts',
       body: (contentBody || subtitle || '').trim(),
       category: category || 'all',
-      imageUrl: finalImageUrl,
-      collageImages: Array.isArray(collageImages) ? collageImages.filter((c: string) => c && c.trim()) : [],
+      imageUrl: effectiveImageUrl || primaryImg,
+      collageImages: validCollage.length > 0 ? validCollage : primaryImg ? [primaryImg] : [],
       url: url || '/',
       actionButtons: Array.isArray(actionButtons) ? actionButtons : [],
       sentAt: new Date().toISOString(),

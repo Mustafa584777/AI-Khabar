@@ -139,9 +139,9 @@ export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps>
       {/* Expanded Content: Visual Collage Strip & Actions */}
       {isExpanded && (
         <div className="mt-3 space-y-3">
-          {/* Visual Cards Strip: Exactly 4 rounded vertical columns (Pinterest style) */}
+          {/* Visual Cards Strip: Exactly 4 rounded vertical columns (Pinterest style) in 16:9 */}
           {images.length > 1 ? (
-            <div className="grid grid-cols-4 gap-1.5 sm:gap-2.5 rounded-2xl overflow-hidden aspect-[16/9] sm:aspect-[20/9]">
+            <div className="grid grid-cols-4 gap-1.5 sm:gap-2.5 rounded-2xl overflow-hidden aspect-[16/9]">
               {images.map((img, idx) => (
                 <div
                   key={idx}
