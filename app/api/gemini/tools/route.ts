@@ -621,6 +621,81 @@ Return the final response strictly conforming to the required JSON schema.`;
       }
     }
 
+    // =========================================================================
+    // ACTION 2: TEXT TO PROMPT (Detailed prompt generator with lighting, color, gender)
+    // =========================================================================
+    if (action === 'text_to_prompt') {
+      const { idea, lighting, colorGrading, gender } = body;
+      if (!idea) {
+        return NextResponse.json({ error: 'Idea is required' }, { status: 400 });
+      }
+
+      if (!apiKey) {
+        const fallback = {
+          title: idea.slice(0, 40),
+          summary: `Detailed professional AI prompt based on "${idea}"`,
+          promptText: `A masterclass photograph of ${gender || 'a subject'} embodying "${idea}", shot with exquisite professional composition, enhanced by ${lighting || 'cinematic golden hour lighting'} and professional ${colorGrading || 'teal and orange cinematic color grading'}, highly detailed skin micro-textures, 8k resolution, photorealistic, shot on 85mm f/1.4 lens, cinematic atmosphere --ar 16:9 --v 6.1 --style raw`,
+          negativePrompt: 'cartoon, illustration, low quality, distorted anatomy, blurry, watermark',
+          camera: '85mm f/1.4 lens, full-frame sensor',
+          lighting: lighting || 'Cinematic lighting',
+          colorPalette: colorGrading || 'Cinematic color grade',
+          aspectRatio: '16:9',
+          confidence: 'high',
+          tags: ['AI Prompt Generator', gender, lighting, colorGrading].filter(Boolean),
+        };
+        return NextResponse.json({ success: true, data: fallback, fallback: true });
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
+      const promptTextInstruction = `You are an expert AI Master Prompt Engineer for Midjourney, Stable Diffusion, and Gemini.
+The user has provided a simple idea or keywords: "${idea}".
+Selected Parameters:
+- Lighting: "${lighting || 'Cinematic Golden Hour'}"
+- Colour Grading: "${colorGrading || 'Teal & Orange Cinematic'}"
+- Gender / Subject Presentation: "${gender || 'Neutral / Unspecified'}"
+
+Craft an extremely detailed, professional, high-fidelity AI image generation prompt based on these parameters. Expand the idea into a masterpiece prompt describing subject features, clothing, pose, exact lighting dynamics, color grading, optical lenses, composition, and atmosphere.
+
+Return ONLY valid JSON matching this schema:
+{
+  "title": "Short descriptive title",
+  "summary": "One sentence describing the visual concept",
+  "promptText": "Complete detailed copy-paste-ready image generation prompt with camera optics, lighting, color grading and aspect ratio",
+  "negativePrompt": "Complete negative prompt",
+  "camera": "Camera and lens details",
+  "lighting": "Lighting details",
+  "colorPalette": "Color grading details",
+  "aspectRatio": "16:9",
+  "confidence": "high",
+  "tags": ["tag1", "tag2"]
+}
+Do not output markdown code blocks.`;
+
+      try {
+        const { response, modelUsed } = await generateWithModel(ai, selectedModel, {
+          contents: promptTextInstruction,
+        });
+
+        const parsed = JSON.parse(response.text || '{}');
+        return NextResponse.json({ success: true, data: parsed, modelUsed });
+      } catch (err: any) {
+        console.warn('Gemini text prompt generation failed, using fallback:', err?.message);
+        const fallback = {
+          title: idea.slice(0, 40),
+          summary: `Detailed professional AI prompt based on "${idea}"`,
+          promptText: `A masterclass photograph of ${gender || 'a subject'} embodying "${idea}", shot with exquisite professional composition, enhanced by ${lighting || 'cinematic golden hour lighting'} and professional ${colorGrading || 'teal and orange cinematic color grading'}, highly detailed skin micro-textures, 8k resolution, photorealistic, shot on 85mm f/1.4 lens, cinematic atmosphere --ar 16:9 --v 6.1 --style raw`,
+          negativePrompt: 'cartoon, illustration, low quality, distorted anatomy, blurry, watermark',
+          camera: '85mm f/1.4 lens, full-frame sensor',
+          lighting: lighting || 'Cinematic lighting',
+          colorPalette: colorGrading || 'Cinematic color grade',
+          aspectRatio: '16:9',
+          confidence: 'high',
+          tags: ['AI Prompt Generator', gender, lighting, colorGrading].filter(Boolean),
+        };
+        return NextResponse.json({ success: true, data: fallback, fallback: true });
+      }
+    }
+
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (error: any) {
     console.error('AI Studio Tools Error:', error);
