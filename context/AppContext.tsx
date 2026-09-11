@@ -4,7 +4,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
-import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem, AiSearchResult, PlanTier, PromptRequestItem, PLAN_MONTHLY_REQUEST_LIMITS } from '@/types/prompt';
+import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem, AiSearchResult, PlanTier, PromptRequestItem, PLAN_MONTHLY_REQUEST_LIMITS, AppNotification } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
 import { supabase, supabaseUserToUserAccount } from '@/lib/supabase';
 import { UserSyncService } from '@/lib/user-sync';
@@ -169,6 +169,31 @@ interface AppContextType {
   lockedPromptContext: PromptPost | null;
   setLockedPromptContext: (post: PromptPost | null) => void;
   applyPlan: (planTier: 'starter' | 'pro' | 'vip') => void;
+
+  // Notifications
+  notifications: AppNotification[];
+  sendAdminNotification: (notifData: {
+    title: string;
+    message: string;
+    category?: string;
+    imageUrl?: string;
+    targetUrl?: string;
+    targetPostId?: string;
+  }) => Promise<boolean>;
+  deleteNotification: (id: string) => Promise<boolean>;
+  isNotificationsDrawerOpen: boolean;
+  setIsNotificationsDrawerOpen: (open: boolean) => void;
+  isNotificationPreferencesModalOpen: boolean;
+  setIsNotificationPreferencesModalOpen: (open: boolean) => void;
+  notificationPreferences: {
+    enabledCategories: string[];
+    browserPushEnabled: boolean;
+    soundEnabled: boolean;
+  };
+  updateNotificationPreferences: (prefs: any) => void;
+  unreadNotificationsCount: number;
+  markNotificationAsRead: (id: string) => Promise<void>;
+  markAllNotificationsAsRead: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -249,6 +274,91 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const [isUnlockPremiumModalOpen, setIsUnlockPremiumModalOpen] = useState<boolean>(false);
   const [lockedPromptContext, setLockedPromptContext] = useState<PromptPost | null>(null);
+
+  // Notifications State & Handlers
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [isNotificationsDrawerOpen, setIsNotificationsDrawerOpen] = useState(false);
+  const [isNotificationPreferencesModalOpen, setIsNotificationPreferencesModalOpen] = useState(false);
+  const [notificationPreferences, setNotificationPreferences] = useState({
+    enabledCategories: ['all'],
+    browserPushEnabled: true,
+    soundEnabled: true,
+  });
+
+  useEffect(() => {
+    fetch('/api/notifications')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.notifications) {
+          setNotifications(data.notifications);
+        }
+      })
+      .catch((err) => console.error('Failed to load notifications:', err));
+  }, []);
+
+  const sendAdminNotification = async (notifData: {
+    title: string;
+    message: string;
+    category?: string;
+    imageUrl?: string;
+    targetUrl?: string;
+    targetPostId?: string;
+  }) => {
+    try {
+      const res = await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(notifData),
+      });
+      const data = await res.json();
+      if (data.success && data.notification) {
+        setNotifications((prev) => [data.notification, ...prev]);
+        showToast('Notification broadcast successfully!');
+        return true;
+      }
+      showToast(data.error || 'Failed to send notification', 'error');
+      return false;
+    } catch (err: any) {
+      showToast(err.message || 'Failed to send notification', 'error');
+      return false;
+    }
+  };
+
+  const deleteNotification = async (id: string) => {
+    try {
+      const res = await fetch(`/api/notifications?id=${id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (id === 'all') {
+          setNotifications([]);
+        } else {
+          setNotifications((prev) => prev.filter((n) => n.id !== id));
+        }
+        return true;
+      }
+      return false;
+    } catch (err) {
+      return false;
+    }
+  };
+
+  const markNotificationAsRead = async (id: string) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  };
+
+  const unreadNotificationsCount = notifications.filter((n) => !n.read).length;
+
+  const updateNotificationPreferences = (prefs: any) => {
+    setNotificationPreferences((prev) => ({ ...prev, ...prefs }));
+  };
 
   // Daily 2 Free Credits Grant Logic
   useEffect(() => {
@@ -1932,6 +2042,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         lockedPromptContext,
         setLockedPromptContext,
         applyPlan,
+        notifications,
+        sendAdminNotification,
+        deleteNotification,
+        isNotificationsDrawerOpen,
+        setIsNotificationsDrawerOpen,
+        isNotificationPreferencesModalOpen,
+        setIsNotificationPreferencesModalOpen,
+        notificationPreferences,
+        updateNotificationPreferences,
+        unreadNotificationsCount,
+        markNotificationAsRead,
+        markAllNotificationsAsRead,
       }}
     >
       {children}
