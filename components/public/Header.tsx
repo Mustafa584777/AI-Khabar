@@ -39,12 +39,22 @@ export const Header = () => {
 
   React.useEffect(() => {
     const update = () => {
+      NotificationService.syncWithServer().then(() => {
+        const list = NotificationService.getNotifications();
+        setUnreadNotifs(list.filter((n) => !n.read).length);
+      });
+    };
+    update();
+    const handleNewNotif = () => {
       const list = NotificationService.getNotifications();
       setUnreadNotifs(list.filter((n) => !n.read).length);
     };
-    update();
-    const timer = setInterval(update, 8000);
-    return () => clearInterval(timer);
+    window.addEventListener('promptcms_new_notification', handleNewNotif);
+    const timer = setInterval(update, 10000);
+    return () => {
+      window.removeEventListener('promptcms_new_notification', handleNewNotif);
+      clearInterval(timer);
+    };
   }, []);
 
   const handleHomeClick = () => {
