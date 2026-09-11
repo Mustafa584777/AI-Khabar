@@ -145,9 +145,41 @@ export interface UserAccount {
   referralsCountForPoints: number;
   isPremium?: boolean;
   membershipPlan?: 'free' | 'starter' | 'pro' | 'vip';
+  planTier?: PlanTier;
+  toolCredits?: number;
+  unlockedPromptIds?: string[];
   credits?: number;
   lastCreditRefresh?: string;
   promptRequestsAllowed?: number;
+}
+
+export interface RegisteredUserRecord {
+  id: string;
+  email: string;
+  name: string;
+  username?: string;
+  avatar?: string;
+  planTier: PlanTier;
+  isProUser: boolean;
+  toolCredits: number;
+  points: number;
+  unlockedPromptIds: string[];
+  promptRequestsRemaining?: number;
+  aiHistoryCount?: number;
+  bookmarksCount?: number;
+  likesCount?: number;
+  joinedDate: string;
+  lastSyncedAt?: string;
+  source: 'supabase_auth' | 'supabase_sync' | 'local_store';
+  rawSyncData?: any;
+}
+
+export interface UsersBackupPayload {
+  version: string;
+  exportedAt: string;
+  system: string;
+  totalUsers: number;
+  users: RegisteredUserRecord[];
 }
 
 export interface PromptRequestItem {
@@ -198,24 +230,7 @@ export interface AiSearchResult {
   isAiPowered: boolean;
 }
 
-export interface AppNotification {
-  id: string;
-  title: string;
-  message: string;
-  category: string; // 'all' or specific category name (e.g. 'Cyberpunk', 'Portrait', 'Anime')
-  targetUrl?: string;
-  targetPostId?: string;
-  imageUrl?: string;
-  createdAt: number;
-  read?: boolean;
-  sentBy?: string;
-}
-
-export interface UserNotificationPreferences {
-  enabledCategories: string[]; // List of category names user wants notifications for
-  browserPushEnabled: boolean;
-  soundEnabled: boolean;
-}
+export type { UserTasteProfile, GenderVibe } from '@/lib/personalization';
 
 
 

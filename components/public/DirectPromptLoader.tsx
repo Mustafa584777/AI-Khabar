@@ -1,32 +1,72 @@
 'use client';
 
-import React from 'react';
-import dynamic from 'next/dynamic';
-import { AppProvider, useApp } from '@/context/AppContext';
+import React, { useEffect, useRef } from 'react';
+import { useApp } from '@/context/AppContext';
 import { Header } from '@/components/public/Header';
 import { HeroSection } from '@/components/public/HeroSection';
 import { ToolFilterBar } from '@/components/public/ToolFilterBar';
 import { PromptGrid } from '@/components/public/PromptGrid';
+import { PromptDetailModal } from '@/components/public/PromptDetailModal';
+import { BookmarksDrawer } from '@/components/public/BookmarksDrawer';
 import { Footer } from '@/components/public/Footer';
 import { SEOContentSection } from '@/components/public/SEOContentSection';
 import { ToastNotification } from '@/components/public/ToastNotification';
 import { BottomNav } from '@/components/public/BottomNav';
+import { TasteProfileModal } from '@/components/public/TasteProfileModal';
+import { UserDashboard } from '@/components/public/UserDashboard';
+import { AIStudioTool } from '@/components/public/AIStudioTool';
+import { UserAuthModal } from '@/components/public/UserAuthModal';
+import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminLoginModal } from '@/components/admin/AdminLoginModal';
+import { SearchExploreModal } from '@/components/public/SearchExploreModal';
+import { RazorpayCheckoutModal } from '@/components/public/RazorpayCheckoutModal';
+import { UnlockPremiumModal } from '@/components/public/UnlockPremiumModal';
+import { slugify } from '@/lib/utils';
 import { Sparkles } from 'lucide-react';
+import { PromptPost } from '@/types/prompt';
 
-const PromptDetailModal = dynamic(() => import('@/components/public/PromptDetailModal').then((m) => m.PromptDetailModal), { ssr: false });
-const BookmarksDrawer = dynamic(() => import('@/components/public/BookmarksDrawer').then((m) => m.BookmarksDrawer), { ssr: false });
-const TasteProfileModal = dynamic(() => import('@/components/public/TasteProfileModal').then((m) => m.TasteProfileModal), { ssr: false });
-const UserDashboard = dynamic(() => import('@/components/public/UserDashboard').then((m) => m.UserDashboard), { ssr: false });
-const AIStudioTool = dynamic(() => import('@/components/public/AIStudioTool').then((m) => m.AIStudioTool), { ssr: false });
-const UserAuthModal = dynamic(() => import('@/components/public/UserAuthModal').then((m) => m.UserAuthModal), { ssr: false });
-const AdminLayout = dynamic(() => import('@/components/admin/AdminLayout').then((m) => m.AdminLayout), { ssr: false });
-const AdminLoginModal = dynamic(() => import('@/components/admin/AdminLoginModal').then((m) => m.AdminLoginModal), { ssr: false });
-const SearchExploreModal = dynamic(() => import('@/components/public/SearchExploreModal').then((m) => m.SearchExploreModal), { ssr: false });
-const RazorpayCheckoutModal = dynamic(() => import('@/components/public/RazorpayCheckoutModal').then((m) => m.RazorpayCheckoutModal), { ssr: false });
-const UnlockPremiumModal = dynamic(() => import('@/components/public/UnlockPremiumModal').then((m) => m.UnlockPremiumModal), { ssr: false });
+export function DirectPromptLoader({
+  id,
+  initialPost,
+}: {
+  id: string;
+  initialPost?: PromptPost | null;
+}) {
+  const { posts, setSelectedPost, currentView } = useApp();
+  const loadedPostIdRef = useRef<string | null>(null);
 
-function MainApp() {
-  const { currentView } = useApp();
+  useEffect(() => {
+    if (loadedPostIdRef.current === id) return;
+
+    if (initialPost) {
+      loadedPostIdRef.current = id;
+      setSelectedPost(initialPost);
+      return;
+    }
+
+    const targetSlug = decodeURIComponent(id).toLowerCase().trim();
+    const matched = posts.find((p) => {
+      if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
+      if (p.id && p.id.toLowerCase() === targetSlug) return true;
+      if (p.title && (p.title.toLowerCase() === targetSlug || slugify(p.title) === targetSlug)) return true;
+      return false;
+    });
+
+    if (matched) {
+      loadedPostIdRef.current = id;
+      setSelectedPost(matched);
+    } else {
+      fetch(`/api/posts/${encodeURIComponent(id)}`)
+        .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+        .then((data) => {
+          if (data.success && data.post) {
+            loadedPostIdRef.current = id;
+            setSelectedPost(data.post);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [id, initialPost, posts, setSelectedPost]);
 
   if (currentView === 'admin') {
     return (
@@ -63,25 +103,6 @@ function MainApp() {
         <AdminLoginModal />
         <ToastNotification />
         <RazorpayCheckoutModal />
-        <UnlockPremiumModal />
-      </div>
-    );
-  }
-
-  if (currentView === 'user-dashboard') {
-    return (
-      <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col">
-        <UserDashboard />
-        <PromptDetailModal />
-        <BookmarksDrawer />
-        <SearchExploreModal />
-        <TasteProfileModal />
-        <UserAuthModal />
-        <AdminLoginModal />
-        <ToastNotification />
-        <BottomNav />
-        <RazorpayCheckoutModal />
-        <UnlockPremiumModal />
       </div>
     );
   }
@@ -100,7 +121,6 @@ function MainApp() {
         <ToastNotification />
         <BottomNav />
         <RazorpayCheckoutModal />
-        <UnlockPremiumModal />
       </div>
     );
   }
@@ -113,11 +133,7 @@ function MainApp() {
       <PromptGrid />
       <SEOContentSection />
       <Footer />
-
-      {/* Pinterest Mobile Bottom Navigation */}
       <BottomNav />
-
-      {/* Global Modals & Overlays */}
       <SearchExploreModal />
       <PromptDetailModal />
       <BookmarksDrawer />
@@ -128,11 +144,5 @@ function MainApp() {
       <RazorpayCheckoutModal />
       <UnlockPremiumModal />
     </div>
-  );
-}
-
-export default function Page() {
-  return (
-    <MainApp />
   );
 }

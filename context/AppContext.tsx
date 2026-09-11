@@ -4,7 +4,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
-import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem, AiSearchResult, PlanTier, AppNotification, UserNotificationPreferences } from '@/types/prompt';
+import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem, AiSearchResult, PlanTier } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
 import { supabase, supabaseUserToUserAccount } from '@/lib/supabase';
 import { UserSyncService } from '@/lib/user-sync';
@@ -17,10 +17,10 @@ import {
 
 interface AppContextType {
   // Navigation & Views
-  currentView: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications';
-  setCurrentView: (view: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications') => void;
-  adminSubView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'notifications';
-  setAdminSubView: (subView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'notifications') => void;
+  currentView: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you';
+  setCurrentView: (view: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you') => void;
+  adminSubView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users';
+  setAdminSubView: (subView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users') => void;
   editingPostId: string | null;
   setEditingPostId: (id: string | null) => void;
   selectedPost: PromptPost | null;
@@ -133,40 +133,31 @@ interface AppContextType {
   planTier: PlanTier;
   setPlanTier: (tier: PlanTier) => void;
   toolCredits: number;
-  deductToolCredit: () => boolean;
-  useToolCredit: () => boolean;
+  deductToolCredit: (amount?: number) => boolean;
+  useToolCredit: (amount?: number) => boolean;
   addToolCredits: (amount: number) => void;
   promptRequestsRemaining: number;
   upgradePlan: (tier: 'starter' | 'pro' | 'vip') => void;
+
+  // Prompt Unlocking with Credits / Subscription
+  unlockedPromptIds: string[];
+  isPromptUnlocked: (promptId: string, isPremium?: boolean) => boolean;
+  unlockPromptWithCredit: (promptId: string) => { success: boolean; message: string };
 
   isUnlockPremiumModalOpen: boolean;
   setIsUnlockPremiumModalOpen: (open: boolean) => void;
   lockedPromptContext: PromptPost | null;
   setLockedPromptContext: (post: PromptPost | null) => void;
   applyPlan: (planTier: 'starter' | 'pro' | 'vip') => void;
-
-  // Push & In-App Notifications (Pinterest Style)
-  notifications: AppNotification[];
-  isNotificationsDrawerOpen: boolean;
-  setIsNotificationsDrawerOpen: (open: boolean) => void;
-  isNotificationPreferencesModalOpen: boolean;
-  setIsNotificationPreferencesModalOpen: (open: boolean) => void;
-  notificationPreferences: UserNotificationPreferences;
-  updateNotificationPreferences: (prefs: Partial<UserNotificationPreferences>) => void;
-  unreadNotificationsCount: number;
-  markNotificationAsRead: (id: string) => void;
-  markAllNotificationsAsRead: () => void;
-  deleteNotification: (id: string) => Promise<void>;
-  sendAdminNotification: (notif: Omit<AppNotification, 'id' | 'createdAt'>) => Promise<boolean>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Navigation
-  const [currentView, setCurrentView] = useState<'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications'>('public');
+  const [currentView, setCurrentView] = useState<'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you'>('public');
   const [adminSubView, setAdminSubView] = useState<
-    'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'notifications'
+    'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users'
   >('dashboard');
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [selectedPost, setSelectedPost] = useState<PromptPost | null>(null);
@@ -183,7 +174,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // Razorpay Pro Membership & Plan Tier State
   const [isProCheckoutModalOpen, setIsProCheckoutModalOpen] = useState<boolean>(false);
-  const [isProUser, setIsProUserState] = useState<boolean>(false);
+  const [isProUser, setIsProUserState] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('auraprompt_pro_member') === 'true';
+    }
+    return false;
+  });
 
   const setIsProUser = useCallback((isPro: boolean) => {
     setIsProUserState(isPro);
@@ -192,7 +188,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const [planTier, setPlanTierState] = useState<PlanTier>('free');
+  const [planTier, setPlanTierState] = useState<PlanTier>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('auraprompt_plan_tier') as PlanTier;
+      if (['starter', 'pro', 'vip', 'free'].includes(saved)) return saved;
+      if (localStorage.getItem('auraprompt_pro_member') === 'true') return 'pro';
+    }
+    return 'free';
+  });
 
   const setPlanTier = useCallback((tier: PlanTier) => {
     setPlanTierState(tier);
@@ -202,145 +205,30 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   // Tool Credits (Daily 2 free credits per user, 1 credit per tool result)
-  const [toolCredits, setToolCreditsState] = useState<number>(2);
+  const [toolCredits, setToolCreditsState] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('auraprompt_tool_credits');
+      if (saved !== null) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed)) return parsed;
+      }
+    }
+    return 2;
+  });
 
-  const [promptRequestsRemaining, setPromptRequestsRemainingState] = useState<number>(0);
+  const [promptRequestsRemaining, setPromptRequestsRemainingState] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('auraprompt_prompt_requests');
+      if (saved !== null) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed)) return parsed;
+      }
+    }
+    return 0;
+  });
 
   const [isUnlockPremiumModalOpen, setIsUnlockPremiumModalOpen] = useState<boolean>(false);
   const [lockedPromptContext, setLockedPromptContext] = useState<PromptPost | null>(null);
-
-  // Push & In-App Notifications State (Pinterest Style)
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
-  const [isNotificationsDrawerOpen, setIsNotificationsDrawerOpen] = useState<boolean>(false);
-  const [isNotificationPreferencesModalOpen, setIsNotificationPreferencesModalOpen] = useState<boolean>(false);
-  const [notificationPreferences, setNotificationPreferences] = useState<UserNotificationPreferences>({
-    enabledCategories: ['all'],
-    browserPushEnabled: false,
-    soundEnabled: true,
-  });
-
-  const loadNotifications = useCallback(async () => {
-    try {
-      const res = await fetch('/api/notifications');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.notifications && Array.isArray(data.notifications)) {
-          let readIds: string[] = [];
-          if (typeof window !== 'undefined') {
-            try {
-              readIds = JSON.parse(localStorage.getItem('auraprompt_read_notif_ids') || '[]');
-            } catch {}
-          }
-          const mapped = data.notifications.map((n: AppNotification) => ({
-            ...n,
-            read: n.read || readIds.includes(n.id),
-          }));
-          setNotifications(mapped);
-        }
-      }
-    } catch (err) {
-      console.error('Failed to load notifications:', err);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadNotifications();
-  }, [loadNotifications]);
-
-  const updateNotificationPreferences = useCallback((prefs: Partial<UserNotificationPreferences>) => {
-    setNotificationPreferences((prev) => {
-      const next = { ...prev, ...prefs };
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('auraprompt_notif_prefs', JSON.stringify(next));
-      }
-      if (userAccount?.id) {
-        fetch('/api/notifications/preferences', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: userAccount.id, preferences: next }),
-        }).catch(console.error);
-      }
-      return next;
-    });
-  }, [userAccount]);
-
-  const markNotificationAsRead = useCallback((id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
-    if (typeof window !== 'undefined') {
-      try {
-        const readIds: string[] = JSON.parse(localStorage.getItem('auraprompt_read_notif_ids') || '[]');
-        if (!readIds.includes(id)) {
-          localStorage.setItem('auraprompt_read_notif_ids', JSON.stringify([...readIds, id]));
-        }
-      } catch {}
-    }
-  }, []);
-
-  const markAllNotificationsAsRead = useCallback(() => {
-    setNotifications((prev) => {
-      const allIds = prev.map((n) => n.id);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('auraprompt_read_notif_ids', JSON.stringify(allIds));
-      }
-      return prev.map((n) => ({ ...n, read: true }));
-    });
-  }, []);
-
-  const deleteNotification = useCallback(async (id: string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-    try {
-      await fetch(`/api/notifications?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
-    } catch (err) {
-      console.error('Failed to delete notification:', err);
-    }
-  }, []);
-
-  const sendAdminNotification = useCallback(async (notif: Omit<AppNotification, 'id' | 'createdAt'>): Promise<boolean> => {
-    try {
-      const res = await fetch('/api/notifications', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(notif),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.notification) {
-          setNotifications((prev) => [data.notification, ...prev]);
-
-          if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-            try {
-              new Notification(notif.title, {
-                body: notif.message,
-                icon: notif.imageUrl || '/logo.png',
-              });
-            } catch (pushErr) {
-              console.error('Browser push error:', pushErr);
-            }
-          }
-        }
-        return true;
-      }
-      return false;
-    } catch (err) {
-      console.error('Failed to send admin notification:', err);
-      return false;
-    }
-  }, []);
-
-  const unreadNotificationsCount = notifications.filter((n) => {
-    if (n.read) return false;
-    if (
-      notificationPreferences.enabledCategories.includes('all') ||
-      notificationPreferences.enabledCategories.length === 0
-    ) {
-      return true;
-    }
-    return notificationPreferences.enabledCategories.some(
-      (c) => c.toLowerCase() === n.category.toLowerCase()
-    );
-  }).length;
 
   // Daily 2 Free Credits Grant Logic
   useEffect(() => {
@@ -357,15 +245,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const deductToolCredit = useCallback((): boolean => {
+  const deductToolCredit = useCallback((amount: number = 1): boolean => {
     let success = false;
     setToolCreditsState((prev) => {
-      if (prev > 0) {
-        const next = prev - 1;
+      if (prev >= amount) {
+        const next = prev - amount;
         if (typeof window !== 'undefined') {
           localStorage.setItem('auraprompt_tool_credits', next.toString());
         }
         success = true;
+        // Sync to cloud if user is logged in
+        const currentAcc = StorageService.getUserAccount();
+        if (currentAcc && currentAcc.isLoggedIn) {
+          void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, { toolCredits: next });
+        }
         return next;
       }
       return prev;
@@ -381,9 +274,72 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_tool_credits', next.toString());
       }
+      // Sync to cloud if user is logged in
+      const currentAcc = StorageService.getUserAccount();
+      if (currentAcc && currentAcc.isLoggedIn) {
+        void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, { toolCredits: next });
+      }
       return next;
     });
   }, []);
+
+  // Unlocked Prompts (Unlocked via 1 credit per prompt or subscription)
+  const [unlockedPromptIds, setUnlockedPromptIds] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('auraprompt_unlocked_prompts');
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return [];
+  });
+
+  const isPromptUnlocked = useCallback(
+    (promptId: string, isPremium?: boolean): boolean => {
+      if (!isPremium) return true;
+      if (isProUser) return true;
+      return unlockedPromptIds.includes(promptId);
+    },
+    [isProUser, unlockedPromptIds]
+  );
+
+  const unlockPromptWithCredit = useCallback(
+    (promptId: string): { success: boolean; message: string } => {
+      if (isProUser) {
+        return { success: true, message: 'Included with Pro Membership!' };
+      }
+      if (unlockedPromptIds.includes(promptId)) {
+        return { success: true, message: 'Prompt is already unlocked!' };
+      }
+      if (toolCredits < 1) {
+        return {
+          success: false,
+          message: 'Insufficient credits. 1 credit is required to unlock this premium prompt.',
+        };
+      }
+      const deducted = deductToolCredit(1);
+      if (!deducted) {
+        return { success: false, message: 'Could not deduct credit. Insufficient balance.' };
+      }
+      setUnlockedPromptIds((prev) => {
+        const next = [...prev, promptId];
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(next));
+        }
+        // Sync to cloud if user is logged in
+        const currentAcc = StorageService.getUserAccount();
+        if (currentAcc && currentAcc.isLoggedIn) {
+          void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, {
+            unlockedPromptIds: next,
+            toolCredits: Math.max(0, toolCredits - 1),
+          });
+        }
+        return next;
+      });
+      return { success: true, message: 'Prompt unlocked! 1 credit used.' };
+    },
+    [isProUser, unlockedPromptIds, toolCredits, deductToolCredit]
+  );
 
   const upgradePlan = useCallback((tier: 'starter' | 'pro' | 'vip') => {
     const creditsMap = { starter: 10, pro: 50, vip: 200 };
@@ -395,16 +351,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const addedCredits = creditsMap[tier];
     const addedRequests = requestsMap[tier];
 
+    let finalCredits = 0;
     setToolCreditsState((prev) => {
       const next = prev + addedCredits;
+      finalCredits = next;
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_tool_credits', next.toString());
       }
       return next;
     });
 
+    let finalRequests = 0;
     setPromptRequestsRemainingState((prev) => {
       const next = prev + addedRequests;
+      finalRequests = next;
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_prompt_requests', next.toString());
       }
@@ -414,6 +374,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('auraprompt_pro_member', 'true');
       localStorage.setItem('auraprompt_plan_tier', tier);
+    }
+
+    // Persist SaaS Plan upgrade immediately to Supabase cloud
+    const currentAcc = StorageService.getUserAccount();
+    if (currentAcc && currentAcc.isLoggedIn) {
+      void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, {
+        planTier: tier,
+        isProUser: true,
+        toolCredits: finalCredits,
+        promptRequestsRemaining: finalRequests,
+      });
     }
   }, []);
 
@@ -533,8 +504,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     StorageService.saveUserAccount(account);
     setUserAccount(account);
 
-    // Reconcile and load all cloud data (bookmarks, likes, history, points, taste profile)
-    void UserSyncService.reconcileOnLogin(account).then((synced) => {
+    // Reconcile and load all cloud data (bookmarks, likes, history, points, plans, credits, unlocks)
+    void UserSyncService.reconcileOnLogin(account, {
+      planTier,
+      isProUser,
+      toolCredits,
+      promptRequestsRemaining,
+      unlockedPromptIds,
+    }).then((synced) => {
       setBookmarkedIds(synced.bookmarkedIds);
       setLikedIds(synced.likedIds);
       if (synced.tasteProfile) {
@@ -544,6 +521,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (synced.aiHistory?.length) setAiHistory(synced.aiHistory);
       if (synced.points !== undefined) {
         setUserAccount((prev) => (prev ? { ...prev, points: synced.points } : prev));
+      }
+      if (synced.planTier) {
+        setPlanTierState(synced.planTier);
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_plan_tier', synced.planTier);
+      }
+      if (synced.isProUser !== undefined) {
+        setIsProUserState(synced.isProUser);
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_pro_member', String(synced.isProUser));
+      }
+      if (synced.toolCredits !== undefined) {
+        setToolCreditsState(synced.toolCredits);
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits));
+      }
+      if (synced.unlockedPromptIds) {
+        setUnlockedPromptIds(synced.unlockedPromptIds);
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds));
       }
     });
 
@@ -570,8 +563,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     StorageService.saveUserAccount(account);
     setUserAccount(account);
 
-    // Push initial cloud data
-    void UserSyncService.reconcileOnLogin(account).then((synced) => {
+    // Push initial cloud data and reconcile
+    void UserSyncService.reconcileOnLogin(account, {
+      planTier,
+      isProUser,
+      toolCredits,
+      promptRequestsRemaining,
+      unlockedPromptIds,
+    }).then((synced) => {
       setBookmarkedIds(synced.bookmarkedIds);
       setLikedIds(synced.likedIds);
       if (synced.tasteProfile) {
@@ -597,11 +596,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const saveAiHistoryItem = (item: AIHistoryItem) => {
-    if (!isProUser) {
-      showToast('Generation history saving is a Premium feature. Upgrade to any monthly plan for unlimited saves!');
-      setIsProCheckoutModalOpen(true);
-      return;
-    }
     const itemWithUser: AIHistoryItem = {
       ...item,
       userId: userAccount?.id || 'guest',
@@ -698,7 +692,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!acc || !acc.isLoggedIn) return;
     try {
       setIsSyncingUserData(true);
-      const synced = await UserSyncService.reconcileOnLogin(acc);
+      const synced = await UserSyncService.reconcileOnLogin(acc, {
+        planTier,
+        isProUser,
+        toolCredits,
+        promptRequestsRemaining,
+        unlockedPromptIds,
+      });
       setBookmarkedIds(synced.bookmarkedIds);
       setLikedIds(synced.likedIds);
       if (synced.tasteProfile) {
@@ -708,6 +708,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (synced.aiHistory?.length) setAiHistory(synced.aiHistory);
       if (synced.points !== undefined) {
         setUserAccount((prev) => (prev ? { ...prev, points: synced.points } : prev));
+      }
+      if (synced.planTier) {
+        setPlanTierState(synced.planTier);
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_plan_tier', synced.planTier);
+      }
+      if (synced.isProUser !== undefined) {
+        setIsProUserState(synced.isProUser);
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_pro_member', String(synced.isProUser));
+      }
+      if (synced.toolCredits !== undefined) {
+        setToolCreditsState(synced.toolCredits);
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits));
+      }
+      if (synced.unlockedPromptIds) {
+        setUnlockedPromptIds(synced.unlockedPromptIds);
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds));
       }
     } catch (e) {
       console.warn('Sync cloud data notice:', e);
@@ -983,35 +999,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setBookmarkedIds(StorageService.getBookmarkedIds());
       setLikedIds(StorageService.getLikedIds());
       setTasteProfile(PersonalizationEngine.getProfile());
-
-      const savedPro = localStorage.getItem('auraprompt_pro_member') === 'true';
-      if (savedPro) setIsProUserState(true);
-
-      const savedTier = localStorage.getItem('auraprompt_plan_tier') as PlanTier;
-      if (['starter', 'pro', 'vip', 'free'].includes(savedTier)) {
-        setPlanTierState(savedTier);
-      } else if (savedPro) {
-        setPlanTierState('pro');
-      }
-
-      const savedCredits = localStorage.getItem('auraprompt_tool_credits');
-      if (savedCredits !== null) {
-        const parsed = parseInt(savedCredits, 10);
-        if (!isNaN(parsed)) setToolCreditsState(parsed);
-      }
-
-      const savedReqs = localStorage.getItem('auraprompt_prompt_requests');
-      if (savedReqs !== null) {
-        const parsed = parseInt(savedReqs, 10);
-        if (!isNaN(parsed)) setPromptRequestsRemainingState(parsed);
-      }
-
-      const savedNotifPrefs = localStorage.getItem('auraprompt_notif_prefs');
-      if (savedNotifPrefs) {
-        try {
-          setNotificationPreferences(JSON.parse(savedNotifPrefs));
-        } catch {}
-      }
     } catch (e) {
       console.warn('Error reading local cache on mount:', e);
     }
@@ -1355,6 +1342,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const copyPromptToClipboard = (text: string, postId?: string) => {
+    if (postId) {
+      const post = posts.find((p) => p.id === postId);
+      if (post && post.isPremium) {
+        const unlocked = isPromptUnlocked(postId, post.isPremium);
+        if (!unlocked) {
+          setLockedPromptContext(post);
+          setIsUnlockPremiumModalOpen(true);
+          showToast('🔒 Access Denied: Premium prompt requires 1 credit or Pro subscription to copy/access!');
+          return;
+        }
+      }
+    }
     navigator.clipboard.writeText(text);
     if (postId) {
       fetch(`/api/posts/${encodeURIComponent(postId)}`, {
@@ -1422,11 +1421,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const toggleBookmark = (id: string) => {
-    if (!isProUser) {
-      showToast('Saving prompts is a Premium feature. Upgrade to any monthly plan for unlimited saves!');
-      setIsProCheckoutModalOpen(true);
-      return;
-    }
     const isNowSaved = StorageService.toggleBookmark(id);
     const updatedBookmarks = StorageService.getBookmarkedIds();
     setBookmarkedIds(updatedBookmarks);
@@ -1446,7 +1440,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       });
     }
 
-    showToast(isNowSaved ? 'Saved to bookmarks (Unlimited saves active)' : 'Removed from bookmarks');
+    showToast(isNowSaved ? 'Saved to bookmarks' : 'Removed from bookmarks');
   };
 
   const restorePromptCards = async (
@@ -1721,23 +1715,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         addToolCredits,
         promptRequestsRemaining,
         upgradePlan,
+        unlockedPromptIds,
+        isPromptUnlocked,
+        unlockPromptWithCredit,
         isUnlockPremiumModalOpen,
         setIsUnlockPremiumModalOpen,
         lockedPromptContext,
         setLockedPromptContext,
         applyPlan,
-        notifications,
-        isNotificationsDrawerOpen,
-        setIsNotificationsDrawerOpen,
-        isNotificationPreferencesModalOpen,
-        setIsNotificationPreferencesModalOpen,
-        notificationPreferences,
-        updateNotificationPreferences,
-        unreadNotificationsCount,
-        markNotificationAsRead,
-        markAllNotificationsAsRead,
-        deleteNotification,
-        sendAdminNotification,
       }}
     >
       {children}

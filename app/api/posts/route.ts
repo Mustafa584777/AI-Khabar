@@ -1,7 +1,7 @@
 import { ServerStorage } from '@/lib/server-storage';
 import { NextRequest, NextResponse } from 'next/server';
 
-export const revalidate = 21600; // 6 hours cache
+export const revalidate = 21600;
 
 export async function GET(req: NextRequest) {
   try {
@@ -33,11 +33,15 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    const cacheHeader = includeDrafts
+      ? 'no-store, no-cache, must-revalidate'
+      : 'public, s-maxage=21600, stale-while-revalidate=43200';
+
     return NextResponse.json(
       { success: true, posts },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=21600, stale-while-revalidate=43200',
+          'Cache-Control': cacheHeader,
         },
       }
     );

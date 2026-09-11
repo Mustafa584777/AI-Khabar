@@ -71,7 +71,7 @@ export const DashboardOverview = () => {
       likesCount: 0,
       author: {
         name: 'tool.reelz',
-        avatar: '/logo.webp',
+        avatar: '/logo.png',
         role: 'Author',
       },
       seo: {

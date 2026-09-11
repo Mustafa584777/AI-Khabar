@@ -18,7 +18,7 @@ import {
   Zap,
   Database,
   Search,
-  Bell,
+  Users,
 } from 'lucide-react';
 
 export const AdminSidebar = () => {
@@ -30,7 +30,6 @@ export const AdminSidebar = () => {
     logout,
     posts,
     currentUser,
-    notifications,
   } = useApp();
 
   const draftCount = posts.filter((p) => p.status === 'draft').length;
@@ -71,10 +70,9 @@ export const AdminSidebar = () => {
       icon: FolderTree,
     },
     {
-      id: 'notifications',
-      label: 'Push Notifications',
-      icon: Bell,
-      badge: notifications.length || null,
+      id: 'users',
+      label: 'Registered Users',
+      icon: Users,
     },
     {
       id: 'search-history',

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useApp } from '@/context/AppContext';
-import { X, Bookmark, Copy, Trash2, ExternalLink, Sparkles, Cloud, RefreshCw, Crown, CheckCircle2 } from 'lucide-react';
+import { X, Bookmark, Copy, Trash2, ExternalLink, Sparkles, Cloud, RefreshCw } from 'lucide-react';
 import Image from 'next/image';
 import { getPromptSlug, getOptimizedImageUrl } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
@@ -21,9 +21,6 @@ export const BookmarksDrawer = () => {
     openAuthModal,
     syncUserCloudData,
     isSyncingUserData,
-    isProUser,
-    setIsProCheckoutModalOpen,
-    planTier,
   } = useApp();
 
   if (!isBookmarksDrawerOpen) return null;
@@ -56,41 +53,6 @@ export const BookmarksDrawer = () => {
           </button>
         </div>
 
-        {/* Monthly Subscription Unlimited Saves Status Banner */}
-        {!isProUser ? (
-          <div className="mx-4 mt-3 p-3.5 rounded-2xl bg-gradient-to-r from-red-500/10 via-amber-500/10 to-red-500/10 border border-red-200 dark:border-red-900/50 space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-black text-neutral-900 dark:text-white flex items-center gap-1.5">
-                <Crown className="w-3.5 h-3.5 text-amber-500" />
-                <span>Unlimited Saves with Monthly Pro</span>
-              </span>
-              <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950 text-[#E60023]">
-                Monthly
-              </span>
-            </div>
-            <p className="text-[11px] text-neutral-600 dark:text-neutral-400 leading-tight">
-              Upgrade to any Monthly Subscription plan for unlimited prompt saves and unlimited AI history saves.
-            </p>
-            <button
-              onClick={() => {
-                setIsBookmarksDrawerOpen(false);
-                setIsProCheckoutModalOpen(true);
-              }}
-              className="w-full py-1.5 px-3 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold text-center transition-all shadow-xs"
-            >
-              Upgrade to Monthly Plan
-            </button>
-          </div>
-        ) : (
-          <div className="mx-4 mt-3 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold flex items-center justify-between">
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Unlimited Saves Active</span>
-            </span>
-            <span className="uppercase text-[10px] font-black text-emerald-600">{planTier || 'PRO'}</span>
-          </div>
-        )}
-
         {/* Bookmarks List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {bookmarkedPosts.length > 0 ? (
@@ -122,7 +84,7 @@ export const BookmarksDrawer = () => {
                 <div className="flex-1 min-w-0 flex flex-col justify-between">
                   <div>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#efefef] dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300">
-                      {post.aiTool}
+                      {post.category}
                     </span>
                     <h4
                       onClick={() => {

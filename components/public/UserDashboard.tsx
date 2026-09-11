@@ -33,7 +33,6 @@ import {
   ShieldCheck,
   Cloud,
   RefreshCw,
-  CheckCircle2,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -68,6 +67,7 @@ export const UserDashboard = () => {
     promptRequestsRemaining,
     syncUserCloudData,
     isSyncingUserData,
+    unlockedPromptIds,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'saved' | 'history' | 'taste' | 'request'>('saved');
@@ -252,7 +252,19 @@ export const UserDashboard = () => {
           </div>
 
           {/* Quick Metrics */}
-          <div className="grid grid-cols-3 gap-3 sm:gap-4 border-t md:border-t-0 md:border-l border-neutral-100 dark:border-neutral-800 pt-4 md:pt-0 md:pl-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 border-t md:border-t-0 md:border-l border-neutral-100 dark:border-neutral-800 pt-4 md:pt-0 md:pl-6">
+            <div className="text-center md:text-left">
+              <div className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400">
+                {toolCredits}
+              </div>
+              <div className="text-[11px] text-neutral-500 font-medium">Credits Available</div>
+            </div>
+            <div className="text-center md:text-left">
+              <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
+                {isProUser ? 'All (Pro)' : unlockedPromptIds.length}
+              </div>
+              <div className="text-[11px] text-neutral-500 font-medium">Unlocked Prompts</div>
+            </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
                 {savedPosts.length}
@@ -264,12 +276,6 @@ export const UserDashboard = () => {
                 {aiHistory.length}
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">AI Generations</div>
-            </div>
-            <div className="text-center md:text-left">
-              <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
-                {Object.values(tasteProfile.categoryAffinities || {}).reduce((a, b) => a + b, 0)}
-              </div>
-              <div className="text-[11px] text-neutral-500 font-medium">Taste Points</div>
             </div>
           </div>
         </div>
@@ -317,7 +323,7 @@ export const UserDashboard = () => {
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
                 {isProUser
                   ? `${toolCredits} prompt tools credits available • ${promptRequestsRemaining} prompt requests remaining • All premium prompts unlocked.`
-                  : `${toolCredits} daily credits available (2 free credits/day). Upgrade to unlock all premium prompts & extra credits.`}
+                  : `${toolCredits} credits available. 1 credit unlocks any premium prompt • 3 credits per image extraction. Top up credits anytime.`}
               </p>
             </div>
           </div>
@@ -364,15 +370,6 @@ export const UserDashboard = () => {
           >
             <Bookmark className="w-4 h-4 fill-current" />
             <span>Saved Prompts ({savedPosts.length})</span>
-            {isProUser ? (
-              <span className="text-[10px] uppercase font-black px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
-                Unlimited
-              </span>
-            ) : (
-              <span className="text-[10px] uppercase font-black px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-800">
-                PRO
-              </span>
-            )}
           </button>
 
           <button
@@ -385,15 +382,6 @@ export const UserDashboard = () => {
           >
             <History className="w-4 h-4" />
             <span>AI Studio History ({aiHistory.length})</span>
-            {isProUser ? (
-              <span className="text-[10px] uppercase font-black px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
-                Unlimited
-              </span>
-            ) : (
-              <span className="text-[10px] uppercase font-black px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-800">
-                PRO
-              </span>
-            )}
           </button>
 
           <button
@@ -424,43 +412,6 @@ export const UserDashboard = () => {
         {/* TAB 1: Saved Prompts */}
         {activeTab === 'saved' && (
           <div>
-            {/* Monthly Subscription Unlimited Saves Banner */}
-            {!isProUser ? (
-              <div className="mb-6 p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-red-500/10 via-amber-500/10 to-red-500/10 border border-red-200 dark:border-red-900/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex items-start gap-3.5">
-                  <div className="w-10 h-10 rounded-2xl bg-[#E60023] text-white flex items-center justify-center shrink-0 shadow-sm">
-                    <Bookmark className="w-5 h-5 fill-current" />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-sm sm:text-base font-black text-neutral-900 dark:text-white">
-                        Unlimited Saved Prompts is a Monthly Pro Feature
-                      </h4>
-                      <span className="px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950/80 text-[#E60023] text-[10px] font-black uppercase">
-                        All Monthly Plans
-                      </span>
-                    </div>
-                    <p className="text-xs text-neutral-600 dark:text-neutral-400 max-w-xl leading-relaxed">
-                      Included in all Monthly Subscription plans (Starter, Pro, VIP) with unlimited saves! Bookmark endless Midjourney, Flux, and ChatGPT prompts to build your personal creative library.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setIsProCheckoutModalOpen(true)}
-                  className="px-5 py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold transition-all shrink-0 shadow-md shadow-red-500/20 active:scale-95"
-                >
-                  Upgrade for Unlimited Saves
-                </button>
-              </div>
-            ) : (
-              <div className="mb-6 px-4 py-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  <span>Unlimited Prompt Saves Active • Monthly Member ({planTier?.toUpperCase() || 'PRO'})</span>
-                </span>
-                <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400">UNLIMITED</span>
-              </div>
-            )}
             {savedPosts.length === 0 ? (
               <div className="text-center py-20 bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 p-8 space-y-4">
                 <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-950/50 text-[#E60023] flex items-center justify-center mx-auto">
@@ -517,7 +468,7 @@ export const UserDashboard = () => {
                       {/* Top Overlay Badge */}
                       <div className="absolute top-2.5 left-2.5 z-10">
                         <span className="px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-bold">
-                          {post.aiTool}
+                          {post.category}
                         </span>
                       </div>
 
@@ -575,44 +526,6 @@ export const UserDashboard = () => {
         {/* TAB 2: AI Studio History */}
         {activeTab === 'history' && (
           <div className="space-y-6">
-            {/* Monthly Subscription Unlimited History Saves Banner */}
-            {!isProUser ? (
-              <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-amber-500/10 via-red-500/10 to-amber-500/10 border border-amber-200 dark:border-amber-900/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex items-start gap-3.5">
-                  <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
-                    <History className="w-5 h-5" />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-sm sm:text-base font-black text-neutral-900 dark:text-white">
-                        AI Studio Generation History is a Monthly Pro Feature
-                      </h4>
-                      <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 text-[10px] font-black uppercase">
-                        All Monthly Plans
-                      </span>
-                    </div>
-                    <p className="text-xs text-neutral-600 dark:text-neutral-400 max-w-xl leading-relaxed">
-                      Included in all Monthly Subscription plans (Starter, Pro, VIP) with unlimited saves! Automatically retain and search all reverse-engineered prompts, camera presets, and style breakdowns forever.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setIsProCheckoutModalOpen(true)}
-                  className="px-5 py-2.5 rounded-full bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 text-white dark:text-neutral-900 text-xs font-bold transition-all shrink-0 shadow-sm active:scale-95"
-                >
-                  Upgrade for Unlimited History
-                </button>
-              </div>
-            ) : (
-              <div className="px-4 py-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  <span>Unlimited Generation History Saves Active • Monthly Member ({planTier?.toUpperCase() || 'PRO'})</span>
-                </span>
-                <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400">UNLIMITED</span>
-              </div>
-            )}
-
             {/* Filter and Search Bar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800">
               <div className="flex items-center gap-2 overflow-x-auto">

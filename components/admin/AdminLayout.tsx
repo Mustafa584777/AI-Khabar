@@ -11,7 +11,7 @@ import { CategoriesManager } from './CategoriesManager';
 import { SettingsView } from './SettingsView';
 import { BackupRestoreView } from './BackupRestoreView';
 import { SearchHistoryManager } from './SearchHistoryManager';
-import { NotificationsManager } from './NotificationsManager';
+import { UsersManager } from './UsersManager';
 import { X } from 'lucide-react';
 
 export const AdminLayout = () => {
@@ -48,10 +48,10 @@ export const AdminLayout = () => {
         return <PostEditor key={editingPostId || 'new-post'} />;
       case 'categories':
         return <CategoriesManager key={settings.popularTags?.join(',') || 'categories'} />;
-      case 'notifications':
-        return <NotificationsManager />;
       case 'search-history':
         return <SearchHistoryManager />;
+      case 'users':
+        return <UsersManager />;
       case 'backup-restore':
         return <BackupRestoreView />;
       case 'settings':

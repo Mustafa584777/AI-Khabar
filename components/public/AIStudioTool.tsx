@@ -17,7 +17,6 @@ import {
   Zap,
   Coins,
   X,
-  Crown,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -86,8 +85,6 @@ export const AIStudioTool = () => {
     saveAiHistoryItem,
     toolCredits,
     deductToolCredit,
-    isProUser,
-    setIsProCheckoutModalOpen,
   } = useApp();
 
   const [uploadedImage, setUploadedImage] = useState<string | null>(() => {
@@ -147,9 +144,10 @@ export const AIStudioTool = () => {
       return;
     }
 
-    if (toolCredits <= 0) {
+    const IMAGE_TO_PROMPT_COST = 3;
+    if (toolCredits < IMAGE_TO_PROMPT_COST) {
       setIsOutOfCreditsModalOpen(true);
-      showToast('No tool credits remaining. Daily 2 free credits reset tomorrow, or upgrade your plan for instant credits!');
+      showToast(`Image-to-prompt requires 3 credits (You have ${toolCredits}). Top up credits or upgrade!`);
       return;
     }
 
@@ -170,9 +168,9 @@ export const AIStudioTool = () => {
 
       const json = await res.json();
       if (json.success && json.data) {
-        deductToolCredit();
+        deductToolCredit(IMAGE_TO_PROMPT_COST);
         setExtractedData(json.data);
-        showToast(`Prompt reverse-engineered! 1 credit used (${Math.max(0, toolCredits - 1)} left)`);
+        showToast(`Prompt reverse-engineered! 3 credits used (${Math.max(0, toolCredits - IMAGE_TO_PROMPT_COST)} left)`);
       } else {
         showToast(json.error || 'Failed to extract prompt from image');
       }
@@ -188,13 +186,7 @@ export const AIStudioTool = () => {
     if (!extractedData) return;
 
     if (!userAccount?.isLoggedIn) {
-      openAuthModal('Please sign in or create an account to save extracted prompts to your history.');
-      return;
-    }
-
-    if (!isProUser) {
-      showToast('Generation history saving is a Premium feature. Upgrade to any monthly plan for unlimited saves!');
-      setIsProCheckoutModalOpen(true);
+      openAuthModal('Please sign in or create a free account to save extracted prompts to your history.');
       return;
     }
 
@@ -216,7 +208,7 @@ export const AIStudioTool = () => {
 
     saveAiHistoryItem(historyItem);
     setIsSavedExtracted(true);
-    showToast('Saved to your AI Studio History (Unlimited saves active)!');
+    showToast('Saved to your AI Studio History!');
   };
 
   return (
@@ -242,12 +234,12 @@ export const AIStudioTool = () => {
             <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 text-xs font-bold shadow-xs">
               <Coins className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
               <span>{toolCredits} Credits</span>
-              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium hidden sm:inline">• 1 / run</span>
+              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium hidden sm:inline">• 3 cr / extraction</span>
               <Link
                 href="/pricing"
                 className="text-[11px] font-black text-[#E60023] hover:underline ml-1"
               >
-                + Get More
+                + Top Up
               </Link>
             </div>
 
@@ -458,7 +450,7 @@ export const AIStudioTool = () => {
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4" />
-                    <span>Extract AI Prompt from Image (1 Credit)</span>
+                    <span>Extract AI Prompt from Image (3 Credits)</span>
                   </>
                 )}
               </button>
@@ -520,33 +512,22 @@ export const AIStudioTool = () => {
 
                     <button
                       onClick={handleSaveExtractedToHistory}
-                      className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-xs ${
+                      className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
                         isSavedExtracted
                           ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400'
-                          : isProUser
-                          ? 'bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 hover:border-red-400'
-                          : 'bg-red-50/80 dark:bg-red-950/40 border-red-200 dark:border-red-900/60 text-[#E60023] hover:bg-red-100 dark:hover:bg-red-900/50'
+                          : 'bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 hover:border-red-400'
                       }`}
-                      title={
-                        isProUser
-                          ? 'Save to your personal generation history (Unlimited Saves)'
-                          : 'Save to History (Monthly Pro Subscription Feature)'
-                      }
+                      title="Save to your personal generation history"
                     >
                       {isSavedExtracted ? (
                         <>
                           <Check className="w-4 h-4 text-emerald-500" />
-                          <span>Saved to History (Unlimited)</span>
-                        </>
-                      ) : isProUser ? (
-                        <>
-                          <Bookmark className="w-4 h-4 text-[#E60023]" />
-                          <span>Save to History</span>
+                          <span>Saved to History</span>
                         </>
                       ) : (
                         <>
-                          <Crown className="w-4 h-4 text-amber-500" />
-                          <span>Save to History (Pro)</span>
+                          <Bookmark className="w-4 h-4 text-[#E60023]" />
+                          <span>Save to My History</span>
                         </>
                       )}
                     </button>
@@ -656,19 +637,19 @@ export const AIStudioTool = () => {
                 Out of Tool Credits
               </h3>
               <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                You have used your free credits. Every user receives <strong className="text-neutral-900 dark:text-white">2 free credits daily</strong>, which reset tomorrow at midnight.
+                Image-to-prompt extraction requires <strong className="text-neutral-900 dark:text-white">3 credits</strong>. Every user receives <strong className="text-neutral-900 dark:text-white">2 free credits daily</strong>, or you can top up anytime.
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-left space-y-1.5 text-xs text-neutral-700 dark:text-neutral-300">
+            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-left space-y-2 text-xs text-neutral-700 dark:text-neutral-300">
               <div className="font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>Instant Upgrade Options:</span>
+                <Coins className="w-3.5 h-3.5 text-amber-500" />
+                <span>Instant Pay-As-You-Go Credits Packs:</span>
               </div>
               <ul className="space-y-1 text-[11px] text-neutral-600 dark:text-neutral-400">
-                <li>• <strong>Starter (₹49/mo)</strong>: 10 tool credits + 1 prompt request</li>
-                <li>• <strong>Pro (₹199/mo)</strong>: 50 tool credits + 3 prompt requests</li>
-                <li>• <strong>VIP (₹499/mo)</strong>: 200 tool credits + 10 prompt requests</li>
+                <li>• <strong>100 Credits (₹49)</strong>: ~33 image extractions or 100 prompt unlocks</li>
+                <li>• <strong>250 Credits (₹99)</strong>: ~83 image extractions (Most Popular)</li>
+                <li>• <strong>499 Credits (₹199)</strong>: ~166 image extractions (Best Value)</li>
               </ul>
             </div>
 

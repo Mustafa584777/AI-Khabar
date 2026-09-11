@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useApp } from '@/context/AppContext';
-import { Home, Search, Plus, User, Bell } from 'lucide-react';
+import { Home, Search, Plus, User, Sparkles } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 
 interface BottomNavProps {
@@ -23,9 +23,6 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
     setCurrentView,
     setIsTasteModalOpen,
     setIsSearchModalOpen,
-    isNotificationsDrawerOpen,
-    setIsNotificationsDrawerOpen,
-    unreadNotificationsCount,
   } = useApp();
 
   const handleHomeClick = () => {
@@ -47,8 +44,16 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
     }
   };
 
-  const handleNotificationsClick = () => {
-    setIsNotificationsDrawerOpen(true);
+  const handleForYouClick = () => {
+    setCurrentView('for-you');
+    setSelectedCategory('all');
+    setSelectedSort('trending');
+    setSearchQuery('');
+    if (pathname !== '/') {
+      router.push('/');
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleCreateStudioClick = () => {
@@ -113,26 +118,19 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
         </span>
       </button>
 
-      {/* 4. Notifications Inbox Button (Replaces For You) */}
+      {/* 4. For You Personalized Feed Button */}
       <button
-        onClick={handleNotificationsClick}
-        id="bottom-nav-notifications"
-        className={`relative flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 ${
-          isNotificationsDrawerOpen
+        onClick={handleForYouClick}
+        id="bottom-nav-for-you"
+        className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 ${
+          currentView === 'for-you'
             ? 'text-[#E60023] scale-105 font-bold'
             : 'text-neutral-500 hover:text-[#E60023] dark:hover:text-white'
         }`}
-        title="Personalized Notifications"
+        title="Personalized For You Feed"
       >
-        <div className="relative">
-          <Bell className={`w-6 h-6 ${isNotificationsDrawerOpen ? 'fill-current' : ''}`} />
-          {unreadNotificationsCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#E60023] text-white text-[9px] font-black flex items-center justify-center ring-2 ring-white dark:ring-neutral-950">
-              {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
-            </span>
-          )}
-        </div>
-        <span className="text-[10px] mt-0.5 font-medium">Updates</span>
+        <Sparkles className="w-6 h-6 text-[#E60023]" />
+        <span className="text-[10px] mt-0.5 font-medium">For You</span>
       </button>
 
       {/* 5. Account / Profile Button */}

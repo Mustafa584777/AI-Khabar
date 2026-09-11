@@ -1,7 +1,7 @@
 import { ServerStorage } from '@/lib/server-storage';
 import { NextRequest, NextResponse } from 'next/server';
 
-export const revalidate = 86400; // 24 hours cache
+export const revalidate = 86400;
 
 export async function GET() {
   try {
