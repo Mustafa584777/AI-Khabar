@@ -20,6 +20,7 @@ import {
   Search,
   Users,
   Bell,
+  Target,
 } from 'lucide-react';
 
 export const AdminSidebar = () => {
@@ -31,9 +32,11 @@ export const AdminSidebar = () => {
     logout,
     posts,
     currentUser,
+    promptRequests,
   } = useApp();
 
   const draftCount = posts.filter((p) => p.status === 'draft').length;
+  const pendingRequestsCount = promptRequests.filter((p) => p.status === 'pending').length;
 
   interface NavItem {
     id: string;
@@ -64,6 +67,12 @@ export const AdminSidebar = () => {
         setEditingPostId(null);
         setAdminSubView('new-post');
       },
+    },
+    {
+      id: 'requested-prompts',
+      label: 'Requested Prompts',
+      icon: Target,
+      badge: pendingRequestsCount > 0 ? pendingRequestsCount : null,
     },
     {
       id: 'categories',

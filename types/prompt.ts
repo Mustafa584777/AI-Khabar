@@ -186,12 +186,25 @@ export interface PromptRequestItem {
   id: string;
   userId: string;
   userName: string;
+  userEmail?: string;
   userAvatar?: string;
+  userPlanTier?: PlanTier;
   requestText: string;
   category?: string;
-  status: 'pending' | 'in_progress' | 'completed';
+  aiToolPreference?: string;
+  aspectRatio?: string;
+  referenceImageUrl?: string;
+  status: 'pending' | 'in_progress' | 'fulfilled' | 'completed' | 'rejected';
   createdAt: number;
   likesCount: number;
+  // Admin Fulfillment Fields (delivered directly & privately to user's dashboard):
+  fulfilledPrompt?: string;
+  fulfilledImageUrl?: string;
+  fulfilledAiTool?: string;
+  fulfilledNotes?: string;
+  adminNotes?: string;
+  fulfilledAt?: number;
+  requestSource?: 'points' | 'plan';
 }
 
 export interface AIHistoryItem {

@@ -1,4 +1,4 @@
-import { Category, PromptPost, SiteSettings, SearchQueryItem } from '@/types/prompt';
+import { Category, PromptPost, SiteSettings, SearchQueryItem, PromptRequestItem } from '@/types/prompt';
 import { INITIAL_CATEGORIES, INITIAL_SETTINGS, INITIAL_POSTS } from './initial-data';
 import { supabase, supabaseAdmin, isSupabaseConfigured } from './supabase';
 import { cleanTagsArray, canonicalizeTag } from './tag-utils';
@@ -12,6 +12,7 @@ const CATEGORIES_FILE = path.join(DATA_DIR, 'categories.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const TAGS_FILE = path.join(DATA_DIR, 'tags.json');
 const SEARCH_QUERIES_FILE = path.join(DATA_DIR, 'search_queries.json');
+const PROMPT_REQUESTS_FILE = path.join(DATA_DIR, 'prompt_requests.json');
 
 const DEFAULT_TAGS = [
   'Portrait', '35mm', 'Cinematic', 'Street Photography', 'Fashion',
@@ -57,6 +58,7 @@ let memoryCategories: Category[] | null = null;
 let memorySettings: SiteSettings | null = null;
 let memoryTags: string[] | null = null;
 let memorySearchQueries: SearchQueryItem[] | null = null;
+let memoryPromptRequests: PromptRequestItem[] | null = null;
 
 // Helpers to map Supabase snake_case rows to PromptPost
 function mapSupabasePost(row: any): PromptPost {
@@ -825,5 +827,132 @@ export const ServerStorage = {
     memoryTags = filtered;
     writeJsonFile(TAGS_FILE, filtered);
     return filtered;
+  },
+
+  // Prompt Requests
+  getAllPromptRequests: async (): Promise<PromptRequestItem[]> => {
+    if (isSupabaseConfigured()) {
+      try {
+        const { data, error } = await db()
+          .from('prompt_requests')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!error && data && Array.isArray(data)) {
+          const mapped: PromptRequestItem[] = data.map((d: any) => ({
+            id: d.id,
+            userId: d.user_id,
+            userName: d.user_name || 'Anonymous User',
+            userEmail: d.user_email || undefined,
+            userAvatar: d.user_avatar || undefined,
+            userPlanTier: d.user_plan_tier || undefined,
+            requestText: d.request_text,
+            category: d.category || undefined,
+            aiToolPreference: d.ai_tool_preference || undefined,
+            aspectRatio: d.aspect_ratio || undefined,
+            referenceImageUrl: d.reference_image_url || undefined,
+            status: d.status || 'pending',
+            createdAt: d.created_at ? new Date(d.created_at).getTime() : Date.now(),
+            likesCount: d.likes_count || 0,
+            fulfilledPrompt: d.fulfilled_prompt || undefined,
+            fulfilledImageUrl: d.fulfilled_image_url || undefined,
+            fulfilledAiTool: d.fulfilled_ai_tool || undefined,
+            fulfilledNotes: d.fulfilled_notes || undefined,
+            adminNotes: d.admin_notes || undefined,
+            fulfilledAt: d.fulfilled_at ? new Date(d.fulfilled_at).getTime() : undefined,
+            requestSource: d.request_source || undefined,
+          }));
+          memoryPromptRequests = mapped;
+          writeJsonFile(PROMPT_REQUESTS_FILE, mapped);
+          return mapped;
+        }
+      } catch (err) {
+        console.warn('Supabase getAllPromptRequests fallback:', err);
+      }
+    }
+
+    if (memoryPromptRequests === null) {
+      memoryPromptRequests = readJsonFile<PromptRequestItem[]>(PROMPT_REQUESTS_FILE, []);
+    }
+    return memoryPromptRequests || [];
+  },
+
+  getPromptRequestsByUserId: async (userId: string): Promise<PromptRequestItem[]> => {
+    const all = await ServerStorage.getAllPromptRequests();
+    return all.filter((r) => r.userId === userId);
+  },
+
+  savePromptRequest: async (request: PromptRequestItem): Promise<PromptRequestItem> => {
+    if (isSupabaseConfigured()) {
+      try {
+        const payload: any = {
+          id: request.id,
+          user_id: request.userId,
+          user_name: request.userName,
+          user_email: request.userEmail || null,
+          user_avatar: request.userAvatar || null,
+          user_plan_tier: request.userPlanTier || null,
+          request_text: request.requestText,
+          category: request.category || null,
+          ai_tool_preference: request.aiToolPreference || null,
+          aspect_ratio: request.aspectRatio || null,
+          reference_image_url: request.referenceImageUrl || null,
+          status: request.status,
+          created_at: new Date(request.createdAt).toISOString(),
+          likes_count: request.likesCount || 0,
+          fulfilled_prompt: request.fulfilledPrompt || null,
+          fulfilled_image_url: request.fulfilledImageUrl || null,
+          fulfilled_ai_tool: request.fulfilledAiTool || null,
+          fulfilled_notes: request.fulfilledNotes || null,
+          admin_notes: request.adminNotes || null,
+          fulfilled_at: request.fulfilledAt ? new Date(request.fulfilledAt).toISOString() : null,
+          request_source: request.requestSource || null,
+        };
+        await db().from('prompt_requests').upsert(payload, { onConflict: 'id' });
+      } catch (err) {
+        console.error('Supabase savePromptRequest error:', err);
+      }
+    }
+
+    const current = await ServerStorage.getAllPromptRequests();
+    const idx = current.findIndex((r) => r.id === request.id);
+    let updated: PromptRequestItem[];
+    if (idx >= 0) {
+      updated = [...current];
+      updated[idx] = request;
+    } else {
+      updated = [request, ...current];
+    }
+    memoryPromptRequests = updated;
+    writeJsonFile(PROMPT_REQUESTS_FILE, updated);
+    return request;
+  },
+
+  updatePromptRequest: async (
+    id: string,
+    updates: Partial<PromptRequestItem>
+  ): Promise<PromptRequestItem | null> => {
+    const current = await ServerStorage.getAllPromptRequests();
+    const existing = current.find((r) => r.id === id);
+    if (!existing) return null;
+
+    const merged: PromptRequestItem = { ...existing, ...updates };
+    await ServerStorage.savePromptRequest(merged);
+    return merged;
+  },
+
+  deletePromptRequest: async (id: string): Promise<boolean> => {
+    if (isSupabaseConfigured()) {
+      try {
+        await db().from('prompt_requests').delete().eq('id', id);
+      } catch (err) {
+        console.error('Supabase deletePromptRequest error:', err);
+      }
+    }
+
+    const current = await ServerStorage.getAllPromptRequests();
+    const updated = current.filter((r) => r.id !== id);
+    memoryPromptRequests = updated;
+    writeJsonFile(PROMPT_REQUESTS_FILE, updated);
+    return true;
   },
 };

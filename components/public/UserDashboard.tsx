@@ -33,6 +33,11 @@ import {
   ShieldCheck,
   Cloud,
   RefreshCw,
+  Lock,
+  CheckCircle2,
+  AlertCircle,
+  ExternalLink,
+  FileText,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -58,6 +63,7 @@ export const UserDashboard = () => {
     persistentRefImage,
     setPersistentRefImage,
     promptRequests,
+    userPromptRequests,
     addPromptRequest,
     awardPoints,
     isProUser,
@@ -78,16 +84,49 @@ export const UserDashboard = () => {
   // Request a prompt form state
   const [requestText, setRequestText] = useState('');
   const [requestCategory, setRequestCategory] = useState('Photorealistic');
+  const [requestAiTool, setRequestAiTool] = useState('Midjourney v6.1');
+  const [requestAspectRatio, setRequestAspectRatio] = useState('16:9');
+  const [requestRefUrl, setRequestRefUrl] = useState('');
+  const [requestSourceChoice, setRequestSourceChoice] = useState<'plan' | 'points'>('plan');
+  const [userRequestStatusFilter, setUserRequestStatusFilter] = useState<'all' | 'fulfilled' | 'pending'>('all');
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
 
-  const handleRequestSubmit = (e: React.FormEvent) => {
+  const handleRequestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!requestText.trim()) {
-      showToast('Please enter your prompt request description');
+    if (!userAccount?.isLoggedIn) {
+      openAuthModal('Please sign in or create an account to submit a prompt request.');
       return;
     }
-    const success = addPromptRequest(requestText, requestCategory);
-    if (success) {
-      setRequestText('');
+    if (!requestText.trim()) {
+      showToast('Please describe what kind of prompt you want engineered');
+      return;
+    }
+
+    const hasPlanQuota = promptRequestsRemaining > 0;
+    const hasPoints = (userAccount?.points || 0) >= 10;
+
+    if (!hasPlanQuota && !hasPoints) {
+      showToast('You need 10 points or an active plan request quota to submit.');
+      return;
+    }
+
+    const source = (hasPlanQuota && requestSourceChoice === 'plan') || !hasPoints ? 'plan' : 'points';
+
+    setIsSubmittingRequest(true);
+    try {
+      const success = await addPromptRequest(requestText, requestCategory, {
+        aiToolPreference: requestAiTool,
+        aspectRatio: requestAspectRatio,
+        referenceImageUrl: requestRefUrl.trim() || undefined,
+        source,
+      });
+
+      if (success) {
+        setRequestText('');
+        setRequestRefUrl('');
+      }
+    } finally {
+      setIsSubmittingRequest(false);
     }
   };
 
@@ -847,158 +886,637 @@ export const UserDashboard = () => {
         {/* TAB 4: Request a Prompt */}
         {activeTab === 'request' && (
           <div className="space-y-6 animate-in fade-in duration-300">
-            <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <h3 className="text-lg font-black text-neutral-900 dark:text-white flex items-center gap-2">
-                    <Target className="w-5 h-5 text-[#E60023]" />
-                    <span>Request a Custom AI Prompt</span>
+            {/* Login Barrier if user is not logged in */}
+            {!userAccount?.isLoggedIn ? (
+              <div className="p-8 sm:p-10 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xl text-center space-y-5">
+                <div className="w-14 h-14 rounded-2xl bg-red-100 dark:bg-red-950/60 text-[#E60023] flex items-center justify-center mx-auto shadow-inner">
+                  <Lock className="w-7 h-7" />
+                </div>
+                <div className="max-w-md mx-auto space-y-2">
+                  <h3 className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white tracking-tight">
+                    Login Required to Request Custom Prompts
                   </h3>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                    Complete activities to fill your 10-point progress bar and request custom AI prompt generation from our expert creators.
+                  <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
+                    Custom AI prompt requests and point accumulation are exclusively available to authenticated members. Sign in or register to request custom prompts, earn activity points, and track your orders.
                   </p>
                 </div>
+                <div className="pt-2 flex flex-wrap justify-center gap-3">
+                  <button
+                    onClick={() => openAuthModal('Sign in to submit custom prompt requests and track your fulfilled prompts.')}
+                    className="px-6 py-3 rounded-2xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-black shadow-lg shadow-red-600/25 transition-all flex items-center gap-2"
+                  >
+                    <LogIn className="w-4 h-4" />
+                    <span>Sign In / Create Account</span>
+                  </button>
+                  <button
+                    onClick={() => setIsProCheckoutModalOpen(true)}
+                    className="px-5 py-3 rounded-2xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-bold transition-all flex items-center gap-2"
+                  >
+                    <Crown className="w-4 h-4 text-amber-500 fill-amber-500" />
+                    <span>View Pro Plans</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* 1. Monthly Premium Requests & Points Status Card */}
+                <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="p-1.5 rounded-xl bg-red-100 dark:bg-red-950/60 text-[#E60023]">
+                          <Target className="w-4 h-4" />
+                        </span>
+                        <h3 className="text-lg font-black text-neutral-900 dark:text-white">
+                          Custom Prompt Request Quota & Points
+                        </h3>
+                      </div>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                        Request tailored AI prompts crafted by experts. Use your monthly plan quota or complete 10 points through community engagement.
+                      </p>
+                    </div>
 
-                {/* Progress Bar Badge / Plan Request Badge */}
-                <div className="px-4 py-2 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-right">
-                  {promptRequestsRemaining > 0 ? (
-                    <>
-                      <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Plan Requests Included</div>
-                      <div className="text-lg font-black text-[#E60023]">
-                        {promptRequestsRemaining} Available
+                    <div className="flex items-center gap-2.5">
+                      <span className="px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5 border border-neutral-200 dark:border-neutral-700">
+                        <Crown className={`w-3.5 h-3.5 ${planTier !== 'free' ? 'text-amber-500 fill-amber-500' : 'text-neutral-400'}`} />
+                        <span>{planTier.toUpperCase()} Member</span>
+                      </span>
+                      {planTier === 'free' && (
+                        <button
+                          onClick={() => setIsProCheckoutModalOpen(true)}
+                          className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-red-600 text-white text-xs font-bold shadow-sm hover:opacity-95 transition-opacity"
+                        >
+                          Upgrade Plan
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Quota Highlights Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {/* Card A: Monthly Plan Quota */}
+                    <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-red-500/5 to-transparent dark:from-amber-950/40 dark:via-red-950/20 dark:to-transparent border border-amber-200 dark:border-amber-800/60 space-y-2">
+                      <div className="flex items-center justify-between text-xs font-bold text-amber-700 dark:text-amber-300">
+                        <span className="flex items-center gap-1.5">
+                          <Crown className="w-4 h-4 text-amber-500 fill-amber-500" />
+                          Monthly Plan Requests
+                        </span>
+                        <span className="text-[11px] px-2 py-0.5 rounded-md bg-amber-200/60 dark:bg-amber-900/60 font-black">
+                          {planTier === 'free' ? '0 / mo' : planTier === 'starter' ? '1 / mo' : planTier === 'vip' ? '10 / mo' : '3 / mo'}
+                        </span>
                       </div>
-                    </>
+                      <div className="text-2xl sm:text-3xl font-black text-neutral-900 dark:text-white">
+                        {promptRequestsRemaining}{' '}
+                        <span className="text-xs font-bold text-neutral-500 dark:text-neutral-400 font-normal">
+                          available this month
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-neutral-600 dark:text-neutral-400">
+                        {promptRequestsRemaining > 0
+                          ? 'Included with your active membership tier.'
+                          : planTier === 'free'
+                          ? 'Upgrade to Pro to receive 3 to 10 prompt requests every month.'
+                          : 'Monthly quota exhausted. You can use 10 activity points to submit extra requests!'}
+                      </p>
+                    </div>
+
+                    {/* Card B: Activity Points Balance */}
+                    <div className="p-5 rounded-2xl bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-2">
+                      <div className="flex items-center justify-between text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                        <span className="flex items-center gap-1.5">
+                          <Sparkles className="w-4 h-4 text-[#E60023]" />
+                          Activity Points
+                        </span>
+                        <span className="text-[11px] font-black text-neutral-500">
+                          Goal: 10 pts = 1 request
+                        </span>
+                      </div>
+                      <div className="text-2xl sm:text-3xl font-black text-[#E60023]">
+                        {userAccount?.points || 0}{' '}
+                        <span className="text-xs font-bold text-neutral-500 dark:text-neutral-400 font-normal">
+                          / 10 points
+                        </span>
+                      </div>
+                      {/* Progress Bar */}
+                      <div className="w-full h-2 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-[#E60023] to-amber-500 rounded-full transition-all duration-300"
+                          style={{
+                            width: `${Math.min(100, Math.round(((userAccount?.points || 0) % 10) * 10))}%`,
+                          }}
+                        />
+                      </div>
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                        {(userAccount?.points || 0) >= 10
+                          ? '🎉 10 points complete! You can redeem a custom prompt right now.'
+                          : `${10 - ((userAccount?.points || 0) % 10)} more point(s) needed to unlock a free request.`}
+                      </p>
+                    </div>
+
+                    {/* Card C: Plan Allowance Reference */}
+                    <div className="p-5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-2 sm:col-span-2 lg:col-span-1">
+                      <div className="text-xs font-bold text-neutral-700 dark:text-neutral-300 flex items-center justify-between">
+                        <span>Plan Allowances</span>
+                        <ShieldCheck className="w-4 h-4 text-blue-500" />
+                      </div>
+                      <div className="text-xs space-y-1.5 pt-1">
+                        <div className="flex items-center justify-between text-neutral-600 dark:text-neutral-400">
+                          <span>Free Plan</span>
+                          <span className="font-bold text-neutral-800 dark:text-neutral-200">10 Pts / Request</span>
+                        </div>
+                        <div className="flex items-center justify-between text-neutral-600 dark:text-neutral-400">
+                          <span>Starter (₹199)</span>
+                          <span className="font-bold text-neutral-800 dark:text-neutral-200">1 Request / mo</span>
+                        </div>
+                        <div className="flex items-center justify-between text-neutral-600 dark:text-neutral-400">
+                          <span>Pro Plan (₹499)</span>
+                          <span className="font-bold text-amber-600 dark:text-amber-400">3 Requests / mo</span>
+                        </div>
+                        <div className="flex items-center justify-between text-neutral-600 dark:text-neutral-400">
+                          <span>VIP Plan (₹999)</span>
+                          <span className="font-bold text-red-600 dark:text-red-400">10 Requests / mo</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quick Activity Points Earning Guide */}
+                  <div className="pt-2">
+                    <div className="text-xs font-bold text-neutral-600 dark:text-neutral-400 mb-2">
+                      Ways to Earn Points (Completed 10 Points = 1 Prompt Request):
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+                      <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-center">
+                        <div className="text-[11px] font-bold text-neutral-900 dark:text-white">10 Likes</div>
+                        <div className="text-[10px] text-[#E60023] font-black">+1 Point</div>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-center">
+                        <div className="text-[11px] font-bold text-neutral-900 dark:text-white">5 Saves</div>
+                        <div className="text-[10px] text-[#E60023] font-black">+1 Point</div>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-center">
+                        <div className="text-[11px] font-bold text-neutral-900 dark:text-white">AI Gen</div>
+                        <div className="text-[10px] text-[#E60023] font-black">+1 Point</div>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-center">
+                        <div className="text-[11px] font-bold text-neutral-900 dark:text-white">Share</div>
+                        <div className="text-[10px] text-[#E60023] font-black">+2 Points</div>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-center">
+                        <div className="text-[11px] font-bold text-neutral-900 dark:text-white">Referral</div>
+                        <div className="text-[10px] text-[#E60023] font-black">+5 Points</div>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center">
+                        <button
+                          onClick={() => awardPoints(2, 'generation')}
+                          className="w-full py-1 rounded-lg bg-[#E60023] text-white text-[11px] font-bold hover:bg-red-700 transition-colors"
+                          title="Click to simulate points from activity"
+                        >
+                          +2 Test Pts
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Submit Prompt Request Form */}
+                <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-base font-black text-neutral-900 dark:text-white">
+                        Submit a New Custom Prompt Request
+                      </h4>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                        Our prompt engineers will craft and test this prompt, then deliver it directly to this dashboard.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Submission Source Selector (Plan Quota vs 10 Points) */}
+                  {(promptRequestsRemaining > 0 && (userAccount?.points || 0) >= 10) && (
+                    <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <span className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                        Select redemption method:
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setRequestSourceChoice('plan')}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
+                            requestSourceChoice === 'plan'
+                              ? 'bg-amber-500 text-white'
+                              : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300'
+                          }`}
+                        >
+                          Use Plan Request ({promptRequestsRemaining} Left)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setRequestSourceChoice('points')}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
+                            requestSourceChoice === 'points'
+                              ? 'bg-[#E60023] text-white'
+                              : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300'
+                          }`}
+                        >
+                          Use 10 Points ({userAccount?.points || 0} Total)
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleRequestSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                      <div>
+                        <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-1.5">
+                          Visual Category
+                        </label>
+                        <select
+                          value={requestCategory}
+                          onChange={(e) => setRequestCategory(e.target.value)}
+                          className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-bold"
+                        >
+                          <option value="Photorealistic">Photorealistic & Portraits</option>
+                          <option value="Cyberpunk">Cyberpunk & Sci-Fi</option>
+                          <option value="Cinematic">Cinematic 8K Film</option>
+                          <option value="Anime">Anime & Manga Masterpiece</option>
+                          <option value="3D Render">3D Unreal Engine 5</option>
+                          <option value="Fantasy">Fantasy & Concept Art</option>
+                          <option value="Commercial">Product & Commercial</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-1.5">
+                          Preferred AI Tool
+                        </label>
+                        <select
+                          value={requestAiTool}
+                          onChange={(e) => setRequestAiTool(e.target.value)}
+                          className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-bold"
+                        >
+                          <option value="Midjourney v6.1">Midjourney v6.1</option>
+                          <option value="Flux.1 Dev">Flux.1 Dev / Schnell</option>
+                          <option value="Ideogram 2.0">Ideogram 2.0 (Typography)</option>
+                          <option value="DALL-E 3">OpenAI DALL-E 3</option>
+                          <option value="Stable Diffusion XL">Stable Diffusion XL</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-1.5">
+                          Aspect Ratio
+                        </label>
+                        <select
+                          value={requestAspectRatio}
+                          onChange={(e) => setRequestAspectRatio(e.target.value)}
+                          className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-bold"
+                        >
+                          <option value="16:9">16:9 Landscape (Desktop/YouTube)</option>
+                          <option value="9:16">9:16 Vertical (Stories/Reels)</option>
+                          <option value="1:1">1:1 Square (Instagram/Avatar)</option>
+                          <option value="4:5">4:5 Social Portrait</option>
+                          <option value="21:9">21:9 Ultra Cinematic</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-1.5">
+                        Describe what you want the prompt to generate
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={requestText}
+                        onChange={(e) => setRequestText(e.target.value)}
+                        placeholder="e.g. Ultra-realistic portrait of an Indian bride with intricate royal gold jewelry, volumetric warm sunset lighting, 85mm portrait lens bokeh, sharp skin textures..."
+                        className="w-full p-3.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-red-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-1.5">
+                        Reference Image URL (Optional)
+                      </label>
+                      <input
+                        type="url"
+                        value={requestRefUrl}
+                        onChange={(e) => setRequestRefUrl(e.target.value)}
+                        placeholder="https://example.com/reference-image.jpg"
+                        className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-red-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="text-xs text-neutral-500">
+                        {promptRequestsRemaining > 0
+                          ? `Will use 1 of your ${promptRequestsRemaining} included monthly requests.`
+                          : (userAccount?.points || 0) >= 10
+                          ? 'Will redeem 10 activity points upon submission.'
+                          : `Requires 10 points (You currently have ${userAccount?.points || 0}/10 points).`}
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={
+                          isSubmittingRequest ||
+                          (promptRequestsRemaining === 0 && (userAccount?.points || 0) < 10)
+                        }
+                        className="px-6 py-3 rounded-2xl bg-[#E60023] hover:bg-[#ad081b] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black shadow-md flex items-center justify-center gap-2 transition-all"
+                      >
+                        {isSubmittingRequest ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            <span>Submitting Request...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4" />
+                            <span>
+                              {promptRequestsRemaining > 0
+                                ? 'Submit with Monthly Plan Quota'
+                                : (userAccount?.points || 0) >= 10
+                                ? 'Submit Request (Use 10 Points)'
+                                : 'Need 10 Points to Submit'}
+                            </span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* 3. User's Private Requested Prompts List */}
+                <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-base font-black text-neutral-900 dark:text-white flex items-center gap-2">
+                        <span>Your Requested Prompts</span>
+                        <span className="px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                          {userPromptRequests.length}
+                        </span>
+                      </h3>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                        Track your prompt requests. Fulfilled prompts are delivered privately to you below.
+                      </p>
+                    </div>
+
+                    {/* Filter Tabs */}
+                    {userPromptRequests.length > 0 && (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => setUserRequestStatusFilter('all')}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
+                            userRequestStatusFilter === 'all'
+                              ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
+                              : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300'
+                          }`}
+                        >
+                          All ({userPromptRequests.length})
+                        </button>
+                        <button
+                          onClick={() => setUserRequestStatusFilter('fulfilled')}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
+                            userRequestStatusFilter === 'fulfilled'
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300'
+                          }`}
+                        >
+                          Fulfilled ({userPromptRequests.filter((r) => r.status === 'fulfilled' || r.status === 'completed').length})
+                        </button>
+                        <button
+                          onClick={() => setUserRequestStatusFilter('pending')}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
+                            userRequestStatusFilter === 'pending'
+                              ? 'bg-amber-500 text-white'
+                              : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300'
+                          }`}
+                        >
+                          Pending ({userPromptRequests.filter((r) => r.status === 'pending' || r.status === 'in_progress').length})
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Privacy notice banner */}
+                  <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-start gap-2.5 text-xs text-emerald-800 dark:text-emerald-300">
+                    <Lock className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+                    <div>
+                      <span className="font-bold">Private & Exclusive Delivery:</span> Once fulfilled by the admin team, your engineered prompt and artwork appear exclusively right here in your private account dashboard. They are never published to the public feed or visible to other users.
+                    </div>
+                  </div>
+
+                  {/* Request Cards */}
+                  {userPromptRequests.length === 0 ? (
+                    <div className="py-12 text-center space-y-3">
+                      <div className="w-12 h-12 rounded-2xl bg-neutral-100 dark:bg-neutral-800 text-neutral-400 flex items-center justify-center mx-auto">
+                        <Target className="w-6 h-6" />
+                      </div>
+                      <p className="text-xs font-bold text-neutral-600 dark:text-neutral-400">
+                        You have not submitted any prompt requests yet.
+                      </p>
+                      <p className="text-[11px] text-neutral-400 max-w-sm mx-auto">
+                        Complete activities to gain 10 points or use your monthly plan quota to request custom prompt engineering.
+                      </p>
+                    </div>
                   ) : (
-                    <>
-                      <div className="text-xs font-bold text-neutral-500">Current Cycle Points</div>
-                      <div className="text-lg font-black text-[#E60023]">
-                        {userAccount?.points || 0} / 10 Points
-                      </div>
-                    </>
+                    <div className="space-y-4">
+                      {userPromptRequests
+                        .filter((r) => {
+                          if (userRequestStatusFilter === 'fulfilled')
+                            return r.status === 'fulfilled' || r.status === 'completed';
+                          if (userRequestStatusFilter === 'pending')
+                            return r.status === 'pending' || r.status === 'in_progress';
+                          return true;
+                        })
+                        .map((req) => {
+                          const isFulfilled = req.status === 'fulfilled' || req.status === 'completed';
+
+                          return (
+                            <div
+                              key={req.id}
+                              className={`p-5 rounded-2xl border transition-all ${
+                                isFulfilled
+                                  ? 'bg-gradient-to-br from-emerald-500/5 via-white to-white dark:from-emerald-950/30 dark:via-neutral-900 dark:to-neutral-900 border-emerald-300 dark:border-emerald-800 shadow-sm'
+                                  : 'bg-white dark:bg-neutral-950 border-neutral-200 dark:border-neutral-800'
+                              }`}
+                            >
+                              {/* Card Header */}
+                              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-neutral-100 dark:border-neutral-800/80">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-red-100 dark:bg-red-950/60 text-[#E60023]">
+                                    {req.category}
+                                  </span>
+                                  {req.aiToolPreference && (
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">
+                                      {req.aiToolPreference}
+                                    </span>
+                                  )}
+                                  {req.aspectRatio && (
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">
+                                      {req.aspectRatio}
+                                    </span>
+                                  )}
+                                  {req.requestSource === 'plan' && (
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">
+                                      Plan Quota
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[11px] text-neutral-400">
+                                    {formatTimestamp(req.createdAt)}
+                                  </span>
+                                  <span
+                                    className={`text-[11px] font-black px-3 py-1 rounded-xl flex items-center gap-1.5 ${
+                                      isFulfilled
+                                        ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                                        : req.status === 'in_progress'
+                                        ? 'bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300'
+                                        : req.status === 'rejected'
+                                        ? 'bg-red-100 dark:bg-red-950/80 text-red-700 dark:text-red-300'
+                                        : 'bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300'
+                                    }`}
+                                  >
+                                    {isFulfilled ? (
+                                      <>
+                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                        <span>Fulfilled & Ready</span>
+                                      </>
+                                    ) : req.status === 'in_progress' ? (
+                                      <>
+                                        <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                                        <span>Engineering Prompt</span>
+                                      </>
+                                    ) : req.status === 'rejected' ? (
+                                      <>
+                                        <AlertCircle className="w-3.5 h-3.5 text-red-600" />
+                                        <span>Declined</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Clock className="w-3.5 h-3.5 text-amber-600" />
+                                        <span>Pending Review</span>
+                                      </>
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* User Request Description */}
+                              <div className="pt-3 space-y-1">
+                                <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
+                                  Your Request
+                                </div>
+                                <p className="text-xs font-medium text-neutral-800 dark:text-neutral-200 leading-relaxed">
+                                  {req.requestText}
+                                </p>
+                              </div>
+
+                              {/* FULFILLED PROMPT SECTION (Private delivery) */}
+                              {isFulfilled && req.fulfilledPrompt && (
+                                <div className="mt-4 p-4 rounded-2xl bg-white dark:bg-neutral-900 border border-emerald-200 dark:border-emerald-800/60 shadow-sm space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-400">
+                                      <Lock className="w-3.5 h-3.5" />
+                                      <span>Your Fulfilled Master Prompt (Private)</span>
+                                    </div>
+                                    <button
+                                      onClick={(e) => handleCopyPrompt(e, req.fulfilledPrompt!, req.id)}
+                                      className="px-3 py-1.5 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-black hover:opacity-90 transition-opacity flex items-center gap-1.5 shadow-sm"
+                                    >
+                                      {copiedId === req.id ? (
+                                        <>
+                                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                          <span>Copied!</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Copy className="w-3.5 h-3.5" />
+                                          <span>Copy Master Prompt</span>
+                                        </>
+                                      )}
+                                    </button>
+                                  </div>
+
+                                  {/* Prompt Text Container */}
+                                  <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 font-mono text-xs text-neutral-800 dark:text-neutral-200 select-all leading-relaxed break-words">
+                                    {req.fulfilledPrompt}
+                                  </div>
+
+                                  {/* Fulfilled Image Preview (if provided by Admin) */}
+                                  {req.fulfilledImageUrl && (
+                                    <div className="pt-2 space-y-2">
+                                      <div className="text-[11px] font-bold text-neutral-500 flex items-center justify-between">
+                                        <span>Generated Sample Preview</span>
+                                        <button
+                                          onClick={(e) =>
+                                            handleDownloadImage(
+                                              e,
+                                              req.fulfilledImageUrl!,
+                                              req.requestText.slice(0, 30)
+                                            )
+                                          }
+                                          className="text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                                        >
+                                          <Download className="w-3 h-3" />
+                                          <span>Download Image</span>
+                                        </button>
+                                      </div>
+                                      <div className="relative h-64 sm:h-80 w-full rounded-xl overflow-hidden bg-neutral-950 border border-neutral-200 dark:border-neutral-800 group">
+                                        <Image
+                                          src={getOptimizedImageUrl(req.fulfilledImageUrl, 1200)}
+                                          alt="Fulfilled Prompt Artwork"
+                                          fill
+                                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                          referrerPolicy="no-referrer"
+                                          unoptimized
+                                        />
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* AI Tool & Aspect Ratio details */}
+                                  <div className="flex flex-wrap items-center gap-3 text-[11px] text-neutral-500 dark:text-neutral-400 pt-1">
+                                    {req.fulfilledAiTool && (
+                                      <span>
+                                        Engineered for: <strong className="text-neutral-800 dark:text-neutral-200">{req.fulfilledAiTool}</strong>
+                                      </span>
+                                    )}
+                                    {req.fulfilledAt && (
+                                      <span>
+                                        Delivered: <strong className="text-neutral-800 dark:text-neutral-200">{formatTimestamp(req.fulfilledAt)}</strong>
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Admin Notes */}
+                                  {(req.fulfilledNotes || req.adminNotes) && (
+                                    <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/40 text-xs text-amber-900 dark:text-amber-200">
+                                      <span className="font-bold">Engineer&apos;s Advice: </span>
+                                      {req.fulfilledNotes || req.adminNotes}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Pending Status Banner */}
+                              {!isFulfilled && req.status !== 'rejected' && (
+                                <div className="mt-3 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-2">
+                                  <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                  <span>
+                                    Our prompt engineers are testing your request. Once fulfilled, your prompt and preview will appear right here.
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                    </div>
                   )}
                 </div>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <span>{promptRequestsRemaining > 0 ? 'Plan Request Active' : 'Progress to Request'}</span>
-                  <span>{promptRequestsRemaining > 0 ? 'Ready to submit' : `${Math.min(100, ((userAccount?.points || 0) % 10) * 10)}%`}</span>
-                </div>
-                <div className="w-full h-3 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-[#E60023] to-amber-500 transition-all duration-500 rounded-full"
-                    style={{ width: promptRequestsRemaining > 0 ? '100%' : `${Math.min(100, ((userAccount?.points || 0) % 10) * 10)}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Activity Guide */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2">
-                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1">
-                  <div className="font-bold text-neutral-900 dark:text-white">10 Likes</div>
-                  <div className="text-neutral-500">+1 Point</div>
-                </div>
-                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1">
-                  <div className="font-bold text-neutral-900 dark:text-white">5 Saves / Bookmarks</div>
-                  <div className="text-neutral-500">+1 Point</div>
-                </div>
-                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1">
-                  <div className="font-bold text-neutral-900 dark:text-white">AI Image / Prompt Gen</div>
-                  <div className="text-neutral-500">+1 Point</div>
-                </div>
-                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1">
-                  <div className="font-bold text-neutral-900 dark:text-white">Share with Friend</div>
-                  <div className="text-neutral-500">+2 Points</div>
-                </div>
-                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1">
-                  <div className="font-bold text-neutral-900 dark:text-white">Friend Login / Referral</div>
-                  <div className="text-neutral-500">+5 Points</div>
-                </div>
-                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
-                  <span className="text-xs font-bold">Quick Test Activity</span>
-                  <button
-                    onClick={() => awardPoints(2, 'generation')}
-                    className="px-3 py-1 rounded-xl bg-[#E60023] text-white text-[11px] font-bold hover:bg-red-700"
-                  >
-                    +2 Points
-                  </button>
-                </div>
-              </div>
-
-              {/* Request Form */}
-              <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800 space-y-4">
-                <h4 className="text-sm font-bold text-neutral-900 dark:text-white">
-                  Submit Prompt Request {promptRequestsRemaining > 0 ? `(${promptRequestsRemaining} Plan Request${promptRequestsRemaining > 1 ? 's' : ''} Included)` : ((userAccount?.points || 0) < 10) ? '(Requires 10 Points)' : '(10 Points will be used)'}
-                </h4>
-
-                <form onSubmit={handleRequestSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-1.5">
-                      Category
-                    </label>
-                    <select
-                      value={requestCategory}
-                      onChange={(e) => setRequestCategory(e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-bold"
-                    >
-                      <option value="Photorealistic">Photorealistic & Portraits</option>
-                      <option value="Cyberpunk">Cyberpunk & Sci-Fi</option>
-                      <option value="Cinematic">Cinematic 8K</option>
-                      <option value="Anime">Anime Masterpiece</option>
-                      <option value="3D Render">3D Unreal Engine</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-1.5">
-                      Describe what you want the prompt to generate
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={requestText}
-                      onChange={(e) => setRequestText(e.target.value)}
-                      placeholder="e.g. A futuristic cyberpunk geisha standing in a neon Tokyo alleyway with volumetric teal lighting..."
-                      className="w-full p-3.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-red-500 focus:outline-none"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={(userAccount?.points || 0) < 10}
-                    className="px-6 py-3 rounded-2xl bg-[#E60023] hover:bg-[#ad081b] disabled:opacity-50 text-white text-xs font-black shadow-md flex items-center gap-2"
-                  >
-                    <Send className="w-4 h-4" />
-                    <span>Submit Prompt Request (10 Points)</span>
-                  </button>
-                </form>
-              </div>
-            </div>
-
-            {/* User's Previous Requests */}
-            {promptRequests && promptRequests.length > 0 && (
-              <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
-                <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
-                  Your Submitted Requests
-                </h3>
-                <div className="space-y-3">
-                  {promptRequests.map((req) => (
-                    <div key={req.id} className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex items-center justify-between gap-4">
-                      <div className="space-y-1">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-950/60 text-[#E60023]">
-                          {req.category}
-                        </span>
-                        <p className="text-xs font-medium text-neutral-800 dark:text-neutral-200">
-                          {req.promptDescription}
-                        </p>
-                      </div>
-                      <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-xl">
-                        {req.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              </>
             )}
           </div>
         )}
