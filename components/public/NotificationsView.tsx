@@ -65,12 +65,6 @@ export const NotificationsView: React.FC = () => {
   }, []);
 
   const handleEnableBrowserPush = async () => {
-    if (isInsideIframe) {
-      showToast('Opening in a new tab so your browser can display the Allow/Block prompt!');
-      window.open(window.location.origin + '/notifications?prompt=1', '_blank');
-      return;
-    }
-
     const res = await NotificationService.requestPushPermission();
     const updatedStatus = NotificationService.getBrowserPermissionStatus();
     setBrowserPushPermission(updatedStatus);
@@ -89,30 +83,12 @@ export const NotificationsView: React.FC = () => {
         sentAt: new Date().toISOString(),
       });
     } else if (res.status === 'denied') {
-      showToast('Notifications are blocked in browser settings. Click the lock 🔒 icon in address bar to allow.');
+      showToast('Notifications are blocked in your browser. Click the lock 🔒 icon in the address bar to allow.');
+    } else if (res.isIframe) {
+      showToast('Notice: Browser security blocks native prompt inside preview iframe. Click "Open in New Tab" to allow!');
     } else {
       showToast('Notification permission prompt was closed or dismissed.');
     }
-  };
-
-  const handleSendTestInAppAlert = () => {
-    const testItem: PushNotificationItem = {
-      id: `in-app-test-${Date.now()}`,
-      title: 'Trending AI Photo Prompts',
-      subtitle: 'Instant In-App Alert Active',
-      body: 'Live floating notifications work directly across this website without requiring browser OS popups!',
-      category: 'Photorealistic & Portraits',
-      imageUrl: '/logo.png',
-      url: '/notifications',
-      sentAt: new Date().toISOString(),
-      read: false,
-    };
-    NotificationService.saveNotifications([testItem, ...notifications]);
-    setNotifications((prev) => [testItem, ...prev]);
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('promptcms_new_notification', { detail: testItem }));
-    }
-    showToast('In-app notification delivered!');
   };
 
   const handleSendTestNotification = async () => {
@@ -222,21 +198,21 @@ export const NotificationsView: React.FC = () => {
           <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 space-y-3" id="banner-push-denied">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <p className="text-xs font-bold text-neutral-900 dark:text-white">
-                  Notifications Blocked in Browser Settings
+                  Notifications Blocked in Your Browser Settings
                 </p>
                 <p className="text-[11px] text-neutral-600 dark:text-neutral-300 leading-relaxed">
-                  <strong>Kyu block hua?</strong> Chrome/Safari browsers security policy ke tahat embedded preview iframes me permission popup allow nahi karte aur use automatically &apos;Denied&apos; mark kar dete hain. Isko theek karne ke liye:
+                  Browser will not display the popup because notifications are set to Block for this domain. To see the prompt:
                 </p>
-                <ol className="text-[11px] text-neutral-700 dark:text-neutral-300 list-decimal pl-4 space-y-1">
-                  <li>Address bar me URL ke left side me <strong>Lock icon 🔒</strong> (ya site settings) par click karein.</li>
-                  <li><strong>Notifications</strong> ko <em>&apos;Block&apos;</em> se badal kar <em>&apos;Allow&apos;</em> (ya &apos;Ask&apos;) select karein.</li>
-                  <li>Neeche <strong>&apos;Refresh Status&apos;</strong> button par click karein.</li>
+                <ol className="text-[11px] text-neutral-700 dark:text-neutral-300 list-decimal pl-4 space-y-0.5">
+                  <li>Click the <strong>lock icon 🔒</strong> in your browser address bar.</li>
+                  <li>Go to <strong>Site settings</strong> or find <strong>Notifications</strong>.</li>
+                  <li>Change permission from <em>&apos;Block&apos;</em> to <em>&apos;Allow&apos;</em> (or &apos;Ask&apos;).</li>
                 </ol>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2 pl-0 sm:pl-8 pt-1">
+            <div className="flex items-center gap-2 pl-8">
               <button
                 type="button"
                 onClick={() => {
@@ -253,54 +229,42 @@ export const NotificationsView: React.FC = () => {
               >
                 🔄 Refresh Status
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  window.open(window.location.origin + '/notifications?prompt=1', '_blank');
-                }}
-                className="px-3.5 py-1.5 rounded-xl bg-neutral-900 dark:bg-neutral-700 text-white text-xs font-bold flex items-center gap-1.5 hover:bg-black cursor-pointer"
-                id="btn-open-standalone"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-                <span>Open in Standalone Tab</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleSendTestInAppAlert}
-                className="px-3.5 py-1.5 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold cursor-pointer shadow-xs"
-                id="btn-test-inapp-alert"
-              >
-                Test In-App Alert (Instant)
-              </button>
             </div>
           </div>
         )}
 
         {/* Case 2: In Preview Iframe (Browser security prevents native popup dialog inside iframes) */}
         {browserPushPermission !== 'granted' && browserPushPermission !== 'denied' && isInsideIframe && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-red-500/10 to-amber-500/10 border border-amber-500/30" id="banner-push-iframe">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30" id="banner-push-iframe">
             <div className="flex items-start gap-3">
-              <BellRing className="w-5 h-5 text-[#E60023] shrink-0 mt-0.5 animate-bounce" />
+              <BellRing className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5 animate-bounce" />
               <div>
                 <p className="text-xs font-bold text-neutral-900 dark:text-white">
-                  Allow Browser Notifications in New Tab
+                  Get Real Browser Notification Popup
                 </p>
-                <p className="text-[11px] text-neutral-600 dark:text-neutral-300 mt-0.5">
-                  Google Chrome iframe ke andar native &apos;Allow / Block&apos; popup show nahi hone deta. Standalone new tab me open karne par browser ka real native popup box turant pop-up hoga!
+                <p className="text-[11px] text-neutral-600 dark:text-neutral-300">
+                  Browsers (Chrome/Safari) block native &apos;Allow / Block&apos; popups inside preview iframes. Open the app in a new tab to see your browser&apos;s real prompt box!
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => {
-                  window.open(window.location.origin + '/notifications?prompt=1', '_blank');
-                }}
-                className="px-4 py-2.5 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-md shadow-red-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
+              <a
+                href={typeof window !== 'undefined' ? window.location.href : '/notifications'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2.5 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-md shadow-red-500/20 transition-all flex items-center gap-1.5"
                 id="btn-open-tab-for-prompt"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
-                <span>Open in New Tab & Allow</span>
+                <span>Open in New Tab</span>
+              </a>
+              <button
+                type="button"
+                onClick={handleEnableBrowserPush}
+                className="px-3 py-2.5 rounded-xl bg-white dark:bg-neutral-800 hover:bg-neutral-100 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-700 text-xs font-bold transition-all cursor-pointer"
+                id="btn-allow-push-notifications"
+              >
+                Try Here
               </button>
             </div>
           </div>
@@ -308,7 +272,7 @@ export const NotificationsView: React.FC = () => {
 
         {/* Case 3: Standalone Tab / Normal browser window - Ready to Prompt! */}
         {browserPushPermission !== 'granted' && browserPushPermission !== 'denied' && !isInsideIframe && browserPushPermission !== 'unsupported' && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[#E60023]/10 border border-[#E60023]/30 ring-2 ring-red-500/20" id="banner-push-default">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[#E60023]/10 border border-[#E60023]/30" id="banner-push-default">
             <div className="flex items-center gap-3">
               <BellRing className="w-5 h-5 text-[#E60023] shrink-0 animate-bounce" />
               <div>
@@ -323,7 +287,7 @@ export const NotificationsView: React.FC = () => {
             <button
               type="button"
               onClick={handleEnableBrowserPush}
-              className="px-5 py-2.5 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-md shadow-red-500/20 transition-all shrink-0 cursor-pointer"
+              className="px-4 py-2.5 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-md shadow-red-500/20 transition-all shrink-0 cursor-pointer"
               id="btn-allow-push-notifications"
             >
               🔔 Allow Browser Notifications
