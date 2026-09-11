@@ -542,6 +542,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Prompt Requests State (Private & Cloud-Synced)
   const [promptRequests, setPromptRequests] = useState<PromptRequestItem[]>([]);
 
+  /* eslint-disable react-hooks/preserve-manual-memoization */
   const refreshPromptRequests = useCallback(async () => {
     try {
       const url = isAuthenticated

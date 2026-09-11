@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
+import { NotificationService } from '@/lib/notifications';
 import {
   Bell,
   Send,
@@ -23,13 +24,30 @@ import { AppNotification } from '@/types/prompt';
 
 export const NotificationsManager = () => {
   const {
-    notifications,
-    sendAdminNotification,
-    deleteNotification,
     categories,
     posts,
     showToast,
   } = useApp();
+
+  const [notifications, setNotifications] = useState<AppNotification[]>(() => 
+    NotificationService.getNotifications() as AppNotification[]
+  );
+
+  useEffect(() => {
+    const handleNew = () => {
+      setNotifications(NotificationService.getNotifications() as AppNotification[]);
+    };
+    window.addEventListener('promptcms_new_notification', handleNew as EventListener);
+    return () => {
+      window.removeEventListener('promptcms_new_notification', handleNew as EventListener);
+    };
+  }, []);
+
+  const deleteNotification = (id: string) => {
+    NotificationService.deleteNotification(id);
+    setNotifications(NotificationService.getNotifications() as AppNotification[]);
+    showToast('Notification deleted');
+  };
 
   // Form State
   const [title, setTitle] = useState('');
@@ -75,7 +93,7 @@ export const NotificationsManager = () => {
 
     setIsSending(true);
     try {
-      const success = await sendAdminNotification({
+      await NotificationService.addNotification({
         title: title.trim(),
         message: message.trim(),
         category: targetCategory,
@@ -83,18 +101,15 @@ export const NotificationsManager = () => {
         targetUrl: targetUrl.trim() || '/',
         targetPostId: targetPostId.trim(),
         sentBy: 'Admin',
-      });
+      }, triggerWebPush);
 
-      if (success) {
-        showToast('Notification sent & broadcasted successfully!');
-        setTitle('');
-        setMessage('');
-        setImageUrl('');
-        setTargetPostId('');
-        setTargetUrl('/');
-      } else {
-        showToast('Failed to send notification. Please try again.');
-      }
+      setNotifications(NotificationService.getNotifications() as AppNotification[]);
+      showToast('Notification sent & broadcasted successfully!');
+      setTitle('');
+      setMessage('');
+      setImageUrl('');
+      setTargetPostId('');
+      setTargetUrl('/');
     } catch (err) {
       console.error('Error sending notification:', err);
       showToast('Error sending notification');
