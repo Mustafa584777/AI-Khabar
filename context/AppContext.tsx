@@ -4,7 +4,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
-import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem, AiSearchResult, PlanTier } from '@/types/prompt';
+import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem, AiSearchResult, PlanTier, PromptRequestItem } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
 import { supabase, supabaseUserToUserAccount } from '@/lib/supabase';
 import { UserSyncService } from '@/lib/user-sync';
@@ -19,8 +19,8 @@ interface AppContextType {
   // Navigation & Views
   currentView: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications';
   setCurrentView: (view: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications') => void;
-  adminSubView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications';
-  setAdminSubView: (subView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications') => void;
+  adminSubView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications' | 'requested-prompts';
+  setAdminSubView: (subView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications' | 'requested-prompts') => void;
   editingPostId: string | null;
   setEditingPostId: (id: string | null) => void;
   selectedPost: PromptPost | null;
@@ -58,8 +58,28 @@ interface AppContextType {
   // Persistent Reference Photo & Prompt Requests
   persistentRefImage: string | null;
   setPersistentRefImage: (url: string | null) => void;
-  promptRequests: any[];
-  addPromptRequest: (requestText: string, category?: string) => boolean;
+  promptRequests: PromptRequestItem[];
+  addPromptRequest: (
+    requestText: string,
+    category?: string,
+    details?: { aiToolPreference?: string; aspectRatio?: string; referenceImageUrl?: string }
+  ) => Promise<boolean>;
+  refreshPromptRequests: () => Promise<void>;
+  fulfillPromptRequest: (
+    id: string,
+    fulfillmentData: {
+      fulfilledPrompt: string;
+      fulfilledImageUrl?: string;
+      fulfilledAiTool?: string;
+      fulfilledNotes?: string;
+      adminNotes?: string;
+    }
+  ) => Promise<boolean>;
+  updatePromptRequestStatus: (
+    id: string,
+    status: 'pending' | 'in_progress' | 'completed' | 'fulfilled' | 'rejected'
+  ) => Promise<boolean>;
+  deletePromptRequest: (id: string) => Promise<boolean>;
 
   // AI Studio History (Image to Prompt & Prompt to Image)
   aiHistory: AIHistoryItem[];
@@ -157,7 +177,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Navigation
   const [currentView, setCurrentView] = useState<'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications'>('public');
   const [adminSubView, setAdminSubView] = useState<
-    'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications'
+    'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications' | 'requested-prompts'
   >('dashboard');
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [selectedPost, setSelectedPost] = useState<PromptPost | null>(null);
@@ -409,50 +429,221 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Prompt Requests State
-  const [promptRequests, setPromptRequests] = useState<any[]>([]);
+  // Prompt Requests State (Private & Cloud-Synced)
+  const [promptRequests, setPromptRequests] = useState<PromptRequestItem[]>([]);
 
-  const addPromptRequest = (requestText: string, category?: string): boolean => {
+  const refreshPromptRequests = useCallback(async () => {
+    try {
+      const url = isAuthenticated
+        ? '/api/prompt-requests'
+        : userAccount?.id
+        ? `/api/prompt-requests?userId=${encodeURIComponent(userAccount.id)}`
+        : '/api/prompt-requests';
+
+      const res = await fetch(url, { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.requests)) {
+          setPromptRequests(data.requests);
+          StorageService.setPromptRequests(data.requests);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('Notice fetching prompt requests from server:', err);
+    }
+    const local = StorageService.getPromptRequests();
+    setPromptRequests(local);
+  }, [isAuthenticated, userAccount?.id]);
+
+  useEffect(() => {
+    refreshPromptRequests();
+  }, [refreshPromptRequests]);
+
+  const addPromptRequest = async (
+    requestText: string,
+    category?: string,
+    details?: { aiToolPreference?: string; aspectRatio?: string; referenceImageUrl?: string }
+  ): Promise<boolean> => {
     if (!userAccount || !userAccount.isLoggedIn) {
-      openAuthModal('Please sign in to request a prompt.');
+      openAuthModal('Please sign in to request a custom prompt.');
       return false;
     }
+
+    const planRequests = promptRequestsRemaining || 0;
     const currentPoints = userAccount.points || 0;
-    if (currentPoints < 10) {
-      showToast(`You need 10 points to request a prompt! Current points: ${currentPoints}/10`);
+    let usedPlanQuota = false;
+
+    if (planRequests > 0) {
+      usedPlanQuota = true;
+      const nextRemaining = planRequests - 1;
+      setPromptRequestsRemainingState(nextRemaining);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auraprompt_prompt_requests', nextRemaining.toString());
+      }
+      void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
+        promptRequestsRemaining: nextRemaining,
+      });
+    } else if (currentPoints >= 10) {
+      const updatedAccount: UserAccount = {
+        ...userAccount,
+        points: currentPoints - 10,
+        requestsMade: (userAccount.requestsMade || 0) + 1,
+      };
+      setUserAccount(updatedAccount);
+      StorageService.saveUserAccount(updatedAccount);
+      void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
+        points: currentPoints - 10,
+      });
+    } else {
+      showToast(`You need 10 points or an active plan request! Current points: ${currentPoints}/10`);
       return false;
     }
 
-    // Deduct 10 points and increment requestsMade
-    const updatedAccount: UserAccount = {
-      ...userAccount,
-      points: currentPoints - 10,
-      requestsMade: (userAccount.requestsMade || 0) + 1,
-    };
-    setUserAccount(updatedAccount);
-    StorageService.saveUserAccount(updatedAccount);
-
-    // Sync deducted points to cloud
-    void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
-      points: currentPoints - 10,
-    });
-
-    const newReq = {
-      id: 'req_' + Date.now(),
+    const newReq: PromptRequestItem = {
+      id: 'req_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       userId: userAccount.id,
-      userName: userAccount.name,
+      userName: userAccount.name || 'Anonymous User',
+      userEmail: userAccount.email,
       userAvatar: userAccount.avatar,
-      requestText,
-      category: category || 'General',
-      status: 'pending' as const,
+      userPlanTier: planTier,
+      requestText: requestText.trim(),
+      category: category || 'Photorealistic & Portraits',
+      aiToolPreference: details?.aiToolPreference || 'Midjourney v6.1',
+      aspectRatio: details?.aspectRatio || '16:9',
+      referenceImageUrl: details?.referenceImageUrl || undefined,
+      status: 'pending',
       createdAt: Date.now(),
       likesCount: 0,
     };
 
     const updatedRequests = StorageService.savePromptRequest(newReq);
     setPromptRequests(updatedRequests);
+
+    try {
+      const res = await fetch('/api/prompt-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newReq),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.request) {
+          setPromptRequests((prev) => [data.request, ...prev.filter((r) => r.id !== newReq.id)]);
+        }
+      }
+    } catch (err) {
+      console.warn('Notice saving prompt request to server:', err);
+    }
+
     confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
-    showToast('Prompt request submitted successfully! 10 points reset.');
+    if (usedPlanQuota) {
+      showToast(`Prompt request submitted using your Plan quota! (${promptRequestsRemaining - 1} left this month)`);
+    } else {
+      showToast('Prompt request submitted successfully! 10 points redeemed.');
+    }
+    return true;
+  };
+
+  const fulfillPromptRequest = async (
+    id: string,
+    fulfillmentData: {
+      fulfilledPrompt: string;
+      fulfilledImageUrl?: string;
+      fulfilledAiTool?: string;
+      fulfilledNotes?: string;
+      adminNotes?: string;
+    }
+  ): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/prompt-requests', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id,
+          status: 'fulfilled',
+          ...fulfillmentData,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.request) {
+          setPromptRequests((prev) =>
+            prev.map((r) => (r.id === id ? data.request : r))
+          );
+          StorageService.setPromptRequests(
+            promptRequests.map((r) => (r.id === id ? data.request : r))
+          );
+          showToast('Prompt fulfilled and delivered directly to user dashboard!');
+          return true;
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fulfill prompt request on server:', err);
+    }
+
+    const updated = promptRequests.map((r) => {
+      if (r.id === id) {
+        return {
+          ...r,
+          status: 'fulfilled' as const,
+          fulfilledPrompt: fulfillmentData.fulfilledPrompt,
+          fulfilledImageUrl: fulfillmentData.fulfilledImageUrl,
+          fulfilledAiTool: fulfillmentData.fulfilledAiTool,
+          fulfilledNotes: fulfillmentData.fulfilledNotes,
+          adminNotes: fulfillmentData.adminNotes,
+          fulfilledAt: Date.now(),
+        };
+      }
+      return r;
+    });
+    setPromptRequests(updated);
+    StorageService.setPromptRequests(updated);
+    showToast('Prompt fulfilled and delivered to user dashboard!');
+    return true;
+  };
+
+  const updatePromptRequestStatus = async (
+    id: string,
+    status: 'pending' | 'in_progress' | 'completed' | 'fulfilled' | 'rejected'
+  ): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/prompt-requests', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.request) {
+          setPromptRequests((prev) =>
+            prev.map((r) => (r.id === id ? data.request : r))
+          );
+          return true;
+        }
+      }
+    } catch (err) {
+      console.warn('Notice updating request status:', err);
+    }
+
+    const updated = promptRequests.map((r) => (r.id === id ? { ...r, status } : r));
+    setPromptRequests(updated);
+    StorageService.setPromptRequests(updated);
+    return true;
+  };
+
+  const deletePromptRequest = async (id: string): Promise<boolean> => {
+    try {
+      await fetch(`/api/prompt-requests?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+    } catch (err) {
+      console.warn('Notice deleting prompt request:', err);
+    }
+    const filtered = promptRequests.filter((r) => r.id !== id);
+    setPromptRequests(filtered);
+    StorageService.setPromptRequests(filtered);
+    showToast('Request removed');
     return true;
   };
 
@@ -1654,6 +1845,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setPersistentRefImage,
         promptRequests,
         addPromptRequest,
+        refreshPromptRequests,
+        fulfillPromptRequest,
+        updatePromptRequestStatus,
+        deletePromptRequest,
         aiHistory,
         saveAiHistoryItem,
         deleteAiHistoryItem,

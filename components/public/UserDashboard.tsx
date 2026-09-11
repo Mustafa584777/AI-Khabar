@@ -33,6 +33,11 @@ import {
   ShieldCheck,
   Cloud,
   RefreshCw,
+  CheckCircle2,
+  AlertCircle,
+  Lock,
+  ExternalLink,
+  Zap,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -77,17 +82,43 @@ export const UserDashboard = () => {
 
   // Request a prompt form state
   const [requestText, setRequestText] = useState('');
-  const [requestCategory, setRequestCategory] = useState('Photorealistic');
+  const [requestCategory, setRequestCategory] = useState('Photorealistic & Portraits');
+  const [aiToolPreference, setAiToolPreference] = useState('Midjourney v6.1');
+  const [aspectRatio, setAspectRatio] = useState('16:9');
+  const [referenceImageUrl, setReferenceImageUrl] = useState('');
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
 
-  const handleRequestSubmit = (e: React.FormEvent) => {
+  const handleRequestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!requestText.trim()) {
-      showToast('Please enter your prompt request description');
+    if (!userAccount || !userAccount.isLoggedIn) {
+      openAuthModal('Please sign in to submit a custom prompt request.');
       return;
     }
-    const success = addPromptRequest(requestText, requestCategory);
-    if (success) {
-      setRequestText('');
+    if (!requestText.trim()) {
+      showToast('Please describe the prompt you want our architects to engineer');
+      return;
+    }
+
+    const hasPlanQuota = promptRequestsRemaining > 0;
+    const hasPoints = (userAccount.points || 0) >= 10;
+    if (!hasPlanQuota && !hasPoints) {
+      showToast('You need 10 points or an active plan request quota to submit.');
+      return;
+    }
+
+    setIsSubmittingRequest(true);
+    try {
+      const success = await addPromptRequest(requestText.trim(), requestCategory, {
+        aiToolPreference,
+        aspectRatio,
+        referenceImageUrl: referenceImageUrl.trim() || persistentRefImage || undefined,
+      });
+      if (success) {
+        setRequestText('');
+        setReferenceImageUrl('');
+      }
+    } finally {
+      setIsSubmittingRequest(false);
     }
   };
 
@@ -847,158 +878,456 @@ export const UserDashboard = () => {
         {/* TAB 4: Request a Prompt */}
         {activeTab === 'request' && (
           <div className="space-y-6 animate-in fade-in duration-300">
-            <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <h3 className="text-lg font-black text-neutral-900 dark:text-white flex items-center gap-2">
-                    <Target className="w-5 h-5 text-[#E60023]" />
-                    <span>Request a Custom AI Prompt</span>
+            {/* Login Enforcement Gate */}
+            {!userAccount || !userAccount.isLoggedIn ? (
+              <div className="p-8 sm:p-12 text-center rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-5 max-w-2xl mx-auto my-8">
+                <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-950/60 text-[#E60023] flex items-center justify-center mx-auto shadow-inner">
+                  <Lock className="w-8 h-8" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-black text-neutral-900 dark:text-white tracking-tight">
+                    Sign In to Request Custom Prompts
                   </h3>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                    Complete activities to fill your 10-point progress bar and request custom AI prompt generation from our expert creators.
+                  <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed max-w-md mx-auto">
+                    Only logged-in creators can submit bespoke prompt requests. Complete 10 points or use your monthly premium plan quota to have expert AI prompt architects craft your custom prompts, delivered directly and privately to your personal dashboard.
                   </p>
                 </div>
+                <button
+                  onClick={() => openAuthModal('Sign in to submit custom prompt requests and view your private fulfilled prompts.')}
+                  className="px-8 py-3.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-black transition-all inline-flex items-center gap-2 shadow-lg shadow-red-500/25 active:scale-95"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>Sign In / Create Free Account</span>
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Active Request Form & Quota Section */}
+                <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
+                  {/* Header & Plan Quota */}
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-neutral-100 dark:border-neutral-800">
+                    <div>
+                      <h3 className="text-lg font-black text-neutral-900 dark:text-white flex items-center gap-2">
+                        <Target className="w-5 h-5 text-[#E60023]" />
+                        <span>Request a Custom AI Prompt</span>
+                      </h3>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                        Our expert prompt architects will engineer a master prompt for your vision. Once fulfilled, your custom prompt and artwork are delivered <span className="font-bold text-neutral-800 dark:text-neutral-200">privately to this dashboard</span>.
+                      </p>
+                    </div>
 
-                {/* Progress Bar Badge / Plan Request Badge */}
-                <div className="px-4 py-2 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-right">
-                  {promptRequestsRemaining > 0 ? (
-                    <>
-                      <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Plan Requests Included</div>
-                      <div className="text-lg font-black text-[#E60023]">
-                        {promptRequestsRemaining} Available
+                    {/* Member Quota & Points Status Box */}
+                    <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-right space-y-1 shrink-0">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {isProUser ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-gradient-to-r from-amber-500 to-red-500 text-white flex items-center gap-1 shadow-xs">
+                            <Crown className="w-2.5 h-2.5 fill-white" />
+                            <span>{planTier ? planTier.toUpperCase() : 'PRO'} Member</span>
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">
+                            Free Member
+                          </span>
+                        )}
                       </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="text-xs font-bold text-neutral-500">Current Cycle Points</div>
-                      <div className="text-lg font-black text-[#E60023]">
-                        {userAccount?.points || 0} / 10 Points
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
 
-              {/* Progress Bar */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <span>{promptRequestsRemaining > 0 ? 'Plan Request Active' : 'Progress to Request'}</span>
-                  <span>{promptRequestsRemaining > 0 ? 'Ready to submit' : `${Math.min(100, ((userAccount?.points || 0) % 10) * 10)}%`}</span>
-                </div>
-                <div className="w-full h-3 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-[#E60023] to-amber-500 transition-all duration-500 rounded-full"
-                    style={{ width: promptRequestsRemaining > 0 ? '100%' : `${Math.min(100, ((userAccount?.points || 0) % 10) * 10)}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Activity Guide */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2">
-                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1">
-                  <div className="font-bold text-neutral-900 dark:text-white">10 Likes</div>
-                  <div className="text-neutral-500">+1 Point</div>
-                </div>
-                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1">
-                  <div className="font-bold text-neutral-900 dark:text-white">5 Saves / Bookmarks</div>
-                  <div className="text-neutral-500">+1 Point</div>
-                </div>
-                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1">
-                  <div className="font-bold text-neutral-900 dark:text-white">AI Image / Prompt Gen</div>
-                  <div className="text-neutral-500">+1 Point</div>
-                </div>
-                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1">
-                  <div className="font-bold text-neutral-900 dark:text-white">Share with Friend</div>
-                  <div className="text-neutral-500">+2 Points</div>
-                </div>
-                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1">
-                  <div className="font-bold text-neutral-900 dark:text-white">Friend Login / Referral</div>
-                  <div className="text-neutral-500">+5 Points</div>
-                </div>
-                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
-                  <span className="text-xs font-bold">Quick Test Activity</span>
-                  <button
-                    onClick={() => awardPoints(2, 'generation')}
-                    className="px-3 py-1 rounded-xl bg-[#E60023] text-white text-[11px] font-bold hover:bg-red-700"
-                  >
-                    +2 Points
-                  </button>
-                </div>
-              </div>
-
-              {/* Request Form */}
-              <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800 space-y-4">
-                <h4 className="text-sm font-bold text-neutral-900 dark:text-white">
-                  Submit Prompt Request {promptRequestsRemaining > 0 ? `(${promptRequestsRemaining} Plan Request${promptRequestsRemaining > 1 ? 's' : ''} Included)` : ((userAccount?.points || 0) < 10) ? '(Requires 10 Points)' : '(10 Points will be used)'}
-                </h4>
-
-                <form onSubmit={handleRequestSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-1.5">
-                      Category
-                    </label>
-                    <select
-                      value={requestCategory}
-                      onChange={(e) => setRequestCategory(e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-bold"
-                    >
-                      <option value="Photorealistic">Photorealistic & Portraits</option>
-                      <option value="Cyberpunk">Cyberpunk & Sci-Fi</option>
-                      <option value="Cinematic">Cinematic 8K</option>
-                      <option value="Anime">Anime Masterpiece</option>
-                      <option value="3D Render">3D Unreal Engine</option>
-                    </select>
+                      {promptRequestsRemaining > 0 ? (
+                        <div className="text-sm font-black text-emerald-600 dark:text-emerald-400">
+                          {promptRequestsRemaining} Plan Request{promptRequestsRemaining > 1 ? 's' : ''} Left
+                        </div>
+                      ) : (
+                        <div className="text-sm font-black text-[#E60023]">
+                          {userAccount?.points || 0} / 10 Points
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-1.5">
-                      Describe what you want the prompt to generate
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={requestText}
-                      onChange={(e) => setRequestText(e.target.value)}
-                      placeholder="e.g. A futuristic cyberpunk geisha standing in a neon Tokyo alleyway with volumetric teal lighting..."
-                      className="w-full p-3.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-red-500 focus:outline-none"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={(userAccount?.points || 0) < 10}
-                    className="px-6 py-3 rounded-2xl bg-[#E60023] hover:bg-[#ad081b] disabled:opacity-50 text-white text-xs font-black shadow-md flex items-center gap-2"
-                  >
-                    <Send className="w-4 h-4" />
-                    <span>Submit Prompt Request (10 Points)</span>
-                  </button>
-                </form>
-              </div>
-            </div>
-
-            {/* User's Previous Requests */}
-            {promptRequests && promptRequests.length > 0 && (
-              <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
-                <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
-                  Your Submitted Requests
-                </h3>
-                <div className="space-y-3">
-                  {promptRequests.map((req) => (
-                    <div key={req.id} className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex items-center justify-between gap-4">
-                      <div className="space-y-1">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-950/60 text-[#E60023]">
-                          {req.category}
-                        </span>
-                        <p className="text-xs font-medium text-neutral-800 dark:text-neutral-200">
-                          {req.promptDescription}
-                        </p>
-                      </div>
-                      <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-xl">
-                        {req.status}
+                  {/* Quota / Points Eligibility Banner */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs font-bold">
+                      <span className="flex items-center gap-1.5 text-neutral-800 dark:text-neutral-200">
+                        {promptRequestsRemaining > 0 ? (
+                          <>
+                            <Zap className="w-4 h-4 text-emerald-500 fill-emerald-500" />
+                            <span className="text-emerald-600 dark:text-emerald-400">
+                              Monthly Plan Quota Active ({promptRequestsRemaining} requests included in your {planTier ? planTier.toUpperCase() : 'PRO'} plan)
+                            </span>
+                          </>
+                        ) : (userAccount?.points || 0) >= 10 ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                            <span className="text-emerald-600 dark:text-emerald-400">
+                              10 Activity Points Completed — Ready to submit!
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="w-4 h-4 text-amber-500" />
+                            <span className="text-neutral-600 dark:text-neutral-400">
+                              Progress to Request: {userAccount?.points || 0}/10 Points (Need {Math.max(0, 10 - (userAccount?.points || 0))} more points)
+                            </span>
+                          </>
+                        )}
+                      </span>
+                      <span className="font-mono text-neutral-500">
+                        {promptRequestsRemaining > 0 ? '100%' : `${Math.min(100, ((userAccount?.points || 0) % 10) * 10)}%`}
                       </span>
                     </div>
-                  ))}
+
+                    <div className="w-full h-2.5 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-500 rounded-full ${
+                          promptRequestsRemaining > 0 || (userAccount?.points || 0) >= 10
+                            ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
+                            : 'bg-gradient-to-r from-[#E60023] to-amber-500'
+                        }`}
+                        style={{
+                          width: promptRequestsRemaining > 0 || (userAccount?.points || 0) >= 10
+                            ? '100%'
+                            : `${Math.min(100, ((userAccount?.points || 0) % 10) * 10)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* How to Earn Points Guide */}
+                  {promptRequestsRemaining === 0 && (userAccount?.points || 0) < 10 && (
+                    <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                          <span>Earn Points with Daily Creative Activities</span>
+                        </span>
+                        <button
+                          onClick={() => awardPoints(2, 'generation')}
+                          className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-bold shadow-xs"
+                        >
+                          +2 Bonus Points
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                        <div className="p-2.5 rounded-xl bg-white dark:bg-neutral-900 border border-amber-200/60 dark:border-amber-800/40">
+                          <div className="font-bold text-neutral-800 dark:text-neutral-200">10 Likes</div>
+                          <div className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">+1 Point</div>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-white dark:bg-neutral-900 border border-amber-200/60 dark:border-amber-800/40">
+                          <div className="font-bold text-neutral-800 dark:text-neutral-200">5 Bookmarks</div>
+                          <div className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">+1 Point</div>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-white dark:bg-neutral-900 border border-amber-200/60 dark:border-amber-800/40">
+                          <div className="font-bold text-neutral-800 dark:text-neutral-200">AI Studio Gen</div>
+                          <div className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">+1 Point</div>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-white dark:bg-neutral-900 border border-amber-200/60 dark:border-amber-800/40">
+                          <div className="font-bold text-neutral-800 dark:text-neutral-200">Share Prompt</div>
+                          <div className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">+2 Points</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Submission Form */}
+                  <form onSubmit={handleRequestSubmit} className="space-y-4 pt-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1.5">
+                          Category
+                        </label>
+                        <select
+                          value={requestCategory}
+                          onChange={(e) => setRequestCategory(e.target.value)}
+                          className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-semibold focus:outline-none"
+                        >
+                          <option value="Photorealistic & Portraits">Photorealistic & Portraits</option>
+                          <option value="Cyberpunk & Sci-Fi">Cyberpunk & Sci-Fi</option>
+                          <option value="Cinematic 8K">Cinematic 8K</option>
+                          <option value="Anime Masterpiece">Anime Masterpiece</option>
+                          <option value="3D Render & Unreal Engine">3D Unreal Engine</option>
+                          <option value="Nature & Landscapes">Nature & Landscapes</option>
+                          <option value="Architecture & Interior">Architecture & Interior</option>
+                          <option value="Dark Fantasy & Mythological">Dark Fantasy & Mythological</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1.5">
+                          Preferred AI Tool
+                        </label>
+                        <select
+                          value={aiToolPreference}
+                          onChange={(e) => setAiToolPreference(e.target.value)}
+                          className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-semibold focus:outline-none"
+                        >
+                          <option value="Midjourney v6.1">Midjourney v6.1</option>
+                          <option value="Flux.1 Dev">Flux.1 Dev</option>
+                          <option value="Flux.1 Schnell">Flux.1 Schnell</option>
+                          <option value="Gemini Imagen 3">Gemini Imagen 3</option>
+                          <option value="Stable Diffusion XL">Stable Diffusion XL</option>
+                          <option value="DALL-E 3">DALL-E 3</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1.5">
+                          Desired Aspect Ratio
+                        </label>
+                        <select
+                          value={aspectRatio}
+                          onChange={(e) => setAspectRatio(e.target.value)}
+                          className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-semibold focus:outline-none"
+                        >
+                          <option value="16:9">16:9 (Cinematic Landscape)</option>
+                          <option value="9:16">9:16 (Story / Phone Portrait)</option>
+                          <option value="1:1">1:1 (Square Feed)</option>
+                          <option value="4:5">4:5 (Portrait Feed)</option>
+                          <option value="21:9">21:9 (Ultrawide)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1.5">
+                        Describe the image or concept you want engineered <span className="text-red-500">*</span>
+                      </label>
+                      <textarea
+                        rows={3}
+                        required
+                        value={requestText}
+                        onChange={(e) => setRequestText(e.target.value)}
+                        placeholder="e.g. Ultra-realistic portrait of an Indian classical dancer in traditional attire with rain pouring around her in Varanasi ghats at twilight, volumetric lantern lighting, golden hour rim lights, shot on Hasselblad..."
+                        className="w-full p-3.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-red-500 focus:outline-none leading-relaxed"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1.5">
+                        Reference Image URL (Optional)
+                      </label>
+                      <input
+                        type="url"
+                        value={referenceImageUrl}
+                        onChange={(e) => setReferenceImageUrl(e.target.value)}
+                        placeholder={persistentRefImage ? `Using your saved reference photo: ${persistentRefImage.slice(0, 40)}...` : 'https://... (image link to guide composition)'}
+                        className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="text-[11px] text-neutral-400 flex items-center gap-1.5">
+                        <Lock className="w-3.5 h-3.5 text-neutral-500" />
+                        <span>Private Delivery Guarantee: Fulfilled prompts only appear in your account.</span>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isSubmittingRequest || (promptRequestsRemaining === 0 && (userAccount?.points || 0) < 10)}
+                        className="px-6 py-3 rounded-2xl bg-[#E60023] hover:bg-[#ad081b] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-black shadow-md flex items-center justify-center gap-2 transition-all active:scale-95"
+                      >
+                        {isSubmittingRequest ? (
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Send className="w-4 h-4" />
+                        )}
+                        <span>
+                          {promptRequestsRemaining > 0
+                            ? `Submit Request (Use 1 Plan Quota • ${promptRequestsRemaining} Left)`
+                            : (userAccount?.points || 0) >= 10
+                            ? 'Submit Request (Redeem 10 Points)'
+                            : '10 Points Required to Submit'}
+                        </span>
+                      </button>
+                    </div>
+                  </form>
                 </div>
-              </div>
+
+                {/* User's Submitted & Fulfilled Requests Section */}
+                <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-base font-black text-neutral-900 dark:text-white flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-[#E60023]" />
+                        <span>Your Requested & Fulfilled Prompts</span>
+                      </h3>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                        Delivered prompts are private to your dashboard and never published on the public site feed.
+                      </p>
+                    </div>
+
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300">
+                      {promptRequests.filter((r) => r.userId === userAccount.id || (userAccount.email && r.userEmail === userAccount.email)).length} Total
+                    </span>
+                  </div>
+
+                  {promptRequests.filter((r) => r.userId === userAccount.id || (userAccount.email && r.userEmail === userAccount.email)).length === 0 ? (
+                    <div className="text-center py-12 border border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 space-y-2">
+                      <Target className="w-8 h-8 text-neutral-300 dark:text-neutral-600 mx-auto" />
+                      <div className="text-xs font-bold text-neutral-600 dark:text-neutral-400">
+                        No requests submitted yet
+                      </div>
+                      <p className="text-[11px] text-neutral-400 max-w-sm mx-auto">
+                        Use the form above to submit your first prompt request. Once our admin team fulfills it, your custom prompt and image will appear right here!
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {promptRequests
+                        .filter((r) => r.userId === userAccount.id || (userAccount.email && r.userEmail === userAccount.email))
+                        .map((req) => {
+                          const isFulfilled = req.status === 'fulfilled' || req.status === 'completed';
+                          const isInProgress = req.status === 'in_progress';
+                          const isPending = req.status === 'pending';
+
+                          return (
+                            <div
+                              key={req.id}
+                              className={`p-5 rounded-3xl border transition-all duration-200 space-y-4 ${
+                                isFulfilled
+                                  ? 'bg-emerald-500/[0.03] border-emerald-300 dark:border-emerald-800/80 shadow-sm'
+                                  : 'bg-neutral-50 dark:bg-neutral-950 border-neutral-200 dark:border-neutral-800'
+                              }`}
+                            >
+                              {/* Request Metadata Header */}
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-200/70 dark:border-neutral-800/70">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="px-2.5 py-1 rounded-lg bg-red-100 dark:bg-red-950/60 text-[#E60023] text-xs font-black">
+                                    {req.category}
+                                  </span>
+                                  {req.aiToolPreference && (
+                                    <span className="px-2.5 py-1 rounded-lg bg-neutral-200/80 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs font-bold">
+                                      {req.aiToolPreference}
+                                    </span>
+                                  )}
+                                  {req.aspectRatio && (
+                                    <span className="px-2.5 py-1 rounded-lg bg-neutral-200/80 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs font-bold">
+                                      Ratio: {req.aspectRatio}
+                                    </span>
+                                  )}
+                                  <span className="text-[11px] text-neutral-400 ml-1">
+                                    Submitted {new Date(req.createdAt).toLocaleDateString()}
+                                  </span>
+                                </div>
+
+                                {/* Status Badge */}
+                                <div>
+                                  {isFulfilled && (
+                                    <span className="px-3 py-1 rounded-xl text-xs font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 border border-emerald-300 dark:border-emerald-800">
+                                      <CheckCircle2 className="w-3.5 h-3.5" />
+                                      <span>Fulfilled & Delivered</span>
+                                    </span>
+                                  )}
+                                  {isInProgress && (
+                                    <span className="px-3 py-1 rounded-xl text-xs font-black bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-400 flex items-center gap-1.5 border border-blue-200 dark:border-blue-800">
+                                      <Clock className="w-3.5 h-3.5 animate-spin" />
+                                      <span>In Engineering</span>
+                                    </span>
+                                  )}
+                                  {isPending && (
+                                    <span className="px-3 py-1 rounded-xl text-xs font-black bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 flex items-center gap-1.5 border border-amber-200 dark:border-amber-800">
+                                      <AlertCircle className="w-3.5 h-3.5" />
+                                      <span>In Queue (Pending Admin Review)</span>
+                                    </span>
+                                  )}
+                                  {req.status === 'rejected' && (
+                                    <span className="px-3 py-1 rounded-xl text-xs font-black bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400 flex items-center gap-1.5 border border-red-200 dark:border-red-800">
+                                      Declined (Points Refunded)
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Your Request Vision */}
+                              <div className="text-xs space-y-1">
+                                <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
+                                  Your Request:
+                                </div>
+                                <p className="font-medium text-neutral-800 dark:text-neutral-200 leading-relaxed italic">
+                                  &ldquo;{req.requestText}&rdquo;
+                                </p>
+                              </div>
+
+                              {/* Fulfilled Delivery Card (Exclusive to this user) */}
+                              {isFulfilled && req.fulfilledPrompt && (
+                                <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-emerald-300 dark:border-emerald-800/80 shadow-md space-y-4">
+                                  {/* Delivery Guarantee Banner */}
+                                  <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-emerald-100 dark:border-emerald-950">
+                                    <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 text-xs font-black">
+                                      <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                                      <span>Bespoke Prompt Engineered by AI Architect</span>
+                                    </div>
+                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 flex items-center gap-1 border border-emerald-200 dark:border-emerald-800">
+                                      <Lock className="w-2.5 h-2.5" />
+                                      <span>Private to Your Dashboard</span>
+                                    </span>
+                                  </div>
+
+                                  <div className="flex flex-col md:flex-row gap-4 items-start">
+                                    {/* Fulfilled Image Preview */}
+                                    {req.fulfilledImageUrl && (
+                                      <div className="w-full md:w-56 h-36 rounded-2xl overflow-hidden relative border border-emerald-200 dark:border-emerald-900 shrink-0 shadow-sm">
+                                        <Image
+                                          src={req.fulfilledImageUrl}
+                                          alt="Engineered result artwork"
+                                          fill
+                                          className="object-cover"
+                                          referrerPolicy="no-referrer"
+                                        />
+                                      </div>
+                                    )}
+
+                                    {/* Fulfilled Master Prompt Text & Controls */}
+                                    <div className="flex-1 w-full space-y-3">
+                                      <div className="p-3.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-emerald-200 dark:border-emerald-900/60 font-mono text-xs text-neutral-900 dark:text-white leading-relaxed select-all">
+                                        {req.fulfilledPrompt}
+                                      </div>
+
+                                      {/* Engineer Advice & Parameters */}
+                                      {req.fulfilledNotes && (
+                                        <div className="text-[11px] text-neutral-500 dark:text-neutral-400 font-medium">
+                                          <span className="font-bold text-neutral-700 dark:text-neutral-300">Architect Notes: </span>
+                                          {req.fulfilledNotes}
+                                        </div>
+                                      )}
+
+                                      {/* Copy & Launch Buttons */}
+                                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                                        <button
+                                          onClick={(e) => handleCopyPrompt(e, req.fulfilledPrompt || '', req.id)}
+                                          className="px-4 py-2 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-black shadow-sm flex items-center gap-1.5 transition-colors active:scale-95"
+                                        >
+                                          {copiedId === req.id ? (
+                                            <>
+                                              <Check className="w-3.5 h-3.5" />
+                                              <span>Copied to Clipboard!</span>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <Copy className="w-3.5 h-3.5" />
+                                              <span>Copy Master Prompt</span>
+                                            </>
+                                          )}
+                                        </button>
+
+                                        <button
+                                          onClick={() => router.push(`/create?prompt=${encodeURIComponent(req.fulfilledPrompt || '')}`)}
+                                          className="px-4 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-bold transition-colors flex items-center gap-1.5"
+                                        >
+                                          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                                          <span>Open in AI Studio</span>
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         )}
