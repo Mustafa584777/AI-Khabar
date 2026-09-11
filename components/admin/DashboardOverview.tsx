@@ -218,7 +218,7 @@ export const DashboardOverview = () => {
 
       {/* 2-Column: Quick Draft & Recent Prompts */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Quick Draft Box (WordPress Style) */}
+        {/* Quick Draft Box */}
         <div className="lg:col-span-5 bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <Sparkles className="w-5 h-5 text-blue-600" />

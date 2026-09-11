@@ -26,7 +26,7 @@ export const AdminLayout = () => {
         <div className="text-center space-y-4 max-w-md bg-neutral-950 p-8 rounded-3xl border border-neutral-800 text-white">
           <h2 className="text-xl font-bold">Authentication Required</h2>
           <p className="text-xs text-neutral-400">
-            You must log in to access the WordPress Editorial CMS.
+            You must log in to access the Editorial CMS.
           </p>
           <button
             onClick={() => setShowLoginModal(true)}

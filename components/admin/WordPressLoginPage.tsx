@@ -91,7 +91,7 @@ export const WordPressLoginPage = () => {
                 Trending Photo Prompts <span className="text-blue-600 dark:text-blue-400">CMS</span>
               </h1>
               <p className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
-                WordPress 6.7 Editorial Administration
+                Editorial Administration Portal
               </p>
             </div>
           </Link>
@@ -252,7 +252,7 @@ export const WordPressLoginPage = () => {
 
         {/* Privacy Note */}
         <div className="mt-8 text-center text-[11px] text-neutral-400 dark:text-neutral-500">
-          <span>Trending Gemini Prompts Editorial Suite • Secured with WordPress Standards</span>
+          <span>Editorial Administration Suite • Secured Access</span>
         </div>
 
       </div>

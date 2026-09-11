@@ -108,7 +108,7 @@ export const AdminSidebar = () => {
 
   return (
     <aside className="w-64 bg-neutral-900 text-neutral-300 flex flex-col shrink-0 border-r border-neutral-800 min-h-screen">
-      {/* WordPress Brand Header */}
+      {/* Brand Header */}
       <div className="p-4 border-b border-neutral-800 flex items-center gap-3">
         <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 relative bg-blue-600 shadow-md shadow-blue-500/20">
           <Image
@@ -120,8 +120,8 @@ export const AdminSidebar = () => {
           />
         </div>
         <div>
-          <h2 className="text-sm font-bold text-white tracking-tight">WordPress CMS</h2>
-          <span className="text-[11px] text-blue-400 font-medium">Trending Photo Prompts</span>
+          <h2 className="text-sm font-bold text-white tracking-tight">Prompt CMS</h2>
+          <span className="text-[11px] text-blue-400 font-medium">Editorial Suite</span>
         </div>
       </div>
 
