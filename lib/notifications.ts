@@ -308,11 +308,14 @@ export const NotificationService = {
     if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
       const prefs = NotificationService.getPreferences();
       const catLower = (item.category || '').toLowerCase();
+      const userInterests = (prefs.selectedInterests || []).map(i => i.toLowerCase());
       const matchesInterest =
         !item.category ||
-        item.category === 'all' ||
-        prefs.selectedInterests.some(
-          (i) => catLower.includes(i.toLowerCase()) || i.toLowerCase().includes(catLower)
+        catLower === 'all' ||
+        catLower === 'general' ||
+        userInterests.length === 0 ||
+        userInterests.some(
+          (i) => catLower === i || catLower.includes(i) || i.includes(catLower)
         );
 
       if (matchesInterest) {

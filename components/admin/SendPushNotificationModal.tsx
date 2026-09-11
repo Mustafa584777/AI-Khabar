@@ -32,8 +32,9 @@ export const SendPushNotificationModal: React.FC<SendPushNotificationModalProps>
   const [title, setTitle] = useState<string>('');
   const [subtitle, setSubtitle] = useState<string>('Trending AI Photo Prompt Drop');
   const [body, setBody] = useState<string>('');
-  const [category, setCategory] = useState<string>('all');
+  const [category, setCategory] = useState<string>('Photorealistic & Portraits');
   const [imageUrl, setImageUrl] = useState<string>('');
+  const [collageImages, setCollageImages] = useState<string[]>(['', '', '', '']);
   const [targetUrl, setTargetUrl] = useState<string>('/');
   const [actionLabel, setActionLabel] = useState<string>('Explore Prompt');
   const [isSending, setIsSending] = useState<boolean>(false);
@@ -41,18 +42,29 @@ export const SendPushNotificationModal: React.FC<SendPushNotificationModalProps>
   useEffect(() => {
     if (isOpen) {
       setTitle(defaultTitle ? `🔥 New: ${defaultTitle}` : 'New Viral Prompt Just Dropped!');
+      const assignedCat = defaultCategory && defaultCategory !== 'all' ? defaultCategory : (categories[0]?.name || 'Photorealistic & Portraits');
       setSubtitle(
-        defaultCategory && defaultCategory !== 'all'
-          ? `Trending in ${defaultCategory}`
+        assignedCat && assignedCat !== 'all'
+          ? `Trending in ${assignedCat}`
           : 'You might like this prompt idea'
       );
       setBody(defaultPromptText ? defaultPromptText.slice(0, 140) + '...' : 'Copy and paste prompt ready for use.');
-      setCategory(defaultCategory || 'all');
+      setCategory(assignedCat);
       setImageUrl(defaultImageUrl || '');
+
+      const sameCatImages = posts
+        .filter((p) => p.category?.toLowerCase() === assignedCat.toLowerCase() && p.imageUrl !== defaultImageUrl)
+        .slice(0, 3)
+        .map((p) => p.imageUrl);
+
+      const initialCollage = defaultImageUrl ? [defaultImageUrl, ...sameCatImages] : ['', '', '', ''];
+      while (initialCollage.length < 4) initialCollage.push('');
+      setCollageImages(initialCollage);
+
       setTargetUrl(defaultUrl || '/');
       setActionLabel('Explore Prompt');
     }
-  }, [isOpen, defaultTitle, defaultCategory, defaultImageUrl, defaultUrl, defaultPromptText]);
+  }, [isOpen, defaultTitle, defaultCategory, defaultImageUrl, defaultUrl, defaultPromptText, categories, posts]);
 
   if (!isOpen) return null;
 
@@ -65,13 +77,8 @@ export const SendPushNotificationModal: React.FC<SendPushNotificationModalProps>
 
     setIsSending(true);
     try {
-      // Gather extra collage images from same category
-      const sameCatImages = posts
-        .filter((p) => p.category?.toLowerCase() === category.toLowerCase() && p.imageUrl !== imageUrl)
-        .slice(0, 3)
-        .map((p) => p.imageUrl);
-
-      const collage = imageUrl ? [imageUrl, ...sameCatImages] : [];
+      const activeCollage = collageImages.filter((u) => u && u.trim().length > 0);
+      const finalImage = imageUrl || activeCollage[0] || '';
 
       const actionButtons: PushNotificationAction[] = [
         { label: actionLabel || 'Explore Prompt', url: targetUrl },
@@ -83,8 +90,8 @@ export const SendPushNotificationModal: React.FC<SendPushNotificationModalProps>
         subtitle: subtitle.trim(),
         body: body.trim(),
         category,
-        imageUrl,
-        collageImages: collage,
+        imageUrl: finalImage,
+        collageImages: activeCollage.length > 0 ? activeCollage : (finalImage ? [finalImage] : []),
         url: targetUrl,
         actionButtons,
         sentBy: 'admin',
@@ -98,7 +105,7 @@ export const SendPushNotificationModal: React.FC<SendPushNotificationModalProps>
 
       await NotificationService.addNotification(payload, true);
 
-      showToast(`Push notification sent to ${category === 'all' ? 'all users' : category} subscribers!`);
+      showToast(`Push notification sent to ${category} subscribers!`);
       onClose();
     } catch (err: any) {
       showToast(err.message || 'Failed to send notification');
