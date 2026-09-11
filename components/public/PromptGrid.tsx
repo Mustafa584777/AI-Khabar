@@ -28,13 +28,7 @@ export const PromptGrid = () => {
     bookmarkedIds,
   } = useApp();
 
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  const activeGenderVibe = isMounted ? tasteProfile.genderVibe : 'default';
-  const currentFilterKey = `${searchQuery}_${selectedCategory}_${selectedTool}_${selectedSort}_${activeGenderVibe}`;
+  const currentFilterKey = `${searchQuery}_${selectedCategory}_${selectedTool}_${selectedSort}_${tasteProfile.genderVibe}`;
   const [displayedCount, setDisplayedCount] = useState<number>(INITIAL_BATCH_SIZE);
   const [prevFilterKey, setPrevFilterKey] = useState<string>(currentFilterKey);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);

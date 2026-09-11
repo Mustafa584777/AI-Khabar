@@ -186,24 +186,12 @@ export interface PromptRequestItem {
   id: string;
   userId: string;
   userName: string;
-  userEmail?: string;
   userAvatar?: string;
-  userPlanTier?: PlanTier;
   requestText: string;
   category?: string;
-  aiToolPreference?: string;
-  aspectRatio?: string;
-  referenceImageUrl?: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'fulfilled' | 'rejected';
+  status: 'pending' | 'in_progress' | 'completed';
   createdAt: number;
-  likesCount?: number;
-  // Fulfillment delivered exclusively to user dashboard (not public)
-  fulfilledPrompt?: string;
-  fulfilledImageUrl?: string;
-  fulfilledAiTool?: string;
-  fulfilledNotes?: string;
-  fulfilledAt?: number;
-  adminNotes?: string;
+  likesCount: number;
 }
 
 export interface AIHistoryItem {

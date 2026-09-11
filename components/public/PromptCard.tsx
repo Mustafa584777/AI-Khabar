@@ -20,16 +20,11 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
 
   const router = useRouter();
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
   const [inView, setInView] = useState(() => priority || typeof window === 'undefined' || !('IntersectionObserver' in window));
   const cardRef = useRef<HTMLElement>(null);
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  const isBookmarked = isMounted && bookmarkedIds.includes(post.id);
-  const isUnlocked = isMounted ? isPromptUnlocked(post.id, post.isPremium) : (!post.isPremium);
+  const isBookmarked = bookmarkedIds.includes(post.id);
+  const isUnlocked = isPromptUnlocked(post.id, post.isPremium);
   const promptSlug = getPromptSlug(post);
   const detectedRatio = detectPostAspectRatio(post);
   const optimizedImgUrl = getOptimizedImageUrl(post.imageUrl, 600);
