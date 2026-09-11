@@ -17,12 +17,10 @@ import {
   Zap,
   Coins,
   X,
-  Bell,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { SendPushNotificationModal } from '@/components/admin/SendPushNotificationModal';
 
 const FALLBACK_SAMPLE_IMAGES = [
   {
@@ -106,8 +104,6 @@ export const AIStudioTool = () => {
     }
     return FALLBACK_SAMPLE_IMAGES;
   }, [posts]);
-
-  const [isPushModalOpen, setIsPushModalOpen] = useState<boolean>(false);
 
   const [uploadedImage, setUploadedImage] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
@@ -553,17 +549,6 @@ export const AIStudioTool = () => {
                         </>
                       )}
                     </button>
-
-                    {isAuthenticated && (
-                      <button
-                        onClick={() => setIsPushModalOpen(true)}
-                        className="px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-[#E60023] hover:bg-[#ad081b] text-white shadow-sm"
-                        title="Broadcast push notification to subscribers for this prompt"
-                      >
-                        <Bell className="w-4 h-4" />
-                        <span>Send Push Notification</span>
-                      </button>
-                    )}
                   </div>
                 </div>
 
@@ -705,18 +690,6 @@ export const AIStudioTool = () => {
             </div>
           </div>
         </div>
-      )}
-
-      {extractedData && (
-        <SendPushNotificationModal
-          isOpen={isPushModalOpen}
-          onClose={() => setIsPushModalOpen(false)}
-          defaultTitle={extractedData.title || 'Trending AI Prompt Drop'}
-          defaultCategory="Photorealistic & Portraits"
-          defaultImageUrl={uploadedImage || ''}
-          defaultUrl="/create"
-          defaultPromptText={extractedData.promptText}
-        />
       )}
     </main>
   );

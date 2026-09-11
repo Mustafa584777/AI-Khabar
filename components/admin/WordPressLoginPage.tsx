@@ -91,7 +91,7 @@ export const WordPressLoginPage = () => {
                 Trending Photo Prompts <span className="text-blue-600 dark:text-blue-400">CMS</span>
               </h1>
               <p className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
-                Editorial Administration Portal
+                Editorial Administration
               </p>
             </div>
           </Link>
@@ -125,7 +125,7 @@ export const WordPressLoginPage = () => {
 
         {/* Login Box */}
         <div className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-lg shadow-neutral-200/50 dark:shadow-none rounded-lg p-6 sm:p-7">
-          <form onSubmit={handleLoginSubmit} className="space-y-4" id="wordpress-login-form">
+          <form onSubmit={handleLoginSubmit} className="space-y-4" id="cms-login-form">
             <div>
               <label
                 htmlFor="user_login"
@@ -252,7 +252,7 @@ export const WordPressLoginPage = () => {
 
         {/* Privacy Note */}
         <div className="mt-8 text-center text-[11px] text-neutral-400 dark:text-neutral-500">
-          <span>Editorial Administration Suite • Secured Access</span>
+          <span>Trending Gemini Prompts Editorial Suite • Secured Administrative Gateway</span>
         </div>
 
       </div>

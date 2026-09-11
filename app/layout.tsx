@@ -15,7 +15,7 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: 'Trending Copy Paste Photo Prompts',
-  description: 'Explore trending copy paste photo prompts for Midjourney, ChatGPT, Flux, Claude and Gemini.',
+  description: 'Explore trending copy paste photo prompts for Midjourney, ChatGPT, Flux, Claude and Gemini. Discover high-quality AI photo prompts, styles, and negative prompts.',
   icons: {
     icon: '/favicon.ico',
   },
