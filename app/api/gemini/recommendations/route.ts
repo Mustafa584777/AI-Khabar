@@ -99,54 +99,6 @@ Return a valid JSON with:
       return NextResponse.json({ success: true, data: parsed });
     }
 
-    if (action === 'idea_to_prompt') {
-      const idea = body.idea;
-      if (!idea) {
-        return NextResponse.json({ error: 'idea is required' }, { status: 400 });
-      }
-
-      const promptStr = `
-        You are an expert AI prompt engineer for Midjourney and Stable Diffusion.
-        The user has provided a short idea or concept: "${idea}"
-        
-        Generate a highly detailed, professional, cinematic AI image prompt based on this idea.
-        The prompt should include detailed subject descriptions, environmental context, lighting, camera settings (lens, angle, film stock), and stylistic modifiers.
-        
-        Return a JSON object containing:
-        - title: A catchy short title for the prompt
-        - aiTool: Recommend the best tool (e.g. Midjourney, Flux, Stable Diffusion)
-        - category: One relevant category (e.g. Cinematic 8K, Photorealistic & Portraits, Sci-Fi & Cyberpunk, etc.)
-        - promptText: The actual full prompt text. Make it detailed (approx. 50-80 words).
-        - tags: Array of 4-6 relevant hashtags (without #).
-      `;
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
-        contents: promptStr,
-        config: {
-          temperature: 0.7,
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              aiTool: { type: Type.STRING },
-              category: { type: Type.STRING },
-              promptText: { type: Type.STRING },
-              tags: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING },
-              },
-            },
-            required: ['title', 'aiTool', 'category', 'promptText', 'tags'],
-          },
-        },
-      });
-
-      const parsed = JSON.parse(response.text || '{}');
-      return NextResponse.json({ success: true, data: parsed });
-    }
-
     // Action 2: Contextual AI Prompt Insights ("Why You'll Love This Pin")
     if (action === 'contextual_pin_insight') {
       if (!currentPost) {

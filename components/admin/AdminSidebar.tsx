@@ -20,7 +20,6 @@ import {
   Search,
   Users,
   Bell,
-  MessageSquare,
 } from 'lucide-react';
 
 export const AdminSidebar = () => {
@@ -70,11 +69,6 @@ export const AdminSidebar = () => {
       id: 'categories',
       label: 'Categories & Tags',
       icon: FolderTree,
-    },
-    {
-      id: 'requested-prompts',
-      label: 'Requested Prompts',
-      icon: MessageSquare,
     },
     {
       id: 'notifications',

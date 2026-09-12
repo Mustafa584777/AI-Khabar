@@ -107,18 +107,6 @@ export const AIStudioTool = () => {
   const [isOutOfCreditsModalOpen, setIsOutOfCreditsModalOpen] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'image-to-prompt' | 'idea-to-prompt'>('idea-to-prompt');
-  
-  // States for Idea to Prompt
-  const [ideaInput, setIdeaInput] = useState('');
-  const [isGeneratingIdea, setIsGeneratingIdea] = useState(false);
-  const [generatedIdeaPrompt, setGeneratedIdeaPrompt] = useState<{
-    title: string;
-    promptText: string;
-    aiTool: string;
-    category: string;
-    tags: string[];
-  } | null>(null);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -129,56 +117,6 @@ export const AIStudioTool = () => {
     setCopiedKey(key);
     showToast(label);
     setTimeout(() => setCopiedKey(null), 2000);
-  };
-
-  const handleGenerateFromIdea = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!ideaInput.trim()) return;
-    
-    // Idea generation uses 1 credit
-    if (!isAuthenticated) {
-      openAuthModal('Please sign in to generate detailed prompts from ideas.');
-      return;
-    }
-    if (toolCredits < 1) {
-      setIsOutOfCreditsModalOpen(true);
-      return;
-    }
-
-    setIsGeneratingIdea(true);
-    deductToolCredit(1);
-
-    try {
-      const res = await fetch('/api/gemini/recommendations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'idea_to_prompt',
-          idea: ideaInput.trim(),
-        }),
-      });
-      const data = await res.json();
-      if (data.success && data.data) {
-        setGeneratedIdeaPrompt(data.data);
-        showToast('Prompt generated successfully!');
-        
-        // Auto-save to history
-        const historyItem: AIHistoryItem = {
-          id: 'idea_' + Date.now(),
-          type: 'text_to_prompt',
-          title: data.data.title || 'Generated Prompt',
-          promptText: data.data.promptText,
-          tags: data.data.tags || [],
-          createdAt: Date.now(),
-        };
-        saveAiHistoryItem(historyItem);
-      }
-    } catch (e) {
-      console.error('Failed to generate prompt from idea:', e);
-      showToast('Generation failed. Please try again.');
-    } finally {
-      setIsGeneratingIdea(false);
-    }
   };
 
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -325,161 +263,20 @@ export const AIStudioTool = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 space-y-8">
-        {/* Hero Title & Tabs */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-neutral-200 dark:border-neutral-800">
+        {/* Hero Title */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-neutral-200 dark:border-neutral-800">
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-neutral-900 dark:text-white tracking-tight flex items-center gap-2.5">
               <Sparkles className="w-7 h-7 text-[#E60023]" />
-              <span>AI Prompt Studio</span>
+              <span>AI Image-to-Prompt Studio</span>
             </h1>
             <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-              Generate detailed prompts from ideas or reverse-engineer prompts from existing images.
+              Reverse-engineer precise, high-fidelity AI prompts from any photo or visual with optical analysis.
             </p>
-          </div>
-          
-          <div className="flex items-center bg-neutral-100 dark:bg-neutral-900 p-1.5 rounded-full border border-neutral-200 dark:border-neutral-800">
-            <button
-              onClick={() => setActiveTab('idea-to-prompt')}
-              className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 ${
-                activeTab === 'idea-to-prompt'
-                  ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white shadow-sm'
-                  : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
-              }`}
-            >
-              <Zap className="w-3.5 h-3.5" />
-              <span>Idea to Prompt</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('image-to-prompt')}
-              className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 ${
-                activeTab === 'image-to-prompt'
-                  ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white shadow-sm'
-                  : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
-              }`}
-            >
-              <Camera className="w-3.5 h-3.5" />
-              <span>Image to Prompt</span>
-            </button>
           </div>
         </div>
 
-        {/* IDEA TO PROMPT STUDIO */}
-        {activeTab === 'idea-to-prompt' && (
-          <div className="max-w-3xl mx-auto space-y-6">
-            <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
-              <div>
-                <h3 className="text-lg font-black text-neutral-900 dark:text-white flex items-center gap-2 mb-2">
-                  <Zap className="w-5 h-5 text-[#E60023]" />
-                  <span>Prompt Generator</span>
-                </h3>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                  Type a simple idea or a few words, and AI will expand it into a highly detailed, professional prompt ready for Midjourney or Stable Diffusion.
-                </p>
-              </div>
-
-              <form onSubmit={handleGenerateFromIdea} className="space-y-4">
-                <textarea
-                  value={ideaInput}
-                  onChange={(e) => setIdeaInput(e.target.value)}
-                  placeholder="e.g., A cinematic shot of a cyberpunk city at night with neon signs and rain..."
-                  className="w-full h-32 p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#E60023]/50 transition-all resize-none"
-                  disabled={isGeneratingIdea}
-                />
-                
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={isGeneratingIdea || !ideaInput.trim()}
-                    className="px-6 py-3 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-sm font-bold transition-all shadow-md flex items-center gap-2 disabled:opacity-50 disabled:hover:bg-[#E60023]"
-                  >
-                    {isGeneratingIdea ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Crafting Prompt...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4" />
-                        <span>Generate Detailed Prompt (1 Credit)</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            {/* Generated Idea Result */}
-            {generatedIdeaPrompt && (
-              <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6 animate-scale-in">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider">
-                      {generatedIdeaPrompt.aiTool || 'Gemini'} Ready
-                    </span>
-                    <h3 className="font-bold text-neutral-900 dark:text-white">
-                      {generatedIdeaPrompt.title}
-                    </h3>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        const historyItem: AIHistoryItem = {
-                          id: 'idea_' + Date.now(),
-                          type: 'text_to_prompt',
-                          title: generatedIdeaPrompt.title,
-                          promptText: generatedIdeaPrompt.promptText,
-                          tags: generatedIdeaPrompt.tags,
-                          createdAt: Date.now(),
-                        };
-                        saveAiHistoryItem(historyItem);
-                        showToast('Saved to your AI Studio History!');
-                      }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-bold transition-colors"
-                    >
-                      <Bookmark className="w-3.5 h-3.5" />
-                      <span>Save</span>
-                    </button>
-                    <button
-                      onClick={() => copyToClipboard(generatedIdeaPrompt.promptText, 'idea-prompt')}
-                      className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold transition-all shadow-sm"
-                    >
-                      {copiedKey === 'idea-prompt' ? (
-                        <>
-                          <Check className="w-3.5 h-3.5" />
-                          <span>Copied!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3.5 h-3.5" />
-                          <span>Copy Prompt</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="relative group">
-                  <p className="text-sm font-mono text-neutral-700 dark:text-neutral-300 bg-neutral-50 dark:bg-neutral-950 p-5 rounded-2xl border border-neutral-200 dark:border-neutral-800 select-all leading-relaxed">
-                    {generatedIdeaPrompt.promptText}
-                  </p>
-                </div>
-                
-                {generatedIdeaPrompt.tags && generatedIdeaPrompt.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    {generatedIdeaPrompt.tags.map((tag) => (
-                      <span key={tag} className="text-xs text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800/60 px-2.5 py-1 rounded-md">
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
         {/* IMAGE TO PROMPT STUDIO */}
-        {activeTab === 'image-to-prompt' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left Column: Input Image & Options (5 cols) */}
           <div className="lg:col-span-5 space-y-6">
@@ -819,7 +616,6 @@ export const AIStudioTool = () => {
             )}
           </div>
         </div>
-        )}
       </div>
 
       {/* Out of Credits Modal */}

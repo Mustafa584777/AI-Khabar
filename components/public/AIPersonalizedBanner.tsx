@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
-import { Sparkles, Copy, Check, Loader2, X, Send } from 'lucide-react';
+import { Sparkles, Copy, Check, Loader2, X } from 'lucide-react';
+import { PersonalizationEngine } from '@/lib/personalization';
 
 export const AIPersonalizedBanner = () => {
-  const { copyPromptToClipboard } = useApp();
-  const [idea, setIdea] = useState('');
+  const { tasteProfile, copyPromptToClipboard } = useApp();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedPrompt, setGeneratedPrompt] = useState<{
     title: string;
@@ -17,29 +17,26 @@ export const AIPersonalizedBanner = () => {
   } | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const handleGenerateIdea = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!idea.trim()) return;
-    
+  const tasteSummary = PersonalizationEngine.getTasteSummary(tasteProfile);
+
+  const handleGeneratePersonalizedPrompt = async () => {
     setIsGenerating(true);
     try {
       const res = await fetch('/api/gemini/recommendations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'idea_to_prompt',
-          idea: idea.trim(),
+          action: 'personalized_prompt_craft',
+          profile: tasteSummary,
         }),
       });
+
       const data = await res.json();
       if (data.success && data.data) {
-        setGeneratedPrompt({
-          ...data.data,
-          matchReason: `Generated based on your idea: "${idea.trim()}"`
-        });
+        setGeneratedPrompt(data.data);
       }
     } catch (e) {
-      console.error('Failed to generate prompt from idea:', e);
+      console.error('Failed to generate personalized prompt:', e);
     } finally {
       setIsGenerating(false);
     }
@@ -58,41 +55,50 @@ export const AIPersonalizedBanner = () => {
         <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-[#E60023]/15 blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 rounded-full bg-blue-600/10 blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col gap-4">
-          <div className="flex items-center gap-2 mb-1">
-            <Sparkles className="w-4 h-4 text-[#E60023]" />
-            <span className="text-xs font-black uppercase tracking-wider text-white">
-              AI Prompt Generator
-            </span>
+        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          {/* Left: AI Inspire Title & Info */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#E60023] to-[#ff4763] flex items-center justify-center text-white shadow-md shrink-0">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black uppercase tracking-wider text-[#ff5c75]">
+                  AI Inspiration Hub
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm text-neutral-300 font-medium mt-0.5">
+                Generate fresh, creative prompt ideas tailored to trending photographic styles with 1 click.
+              </p>
+            </div>
           </div>
-          
-          {/* Gemini-like Input Box */}
-          <form onSubmit={handleGenerateIdea} className="relative w-full">
-            <input
-              type="text"
-              value={idea}
-              onChange={(e) => setIdea(e.target.value)}
-              placeholder="Describe your idea in a few words (e.g. 'a neon cyberpunk city at night')..."
-              className="w-full bg-white/5 border border-white/10 text-white placeholder-neutral-400 text-sm rounded-full py-3.5 pl-5 pr-14 focus:outline-none focus:ring-2 focus:ring-[#E60023] transition-all backdrop-blur-sm"
-              disabled={isGenerating}
-            />
+
+          {/* Right: AI Inspire Me Button */}
+          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
             <button
-              type="submit"
-              disabled={isGenerating || !idea.trim()}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white flex items-center justify-center transition-all disabled:opacity-50 disabled:hover:bg-[#E60023]"
+              onClick={handleGeneratePersonalizedPrompt}
+              disabled={isGenerating}
+              className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold transition-all shadow-md shadow-[#E60023]/25 flex items-center justify-center gap-2 disabled:opacity-75 transform active:scale-95 shrink-0"
+              id="ai-inspire-btn"
             >
               {isGenerating ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Generating for You...</span>
+                </>
               ) : (
-                <Send className="w-4 h-4 -ml-0.5" />
+                <>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>AI Inspire Me</span>
+                </>
               )}
             </button>
-          </form>
+          </div>
         </div>
 
         {/* Live Generated Prompt Card */}
         {generatedPrompt && (
-          <div className="relative mt-5 pt-4 border-t border-white/10 animate-scale-in">
+          <div className="relative mt-4 pt-4 border-t border-white/10 animate-scale-in">
             <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
               <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="flex items-center gap-2">
