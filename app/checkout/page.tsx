@@ -284,11 +284,15 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
-                      <span><strong>30</strong> monthly prompt tool credits</span>
+                      <span><strong>100</strong> monthly prompt tool credits</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
                       <span className="font-bold text-emerald-600 dark:text-emerald-400">Unlimited prompt & history saves</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-emerald-500 font-bold">✓</span>
+                      <span>Standard generation speed</span>
                     </li>
                   </ul>
                 </div>
@@ -297,7 +301,7 @@ export default function CheckoutPage() {
                   amount={4900}
                   planTier="starter"
                   planName="Starter"
-                  description="Monthly Starter Membership - Unlock Prompts, Unlimited Saves & 30 Credits"
+                  description="Monthly Starter Membership - Unlock Prompts, Unlimited Saves & 100 Credits"
                   buttonText="Get Starter for ₹49/mo"
                   variant="secondary"
                   className="w-full"
@@ -334,7 +338,7 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
-                      <span><strong>60</strong> monthly prompt tool credits</span>
+                      <span><strong>250</strong> monthly prompt tool credits</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
@@ -351,7 +355,7 @@ export default function CheckoutPage() {
                   amount={9900}
                   planTier="pro"
                   planName="Pro"
-                  description="Monthly Pro Membership - Unlock Prompts, Unlimited Saves & 60 Credits"
+                  description="Monthly Pro Membership - Unlock Prompts, Unlimited Saves & 250 Credits"
                   buttonText="Get Pro for ₹99/mo"
                   variant="pill"
                   size="lg"
@@ -385,7 +389,7 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
-                      <span><strong>180</strong> monthly prompt tool credits</span>
+                      <span><strong>500</strong> monthly prompt tool credits</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
@@ -402,7 +406,7 @@ export default function CheckoutPage() {
                   amount={19900}
                   planTier="vip"
                   planName="VIP"
-                  description="Monthly VIP Membership - Unlock Prompts, Unlimited Saves & 180 Credits"
+                  description="Monthly VIP Membership - Unlock Prompts, Unlimited Saves & 500 Credits"
                   buttonText="Get VIP for ₹199/mo"
                   variant="primary"
                   className="w-full"

@@ -35,7 +35,7 @@ const SUBSCRIPTION_PLANS: PlanOption[] = [
     amountPaise: 4900,
     displayPrice: '₹49',
     period: '/ month',
-    features: ['Unlock all premium prompts', '30 prompt tools credits', 'Unlimited prompt & history saves'],
+    features: ['Unlock all premium prompts', '100 prompt tools credits', 'Unlimited prompt & history saves'],
     icon: <Sparkles className="w-5 h-5 text-amber-500" />,
   },
   {
@@ -45,7 +45,7 @@ const SUBSCRIPTION_PLANS: PlanOption[] = [
     displayPrice: '₹99',
     period: '/ month',
     badge: 'Most Popular',
-    features: ['Unlock all premium prompts', '60 prompt tools credits', 'Unlimited prompt & history saves', 'Priority fast-lane'],
+    features: ['Unlock all premium prompts', '250 prompt tools credits', 'Unlimited prompt & history saves', 'Priority fast-lane'],
     icon: <Zap className="w-5 h-5 text-[#E60023]" />,
   },
   {
@@ -55,7 +55,7 @@ const SUBSCRIPTION_PLANS: PlanOption[] = [
     displayPrice: '₹199',
     period: '/ month',
     badge: 'Best Value',
-    features: ['Unlock all premium prompts', '180 prompt tools credits', 'Unlimited prompt & history saves', 'VIP 1-on-1 priority support'],
+    features: ['Unlock all premium prompts', '500 prompt tools credits', 'Unlimited prompt & history saves', 'VIP 1-on-1 priority support'],
     icon: <Crown className="w-5 h-5 text-purple-500" />,
   },
 ];

@@ -163,23 +163,21 @@ export const Header = () => {
             )}
           </button>
 
-          {/* Saved Prompts - only visible after login */}
-          {userAccount?.isLoggedIn && (
-            <button
-              onClick={() => setIsBookmarksDrawerOpen(true)}
-              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs sm:text-sm font-bold shadow-sm transition-all transform active:scale-95"
-              title="View Saved Prompts"
-              id="header-bookmarks-btn"
-            >
-              <Bookmark className="w-4 h-4 fill-current" />
-              <span className="hidden sm:inline">Saved</span>
-              {bookmarkedIds.length > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full bg-white text-[#E60023] text-[11px] font-black">
-                  {bookmarkedIds.length}
-                </span>
-              )}
-            </button>
-          )}
+          {/* Saved Prompts */}
+          <button
+            onClick={() => setIsBookmarksDrawerOpen(true)}
+            className="flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs sm:text-sm font-bold shadow-sm transition-all transform active:scale-95"
+            title="View Saved Prompts"
+            id="header-bookmarks-btn"
+          >
+            <Bookmark className="w-4 h-4 fill-current" />
+            <span className="hidden sm:inline">Saved</span>
+            {bookmarkedIds.length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-white text-[#E60023] text-[11px] font-black">
+                {bookmarkedIds.length}
+              </span>
+            )}
+          </button>
 
           {/* Razorpay Pro Upgrade Button -> Navigates to /pricing */}
           <Link

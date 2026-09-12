@@ -151,7 +151,6 @@ export interface UserAccount {
   credits?: number;
   lastCreditRefresh?: string;
   promptRequestsAllowed?: number;
-  planExpiresAt?: number;
 }
 
 export interface RegisteredUserRecord {
@@ -162,7 +161,6 @@ export interface RegisteredUserRecord {
   avatar?: string;
   planTier: PlanTier;
   isProUser: boolean;
-  planExpiresAt?: number;
   toolCredits: number;
   points: number;
   unlockedPromptIds: string[];
