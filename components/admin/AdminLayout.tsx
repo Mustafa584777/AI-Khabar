@@ -13,7 +13,6 @@ import { BackupRestoreView } from './BackupRestoreView';
 import { SearchHistoryManager } from './SearchHistoryManager';
 import { UsersManager } from './UsersManager';
 import { PushNotificationsManager } from './PushNotificationsManager';
-import { RequestedPromptsManager } from './RequestedPromptsManager';
 import { X } from 'lucide-react';
 
 export const AdminLayout = () => {
@@ -48,8 +47,6 @@ export const AdminLayout = () => {
       case 'new-post':
       case 'edit-post':
         return <PostEditor key={editingPostId || 'new-post'} />;
-      case 'requested-prompts':
-        return <RequestedPromptsManager />;
       case 'categories':
         return <CategoriesManager key={settings.popularTags?.join(',') || 'categories'} />;
       case 'notifications':

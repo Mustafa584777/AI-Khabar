@@ -29,14 +29,6 @@ export interface NotificationPreferences {
   soundEnabled: boolean;
 }
 
-export interface UserNotificationPreferences {
-  enabledCategories: string[];
-  browserPushEnabled: boolean;
-  soundEnabled: boolean;
-  selectedInterests?: string[];
-  frequency?: 'instant' | 'daily' | 'weekly';
-}
-
 export interface PushSubscriber {
   id: string;
   endpoint?: string;

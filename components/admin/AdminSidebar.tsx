@@ -20,7 +20,6 @@ import {
   Search,
   Users,
   Bell,
-  Target,
 } from 'lucide-react';
 
 export const AdminSidebar = () => {
@@ -32,11 +31,9 @@ export const AdminSidebar = () => {
     logout,
     posts,
     currentUser,
-    promptRequests,
   } = useApp();
 
   const draftCount = posts.filter((p) => p.status === 'draft').length;
-  const pendingRequestsCount = promptRequests.filter((p) => p.status === 'pending').length;
 
   interface NavItem {
     id: string;
@@ -67,12 +64,6 @@ export const AdminSidebar = () => {
         setEditingPostId(null);
         setAdminSubView('new-post');
       },
-    },
-    {
-      id: 'requested-prompts',
-      label: 'Requested Prompts',
-      icon: Target,
-      badge: pendingRequestsCount > 0 ? pendingRequestsCount : null,
     },
     {
       id: 'categories',
@@ -108,7 +99,7 @@ export const AdminSidebar = () => {
 
   return (
     <aside className="w-64 bg-neutral-900 text-neutral-300 flex flex-col shrink-0 border-r border-neutral-800 min-h-screen">
-      {/* WordPress Brand Header */}
+      {/* Brand Header */}
       <div className="p-4 border-b border-neutral-800 flex items-center gap-3">
         <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 relative bg-blue-600 shadow-md shadow-blue-500/20">
           <Image
@@ -120,7 +111,7 @@ export const AdminSidebar = () => {
           />
         </div>
         <div>
-          <h2 className="text-sm font-bold text-white tracking-tight">Prompt Studio CMS</h2>
+          <h2 className="text-sm font-bold text-white tracking-tight">Editorial Suite</h2>
           <span className="text-[11px] text-blue-400 font-medium">Trending Photo Prompts</span>
         </div>
       </div>

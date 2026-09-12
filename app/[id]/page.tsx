@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import { ServerStorage } from '@/lib/server-storage';
-import { getPromptSlug, getPromptSeoTitle, getPromptSeoDescription } from '@/lib/utils';
+import { getPromptSlug, getPromptMetaDescription } from '@/lib/utils';
 import { DirectPromptLoader } from '@/components/public/DirectPromptLoader';
 
 export const revalidate = 21600;
@@ -37,8 +37,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const slug = getPromptSlug(post);
-  const cleanTitle = getPromptSeoTitle(post);
-  const cleanDesc = getPromptSeoDescription(post);
+  const cleanTitle = `${post.title} - AI Photo Prompt & Settings`;
+  const cleanDesc = getPromptMetaDescription(post);
   const pageUrl = `https://geminipromptgenerator.online/${slug}`;
 
   return {
@@ -106,7 +106,7 @@ export default async function SinglePromptDetailPage({ params }: PageProps) {
         '@type': 'CreativeWork',
         name: post.title,
         headline: post.title,
-        description: getPromptSeoDescription(post),
+        description: post.seoDescription || post.seo?.metaDescription || post.promptText,
         image: post.imageUrl,
         datePublished: post.publishedAt || post.createdAt,
         dateModified: post.updatedAt || post.publishedAt || post.createdAt,
@@ -157,7 +157,7 @@ export default async function SinglePromptDetailPage({ params }: PageProps) {
       {post && (
         <article className="sr-only" aria-hidden="false">
           <h1>{post.title}</h1>
-          <p>{getPromptSeoDescription(post)}</p>
+          <p>{getPromptMetaDescription(post)}</p>
           <blockquote>{post.promptText}</blockquote>
           <div>Category: {post.category}</div>
           {post.tags && <div>Tags: {post.tags.join(', ')}</div>}

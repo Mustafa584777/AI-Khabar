@@ -31,6 +31,28 @@ export function getPromptSlug(post: { slug?: string; title?: string; id?: string
   return post.id || 'prompt';
 }
 
+export function getPromptMetaDescription(post: {
+  title?: string;
+  category?: string;
+  aiTool?: string;
+  tags?: string[];
+  seoDescription?: string;
+  seo?: { metaDescription?: string };
+  promptText?: string;
+}): string {
+  if (post.seoDescription && post.seoDescription.trim().length > 15) {
+    return post.seoDescription.trim();
+  }
+  if (post.seo?.metaDescription && post.seo.metaDescription.trim().length > 15) {
+    return post.seo.metaDescription.trim();
+  }
+  const toolName = post.aiTool || 'Midjourney, ChatGPT, and Flux';
+  const category = post.category || 'AI Photo';
+  const title = post.title || 'Creative AI Photo Prompt';
+  const tagsStr = post.tags && post.tags.length > 0 ? ` featuring ${post.tags.slice(0, 3).join(', ')}` : '';
+  return `Copy and paste this ${title} photo prompt for ${toolName}. Curated ${category.toLowerCase()} settings and camera parameters${tagsStr}.`;
+}
+
 export function getOptimizedImageUrl(url?: string, width = 550): string {
   if (!url || typeof url !== 'string') return url || '';
   if (url.includes('res.cloudinary.com') && url.includes('/image/upload/')) {
@@ -83,43 +105,5 @@ export function detectPostAspectRatio(post: {
   return '3 / 4';
 }
 
-export function getPromptSeoTitle(post: { title?: string; category?: string }): string {
-  const title = post.title?.trim() || 'AI Photo Prompt';
-  const category = post.category ? ` - ${post.category}` : '';
-  return `${title}${category} | AI Photo Prompt & Settings`;
-}
-
-export function getPromptSeoDescription(post: {
-  title?: string;
-  category?: string;
-  seoDescription?: string;
-  seo?: { metaDescription?: string };
-  promptText?: string;
-  tags?: string[];
-}): string {
-  if (post.seoDescription && post.seoDescription.trim().length >= 25) {
-    return post.seoDescription.trim();
-  }
-  if (post.seo?.metaDescription && post.seo.metaDescription.trim().length >= 25) {
-    return post.seo.metaDescription.trim();
-  }
-
-  // Clean prompt text sample (strip parameter flags like --ar 16:9 etc.)
-  const cleanPrompt = (post.promptText || '')
-    .replace(/--[a-z0-9]+\s+[^\s]+/gi, '')
-    .replace(/--[a-z0-9]+/gi, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  const title = post.title?.trim() || 'Trending AI Photo Prompt';
-  const category = post.category ? ` in ${post.category}` : '';
-  const snippet = cleanPrompt ? ` Prompt: "${cleanPrompt.slice(0, 85).trim()}..."` : '';
-  const tagsStr = post.tags && post.tags.length > 0 ? ` Tags: ${post.tags.slice(0, 3).join(', ')}.` : '';
-
-  const fullDesc = `Copy and paste this trending ${title} AI photo prompt${category} for Midjourney, ChatGPT, Flux, and Gemini.${snippet}${tagsStr} Free copy paste prompt settings.`;
-  return fullDesc.slice(0, 160);
-}
-
 export * from './tag-utils';
-
 

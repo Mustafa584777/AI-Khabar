@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
-import { Sliders, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { getCategoryIcon } from '@/lib/icons';
 import { PersonalizationEngine } from '@/lib/personalization';
 
@@ -14,10 +14,7 @@ export const ToolFilterBar = () => {
     selectedCategory,
     setSelectedCategory,
     categories,
-    selectedSort,
-    setSelectedSort,
     tasteProfile,
-    setIsTasteModalOpen,
   } = useApp();
 
   const isMounted = useIsMounted();
@@ -48,7 +45,7 @@ export const ToolFilterBar = () => {
             <span>For You</span>
           </button>
 
-          {/* 2. AI Ranked Personalized Category Tabs */}
+          {/* AI Ranked Personalized Category Tabs */}
           {personalizedCategories.map((cat) => {
             const isSelected =
               selectedCategory.toLowerCase() === cat.name.toLowerCase();

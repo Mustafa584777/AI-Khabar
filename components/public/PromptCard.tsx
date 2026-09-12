@@ -6,7 +6,7 @@ import { PromptPost } from '@/types/prompt';
 import { useApp } from '@/context/AppContext';
 import Image from 'next/image';
 import { Sparkles, Bookmark, Crown } from 'lucide-react';
-import { getPromptSlug, getOptimizedImageUrl, detectPostAspectRatio } from '@/lib/utils';
+import { getPromptSlug, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription } from '@/lib/utils';
 
 export const PromptCard = ({ post, priority = false }: { post: PromptPost; priority?: boolean }) => {
   const {
@@ -81,11 +81,14 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   return (
     <article
       ref={cardRef}
+      itemScope
+      itemType="https://schema.org/CreativeWork"
       className="group relative rounded-[20px] sm:rounded-[24px] overflow-hidden bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800/80 cursor-pointer shadow-xs hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 select-none w-full"
       id={`prompt-pin-${post.id}`}
       style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
     >
-      <h2 className="sr-only">{post.title}</h2>
+      <h2 className="sr-only" itemProp="name">{post.title}</h2>
+      <p className="sr-only" itemProp="description">{getPromptMetaDescription(post)}</p>
       <a
         href={`/${promptSlug}`}
         onClick={handleCardClick}

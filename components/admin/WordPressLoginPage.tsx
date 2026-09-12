@@ -88,16 +88,16 @@ export const WordPressLoginPage = () => {
             </div>
             <div className="mt-1">
               <h1 className="text-xl font-bold tracking-tight text-neutral-900 dark:text-white flex items-center justify-center gap-1.5">
-                Trending Photo Prompts <span className="text-blue-600 dark:text-blue-400">CMS</span>
+                Trending Photo Prompts <span className="text-blue-600 dark:text-blue-400">Editorial</span>
               </h1>
               <p className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
-                Editorial Administration
+                Editorial Administration Dashboard
               </p>
             </div>
           </Link>
         </div>
 
-        {/* Error Notice (WordPress Style: left thick border) */}
+        {/* Error Notice */}
         {error && (
           <div className="w-full mb-4 p-3 bg-white dark:bg-neutral-900 border-l-4 border-red-500 shadow-sm text-xs text-neutral-800 dark:text-neutral-200 flex items-start gap-2 rounded-r-md">
             <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
@@ -125,7 +125,7 @@ export const WordPressLoginPage = () => {
 
         {/* Login Box */}
         <div className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-lg shadow-neutral-200/50 dark:shadow-none rounded-lg p-6 sm:p-7">
-          <form onSubmit={handleLoginSubmit} className="space-y-4" id="cms-login-form">
+          <form onSubmit={handleLoginSubmit} className="space-y-4" id="admin-login-form">
             <div>
               <label
                 htmlFor="user_login"
@@ -252,7 +252,7 @@ export const WordPressLoginPage = () => {
 
         {/* Privacy Note */}
         <div className="mt-8 text-center text-[11px] text-neutral-400 dark:text-neutral-500">
-          <span>Trending Gemini Prompts Editorial Suite • Secured Administrative Gateway</span>
+          <span>Trending Photo Prompts Editorial Suite • Secured Platform</span>
         </div>
 
       </div>

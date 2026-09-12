@@ -1,6 +1,6 @@
 {
   "name": "Trending Copy Paste Photo Prompts",
-  "description": "Copy-paste prompt directory for Trending Copy Paste Photo Prompts for discovering, editing, and publishing AI prompts and creative visual guides.",
+  "description": "Copy-paste prompt directory for Trending Copy Paste Photo Prompts for creating, exploring, and sharing curated AI photo prompts and creative guides.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

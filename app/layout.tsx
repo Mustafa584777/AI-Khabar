@@ -4,8 +4,6 @@ import { Poppins } from 'next/font/google';
 import './globals.css';
 import { AppProvider } from '@/context/AppContext';
 
-import { InAppNotificationBanner } from '@/components/public/InAppNotificationBanner';
-
 const poppins = Poppins({
   weight: ['300', '400', '500', '600', '700', '800'],
   subsets: ['latin'],
@@ -15,7 +13,7 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: 'Trending Copy Paste Photo Prompts',
-  description: 'Explore trending copy paste photo prompts for Midjourney, ChatGPT, Flux, Claude and Gemini. Discover high-quality AI photo prompts, styles, and negative prompts.',
+  description: 'Explore trending copy paste photo prompts for Midjourney, ChatGPT, Flux, Claude and Gemini. Instant copy, high-res previews, and creative AI prompt settings.',
   icons: {
     icon: '/favicon.ico',
   },
@@ -72,7 +70,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${poppins.variable} ${poppins.className} font-sans antialiased selection:bg-[#E60023] selection:text-white`} suppressHydrationWarning>
         <AppProvider>
           {children}
-          <InAppNotificationBanner />
         </AppProvider>
       </body>
     </html>

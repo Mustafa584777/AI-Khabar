@@ -4,7 +4,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
-import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem, AiSearchResult, PlanTier, PromptRequestItem, PLAN_MONTHLY_REQUEST_LIMITS, AppNotification } from '@/types/prompt';
+import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem, AiSearchResult, PlanTier } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
 import { supabase, supabaseUserToUserAccount } from '@/lib/supabase';
 import { UserSyncService } from '@/lib/user-sync';
@@ -19,8 +19,8 @@ interface AppContextType {
   // Navigation & Views
   currentView: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications';
   setCurrentView: (view: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications') => void;
-  adminSubView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications' | 'requested-prompts';
-  setAdminSubView: (subView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications' | 'requested-prompts') => void;
+  adminSubView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications';
+  setAdminSubView: (subView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications') => void;
   editingPostId: string | null;
   setEditingPostId: (id: string | null) => void;
   selectedPost: PromptPost | null;
@@ -58,28 +58,8 @@ interface AppContextType {
   // Persistent Reference Photo & Prompt Requests
   persistentRefImage: string | null;
   setPersistentRefImage: (url: string | null) => void;
-  promptRequests: PromptRequestItem[];
-  addPromptRequest: (
-    requestText: string,
-    category?: string,
-    details?: { aiToolPreference?: string; aspectRatio?: string; referenceImageUrl?: string }
-  ) => Promise<boolean>;
-  refreshPromptRequests: () => Promise<void>;
-  fulfillPromptRequest: (
-    id: string,
-    fulfillmentData: {
-      fulfilledPrompt: string;
-      fulfilledImageUrl?: string;
-      fulfilledAiTool?: string;
-      fulfilledNotes?: string;
-      adminNotes?: string;
-    }
-  ) => Promise<boolean>;
-  updatePromptRequestStatus: (
-    id: string,
-    status: 'pending' | 'in_progress' | 'completed' | 'fulfilled' | 'rejected'
-  ) => Promise<boolean>;
-  deletePromptRequest: (id: string) => Promise<boolean>;
+  promptRequests: any[];
+  addPromptRequest: (requestText: string, category?: string) => boolean;
 
   // AI Studio History (Image to Prompt & Prompt to Image)
   aiHistory: AIHistoryItem[];
@@ -169,31 +149,6 @@ interface AppContextType {
   lockedPromptContext: PromptPost | null;
   setLockedPromptContext: (post: PromptPost | null) => void;
   applyPlan: (planTier: 'starter' | 'pro' | 'vip') => void;
-
-  // Notifications
-  notifications: AppNotification[];
-  sendAdminNotification: (notifData: {
-    title: string;
-    message: string;
-    category?: string;
-    imageUrl?: string;
-    targetUrl?: string;
-    targetPostId?: string;
-  }) => Promise<boolean>;
-  deleteNotification: (id: string) => Promise<boolean>;
-  isNotificationsDrawerOpen: boolean;
-  setIsNotificationsDrawerOpen: (open: boolean) => void;
-  isNotificationPreferencesModalOpen: boolean;
-  setIsNotificationPreferencesModalOpen: (open: boolean) => void;
-  notificationPreferences: {
-    enabledCategories: string[];
-    browserPushEnabled: boolean;
-    soundEnabled: boolean;
-  };
-  updateNotificationPreferences: (prefs: any) => void;
-  unreadNotificationsCount: number;
-  markNotificationAsRead: (id: string) => Promise<void>;
-  markAllNotificationsAsRead: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -202,7 +157,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Navigation
   const [currentView, setCurrentView] = useState<'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications'>('public');
   const [adminSubView, setAdminSubView] = useState<
-    'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications' | 'requested-prompts'
+    'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications'
   >('dashboard');
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [selectedPost, setSelectedPost] = useState<PromptPost | null>(null);
@@ -274,91 +229,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const [isUnlockPremiumModalOpen, setIsUnlockPremiumModalOpen] = useState<boolean>(false);
   const [lockedPromptContext, setLockedPromptContext] = useState<PromptPost | null>(null);
-
-  // Notifications State & Handlers
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
-  const [isNotificationsDrawerOpen, setIsNotificationsDrawerOpen] = useState(false);
-  const [isNotificationPreferencesModalOpen, setIsNotificationPreferencesModalOpen] = useState(false);
-  const [notificationPreferences, setNotificationPreferences] = useState({
-    enabledCategories: ['all'],
-    browserPushEnabled: true,
-    soundEnabled: true,
-  });
-
-  useEffect(() => {
-    fetch('/api/notifications')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.notifications) {
-          setNotifications(data.notifications);
-        }
-      })
-      .catch((err) => console.error('Failed to load notifications:', err));
-  }, []);
-
-  const sendAdminNotification = async (notifData: {
-    title: string;
-    message: string;
-    category?: string;
-    imageUrl?: string;
-    targetUrl?: string;
-    targetPostId?: string;
-  }) => {
-    try {
-      const res = await fetch('/api/notifications', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(notifData),
-      });
-      const data = await res.json();
-      if (data.success && data.notification) {
-        setNotifications((prev) => [data.notification, ...prev]);
-        showToast('Notification broadcast successfully!');
-        return true;
-      }
-      showToast(data.error || 'Failed to send notification', 'error');
-      return false;
-    } catch (err: any) {
-      showToast(err.message || 'Failed to send notification', 'error');
-      return false;
-    }
-  };
-
-  const deleteNotification = async (id: string) => {
-    try {
-      const res = await fetch(`/api/notifications?id=${id}`, {
-        method: 'DELETE',
-      });
-      const data = await res.json();
-      if (data.success) {
-        if (id === 'all') {
-          setNotifications([]);
-        } else {
-          setNotifications((prev) => prev.filter((n) => n.id !== id));
-        }
-        return true;
-      }
-      return false;
-    } catch (err) {
-      return false;
-    }
-  };
-
-  const markNotificationAsRead = async (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
-  };
-
-  const markAllNotificationsAsRead = async () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  };
-
-  const unreadNotificationsCount = notifications.filter((n) => !n.read).length;
-
-  const updateNotificationPreferences = (prefs: any) => {
-    setNotificationPreferences((prev) => ({ ...prev, ...prefs }));
-  };
 
   // Daily 2 Free Credits Grant Logic
   useEffect(() => {
@@ -539,235 +409,50 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Prompt Requests State (Private & Cloud-Synced)
-  const [promptRequests, setPromptRequests] = useState<PromptRequestItem[]>([]);
+  // Prompt Requests State
+  const [promptRequests, setPromptRequests] = useState<any[]>([]);
 
-  const refreshPromptRequests = useCallback(async () => {
-    try {
-      const url = isAuthenticated
-        ? '/api/prompt-requests'
-        : userAccount?.id
-        ? `/api/prompt-requests?userId=${encodeURIComponent(userAccount.id)}${userAccount.email ? `&email=${encodeURIComponent(userAccount.email)}` : ''}`
-        : null;
-
-      if (!url) {
-        setPromptRequests([]);
-        return;
-      }
-
-      const headers: Record<string, string> = {};
-      if (isAuthenticated) {
-        headers['x-admin-request'] = 'true';
-      }
-
-      const res = await fetch(url, { headers, cache: 'no-store' });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && Array.isArray(data.requests)) {
-          setPromptRequests(data.requests);
-          StorageService.setPromptRequests(data.requests);
-          return;
-        }
-      }
-    } catch (err) {
-      console.warn('Notice fetching prompt requests from server:', err);
-    }
-    const local = StorageService.getPromptRequests();
-    setPromptRequests(local);
-  }, [isAuthenticated, userAccount?.id, userAccount?.email]);
-
-  useEffect(() => {
-    refreshPromptRequests();
-  }, [refreshPromptRequests]);
-
-  const addPromptRequest = async (
-    requestText: string,
-    category?: string,
-    details?: { aiToolPreference?: string; aspectRatio?: string; referenceImageUrl?: string }
-  ): Promise<boolean> => {
+  const addPromptRequest = (requestText: string, category?: string): boolean => {
     if (!userAccount || !userAccount.isLoggedIn) {
-      openAuthModal('Please sign in to request a custom prompt.');
+      openAuthModal('Please sign in to request a prompt.');
       return false;
     }
-
-    const planAllowance = PLAN_MONTHLY_REQUEST_LIMITS[planTier || 'free'] || 0;
-    const planRequests = promptRequestsRemaining || 0;
     const currentPoints = userAccount.points || 0;
-    let usedPlanQuota = false;
-
-    if (planRequests > 0) {
-      usedPlanQuota = true;
-      const nextRemaining = planRequests - 1;
-      setPromptRequestsRemainingState(nextRemaining);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('auraprompt_prompt_requests', nextRemaining.toString());
-      }
-      void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
-        promptRequestsRemaining: nextRemaining,
-      });
-    } else if (currentPoints >= 10) {
-      const updatedAccount: UserAccount = {
-        ...userAccount,
-        points: currentPoints - 10,
-        requestsMade: (userAccount.requestsMade || 0) + 1,
-      };
-      setUserAccount(updatedAccount);
-      StorageService.saveUserAccount(updatedAccount);
-      void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
-        points: currentPoints - 10,
-      });
-    } else {
-      showToast(`You need 10 points or an active plan request! Current points: ${currentPoints}/10`);
+    if (currentPoints < 10) {
+      showToast(`You need 10 points to request a prompt! Current points: ${currentPoints}/10`);
       return false;
     }
 
-    const newReq: PromptRequestItem = {
-      id: 'req_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+    // Deduct 10 points and increment requestsMade
+    const updatedAccount: UserAccount = {
+      ...userAccount,
+      points: currentPoints - 10,
+      requestsMade: (userAccount.requestsMade || 0) + 1,
+    };
+    setUserAccount(updatedAccount);
+    StorageService.saveUserAccount(updatedAccount);
+
+    // Sync deducted points to cloud
+    void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
+      points: currentPoints - 10,
+    });
+
+    const newReq = {
+      id: 'req_' + Date.now(),
       userId: userAccount.id,
-      userName: userAccount.name || 'Anonymous User',
-      userEmail: userAccount.email,
+      userName: userAccount.name,
       userAvatar: userAccount.avatar,
-      userPlanTier: planTier,
-      planRequestsAllowed: planAllowance,
-      planRequestsRemaining: usedPlanQuota ? Math.max(0, planRequests - 1) : planRequests,
-      requestedVia: usedPlanQuota ? 'plan_quota' : 'points',
-      requestText: requestText.trim(),
-      category: category || 'Photorealistic & Portraits',
-      aiToolPreference: details?.aiToolPreference || 'Midjourney v6.1',
-      aspectRatio: details?.aspectRatio || '16:9',
-      referenceImageUrl: details?.referenceImageUrl || undefined,
-      status: 'pending',
+      requestText,
+      category: category || 'General',
+      status: 'pending' as const,
       createdAt: Date.now(),
       likesCount: 0,
     };
 
     const updatedRequests = StorageService.savePromptRequest(newReq);
     setPromptRequests(updatedRequests);
-
-    try {
-      const res = await fetch('/api/prompt-requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newReq),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && data.request) {
-          setPromptRequests((prev) => [data.request, ...prev.filter((r) => r.id !== newReq.id)]);
-        }
-      }
-    } catch (err) {
-      console.warn('Notice saving prompt request to server:', err);
-    }
-
     confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
-    if (usedPlanQuota) {
-      showToast(`Prompt request submitted using your Plan quota! (${promptRequestsRemaining - 1} left this month)`);
-    } else {
-      showToast('Prompt request submitted successfully! 10 points redeemed.');
-    }
-    return true;
-  };
-
-  const fulfillPromptRequest = async (
-    id: string,
-    fulfillmentData: {
-      fulfilledPrompt: string;
-      fulfilledImageUrl?: string;
-      fulfilledAiTool?: string;
-      fulfilledNotes?: string;
-      adminNotes?: string;
-    }
-  ): Promise<boolean> => {
-    try {
-      const res = await fetch('/api/prompt-requests', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id,
-          status: 'fulfilled',
-          ...fulfillmentData,
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && data.request) {
-          setPromptRequests((prev) =>
-            prev.map((r) => (r.id === id ? data.request : r))
-          );
-          StorageService.setPromptRequests(
-            promptRequests.map((r) => (r.id === id ? data.request : r))
-          );
-          showToast('Prompt fulfilled and delivered directly to user dashboard!');
-          return true;
-        }
-      }
-    } catch (err) {
-      console.error('Failed to fulfill prompt request on server:', err);
-    }
-
-    const updated = promptRequests.map((r) => {
-      if (r.id === id) {
-        return {
-          ...r,
-          status: 'fulfilled' as const,
-          fulfilledPrompt: fulfillmentData.fulfilledPrompt,
-          fulfilledImageUrl: fulfillmentData.fulfilledImageUrl,
-          fulfilledAiTool: fulfillmentData.fulfilledAiTool,
-          fulfilledNotes: fulfillmentData.fulfilledNotes,
-          adminNotes: fulfillmentData.adminNotes,
-          fulfilledAt: Date.now(),
-        };
-      }
-      return r;
-    });
-    setPromptRequests(updated);
-    StorageService.setPromptRequests(updated);
-    showToast('Prompt fulfilled and delivered to user dashboard!');
-    return true;
-  };
-
-  const updatePromptRequestStatus = async (
-    id: string,
-    status: 'pending' | 'in_progress' | 'completed' | 'fulfilled' | 'rejected'
-  ): Promise<boolean> => {
-    try {
-      const res = await fetch('/api/prompt-requests', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && data.request) {
-          setPromptRequests((prev) =>
-            prev.map((r) => (r.id === id ? data.request : r))
-          );
-          return true;
-        }
-      }
-    } catch (err) {
-      console.warn('Notice updating request status:', err);
-    }
-
-    const updated = promptRequests.map((r) => (r.id === id ? { ...r, status } : r));
-    setPromptRequests(updated);
-    StorageService.setPromptRequests(updated);
-    return true;
-  };
-
-  const deletePromptRequest = async (id: string): Promise<boolean> => {
-    try {
-      await fetch(`/api/prompt-requests?id=${encodeURIComponent(id)}`, {
-        method: 'DELETE',
-      });
-    } catch (err) {
-      console.warn('Notice deleting prompt request:', err);
-    }
-    const filtered = promptRequests.filter((r) => r.id !== id);
-    setPromptRequests(filtered);
-    StorageService.setPromptRequests(filtered);
-    showToast('Request removed');
+    showToast('Prompt request submitted successfully! 10 points reset.');
     return true;
   };
 
@@ -1969,10 +1654,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setPersistentRefImage,
         promptRequests,
         addPromptRequest,
-        refreshPromptRequests,
-        fulfillPromptRequest,
-        updatePromptRequestStatus,
-        deletePromptRequest,
         aiHistory,
         saveAiHistoryItem,
         deleteAiHistoryItem,
@@ -2032,28 +1713,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         deductToolCredit,
         useToolCredit,
         addToolCredits,
-        unlockedPromptIds,
-        unlockPromptWithCredit,
-        isPromptUnlocked,
         promptRequestsRemaining,
         upgradePlan,
+        unlockedPromptIds,
+        isPromptUnlocked,
+        unlockPromptWithCredit,
         isUnlockPremiumModalOpen,
         setIsUnlockPremiumModalOpen,
         lockedPromptContext,
         setLockedPromptContext,
         applyPlan,
-        notifications,
-        sendAdminNotification,
-        deleteNotification,
-        isNotificationsDrawerOpen,
-        setIsNotificationsDrawerOpen,
-        isNotificationPreferencesModalOpen,
-        setIsNotificationPreferencesModalOpen,
-        notificationPreferences,
-        updateNotificationPreferences,
-        unreadNotificationsCount,
-        markNotificationAsRead,
-        markAllNotificationsAsRead,
       }}
     >
       {children}
