@@ -91,15 +91,19 @@ export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps>
       {/* Header Row: Pinterest Red Badge + App Name + Time + Bell */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          {/* Pinterest-styled Red Circle Logo */}
-          <div className="w-8 h-8 rounded-full bg-[#E60023] flex items-center justify-center text-white font-black text-sm shadow-xs shrink-0 select-none">
-            <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-              <path d="M12 0C5.373 0 0 5.372 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738.098.119.112.224.083.345-.09.375-.291 1.199-.332 1.365-.053.225-.172.271-.401.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.354-.629-2.758-1.379l-.749 2.848c-.269 1.045-1.004 2.352-1.498 3.146 1.123.345 2.306.535 3.546.535 6.627 0 12-5.373 12-12 0-6.628-5.373-12-12-12z" />
-            </svg>
+          {/* App Logo Badge with /logo.png */}
+          <div className="w-8 h-8 rounded-full overflow-hidden shadow-xs shrink-0 select-none bg-neutral-100 dark:bg-neutral-800 relative border border-neutral-200 dark:border-neutral-700">
+            <Image
+              src="/logo.png"
+              alt="tool.reelz"
+              width={32}
+              height={32}
+              className="w-full h-full object-cover"
+            />
           </div>
 
           <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400 font-medium">
-            <span className="font-bold text-neutral-800 dark:text-neutral-200">Pinterest</span>
+            <span className="font-bold text-neutral-800 dark:text-neutral-200">tool.reelz</span>
             <span>•</span>
             <span>{timeAgo}</span>
             <Bell className="w-3 h-3 text-neutral-400 fill-neutral-400" />

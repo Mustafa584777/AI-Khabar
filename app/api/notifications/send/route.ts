@@ -1,4 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { NotificationServerStore } from '@/lib/notification-storage';
+import { PushNotificationItem } from '@/types/notification';
+
+export async function GET() {
+  try {
+    const notifications = NotificationServerStore.getNotifications();
+    const stats = NotificationServerStore.getStats();
+    return NextResponse.json({
+      success: true,
+      notifications,
+      stats,
+    });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message || 'Failed to fetch notifications' },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,7 +41,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const newNotification = {
+    const newNotification: PushNotificationItem = {
       id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       title: title.trim(),
       subtitle: subtitle?.trim() || 'Trending AI Photo Prompts',
@@ -38,9 +57,12 @@ export async function POST(req: NextRequest) {
       read: false,
     };
 
+    const { totalSent } = NotificationServerStore.addNotification(newNotification);
+
     return NextResponse.json({
       success: true,
       notification: newNotification,
+      totalSent,
       message: 'Push notification queued and broadcasted successfully!',
     });
   } catch (error: any) {
