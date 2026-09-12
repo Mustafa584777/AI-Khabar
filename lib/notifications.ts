@@ -11,6 +11,9 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   browserPushGranted: false,
   selectedInterests: [
     'Photorealistic & Portraits',
+    'Anime & Cyberpunk',
+    '3D Art & CGI Renders',
+    'Cinematic & Movie Still',
   ],
   frequency: 'instant',
   soundEnabled: true,
@@ -141,57 +144,6 @@ if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
   }
 }
 
-// Category normalization helper
-export const normalizeCategory = (cat: string): string => {
-  return (cat || '')
-    .toLowerCase()
-    .replace(/&amp;/g, '&')
-    .replace(/&/g, ' and ')
-    .replace(/[\s\-_+]+/g, ' ')
-    .trim();
-};
-
-// Strict check whether notification category matches user selected interests
-export const isCategoryMatchingInterest = (
-  notifCategory: string | undefined | null,
-  userInterests: string[]
-): boolean => {
-  if (!notifCategory) return false;
-  const normNotif = normalizeCategory(notifCategory);
-
-  // Global broadcast to all users
-  if (
-    normNotif === 'all' ||
-    normNotif === 'global' ||
-    normNotif === 'broadcast' ||
-    normNotif === 'everyone' ||
-    normNotif === 'all users'
-  ) {
-    return true;
-  }
-
-  if (!userInterests || userInterests.length === 0) {
-    return false;
-  }
-
-  const slugNotif = normNotif.replace(/[^a-z0-9]/g, '');
-
-  return userInterests.some((interest) => {
-    if (!interest) return false;
-    const normUserInt = normalizeCategory(interest);
-    if (!normUserInt) return false;
-
-    // 1. Exact normalized match (e.g. "anime & manga" === "anime and manga")
-    if (normNotif === normUserInt) return true;
-
-    // 2. Exact alphanumeric slug match (e.g. "animeandmanga" === "animeandmanga")
-    const slugUser = normUserInt.replace(/[^a-z0-9]/g, '');
-    if (slugNotif && slugUser && slugNotif === slugUser) return true;
-
-    return false;
-  });
-};
-
 export const NotificationService = {
   // Get subscriber client ID
   getClientSubscriberId: (): string => {
@@ -212,78 +164,49 @@ export const NotificationService = {
     return Notification.permission;
   },
 
-  // Check if running inside an iframe (e.g. preview environment)
-  isInsideIframe: (): boolean => {
-    if (typeof window === 'undefined') return false;
-    try {
-      return window.self !== window.top;
-    } catch {
-      return true;
-    }
-  },
-
   // Request browser permission and register subscriber with backend
-  requestPushPermission: async (): Promise<{
-    status: NotificationPermission | 'unsupported';
-    isIframe: boolean;
-  }> => {
-    if (typeof window === 'undefined') {
-      return { status: 'unsupported', isIframe: false };
+  requestPushPermission: async (): Promise<boolean> => {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      return false;
     }
 
-    let isIframe = false;
     try {
-      isIframe = window.self !== window.top;
-    } catch {
-      isIframe = true;
-    }
+      const permission = await Notification.requestPermission();
+      const granted = permission === 'granted';
 
-    if (!('Notification' in window)) {
-      return { status: 'unsupported', isIframe };
-    }
+      // Update preferences
+      const prefs = NotificationService.getPreferences();
+      prefs.browserPushGranted = granted;
+      NotificationService.savePreferences(prefs);
 
-    let permission = Notification.permission;
-
-    // If permission is 'default' and not yet decided, invoke browser request
-    if (permission === 'default') {
-      try {
-        permission = await Notification.requestPermission();
-      } catch {
-        try {
-          permission = await new Promise<NotificationPermission>((resolve) => {
-            Notification.requestPermission(resolve);
-          });
-        } catch (cbErr) {
-          console.warn('requestPermission callback error:', cbErr);
-        }
-      }
-    }
-
-    const granted = permission === 'granted';
-
-    // Update preferences with REAL permission state
-    const prefs = NotificationService.getPreferences();
-    prefs.browserPushGranted = granted;
-    NotificationService.savePreferences(prefs);
-
-    // Register Service Worker and server subscriber ONLY when truly granted
-    if (granted) {
-      if ('serviceWorker' in navigator) {
+      // Register Service Worker if granted
+      if (granted && 'serviceWorker' in navigator) {
         try {
           await navigator.serviceWorker.register('/sw.js');
         } catch (swErr) {
           console.warn('SW registration warning:', swErr);
         }
       }
-      await NotificationService.registerSubscriber(prefs.selectedInterests);
-    }
 
-    return { status: permission, isIframe };
+      // Record subscriber on server
+      if (granted) {
+        await NotificationService.registerSubscriber(prefs.selectedInterests);
+      }
+
+      return granted;
+    } catch (e) {
+      console.error('Failed to request push notification permission:', e);
+      return false;
+    }
   },
 
   // Trigger Native Browser Notification Popup
   showNativeNotification: async (item: PushNotificationItem): Promise<boolean> => {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      return false;
+    }
+
+    if (Notification.permission !== 'granted') {
       return false;
     }
 
@@ -294,39 +217,14 @@ export const NotificationService = {
         playNotificationChime();
       }
 
-      const iconPath = `${window.location.origin}/logo.png`;
-      const badgePath = iconPath;
-
-      // Ensure 16:9 composite banner image (handles 4 collage images or 1 image in 16:9)
-      let displayImage = item.imageUrl || '';
-      if (displayImage && displayImage.startsWith('/collages/')) {
-        // Pre-rendered 16:9 static image ready!
-      } else if (item.collageImages && item.collageImages.length > 1) {
-        if (item.id) {
-          displayImage = `/api/notifications/collage?id=${encodeURIComponent(item.id)}`;
-        } else {
-          displayImage = `/api/notifications/collage?urls=${encodeURIComponent(item.collageImages.slice(0, 4).join(','))}`;
-        }
-      } else if (displayImage && !displayImage.includes('/api/notifications/collage')) {
-        // Route single image through 16:9 collage endpoint to enforce 16:9 aspect ratio
-        if (item.id) {
-          displayImage = `/api/notifications/collage?id=${encodeURIComponent(item.id)}`;
-        } else if (displayImage.startsWith('http')) {
-          displayImage = `/api/notifications/collage?urls=${encodeURIComponent(displayImage)}`;
-        }
-      }
-
-      // Guarantee absolute URL for service worker and browser notification engine
-      if (!displayImage) {
-        displayImage = iconPath;
-      } else if (displayImage.startsWith('/')) {
-        displayImage = `${window.location.origin}${displayImage}`;
-      }
+      const iconPath = '/logo.png';
+      const badgePath = '/logo.png';
+      const displayImage = item.imageUrl || item.collageImages?.[0] || '/logo.png';
 
       let shown = false;
 
-      // 1. Try Service Worker showNotification if permitted
-      if ('Notification' in window && Notification.permission === 'granted' && 'serviceWorker' in navigator) {
+      // 1. Try Service Worker showNotification first
+      if ('serviceWorker' in navigator) {
         try {
           const registration = await navigator.serviceWorker.getRegistration();
           if (registration && registration.showNotification) {
@@ -345,11 +243,7 @@ export const NotificationService = {
           } else if (navigator.serviceWorker.controller) {
             navigator.serviceWorker.controller.postMessage({
               type: 'SHOW_NOTIFICATION',
-              payload: {
-                ...item,
-                imageUrl: displayImage,
-                image: displayImage,
-              },
+              payload: item,
             });
             shown = true;
           }
@@ -358,17 +252,31 @@ export const NotificationService = {
         }
       }
 
-      // Also dispatch in-app window event so floating banner notifications appear in the UI
-      window.dispatchEvent(
-        new CustomEvent('promptcms_native_popup', {
-          detail: {
-            ...item,
-            imageUrl: displayImage,
-          },
-        })
-      );
+      // 2. Fallback to Window Notification API
+      if (!shown && typeof Notification !== 'undefined') {
+        try {
+          const n = new Notification(item.title, {
+            body: item.subtitle || item.body,
+            icon: iconPath,
+            image: displayImage,
+            data: { url: item.url },
+          } as any);
 
-      return true;
+          n.onclick = (e) => {
+            e.preventDefault();
+            window.focus();
+            if (item.url) {
+              window.location.href = item.url;
+            }
+            n.close();
+          };
+          shown = true;
+        } catch (winErr) {
+          console.warn('Window Notification failed:', winErr);
+        }
+      }
+
+      return shown;
     } catch (e) {
       console.error('Failed to show native notification:', e);
       return false;
@@ -380,22 +288,24 @@ export const NotificationService = {
     const list = NotificationService.getNotifications();
     if (list.some((n) => n.id === item.id)) return; // Already have it
 
-    const prefs = NotificationService.getPreferences();
-    const matchesInterest = isCategoryMatchingInterest(item.category, prefs.selectedInterests);
-
-    // If notification category DOES NOT MATCH user's selected interests:
-    // Do NOT trigger browser push, do NOT pop up banner, do NOT pollute feed!
-    if (!matchesInterest) {
-      return;
-    }
-
-    // User is subscribed to this category: Prepend to local feed
+    // Prepend to local feed
     const updated = [item, ...list];
     NotificationService.saveNotifications(updated);
 
-    // Check if user allows push and trigger native push
-    if (prefs.enabled && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      await NotificationService.showNativeNotification(item);
+    // Check if user allows push and matches interests
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      const prefs = NotificationService.getPreferences();
+      const catLower = (item.category || '').toLowerCase();
+      const matchesInterest =
+        !item.category ||
+        item.category === 'all' ||
+        prefs.selectedInterests.some(
+          (i) => catLower.includes(i.toLowerCase()) || i.toLowerCase().includes(catLower)
+        );
+
+      if (matchesInterest) {
+        await NotificationService.showNativeNotification(item);
+      }
     }
 
     // Trigger UI refresh event
@@ -409,9 +319,7 @@ export const NotificationService = {
     if (typeof window === 'undefined') return;
     try {
       const lastSyncStr = localStorage.getItem(STORAGE_KEY_LAST_SYNC) || '0';
-      const prefs = NotificationService.getPreferences();
-      const interestsParam = encodeURIComponent((prefs.selectedInterests || []).join(','));
-      const res = await fetch(`/api/notifications/latest?since=${lastSyncStr}&interests=${interestsParam}`);
+      const res = await fetch(`/api/notifications/latest?since=${lastSyncStr}`);
       if (!res.ok) return;
 
       const data = await res.json();
@@ -465,31 +373,23 @@ export const NotificationService = {
 
     if (!interests || interests.length === 0) return all;
 
-    return all.filter((n) => isCategoryMatchingInterest(n.category, interests));
+    const lowerInterests = interests.map((i) => i.toLowerCase());
+
+    return all.filter((n) => {
+      if (!n.category || n.category === 'all') return true;
+      const catLower = n.category.toLowerCase();
+      return lowerInterests.some((i) => catLower.includes(i) || i.includes(catLower));
+    });
   },
 
   // Broadcast & Add notification (e.g. from Admin or Prompt creation)
   addNotification: async (
-    item: Omit<PushNotificationItem, 'id' | 'sentAt' | 'clicksCount' | 'read'> & { id?: string },
+    item: Omit<PushNotificationItem, 'id' | 'sentAt' | 'clicksCount' | 'read'>,
     sendNativePush = true
   ): Promise<PushNotificationItem> => {
-    const notifId = item.id || `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    const validCollage = Array.isArray(item.collageImages)
-      ? item.collageImages.filter((u) => u && typeof u === 'string' && u.trim().length > 0).slice(0, 4)
-      : [];
-
-    let effectiveImageUrl = item.imageUrl || '';
-    if (effectiveImageUrl && effectiveImageUrl.startsWith('/collages/')) {
-      // Pre-saved 16:9 composite already available
-    } else if (validCollage.length > 1 || effectiveImageUrl) {
-      effectiveImageUrl = `/api/notifications/collage?id=${notifId}`;
-    }
-
     const newItem: PushNotificationItem = {
       ...item,
-      id: notifId,
-      imageUrl: effectiveImageUrl || item.imageUrl,
-      collageImages: validCollage.length > 0 ? validCollage : item.imageUrl ? [item.imageUrl] : [],
+      id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       sentAt: new Date().toISOString(),
       clicksCount: 0,
       read: false,
@@ -497,7 +397,7 @@ export const NotificationService = {
 
     // Save locally
     const current = NotificationService.getNotifications();
-    const updated = [newItem, ...current.filter((n) => n.id !== newItem.id)];
+    const updated = [newItem, ...current];
     NotificationService.saveNotifications(updated);
 
     // Broadcast across tabs on same device
@@ -509,13 +409,9 @@ export const NotificationService = {
       }
     }
 
-    // STRICT CHECK: Only pop up native notification if this user has enabled push AND the notification category matches their selected interests!
+    // Show native push on current device if permitted
     if (sendNativePush && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      const prefs = NotificationService.getPreferences();
-      const matches = isCategoryMatchingInterest(newItem.category, prefs.selectedInterests);
-      if (prefs.enabled && matches) {
-        await NotificationService.showNativeNotification(newItem);
-      }
+      await NotificationService.showNativeNotification(newItem);
     }
 
     // Trigger UI refresh event

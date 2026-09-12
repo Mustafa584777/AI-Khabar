@@ -4,8 +4,6 @@ import { Poppins } from 'next/font/google';
 import './globals.css';
 import { AppProvider } from '@/context/AppContext';
 
-import { InAppNotificationBanner } from '@/components/public/InAppNotificationBanner';
-
 const poppins = Poppins({
   weight: ['300', '400', '500', '600', '700', '800'],
   subsets: ['latin'],
@@ -72,7 +70,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${poppins.variable} ${poppins.className} font-sans antialiased selection:bg-[#E60023] selection:text-white`} suppressHydrationWarning>
         <AppProvider>
           {children}
-          <InAppNotificationBanner />
         </AppProvider>
       </body>
     </html>
