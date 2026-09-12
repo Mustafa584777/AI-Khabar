@@ -34,7 +34,7 @@ export const Footer = () => {
             </div>
             <p className="text-sm leading-relaxed text-neutral-500 dark:text-neutral-400 max-w-xs">
               {settings.siteTagline ||
-                'The premier Pinterest-style copy-paste photo prompt directory for Midjourney, ChatGPT, Flux, and Gemini.'}
+                'The premier copy-paste photo prompt directory for Midjourney, ChatGPT, Flux, and Gemini.'}
             </p>
           </div>
 

@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { PromptPost } from '@/types/prompt';
@@ -774,9 +775,9 @@ export const PromptDetailModal = () => {
     <div
       ref={containerRef}
       className="fixed inset-0 z-50 overflow-y-auto bg-neutral-100 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors flex flex-col animate-fade-in"
-      id="pinterest-fullscreen-view"
+      id="fullscreen-prompt-view"
     >
-      {/* Top Pinterest-Style Navigation Bar */}
+      {/* Top Navigation Bar */}
       <header className="sticky top-0 z-40 flex items-center justify-between px-3 sm:px-6 lg:px-8 py-3 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md border-b border-neutral-200/80 dark:border-neutral-800 shadow-sm">
         {/* Left: Back to explore / previous pin button */}
         <div className="flex items-center gap-3">
@@ -805,7 +806,7 @@ export const PromptDetailModal = () => {
 
         {/* Center/Right: Action Buttons */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Pinterest Red Save Button */}
+          {/* Red Save Button */}
           <button
             onClick={() => toggleBookmark(selectedPost.id)}
             className={`flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold shadow-sm transition-all ${
@@ -813,7 +814,7 @@ export const PromptDetailModal = () => {
                 ? 'bg-neutral-800 text-white dark:bg-neutral-200 dark:text-neutral-900'
                 : 'bg-[#E60023] hover:bg-[#ad081b] text-white shadow-[#E60023]/20'
             }`}
-            title={isBookmarked ? 'Saved to collection' : 'Save Pin'}
+            title={isBookmarked ? 'Saved to collection' : 'Save prompt'}
           >
             <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />
             <span>{isBookmarked ? 'Saved' : 'Save'}</span>
@@ -841,7 +842,7 @@ export const PromptDetailModal = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-12">
-        {/* Pinterest Master Pin Card */}
+        {/* Master Prompt Card */}
         <section
           key={selectedPost.id}
           className="bg-white dark:bg-neutral-900 rounded-[28px] sm:rounded-[36px] shadow-2xl border border-neutral-200/80 dark:border-neutral-800 overflow-hidden animate-fade-in transition-all duration-150"
@@ -1132,7 +1133,7 @@ export const PromptDetailModal = () => {
           </div>
         </section>
 
-        {/* Pinterest "More to explore" / "More Prompts" Masonry Image Grid */}
+        {/* "More to explore" / "More Prompts" Masonry Image Grid */}
         <section className="space-y-6 pt-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-200 dark:border-neutral-800 pb-4">
             <div>

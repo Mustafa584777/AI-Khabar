@@ -66,6 +66,12 @@ export const HeroSection = () => {
 
   const sortOptions = [
     {
+      id: 'newest' as const,
+      label: 'Newest First',
+      icon: Clock,
+      desc: 'Recently published prompts',
+    },
+    {
       id: 'trending' as const,
       label: 'Trending',
       icon: Flame,
@@ -88,12 +94,6 @@ export const HeroSection = () => {
       label: 'Most Copied',
       icon: Copy,
       desc: 'Most copied prompts',
-    },
-    {
-      id: 'newest' as const,
-      label: 'Newest First',
-      icon: Clock,
-      desc: 'Recently published prompts',
     },
   ];
 
@@ -120,7 +120,7 @@ export const HeroSection = () => {
 
       {/* Action Bar: Search & Trending/Sort Dropdown */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 animate-fade-in [animation-delay:300ms]">
-        {/* Pinterest Search Bar */}
+        {/* Search Bar */}
         <div className="flex-1 relative group" ref={searchContainerRef}>
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-neutral-400 group-focus-within:text-[#E60023] transition-colors">
             <Search className="w-5 h-5" />

@@ -12,7 +12,7 @@ export interface PushNotificationItem {
   category: string; // e.g. 'all' | 'Photorealistic & Portraits' | 'Anime & Cyberpunk' | etc.
   targetTags?: string[];
   imageUrl?: string; // Main image or first collage card
-  collageImages?: string[]; // Up to 4 images for the Pinterest 4-card strip collage!
+  collageImages?: string[]; // Up to 4 images for the 4-card strip collage
   url: string; // Destination URL e.g. "/cyberpunk-neon-portrait" or "/explore"
   actionButtons?: PushNotificationAction[];
   sentAt: string; // ISO string

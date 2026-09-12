@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { PushNotificationItem } from '@/types/notification';
 import { NotificationService } from '@/lib/notifications';
-import { PinterestNotificationCard } from './PinterestNotificationCard';
+import { NotificationCard } from './NotificationCard';
 import { InterestSelectionModal } from './InterestSelectionModal';
 import {
   Bell,
@@ -154,7 +154,7 @@ export const NotificationsView: React.FC = () => {
               )}
             </div>
             <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
-              Personalized Pinterest-style prompt drops and updates tailored strictly to your selected interests.
+              Personalized prompt drops and updates tailored strictly to your selected interests.
             </p>
           </div>
 
@@ -183,8 +183,8 @@ export const NotificationsView: React.FC = () => {
           </div>
         </div>
 
-        {/* Browser Push Permission Banner (if not granted) */}
-        {browserPushPermission !== 'granted' && browserPushPermission !== 'unsupported' && (
+        {/* Browser Push Permission Banner temporarily hidden */}
+        {false && browserPushPermission !== 'granted' && browserPushPermission !== 'unsupported' && (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[#E60023]/10 border border-[#E60023]/30">
             <div className="flex items-center gap-3">
               <BellRing className="w-5 h-5 text-[#E60023] shrink-0 animate-bounce" />
@@ -208,8 +208,8 @@ export const NotificationsView: React.FC = () => {
           </div>
         )}
 
-        {/* If granted: Show status & Test Popup button */}
-        {browserPushPermission === 'granted' && (
+        {/* Active Browser Push Status Banner temporarily hidden */}
+        {false && browserPushPermission === 'granted' && (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60">
             <div className="flex items-center gap-2.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -311,7 +311,7 @@ export const NotificationsView: React.FC = () => {
       <div className="space-y-4">
         {filteredNotifications.length > 0 ? (
           filteredNotifications.map((notif) => (
-            <PinterestNotificationCard
+            <NotificationCard
               key={notif.id}
               notification={notif}
               onRead={handleSingleRead}

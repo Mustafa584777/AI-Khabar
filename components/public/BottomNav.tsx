@@ -60,7 +60,7 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
   const handleNotificationsClick = () => {
     setCurrentView('notifications');
     setSelectedCategory('all');
-    setSelectedSort('trending');
+    setSelectedSort('newest');
     setSearchQuery('');
     if (pathname !== '/') {
       router.push('/');

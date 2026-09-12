@@ -35,7 +35,7 @@ export const PushNotificationsManager: React.FC = () => {
   const [title, setTitle] = useState<string>('Why is Pink Background everywhere right now?');
   const [subtitle, setSubtitle] = useState<string>('You might like these searches');
   const [body, setBody] = useState<string>(
-    'Explore high-contrast aesthetics, pastel glow prompts, and portrait lighting trending across Pinterest.'
+    'Explore high-contrast aesthetics, pastel glow prompts, and portrait lighting trending across modern photography.'
   );
   const [targetCategory, setTargetCategory] = useState<string>('all');
   const [destinationUrl, setDestinationUrl] = useState<string>('/explore?q=pink+aesthetic');
@@ -43,7 +43,7 @@ export const PushNotificationsManager: React.FC = () => {
     posts[0]?.imageUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80'
   );
 
-  // 4 Collage images (like Pinterest's 4-photo card strip)
+  // 4 Collage images (4-photo card strip)
   const [collageImages, setCollageImages] = useState<string[]>([
     'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=600&auto=format&fit=crop&q=80',
     'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&auto=format&fit=crop&q=80',
@@ -223,11 +223,11 @@ export const PushNotificationsManager: React.FC = () => {
               <Bell className="w-4 h-4 fill-current" />
             </span>
             <h1 className="text-2xl font-black text-neutral-900 dark:text-white tracking-tight">
-              Push Notifications & Pinterest Broadcast
+              Push Notifications & Community Broadcast
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-            Send rich Pinterest-style browser push notifications with 4-card photo strips, custom buttons, and category personalization.
+            Send rich browser push notifications with 4-card photo strips, custom buttons, and category personalization.
           </p>
         </div>
 
@@ -304,7 +304,7 @@ export const PushNotificationsManager: React.FC = () => {
                 required
               />
               <span className="text-[11px] text-neutral-400 mt-1 block">
-                Inspired by Pinterest&apos;s viral question hooks that generate 10x higher click-through rates.
+                Inspired by viral question hooks that generate 10x higher click-through rates.
               </span>
             </div>
 
@@ -359,15 +359,15 @@ export const PushNotificationsManager: React.FC = () => {
               </div>
             </div>
 
-            {/* 4-Card Collage Images Section (Pinterest Signature Look) */}
+            {/* 4-Card Collage Images Section */}
             <div className="space-y-3 pt-2 border-t border-neutral-100 dark:border-neutral-800">
               <div className="flex items-center justify-between">
                 <div>
                   <label className="block text-xs font-bold text-neutral-800 dark:text-neutral-200">
-                    Pinterest 4-Card Photo Collage Strip
+                    4-Card Photo Collage Strip
                   </label>
                   <span className="text-[11px] text-neutral-500">
-                    Provide up to 4 image URLs to render the 4-pin collage strip (as in Pinterest lockscreen notifications).
+                    Provide up to 4 image URLs to render the 4-card collage strip for lockscreen notifications.
                   </span>
                 </div>
                 <button
@@ -524,7 +524,7 @@ export const PushNotificationsManager: React.FC = () => {
               </div>
             </div>
 
-            {/* Pinterest Push Notification Card (Identical to screenshot IMG_20260910_070715_945.jpg) */}
+            {/* Push Notification Card */}
             <div className="relative z-10 w-full rounded-3xl bg-white/95 dark:bg-neutral-900/95 backdrop-blur-2xl shadow-xl border border-white/60 dark:border-neutral-800/80 p-4 sm:p-5 space-y-2.5 transition-all text-left">
               {/* Header: tool.reelz logo + tool.reelz now 🔔 */}
               <div className="flex items-center justify-between">

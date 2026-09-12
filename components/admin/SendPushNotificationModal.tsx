@@ -129,7 +129,7 @@ export const SendPushNotificationModal: React.FC<SendPushNotificationModalProps>
             Broadcast Notification to Subscribed Users
           </h2>
           <p className="text-xs text-neutral-500">
-            Sends native browser push and adds to users&apos; personalized Pinterest notification feed.
+            Sends native browser push and adds to users&apos; personalized notification feed.
           </p>
         </div>
 

@@ -19,13 +19,13 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   soundEnabled: true,
 };
 
-// Seed notifications styled like Pinterest's viral drops
+// Seed notifications styled like viral drops
 export const SEED_NOTIFICATIONS: PushNotificationItem[] = [
   {
-    id: 'notif-pinterest-pink-viral',
+    id: 'notif-pink-viral-aesthetic',
     title: 'Why is Pink Background everywhere right now?',
     subtitle: 'You might like these searches',
-    body: 'Explore high-contrast aesthetics, vaporwave aesthetics, and pastel glow prompts dominating Pinterest and Instagram.',
+    body: 'Explore high-contrast aesthetics, vaporwave aesthetics, and pastel glow prompts dominating modern photography and Instagram.',
     category: 'Photorealistic & Portraits',
     imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80',
     collageImages: [

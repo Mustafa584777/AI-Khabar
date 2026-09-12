@@ -137,7 +137,7 @@ export const TasteProfileModal = () => {
                 Tune Your &quot;For You&quot; Feed
               </h2>
               <p className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">
-                Pinterest-style AI personalization powered by your actions & preferences
+                AI personalization powered by your actions & preferences
               </p>
             </div>
           </div>

@@ -322,7 +322,7 @@ export const UserDashboard = () => {
               </div>
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
                 {isProUser
-                  ? `${toolCredits} prompt tools credits available • ${promptRequestsRemaining} prompt requests remaining • All premium prompts unlocked.`
+                  ? `${toolCredits} prompt tools credits available • All premium prompts unlocked.`
                   : `${toolCredits} credits available. 1 credit unlocks any premium prompt • 3 credits per image extraction. Top up credits anytime.`}
               </p>
             </div>
@@ -384,29 +384,35 @@ export const UserDashboard = () => {
             <span>AI Studio History ({aiHistory.length})</span>
           </button>
 
-          <button
-            onClick={() => setActiveTab('request')}
-            className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shrink-0 ${
-              activeTab === 'request'
-                ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-sm'
-                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-            }`}
-          >
-            <Target className="w-4 h-4 text-[#E60023]" />
-            <span>Request a Prompt</span>
-          </button>
+          {/* Temporarily hidden: Request a Prompt tab */}
+          {false && (
+            <button
+              onClick={() => setActiveTab('request')}
+              className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shrink-0 ${
+                activeTab === 'request'
+                  ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-sm'
+                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+              }`}
+            >
+              <Target className="w-4 h-4 text-[#E60023]" />
+              <span>Request a Prompt</span>
+            </button>
+          )}
 
-          <button
-            onClick={() => setActiveTab('taste')}
-            className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shrink-0 ${
-              activeTab === 'taste'
-                ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-sm'
-                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-            }`}
-          >
-            <SlidersHorizontal className="w-4 h-4" />
-            <span>AI Taste Preferences</span>
-          </button>
+          {/* Temporarily hidden: AI Taste Preferences tab */}
+          {false && (
+            <button
+              onClick={() => setActiveTab('taste')}
+              className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shrink-0 ${
+                activeTab === 'taste'
+                  ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-sm'
+                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+              }`}
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              <span>AI Taste Preferences</span>
+            </button>
+          )}
         </div>
 
         {/* TAB 1: Saved Prompts */}
@@ -729,8 +735,8 @@ export const UserDashboard = () => {
           </div>
         )}
 
-        {/* TAB 3: AI Taste Profile Controls */}
-        {activeTab === 'taste' && (
+        {/* TAB 3: AI Taste Profile Controls (Temporarily Hidden) */}
+        {false && activeTab === 'taste' && (
           <div className="space-y-6">
             <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
               <div>
@@ -844,8 +850,8 @@ export const UserDashboard = () => {
           </div>
         )}
 
-        {/* TAB 4: Request a Prompt */}
-        {activeTab === 'request' && (
+        {/* TAB 4: Request a Prompt (Temporarily Hidden) */}
+        {false && activeTab === 'request' && (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

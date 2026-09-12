@@ -142,7 +142,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
           </div>
         ) : null}
 
-        {/* Pinterest Dark Semi-Transparent Overlay with White Popup Action Buttons */}
+        {/* Dark Semi-Transparent Overlay with White Popup Action Buttons */}
         <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto flex items-center justify-center gap-3.5 z-10">
           <button
             type="button"

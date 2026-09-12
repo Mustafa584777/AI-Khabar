@@ -173,7 +173,7 @@ export const Header = () => {
             )}
           </button>
 
-          {/* Saved Prompts (Pinterest Red Pill) */}
+          {/* Saved Prompts */}
           <button
             onClick={() => setIsBookmarksDrawerOpen(true)}
             className="flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs sm:text-sm font-bold shadow-sm transition-all transform active:scale-95"

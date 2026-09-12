@@ -101,7 +101,7 @@ export function detectPostAspectRatio(post: {
     return `${post.imageWidth} / ${post.imageHeight}`;
   }
 
-  // 6. Default fallback (Pinterest aesthetic 3:4 standard portrait)
+  // 6. Default fallback (3:4 standard portrait)
   return '3 / 4';
 }
 

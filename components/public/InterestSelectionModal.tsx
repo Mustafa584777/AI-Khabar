@@ -92,7 +92,7 @@ export const InterestSelectionModal: React.FC<InterestSelectionModalProps> = ({
             Choose Your Push Notification Interests
           </h2>
           <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
-            Select the categories you want instant Pinterest-style notifications for when new prompts drop.
+            Select the categories you want instant notifications for when new prompts drop.
           </p>
         </div>
 

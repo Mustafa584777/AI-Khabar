@@ -26,7 +26,7 @@ interface AppContextType {
   selectedPost: PromptPost | null;
   setSelectedPost: (post: PromptPost | null) => void;
 
-  // Personalization & Taste Profile (Pinterest-Style AI Personalization)
+  // Personalization & Taste Profile (AI Personalization)
   tasteProfile: UserTasteProfile;
   setTasteProfile: (profile: UserTasteProfile) => void;
   updateTasteProfile: (updates: Partial<UserTasteProfile>) => void;
@@ -669,7 +669,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [likedIds, setLikedIds] = useState<string[]>([]);
   const [isBookmarksDrawerOpen, setIsBookmarksDrawerOpen] = useState<boolean>(false);
 
-  // Personalization Taste Profile (Pinterest AI Personalization)
+  // Personalization Taste Profile (AI Personalization)
   const [tasteProfile, setTasteProfile] = useState<UserTasteProfile>(INITIAL_TASTE_PROFILE);
   const [isTasteModalOpen, setIsTasteModalOpen] = useState<boolean>(false);
 
@@ -749,7 +749,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [selectedTool, setSelectedTool] = useState<string>('all');
   const [selectedSort, setSelectedSort] = useState<
     'trending' | 'most-popular' | 'most-liked' | 'most-copied' | 'newest'
-  >('trending');
+  >('newest');
 
   // Gemini AI Search State & Cache
   const [aiSearchResults, setAiSearchResults] = useState<AiSearchResult | null>(null);

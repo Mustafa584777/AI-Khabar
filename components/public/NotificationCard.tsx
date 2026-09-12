@@ -8,14 +8,14 @@ import { PushNotificationItem } from '@/types/notification';
 import { NotificationService } from '@/lib/notifications';
 import { Bell, ChevronUp, ChevronDown, ExternalLink, Sparkles, Check, ArrowRight } from 'lucide-react';
 
-interface PinterestNotificationCardProps {
+interface NotificationCardProps {
   notification: PushNotificationItem;
   onRead?: (id: string) => void;
   onDelete?: (id: string) => void;
   isCompact?: boolean;
 }
 
-export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps> = ({
+export const NotificationCard: React.FC<NotificationCardProps> = ({
   notification,
   onRead,
   onDelete,
@@ -88,7 +88,7 @@ export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps>
         <span className="absolute top-4 right-4 w-2 h-2 rounded-full bg-[#E60023] animate-pulse" />
       )}
 
-      {/* Header Row: Pinterest Red Badge + App Name + Time + Bell */}
+      {/* Header Row: Red Badge + App Name + Time + Bell */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           {/* App Logo Badge with /logo.png */}
@@ -139,7 +139,7 @@ export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps>
       {/* Expanded Content: Visual Collage Strip & Actions */}
       {isExpanded && (
         <div className="mt-3 space-y-3">
-          {/* Visual Cards Strip: Exactly 4 rounded vertical columns (Pinterest style) */}
+          {/* Visual Cards Strip: Exactly 4 rounded vertical columns */}
           {images.length > 1 ? (
             <div className="grid grid-cols-4 gap-1.5 sm:gap-2.5 rounded-2xl overflow-hidden aspect-[16/9] sm:aspect-[20/9]">
               {images.map((img, idx) => (
@@ -190,7 +190,7 @@ export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps>
               )}
             </div>
 
-            {/* Action Buttons (Pinterest Red Pill + Secondary Pill) */}
+            {/* Action Buttons (Red Pill + Secondary Pill) */}
             <div className="flex items-center gap-2">
               {notification.actionButtons && notification.actionButtons.length > 0 ? (
                 notification.actionButtons.map((action, aIdx) => (
