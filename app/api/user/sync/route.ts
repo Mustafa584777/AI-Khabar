@@ -58,9 +58,25 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, syncData: null });
       }
 
+      const rawSync = row?.data || null;
+      if (rawSync) {
+        const syncData = { ...rawSync };
+        const credits = Number(syncData.toolCredits || 0);
+        if (credits > 2 || syncData.isProUser || (syncData.planTier && syncData.planTier !== 'free')) {
+          syncData.isProUser = true;
+          if (!syncData.planTier || syncData.planTier === 'free') {
+            syncData.planTier = credits >= 499 ? 'vip' : (credits >= 250 ? 'pro' : 'starter');
+          }
+        }
+        return NextResponse.json({
+          success: true,
+          syncData,
+        });
+      }
+
       return NextResponse.json({
         success: true,
-        syncData: row?.data || null,
+        syncData: null,
       });
     }
 
@@ -90,6 +106,11 @@ export async function POST(req: NextRequest) {
         new Set([...(existingData.unlockedPromptIds || []), ...(data.unlockedPromptIds || [])])
       );
 
+      // Safe Tool Credits (maintain balance, never drop to 0 unexpectedly)
+      const resolvedToolCredits = data.toolCredits !== undefined
+        ? Number(data.toolCredits)
+        : (existingData.toolCredits !== undefined ? Number(existingData.toolCredits) : 2);
+
       // Safe Plan Tier resolution (vip > pro > starter > free)
       const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3 };
       const currentTier = existingData.planTier || (existingData.isProUser ? 'pro' : 'free');
@@ -100,12 +121,15 @@ export async function POST(req: NextRequest) {
           resolvedPlanTier = incomingTier;
         }
       }
-      const resolvedIsPro = resolvedPlanTier !== 'free' || Boolean(data.isProUser ?? existingData.isProUser);
+      let resolvedIsPro = resolvedPlanTier !== 'free' || Boolean(data.isProUser ?? existingData.isProUser);
 
-      // Safe Tool Credits (maintain balance, never drop to 0 unexpectedly)
-      const resolvedToolCredits = data.toolCredits !== undefined
-        ? data.toolCredits
-        : (existingData.toolCredits !== undefined ? existingData.toolCredits : 2);
+      // Strict Correctness: Any user with credits > 2 or paid status is marked Pro/Paid
+      if (resolvedToolCredits > 2 || resolvedIsPro || (resolvedPlanTier && resolvedPlanTier !== 'free')) {
+        resolvedIsPro = true;
+        if (resolvedPlanTier === 'free') {
+          resolvedPlanTier = resolvedToolCredits >= 499 ? 'vip' : (resolvedToolCredits >= 250 ? 'pro' : 'starter');
+        }
+      }
 
       // Merge aiHistory safely
       let mergedAiHistory = existingData.aiHistory || [];

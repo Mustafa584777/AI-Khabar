@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { RegisteredUserRecord, PlanTier, UsersBackupPayload } from '@/types/prompt';
@@ -46,8 +46,8 @@ export const UsersManager = () => {
   const [restoreError, setRestoreError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch Users strictly on demand when user clicks "Sync" button
-  const handleSyncUsers = async () => {
+  // Fetch Users function (runs automatically on mount and on manual refresh)
+  const handleSyncUsers = async (isAuto: boolean = false) => {
     setIsLoading(true);
     try {
       const res = await fetch('/api/admin/users', {
@@ -65,17 +65,26 @@ export const UsersManager = () => {
         setHasFetched(true);
         const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         setLastSyncedTime(timeStr);
-        showToast(`Successfully synced ${data.users.length} registered users from Supabase!`);
+        if (!isAuto) {
+          showToast(`Successfully refreshed ${data.users.length} registered users from Supabase!`);
+        }
       } else {
         throw new Error(data.error || 'Failed to parse users data');
       }
     } catch (err: any) {
       console.error('Error syncing users:', err);
-      showToast(err?.message || 'Could not sync users from Supabase. Check database connection.');
+      if (!isAuto) {
+        showToast(err?.message || 'Could not sync users from Supabase. Check database connection.');
+      }
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Automatically fetch users data on mount so admin sees all users without pressing sync button
+  useEffect(() => {
+    void handleSyncUsers(true);
+  }, []);
 
   // Copy email to clipboard
   const copyEmail = (email: string) => {
@@ -207,9 +216,11 @@ export const UsersManager = () => {
       u.name.toLowerCase().includes(q) ||
       (u.username && u.username.toLowerCase().includes(q));
 
+    const isPaid = u.isProUser || (u.planTier && u.planTier !== 'free') || (u.toolCredits && u.toolCredits > 2);
     const matchesTier =
       selectedTier === 'all' ||
-      (selectedTier === 'paid' && u.planTier !== 'free') ||
+      (selectedTier === 'paid' && isPaid) ||
+      (selectedTier === 'free' && !isPaid) ||
       u.planTier === selectedTier;
 
     return matchesQuery && matchesTier;
@@ -217,8 +228,8 @@ export const UsersManager = () => {
 
   // KPI Calculations
   const totalUsersCount = users.length;
-  const paidUsersCount = users.filter((u) => u.planTier && u.planTier !== 'free').length;
-  const freeUsersCount = users.filter((u) => !u.planTier || u.planTier === 'free').length;
+  const paidUsersCount = users.filter((u) => u.isProUser || (u.planTier && u.planTier !== 'free') || (u.toolCredits && u.toolCredits > 2)).length;
+  const freeUsersCount = users.length - paidUsersCount;
   const totalCreditsInSystem = users.reduce((acc, u) => acc + (u.toolCredits || 0), 0);
 
   const getTierBadgeClass = (tier: PlanTier) => {
@@ -258,26 +269,26 @@ export const UsersManager = () => {
               </h1>
             </div>
             <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 max-w-2xl">
-              Real-time user accounts, subscription tiers, and tool credit balances fetched on-demand directly from Supabase database.
+              Live user accounts, subscription tiers, and tool credit balances fetched directly from Supabase & Razorpay.
             </p>
             {lastSyncedTime && (
               <div className="flex items-center gap-2 pt-1 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Last fetched from Supabase at {lastSyncedTime}</span>
+                <span>Live data synced at {lastSyncedTime}</span>
               </div>
             )}
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {/* Sync Button (On-Demand Fetch) */}
+            {/* Refresh Users Button */}
             <button
-              onClick={handleSyncUsers}
+              onClick={() => handleSyncUsers(false)}
               disabled={isLoading}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all disabled:opacity-50"
               id="admin-sync-supabase-users-btn"
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-              <span>{isLoading ? 'Fetching Supabase...' : 'Sync Users from Supabase'}</span>
+              <span>{isLoading ? 'Refreshing...' : 'Refresh Users Data'}</span>
             </button>
 
             {/* Export Backup Button */}
@@ -320,10 +331,10 @@ export const UsersManager = () => {
             <Users className="w-4 h-4 text-blue-500" />
           </div>
           <div className="text-2xl sm:text-3xl font-black text-neutral-900 dark:text-white">
-            {hasFetched ? totalUsersCount : '—'}
+            {hasFetched ? totalUsersCount : (isLoading ? '...' : '—')}
           </div>
           <span className="text-[11px] text-neutral-400">
-            {hasFetched ? 'Registered in Supabase' : 'Click Sync to fetch'}
+            {hasFetched ? 'Registered Accounts' : 'Loading data...'}
           </span>
         </div>
 
@@ -333,7 +344,7 @@ export const UsersManager = () => {
             <Crown className="w-4 h-4 text-amber-500" />
           </div>
           <div className="text-2xl sm:text-3xl font-black text-neutral-900 dark:text-white">
-            {hasFetched ? paidUsersCount : '—'}
+            {hasFetched ? paidUsersCount : (isLoading ? '...' : '—')}
           </div>
           <span className="text-[11px] text-neutral-400">
             Starter / Pro / VIP
@@ -346,7 +357,7 @@ export const UsersManager = () => {
             <Sparkles className="w-4 h-4 text-emerald-500" />
           </div>
           <div className="text-2xl sm:text-3xl font-black text-neutral-900 dark:text-white">
-            {hasFetched ? freeUsersCount : '—'}
+            {hasFetched ? freeUsersCount : (isLoading ? '...' : '—')}
           </div>
           <span className="text-[11px] text-neutral-400">Standard Tier</span>
         </div>
@@ -357,7 +368,7 @@ export const UsersManager = () => {
             <Zap className="w-4 h-4 text-indigo-500" />
           </div>
           <div className="text-2xl sm:text-3xl font-black text-neutral-900 dark:text-white">
-            {hasFetched ? totalCreditsInSystem : '—'}
+            {hasFetched ? totalCreditsInSystem : (isLoading ? '...' : '—')}
           </div>
           <span className="text-[11px] text-neutral-400">Tool Credits in circulation</span>
         </div>
@@ -365,26 +376,27 @@ export const UsersManager = () => {
 
       {/* Main Content Area */}
       {!hasFetched ? (
-        /* Initial Unfetched State (Strict adherence to: "Ise dynamically fetch mat karna jab me sync button per click krunga tabhi fetch karna supabase se") */
         <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl p-12 text-center space-y-4">
           <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto shadow-sm">
-            <Database className="w-8 h-8" />
+            {isLoading ? <RefreshCw className="w-8 h-8 animate-spin" /> : <Database className="w-8 h-8" />}
           </div>
           <div className="max-w-md mx-auto space-y-2">
             <h2 className="text-lg font-bold text-neutral-900 dark:text-white">
-              Supabase User Registry On-Demand
+              {isLoading ? 'Loading Users & Razorpay Data...' : 'Connecting to Database...'}
             </h2>
             <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              User records are not fetched automatically to optimize performance and keep requests lean. Click the button below to pull all registered users, plans, and credits from Supabase.
+              {isLoading
+                ? 'Retrieving registered accounts, payment records, and credit balances...'
+                : 'Could not automatically load users. Click below to retry.'}
             </p>
           </div>
           <button
-            onClick={handleSyncUsers}
+            onClick={() => handleSyncUsers(false)}
             disabled={isLoading}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold shadow-lg shadow-blue-600/30 transition-all"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>Fetch Registered Users Now</span>
+            <span>{isLoading ? 'Fetching Data...' : 'Load Users Now'}</span>
           </button>
         </div>
       ) : (
@@ -502,20 +514,50 @@ export const UsersManager = () => {
 
                       {/* Plan Tier Badge */}
                       <td className="py-3.5 px-4">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border uppercase tracking-wider ${getTierBadgeClass(
-                            u.planTier
-                          )}`}
-                        >
-                          {u.planTier !== 'free' && <Crown className="w-3 h-3 shrink-0" />}
-                          <span>{u.planTier || 'Free'}</span>
-                        </span>
+                        <div className="flex flex-col items-start gap-1">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border uppercase tracking-wider ${getTierBadgeClass(
+                              u.planTier
+                            )}`}
+                          >
+                            {u.isProUser || (u.planTier && u.planTier !== 'free') ? (
+                              <>
+                                <Crown className="w-3 h-3 shrink-0 text-amber-500 fill-amber-500" />
+                                <span>PAID ({u.planTier ? u.planTier.toUpperCase() : 'PRO'})</span>
+                              </>
+                            ) : (
+                              <span>FREE TIER</span>
+                            )}
+                          </span>
+                          {u.paymentAmount ? (
+                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>Razorpay: ₹{u.paymentAmount}</span>
+                            </span>
+                          ) : u.source === 'razorpay_verified' ? (
+                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                              ✓ Razorpay Verified
+                            </span>
+                          ) : null}
+                        </div>
                       </td>
 
                       {/* Tool Credits */}
                       <td className="py-3.5 px-4">
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-900/60 font-bold text-indigo-700 dark:text-indigo-300 text-xs">
-                          <Zap className="w-3.5 h-3.5 text-indigo-500 fill-indigo-500" />
+                        <div
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border font-bold text-xs ${
+                            (u.toolCredits || 0) > 2
+                              ? 'bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-200'
+                              : 'bg-indigo-50 dark:bg-indigo-950/50 border-indigo-200 dark:border-indigo-900/60 text-indigo-700 dark:text-indigo-300'
+                          }`}
+                        >
+                          <Zap
+                            className={`w-3.5 h-3.5 ${
+                              (u.toolCredits || 0) > 2
+                                ? 'text-amber-500 fill-amber-500'
+                                : 'text-indigo-500 fill-indigo-500'
+                            }`}
+                          />
                           <span>{u.toolCredits ?? 2} Credits</span>
                         </div>
                       </td>

@@ -132,12 +132,13 @@ export const PromptGrid = () => {
           if (diff !== 0) return diff;
           return (b.createdAt || '').localeCompare(a.createdAt || '') || a.id.localeCompare(b.id);
         });
-      } else if (selectedSort === 'newest') {
+      } else {
+        // Default / 'newest': Always prioritize newest/latest posts first
         list = [...list].sort((a, b) => {
-          const timeB = new Date(b.createdAt).getTime();
-          const timeA = new Date(a.createdAt).getTime();
-          if (timeB !== timeA) return timeB - timeA;
-          return a.id.localeCompare(b.id);
+          const timeB = new Date(b.publishedAt || b.createdAt || 0).getTime();
+          const timeA = new Date(a.publishedAt || a.createdAt || 0).getTime();
+          if (timeB !== timeA && !isNaN(timeB) && !isNaN(timeA)) return timeB - timeA;
+          return (b.createdAt || '').localeCompare(a.createdAt || '') || b.id.localeCompare(a.id);
         });
       }
     }

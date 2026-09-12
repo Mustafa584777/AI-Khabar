@@ -138,15 +138,23 @@ export const UserSyncService = {
     const remote = await UserSyncService.pullUserData(user.id, user.email);
 
     // Resolve Highest Tier to prevent accidental downgrades across app updates
-    const resolvedTier = resolveHighestTier(localState?.planTier, remote?.planTier);
-    const resolvedIsPro = resolvedTier !== 'free' || Boolean(localState?.isProUser || remote?.isProUser);
+    let resolvedTier = resolveHighestTier(localState?.planTier, remote?.planTier);
+    let resolvedIsPro = resolvedTier !== 'free' || Boolean(localState?.isProUser || remote?.isProUser);
 
     // Resolve Credits: highest balance is maintained
     const resolvedCredits = Math.max(
-      localState?.toolCredits || 0,
+      localState?.toolCredits !== undefined ? Number(localState.toolCredits) : 0,
       remote?.toolCredits !== undefined ? Number(remote.toolCredits) : 0,
       2 // minimum 2 daily base
     );
+
+    // Strict Correctness: If user has > 2 credits or paid flag, strictly preserve paid status
+    if (resolvedCredits > 2 || resolvedIsPro || (resolvedTier && resolvedTier !== 'free')) {
+      resolvedIsPro = true;
+      if (resolvedTier === 'free') {
+        resolvedTier = resolvedCredits >= 499 ? 'vip' : (resolvedCredits >= 250 ? 'pro' : 'starter');
+      }
+    }
 
     // Resolve Unlocked Prompts: non-destructive union
     const resolvedUnlocks = Array.from(

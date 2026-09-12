@@ -38,9 +38,9 @@ const CREDIT_PACKS: CreditPack[] = [
     id: 'pack-100',
     name: 'Starter Pack',
     credits: 100,
-    priceRupees: 1,
-    amountPaise: 100,
-    rateText: '₹0.01 / credit (Testing)',
+    priceRupees: 49,
+    amountPaise: 4900,
+    rateText: '₹0.49 / credit',
     description: 'Perfect for quick unlocks and testing image extraction',
     badge: null,
     icon: <Coins className="w-6 h-6 text-amber-500" />,
@@ -56,9 +56,9 @@ const CREDIT_PACKS: CreditPack[] = [
     id: 'pack-250',
     name: 'Creator Pack',
     credits: 250,
-    priceRupees: 1,
-    amountPaise: 100,
-    rateText: '₹0.004 / credit • Testing',
+    priceRupees: 99,
+    amountPaise: 9900,
+    rateText: '₹0.39 / credit • Popular',
     description: 'Our most popular top-up for active visual designers',
     badge: 'Most Popular',
     icon: <Zap className="w-6 h-6 text-[#E60023]" />,
@@ -74,9 +74,9 @@ const CREDIT_PACKS: CreditPack[] = [
     id: 'pack-499',
     name: 'Mega Pack',
     credits: 499,
-    priceRupees: 1,
-    amountPaise: 100,
-    rateText: '₹0.002 / credit • Best Value',
+    priceRupees: 199,
+    amountPaise: 19900,
+    rateText: '₹0.39 / credit • Best Value',
     description: 'High-volume pack for content studios & power creators',
     badge: 'Best Value',
     icon: <Crown className="w-6 h-6 text-purple-500" />,
@@ -272,7 +272,7 @@ export default function CheckoutPage() {
 
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl sm:text-4xl font-black text-neutral-900 dark:text-white">
-                      ₹1
+                      ₹49
                     </span>
                     <span className="text-xs text-neutral-400">/ month</span>
                   </div>
@@ -284,11 +284,11 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
-                      <span><strong>10</strong> monthly prompt tool credits</span>
+                      <span><strong>100</strong> monthly prompt tool credits</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
-                      <span><strong>1</strong> custom prompt request</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">Unlimited prompt & history saves</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
@@ -298,11 +298,11 @@ export default function CheckoutPage() {
                 </div>
 
                 <RazorpayCheckoutButton
-                  amount={100}
+                  amount={4900}
                   planTier="starter"
                   planName="Starter"
-                  description="Monthly Starter Membership - Unlock Prompts & 10 Credits"
-                  buttonText="Get Starter for ₹1/mo"
+                  description="Monthly Starter Membership - Unlock Prompts, Unlimited Saves & 100 Credits"
+                  buttonText="Get Starter for ₹49/mo"
                   variant="secondary"
                   className="w-full"
                 />
@@ -326,7 +326,7 @@ export default function CheckoutPage() {
 
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl sm:text-4xl font-black text-neutral-900 dark:text-white">
-                      ₹1
+                      ₹99
                     </span>
                     <span className="text-xs text-neutral-400">/ month</span>
                   </div>
@@ -338,11 +338,11 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
-                      <span><strong>50</strong> monthly prompt tool credits</span>
+                      <span><strong>250</strong> monthly prompt tool credits</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
-                      <span><strong>3</strong> custom prompt requests</span>
+                      <span className="font-bold text-[#E60023]">Unlimited prompt & history saves</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
@@ -352,11 +352,11 @@ export default function CheckoutPage() {
                 </div>
 
                 <RazorpayCheckoutButton
-                  amount={100}
+                  amount={9900}
                   planTier="pro"
                   planName="Pro"
-                  description="Monthly Pro Membership - Unlock Prompts & 50 Credits"
-                  buttonText="Get Pro for ₹1/mo"
+                  description="Monthly Pro Membership - Unlock Prompts, Unlimited Saves & 250 Credits"
+                  buttonText="Get Pro for ₹99/mo"
                   variant="pill"
                   size="lg"
                   className="w-full"
@@ -377,7 +377,7 @@ export default function CheckoutPage() {
 
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl sm:text-4xl font-black text-neutral-900 dark:text-white">
-                      ₹1
+                      ₹199
                     </span>
                     <span className="text-xs text-neutral-400">/ month</span>
                   </div>
@@ -389,11 +389,11 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
-                      <span><strong>200</strong> monthly prompt tool credits</span>
+                      <span><strong>500</strong> monthly prompt tool credits</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
-                      <span><strong>10</strong> custom prompt requests</span>
+                      <span className="font-bold text-purple-600 dark:text-purple-400">Unlimited prompt & history saves</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
@@ -403,11 +403,11 @@ export default function CheckoutPage() {
                 </div>
 
                 <RazorpayCheckoutButton
-                  amount={100}
+                  amount={19900}
                   planTier="vip"
                   planName="VIP"
-                  description="Monthly VIP Membership - Unlock Prompts & 200 Credits"
-                  buttonText="Get VIP for ₹1/mo"
+                  description="Monthly VIP Membership - Unlock Prompts, Unlimited Saves & 500 Credits"
+                  buttonText="Get VIP for ₹199/mo"
                   variant="primary"
                   className="w-full"
                 />

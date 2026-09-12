@@ -166,7 +166,7 @@ export const UnlockPremiumModal: React.FC = () => {
           </button>
         </div>
 
-        {/* Tab 1: Credits Packs (₹1 for all packs for testing) */}
+        {/* Tab 1: Credits Packs */}
         {activeTab === 'credits' ? (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {/* 100 Credits Pack */}
@@ -174,9 +174,9 @@ export const UnlockPremiumModal: React.FC = () => {
               <div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-neutral-900 dark:text-white">100 Credits</span>
-                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">₹1</span>
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">₹49</span>
                 </div>
-                <div className="text-[10px] text-neutral-400 mt-0.5">₹0.01 / credit (Testing)</div>
+                <div className="text-[10px] text-neutral-400 mt-0.5">₹0.49 / credit</div>
                 <ul className="mt-2.5 space-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
@@ -193,11 +193,11 @@ export const UnlockPremiumModal: React.FC = () => {
                 </ul>
               </div>
               <RazorpayCheckoutButton
-                amount={100}
+                amount={4900}
                 creditsToAdd={100}
                 planName="100 Credits Pack"
                 description="Instant 100 credits for prompt unlocks & AI studio"
-                buttonText="Buy 100 for ₹1"
+                buttonText="Buy 100 for ₹49"
                 variant="secondary"
                 size="sm"
                 className="w-full text-xs font-bold py-2"
@@ -216,9 +216,9 @@ export const UnlockPremiumModal: React.FC = () => {
               <div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-[#E60023] dark:text-red-400">250 Credits</span>
-                  <span className="text-xs font-bold text-neutral-900 dark:text-white">₹1</span>
+                  <span className="text-xs font-bold text-neutral-900 dark:text-white">₹99</span>
                 </div>
-                <div className="text-[10px] text-neutral-400 mt-0.5">₹0.004 / credit (Testing)</div>
+                <div className="text-[10px] text-neutral-400 mt-0.5">₹0.39 / credit • Popular</div>
                 <ul className="mt-2.5 space-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
@@ -235,11 +235,11 @@ export const UnlockPremiumModal: React.FC = () => {
                 </ul>
               </div>
               <RazorpayCheckoutButton
-                amount={100}
+                amount={9900}
                 creditsToAdd={250}
                 planName="250 Credits Pack"
                 description="Instant 250 credits for prompt unlocks & AI studio"
-                buttonText="Buy 250 for ₹1"
+                buttonText="Buy 250 for ₹99"
                 variant="primary"
                 size="sm"
                 className="w-full text-xs font-bold py-2"
@@ -255,9 +255,9 @@ export const UnlockPremiumModal: React.FC = () => {
               <div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-amber-600 dark:text-amber-400">499 Credits</span>
-                  <span className="text-xs font-bold text-neutral-900 dark:text-white">₹1</span>
+                  <span className="text-xs font-bold text-neutral-900 dark:text-white">₹199</span>
                 </div>
-                <div className="text-[10px] text-neutral-400 mt-0.5">₹0.002 / credit • Best Value</div>
+                <div className="text-[10px] text-neutral-400 mt-0.5">₹0.39 / credit • Best Value</div>
                 <ul className="mt-2.5 space-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
@@ -274,11 +274,11 @@ export const UnlockPremiumModal: React.FC = () => {
                 </ul>
               </div>
               <RazorpayCheckoutButton
-                amount={100}
+                amount={19900}
                 creditsToAdd={499}
                 planName="499 Credits Pack"
                 description="Instant 499 credits for prompt unlocks & AI studio"
-                buttonText="Buy 499 for ₹1"
+                buttonText="Buy 499 for ₹199"
                 variant="dark"
                 size="sm"
                 className="w-full text-xs font-bold py-2"
@@ -297,7 +297,7 @@ export const UnlockPremiumModal: React.FC = () => {
               <div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-neutral-900 dark:text-white">Starter</span>
-                  <span className="text-xs text-neutral-500">₹1/mo</span>
+                  <span className="text-xs font-bold text-neutral-900 dark:text-white">₹49/mo</span>
                 </div>
                 <ul className="mt-2.5 space-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
                   <li className="flex items-center gap-1.5">
@@ -306,19 +306,20 @@ export const UnlockPremiumModal: React.FC = () => {
                   </li>
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span>10 tool credits / mo</span>
+                    <span>100 tool credits / mo</span>
                   </li>
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span>1 prompt request</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">Unlimited prompt & history saves</span>
                   </li>
                 </ul>
               </div>
               <RazorpayCheckoutButton
-                amount={100}
+                amount={4900}
                 planName="Starter Plan"
-                description="Unlock premium prompts + 10 tool credits + 1 request"
-                buttonText="Pay ₹1/mo"
+                planTier="starter"
+                description="Unlock premium prompts + 100 tool credits + Unlimited saves"
+                buttonText="Pay ₹49/mo"
                 variant="secondary"
                 size="sm"
                 className="w-full text-xs font-bold py-2"
@@ -334,7 +335,7 @@ export const UnlockPremiumModal: React.FC = () => {
               <div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-[#E60023] dark:text-red-400">Pro</span>
-                  <span className="text-xs font-bold text-neutral-900 dark:text-white">₹1/mo</span>
+                  <span className="text-xs font-bold text-neutral-900 dark:text-white">₹99/mo</span>
                 </div>
                 <ul className="mt-2.5 space-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
                   <li className="flex items-center gap-1.5">
@@ -343,19 +344,20 @@ export const UnlockPremiumModal: React.FC = () => {
                   </li>
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span>50 tool credits / mo</span>
+                    <span>250 tool credits / mo</span>
                   </li>
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span>3 prompt requests</span>
+                    <span className="font-bold text-[#E60023]">Unlimited prompt & history saves</span>
                   </li>
                 </ul>
               </div>
               <RazorpayCheckoutButton
-                amount={100}
+                amount={9900}
                 planName="Pro Plan"
-                description="Unlock premium prompts + 50 tool credits + 3 requests"
-                buttonText="Pay ₹1/mo"
+                planTier="pro"
+                description="Unlock premium prompts + 250 tool credits + Unlimited saves"
+                buttonText="Pay ₹99/mo"
                 variant="primary"
                 size="sm"
                 className="w-full text-xs font-bold py-2"
@@ -368,7 +370,7 @@ export const UnlockPremiumModal: React.FC = () => {
               <div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-amber-600 dark:text-amber-400">VIP</span>
-                  <span className="text-xs text-neutral-500">₹1/mo</span>
+                  <span className="text-xs font-bold text-neutral-900 dark:text-white">₹199/mo</span>
                 </div>
                 <ul className="mt-2.5 space-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
                   <li className="flex items-center gap-1.5">
@@ -377,19 +379,20 @@ export const UnlockPremiumModal: React.FC = () => {
                   </li>
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span>200 tool credits / mo</span>
+                    <span>500 tool credits / mo</span>
                   </li>
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span>10 prompt requests</span>
+                    <span className="font-bold text-purple-600 dark:text-purple-400">Unlimited prompt & history saves</span>
                   </li>
                 </ul>
               </div>
               <RazorpayCheckoutButton
-                amount={100}
+                amount={19900}
                 planName="VIP Plan"
-                description="Unlock premium prompts + 200 tool credits + 10 requests"
-                buttonText="Pay ₹1/mo"
+                planTier="vip"
+                description="Unlock premium prompts + 500 tool credits + Unlimited saves"
+                buttonText="Pay ₹199/mo"
                 variant="dark"
                 size="sm"
                 className="w-full text-xs font-bold py-2"

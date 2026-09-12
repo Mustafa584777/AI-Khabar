@@ -75,6 +75,18 @@ export const UserDashboard = () => {
   const [historySearch, setHistorySearch] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  // Strict paid tier resolution for Dashboard display
+  const isPaid = Boolean(
+    isProUser ||
+    (planTier && planTier !== 'free') ||
+    (toolCredits && toolCredits > 2) ||
+    (userAccount?.planTier && userAccount.planTier !== 'free') ||
+    (userAccount?.toolCredits && userAccount.toolCredits > 2)
+  );
+  const effectivePlanTier = isPaid
+    ? (planTier && planTier !== 'free' ? planTier : (userAccount?.planTier && userAccount.planTier !== 'free' ? userAccount.planTier : (toolCredits >= 499 ? 'vip' : (toolCredits >= 250 ? 'pro' : 'starter'))))
+    : 'free';
+
   // Request a prompt form state
   const [requestText, setRequestText] = useState('');
   const [requestCategory, setRequestCategory] = useState('Photorealistic');
@@ -226,6 +238,23 @@ export const UserDashboard = () => {
                     Guest Session
                   </span>
                 )}
+                {/* Strict Paid / Free Tier Badge */}
+                <span
+                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold flex items-center gap-1 border ${
+                    isPaid
+                      ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300'
+                      : 'bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400'
+                  }`}
+                >
+                  {isPaid ? (
+                    <>
+                      <Crown className="w-3 h-3 text-amber-500 fill-amber-500" />
+                      <span>PAID ({effectivePlanTier.toUpperCase()})</span>
+                    </>
+                  ) : (
+                    <span>FREE TIER</span>
+                  )}
+                </span>
                 {userAccount?.isLoggedIn && (
                   <button
                     onClick={() => void syncUserCloudData()}
@@ -305,36 +334,48 @@ export const UserDashboard = () => {
           </div>
         )}
 
-        {/* Razorpay Pro Membership Banner */}
+        {/* Membership Tier Banner */}
         <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-amber-500/10 text-amber-500 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20">
-              <Crown className="w-6 h-6" />
+            <div
+              className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border ${
+                isPaid
+                  ? 'bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500/20'
+                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 border-neutral-200 dark:border-neutral-700'
+              }`}
+            >
+              <Crown className={`w-6 h-6 ${isPaid ? 'fill-amber-500 text-amber-500' : ''}`} />
             </div>
             <div className="space-y-0.5">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm sm:text-base font-black text-neutral-900 dark:text-white">
-                  {isProUser ? `${(planTier || 'pro').toUpperCase()} Membership Active` : 'Upgrade to Creator Pro with Razorpay'}
+                  {isPaid ? `${effectivePlanTier.toUpperCase()} Membership Active` : 'Upgrade to Creator Pro'}
                 </h3>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 text-[10px] font-mono font-bold">
-                  {isProUser ? 'PRO MEMBER' : 'FREE TIER'}
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                    isPaid
+                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
+                      : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
+                  }`}
+                >
+                  {isPaid ? `PAID (${effectivePlanTier.toUpperCase()})` : 'FREE TIER'}
                 </span>
               </div>
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                {isProUser
-                  ? `${toolCredits} prompt tools credits available • All premium prompts unlocked.`
+                {isPaid
+                  ? `${toolCredits} prompt tools credits available • All premium prompts unlocked • Unlimited prompt & history saves.`
                   : `${toolCredits} credits available. 1 credit unlocks any premium prompt • 3 credits per image extraction. Top up credits anytime.`}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0 self-start md:self-auto">
-            {!isProUser ? (
+            {!isPaid ? (
               <>
                 <RazorpayCheckoutButton
-                  amount={19900}
+                  amount={9900}
                   planName="Pro Creator"
-                  buttonText="Get Pro (₹199)"
+                  buttonText="Get Pro (₹99)"
                   variant="pill"
                   size="sm"
                 />

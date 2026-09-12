@@ -38,6 +38,8 @@ export async function GET(req: NextRequest) {
         .like('id', 'user_sync_%');
 
       if (!syncError && Array.isArray(syncRows)) {
+        const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3 };
+
         for (const row of syncRows) {
           const syncData = row.data || {};
           const email = getCleanEmail(syncData.email);
@@ -46,9 +48,16 @@ export async function GET(req: NextRequest) {
 
           if (!key) continue;
 
-          const planTier: PlanTier = syncData.planTier || (syncData.isProUser ? 'pro' : 'free');
-          const isProUser = planTier !== 'free' || Boolean(syncData.isProUser);
-          const toolCredits = typeof syncData.toolCredits === 'number' ? syncData.toolCredits : 2;
+          const rawCredits = typeof syncData.toolCredits === 'number' ? syncData.toolCredits : 2;
+          const isExplicitPro = Boolean(syncData.isProUser);
+          const rawTier: PlanTier = syncData.planTier || (isExplicitPro ? 'pro' : 'free');
+          
+          // A user is strictly a Paid user if rawTier !== 'free' OR rawCredits > 2 OR isExplicitPro
+          const isProUser = rawTier !== 'free' || isExplicitPro || rawCredits > 2;
+          const planTier: PlanTier = isProUser && rawTier === 'free'
+            ? (rawCredits >= 499 ? 'vip' : (rawCredits >= 250 ? 'pro' : 'starter'))
+            : rawTier;
+          const toolCredits = rawCredits;
           const points = typeof syncData.points === 'number' ? syncData.points : 10;
           const unlockedPromptIds = Array.isArray(syncData.unlockedPromptIds) ? syncData.unlockedPromptIds : [];
           const bookmarks = Array.isArray(syncData.bookmarkedIds) ? syncData.bookmarkedIds : [];
@@ -74,18 +83,21 @@ export async function GET(req: NextRequest) {
               likesCount: likes.length,
               joinedDate: syncData.joinedDate || (syncData.updatedAt ? new Date(syncData.updatedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Recently'),
               lastSyncedAt: syncData.updatedAt || new Date().toISOString(),
-              source: 'supabase_sync',
+              source: isProUser ? 'supabase_sync' : 'supabase_sync',
               rawSyncData: syncData,
             });
           } else {
-            // Merge with highest priority
+            // Merge non-destructively giving priority to paid state
             const updatedUnlocks = Array.from(new Set([...existing.unlockedPromptIds, ...unlockedPromptIds]));
             existing.unlockedPromptIds = updatedUnlocks;
             if (toolCredits > existing.toolCredits) existing.toolCredits = toolCredits;
             if (points > existing.points) existing.points = points;
-            if (planTier !== 'free' && existing.planTier === 'free') {
+            if (isProUser) existing.isProUser = true;
+            if ((TIER_RANK[planTier] || 0) > (TIER_RANK[existing.planTier] || 0)) {
               existing.planTier = planTier;
-              existing.isProUser = true;
+            }
+            if (syncData.updatedAt && new Date(syncData.updatedAt) > new Date(existing.lastSyncedAt || 0)) {
+              existing.lastSyncedAt = syncData.updatedAt;
             }
           }
         }
@@ -109,7 +121,6 @@ export async function GET(req: NextRequest) {
 
             const existing = usersMap.get(key);
             if (existing) {
-              existing.source = 'supabase_auth';
               if (u.id) existing.id = u.id;
               if (createdDate && (!existing.joinedDate || existing.joinedDate === 'Recently')) {
                 existing.joinedDate = createdDate;
@@ -143,7 +154,77 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const users = Array.from(usersMap.values());
+    // 3. Fetch from Razorpay API to enrich user records with live payment transactions
+    const rzpKeyId = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_SKvY1N5zP65v3p';
+    const rzpKeySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (rzpKeyId && rzpKeySecret) {
+      try {
+        const Razorpay = (await import('razorpay')).default;
+        const razorpay = new Razorpay({
+          key_id: rzpKeyId,
+          key_secret: rzpKeySecret,
+        });
+        const payments = await razorpay.payments.all({ count: 100 });
+        if (payments && Array.isArray((payments as any).items)) {
+          for (const p of (payments as any).items) {
+            if (p.status === 'captured') {
+              const payEmail = getCleanEmail(p.email);
+              const amountRupees = Math.round(Number(p.amount) / 100);
+              const inferredTier: PlanTier = amountRupees >= 199 ? 'vip' : (amountRupees >= 99 ? 'pro' : (amountRupees >= 49 ? 'starter' : 'pro'));
+              const payDate = p.created_at ? new Date(p.created_at * 1000).toISOString() : new Date().toISOString();
+
+              if (payEmail) {
+                const existing = usersMap.get(payEmail);
+                if (existing) {
+                  existing.isProUser = true;
+                  existing.planTier = inferredTier;
+                  existing.source = 'razorpay_verified';
+                  existing.paymentAmount = amountRupees;
+                  existing.paymentId = p.id;
+                  existing.paymentDate = payDate;
+                  existing.paymentMethod = p.method;
+                } else {
+                  const name = p.notes?.name || payEmail.split('@')[0];
+                  usersMap.set(payEmail, {
+                    id: `rzp_${p.id}`,
+                    email: payEmail,
+                    name: String(name),
+                    username: `@${payEmail.split('@')[0]}`,
+                    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
+                    planTier: inferredTier,
+                    isProUser: true,
+                    toolCredits: amountRupees >= 199 ? 499 : (amountRupees >= 99 ? 250 : 100),
+                    points: 50,
+                    unlockedPromptIds: [],
+                    promptRequestsRemaining: 0,
+                    aiHistoryCount: 0,
+                    bookmarksCount: 0,
+                    likesCount: 0,
+                    joinedDate: new Date(payDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                    lastSyncedAt: payDate,
+                    source: 'razorpay_verified',
+                    paymentAmount: amountRupees,
+                    paymentId: p.id,
+                    paymentDate: payDate,
+                    paymentMethod: p.method,
+                  });
+                }
+              }
+            }
+          }
+        }
+      } catch (rzpErr) {
+        console.warn('Razorpay API fetch notice:', rzpErr);
+      }
+    }
+
+    // Sort: Paid members first, then by credits descending, then recent activity
+    const users = Array.from(usersMap.values()).sort((a, b) => {
+      if (a.isProUser && !b.isProUser) return -1;
+      if (!a.isProUser && b.isProUser) return 1;
+      if (b.toolCredits !== a.toolCredits) return b.toolCredits - a.toolCredits;
+      return new Date(b.lastSyncedAt || 0).getTime() - new Date(a.lastSyncedAt || 0).getTime();
+    });
 
     return NextResponse.json({
       success: true,

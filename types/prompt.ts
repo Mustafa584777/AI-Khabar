@@ -170,7 +170,11 @@ export interface RegisteredUserRecord {
   likesCount?: number;
   joinedDate: string;
   lastSyncedAt?: string;
-  source: 'supabase_auth' | 'supabase_sync' | 'local_store';
+  source: 'supabase_auth' | 'supabase_sync' | 'local_store' | 'razorpay' | 'razorpay_verified';
+  paymentAmount?: number;
+  paymentId?: string;
+  paymentDate?: string;
+  paymentMethod?: string;
   rawSyncData?: any;
 }
 

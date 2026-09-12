@@ -596,6 +596,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const saveAiHistoryItem = (item: AIHistoryItem) => {
+    // Premium Monthly exclusive feature with unlimited saves
+    if (!isProUser && planTier === 'free') {
+      showToast('AI history save is a Premium feature! Upgrade to Monthly Plan for unlimited saves.');
+      setIsUnlockPremiumModalOpen(true);
+      return;
+    }
+
     const itemWithUser: AIHistoryItem = {
       ...item,
       userId: userAccount?.id || 'guest',
