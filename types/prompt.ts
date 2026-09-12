@@ -88,13 +88,6 @@ export interface PromptPost {
 
 export type PlanTier = 'free' | 'starter' | 'pro' | 'vip';
 
-export const PLAN_MONTHLY_REQUEST_LIMITS: Record<PlanTier, number> = {
-  free: 0,
-  starter: 1,
-  pro: 3,
-  vip: 10,
-};
-
 export interface Category {
   id: string;
   name: string;
@@ -193,28 +186,12 @@ export interface PromptRequestItem {
   id: string;
   userId: string;
   userName: string;
-  userEmail?: string;
   userAvatar?: string;
-  userPlanTier?: PlanTier;
-  planRequestsAllowed?: number;
-  planRequestsRemaining?: number;
-  requestedVia?: 'plan_quota' | 'points';
   requestText: string;
   category?: string;
-  aiToolPreference?: string;
-  aspectRatio?: string;
-  referenceImageUrl?: string;
-  status: 'pending' | 'in_progress' | 'fulfilled' | 'completed' | 'rejected';
+  status: 'pending' | 'in_progress' | 'completed';
   createdAt: number;
   likesCount: number;
-  // Admin Fulfillment Fields (delivered directly & privately to user's dashboard):
-  fulfilledPrompt?: string;
-  fulfilledImageUrl?: string;
-  fulfilledAiTool?: string;
-  fulfilledNotes?: string;
-  adminNotes?: string;
-  fulfilledAt?: number;
-  requestSource?: 'points' | 'plan';
 }
 
 export interface AIHistoryItem {
@@ -254,19 +231,6 @@ export interface AiSearchResult {
 }
 
 export type { UserTasteProfile, GenderVibe } from '@/lib/personalization';
-
-export interface AppNotification {
-  id: string;
-  title: string;
-  message: string;
-  category?: string;
-  imageUrl?: string;
-  targetUrl?: string;
-  targetPostId?: string;
-  createdAt: number;
-  read?: boolean;
-  sentBy?: string;
-}
 
 
 

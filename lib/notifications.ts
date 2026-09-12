@@ -3,8 +3,6 @@ import { PushNotificationItem, NotificationPreferences, PushSubscriber } from '@
 const STORAGE_KEY_NOTIFICATIONS = 'promptcms_push_notifications';
 const STORAGE_KEY_PREFERENCES = 'promptcms_push_preferences';
 const STORAGE_KEY_SUBSCRIBERS = 'promptcms_push_subscribers';
-const STORAGE_KEY_CLIENT_ID = 'promptcms_subscriber_client_id';
-const STORAGE_KEY_LAST_SYNC = 'promptcms_last_sync_timestamp';
 
 export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   enabled: true,
@@ -19,7 +17,7 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   soundEnabled: true,
 };
 
-// Seed notifications styled like Pinterest's viral drops
+// Seed notifications styled exactly like Pinterest's viral drops
 export const SEED_NOTIFICATIONS: PushNotificationItem[] = [
   {
     id: 'notif-pinterest-pink-viral',
@@ -39,7 +37,7 @@ export const SEED_NOTIFICATIONS: PushNotificationItem[] = [
       { label: 'Explore Searches', url: '/explore?q=pink+aesthetic' },
       { label: 'Try in Studio', url: '/create' },
     ],
-    sentAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
+    sentAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15 mins ago
     sentBy: 'admin',
     clicksCount: 142,
     read: false,
@@ -62,7 +60,7 @@ export const SEED_NOTIFICATIONS: PushNotificationItem[] = [
       { label: 'Copy Prompts', url: '/explore?category=Anime+%26+Cyberpunk' },
       { label: 'AI Generator', url: '/create' },
     ],
-    sentAt: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
+    sentAt: new Date(Date.now() - 1000 * 60 * 180).toISOString(), // 3 hours ago
     sentBy: 'admin',
     clicksCount: 389,
     read: false,
@@ -84,7 +82,7 @@ export const SEED_NOTIFICATIONS: PushNotificationItem[] = [
     actionButtons: [
       { label: 'View Gallery', url: '/explore?category=3D+Art+%26+CGI+Renders' },
     ],
-    sentAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+    sentAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
     sentBy: 'admin',
     clicksCount: 512,
     read: true,
@@ -124,39 +122,13 @@ export const playNotificationChime = () => {
     osc2.start(now + 0.08);
     osc1.stop(now + 0.35);
     osc2.stop(now + 0.4);
-  } catch {
+  } catch (e) {
     // Ignore audio permission edge-cases
   }
 };
 
-// Global cross-tab channel
-let pushChannel: BroadcastChannel | null = null;
-if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
-  try {
-    pushChannel = new BroadcastChannel('auraprompt_push_events');
-    pushChannel.onmessage = (event) => {
-      if (event.data?.type === 'NEW_NOTIFICATION' && event.data.item) {
-        NotificationService.handleIncomingRealNotification(event.data.item);
-      }
-    };
-  } catch (err) {
-    console.warn('BroadcastChannel error:', err);
-  }
-}
-
 export const NotificationService = {
-  // Get subscriber client ID
-  getClientSubscriberId: (): string => {
-    if (typeof window === 'undefined') return 'sub-ssr';
-    let id = localStorage.getItem(STORAGE_KEY_CLIENT_ID);
-    if (!id) {
-      id = `sub-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      localStorage.setItem(STORAGE_KEY_CLIENT_ID, id);
-    }
-    return id;
-  },
-
-  // Check browser permission status
+  // Check permission
   getBrowserPermissionStatus: (): NotificationPermission | 'unsupported' => {
     if (typeof window === 'undefined' || !('Notification' in window)) {
       return 'unsupported';
@@ -164,7 +136,7 @@ export const NotificationService = {
     return Notification.permission;
   },
 
-  // Request browser permission and register subscriber with backend
+  // Request browser permission
   requestPushPermission: async (): Promise<boolean> => {
     if (typeof window === 'undefined' || !('Notification' in window)) {
       return false;
@@ -188,9 +160,9 @@ export const NotificationService = {
         }
       }
 
-      // Record subscriber on server
+      // Record subscriber
       if (granted) {
-        await NotificationService.registerSubscriber(prefs.selectedInterests);
+        NotificationService.registerSubscriber(prefs.selectedInterests);
       }
 
       return granted;
@@ -200,7 +172,7 @@ export const NotificationService = {
     }
   },
 
-  // Trigger Native Browser Notification Popup
+  // Trigger Native Browser Notification
   showNativeNotification: async (item: PushNotificationItem): Promise<boolean> => {
     if (typeof window === 'undefined' || !('Notification' in window)) {
       return false;
@@ -211,132 +183,56 @@ export const NotificationService = {
     }
 
     try {
-      // Play soft chime if enabled
+      // Play soft chime
       const prefs = NotificationService.getPreferences();
       if (prefs.soundEnabled) {
         playNotificationChime();
       }
 
-      const iconPath = '/logo.png';
-      const badgePath = '/logo.png';
-      const displayImage = item.imageUrl || item.collageImages?.[0] || '/logo.png';
-
-      let shown = false;
-
-      // 1. Try Service Worker showNotification first
+      // Try via service worker for richer lockscreen UI
       if ('serviceWorker' in navigator) {
-        try {
-          const registration = await navigator.serviceWorker.getRegistration();
-          if (registration && registration.showNotification) {
-            await registration.showNotification(item.title, {
-              body: item.subtitle || item.body,
-              icon: iconPath,
-              badge: badgePath,
-              image: displayImage,
-              data: { url: item.url },
-              actions: item.actionButtons?.slice(0, 2).map((b) => ({
-                action: b.actionKey || 'open',
-                title: b.label,
-              })),
-            } as any);
-            shown = true;
-          } else if (navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({
-              type: 'SHOW_NOTIFICATION',
-              payload: item,
-            });
-            shown = true;
-          }
-        } catch (swErr) {
-          console.warn('Service worker showNotification fallback:', swErr);
-        }
-      }
-
-      // 2. Fallback to Window Notification API
-      if (!shown && typeof Notification !== 'undefined') {
-        try {
-          const n = new Notification(item.title, {
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (registration && registration.showNotification) {
+          await registration.showNotification(item.title, {
             body: item.subtitle || item.body,
-            icon: iconPath,
-            image: displayImage,
+            icon: '/logo.png',
+            badge: '/logo.png',
+            image: item.imageUrl || item.collageImages?.[0],
             data: { url: item.url },
+            actions: item.actionButtons?.slice(0, 2).map((b) => ({
+              action: b.actionKey || 'open',
+              title: b.label,
+            })),
           } as any);
-
-          n.onclick = (e) => {
-            e.preventDefault();
-            window.focus();
-            if (item.url) {
-              window.location.href = item.url;
-            }
-            n.close();
-          };
-          shown = true;
-        } catch (winErr) {
-          console.warn('Window Notification failed:', winErr);
+          return true;
         }
       }
 
-      return shown;
+      // Fallback to Window Notification API
+      const n = new Notification(item.title, {
+        body: item.subtitle || item.body,
+        icon: '/logo.png',
+        image: item.imageUrl || item.collageImages?.[0],
+        data: { url: item.url },
+      } as any);
+
+      n.onclick = (e) => {
+        e.preventDefault();
+        window.focus();
+        if (item.url) {
+          window.location.href = item.url;
+        }
+        n.close();
+      };
+
+      return true;
     } catch (e) {
       console.error('Failed to show native notification:', e);
       return false;
     }
   },
 
-  // Handle incoming real notification from server or BroadcastChannel
-  handleIncomingRealNotification: async (item: PushNotificationItem) => {
-    const list = NotificationService.getNotifications();
-    if (list.some((n) => n.id === item.id)) return; // Already have it
-
-    // Prepend to local feed
-    const updated = [item, ...list];
-    NotificationService.saveNotifications(updated);
-
-    // Check if user allows push and matches interests
-    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      const prefs = NotificationService.getPreferences();
-      const catLower = (item.category || '').toLowerCase();
-      const matchesInterest =
-        !item.category ||
-        item.category === 'all' ||
-        prefs.selectedInterests.some(
-          (i) => catLower.includes(i.toLowerCase()) || i.toLowerCase().includes(catLower)
-        );
-
-      if (matchesInterest) {
-        await NotificationService.showNativeNotification(item);
-      }
-    }
-
-    // Trigger UI refresh event
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('promptcms_new_notification', { detail: item }));
-    }
-  },
-
-  // Sync with Server (fetches any newly broadcasted notifications)
-  syncWithServer: async (): Promise<void> => {
-    if (typeof window === 'undefined') return;
-    try {
-      const lastSyncStr = localStorage.getItem(STORAGE_KEY_LAST_SYNC) || '0';
-      const res = await fetch(`/api/notifications/latest?since=${lastSyncStr}`);
-      if (!res.ok) return;
-
-      const data = await res.json();
-      if (data.success && Array.isArray(data.notifications)) {
-        for (const notif of data.notifications) {
-          await NotificationService.handleIncomingRealNotification(notif);
-        }
-        if (data.timestamp) {
-          localStorage.setItem(STORAGE_KEY_LAST_SYNC, String(data.timestamp));
-        }
-      }
-    } catch {
-      // Ignore background sync errors
-    }
-  },
-
-  // Get notifications from local storage
+  // Get notifications
   getNotifications: (): PushNotificationItem[] => {
     if (typeof window === 'undefined') return SEED_NOTIFICATIONS;
     try {
@@ -363,13 +259,12 @@ export const NotificationService = {
     }
   },
 
-  // Filter notifications based on user selected interests
+  // Filter notifications for user based on selected interests
   getPersonalizedNotifications: (userInterests?: string[]): PushNotificationItem[] => {
     const all = NotificationService.getNotifications();
-    const interests =
-      userInterests && userInterests.length > 0
-        ? userInterests
-        : NotificationService.getPreferences().selectedInterests;
+    const interests = userInterests && userInterests.length > 0
+      ? userInterests
+      : NotificationService.getPreferences().selectedInterests;
 
     if (!interests || interests.length === 0) return all;
 
@@ -382,7 +277,7 @@ export const NotificationService = {
     });
   },
 
-  // Broadcast & Add notification (e.g. from Admin or Prompt creation)
+  // Add notification (e.g. from Admin or Prompt creation)
   addNotification: async (
     item: Omit<PushNotificationItem, 'id' | 'sentAt' | 'clicksCount' | 'read'>,
     sendNativePush = true
@@ -395,28 +290,22 @@ export const NotificationService = {
       read: false,
     };
 
-    // Save locally
     const current = NotificationService.getNotifications();
     const updated = [newItem, ...current];
     NotificationService.saveNotifications(updated);
 
-    // Broadcast across tabs on same device
-    if (pushChannel) {
-      try {
-        pushChannel.postMessage({ type: 'NEW_NOTIFICATION', item: newItem });
-      } catch {
-        // ignore
+    if (sendNativePush) {
+      // Check if user interests match
+      const prefs = NotificationService.getPreferences();
+      const catLower = (newItem.category || '').toLowerCase();
+      const matchesInterest =
+        !newItem.category ||
+        newItem.category === 'all' ||
+        prefs.selectedInterests.some((i) => catLower.includes(i.toLowerCase()) || i.toLowerCase().includes(catLower));
+
+      if (matchesInterest) {
+        await NotificationService.showNativeNotification(newItem);
       }
-    }
-
-    // Show native push on current device if permitted
-    if (sendNativePush && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      await NotificationService.showNativeNotification(newItem);
-    }
-
-    // Trigger UI refresh event
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('promptcms_new_notification', { detail: newItem }));
     }
 
     return newItem;
@@ -477,70 +366,7 @@ export const NotificationService = {
     }
   },
 
-  // Push Subscribers (Sync with server for real admin metrics)
-  fetchRealSubscribers: async (): Promise<{ subscribers: PushSubscriber[]; count: number }> => {
-    try {
-      const res = await fetch('/api/notifications/subscribe');
-      if (res.ok) {
-        const data = await res.json();
-        return {
-          subscribers: data.subscribers || [],
-          count: data.count || (data.subscribers ? data.subscribers.length : 0),
-        };
-      }
-    } catch (e) {
-      console.error('Failed to fetch real subscribers from server:', e);
-    }
-    return { subscribers: [], count: 0 };
-  },
-
-  fetchRealStats: async (): Promise<{ totalSent: number; totalSubscribers: number; totalClicks: number }> => {
-    try {
-      const res = await fetch('/api/notifications/send');
-      if (res.ok) {
-        const data = await res.json();
-        return data.stats || { totalSent: 0, totalSubscribers: 0, totalClicks: 0 };
-      }
-    } catch (e) {
-      console.error('Failed to fetch real stats from server:', e);
-    }
-    return { totalSent: 0, totalSubscribers: 0, totalClicks: 0 };
-  },
-
-  // Register real subscriber on server and locally
-  registerSubscriber: async (interests: string[]): Promise<void> => {
-    if (typeof window === 'undefined') return;
-    const clientSubscriberId = NotificationService.getClientSubscriberId();
-
-    try {
-      // 1. Send to server
-      const res = await fetch('/api/notifications/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subscriberId: clientSubscriberId,
-          interests,
-          userAgent: navigator.userAgent,
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.subscriber) {
-          // Store locally
-          const currentSubs = NotificationService.getSubscribers();
-          const filtered = currentSubs.filter((s) => s.id !== clientSubscriberId);
-          localStorage.setItem(
-            STORAGE_KEY_SUBSCRIBERS,
-            JSON.stringify([data.subscriber, ...filtered])
-          );
-        }
-      }
-    } catch (e) {
-      console.error('Failed to register subscriber with server:', e);
-    }
-  },
-
+  // Push Subscribers
   getSubscribers: (): PushSubscriber[] => {
     if (typeof window === 'undefined') return [];
     try {
@@ -549,6 +375,38 @@ export const NotificationService = {
     } catch {
       // ignore
     }
-    return [];
+    // Return mock active subscribers for display
+    return [
+      {
+        id: 'sub-local-1',
+        subscribedAt: new Date(Date.now() - 1000 * 3600 * 24 * 3).toISOString(),
+        interests: ['Photorealistic & Portraits', 'Anime & Cyberpunk'],
+        userAgent: 'Chrome on Android',
+      },
+      {
+        id: 'sub-local-2',
+        subscribedAt: new Date(Date.now() - 1000 * 3600 * 48).toISOString(),
+        interests: ['3D Art & CGI Renders', 'Cinematic & Movie Still'],
+        userAgent: 'Safari on iPhone iOS',
+      },
+    ];
+  },
+
+  registerSubscriber: (interests: string[]): void => {
+    if (typeof window === 'undefined') return;
+    try {
+      const subscribers = NotificationService.getSubscribers();
+      const currentId = `sub-client-${Date.now()}`;
+      const newSub: PushSubscriber = {
+        id: currentId,
+        subscribedAt: new Date().toISOString(),
+        interests,
+        userAgent: navigator.userAgent.slice(0, 100),
+        lastActiveAt: new Date().toISOString(),
+      };
+      localStorage.setItem(STORAGE_KEY_SUBSCRIBERS, JSON.stringify([newSub, ...subscribers.slice(0, 50)]));
+    } catch {
+      // ignore
+    }
   },
 };

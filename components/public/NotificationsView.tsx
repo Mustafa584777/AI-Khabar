@@ -30,7 +30,7 @@ export const NotificationsView: React.FC = () => {
   const [browserPushPermission, setBrowserPushPermission] = useState<NotificationPermission | 'unsupported'>('default');
   const [userInterests, setUserInterests] = useState<string[]>([]);
 
-  // Load initial data & sync
+  // Load initial data
   const loadNotifications = () => {
     const list = NotificationService.getNotifications();
     setNotifications(list);
@@ -41,67 +41,25 @@ export const NotificationsView: React.FC = () => {
 
   useEffect(() => {
     loadNotifications();
-    NotificationService.syncWithServer().then(() => loadNotifications());
-
-    // Listen for live push notifications across tabs
-    const handleNewNotif = () => {
-      loadNotifications();
-    };
-    window.addEventListener('promptcms_new_notification', handleNewNotif);
-
-    // Periodic sync every 10 seconds for real-time delivery
-    const interval = setInterval(() => {
-      NotificationService.syncWithServer().then(() => loadNotifications());
-    }, 10000);
-
-    return () => {
-      window.removeEventListener('promptcms_new_notification', handleNewNotif);
-      clearInterval(interval);
-    };
   }, []);
 
   const handleEnableBrowserPush = async () => {
     const granted = await NotificationService.requestPushPermission();
     setBrowserPushPermission(NotificationService.getBrowserPermissionStatus());
     if (granted) {
-      showToast('Browser notifications enabled! You will now receive instant drops.');
-      // Immediate real browser notification popup with sound chime
+      showToast('Push notifications enabled! You will now receive instant drops.');
+      // Send a welcoming test notification
       await NotificationService.showNativeNotification({
-        id: `notif-welcome-${Date.now()}`,
-        title: 'tool.reelz: Trending Photo Prompts',
-        subtitle: 'Browser Push Notifications Active! 🔔',
-        body: 'You are now ready! Whenever trending prompts drop in your chosen categories, you will receive native alerts directly.',
+        id: 'notif-welcome',
+        title: 'Push Notifications Active! 🔔',
+        subtitle: 'You are now ready for viral Pinterest-style drops',
+        body: 'Whenever new trending prompts drop in your chosen categories, you will be notified.',
         category: 'all',
-        imageUrl: '/logo.png',
-        url: '/notifications',
+        url: '/',
         sentAt: new Date().toISOString(),
       });
     } else {
-      showToast('Notification permission was not granted in your browser.');
-    }
-  };
-
-  const handleSendTestNotification = async () => {
-    if (browserPushPermission !== 'granted') {
-      await handleEnableBrowserPush();
-      return;
-    }
-
-    const success = await NotificationService.showNativeNotification({
-      id: `notif-test-${Date.now()}`,
-      title: 'tool.reelz: Trending AI Photo Prompts',
-      subtitle: 'Instant Browser Push Test 🔔',
-      body: 'Live browser notification popup is working perfectly on your device!',
-      category: 'all',
-      imageUrl: '/logo.png',
-      url: '/explore',
-      sentAt: new Date().toISOString(),
-    });
-
-    if (success) {
-      showToast('Test notification popup displayed on your device!');
-    } else {
-      showToast('Could not display test popup. Check if notifications are allowed.');
+      showToast('Notification permission was not granted.');
     }
   };
 
@@ -200,36 +158,10 @@ export const NotificationsView: React.FC = () => {
             <button
               type="button"
               onClick={handleEnableBrowserPush}
-              className="px-4 py-2.5 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-md shadow-red-500/20 transition-all shrink-0 cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-md shadow-red-500/20 transition-all shrink-0"
               id="btn-allow-push-notifications"
             >
-              🔔 Enable Browser Notifications
-            </button>
-          </div>
-        )}
-
-        {/* If granted: Show status & Test Popup button */}
-        {browserPushPermission === 'granted' && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60">
-            <div className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <div>
-                <p className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
-                  Browser Push Notifications Active
-                </p>
-                <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80">
-                  This device is registered to receive instant real-time prompt drops.
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleSendTestNotification}
-              className="px-3.5 py-1.5 rounded-xl bg-white dark:bg-neutral-800 hover:bg-emerald-100 dark:hover:bg-neutral-700 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 text-xs font-bold transition-all shadow-xs shrink-0 flex items-center gap-1.5 cursor-pointer"
-              id="btn-test-notification-popup"
-            >
-              <Bell className="w-3.5 h-3.5" />
-              <span>Test Notification Popup</span>
+              Allow Notifications
             </button>
           </div>
         )}
