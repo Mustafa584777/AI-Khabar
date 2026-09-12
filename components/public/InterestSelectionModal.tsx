@@ -57,9 +57,6 @@ export const InterestSelectionModal: React.FC<InterestSelectionModalProps> = ({
     prefs.soundEnabled = soundEnabled;
     NotificationService.savePreferences(prefs);
 
-    // Sync to server as active subscriber
-    NotificationService.registerSubscriber(selected);
-
     // Sync to user taste profile as well
     updateTasteProfile({
       favoriteStyles: selected.slice(0, 8),

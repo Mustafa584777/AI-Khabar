@@ -306,7 +306,7 @@ export const UnlockPremiumModal: React.FC = () => {
                   </li>
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span>100 tool credits / mo</span>
+                    <span>30 tool credits / mo</span>
                   </li>
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
@@ -318,7 +318,7 @@ export const UnlockPremiumModal: React.FC = () => {
                 amount={4900}
                 planName="Starter Plan"
                 planTier="starter"
-                description="Unlock premium prompts + 100 tool credits + Unlimited saves"
+                description="Unlock premium prompts + 30 tool credits + Unlimited saves"
                 buttonText="Pay ₹49/mo"
                 variant="secondary"
                 size="sm"
@@ -344,7 +344,7 @@ export const UnlockPremiumModal: React.FC = () => {
                   </li>
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span>250 tool credits / mo</span>
+                    <span>60 tool credits / mo</span>
                   </li>
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
@@ -356,7 +356,7 @@ export const UnlockPremiumModal: React.FC = () => {
                 amount={9900}
                 planName="Pro Plan"
                 planTier="pro"
-                description="Unlock premium prompts + 250 tool credits + Unlimited saves"
+                description="Unlock premium prompts + 60 tool credits + Unlimited saves"
                 buttonText="Pay ₹99/mo"
                 variant="primary"
                 size="sm"
@@ -379,7 +379,7 @@ export const UnlockPremiumModal: React.FC = () => {
                   </li>
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span>500 tool credits / mo</span>
+                    <span>180 tool credits / mo</span>
                   </li>
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
@@ -391,7 +391,7 @@ export const UnlockPremiumModal: React.FC = () => {
                 amount={19900}
                 planName="VIP Plan"
                 planTier="vip"
-                description="Unlock premium prompts + 500 tool credits + Unlimited saves"
+                description="Unlock premium prompts + 180 tool credits + Unlimited saves"
                 buttonText="Pay ₹199/mo"
                 variant="dark"
                 size="sm"

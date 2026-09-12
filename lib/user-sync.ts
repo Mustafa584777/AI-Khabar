@@ -16,6 +16,7 @@ export interface UserSyncData {
   toolCredits?: number;
   promptRequestsRemaining?: number;
   unlockedPromptIds?: string[];
+  planExpiresAt?: number;
   updatedAt?: string;
 }
 
@@ -121,6 +122,7 @@ export const UserSyncService = {
       toolCredits?: number;
       promptRequestsRemaining?: number;
       unlockedPromptIds?: string[];
+      planExpiresAt?: number;
     }
   ): Promise<{
     bookmarkedIds: string[];
@@ -133,6 +135,7 @@ export const UserSyncService = {
     toolCredits: number;
     promptRequestsRemaining: number;
     unlockedPromptIds: string[];
+    planExpiresAt?: number;
   }> => {
     const currentPoints = user.points || 10;
     const remote = await UserSyncService.pullUserData(user.id, user.email);
@@ -166,6 +169,10 @@ export const UserSyncService = {
       remote?.promptRequestsRemaining || 0
     );
 
+    const resolvedExpiresAt = resolvedIsPro
+      ? (localState?.planExpiresAt || remote?.planExpiresAt || (Date.now() + 30 * 24 * 60 * 60 * 1000))
+      : undefined;
+
     if (!remote) {
       // First time login or no remote record yet: initialize database record with defaults and local state
       const initialData: UserSyncData = {
@@ -183,6 +190,7 @@ export const UserSyncService = {
         toolCredits: resolvedCredits,
         promptRequestsRemaining: resolvedRequestsRemaining,
         unlockedPromptIds: resolvedUnlocks,
+        planExpiresAt: resolvedExpiresAt,
         updatedAt: new Date().toISOString(),
       };
 
@@ -199,6 +207,7 @@ export const UserSyncService = {
         toolCredits: resolvedCredits,
         promptRequestsRemaining: resolvedRequestsRemaining,
         unlockedPromptIds: resolvedUnlocks,
+        planExpiresAt: resolvedExpiresAt,
       };
     }
 
@@ -218,6 +227,7 @@ export const UserSyncService = {
       toolCredits: resolvedCredits,
       promptRequestsRemaining: resolvedRequestsRemaining,
       unlockedPromptIds: resolvedUnlocks,
+      planExpiresAt: resolvedExpiresAt,
       updatedAt: new Date().toISOString(),
     };
 
@@ -234,6 +244,7 @@ export const UserSyncService = {
       toolCredits: resolvedCredits,
       promptRequestsRemaining: resolvedRequestsRemaining,
       unlockedPromptIds: resolvedUnlocks,
+      planExpiresAt: resolvedExpiresAt,
     };
   },
 };

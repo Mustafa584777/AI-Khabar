@@ -16,6 +16,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
     showToast,
     isPromptUnlocked,
     isProUser,
+    userAccount,
   } = useApp();
 
   const router = useRouter();
@@ -144,21 +145,23 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
 
         {/* Dark Semi-Transparent Overlay with White Popup Action Buttons */}
         <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto flex items-center justify-center gap-3.5 z-10">
-          <button
-            type="button"
-            onClick={handleBookmark}
-            className={`w-12 h-12 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl flex items-center justify-center transition-all duration-300 ease-out transform scale-75 group-hover:scale-100 hover:scale-110 active:scale-95 ${
-              isBookmarked ? 'ring-2 ring-[#E60023] text-[#E60023]' : 'text-neutral-900'
-            }`}
-            title={isBookmarked ? 'Saved (Click to remove)' : 'Save prompt'}
-            aria-label="Save prompt"
-          >
-            {isBookmarked ? (
-              <Bookmark className="w-5 h-5 fill-[#E60023] text-[#E60023]" />
-            ) : (
-              <Bookmark className="w-5 h-5 text-neutral-800" />
-            )}
-          </button>
+          {userAccount?.isLoggedIn && (
+            <button
+              type="button"
+              onClick={handleBookmark}
+              className={`w-12 h-12 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl flex items-center justify-center transition-all duration-300 ease-out transform scale-75 group-hover:scale-100 hover:scale-110 active:scale-95 ${
+                isBookmarked ? 'ring-2 ring-[#E60023] text-[#E60023]' : 'text-neutral-900'
+              }`}
+              title={isBookmarked ? 'Saved (Click to remove)' : 'Save prompt'}
+              aria-label="Save prompt"
+            >
+              {isBookmarked ? (
+                <Bookmark className="w-5 h-5 fill-[#E60023] text-[#E60023]" />
+              ) : (
+                <Bookmark className="w-5 h-5 text-neutral-800" />
+              )}
+            </button>
+          )}
 
           <button
             type="button"
