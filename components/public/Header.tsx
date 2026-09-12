@@ -154,10 +154,10 @@ export const Header = () => {
 
         {/* Right: Saved, Account & Admin Actions */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Notifications Button */}
+          {/* Notifications Button (Hidden on Mobile, use BottomNav instead) */}
           <button
             onClick={handleNotificationsClick}
-            className={`relative flex items-center justify-center p-2 rounded-full transition-colors ${
+            className={`hidden sm:flex relative items-center justify-center p-2 rounded-full transition-colors ${
               currentView === 'notifications'
                 ? 'bg-[#E60023] text-white shadow-xs'
                 : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'

@@ -1055,22 +1055,22 @@ export const PromptDetailModal = () => {
                           </p>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 w-full pt-1">
+                        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-center gap-2.5 w-full pt-1">
                           <button
                             type="button"
                             onClick={handleUnlockWithOneCredit}
-                            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition-all active:scale-95 font-sans cursor-pointer shrink-0"
+                            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition-all active:scale-95 font-sans cursor-pointer flex-auto sm:flex-none"
                           >
                             <Coins className="w-4 h-4 fill-black shrink-0" />
-                            <span>{toolCredits >= 1 ? `Unlock for 1 Credit (${toolCredits} Left)` : 'Unlock for 1 Credit (0 Left)'}</span>
+                            <span className="whitespace-nowrap">{toolCredits >= 1 ? `Unlock for 1 Credit (${toolCredits} Left)` : 'Unlock for 1 Credit (0 Left)'}</span>
                           </button>
                           <button
                             type="button"
                             onClick={() => setIsUnlockModalOpen(true)}
-                            className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs sm:text-sm font-bold border border-neutral-700 transition-colors font-sans cursor-pointer shrink-0"
+                            className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs sm:text-sm font-bold border border-neutral-700 transition-colors font-sans cursor-pointer flex-auto sm:flex-none"
                           >
                             <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                            <span>Get Credits / Pro</span>
+                            <span className="whitespace-nowrap">Get Credits / Pro</span>
                           </button>
                         </div>
                       </div>
