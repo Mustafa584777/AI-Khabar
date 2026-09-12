@@ -17,33 +17,31 @@ import {
   Zap,
   Coins,
   X,
-  Bell,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { SendPushNotificationModal } from '@/components/admin/SendPushNotificationModal';
 
-const SAMPLE_IMAGES = [
+const FALLBACK_SAMPLE_IMAGES = [
   {
-    name: 'Cyberpunk Neon',
-    url: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=800&auto=format&fit=crop&q=80',
-    style: 'Cyberpunk & Sci-Fi',
-  },
-  {
-    name: 'Studio Portrait',
-    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80',
+    name: '80s Bollywood Couple',
+    url: 'https://res.cloudinary.com/idbpgaqz/image/upload/v1789084501/prompts/prompt-1789084496535.webp',
     style: 'Photorealistic & Portraits',
   },
   {
-    name: 'Cinematic Nature',
-    url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80',
-    style: 'Cinematic 8K',
+    name: '80s Golden Hour Vintage',
+    url: 'https://res.cloudinary.com/idbpgaqz/image/upload/v1789084425/prompts/prompt-1789084418854.webp',
+    style: 'Photorealistic & Portraits',
   },
   {
-    name: '3D Render',
-    url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
-    style: '3D Art & Unreal Engine',
+    name: 'Retro 80s Studio Glamour',
+    url: 'https://res.cloudinary.com/idbpgaqz/image/upload/v1789084365/prompts/prompt-1789084357771.webp',
+    style: 'Photorealistic & Portraits',
+  },
+  {
+    name: 'Vintage 80s Cinematic Pose',
+    url: 'https://res.cloudinary.com/idbpgaqz/image/upload/v1789084305/prompts/prompt-1789084297672.webp',
+    style: 'Cinematic 8K',
   },
 ];
 
@@ -78,6 +76,7 @@ interface ExtractedPromptData {
 export const AIStudioTool = () => {
   const router = useRouter();
   const {
+    posts,
     setCurrentView,
     setSelectedCategory,
     setSearchQuery,
@@ -90,7 +89,21 @@ export const AIStudioTool = () => {
     isAuthenticated,
   } = useApp();
 
-  const [isPushModalOpen, setIsPushModalOpen] = useState<boolean>(false);
+  // Pick latest published prompt images as sample presets
+  const sampleImages = React.useMemo(() => {
+    const latestWithImages = (posts || [])
+      .filter((p) => p.imageUrl && p.imageUrl.startsWith('http'))
+      .slice(0, 4);
+
+    if (latestWithImages.length >= 4) {
+      return latestWithImages.map((p) => ({
+        name: p.title,
+        url: p.imageUrl,
+        style: p.category || 'Trending Prompt',
+      }));
+    }
+    return FALLBACK_SAMPLE_IMAGES;
+  }, [posts]);
 
   const [uploadedImage, setUploadedImage] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
@@ -112,6 +125,14 @@ export const AIStudioTool = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
+  // Text-to-Prompt Generator State
+  const [ideaInput, setIdeaInput] = useState('');
+  const [selectedLighting, setSelectedLighting] = useState('Cinematic Golden Hour');
+  const [selectedColorGrading, setSelectedColorGrading] = useState('Teal and Orange Cinematic');
+  const [selectedGender, setSelectedGender] = useState('Any / Neutral');
+  const [isGeneratingTextPrompt, setIsGeneratingTextPrompt] = useState(false);
+  const [generatedTextPromptData, setGeneratedTextPromptData] = useState<ExtractedPromptData | null>(null);
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
@@ -121,6 +142,43 @@ export const AIStudioTool = () => {
     setCopiedKey(key);
     showToast(label);
     setTimeout(() => setCopiedKey(null), 2000);
+  };
+
+  const handleGenerateTextPrompt = async () => {
+    if (!ideaInput.trim()) {
+      showToast('Please enter your 1-line idea or keywords');
+      return;
+    }
+
+    setIsGeneratingTextPrompt(true);
+    setGeneratedTextPromptData(null);
+
+    try {
+      const res = await fetch('/api/gemini/tools', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'text_to_prompt',
+          idea: ideaInput,
+          lighting: selectedLighting,
+          colorGrading: selectedColorGrading,
+          gender: selectedGender,
+        }),
+      });
+
+      const json = await res.json();
+      if (json.success && json.data) {
+        setGeneratedTextPromptData(json.data);
+        showToast('Detailed AI prompt generated successfully!');
+      } else {
+        showToast(json.error || 'Failed to generate prompt');
+      }
+    } catch (err) {
+      console.error('Text-to-prompt error:', err);
+      showToast('An error occurred during prompt generation');
+    } finally {
+      setIsGeneratingTextPrompt(false);
+    }
   };
 
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -280,6 +338,173 @@ export const AIStudioTool = () => {
           </div>
         </div>
 
+        {/* AI TEXT-TO-PROMPT GENERATOR TOOL */}
+        <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-neutral-900 via-neutral-850 to-neutral-900 dark:from-neutral-900 dark:via-neutral-950 dark:to-neutral-900 text-white shadow-xl border border-neutral-800 space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-[#E60023] flex items-center justify-center text-white shadow-md shadow-[#E60023]/30 shrink-0">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <div>
+              <span className="text-xs font-black uppercase tracking-wider text-[#ff5c75]">
+                Gemini AI Prompt Crafting Engine
+              </span>
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                AI Text-to-Prompt Generator
+              </h2>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* 1. Idea Input */}
+            <div className="md:col-span-3">
+              <label className="block text-xs font-bold text-neutral-300 mb-1.5">
+                Your 1-Line Idea or Keywords
+              </label>
+              <input
+                type="text"
+                value={ideaInput}
+                onChange={(e) => setIdeaInput(e.target.value)}
+                placeholder="e.g. Futuristic cyberpunk samurai walking in neon Tokyo rain..."
+                className="w-full px-4 py-3.5 rounded-2xl bg-neutral-800 border border-neutral-700 text-sm text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#E60023]"
+              />
+            </div>
+
+            {/* 2. Lighting Dropdown */}
+            <div>
+              <label className="block text-xs font-bold text-neutral-300 mb-1.5">
+                Lighting Style
+              </label>
+              <select
+                value={selectedLighting}
+                onChange={(e) => setSelectedLighting(e.target.value)}
+                className="w-full px-4 py-3 rounded-2xl bg-neutral-800 border border-neutral-700 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#E60023] cursor-pointer"
+              >
+                <option value="Cinematic Golden Hour">Cinematic Golden Hour</option>
+                <option value="Dramatic Studio Lighting">Dramatic Studio Lighting</option>
+                <option value="Cyberpunk Neon Glow">Cyberpunk Neon Glow</option>
+                <option value="Soft Diffused Morning Light">Soft Diffused Morning Light</option>
+                <option value="Moody Volumetric Lighting">Moody Volumetric Lighting</option>
+                <option value="Neon Rim Lighting">Neon Rim Lighting</option>
+                <option value="Natural Sunlight">Natural Sunlight</option>
+                <option value="Moody Chiaroscuro">Moody Chiaroscuro</option>
+              </select>
+            </div>
+
+            {/* 3. Colour Grading Dropdown */}
+            <div>
+              <label className="block text-xs font-bold text-neutral-300 mb-1.5">
+                Colour Grading
+              </label>
+              <select
+                value={selectedColorGrading}
+                onChange={(e) => setSelectedColorGrading(e.target.value)}
+                className="w-full px-4 py-3 rounded-2xl bg-neutral-800 border border-neutral-700 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#E60023] cursor-pointer"
+              >
+                <option value="Teal and Orange Cinematic">Teal and Orange Cinematic</option>
+                <option value="Moody Cyberpunk Neon">Moody Cyberpunk Neon</option>
+                <option value="Vibrant Technicolor">Vibrant Technicolor</option>
+                <option value="Warm Vintage Film">Warm Vintage Film</option>
+                <option value="Monochromatic Noir">Monochromatic Noir</option>
+                <option value="Pastel Dreamy Cinematic">Pastel Dreamy Cinematic</option>
+                <option value="High Contrast HDR">High Contrast HDR</option>
+                <option value="Rich Cinematic Film Stock">Rich Cinematic Film Stock</option>
+              </select>
+            </div>
+
+            {/* 4. Gender / Character Selection Dropdown */}
+            <div>
+              <label className="block text-xs font-bold text-neutral-300 mb-1.5">
+                Gender / Character Style
+              </label>
+              <select
+                value={selectedGender}
+                onChange={(e) => setSelectedGender(e.target.value)}
+                className="w-full px-4 py-3 rounded-2xl bg-neutral-800 border border-neutral-700 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#E60023] cursor-pointer"
+              >
+                <option value="Any / Neutral">Any / Neutral</option>
+                <option value="Male Subject">Male Subject</option>
+                <option value="Female Subject">Female Subject</option>
+                <option value="Non-Binary Subject">Non-Binary Subject</option>
+                <option value="Duo / Couple">Duo / Couple</option>
+                <option value="Group Ensemble">Group Ensemble</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <button
+              onClick={handleGenerateTextPrompt}
+              disabled={isGeneratingTextPrompt || !ideaInput.trim()}
+              className="px-8 py-3.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-sm font-black transition-all shadow-lg shadow-[#E60023]/30 flex items-center gap-2 disabled:opacity-50 transform active:scale-95 cursor-pointer"
+            >
+              {isGeneratingTextPrompt ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Crafting Detailed Prompt...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  <span>Generate Detailed AI Prompt</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Generated Text Prompt Result */}
+          {generatedTextPromptData && (
+            <div className="mt-6 p-6 rounded-2xl bg-black/50 border border-white/10 space-y-4 animate-scale-in">
+              <div className="flex items-center justify-between">
+                <span className="px-3 py-1 rounded-full bg-[#E60023] text-white text-xs font-black uppercase tracking-wider">
+                  Generated Pro Prompt Ready
+                </span>
+                <span className="text-xs text-neutral-400 font-mono">
+                  {generatedTextPromptData.aspectRatio} • {generatedTextPromptData.confidence} confidence
+                </span>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-bold text-white mb-1">{generatedTextPromptData.title}</h4>
+                <p className="text-xs text-neutral-300 mb-3">{generatedTextPromptData.summary}</p>
+                <div className="p-4 rounded-xl bg-neutral-900 border border-neutral-800 text-xs text-neutral-200 font-mono select-all leading-relaxed break-words">
+                  {generatedTextPromptData.promptText}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                <div className="text-[11px] text-neutral-400">
+                  <span className="text-[#ff5c75] font-bold">Negative Prompt:</span> {generatedTextPromptData.negativePrompt}
+                </div>
+                <button
+                  onClick={() => copyToClipboard(generatedTextPromptData.promptText, 'text-prompt', 'Detailed prompt copied to clipboard!')}
+                  className="px-5 py-2.5 rounded-full bg-white text-neutral-950 hover:bg-neutral-200 text-xs font-black transition-all flex items-center gap-2 shadow-sm cursor-pointer"
+                >
+                  {copiedKey === 'text-prompt' ? (
+                    <>
+                      <Check className="w-4 h-4 text-emerald-600" />
+                      <span>Copied Successfully!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      <span>Copy Full Prompt</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="pt-6 border-t border-neutral-200 dark:border-neutral-800">
+          <h3 className="text-lg font-bold text-neutral-900 dark:text-white mb-1">
+            Or Use Image-to-Prompt Studio
+          </h3>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            Upload any reference photo or artwork to reverse-engineer its camera settings, lighting, and prompt structure.
+          </p>
+        </div>
+
         {/* IMAGE TO PROMPT STUDIO */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left Column: Input Image & Options (5 cols) */}
@@ -354,7 +579,7 @@ export const AIStudioTool = () => {
                   Or Pick a Sample Photo:
                 </span>
                 <div className="grid grid-cols-4 gap-2">
-                  {SAMPLE_IMAGES.map((sample) => (
+                  {sampleImages.map((sample) => (
                     <button
                       key={sample.name}
                       onClick={() => {
@@ -371,7 +596,7 @@ export const AIStudioTool = () => {
                         className="object-cover group-hover:scale-110 transition-transform duration-300"
                         referrerPolicy="no-referrer"
                       />
-                      <div className="absolute inset-x-0 bottom-0 bg-black/70 py-0.5 px-1 text-[9px] font-bold text-white text-center truncate">
+                      <div className="absolute inset-x-0 bottom-0 bg-black/75 py-0.5 px-1 text-[9px] font-bold text-white text-center truncate">
                         {sample.name}
                       </div>
                     </button>
@@ -536,17 +761,6 @@ export const AIStudioTool = () => {
                         </>
                       )}
                     </button>
-
-                    {isAuthenticated && (
-                      <button
-                        onClick={() => setIsPushModalOpen(true)}
-                        className="px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-[#E60023] hover:bg-[#ad081b] text-white shadow-sm"
-                        title="Broadcast push notification to subscribers for this prompt"
-                      >
-                        <Bell className="w-4 h-4" />
-                        <span>Send Push Notification</span>
-                      </button>
-                    )}
                   </div>
                 </div>
 
@@ -688,18 +902,6 @@ export const AIStudioTool = () => {
             </div>
           </div>
         </div>
-      )}
-
-      {extractedData && (
-        <SendPushNotificationModal
-          isOpen={isPushModalOpen}
-          onClose={() => setIsPushModalOpen(false)}
-          defaultTitle={extractedData.title || 'Trending AI Prompt Drop'}
-          defaultCategory="Photorealistic & Portraits"
-          defaultImageUrl={uploadedImage || ''}
-          defaultUrl="/create"
-          defaultPromptText={extractedData.promptText}
-        />
       )}
     </main>
   );

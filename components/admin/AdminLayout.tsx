@@ -13,6 +13,7 @@ import { BackupRestoreView } from './BackupRestoreView';
 import { SearchHistoryManager } from './SearchHistoryManager';
 import { UsersManager } from './UsersManager';
 import { PushNotificationsManager } from './PushNotificationsManager';
+import { RequestedPromptsManager } from './RequestedPromptsManager';
 import { X } from 'lucide-react';
 
 export const AdminLayout = () => {
@@ -25,7 +26,7 @@ export const AdminLayout = () => {
         <div className="text-center space-y-4 max-w-md bg-neutral-950 p-8 rounded-3xl border border-neutral-800 text-white">
           <h2 className="text-xl font-bold">Authentication Required</h2>
           <p className="text-xs text-neutral-400">
-            You must log in to access the WordPress Editorial CMS.
+            You must log in to access the Editorial CMS.
           </p>
           <button
             onClick={() => setShowLoginModal(true)}
@@ -47,6 +48,8 @@ export const AdminLayout = () => {
       case 'new-post':
       case 'edit-post':
         return <PostEditor key={editingPostId || 'new-post'} />;
+      case 'requested-prompts':
+        return <RequestedPromptsManager />;
       case 'categories':
         return <CategoriesManager key={settings.popularTags?.join(',') || 'categories'} />;
       case 'notifications':

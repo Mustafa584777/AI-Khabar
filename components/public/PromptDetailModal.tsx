@@ -28,7 +28,7 @@ import confetti from 'canvas-confetti';
 import Image from 'next/image';
 import Link from 'next/link';
 import { PersonalizationEngine } from '@/lib/personalization';
-import { getPromptSlug, slugify, getOptimizedImageUrl, detectPostAspectRatio } from '@/lib/utils';
+import { getPromptSlug, slugify, getOptimizedImageUrl, detectPostAspectRatio, getPromptSeoTitle, getPromptSeoDescription } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
 interface RecommendedPinCardProps {
@@ -204,7 +204,40 @@ export const PromptDetailModal = () => {
   const [historyStack, setHistoryStack] = useState<PromptPost[]>(() => (selectedPost ? [selectedPost] : []));
   const [prevSelectedId, setPrevSelectedId] = useState<string | null>(selectedPost?.id || null);
 
+  const historyStackRef = useRef<PromptPost[]>(historyStack);
+  useEffect(() => {
+    historyStackRef.current = historyStack;
+  }, [historyStack]);
+
   const router = useRouter();
+
+  // Dynamic SEO Title & Meta Description update for each prompt card
+  useEffect(() => {
+    if (!selectedPost) return;
+
+    const originalTitle = document.title;
+    const metaDescEl = document.querySelector('meta[name="description"]');
+    const ogDescEl = document.querySelector('meta[property="og:description"]');
+    const ogTitleEl = document.querySelector('meta[property="og:title"]');
+    const twitterDescEl = document.querySelector('meta[name="twitter:description"]');
+    const twitterTitleEl = document.querySelector('meta[name="twitter:title"]');
+    const originalDesc = metaDescEl?.getAttribute('content') || '';
+
+    const seoTitle = getPromptSeoTitle(selectedPost);
+    const seoDesc = getPromptSeoDescription(selectedPost);
+
+    document.title = seoTitle;
+    if (metaDescEl) metaDescEl.setAttribute('content', seoDesc);
+    if (ogDescEl) ogDescEl.setAttribute('content', seoDesc);
+    if (ogTitleEl) ogTitleEl.setAttribute('content', seoTitle);
+    if (twitterDescEl) twitterDescEl.setAttribute('content', seoDesc);
+    if (twitterTitleEl) twitterTitleEl.setAttribute('content', seoTitle);
+
+    return () => {
+      document.title = originalTitle;
+      if (metaDescEl && originalDesc) metaDescEl.setAttribute('content', originalDesc);
+    };
+  }, [selectedPost]);
 
   // Keep historyStack synchronized with selectedPost during render
   if (selectedPost && selectedPost.id !== prevSelectedId) {
@@ -237,26 +270,30 @@ export const PromptDetailModal = () => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
       if (path !== '/' && path !== '/dashboard' && path !== '/create' && !path.startsWith('/admin') && !path.startsWith('/blog')) {
-        window.history.replaceState(null, '', '/');
+        window.history.pushState(null, '', '/');
       }
     }
   }, [setSelectedPost]);
 
   const handleGoBack = useCallback(() => {
     if (historyStack.length > 1) {
-      const newStack = [...historyStack];
-      newStack.pop(); // Remove active prompt
-      const prevPost = newStack[newStack.length - 1];
-      setHistoryStack(newStack);
-      if (containerRef.current) {
-        containerRef.current.scrollTop = 0;
+      if (typeof window !== 'undefined' && window.history.length > 1) {
+        window.history.back();
+      } else {
+        const newStack = [...historyStack];
+        newStack.pop(); // Remove active prompt
+        const prevPost = newStack[newStack.length - 1];
+        setHistoryStack(newStack);
+        if (containerRef.current) {
+          containerRef.current.scrollTop = 0;
+        }
+        setSelectedPost(prevPost);
+        if (typeof window !== 'undefined') {
+          const prevSlug = getPromptSlug(prevPost);
+          window.history.pushState({ postId: prevPost.id }, '', `/${prevSlug}`);
+        }
+        setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
       }
-      setSelectedPost(prevPost);
-      if (typeof window !== 'undefined') {
-        const prevSlug = getPromptSlug(prevPost);
-        window.history.replaceState({ postId: prevPost.id }, '', `/${prevSlug}`);
-      }
-      setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
     } else {
       closeModal();
     }
@@ -264,7 +301,7 @@ export const PromptDetailModal = () => {
 
   // Handle browser back / forward navigation and Escape key
   useEffect(() => {
-    const handlePopState = () => {
+    const handlePopState = (e: PopStateEvent) => {
       if (typeof window !== 'undefined') {
         const path = window.location.pathname;
         if (path === '/' || path === '' || path === '/dashboard' || path === '/create' || path.startsWith('/admin') || path.startsWith('/blog')) {
@@ -273,12 +310,20 @@ export const PromptDetailModal = () => {
         } else if (path.length > 1) {
           const rawSlug = path.replace('/', '').split('/')[0];
           const targetSlug = decodeURIComponent(rawSlug).toLowerCase().trim();
-          const matched = posts.find((p) => {
+          const statePostId = (e.state && typeof e.state === 'object' && 'postId' in e.state) ? (e.state as { postId?: string }).postId : null;
+
+          const matchedFromStack = historyStackRef.current.find(
+            (p) => (statePostId && p.id === statePostId) || (p.slug && p.slug.toLowerCase() === targetSlug) || p.id.toLowerCase() === targetSlug
+          );
+
+          const matched = matchedFromStack || posts.find((p) => {
+            if (statePostId && p.id === statePostId) return true;
             if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
             if (p.id && p.id.toLowerCase() === targetSlug) return true;
             if (p.title && (p.title.toLowerCase() === targetSlug || slugify(p.title) === targetSlug)) return true;
             return false;
           });
+
           if (matched) {
             if (containerRef.current) {
               containerRef.current.scrollTop = 0;
@@ -709,7 +754,7 @@ export const PromptDetailModal = () => {
     setSelectedPost(pin);
     if (typeof window !== 'undefined') {
       const pinSlug = getPromptSlug(pin);
-      window.history.replaceState({ postId: pin.id }, '', `/${pinSlug}`);
+      window.history.pushState({ postId: pin.id }, '', `/${pinSlug}`);
     }
     setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
   };
@@ -985,42 +1030,46 @@ export const PromptDetailModal = () => {
                   )}
 
                   {isPromptGated ? (
-                    <div className="relative rounded-2xl bg-gradient-to-b from-neutral-900 to-neutral-950 text-neutral-100 p-6 border border-amber-500/40 shadow-xl overflow-hidden text-center">
-                      {/* Obscured blurred placeholder lines */}
-                      <div className="filter blur-md select-none opacity-20 pointer-events-none space-y-2 font-mono text-xs leading-relaxed">
-                        <p>Cinematic hyperrealistic photography shot on Hasselblad 50mm f/1.2 lens, photorealistic studio lighting, delicate cinematic color grading, 8k resolution...</p>
+                    <div className="relative rounded-2xl bg-gradient-to-b from-neutral-900 via-neutral-950 to-black text-neutral-100 p-5 sm:p-7 border border-amber-500/40 shadow-xl overflow-hidden text-center min-h-[220px] flex flex-col items-center justify-center">
+                      {/* Background obscured blurred placeholder lines */}
+                      <div className="absolute inset-0 select-none opacity-15 pointer-events-none filter blur-[3px] p-4 font-mono text-[11px] leading-relaxed overflow-hidden text-neutral-400">
+                        <p>Cinematic hyperrealistic photography shot on Hasselblad 50mm f/1.2 lens, studio lighting, delicate cinematic color grading, 8k resolution...</p>
                         <p>--ar 16:9 --style raw --v 6.1 --s 250 --quality 2</p>
+                        <p>Award-winning professional photorealistic portrait with dramatic rim lighting and volumetric depth of field.</p>
                       </div>
 
-                      {/* Centered Unlock Prompt Message Popup Trigger */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center p-5 bg-black/75 backdrop-blur-xs">
-                        <div className="w-11 h-11 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-2 border border-amber-500/40 shadow-md">
+                      {/* Prominent Golden Amber Glow Accent in center */}
+                      <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-48 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+
+                      {/* Foreground Flow Content */}
+                      <div className="relative z-10 w-full flex flex-col items-center justify-center py-1">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 text-amber-400 flex items-center justify-center mb-3 border border-amber-500/40 shadow-lg shadow-amber-500/10 shrink-0">
                           <Lock className="w-5 h-5" />
                         </div>
-                        <h3 className="text-sm sm:text-base font-black text-white flex items-center gap-2">
+                        <h3 className="text-base sm:text-lg font-black text-white flex flex-wrap items-center justify-center gap-2">
                           <span>Premium Prompt Locked</span>
-                          <span className="px-2 py-0.5 rounded-full bg-amber-500 text-black text-[9px] font-black uppercase">
+                          <span className="px-2.5 py-0.5 rounded-full bg-amber-500 text-black text-[10px] font-black uppercase tracking-wide shadow-sm">
                             1 Credit
                           </span>
                         </h3>
-                        <p className="text-[11px] sm:text-xs text-neutral-300 max-w-sm mt-1 mb-3.5 leading-relaxed font-sans">
-                          Unlock this prompt permanently with <strong>1 credit</strong> (Balance: <strong className="text-amber-400">{toolCredits} Credits</strong>), or subscribe for unlimited access.
+                        <p className="text-xs sm:text-sm text-neutral-300 max-w-md mt-1.5 mb-4 leading-relaxed font-sans px-2">
+                          Unlock this prompt permanently with <strong>1 credit</strong> (Balance: <strong className="text-amber-400">{toolCredits} Credits</strong>), or upgrade for unlimited access.
                         </p>
-                        <div className="flex flex-wrap items-center justify-center gap-2">
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 w-full sm:w-auto">
                           <button
                             type="button"
                             onClick={handleUnlockWithOneCredit}
-                            className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs shadow-lg shadow-amber-500/25 transition-all active:scale-95 font-sans cursor-pointer"
+                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 sm:py-3 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition-all active:scale-95 font-sans cursor-pointer"
                           >
-                            <Coins className="w-3.5 h-3.5 fill-black" />
+                            <Coins className="w-4 h-4 fill-black" />
                             <span>{toolCredits >= 1 ? `Unlock for 1 Credit (${toolCredits} Left)` : 'Unlock for 1 Credit (0 Left)'}</span>
                           </button>
                           <button
                             type="button"
                             onClick={() => setIsUnlockModalOpen(true)}
-                            className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold border border-neutral-700 transition-colors font-sans cursor-pointer"
+                            className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-3 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs sm:text-sm font-semibold border border-neutral-700 transition-colors font-sans cursor-pointer"
                           >
-                            <Crown className="w-3.5 h-3.5 text-amber-400" />
+                            <Crown className="w-4 h-4 text-amber-400" />
                             <span>Get Credits / Pro</span>
                           </button>
                         </div>
