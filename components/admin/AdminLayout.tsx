@@ -12,6 +12,7 @@ import { SettingsView } from './SettingsView';
 import { BackupRestoreView } from './BackupRestoreView';
 import { SearchHistoryManager } from './SearchHistoryManager';
 import { UsersManager } from './UsersManager';
+import { RequestedPromptsManager } from './RequestedPromptsManager';
 import { PushNotificationsManager } from './PushNotificationsManager';
 import { X } from 'lucide-react';
 
@@ -55,6 +56,8 @@ export const AdminLayout = () => {
         return <SearchHistoryManager />;
       case 'users':
         return <UsersManager />;
+      case 'requested-prompts':
+        return <RequestedPromptsManager />;
       case 'backup-restore':
         return <BackupRestoreView />;
       case 'settings':
