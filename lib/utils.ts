@@ -39,6 +39,7 @@ export function getPromptMetaDescription(post: {
   seoDescription?: string;
   seo?: { metaDescription?: string };
   promptText?: string;
+  parameters?: { aspectRatio?: string; lighting?: string; camera?: string; shotType?: string; style?: string };
 }): string {
   if (post.seoDescription && post.seoDescription.trim().length > 15) {
     return post.seoDescription.trim();
@@ -46,11 +47,15 @@ export function getPromptMetaDescription(post: {
   if (post.seo?.metaDescription && post.seo.metaDescription.trim().length > 15) {
     return post.seo.metaDescription.trim();
   }
-  const toolName = post.aiTool || 'Midjourney, ChatGPT, and Flux';
-  const category = post.category || 'AI Photo';
+  const toolName = post.aiTool || 'Midjourney, ChatGPT, Gemini and Flux';
+  const category = post.category || 'AI Photography';
   const title = post.title || 'Creative AI Photo Prompt';
   const tagsStr = post.tags && post.tags.length > 0 ? ` featuring ${post.tags.slice(0, 3).join(', ')}` : '';
-  return `Copy and paste this ${title} photo prompt for ${toolName}. Curated ${category.toLowerCase()} settings and camera parameters${tagsStr}.`;
+  const lightingStr = post.parameters?.lighting ? ` with ${post.parameters.lighting}` : '';
+  const cameraStr = post.parameters?.camera ? ` (${post.parameters.camera})` : '';
+  const ratioStr = post.parameters?.aspectRatio ? ` [--ar ${post.parameters.aspectRatio}]` : '';
+  
+  return `Copy and paste this ${title} photo prompt for ${toolName}. Curated ${category.toLowerCase()} aesthetic${lightingStr}${cameraStr}${tagsStr}${ratioStr}. Instant 1-click copy.`;
 }
 
 export function getOptimizedImageUrl(url?: string, width = 550): string {

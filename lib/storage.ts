@@ -121,14 +121,10 @@ export const StorageService = {
       }
     }
   },
-  // Bookmarks (Strictly User Authenticated)
+  // Bookmarks (Client local user preference)
   getBookmarkedIds: (): string[] => {
     if (typeof window !== 'undefined') {
       try {
-        const user = StorageService.getUserAccount();
-        if (!user || !user.isLoggedIn) {
-          return [];
-        }
         const saved = localStorage.getItem(STORAGE_KEY_BOOKMARKS);
         return saved ? JSON.parse(saved) : [];
       } catch (e) {
@@ -149,10 +145,6 @@ export const StorageService = {
   },
 
   toggleBookmark: (id: string): boolean => {
-    const user = StorageService.getUserAccount();
-    if (!user || !user.isLoggedIn) {
-      return false;
-    }
     const current = StorageService.getBookmarkedIds();
     let updated: string[];
     let isBookmarked: boolean;
@@ -171,14 +163,10 @@ export const StorageService = {
     return isBookmarked;
   },
 
-  // Likes (Client local user preference, authenticated only)
+  // Likes (Client local user preference)
   getLikedIds: (): string[] => {
     if (typeof window !== 'undefined') {
       try {
-        const user = StorageService.getUserAccount();
-        if (!user || !user.isLoggedIn) {
-          return [];
-        }
         const saved = localStorage.getItem(STORAGE_KEY_LIKES);
         return saved ? JSON.parse(saved) : [];
       } catch (e) {
@@ -279,85 +267,51 @@ export const StorageService = {
 
   saveUserAccount: (account: UserAccount): void => {
     if (typeof window !== 'undefined') {
-      try {
-        const rawExisting = localStorage.getItem(STORAGE_KEY_USER_ACCOUNT);
-        if (rawExisting) {
-          const existing = JSON.parse(rawExisting);
-          if (
-            existing?.email &&
-            account?.email &&
-            existing.email.trim().toLowerCase() !== account.email.trim().toLowerCase()
-          ) {
-            // New user account differs from previous user! Completely purge old data
-            StorageService.clearAllUserData();
-          }
-        }
-      } catch {}
-
       localStorage.setItem(STORAGE_KEY_USER_ACCOUNT, JSON.stringify(account));
-      if (account?.email) {
-        localStorage.setItem('auraprompt_active_email', account.email.trim().toLowerCase());
-      }
     }
   },
 
   logoutUserAccount: (): void => {
-    StorageService.clearAllUserData();
-  },
+    if (typeof window !== 'undefined') {
+      const userKeys = [
+        STORAGE_KEY_USER_ACCOUNT,
+        STORAGE_KEY_BOOKMARKS,
+        STORAGE_KEY_LIKES,
+        STORAGE_KEY_AI_HISTORY,
+        'auraprompt_pro_member',
+        'auraprompt_plan_tier',
+        'auraprompt_tool_credits',
+        'auraprompt_last_credit_date',
+        'auraprompt_unlocked_prompts',
+        'auraprompt_prompt_requests',
+        'promptcms_user_taste',
+        'auraprompt_user_taste',
+        'auraprompt_studio_preload',
+        'promptcms_studio_preload',
+        'promptcms_studio_image_preload',
+      ];
+      userKeys.forEach((k) => {
+        try {
+          localStorage.removeItem(k);
+        } catch {}
+      });
 
-  // Complete, aggressive wipe of all local user data and session cache
-  clearAllUserData: (): void => {
-    if (typeof window === 'undefined') return;
-    const userKeys = [
-      STORAGE_KEY_USER_ACCOUNT,
-      STORAGE_KEY_BOOKMARKS,
-      STORAGE_KEY_LIKES,
-      STORAGE_KEY_AI_HISTORY,
-      'auraprompt_active_email',
-      'auraprompt_pro_member',
-      'auraprompt_plan_tier',
-      'auraprompt_tool_credits',
-      'auraprompt_prompt_requests',
-      'auraprompt_unlocked_prompts',
-      'auraprompt_last_credit_date',
-      'auraprompt_taste_profile',
-      'promptcms_persistent_ref_image',
-      'promptcms_prompt_requests',
-      'auraprompt_studio_preload',
-      'promptcms_studio_preload',
-      'promptcms_studio_image_preload',
-    ];
-    for (const key of userKeys) {
+      // Clear session storage as well
       try {
-        localStorage.removeItem(key);
-        sessionStorage.removeItem(key);
+        sessionStorage.clear();
       } catch {}
     }
-    // Purge any user-specific dynamic keys
-    try {
-      for (let i = localStorage.length - 1; i >= 0; i--) {
-        const k = localStorage.key(i);
-        if (k && (k.startsWith('auraprompt_') || k.startsWith('user_sync_'))) {
-          localStorage.removeItem(k);
-        }
-      }
-    } catch {}
   },
 
-  // AI Generation & Extraction History (Strictly Logged In Users)
+  // AI Generation & Extraction History
   getAiHistory: (userId?: string): AIHistoryItem[] => {
     if (typeof window !== 'undefined') {
       try {
-        const user = StorageService.getUserAccount();
-        if (!user || !user.isLoggedIn) {
-          return [];
-        }
-        const targetUserId = userId || user.id;
         const saved = localStorage.getItem(STORAGE_KEY_AI_HISTORY);
         if (saved) {
           const items: AIHistoryItem[] = JSON.parse(saved);
-          if (targetUserId) {
-            return items.filter((it) => it && it.userId === targetUserId);
+          if (userId) {
+            return items.filter((it) => !it.userId || it.userId === userId);
           }
           return items;
         }
@@ -379,11 +333,7 @@ export const StorageService = {
   },
 
   saveAiHistoryItem: (item: AIHistoryItem): AIHistoryItem[] => {
-    const user = StorageService.getUserAccount();
-    if (!user || !user.isLoggedIn) {
-      return [];
-    }
-    const current = StorageService.getAiHistory(user.id);
+    const current = StorageService.getAiHistory();
     // Prepend new item and keep up to 100 entries
     const updated = [item, ...current.filter((it) => it.id !== item.id)].slice(0, 100);
     if (typeof window !== 'undefined') {

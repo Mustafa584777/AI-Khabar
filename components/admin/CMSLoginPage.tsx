@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { AdminLayout } from './AdminLayout';
 
-export const WordPressLoginPage = () => {
+export const CMSLoginPage = () => {
   const { isAuthenticated, login, logout, currentUser, setCurrentView, setAdminSubView } = useApp();
   const [username, setUsername] = useState('admin@trendinggeminiprompts.com');
   const [password, setPassword] = useState('admin123');
@@ -65,10 +65,10 @@ export const WordPressLoginPage = () => {
 
   return (
     <div className="min-h-screen bg-[#f0f0f1] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 flex flex-col items-center justify-center p-4 sm:p-6 transition-colors">
-      {/* WordPress Classic Center Container */}
+      {/* Studio CMS Center Container */}
       <div className="w-full max-w-[360px] sm:max-w-[390px] flex flex-col items-center">
         
-        {/* Top Logo / WordPress Badge */}
+        {/* Top Logo / Studio CMS Badge */}
         <div className="mb-6 flex flex-col items-center text-center">
           <Link
             href="/"
@@ -195,12 +195,12 @@ export const WordPressLoginPage = () => {
               </label>
             </div>
 
-            {/* WordPress Classic Log In Button */}
+            {/* Studio CMS Log In Button */}
             <div className="pt-2">
               <button
                 type="submit"
                 disabled={isSubmitting}
-                id="wp-submit"
+                id="cms-login-submit"
                 className="w-full py-2.5 px-4 rounded bg-[#2271b1] hover:bg-[#135e96] active:bg-[#0a4b78] text-white font-semibold text-sm shadow-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
               >
                 {isSubmitting ? (
@@ -231,7 +231,7 @@ export const WordPressLoginPage = () => {
           </div>
         </div>
 
-        {/* Footer Sub-Links (Classic WordPress style) */}
+        {/* Footer Sub-Links */}
         <div className="w-full mt-4 flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400 px-1">
           <Link
             href="/"

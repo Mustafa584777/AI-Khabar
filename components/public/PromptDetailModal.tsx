@@ -207,6 +207,10 @@ export const PromptDetailModal = () => {
   const [historyStack, setHistoryStack] = useState<PromptPost[]>(() => (selectedPost ? [selectedPost] : []));
 
   const router = useRouter();
+  const postsRef = useRef(posts);
+  postsRef.current = posts;
+  const historyStackRef = useRef(historyStack);
+  historyStackRef.current = historyStack;
 
   // Cleanly synchronize historyStack whenever selectedPost changes
   useEffect(() => {
@@ -281,12 +285,7 @@ export const PromptDetailModal = () => {
 
   const handleGoBack = useCallback(() => {
     if (historyStack.length > 1) {
-      // If browser history has previous prompt steps from this session, go back smoothly
-      if (typeof window !== 'undefined' && window.history.length > 1) {
-        window.history.back();
-        return;
-      }
-      // Fallback: manually pop stack and update
+      // Deterministically pop to previous prompt in the stack without crashing into Next.js router
       const newStack = [...historyStack];
       newStack.pop();
       const prevPost = newStack[newStack.length - 1];
@@ -316,18 +315,25 @@ export const PromptDetailModal = () => {
         return;
       }
       if (path.length > 1) {
+        const currentPosts = postsRef.current;
+        const currentStack = historyStackRef.current;
         const statePostId = event.state?.postId;
         let matched: PromptPost | undefined;
 
         if (statePostId) {
-          matched = posts.find((p) => p.id === statePostId);
+          matched = currentPosts.find((p) => p.id === statePostId) || currentStack.find((p) => p.id === statePostId);
         }
 
         const rawSlug = path.replace('/', '').split('/')[0];
         const targetSlug = decodeURIComponent(rawSlug).toLowerCase().trim();
 
         if (!matched) {
-          matched = posts.find((p) => {
+          matched = currentPosts.find((p) => {
+            if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
+            if (p.id && p.id.toLowerCase() === targetSlug) return true;
+            if (p.title && (p.title.toLowerCase() === targetSlug || slugify(p.title) === targetSlug)) return true;
+            return false;
+          }) || currentStack.find((p) => {
             if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
             if (p.id && p.id.toLowerCase() === targetSlug) return true;
             if (p.title && (p.title.toLowerCase() === targetSlug || slugify(p.title) === targetSlug)) return true;
@@ -374,7 +380,7 @@ export const PromptDetailModal = () => {
       window.removeEventListener('popstate', handlePopState);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [setSelectedPost, posts, showFullImageModal, selectedPost, handleGoBack]);
+  }, [setSelectedPost, showFullImageModal, selectedPost, handleGoBack]);
 
   const handleLike = () => {
     if (!selectedPost) return;
@@ -1040,7 +1046,7 @@ export const PromptDetailModal = () => {
                   )}
 
                   {isPromptGated ? (
-                    <div className="relative rounded-2xl bg-gradient-to-b from-neutral-900 via-neutral-900 to-neutral-950 text-neutral-100 p-5 sm:p-7 border border-amber-500/40 shadow-xl overflow-hidden text-center flex flex-col items-center justify-center">
+                    <div className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-b from-neutral-900 via-neutral-900 to-neutral-950 text-neutral-100 p-4 sm:p-6 lg:p-7 border border-amber-500/40 shadow-xl overflow-hidden text-center flex flex-col items-center justify-center w-full">
                       {/* Obscured blurred background accents */}
                       <div
                         aria-hidden="true"
@@ -1053,11 +1059,11 @@ export const PromptDetailModal = () => {
 
                       {/* Content in natural flow so height dynamically expands and layout never gets cut off */}
                       <div className="relative z-10 flex flex-col items-center justify-center w-full max-w-md mx-auto space-y-3 sm:space-y-4">
-                        <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/40 shadow-md shrink-0">
+                        <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/40 shadow-md shrink-0">
                           <Lock className="w-5 h-5" />
                         </div>
 
-                        <div className="space-y-1.5 text-center">
+                        <div className="space-y-1.5 text-center px-1">
                           <h3 className="text-base sm:text-lg font-black text-white flex items-center justify-center gap-2 flex-wrap">
                             <span>Premium Prompt Locked</span>
                             <span className="px-2 py-0.5 rounded-full bg-amber-500 text-black text-[10px] font-black uppercase tracking-wider">
@@ -1069,22 +1075,22 @@ export const PromptDetailModal = () => {
                           </p>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-center gap-2.5 w-full pt-1">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2 sm:gap-2.5 w-full pt-1">
                           <button
                             type="button"
                             onClick={handleUnlockWithOneCredit}
-                            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition-all active:scale-95 font-sans cursor-pointer flex-auto sm:flex-none"
+                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition-all active:scale-95 font-sans cursor-pointer text-center"
                           >
                             <Coins className="w-4 h-4 fill-black shrink-0" />
-                            <span className="whitespace-nowrap">{toolCredits >= 1 ? `Unlock for 1 Credit (${toolCredits} Left)` : 'Unlock for 1 Credit (0 Left)'}</span>
+                            <span>{toolCredits >= 1 ? `Unlock for 1 Credit (${toolCredits} Left)` : 'Unlock for 1 Credit'}</span>
                           </button>
                           <button
                             type="button"
                             onClick={() => setIsUnlockModalOpen(true)}
-                            className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs sm:text-sm font-bold border border-neutral-700 transition-colors font-sans cursor-pointer flex-auto sm:flex-none"
+                            className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs sm:text-sm font-bold border border-neutral-700 transition-colors font-sans cursor-pointer text-center"
                           >
                             <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                            <span className="whitespace-nowrap">Get Credits / Pro</span>
+                            <span>Get Credits / Pro</span>
                           </button>
                         </div>
                       </div>

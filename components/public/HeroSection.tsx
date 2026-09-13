@@ -17,6 +17,7 @@ import {
   Sliders,
 } from 'lucide-react';
 import { getPromptSlug, getDynamicPopularTags, getOptimizedImageUrl } from '@/lib/utils';
+import { GeminiPromptBox } from './GeminiPromptBox';
 
 export const HeroSection = () => {
   const {
@@ -36,7 +37,7 @@ export const HeroSection = () => {
     recordSearchQuery,
   } = useApp();
 
-  const [isTrendingOpen, setIsTrendingOpen] = useState(false);
+  const [isSortOpen, setIsSortOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const isMounted = React.useSyncExternalStore(
     () => () => {},
@@ -54,7 +55,7 @@ export const HeroSection = () => {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsTrendingOpen(false);
+        setIsSortOpen(false);
       }
       if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
         setIsSearchOpen(false);
@@ -70,12 +71,6 @@ export const HeroSection = () => {
       label: 'Newest First',
       icon: Clock,
       desc: 'Recently published prompts',
-    },
-    {
-      id: 'trending' as const,
-      label: 'Trending',
-      icon: Flame,
-      desc: 'Top engagement & copies',
     },
     {
       id: 'most-popular' as const,
@@ -113,12 +108,15 @@ export const HeroSection = () => {
         {settings.heroHeadline || 'Trending Copy Paste Photo Prompts'}
       </h1>
 
-      <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto mb-8 animate-fade-in [animation-delay:200ms]">
+      <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto mb-6 animate-fade-in [animation-delay:200ms]">
         {settings.heroSubheadline ||
           'Explore 1,000+ curated photo prompts for Gemini and ChatGPT. Copy with 1 click.'}
       </p>
 
-      {/* Action Bar: Search & Trending/Sort Dropdown */}
+      {/* Gemini AI Prompt Generator Box (Replacing AI Inspire Me Button) */}
+      <GeminiPromptBox />
+
+      {/* Action Bar: Search & Sort Dropdown */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 animate-fade-in [animation-delay:300ms]">
         {/* Search Bar */}
         <div className="flex-1 relative group" ref={searchContainerRef}>
@@ -264,12 +262,12 @@ export const HeroSection = () => {
           )}
         </div>
 
-        {/* Dynamic Sort & Trending Dropdown */}
+        {/* Dynamic Sort Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
-            onClick={() => setIsTrendingOpen(!isTrendingOpen)}
-            className="w-full sm:w-auto flex items-center justify-between gap-2.5 px-5 py-3.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-full text-sm font-bold shadow-md hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-all"
-            id="trending-sort-dropdown-btn"
+            onClick={() => setIsSortOpen(!isSortOpen)}
+            className="w-full sm:w-auto flex items-center justify-between gap-2.5 px-5 py-3.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-full text-sm font-bold shadow-md hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-all cursor-pointer"
+            id="sort-filter-dropdown-btn"
           >
             <div className="flex items-center gap-2">
               <CurrentSortIcon className="w-4 h-4 text-amber-400 dark:text-amber-600" />
@@ -277,13 +275,13 @@ export const HeroSection = () => {
             </div>
             <ChevronDown
               className={`w-4 h-4 transition-transform duration-300 ${
-                isTrendingOpen ? 'rotate-180' : ''
+                isSortOpen ? 'rotate-180' : ''
               }`}
             />
           </button>
 
           {/* Dropdown Menu */}
-          {isTrendingOpen && (
+          {isSortOpen && (
             <div className="absolute top-full right-0 mt-2 w-full sm:w-64 bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl border border-neutral-200 dark:border-neutral-800 py-2 z-50 animate-scale-in">
               <ul className="text-left divide-y divide-neutral-100 dark:divide-neutral-800/60">
                 {/* Sort Options */}
@@ -300,9 +298,9 @@ export const HeroSection = () => {
                           key={opt.id}
                           onClick={() => {
                             setSelectedSort(opt.id);
-                            setIsTrendingOpen(false);
+                            setIsSortOpen(false);
                           }}
-                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                             isSelected
                               ? 'bg-neutral-100 dark:bg-neutral-800 text-[#E60023] font-bold'
                               : 'text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800/60'
@@ -338,9 +336,9 @@ export const HeroSection = () => {
                           onClick={() => {
                             setSearchQuery(tag);
                             setSelectedCategory('all');
-                            setIsTrendingOpen(false);
+                            setIsSortOpen(false);
                           }}
-                          className="w-full text-left px-3 py-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/60 rounded-xl transition-colors truncate"
+                          className="w-full text-left px-3 py-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/60 rounded-xl transition-colors truncate cursor-pointer"
                         >
                           #{tag}
                         </button>

@@ -14,6 +14,7 @@ export interface UserSyncData {
   planTier?: PlanTier;
   isProUser?: boolean;
   toolCredits?: number;
+  lastDailyCreditDate?: string;
   promptRequestsRemaining?: number;
   unlockedPromptIds?: string[];
   updatedAt?: string;
@@ -25,14 +26,6 @@ const TIER_WEIGHT: Record<PlanTier, number> = {
   pro: 2,
   vip: 3,
 };
-
-function resolveHighestTier(t1?: PlanTier, t2?: PlanTier): PlanTier {
-  const w1 = t1 && TIER_WEIGHT[t1] !== undefined ? TIER_WEIGHT[t1] : 0;
-  const w2 = t2 && TIER_WEIGHT[t2] !== undefined ? TIER_WEIGHT[t2] : 0;
-  if (w1 >= w2 && w1 > 0) return t1!;
-  if (w2 > w1) return t2!;
-  return 'free';
-}
 
 export const UserSyncService = {
   /**
@@ -111,8 +104,7 @@ export const UserSyncService = {
 
   /**
    * Called whenever a user logs in. Pulls remote user data from database.
-   * Ensures all bookmarks, likes, history, points, plans, credits, and unlocked content come strictly from the authenticated user's remote cloud record.
-   * Never leaks or inherits data from prior sessions or other accounts.
+   * STRICT GUARANTEE: Never inherits or leaks credits, plans, or bookmarks from previous sessions or guests.
    */
   reconcileOnLogin: async (
     user: UserAccount
@@ -128,41 +120,25 @@ export const UserSyncService = {
     promptRequestsRemaining: number;
     unlockedPromptIds: string[];
   }> => {
-    const currentPoints = user.points || 10;
-    let remote = await UserSyncService.pullUserData(user.id, user.email);
-
-    // Strict account isolation: if remote record belongs to another email, discard it immediately
-    if (
-      remote &&
-      remote.email &&
-      user.email &&
-      remote.email.trim().toLowerCase() !== user.email.trim().toLowerCase()
-    ) {
-      console.warn('Cross-account data detected in pullUserData, rejecting foreign record');
-      remote = null;
-    }
+    const todayStr = new Date().toISOString().split('T')[0];
+    const remote = await UserSyncService.pullUserData(user.id, user.email);
 
     if (!remote) {
-      // First time login or no remote record yet for this specific user:
-      // Initialize a clean, free-tier account with standard 2 starter credits
-      const initialTier: PlanTier = 'free';
-      const initialIsPro = false;
-      const initialCredits = 2;
-      const today = new Date().toISOString().split('T')[0];
-
+      // First time login for this specific user: grant 2 daily credits for today on clean free tier
       const initialData: UserSyncData = {
         userId: user.id,
         email: user.email,
         name: user.name,
         avatar: user.avatar,
-        points: currentPoints,
+        points: user.points || 10,
         bookmarkedIds: [],
         likedIds: [],
         aiHistory: [],
         tasteProfile: INITIAL_TASTE_PROFILE,
-        planTier: initialTier,
-        isProUser: initialIsPro,
-        toolCredits: initialCredits,
+        planTier: 'free',
+        isProUser: false,
+        toolCredits: 2, // 2 daily credits start after login
+        lastDailyCreditDate: todayStr,
         promptRequestsRemaining: 0,
         unlockedPromptIds: [],
         updatedAt: new Date().toISOString(),
@@ -173,51 +149,73 @@ export const UserSyncService = {
       return {
         bookmarkedIds: [],
         likedIds: [],
-        points: currentPoints,
+        points: user.points || 10,
         aiHistory: [],
         tasteProfile: INITIAL_TASTE_PROFILE,
-        planTier: initialTier,
-        isProUser: initialIsPro,
-        toolCredits: initialCredits,
+        planTier: 'free',
+        isProUser: false,
+        toolCredits: 2,
         promptRequestsRemaining: 0,
         unlockedPromptIds: [],
       };
     }
 
-    // Remote account exists: strictly respect cloud record for this user
-    const resolvedTier: PlanTier = (
-      ['starter', 'pro', 'vip'].includes(remote.planTier as string) ? remote.planTier : 'free'
-    ) as PlanTier;
-    const resolvedIsPro = Boolean(remote.isProUser && resolvedTier !== 'free');
+    // Remote account exists for this user: use strictly their remote verified plan & credits
+    const resolvedTier: PlanTier = (remote.planTier && ['starter', 'pro', 'vip', 'free'].includes(remote.planTier))
+      ? remote.planTier
+      : (remote.isProUser ? 'pro' : 'free');
+    
+    const resolvedIsPro: boolean = resolvedTier !== 'free' || Boolean(remote.isProUser);
 
-    // Daily 2 credit refresh check for free tier users
-    let resolvedCredits = remote.toolCredits !== undefined ? Number(remote.toolCredits) : 2;
-    const today = new Date().toISOString().split('T')[0];
-    const remoteLastCreditDate = (remote as any).lastCreditDate;
+    let currentCredits = Number(remote.toolCredits ?? 0);
+    let lastCreditDate = remote.lastDailyCreditDate;
 
-    if (resolvedTier === 'free' && remoteLastCreditDate !== today) {
-      resolvedCredits = Math.max(resolvedCredits, 2);
-      void UserSyncService.pushUserData(user.id, user.email, {
-        toolCredits: resolvedCredits,
-        // @ts-ignore
-        lastCreditDate: today,
-      });
+    // Daily 2 credits refresh logic: if free user logs in on a new day, refresh daily credits to at least 2
+    if (!resolvedIsPro && resolvedTier === 'free') {
+      if (lastCreditDate !== todayStr) {
+        currentCredits = Math.max(currentCredits, 2);
+        lastCreditDate = todayStr;
+      }
     }
 
-    const resolvedUnlocks = Array.isArray(remote.unlockedPromptIds) ? remote.unlockedPromptIds : [];
-    const resolvedRequestsRemaining = remote.promptRequestsRemaining !== undefined ? Number(remote.promptRequestsRemaining) : 0;
-
-    return {
+    const mergedData: UserSyncData = {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      avatar: user.avatar,
+      points: remote.points !== undefined ? Number(remote.points) : (user.points || 10),
       bookmarkedIds: Array.isArray(remote.bookmarkedIds) ? remote.bookmarkedIds : [],
       likedIds: Array.isArray(remote.likedIds) ? remote.likedIds : [],
-      points: remote.points !== undefined ? Number(remote.points) : currentPoints,
       aiHistory: Array.isArray(remote.aiHistory) ? remote.aiHistory : [],
       tasteProfile: remote.tasteProfile || INITIAL_TASTE_PROFILE,
       planTier: resolvedTier,
       isProUser: resolvedIsPro,
-      toolCredits: resolvedCredits,
-      promptRequestsRemaining: resolvedRequestsRemaining,
-      unlockedPromptIds: resolvedUnlocks,
+      toolCredits: currentCredits,
+      lastDailyCreditDate: lastCreditDate,
+      promptRequestsRemaining: Number(remote.promptRequestsRemaining || 0),
+      unlockedPromptIds: Array.isArray(remote.unlockedPromptIds) ? remote.unlockedPromptIds : [],
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Keep database in sync with any daily credit refresh
+    if (lastCreditDate === todayStr && remote.lastDailyCreditDate !== todayStr) {
+      void UserSyncService.pushUserData(user.id, user.email, {
+        toolCredits: currentCredits,
+        lastDailyCreditDate: lastCreditDate,
+      });
+    }
+
+    return {
+      bookmarkedIds: mergedData.bookmarkedIds || [],
+      likedIds: mergedData.likedIds || [],
+      points: mergedData.points !== undefined ? mergedData.points : 10,
+      aiHistory: mergedData.aiHistory || [],
+      tasteProfile: mergedData.tasteProfile || INITIAL_TASTE_PROFILE,
+      planTier: resolvedTier,
+      isProUser: resolvedIsPro,
+      toolCredits: currentCredits,
+      promptRequestsRemaining: mergedData.promptRequestsRemaining || 0,
+      unlockedPromptIds: mergedData.unlockedPromptIds || [],
     };
   },
 };
