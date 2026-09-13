@@ -5,11 +5,11 @@ import { getClientIp, checkRateLimit, createRateLimitResponse, sanitizePayload }
 export const dynamic = 'force-dynamic';
 
 function getSyncKey(userId?: string, email?: string): string {
-  if (userId) return `user_sync_${userId}`;
-  if (email) {
-    const clean = email.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+  if (email && email.includes('@')) {
+    const clean = email.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
     return `user_sync_email_${clean}`;
   }
+  if (userId) return `user_sync_${userId}`;
   return '';
 }
 
@@ -35,39 +35,54 @@ export async function POST(req: NextRequest) {
 
     // 1. PULL: Retrieve synced data for user
     if (action === 'pull' || !action) {
-      const { data: row, error } = await client
+      let { data: row, error } = await client
         .from('settings')
         .select('*')
         .eq('id', key)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
-        // Fallback: If searched by userId, also check email key
-        if (email) {
-          const emailKey = getSyncKey(undefined, email);
-          const { data: emailRow } = await client
+      // If not found by primary key and userId is also provided, try userId key as fallback
+      if ((!row?.data || error) && userId) {
+        const altKey = `user_sync_${userId}`;
+        if (altKey !== key) {
+          const { data: altRow } = await client
             .from('settings')
             .select('*')
-            .eq('id', emailKey)
+            .eq('id', altKey)
             .single();
-
-          if (emailRow?.data) {
-            return NextResponse.json({ success: true, syncData: emailRow.data });
+          if (altRow?.data) {
+            if (
+              !email ||
+              !altRow.data.email ||
+              altRow.data.email.trim().toLowerCase() === email.trim().toLowerCase()
+            ) {
+              row = altRow;
+            }
           }
         }
-        return NextResponse.json({ success: true, syncData: null });
       }
 
       const rawSync = row?.data || null;
       if (rawSync) {
-        const syncData = { ...rawSync };
-        const credits = Number(syncData.toolCredits || 0);
-        if (credits > 2 || syncData.isProUser || (syncData.planTier && syncData.planTier !== 'free')) {
-          syncData.isProUser = true;
-          if (!syncData.planTier || syncData.planTier === 'free') {
-            syncData.planTier = credits >= 499 ? 'vip' : (credits >= 250 ? 'pro' : 'starter');
-          }
+        // Strict isolation check: Never return another user's synced data
+        if (
+          email &&
+          rawSync.email &&
+          rawSync.email.trim().toLowerCase() !== email.trim().toLowerCase()
+        ) {
+          return NextResponse.json({
+            success: true,
+            syncData: null,
+          });
         }
+
+        const syncData = { ...rawSync };
+        // Clean tier resolution - NEVER auto-upgrade free tier users based on credits!
+        const plan = (syncData.planTier || (syncData.isProUser ? 'pro' : 'free')) as string;
+        syncData.planTier = plan;
+        syncData.isProUser = Boolean(syncData.isProUser && plan !== 'free');
+        syncData.toolCredits = syncData.toolCredits !== undefined ? Number(syncData.toolCredits) : 2;
+
         return NextResponse.json({
           success: true,
           syncData,
@@ -93,7 +108,16 @@ export async function POST(req: NextRequest) {
         .eq('id', key)
         .single();
 
-      const existingData = existingRow?.data || {};
+      let existingData = existingRow?.data || {};
+
+      // Strict isolation check: If existing row belonged to a different email, do NOT merge it!
+      if (
+        email &&
+        existingData.email &&
+        existingData.email.trim().toLowerCase() !== email.trim().toLowerCase()
+      ) {
+        existingData = {};
+      }
 
       // Merge arrays uniquely
       const mergedBookmarks = Array.from(
@@ -111,25 +135,15 @@ export async function POST(req: NextRequest) {
         ? Number(data.toolCredits)
         : (existingData.toolCredits !== undefined ? Number(existingData.toolCredits) : 2);
 
-      // Safe Plan Tier resolution (vip > pro > starter > free)
+      // Accurate Plan Tier resolution (vip > pro > starter > free)
       const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3 };
       const currentTier = existingData.planTier || (existingData.isProUser ? 'pro' : 'free');
       const incomingTier = data.planTier;
       let resolvedPlanTier = currentTier;
       if (incomingTier && TIER_RANK[incomingTier] !== undefined) {
-        if (TIER_RANK[incomingTier] >= (TIER_RANK[currentTier] || 0) || !existingData.planTier) {
-          resolvedPlanTier = incomingTier;
-        }
+        resolvedPlanTier = incomingTier;
       }
-      let resolvedIsPro = resolvedPlanTier !== 'free' || Boolean(data.isProUser ?? existingData.isProUser);
-
-      // Strict Correctness: Any user with credits > 2 or paid status is marked Pro/Paid
-      if (resolvedToolCredits > 2 || resolvedIsPro || (resolvedPlanTier && resolvedPlanTier !== 'free')) {
-        resolvedIsPro = true;
-        if (resolvedPlanTier === 'free') {
-          resolvedPlanTier = resolvedToolCredits >= 499 ? 'vip' : (resolvedToolCredits >= 250 ? 'pro' : 'starter');
-        }
-      }
+      const resolvedIsPro = Boolean((data.isProUser ?? existingData.isProUser) && resolvedPlanTier !== 'free');
 
       // Merge aiHistory safely
       let mergedAiHistory = existingData.aiHistory || [];
@@ -215,11 +229,17 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: upsertError.message }, { status: 500 });
       }
 
-      // Also mirror to email key if available for multi-device cross-resolution
+      // Also mirror across email and userId keys for multi-device cross-resolution
       if (email) {
         const emailKey = getSyncKey(undefined, email);
         if (emailKey !== key) {
           await client.from('settings').upsert({ id: emailKey, data: mergedPayload });
+        }
+      }
+      if (userId) {
+        const userKey = `user_sync_${userId}`;
+        if (userKey !== key) {
+          await client.from('settings').upsert({ id: userKey, data: mergedPayload });
         }
       }
 

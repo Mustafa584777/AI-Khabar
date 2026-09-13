@@ -111,17 +111,11 @@ export const UserSyncService = {
 
   /**
    * Called whenever a user logs in. Pulls remote user data from database.
-   * Ensures all bookmarks, likes, history, points, plans, credits, and unlocked content come from database and merge safely without data loss.
+   * Ensures all bookmarks, likes, history, points, plans, credits, and unlocked content come strictly from the authenticated user's remote cloud record.
+   * Never leaks or inherits data from prior sessions or other accounts.
    */
   reconcileOnLogin: async (
-    user: UserAccount,
-    localState?: {
-      planTier?: PlanTier;
-      isProUser?: boolean;
-      toolCredits?: number;
-      promptRequestsRemaining?: number;
-      unlockedPromptIds?: string[];
-    }
+    user: UserAccount
   ): Promise<{
     bookmarkedIds: string[];
     likedIds: string[];
@@ -135,39 +129,27 @@ export const UserSyncService = {
     unlockedPromptIds: string[];
   }> => {
     const currentPoints = user.points || 10;
-    const remote = await UserSyncService.pullUserData(user.id, user.email);
+    let remote = await UserSyncService.pullUserData(user.id, user.email);
 
-    // Resolve Highest Tier to prevent accidental downgrades across app updates
-    let resolvedTier = resolveHighestTier(localState?.planTier, remote?.planTier);
-    let resolvedIsPro = resolvedTier !== 'free' || Boolean(localState?.isProUser || remote?.isProUser);
-
-    // Resolve Credits: highest balance is maintained
-    const resolvedCredits = Math.max(
-      localState?.toolCredits !== undefined ? Number(localState.toolCredits) : 0,
-      remote?.toolCredits !== undefined ? Number(remote.toolCredits) : 0,
-      2 // minimum 2 daily base
-    );
-
-    // Strict Correctness: If user has > 2 credits or paid flag, strictly preserve paid status
-    if (resolvedCredits > 2 || resolvedIsPro || (resolvedTier && resolvedTier !== 'free')) {
-      resolvedIsPro = true;
-      if (resolvedTier === 'free') {
-        resolvedTier = resolvedCredits >= 499 ? 'vip' : (resolvedCredits >= 250 ? 'pro' : 'starter');
-      }
+    // Strict account isolation: if remote record belongs to another email, discard it immediately
+    if (
+      remote &&
+      remote.email &&
+      user.email &&
+      remote.email.trim().toLowerCase() !== user.email.trim().toLowerCase()
+    ) {
+      console.warn('Cross-account data detected in pullUserData, rejecting foreign record');
+      remote = null;
     }
 
-    // Resolve Unlocked Prompts: non-destructive union
-    const resolvedUnlocks = Array.from(
-      new Set([...(localState?.unlockedPromptIds || []), ...(remote?.unlockedPromptIds || [])])
-    );
-
-    const resolvedRequestsRemaining = Math.max(
-      localState?.promptRequestsRemaining || 0,
-      remote?.promptRequestsRemaining || 0
-    );
-
     if (!remote) {
-      // First time login or no remote record yet: initialize database record with defaults and local state
+      // First time login or no remote record yet for this specific user:
+      // Initialize a clean, free-tier account with standard 2 starter credits
+      const initialTier: PlanTier = 'free';
+      const initialIsPro = false;
+      const initialCredits = 2;
+      const today = new Date().toISOString().split('T')[0];
+
       const initialData: UserSyncData = {
         userId: user.id,
         email: user.email,
@@ -178,11 +160,11 @@ export const UserSyncService = {
         likedIds: [],
         aiHistory: [],
         tasteProfile: INITIAL_TASTE_PROFILE,
-        planTier: resolvedTier,
-        isProUser: resolvedIsPro,
-        toolCredits: resolvedCredits,
-        promptRequestsRemaining: resolvedRequestsRemaining,
-        unlockedPromptIds: resolvedUnlocks,
+        planTier: initialTier,
+        isProUser: initialIsPro,
+        toolCredits: initialCredits,
+        promptRequestsRemaining: 0,
+        unlockedPromptIds: [],
         updatedAt: new Date().toISOString(),
       };
 
@@ -194,41 +176,43 @@ export const UserSyncService = {
         points: currentPoints,
         aiHistory: [],
         tasteProfile: INITIAL_TASTE_PROFILE,
-        planTier: resolvedTier,
-        isProUser: resolvedIsPro,
-        toolCredits: resolvedCredits,
-        promptRequestsRemaining: resolvedRequestsRemaining,
-        unlockedPromptIds: resolvedUnlocks,
+        planTier: initialTier,
+        isProUser: initialIsPro,
+        toolCredits: initialCredits,
+        promptRequestsRemaining: 0,
+        unlockedPromptIds: [],
       };
     }
 
-    // Remote exists - merge non-destructively and push back if local had additional items
-    const mergedData: UserSyncData = {
-      userId: user.id,
-      email: user.email,
-      name: user.name,
-      avatar: user.avatar,
-      points: remote.points !== undefined ? Number(remote.points) : currentPoints,
-      bookmarkedIds: Array.isArray(remote.bookmarkedIds) ? remote.bookmarkedIds : [],
-      likedIds: Array.isArray(remote.likedIds) ? remote.likedIds : [],
-      aiHistory: Array.isArray(remote.aiHistory) ? remote.aiHistory : [],
-      tasteProfile: remote.tasteProfile || INITIAL_TASTE_PROFILE,
-      planTier: resolvedTier,
-      isProUser: resolvedIsPro,
-      toolCredits: resolvedCredits,
-      promptRequestsRemaining: resolvedRequestsRemaining,
-      unlockedPromptIds: resolvedUnlocks,
-      updatedAt: new Date().toISOString(),
-    };
+    // Remote account exists: strictly respect cloud record for this user
+    const resolvedTier: PlanTier = (
+      ['starter', 'pro', 'vip'].includes(remote.planTier as string) ? remote.planTier : 'free'
+    ) as PlanTier;
+    const resolvedIsPro = Boolean(remote.isProUser && resolvedTier !== 'free');
 
-    void UserSyncService.pushUserData(user.id, user.email, mergedData);
+    // Daily 2 credit refresh check for free tier users
+    let resolvedCredits = remote.toolCredits !== undefined ? Number(remote.toolCredits) : 2;
+    const today = new Date().toISOString().split('T')[0];
+    const remoteLastCreditDate = (remote as any).lastCreditDate;
+
+    if (resolvedTier === 'free' && remoteLastCreditDate !== today) {
+      resolvedCredits = Math.max(resolvedCredits, 2);
+      void UserSyncService.pushUserData(user.id, user.email, {
+        toolCredits: resolvedCredits,
+        // @ts-ignore
+        lastCreditDate: today,
+      });
+    }
+
+    const resolvedUnlocks = Array.isArray(remote.unlockedPromptIds) ? remote.unlockedPromptIds : [];
+    const resolvedRequestsRemaining = remote.promptRequestsRemaining !== undefined ? Number(remote.promptRequestsRemaining) : 0;
 
     return {
-      bookmarkedIds: mergedData.bookmarkedIds || [],
-      likedIds: mergedData.likedIds || [],
-      points: mergedData.points !== undefined ? mergedData.points : currentPoints,
-      aiHistory: mergedData.aiHistory || [],
-      tasteProfile: mergedData.tasteProfile || INITIAL_TASTE_PROFILE,
+      bookmarkedIds: Array.isArray(remote.bookmarkedIds) ? remote.bookmarkedIds : [],
+      likedIds: Array.isArray(remote.likedIds) ? remote.likedIds : [],
+      points: remote.points !== undefined ? Number(remote.points) : currentPoints,
+      aiHistory: Array.isArray(remote.aiHistory) ? remote.aiHistory : [],
+      tasteProfile: remote.tasteProfile || INITIAL_TASTE_PROFILE,
       planTier: resolvedTier,
       isProUser: resolvedIsPro,
       toolCredits: resolvedCredits,

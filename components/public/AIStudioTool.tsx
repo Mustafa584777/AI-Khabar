@@ -110,7 +110,10 @@ export const AIStudioTool = () => {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+    if (!userAccount?.isLoggedIn) {
+      openAuthModal('Please sign in or create an account to use the AI Studio tools.');
+    }
+  }, [userAccount?.isLoggedIn]);
 
   const copyToClipboard = (text: string, key: string, label = 'Copied to clipboard!') => {
     navigator.clipboard.writeText(text);
@@ -140,6 +143,11 @@ export const AIStudioTool = () => {
   };
 
   const handleExtractPrompt = async () => {
+    if (!userAccount?.isLoggedIn) {
+      openAuthModal('Please sign in or create a free account to use the AI Studio Reverse-Engineering tool.');
+      return;
+    }
+
     if (!uploadedImage) {
       showToast('Please upload or select an image first');
       return;
@@ -211,6 +219,42 @@ export const AIStudioTool = () => {
     setIsSavedExtracted(true);
     showToast('Saved to your AI Studio History!');
   };
+
+  // Strict Login Gate: Unauthenticated users cannot use or see tool workspace
+  if (!userAccount?.isLoggedIn) {
+    return (
+      <main className="min-h-[80vh] flex items-center justify-center px-4 py-16 bg-[#fafafa] dark:bg-neutral-950">
+        <div className="max-w-md w-full p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xl text-center space-y-6">
+          <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-[#E60023] to-amber-500 text-white flex items-center justify-center mx-auto shadow-lg shadow-red-500/20">
+            <Sparkles className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-black text-neutral-900 dark:text-white">
+              Sign In to Access AI Studio
+            </h1>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+              Image-to-Prompt extraction, AI reverse-engineering, and prompt generation require an active account. Sign in or register to get started with your daily free credits.
+            </p>
+          </div>
+          <div className="space-y-3 pt-2">
+            <button
+              onClick={() => openAuthModal('Sign in to access the AI Studio Creation Tool.')}
+              className="w-full py-3.5 px-6 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-sm font-bold shadow-lg shadow-red-500/25 transition-all transform active:scale-95 flex items-center justify-center gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Sign In / Create Free Account</span>
+            </button>
+            <button
+              onClick={() => router.push('/')}
+              className="w-full py-3 px-6 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-bold transition-colors"
+            >
+              Back to Home Feed
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 pb-28">

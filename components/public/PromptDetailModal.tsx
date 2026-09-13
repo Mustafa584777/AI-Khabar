@@ -192,6 +192,8 @@ export const PromptDetailModal = () => {
     unlockedPromptIds,
     unlockPromptWithCredit,
     isPromptUnlocked,
+    userAccount,
+    openAuthModal,
   } = useApp();
 
   const INITIAL_RECOMMENDED_COUNT = 15;
@@ -806,19 +808,30 @@ export const PromptDetailModal = () => {
 
         {/* Center/Right: Action Buttons */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Red Save Button */}
-          <button
-            onClick={() => toggleBookmark(selectedPost.id)}
-            className={`flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold shadow-sm transition-all ${
-              isBookmarked
-                ? 'bg-neutral-800 text-white dark:bg-neutral-200 dark:text-neutral-900'
-                : 'bg-[#E60023] hover:bg-[#ad081b] text-white shadow-[#E60023]/20'
-            }`}
-            title={isBookmarked ? 'Saved to collection' : 'Save prompt'}
-          >
-            <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />
-            <span>{isBookmarked ? 'Saved' : 'Save'}</span>
-          </button>
+          {/* Red Save Button (Strictly accessible after login) */}
+          {userAccount?.isLoggedIn ? (
+            <button
+              onClick={() => toggleBookmark(selectedPost.id)}
+              className={`flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold shadow-sm transition-all ${
+                isBookmarked
+                  ? 'bg-neutral-800 text-white dark:bg-neutral-200 dark:text-neutral-900'
+                  : 'bg-[#E60023] hover:bg-[#ad081b] text-white shadow-[#E60023]/20'
+              }`}
+              title={isBookmarked ? 'Saved to collection' : 'Save prompt'}
+            >
+              <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />
+              <span>{isBookmarked ? 'Saved' : 'Save'}</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => openAuthModal('Sign in to save this prompt to your private collection.')}
+              className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-bold bg-[#E60023] hover:bg-[#ad081b] text-white shadow-sm transition-all"
+              title="Sign in to save prompt"
+            >
+              <Bookmark className="w-4 h-4" />
+              <span>Sign in to Save</span>
+            </button>
+          )}
 
           {/* Share */}
           <button
@@ -1204,6 +1217,10 @@ export const PromptDetailModal = () => {
                     onCopy={(e, p) => handleQuickCopyPin(e, p)}
                     onToggleBookmark={(e, p) => {
                       e.stopPropagation();
+                      if (!userAccount?.isLoggedIn) {
+                        openAuthModal('Please sign in or create an account to save prompts.');
+                        return;
+                      }
                       toggleBookmark(p.id);
                     }}
                   />
