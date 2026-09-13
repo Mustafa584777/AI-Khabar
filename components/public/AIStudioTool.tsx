@@ -113,7 +113,7 @@ export const AIStudioTool = () => {
     if (!userAccount?.isLoggedIn) {
       openAuthModal('Please sign in or create an account to use the AI Studio tools.');
     }
-  }, [userAccount?.isLoggedIn]);
+  }, [userAccount?.isLoggedIn, openAuthModal]);
 
   const copyToClipboard = (text: string, key: string, label = 'Copied to clipboard!') => {
     navigator.clipboard.writeText(text);

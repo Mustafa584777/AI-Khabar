@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { RegisteredUserRecord, PlanTier, UsersBackupPayload } from '@/types/prompt';
@@ -47,7 +47,7 @@ export const UsersManager = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch Users function (runs automatically on mount and on manual refresh)
-  const handleSyncUsers = async (isAuto: boolean = false) => {
+  const handleSyncUsers = useCallback(async (isAuto: boolean = false) => {
     setIsLoading(true);
     try {
       const res = await fetch('/api/admin/users', {
@@ -79,12 +79,22 @@ export const UsersManager = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [showToast]);
 
   // Automatically fetch users data on mount so admin sees all users without pressing sync button
   useEffect(() => {
-    void handleSyncUsers(true);
-  }, []);
+    let isMounted = true;
+    const timer = setTimeout(() => {
+      if (isMounted) {
+        void handleSyncUsers(true);
+      }
+    }, 0);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [handleSyncUsers]);
 
   // Copy email to clipboard
   const copyEmail = (email: string) => {

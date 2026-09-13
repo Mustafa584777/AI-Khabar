@@ -86,7 +86,7 @@ export const UserDashboard = () => {
     if (!userAccount?.isLoggedIn) {
       openAuthModal('Please sign in or create an account to access your Creator Dashboard.');
     }
-  }, [userAccount?.isLoggedIn]);
+  }, [userAccount?.isLoggedIn, openAuthModal]);
 
   // Request a prompt form state
   const [requestText, setRequestText] = useState('');
