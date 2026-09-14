@@ -29,9 +29,9 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 1,
-    "copiesCount": 0,
-    "likesCount": 0,
+    "viewsCount": 4,
+    "copiesCount": 1,
+    "likesCount": 1,
     "bookmarksCount": 0,
     "seoTitle": "Create Vintage Scrapbook Saree Portrait Collages | Midjourney Prompt",
     "seoDescription": "Master the art of vintage scrapbook photography with this Midjourney prompt. Create elegant, film-inspired Saree portrait collages with ease.",
@@ -46,7 +46,7 @@
       "metaDescription": "Master the art of vintage scrapbook photography with this Midjourney prompt. Create elegant, film-inspired Saree portrait collages with ease."
     },
     "createdAt": "2026-09-11T09:50:24.159+00:00",
-    "updatedAt": "2026-09-11T09:50:49.016+00:00",
+    "updatedAt": "2026-09-12T13:34:43.629+00:00",
     "publishedAt": "2026-09-11T09:50:24.159+00:00"
   },
   {
@@ -79,7 +79,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 1,
+    "viewsCount": 3,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -96,14 +96,14 @@
       "metaDescription": "Learn how to recreate the nostalgic, warm aesthetic of 1990s vintage family photography with this professional AI prompt."
     },
     "createdAt": "2026-09-11T09:48:48.561+00:00",
-    "updatedAt": "2026-09-11T11:46:33.781+00:00",
+    "updatedAt": "2026-09-12T13:36:13.609+00:00",
     "publishedAt": "2026-09-11T09:48:48.561+00:00"
   },
   {
     "id": "prompt-1789101322747",
     "title": "1980s Vintage Studio Portrait",
     "slug": "1980s-vintage-studio-portrait",
-    "category": "Photorealistic & Portraits",
+    "category": "Instagram Trend",
     "aiTool": "Midjourney",
     "promptText": "A professional 1980s studio portrait of [subject], featuring classic feathered mullet hairstyle, wearing oversized corduroy blazer with leather elbow patches and a vibrant geometric pattern vintage dress shirt, gold chain necklace, wearing retro aviator sunglasses. The background is a traditional mottled brown and tan studio muslin backdrop with soft vignetting. Shot on 35mm film with authentic grain, slight color fading, chromatic aberration, and a bottom-right corner digital orange timestamp 'SEP 12 '88'. The lighting is classic 80s soft studio strobe with a subtle rim light, high-resolution vintage aesthetic, nostalgic atmosphere, kodak portra style.",
     "imageUrl": "https://res.cloudinary.com/idbpgaqz/image/upload/v1789101274/prompts/prompt-1789101272449.webp",
@@ -129,7 +129,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 2,
+    "viewsCount": 3,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -146,7 +146,7 @@
       "metaDescription": "Capture the iconic 1980s studio portrait look with this high-quality AI image generation prompt. Perfect for vintage aesthetic projects."
     },
     "createdAt": "2026-09-11T04:35:22.748+00:00",
-    "updatedAt": "2026-09-11T04:41:41.476+00:00",
+    "updatedAt": "2026-09-12T12:05:30.603+00:00",
     "publishedAt": "2026-09-11T04:35:22.748+00:00"
   },
   {
@@ -180,7 +180,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 1,
+    "viewsCount": 2,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -197,7 +197,7 @@
       "metaDescription": "Learn how to generate authentic 1980s-style Bollywood cinematic portraits using this professional Midjourney/Gemini prompt."
     },
     "createdAt": "2026-09-10T23:55:32.465+00:00",
-    "updatedAt": "2026-09-11T11:46:53.6+00:00",
+    "updatedAt": "2026-09-12T10:02:14.312+00:00",
     "publishedAt": "2026-09-10T23:55:32.465+00:00"
   },
   {
@@ -530,7 +530,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 1,
+    "viewsCount": 2,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -547,7 +547,7 @@
       "metaDescription": "Master the art of high-end editorial portraiture with this cinematic golden hour prompt for AI image generators."
     },
     "createdAt": "2026-09-10T05:12:29.498+00:00",
-    "updatedAt": "2026-09-11T09:51:19.982+00:00",
+    "updatedAt": "2026-09-12T10:01:31.327+00:00",
     "publishedAt": "2026-09-10T05:12:29.498+00:00"
   },
   {
@@ -1026,7 +1026,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 0,
+    "viewsCount": 1,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -1035,15 +1035,10 @@
       "role": "Author",
       "avatar": "/logo.png"
     },
-    "seo": {
-      "metaTitle": "Golden Hour Rural Portraiture AI Prompt | Copy Paste Settings",
-      "metaDescription": "Capture warm lifestyle editorial portraits with this copy-paste AI prompt. Create realistic golden hour outdoor photography with soft lighting and film aesthetics.",
-      "focusKeyword": "Golden Hour Rural Portraiture"
-    },
+    "seo": {},
     "createdAt": "2026-09-05T09:47:01.463+00:00",
-    "updatedAt": "2026-09-06T05:13:42.983+00:00",
-    "publishedAt": "2026-09-05T09:47:01.463+00:00",
-    "seoDescription": "Capture warm lifestyle editorial portraits with this copy-paste AI prompt. Create realistic golden hour outdoor photography with soft lighting and film aesthetics."
+    "updatedAt": "2026-09-12T10:01:36.318+00:00",
+    "publishedAt": "2026-09-05T09:47:01.463+00:00"
   },
   {
     "id": "prompt-1788601607595",
@@ -1075,7 +1070,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 1,
+    "viewsCount": 2,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -1084,15 +1079,10 @@
       "role": "Author",
       "avatar": "/logo.png"
     },
-    "seo": {
-      "metaTitle": "Ethereal Moonlit Saree Portrait AI Prompt | ChatGPT & Midjourney",
-      "metaDescription": "Generate dreamy moonlit portraits with this copy-paste saree photography prompt. Perfect for cinematic traditional aesthetics with facial identity preservation.",
-      "focusKeyword": "Ethereal Moonlit Saree Portrait"
-    },
+    "seo": {},
     "createdAt": "2026-09-05T09:46:47.595+00:00",
-    "updatedAt": "2026-09-06T05:13:45.56+00:00",
-    "publishedAt": "2026-09-05T09:46:47.596+00:00",
-    "seoDescription": "Generate dreamy moonlit portraits with this copy-paste saree photography prompt. Perfect for cinematic traditional aesthetics with facial identity preservation."
+    "updatedAt": "2026-09-12T10:02:22.422+00:00",
+    "publishedAt": "2026-09-05T09:46:47.596+00:00"
   },
   {
     "id": "prompt-1788601566415",
@@ -1273,7 +1263,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 1,
+    "viewsCount": 2,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -1290,7 +1280,7 @@
       "metaDescription": "Learn how to generate professional multi-pose fashion editorial spreads with this high-key studio photography prompt guide."
     },
     "createdAt": "2026-09-05T09:44:41.659+00:00",
-    "updatedAt": "2026-09-06T05:13:54.442+00:00",
+    "updatedAt": "2026-09-12T12:05:49.947+00:00",
     "publishedAt": "2026-09-05T09:44:41.659+00:00"
   },
   {
@@ -2374,7 +2364,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 1,
+    "viewsCount": 2,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -2391,7 +2381,7 @@
       "metaDescription": "Master the art of dark, cinematic portraits with this supernatural-themed prompt. Perfect for Midjourney and Gemini."
     },
     "createdAt": "2026-09-04T07:27:34.509+00:00",
-    "updatedAt": "2026-09-09T02:11:21.628+00:00",
+    "updatedAt": "2026-09-12T06:06:55.324+00:00",
     "publishedAt": "2026-09-04T07:27:34.509+00:00"
   },
   {
@@ -4025,7 +4015,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 1,
+    "viewsCount": 2,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -4042,7 +4032,7 @@
       "metaDescription": "Master the art of high-end desert lifestyle portraits with this professional Midjourney and AI photography prompt, capturing luxury vehicles and editorial style."
     },
     "createdAt": "2026-09-04T07:07:03.092+00:00",
-    "updatedAt": "2026-09-09T08:40:05.201+00:00",
+    "updatedAt": "2026-09-12T10:01:39.683+00:00",
     "publishedAt": "2026-09-04T07:07:03.092+00:00"
   },
   {
@@ -5636,7 +5626,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 1,
+    "viewsCount": 2,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -5653,7 +5643,7 @@
       "metaDescription": "Learn how to prompt for clean, modern, and realistic mirror selfie photography with this high-quality AI prompt guide."
     },
     "createdAt": "2026-08-24T04:26:00.442+00:00",
-    "updatedAt": "2026-09-06T05:16:53.68+00:00",
+    "updatedAt": "2026-09-12T10:01:50.556+00:00",
     "publishedAt": "2026-08-24T04:26:00.442+00:00"
   },
   {
@@ -5735,9 +5725,9 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 8,
+    "viewsCount": 9,
     "copiesCount": 1,
-    "likesCount": 2,
+    "likesCount": 3,
     "bookmarksCount": 0,
     "seoTitle": "Capture Professional Outdoor Portraits with Perfect Bokeh",
     "seoDescription": "Learn how to recreate this stunning outdoor portrait look with professional lighting and camera techniques.",
@@ -5752,7 +5742,7 @@
       "metaDescription": "Learn how to recreate this stunning outdoor portrait look with professional lighting and camera techniques."
     },
     "createdAt": "2026-08-23T09:22:40.003+00:00",
-    "updatedAt": "2026-09-11T03:16:39.318+00:00",
+    "updatedAt": "2026-09-12T11:55:57.698+00:00",
     "publishedAt": "2026-08-23T09:22:40.003+00:00"
   },
   {
@@ -5890,7 +5880,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 2,
+    "viewsCount": 3,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -5907,7 +5897,7 @@
       "metaDescription": "Learn how to recreate this stunning golden hour portrait in a lavender field using Midjourney or Gemini. Includes lighting, camera settings, and expert tips."
     },
     "createdAt": "2026-08-23T09:13:49.642+00:00",
-    "updatedAt": "2026-09-06T05:17:03.397+00:00",
+    "updatedAt": "2026-09-12T10:01:33.677+00:00",
     "publishedAt": "2026-08-23T09:13:49.642+00:00"
   },
   {
@@ -6093,7 +6083,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 2,
+    "viewsCount": 3,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -6110,7 +6100,7 @@
       "metaDescription": "Learn how to generate warm, cozy, autumn-inspired mirror selfie portraits with our master-level AI image generation prompt guide."
     },
     "createdAt": "2026-08-23T06:32:20.061+00:00",
-    "updatedAt": "2026-09-06T05:17:11.258+00:00",
+    "updatedAt": "2026-09-12T10:02:04.599+00:00",
     "publishedAt": "2026-08-23T06:32:20.061+00:00"
   },
   {
@@ -6398,9 +6388,9 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 33,
+    "viewsCount": 34,
     "copiesCount": 10,
-    "likesCount": 1,
+    "likesCount": 2,
     "bookmarksCount": 0,
     "seoTitle": "Cinematic Moonlit Portrait Photography Prompt",
     "seoDescription": "Learn how to generate stunning cinematic moonlit portraits using this professional photography prompt optimized for Midjourney and Gemini.",
@@ -6415,7 +6405,7 @@
       "metaDescription": "Learn how to generate stunning cinematic moonlit portraits using this professional photography prompt optimized for Midjourney and Gemini."
     },
     "createdAt": "2026-08-23T05:47:43.235+00:00",
-    "updatedAt": "2026-09-12T05:27:10.25+00:00",
+    "updatedAt": "2026-09-12T13:14:08.527+00:00",
     "publishedAt": "2026-08-23T05:47:43.235+00:00"
   },
   {
@@ -6869,7 +6859,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 4,
+    "viewsCount": 5,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -6886,7 +6876,7 @@
       "metaDescription": "Create stunning, high-end lifestyle portraits of men with luxury cars using this optimized AI photography prompt for Midjourney and Gemini."
     },
     "createdAt": "2026-08-23T05:38:15.37+00:00",
-    "updatedAt": "2026-09-06T05:17:41.073+00:00",
+    "updatedAt": "2026-09-12T10:01:44.377+00:00",
     "publishedAt": "2026-08-23T05:38:15.37+00:00"
   },
   {
@@ -7133,7 +7123,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 2,
+    "viewsCount": 3,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -7150,7 +7140,7 @@
       "metaDescription": "Learn to recreate authentic, high-quality mirror selfie portraits with this professional Midjourney and AI photography prompt guide."
     },
     "createdAt": "2026-08-23T05:33:39.402+00:00",
-    "updatedAt": "2026-09-06T05:17:51.056+00:00",
+    "updatedAt": "2026-09-12T10:01:55.486+00:00",
     "publishedAt": "2026-08-23T05:33:39.402+00:00"
   },
   {
@@ -7694,7 +7684,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 10,
+    "viewsCount": 11,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -7711,7 +7701,7 @@
       "metaDescription": "Learn how to generate professional cinematic polaroid aesthetic collages with our master-level AI image prompt guide."
     },
     "createdAt": "2026-08-23T05:25:10.161+00:00",
-    "updatedAt": "2026-09-11T10:38:38.514+00:00",
+    "updatedAt": "2026-09-12T06:06:39.98+00:00",
     "publishedAt": "2026-08-23T05:25:10.161+00:00"
   },
   {

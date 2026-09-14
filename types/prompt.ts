@@ -146,6 +146,8 @@ export interface UserAccount {
   isPremium?: boolean;
   membershipPlan?: 'free' | 'starter' | 'pro' | 'vip';
   planTier?: PlanTier;
+  planExpiresAt?: string;
+  planStartedAt?: string;
   toolCredits?: number;
   unlockedPromptIds?: string[];
   credits?: number;
@@ -161,6 +163,7 @@ export interface RegisteredUserRecord {
   avatar?: string;
   planTier: PlanTier;
   isProUser: boolean;
+  planExpiresAt?: string;
   toolCredits: number;
   points: number;
   unlockedPromptIds: string[];

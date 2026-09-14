@@ -55,10 +55,11 @@ export async function GET(req: NextRequest) {
           // A user is strictly a Paid user if rawTier !== 'free' OR rawCredits > 2 OR isExplicitPro
           const isProUser = rawTier !== 'free' || isExplicitPro || rawCredits > 2;
           const planTier: PlanTier = isProUser && rawTier === 'free'
-            ? (rawCredits >= 499 ? 'vip' : (rawCredits >= 250 ? 'pro' : 'starter'))
+            ? (rawCredits >= 180 ? 'vip' : (rawCredits >= 60 ? 'pro' : 'starter'))
             : rawTier;
           const toolCredits = rawCredits;
           const points = typeof syncData.points === 'number' ? syncData.points : 10;
+          const planExpiresAt = syncData.planExpiresAt;
           const unlockedPromptIds = Array.isArray(syncData.unlockedPromptIds) ? syncData.unlockedPromptIds : [];
           const bookmarks = Array.isArray(syncData.bookmarkedIds) ? syncData.bookmarkedIds : [];
           const likes = Array.isArray(syncData.likedIds) ? syncData.likedIds : [];
@@ -74,6 +75,7 @@ export async function GET(req: NextRequest) {
               avatar: syncData.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
               planTier,
               isProUser,
+              planExpiresAt,
               toolCredits,
               points,
               unlockedPromptIds,
