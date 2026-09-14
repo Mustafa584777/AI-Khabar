@@ -596,9 +596,9 @@ OUTPUT MUST BE VALID JSON ONLY matching this schema:
   "tags": ["string", "string", "string"]
 }`;
 
-        const { response, modelUsed } = await generateWithModel(ai, selectedModel, {
+        const { response, modelUsed } = await generateWithModel(ai, undefined, {
           contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
-          config: {
+          generationConfig: {
             responseMimeType: 'application/json',
             temperature: 0.7,
           },
