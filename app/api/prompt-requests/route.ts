@@ -57,7 +57,7 @@ async function saveAllPromptRequests(requests: PromptRequestItem[]): Promise<boo
 
 export async function GET(req: NextRequest) {
   const clientIp = getClientIp(req);
-  const rateLimit = checkRateLimit('public', clientIp);
+  const rateLimit = checkRateLimit('general', clientIp);
   if (!rateLimit.allowed) {
     return createRateLimitResponse(rateLimit.resetInMs);
   }

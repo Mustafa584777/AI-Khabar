@@ -20,7 +20,7 @@ import {
   Search,
   Users,
   Bell,
-  MessageSquareCheck,
+  MessageSquare,
 } from 'lucide-react';
 
 export const AdminSidebar = () => {
@@ -76,7 +76,7 @@ export const AdminSidebar = () => {
     {
       id: 'requested-prompts',
       label: 'Requested Prompts',
-      icon: MessageSquareCheck,
+      icon: MessageSquare,
       badge: pendingRequestsCount > 0 ? pendingRequestsCount : null,
     },
     {

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
 import { PromptRequestItem } from '@/types/prompt';
 import {
-  MessageSquareCheck,
+  MessageSquare,
   Search,
   RefreshCw,
   Clock,
@@ -191,7 +191,7 @@ export const RequestedPromptsManager = () => {
         <div>
           <div className="flex items-center gap-2.5">
             <span className="p-2 rounded-xl bg-red-600 text-white shadow-md shadow-red-500/20">
-              <MessageSquareCheck className="w-5 h-5" />
+              <MessageSquare className="w-5 h-5" />
             </span>
             <h1 className="text-xl md:text-2xl font-black text-neutral-900 dark:text-white tracking-tight">
               Requested Prompts Manager
@@ -317,7 +317,7 @@ export const RequestedPromptsManager = () => {
         {filteredRequests.length === 0 ? (
           <div className="p-12 text-center rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 space-y-3">
             <div className="w-12 h-12 mx-auto rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-400">
-              <MessageSquareCheck className="w-6 h-6" />
+              <MessageSquare className="w-6 h-6" />
             </div>
             <h3 className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
               No prompt requests found
