@@ -19,26 +19,7 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   soundEnabled: true,
 };
 
-// Helper to enforce 16:9 aspect ratio for notification images (1280x720 crop)
-export const formatNotificationImage16x9 = (url?: string): string => {
-  if (!url) return '';
-  if (url.includes('images.unsplash.com')) {
-    try {
-      const u = new URL(url);
-      u.searchParams.set('w', '1280');
-      u.searchParams.set('h', '720');
-      u.searchParams.set('fit', 'crop');
-      u.searchParams.set('auto', 'format');
-      u.searchParams.set('q', '80');
-      return u.toString();
-    } catch {
-      return url;
-    }
-  }
-  return url;
-};
-
-// Seed notifications styled like viral drops with 16:9 images
+// Seed notifications styled like viral drops
 export const SEED_NOTIFICATIONS: PushNotificationItem[] = [
   {
     id: 'notif-pink-viral-aesthetic',
@@ -46,12 +27,12 @@ export const SEED_NOTIFICATIONS: PushNotificationItem[] = [
     subtitle: 'You might like these searches',
     body: 'Explore high-contrast aesthetics, vaporwave aesthetics, and pastel glow prompts dominating modern photography and Instagram.',
     category: 'Photorealistic & Portraits',
-    imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=1280&h=720&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80',
     collageImages: [
-      'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=1280&h=720&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=1280&h=720&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1280&h=720&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=1280&h=720&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=600&auto=format&fit=crop&q=80',
     ],
     url: '/explore?q=pink+aesthetic',
     actionButtons: [
@@ -69,12 +50,12 @@ export const SEED_NOTIFICATIONS: PushNotificationItem[] = [
     subtitle: 'Trending in Anime & Cyberpunk',
     body: 'Top photorealistic prompts with rainy reflections, volumetric neon lighting, and cinematic Sony A7 IV depth of field.',
     category: 'Anime & Cyberpunk',
-    imageUrl: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1280&h=720&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=800&auto=format&fit=crop&q=80',
     collageImages: [
-      'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1280&h=720&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1280&h=720&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1563089145-599997674d42?w=1280&h=720&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1280&h=720&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1563089145-599997674d42?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80',
     ],
     url: '/explore?category=Anime+%26+Cyberpunk',
     actionButtons: [
@@ -92,12 +73,12 @@ export const SEED_NOTIFICATIONS: PushNotificationItem[] = [
     subtitle: 'You might like these prompt ideas',
     body: 'Curated 3D hyper-detailed figures with Octane clay shading, subsurface scattering, and isometric perspective.',
     category: '3D Art & CGI Renders',
-    imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1280&h=720&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
     collageImages: [
-      'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1280&h=720&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=1280&h=720&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1614680376593-902f749f7ffc?w=1280&h=720&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1280&h=720&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1614680376593-902f749f7ffc?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop&q=80',
     ],
     url: '/explore?category=3D+Art+%26+CGI+Renders',
     actionButtons: [
@@ -109,6 +90,25 @@ export const SEED_NOTIFICATIONS: PushNotificationItem[] = [
     read: true,
   },
 ];
+
+// Ensure notification image is properly formatted in 16:9 widescreen aspect ratio
+export const formatNotification169Image = (url?: string): string => {
+  if (!url) return '/logo.png';
+  if (url.startsWith('/')) return url;
+  if (url.includes('images.unsplash.com')) {
+    try {
+      const u = new URL(url);
+      u.searchParams.set('ar', '16:9');
+      u.searchParams.set('fit', 'crop');
+      u.searchParams.set('w', '1280');
+      u.searchParams.set('q', '80');
+      return u.toString();
+    } catch {
+      return url;
+    }
+  }
+  return url;
+};
 
 // Play soft ambient notification chime using Web Audio API
 export const playNotificationChime = () => {
@@ -183,14 +183,143 @@ export const NotificationService = {
     return Notification.permission;
   },
 
-  // Request browser permission and register subscriber with backend
-  requestPushPermission: async (): Promise<boolean> => {
+  // Check comprehensive browser environment diagnostics
+  checkBrowserEnvironment: async (): Promise<{
+    supported: boolean;
+    permission: NotificationPermission | 'unsupported';
+    isIncognito: boolean;
+    isIOS: boolean;
+    isStandalonePWA: boolean;
+    isSecure: boolean;
+  }> => {
+    if (typeof window === 'undefined') {
+      return {
+        supported: false,
+        permission: 'unsupported',
+        isIncognito: false,
+        isIOS: false,
+        isStandalonePWA: false,
+        isSecure: true,
+      };
+    }
+
+    const isSecure = window.isSecureContext ?? true;
+    const supported = 'Notification' in window;
+    const permission: NotificationPermission | 'unsupported' = supported ? Notification.permission : 'unsupported';
+
+    // Check iOS
+    const ua = navigator.userAgent || '';
+    const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isStandalonePWA =
+      window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true;
+
+    // Check Incognito / Private browsing
+    let isIncognito = false;
+    try {
+      if ('storage' in navigator && 'estimate' in navigator.storage) {
+        const { quota } = await navigator.storage.estimate();
+        // Chromium incognito has small quota (< 250MB) compared to normal tabs (> 2GB to 100GB+)
+        if (quota && quota < 250 * 1024 * 1024) {
+          isIncognito = true;
+        }
+      }
+    } catch {
+      // Ignore estimation errors
+    }
+
+    return {
+      supported,
+      permission,
+      isIncognito,
+      isIOS,
+      isStandalonePWA,
+      isSecure,
+    };
+  },
+
+  // Request browser push permission with detailed diagnostic reason
+  requestPushPermissionWithDetails: async (): Promise<{
+    granted: boolean;
+    status: NotificationPermission | 'unsupported';
+    reason?: 'incognito' | 'blocked_in_settings' | 'ios_not_pwa' | 'insecure_origin' | 'denied_by_user' | 'unsupported';
+    message: string;
+  }> => {
     if (typeof window === 'undefined' || !('Notification' in window)) {
-      return false;
+      return {
+        granted: false,
+        status: 'unsupported',
+        reason: 'unsupported',
+        message: 'Push notifications are not supported by this browser.',
+      };
+    }
+
+    // Check secure context
+    if (!window.isSecureContext) {
+      return {
+        granted: false,
+        status: Notification.permission,
+        reason: 'insecure_origin',
+        message: 'Push notifications require a secure (HTTPS) connection.',
+      };
+    }
+
+    // Check iOS PWA requirement
+    const ua = navigator.userAgent || '';
+    const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isStandalonePWA =
+      window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true;
+
+    if (isIOS && !isStandalonePWA) {
+      return {
+        granted: false,
+        status: Notification.permission,
+        reason: 'ios_not_pwa',
+        message: 'On iPhone/iPad, tap Share in Safari and select "Add to Home Screen" to enable notifications.',
+      };
+    }
+
+    // Check Incognito
+    let isIncognito = false;
+    try {
+      if ('storage' in navigator && 'estimate' in navigator.storage) {
+        const { quota } = await navigator.storage.estimate();
+        if (quota && quota < 250 * 1024 * 1024) {
+          isIncognito = true;
+        }
+      }
+    } catch {
+      // Ignore
+    }
+
+    // If permission was already permanently blocked in browser site settings or incognito
+    if (Notification.permission === 'denied') {
+      return {
+        granted: false,
+        status: 'denied',
+        reason: isIncognito ? 'incognito' : 'blocked_in_settings',
+        message: isIncognito
+          ? 'Notifications are automatically blocked in Incognito / Private tabs. Please switch to a normal tab.'
+          : 'Notifications are blocked in your browser site settings. Tap the lock/tune icon in the address bar to allow.',
+      };
     }
 
     try {
-      const permission = await Notification.requestPermission();
+      let permission: NotificationPermission;
+      try {
+        const res = Notification.requestPermission();
+        if (res && typeof (res as any).then === 'function') {
+          permission = await res;
+        } else {
+          permission = await new Promise<NotificationPermission>((resolve) => {
+            Notification.requestPermission((p) => resolve(p));
+          });
+        }
+      } catch {
+        permission = await new Promise<NotificationPermission>((resolve) => {
+          Notification.requestPermission((p) => resolve(p));
+        });
+      }
+
       const granted = permission === 'granted';
 
       // Update preferences
@@ -210,18 +339,44 @@ export const NotificationService = {
       // Record subscriber on server
       if (granted) {
         await NotificationService.registerSubscriber(prefs.selectedInterests);
+        return {
+          granted: true,
+          status: 'granted',
+          message: 'Browser push notifications successfully enabled!',
+        };
       }
 
-      return granted;
+      // If denied, explain clearly based on context
+      if (isIncognito) {
+        return {
+          granted: false,
+          status: 'denied',
+          reason: 'incognito',
+          message: 'Notifications are automatically blocked in Incognito / Private tabs. Please open in a normal tab.',
+        };
+      }
+
+      return {
+        granted: false,
+        status: 'denied',
+        reason: 'denied_by_user',
+        message: 'Notification permission was not granted. You can enable it anytime from browser site settings.',
+      };
     } catch (e) {
       console.error('Failed to request push notification permission:', e);
-      return false;
+      return {
+        granted: false,
+        status: Notification.permission || 'denied',
+        reason: isIncognito ? 'incognito' : 'blocked_in_settings',
+        message: 'Could not request notification permission in this browser session.',
+      };
     }
   },
 
-  // Alias for Header quick allow button
-  requestBrowserPushPermission: async (): Promise<boolean> => {
-    return NotificationService.requestPushPermission();
+  // Request browser permission and register subscriber with backend (backward compatible)
+  requestPushPermission: async (): Promise<boolean> => {
+    const res = await NotificationService.requestPushPermissionWithDetails();
+    return res.granted;
   },
 
   // Trigger Native Browser Notification Popup
@@ -243,9 +398,8 @@ export const NotificationService = {
 
       const iconPath = '/logo.png';
       const badgePath = '/logo.png';
-      // Ensure the push notification banner image is formatted in 16:9 aspect ratio
-      const rawImage = item.imageUrl || item.collageImages?.[0];
-      const displayImage = rawImage ? formatNotificationImage16x9(rawImage) : undefined;
+      const rawImage = item.imageUrl || item.collageImages?.[0] || '/logo.png';
+      const displayImage = formatNotification169Image(rawImage);
 
       let shown = false;
 
@@ -269,10 +423,7 @@ export const NotificationService = {
           } else if (navigator.serviceWorker.controller) {
             navigator.serviceWorker.controller.postMessage({
               type: 'SHOW_NOTIFICATION',
-              payload: {
-                ...item,
-                imageUrl: displayImage || item.imageUrl,
-              },
+              payload: item,
             });
             shown = true;
           }
@@ -317,37 +468,29 @@ export const NotificationService = {
     const list = NotificationService.getNotifications();
     if (list.some((n) => n.id === item.id)) return; // Already have it
 
-    const formattedItem: PushNotificationItem = {
-      ...item,
-      imageUrl: formatNotificationImage16x9(item.imageUrl),
-      collageImages: Array.isArray(item.collageImages)
-        ? item.collageImages.map((img) => formatNotificationImage16x9(img))
-        : [],
-    };
-
     // Prepend to local feed
-    const updated = [formattedItem, ...list];
+    const updated = [item, ...list];
     NotificationService.saveNotifications(updated);
 
     // Check if user allows push and matches interests
     if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
       const prefs = NotificationService.getPreferences();
-      const catLower = (formattedItem.category || '').toLowerCase();
+      const catLower = (item.category || '').toLowerCase();
       const matchesInterest =
-        !formattedItem.category ||
-        formattedItem.category === 'all' ||
+        !item.category ||
+        item.category === 'all' ||
         prefs.selectedInterests.some(
           (i) => catLower.includes(i.toLowerCase()) || i.toLowerCase().includes(catLower)
         );
 
       if (matchesInterest) {
-        await NotificationService.showNativeNotification(formattedItem);
+        await NotificationService.showNativeNotification(item);
       }
     }
 
     // Trigger UI refresh event
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('promptcms_new_notification', { detail: formattedItem }));
+      window.dispatchEvent(new CustomEvent('promptcms_new_notification', { detail: item }));
     }
   },
 
@@ -426,10 +569,7 @@ export const NotificationService = {
   ): Promise<PushNotificationItem> => {
     const newItem: PushNotificationItem = {
       ...item,
-      imageUrl: formatNotificationImage16x9(item.imageUrl),
-      collageImages: Array.isArray(item.collageImages)
-        ? item.collageImages.map((img) => formatNotificationImage16x9(img))
-        : [],
+      imageUrl: item.imageUrl ? formatNotification169Image(item.imageUrl) : '',
       id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       sentAt: new Date().toISOString(),
       clicksCount: 0,
@@ -473,18 +613,6 @@ export const NotificationService = {
     const list = NotificationService.getNotifications();
     const updated = list.map((n) => ({ ...n, read: true }));
     NotificationService.saveNotifications(updated);
-  },
-
-  getUnreadCount: (): number => {
-    const list = NotificationService.getNotifications();
-    return list.filter((n) => !n.read).length;
-  },
-
-  getPermissionStatus: (): NotificationPermission | 'unsupported' => {
-    if (typeof window === 'undefined' || !('Notification' in window)) {
-      return 'unsupported';
-    }
-    return Notification.permission;
   },
 
   deleteNotification: (id: string): void => {
