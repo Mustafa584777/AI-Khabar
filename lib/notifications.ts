@@ -91,6 +91,25 @@ export const SEED_NOTIFICATIONS: PushNotificationItem[] = [
   },
 ];
 
+// Ensure notification image is properly formatted in 16:9 widescreen aspect ratio
+export const formatNotification169Image = (url?: string): string => {
+  if (!url) return '/logo.png';
+  if (url.startsWith('/')) return url;
+  if (url.includes('images.unsplash.com')) {
+    try {
+      const u = new URL(url);
+      u.searchParams.set('ar', '16:9');
+      u.searchParams.set('fit', 'crop');
+      u.searchParams.set('w', '1280');
+      u.searchParams.set('q', '80');
+      return u.toString();
+    } catch {
+      return url;
+    }
+  }
+  return url;
+};
+
 // Play soft ambient notification chime using Web Audio API
 export const playNotificationChime = () => {
   if (typeof window === 'undefined') return;
@@ -219,7 +238,8 @@ export const NotificationService = {
 
       const iconPath = '/logo.png';
       const badgePath = '/logo.png';
-      const displayImage = item.imageUrl || item.collageImages?.[0] || '/logo.png';
+      const rawImage = item.imageUrl || item.collageImages?.[0] || '/logo.png';
+      const displayImage = formatNotification169Image(rawImage);
 
       let shown = false;
 
@@ -389,6 +409,7 @@ export const NotificationService = {
   ): Promise<PushNotificationItem> => {
     const newItem: PushNotificationItem = {
       ...item,
+      imageUrl: item.imageUrl ? formatNotification169Image(item.imageUrl) : '',
       id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       sentAt: new Date().toISOString(),
       clicksCount: 0,

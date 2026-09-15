@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { PushNotificationItem, PushNotificationAction, PushSubscriber } from '@/types/notification';
-import { NotificationService } from '@/lib/notifications';
+import { NotificationService, formatNotification169Image } from '@/lib/notifications';
 import {
   Bell,
   Send,
@@ -151,13 +151,18 @@ export const PushNotificationsManager: React.FC = () => {
         actionButtons.push({ label: actionButton2Label, url: actionButton2Url });
       }
 
+      const formattedMainImage = mainImageUrl ? formatNotification169Image(mainImageUrl) : '';
+      const formattedCollage = collageImages
+        .filter((u) => u && u.trim().length > 0)
+        .map((img) => formatNotification169Image(img));
+
       const itemPayload = {
         title: title.trim(),
         subtitle: subtitle.trim(),
         body: body.trim(),
         category: targetCategory,
-        imageUrl: mainImageUrl,
-        collageImages: collageImages.filter((u) => u && u.trim().length > 0),
+        imageUrl: formattedMainImage,
+        collageImages: formattedCollage,
         url: destinationUrl || '/',
         actionButtons,
         sentBy: 'admin',
@@ -195,14 +200,17 @@ export const PushNotificationsManager: React.FC = () => {
   };
 
   const handleResend = async (item: PushNotificationItem) => {
+    const formattedImage = item.imageUrl ? formatNotification169Image(item.imageUrl) : '';
+    const formattedCollage = (item.collageImages || []).map((img) => formatNotification169Image(img));
+
     await NotificationService.addNotification(
       {
         title: item.title,
         subtitle: item.subtitle,
         body: item.body,
         category: item.category,
-        imageUrl: item.imageUrl,
-        collageImages: item.collageImages,
+        imageUrl: formattedImage,
+        collageImages: formattedCollage,
         url: item.url,
         actionButtons: item.actionButtons,
         sentBy: 'admin',
@@ -561,26 +569,58 @@ export const PushNotificationsManager: React.FC = () => {
                 {subtitle || 'You might like these searches'}
               </p>
 
-              {/* 4-Card Photo Collage Strip (Exact visual match) */}
-              <div className="grid grid-cols-4 gap-1.5 rounded-2xl overflow-hidden aspect-[16/9] mt-2">
-                {collageImages.slice(0, 4).map((img, i) => (
-                  <div key={i} className="relative w-full h-full bg-neutral-200 dark:bg-neutral-800 rounded-xl overflow-hidden shadow-2xs">
-                    {img ? (
-                      <Image
-                        src={img}
-                        alt={`Collage ${i}`}
-                        fill
-                        className="object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[10px] text-neutral-400">
-                        Img {i + 1}
-                      </div>
-                    )}
+              {/* Notification Image / Collage Strip in strict 16:9 widescreen */}
+              {collageImages.filter(Boolean).length > 1 ? (
+                <div className="space-y-1 mt-2">
+                  <div className="flex items-center justify-between px-0.5">
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                      4-Card Strip
+                    </span>
+                    <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">
+                      16:9 Ratio
+                    </span>
                   </div>
-                ))}
-              </div>
+                  <div className="grid grid-cols-4 gap-1.5 rounded-2xl overflow-hidden aspect-[16/9]">
+                    {collageImages.slice(0, 4).map((img, i) => (
+                      <div key={i} className="relative w-full h-full bg-neutral-200 dark:bg-neutral-800 rounded-xl overflow-hidden shadow-2xs">
+                        {img ? (
+                          <Image
+                            src={formatNotification169Image(img)}
+                            alt={`Collage ${i}`}
+                            fill
+                            className="object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-[10px] text-neutral-400">
+                            Img {i + 1}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (mainImageUrl || collageImages[0]) ? (
+                <div className="space-y-1 mt-2">
+                  <div className="flex items-center justify-between px-0.5">
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                      Widescreen Image
+                    </span>
+                    <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-red-100 dark:bg-red-950/60 text-[#E60023]">
+                      16:9 Ratio
+                    </span>
+                  </div>
+                  <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden bg-neutral-200 dark:bg-neutral-800 shadow-xs">
+                    <Image
+                      src={formatNotification169Image(mainImageUrl || collageImages[0])}
+                      alt="Notification Hero"
+                      fill
+                      className="object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                </div>
+              ) : null}
 
               {/* Action Buttons in Lockscreen Card */}
               <div className="pt-2 flex items-center justify-end gap-2">

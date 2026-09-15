@@ -459,7 +459,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } catch (e) {
       console.warn('Notice loading prompt requests from API:', e);
     }
-  }, []);
+  }, [setPromptRequests]);
 
   const addPromptRequest = async (requestText: string, category?: string, aiTool?: string): Promise<boolean> => {
     if (!userAccount || !userAccount.isLoggedIn) {

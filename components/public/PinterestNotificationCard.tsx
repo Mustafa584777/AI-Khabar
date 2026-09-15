@@ -160,7 +160,7 @@ export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps>
               ))}
             </div>
           ) : images.length === 1 ? (
-            <div className="relative w-full h-44 sm:h-52 rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 shadow-xs">
+            <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 shadow-xs">
               <Image
                 src={images[0]}
                 alt={notification.title}
