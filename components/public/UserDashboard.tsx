@@ -58,6 +58,7 @@ export const UserDashboard = () => {
     persistentRefImage,
     setPersistentRefImage,
     promptRequests,
+    fetchPromptRequests,
     addPromptRequest,
     awardPoints,
     isProUser,
@@ -69,6 +70,12 @@ export const UserDashboard = () => {
     isSyncingUserData,
     unlockedPromptIds,
   } = useApp();
+
+  React.useEffect(() => {
+    fetchPromptRequests();
+  }, [fetchPromptRequests]);
+
+  const userPromptRequests = promptRequests.filter(req => req.userId === userAccount?.id || req.userEmail === userAccount?.email);
 
   const [activeTab, setActiveTab] = useState<'saved' | 'history' | 'taste' | 'request'>('saved');
   const [historyFilter, setHistoryFilter] = useState<'all' | 'image_to_prompt'>('all');
@@ -1059,24 +1066,28 @@ export const UserDashboard = () => {
             </div>
 
             {/* User's Previous Requests */}
-            {promptRequests && promptRequests.length > 0 && (
+            {userPromptRequests && userPromptRequests.length > 0 && (
               <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
                 <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
                   Your Submitted Requests
                 </h3>
                 <div className="space-y-3">
-                  {promptRequests.map((req) => (
+                  {userPromptRequests.map((req) => (
                     <div key={req.id} className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex items-center justify-between gap-4">
                       <div className="space-y-1">
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-950/60 text-[#E60023]">
                           {req.category}
                         </span>
                         <p className="text-xs font-medium text-neutral-800 dark:text-neutral-200">
-                          {req.promptDescription}
+                          {req.requestText}
                         </p>
                       </div>
-                      <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-xl">
-                        {req.status}
+                      <span className={`text-[11px] font-bold px-2.5 py-1 rounded-xl ${
+                        req.status === 'completed' ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50' : 
+                        req.status === 'in_progress' ? 'text-amber-600 bg-amber-50 dark:bg-amber-950/50' : 
+                        'text-neutral-600 bg-neutral-200 dark:bg-neutral-800'
+                      }`}>
+                        {req.status === 'completed' ? 'Completed' : req.status === 'in_progress' ? 'In Progress' : 'Pending'}
                       </span>
                     </div>
                   ))}

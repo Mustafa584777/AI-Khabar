@@ -19,8 +19,8 @@ interface AppContextType {
   // Navigation & Views
   currentView: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications';
   setCurrentView: (view: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications') => void;
-  adminSubView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications';
-  setAdminSubView: (subView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications') => void;
+  adminSubView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications' | 'prompt-requests';
+  setAdminSubView: (subView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications' | 'prompt-requests') => void;
   editingPostId: string | null;
   setEditingPostId: (id: string | null) => void;
   selectedPost: PromptPost | null;
@@ -60,6 +60,7 @@ interface AppContextType {
   setPersistentRefImage: (url: string | null) => void;
   promptRequests: any[];
   addPromptRequest: (requestText: string, category?: string) => boolean;
+  fetchPromptRequests: () => Promise<void>;
 
   // AI Studio History (Image to Prompt & Prompt to Image)
   aiHistory: AIHistoryItem[];
@@ -157,7 +158,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Navigation
   const [currentView, setCurrentView] = useState<'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications'>('public');
   const [adminSubView, setAdminSubView] = useState<
-    'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications'
+    'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications' | 'prompt-requests'
   >('dashboard');
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [selectedPost, setSelectedPost] = useState<PromptPost | null>(null);
@@ -442,47 +443,82 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Prompt Requests State
   const [promptRequests, setPromptRequests] = useState<any[]>([]);
 
+  const fetchPromptRequests = useCallback(async () => {
+    try {
+      const res = await fetch('/api/prompt-requests');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.requests)) {
+          setPromptRequests(data.requests);
+        }
+      }
+    } catch (e) {
+      console.warn('Error fetching prompt requests:', e);
+    }
+  }, []);
+
   const addPromptRequest = (requestText: string, category?: string): boolean => {
     if (!userAccount || !userAccount.isLoggedIn) {
       openAuthModal('Please sign in to request a prompt.');
       return false;
     }
     const currentPoints = userAccount.points || 0;
-    if (currentPoints < 10) {
+    
+    // Check if user has promptRequestsRemaining (Plan requests)
+    const hasPlanRequests = promptRequestsRemaining > 0;
+
+    if (!hasPlanRequests && currentPoints < 10) {
       showToast(`You need 10 points to request a prompt! Current points: ${currentPoints}/10`);
       return false;
     }
 
-    // Deduct 10 points and increment requestsMade
-    const updatedAccount: UserAccount = {
-      ...userAccount,
-      points: currentPoints - 10,
-      requestsMade: (userAccount.requestsMade || 0) + 1,
-    };
-    setUserAccount(updatedAccount);
-    StorageService.saveUserAccount(updatedAccount);
+    if (hasPlanRequests) {
+      // Use plan request
+      const nextRemaining = promptRequestsRemaining - 1;
+      setPromptRequestsRemainingState(nextRemaining);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auraprompt_prompt_requests', nextRemaining.toString());
+      }
+      void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
+        promptRequestsRemaining: nextRemaining,
+      });
+      showToast(`Plan request used! ${nextRemaining} requests remaining.`);
+    } else {
+      // Use points
+      const updatedAccount: UserAccount = {
+        ...userAccount,
+        points: currentPoints - 10,
+        requestsMade: (userAccount.requestsMade || 0) + 1,
+      };
+      setUserAccount(updatedAccount);
+      StorageService.saveUserAccount(updatedAccount);
 
-    // Sync deducted points to cloud
-    void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
-      points: currentPoints - 10,
+      // Sync deducted points to cloud
+      void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
+        points: currentPoints - 10,
+      });
+      showToast('Prompt request submitted successfully! 10 points used.');
+    }
+
+    // Call API to save request
+    fetch('/api/prompt-requests', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: userAccount.id,
+        userName: userAccount.name,
+        userAvatar: userAccount.avatar,
+        userEmail: userAccount.email,
+        requestText,
+        category: category || 'General'
+      })
+    }).then(() => {
+      fetchPromptRequests(); // refresh list
+    }).catch(e => {
+      console.error('Failed to submit prompt request:', e);
     });
 
-    const newReq = {
-      id: 'req_' + Date.now(),
-      userId: userAccount.id,
-      userName: userAccount.name,
-      userAvatar: userAccount.avatar,
-      requestText,
-      category: category || 'General',
-      status: 'pending' as const,
-      createdAt: Date.now(),
-      likesCount: 0,
-    };
-
-    const updatedRequests = StorageService.savePromptRequest(newReq);
-    setPromptRequests(updatedRequests);
     confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
-    showToast('Prompt request submitted successfully! 10 points reset.');
     return true;
   };
 
@@ -1746,6 +1782,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         persistentRefImage,
         setPersistentRefImage,
         promptRequests,
+        fetchPromptRequests,
         addPromptRequest,
         aiHistory,
         saveAiHistoryItem,
