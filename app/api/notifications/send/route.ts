@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { NotificationServerStore } from '@/lib/notification-storage';
 import { PushNotificationItem } from '@/types/notification';
+import { formatNotificationImage16x9 } from '@/lib/notifications';
 
 export async function GET() {
   try {
@@ -17,24 +18,6 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
-
-function to169Image(url?: string): string {
-  if (!url) return '';
-  if (url.startsWith('/')) return url;
-  if (url.includes('images.unsplash.com')) {
-    try {
-      const u = new URL(url);
-      u.searchParams.set('ar', '16:9');
-      u.searchParams.set('fit', 'crop');
-      u.searchParams.set('w', '1280');
-      u.searchParams.set('q', '80');
-      return u.toString();
-    } catch {
-      return url;
-    }
-  }
-  return url;
 }
 
 export async function POST(req: NextRequest) {
@@ -59,19 +42,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const formattedImage = to169Image(imageUrl);
-    const formattedCollage = Array.isArray(collageImages)
-      ? collageImages.slice(0, 4).map((img: string) => to169Image(img))
-      : [];
-
     const newNotification: PushNotificationItem = {
       id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       title: title.trim(),
       subtitle: subtitle?.trim() || 'Trending AI Photo Prompts',
       body: (contentBody || subtitle || '').trim(),
       category: category || 'all',
-      imageUrl: formattedImage,
-      collageImages: formattedCollage,
+      imageUrl: formatNotificationImage16x9(imageUrl) || '',
+      collageImages: Array.isArray(collageImages)
+        ? collageImages.slice(0, 4).map((u: string) => formatNotificationImage16x9(u))
+        : [],
       url: url || '/',
       actionButtons: Array.isArray(actionButtons) ? actionButtons : [],
       sentAt: new Date().toISOString(),

@@ -19,7 +19,26 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   soundEnabled: true,
 };
 
-// Seed notifications styled like viral drops
+// Helper to enforce 16:9 aspect ratio for notification images (1280x720 crop)
+export const formatNotificationImage16x9 = (url?: string): string => {
+  if (!url) return '';
+  if (url.includes('images.unsplash.com')) {
+    try {
+      const u = new URL(url);
+      u.searchParams.set('w', '1280');
+      u.searchParams.set('h', '720');
+      u.searchParams.set('fit', 'crop');
+      u.searchParams.set('auto', 'format');
+      u.searchParams.set('q', '80');
+      return u.toString();
+    } catch {
+      return url;
+    }
+  }
+  return url;
+};
+
+// Seed notifications styled like viral drops with 16:9 images
 export const SEED_NOTIFICATIONS: PushNotificationItem[] = [
   {
     id: 'notif-pink-viral-aesthetic',
@@ -27,12 +46,12 @@ export const SEED_NOTIFICATIONS: PushNotificationItem[] = [
     subtitle: 'You might like these searches',
     body: 'Explore high-contrast aesthetics, vaporwave aesthetics, and pastel glow prompts dominating modern photography and Instagram.',
     category: 'Photorealistic & Portraits',
-    imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=1280&h=720&auto=format&fit=crop&q=80',
     collageImages: [
-      'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=1280&h=720&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=1280&h=720&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1280&h=720&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=1280&h=720&auto=format&fit=crop&q=80',
     ],
     url: '/explore?q=pink+aesthetic',
     actionButtons: [
@@ -50,12 +69,12 @@ export const SEED_NOTIFICATIONS: PushNotificationItem[] = [
     subtitle: 'Trending in Anime & Cyberpunk',
     body: 'Top photorealistic prompts with rainy reflections, volumetric neon lighting, and cinematic Sony A7 IV depth of field.',
     category: 'Anime & Cyberpunk',
-    imageUrl: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1280&h=720&auto=format&fit=crop&q=80',
     collageImages: [
-      'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1563089145-599997674d42?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1280&h=720&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1280&h=720&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1563089145-599997674d42?w=1280&h=720&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1280&h=720&auto=format&fit=crop&q=80',
     ],
     url: '/explore?category=Anime+%26+Cyberpunk',
     actionButtons: [
@@ -73,12 +92,12 @@ export const SEED_NOTIFICATIONS: PushNotificationItem[] = [
     subtitle: 'You might like these prompt ideas',
     body: 'Curated 3D hyper-detailed figures with Octane clay shading, subsurface scattering, and isometric perspective.',
     category: '3D Art & CGI Renders',
-    imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1280&h=720&auto=format&fit=crop&q=80',
     collageImages: [
-      'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1614680376593-902f749f7ffc?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1280&h=720&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=1280&h=720&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1614680376593-902f749f7ffc?w=1280&h=720&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1280&h=720&auto=format&fit=crop&q=80',
     ],
     url: '/explore?category=3D+Art+%26+CGI+Renders',
     actionButtons: [
@@ -90,25 +109,6 @@ export const SEED_NOTIFICATIONS: PushNotificationItem[] = [
     read: true,
   },
 ];
-
-// Ensure notification image is properly formatted in 16:9 widescreen aspect ratio
-export const formatNotification169Image = (url?: string): string => {
-  if (!url) return '/logo.png';
-  if (url.startsWith('/')) return url;
-  if (url.includes('images.unsplash.com')) {
-    try {
-      const u = new URL(url);
-      u.searchParams.set('ar', '16:9');
-      u.searchParams.set('fit', 'crop');
-      u.searchParams.set('w', '1280');
-      u.searchParams.set('q', '80');
-      return u.toString();
-    } catch {
-      return url;
-    }
-  }
-  return url;
-};
 
 // Play soft ambient notification chime using Web Audio API
 export const playNotificationChime = () => {
@@ -219,6 +219,11 @@ export const NotificationService = {
     }
   },
 
+  // Alias for Header quick allow button
+  requestBrowserPushPermission: async (): Promise<boolean> => {
+    return NotificationService.requestPushPermission();
+  },
+
   // Trigger Native Browser Notification Popup
   showNativeNotification: async (item: PushNotificationItem): Promise<boolean> => {
     if (typeof window === 'undefined' || !('Notification' in window)) {
@@ -238,8 +243,9 @@ export const NotificationService = {
 
       const iconPath = '/logo.png';
       const badgePath = '/logo.png';
-      const rawImage = item.imageUrl || item.collageImages?.[0] || '/logo.png';
-      const displayImage = formatNotification169Image(rawImage);
+      // Ensure the push notification banner image is formatted in 16:9 aspect ratio
+      const rawImage = item.imageUrl || item.collageImages?.[0];
+      const displayImage = rawImage ? formatNotificationImage16x9(rawImage) : undefined;
 
       let shown = false;
 
@@ -263,7 +269,10 @@ export const NotificationService = {
           } else if (navigator.serviceWorker.controller) {
             navigator.serviceWorker.controller.postMessage({
               type: 'SHOW_NOTIFICATION',
-              payload: item,
+              payload: {
+                ...item,
+                imageUrl: displayImage || item.imageUrl,
+              },
             });
             shown = true;
           }
@@ -308,29 +317,37 @@ export const NotificationService = {
     const list = NotificationService.getNotifications();
     if (list.some((n) => n.id === item.id)) return; // Already have it
 
+    const formattedItem: PushNotificationItem = {
+      ...item,
+      imageUrl: formatNotificationImage16x9(item.imageUrl),
+      collageImages: Array.isArray(item.collageImages)
+        ? item.collageImages.map((img) => formatNotificationImage16x9(img))
+        : [],
+    };
+
     // Prepend to local feed
-    const updated = [item, ...list];
+    const updated = [formattedItem, ...list];
     NotificationService.saveNotifications(updated);
 
     // Check if user allows push and matches interests
     if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
       const prefs = NotificationService.getPreferences();
-      const catLower = (item.category || '').toLowerCase();
+      const catLower = (formattedItem.category || '').toLowerCase();
       const matchesInterest =
-        !item.category ||
-        item.category === 'all' ||
+        !formattedItem.category ||
+        formattedItem.category === 'all' ||
         prefs.selectedInterests.some(
           (i) => catLower.includes(i.toLowerCase()) || i.toLowerCase().includes(catLower)
         );
 
       if (matchesInterest) {
-        await NotificationService.showNativeNotification(item);
+        await NotificationService.showNativeNotification(formattedItem);
       }
     }
 
     // Trigger UI refresh event
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('promptcms_new_notification', { detail: item }));
+      window.dispatchEvent(new CustomEvent('promptcms_new_notification', { detail: formattedItem }));
     }
   },
 
@@ -409,7 +426,10 @@ export const NotificationService = {
   ): Promise<PushNotificationItem> => {
     const newItem: PushNotificationItem = {
       ...item,
-      imageUrl: item.imageUrl ? formatNotification169Image(item.imageUrl) : '',
+      imageUrl: formatNotificationImage16x9(item.imageUrl),
+      collageImages: Array.isArray(item.collageImages)
+        ? item.collageImages.map((img) => formatNotificationImage16x9(img))
+        : [],
       id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       sentAt: new Date().toISOString(),
       clicksCount: 0,
@@ -453,6 +473,18 @@ export const NotificationService = {
     const list = NotificationService.getNotifications();
     const updated = list.map((n) => ({ ...n, read: true }));
     NotificationService.saveNotifications(updated);
+  },
+
+  getUnreadCount: (): number => {
+    const list = NotificationService.getNotifications();
+    return list.filter((n) => !n.read).length;
+  },
+
+  getPermissionStatus: (): NotificationPermission | 'unsupported' => {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      return 'unsupported';
+    }
+    return Notification.permission;
   },
 
   deleteNotification: (id: string): void => {

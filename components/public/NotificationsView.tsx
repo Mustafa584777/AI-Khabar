@@ -72,7 +72,7 @@ export const NotificationsView: React.FC = () => {
         subtitle: 'Browser Push Notifications Active! 🔔',
         body: 'You are now ready! Whenever trending prompts drop in your chosen categories, you will receive native alerts directly.',
         category: 'all',
-        imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1280&auto=format&fit=crop&q=80&ar=16:9',
+        imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=1280&h=720&fit=crop&auto=format&q=80',
         url: '/notifications',
         sentAt: new Date().toISOString(),
       });
@@ -91,9 +91,9 @@ export const NotificationsView: React.FC = () => {
       id: `notif-test-${Date.now()}`,
       title: 'tool.reelz: Trending AI Photo Prompts',
       subtitle: 'Instant Browser Push Test 🔔',
-      body: 'Live browser notification popup is working in 16:9 widescreen on your device!',
+      body: 'Live browser notification popup is working perfectly on your device!',
       category: 'all',
-      imageUrl: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=1280&auto=format&fit=crop&q=80&ar=16:9',
+      imageUrl: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1280&h=720&fit=crop&auto=format&q=80',
       url: '/explore',
       sentAt: new Date().toISOString(),
     });
@@ -159,6 +159,20 @@ export const NotificationsView: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            {/* Quick Allow Notifications Button if not yet granted */}
+            {browserPushPermission !== 'granted' && browserPushPermission !== 'unsupported' && (
+              <button
+                type="button"
+                onClick={handleEnableBrowserPush}
+                className="px-3.5 py-2 rounded-2xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs shrink-0 cursor-pointer"
+                id="btn-quick-allow-notifications"
+                title="Allow Browser Push Notifications"
+              >
+                <BellRing className="w-3.5 h-3.5 animate-bounce" />
+                <span>Allow Notifications</span>
+              </button>
+            )}
+
             {/* Customize Interests Button */}
             <button
               type="button"
@@ -183,45 +197,43 @@ export const NotificationsView: React.FC = () => {
           </div>
         </div>
 
-        {/* Browser Push Permission Banner */}
+        {/* Browser Push Permission Banner (Restored) */}
         {browserPushPermission !== 'granted' && browserPushPermission !== 'unsupported' && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[#E60023]/10 border border-[#E60023]/30 animate-in fade-in duration-300">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[#E60023]/10 border border-[#E60023]/30">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#E60023]/20 flex items-center justify-center shrink-0">
-                <BellRing className="w-5 h-5 text-[#E60023] animate-bounce" />
-              </div>
+              <BellRing className="w-5 h-5 text-[#E60023] shrink-0 animate-bounce" />
               <div>
-                <p className="text-xs sm:text-sm font-black text-neutral-900 dark:text-white">
+                <p className="text-xs font-bold text-neutral-900 dark:text-white">
                   Turn on Browser Push Notifications
                 </p>
                 <p className="text-[11px] text-neutral-600 dark:text-neutral-400">
-                  Receive instant 16:9 lockscreen drops when viral prompts match your selected categories.
+                  Receive instant lockscreen drops when viral prompts match your categories.
                 </p>
               </div>
             </div>
             <button
               type="button"
               onClick={handleEnableBrowserPush}
-              className="px-4 py-2.5 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-black shadow-md shadow-red-500/20 transition-all shrink-0 cursor-pointer flex items-center justify-center gap-1.5"
+              className="px-4 py-2.5 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-md shadow-red-500/20 transition-all shrink-0 cursor-pointer flex items-center gap-2"
               id="btn-allow-push-notifications"
             >
-              <Bell className="w-3.5 h-3.5 fill-white" />
-              <span>Allow Notifications</span>
+              <Bell className="w-4 h-4" />
+              <span>Enable Browser Notifications</span>
             </button>
           </div>
         )}
 
-        {/* Active Browser Push Status Banner */}
+        {/* Active Browser Push Status Banner (Restored) */}
         {browserPushPermission === 'granted' && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 animate-in fade-in duration-300">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60">
             <div className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <div>
                 <p className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
                   Browser Push Notifications Active
                 </p>
                 <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80">
-                  This device is registered to receive instant real-time 16:9 prompt drops.
+                  This device is registered to receive instant real-time prompt drops.
                 </p>
               </div>
             </div>
@@ -231,8 +243,8 @@ export const NotificationsView: React.FC = () => {
               className="px-3.5 py-1.5 rounded-xl bg-white dark:bg-neutral-800 hover:bg-emerald-100 dark:hover:bg-neutral-700 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 text-xs font-bold transition-all shadow-xs shrink-0 flex items-center gap-1.5 cursor-pointer"
               id="btn-test-notification-popup"
             >
-              <Zap className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>Send Test Popup</span>
+              <Bell className="w-3.5 h-3.5" />
+              <span>Test Notification Popup</span>
             </button>
           </div>
         )}

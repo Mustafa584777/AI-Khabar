@@ -7,16 +7,17 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-// Helper to ensure 16:9 widescreen format for notification image
-function format169Image(url) {
-  if (!url || typeof url !== 'string') return '/logo.png';
-  if (url.startsWith('/')) return url;
+// Helper to enforce 16:9 aspect ratio on notification banner images
+function formatNotificationImage16x9(url) {
+  if (!url || typeof url !== 'string') return undefined;
+  if (url === '/logo.png') return undefined;
   if (url.includes('images.unsplash.com')) {
     try {
       const u = new URL(url);
-      u.searchParams.set('ar', '16:9');
-      u.searchParams.set('fit', 'crop');
       u.searchParams.set('w', '1280');
+      u.searchParams.set('h', '720');
+      u.searchParams.set('fit', 'crop');
+      u.searchParams.set('auto', 'format');
       u.searchParams.set('q', '80');
       return u.toString();
     } catch (e) {
@@ -38,12 +39,15 @@ self.addEventListener('push', (event) => {
   }
 
   const title = data.title || 'tool.reelz: Trending Photo Prompts';
-  const rawImage = data.image || data.imageUrl;
+  const bannerImage = formatNotificationImage16x9(
+    data.image || data.imageUrl || (Array.isArray(data.collageImages) ? data.collageImages[0] : undefined)
+  );
+
   const options = {
     body: data.body || data.subtitle || 'New trending AI photo prompts curated for you!',
     icon: '/logo.png',
     badge: '/logo.png',
-    image: format169Image(rawImage),
+    ...(bannerImage ? { image: bannerImage } : {}),
     data: {
       url: data.url || '/',
     },
@@ -64,12 +68,15 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
     const data = event.data.payload || {};
     const title = data.title || 'tool.reelz: Trending Photo Prompts';
-    const rawImage = data.imageUrl || data.image || '/logo.png';
+    const bannerImage = formatNotificationImage16x9(
+      data.image || data.imageUrl || (Array.isArray(data.collageImages) ? data.collageImages[0] : undefined)
+    );
+
     const options = {
       body: data.subtitle || data.body || 'New trending AI photo prompts curated for you!',
       icon: '/logo.png',
       badge: '/logo.png',
-      image: format169Image(rawImage),
+      ...(bannerImage ? { image: bannerImage } : {}),
       data: {
         url: data.url || '/',
       },

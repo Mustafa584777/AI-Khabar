@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { PushNotificationItem } from '@/types/notification';
-import { NotificationService } from '@/lib/notifications';
+import { NotificationService, formatNotificationImage16x9 } from '@/lib/notifications';
 import { Bell, ChevronUp, ChevronDown, ExternalLink, Sparkles, Check, ArrowRight } from 'lucide-react';
 
 interface PinterestNotificationCardProps {
@@ -43,12 +43,13 @@ export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps>
     router.push(url);
   };
 
-  // Determine images to show in the 4-card strip
-  const images = notification.collageImages && notification.collageImages.length > 0
+  // Determine images to show in the 4-card strip (strictly formatted to 16:9)
+  const rawImages = notification.collageImages && notification.collageImages.length > 0
     ? notification.collageImages.slice(0, 4)
     : notification.imageUrl
     ? [notification.imageUrl]
     : [];
+  const images = rawImages.map((img) => formatNotificationImage16x9(img));
 
   const [timeAgo, setTimeAgo] = useState('recently');
 
@@ -139,9 +140,9 @@ export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps>
       {/* Expanded Content: Visual Collage Strip & Actions */}
       {isExpanded && (
         <div className="mt-3 space-y-3">
-          {/* Visual Cards Strip: Exactly 4 rounded vertical columns (Pinterest style) */}
+          {/* Visual Cards Strip: Exactly 4 rounded vertical columns (Strict 16:9 container aspect ratio) */}
           {images.length > 1 ? (
-            <div className="grid grid-cols-4 gap-1.5 sm:gap-2.5 rounded-2xl overflow-hidden aspect-[16/9] sm:aspect-[20/9]">
+            <div className="grid grid-cols-4 gap-1.5 sm:gap-2.5 rounded-2xl overflow-hidden aspect-[16/9] w-full">
               {images.map((img, idx) => (
                 <div
                   key={idx}

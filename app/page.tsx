@@ -19,13 +19,11 @@ const TasteProfileModal = dynamic(() => import('@/components/public/TasteProfile
 const UserDashboard = dynamic(() => import('@/components/public/UserDashboard').then((m) => m.UserDashboard), { ssr: false });
 const AIStudioTool = dynamic(() => import('@/components/public/AIStudioTool').then((m) => m.AIStudioTool), { ssr: false });
 const UserAuthModal = dynamic(() => import('@/components/public/UserAuthModal').then((m) => m.UserAuthModal), { ssr: false });
-const NotificationsView = dynamic(() => import('@/components/public/NotificationsView').then((m) => m.NotificationsView), { ssr: false });
 const AdminLayout = dynamic(() => import('@/components/admin/AdminLayout').then((m) => m.AdminLayout), { ssr: false });
 const AdminLoginModal = dynamic(() => import('@/components/admin/AdminLoginModal').then((m) => m.AdminLoginModal), { ssr: false });
 const SearchExploreModal = dynamic(() => import('@/components/public/SearchExploreModal').then((m) => m.SearchExploreModal), { ssr: false });
-const RazorpayCheckoutModal = dynamic(() => import('@/components/public/RazorpayCheckoutModal').then((m) => m.RazorpayCheckoutModal), { ssr: false });
-const UnlockPremiumModal = dynamic(() => import('@/components/public/UnlockPremiumModal').then((m) => m.UnlockPremiumModal), { ssr: false });
-const NotificationPermissionBanner = dynamic(() => import('@/components/public/NotificationPermissionBanner').then((m) => m.NotificationPermissionBanner), { ssr: false });
+const RequestedPromptsFeed = dynamic(() => import('@/components/public/RequestedPromptsFeed').then((m) => m.RequestedPromptsFeed), { ssr: false });
+const NotificationsView = dynamic(() => import('@/components/public/NotificationsView').then((m) => m.NotificationsView), { ssr: false });
 
 function MainApp() {
   const { currentView } = useApp();
@@ -40,11 +38,12 @@ function MainApp() {
     );
   }
 
-  if (currentView === 'notifications' || currentView === 'for-you') {
+  if (currentView === 'notifications') {
     return (
       <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col pb-20 sm:pb-8">
         <Header />
         <NotificationsView />
+        <Footer />
         <BottomNav />
         <SearchExploreModal />
         <PromptDetailModal />
@@ -53,8 +52,24 @@ function MainApp() {
         <UserAuthModal />
         <AdminLoginModal />
         <ToastNotification />
-        <RazorpayCheckoutModal />
-        <UnlockPremiumModal />
+      </div>
+    );
+  }
+
+  if (currentView === 'for-you') {
+    return (
+      <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col pb-20 sm:pb-8">
+        <Header />
+        <RequestedPromptsFeed />
+        <Footer />
+        <BottomNav />
+        <SearchExploreModal />
+        <PromptDetailModal />
+        <BookmarksDrawer />
+        <TasteProfileModal />
+        <UserAuthModal />
+        <AdminLoginModal />
+        <ToastNotification />
       </div>
     );
   }
@@ -71,8 +86,6 @@ function MainApp() {
         <AdminLoginModal />
         <ToastNotification />
         <BottomNav />
-        <RazorpayCheckoutModal />
-        <UnlockPremiumModal />
       </div>
     );
   }
@@ -90,8 +103,6 @@ function MainApp() {
         <AdminLoginModal />
         <ToastNotification />
         <BottomNav />
-        <RazorpayCheckoutModal />
-        <UnlockPremiumModal />
       </div>
     );
   }
@@ -105,7 +116,7 @@ function MainApp() {
       <SEOContentSection />
       <Footer />
 
-      {/* Mobile Bottom Navigation */}
+      {/* Pinterest Mobile Bottom Navigation */}
       <BottomNav />
 
       {/* Global Modals & Overlays */}
@@ -116,15 +127,14 @@ function MainApp() {
       <UserAuthModal />
       <AdminLoginModal />
       <ToastNotification />
-      <RazorpayCheckoutModal />
-      <UnlockPremiumModal />
-      <NotificationPermissionBanner />
     </div>
   );
 }
 
 export default function Page() {
   return (
-    <MainApp />
+    <AppProvider>
+      <MainApp />
+    </AppProvider>
   );
 }
