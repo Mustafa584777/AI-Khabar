@@ -1,4 +1,4 @@
-import { UserAccount, AIHistoryItem, PlanTier } from '@/types/prompt';
+import { UserAccount, AIHistoryItem, PlanTier, PromptRequestItem } from '@/types/prompt';
 import { INITIAL_TASTE_PROFILE, UserTasteProfile } from './personalization';
 
 export interface UserSyncData {
@@ -19,6 +19,7 @@ export interface UserSyncData {
   unlockedPromptIds?: string[];
   planStartedAt?: string;
   planExpiresAt?: string;
+  promptRequests?: PromptRequestItem[];
   updatedAt?: string;
 }
 

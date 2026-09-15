@@ -192,13 +192,19 @@ export interface UsersBackupPayload {
 export interface PromptRequestItem {
   id: string;
   userId: string;
+  userEmail: string;
   userName: string;
   userAvatar?: string;
   requestText: string;
   category?: string;
-  status: 'pending' | 'in_progress' | 'completed';
+  aiTool?: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'rejected';
   createdAt: number;
-  likesCount: number;
+  likesCount?: number;
+  fulfilledPrompt?: string;
+  fulfilledAt?: number | string;
+  adminNotes?: string;
+  fulfilledBy?: string;
 }
 
 export interface AIHistoryItem {

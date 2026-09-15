@@ -20,7 +20,7 @@ import {
   Search,
   Users,
   Bell,
-  MessageSquare,
+  MessageSquareCheck,
 } from 'lucide-react';
 
 export const AdminSidebar = () => {
@@ -32,9 +32,11 @@ export const AdminSidebar = () => {
     logout,
     posts,
     currentUser,
+    promptRequests,
   } = useApp();
 
   const draftCount = posts.filter((p) => p.status === 'draft').length;
+  const pendingRequestsCount = promptRequests.filter((r) => r.status === 'pending').length;
 
   interface NavItem {
     id: string;
@@ -72,6 +74,12 @@ export const AdminSidebar = () => {
       icon: FolderTree,
     },
     {
+      id: 'requested-prompts',
+      label: 'Requested Prompts',
+      icon: MessageSquareCheck,
+      badge: pendingRequestsCount > 0 ? pendingRequestsCount : null,
+    },
+    {
       id: 'notifications',
       label: 'Push Notifications',
       icon: Bell,
@@ -80,11 +88,6 @@ export const AdminSidebar = () => {
       id: 'users',
       label: 'Registered Users',
       icon: Users,
-    },
-    {
-      id: 'prompt-requests',
-      label: 'Requested Prompts',
-      icon: MessageSquare,
     },
     {
       id: 'search-history',
