@@ -17,6 +17,8 @@ export interface UserSyncData {
   lastDailyCreditDate?: string;
   promptRequestsRemaining?: number;
   unlockedPromptIds?: string[];
+  planStartedAt?: string;
+  planExpiresAt?: string;
   updatedAt?: string;
 }
 
@@ -119,6 +121,8 @@ export const UserSyncService = {
     toolCredits: number;
     promptRequestsRemaining: number;
     unlockedPromptIds: string[];
+    planStartedAt?: string;
+    planExpiresAt?: string;
   }> => {
     const todayStr = new Date().toISOString().split('T')[0];
     const remote = await UserSyncService.pullUserData(user.id, user.email);
@@ -161,11 +165,20 @@ export const UserSyncService = {
     }
 
     // Remote account exists for this user: use strictly their remote verified plan & credits
-    const resolvedTier: PlanTier = (remote.planTier && ['starter', 'pro', 'vip', 'free'].includes(remote.planTier))
+    let resolvedTier: PlanTier = (remote.planTier && ['starter', 'pro', 'vip', 'free'].includes(remote.planTier))
       ? remote.planTier
       : (remote.isProUser ? 'pro' : 'free');
     
-    const resolvedIsPro: boolean = resolvedTier !== 'free' || Boolean(remote.isProUser);
+    let resolvedIsPro: boolean = resolvedTier !== 'free' || Boolean(remote.isProUser);
+
+    // Validate plan expiration if an expiration date is present
+    if (resolvedTier !== 'free' && remote.planExpiresAt) {
+      const expTime = new Date(remote.planExpiresAt).getTime();
+      if (!isNaN(expTime) && expTime < Date.now()) {
+        resolvedTier = 'free';
+        resolvedIsPro = false;
+      }
+    }
 
     let currentCredits = Number(remote.toolCredits ?? 0);
     let lastCreditDate = remote.lastDailyCreditDate;
@@ -194,6 +207,8 @@ export const UserSyncService = {
       lastDailyCreditDate: lastCreditDate,
       promptRequestsRemaining: Number(remote.promptRequestsRemaining || 0),
       unlockedPromptIds: Array.isArray(remote.unlockedPromptIds) ? remote.unlockedPromptIds : [],
+      planStartedAt: remote.planStartedAt,
+      planExpiresAt: remote.planExpiresAt,
       updatedAt: new Date().toISOString(),
     };
 
@@ -216,6 +231,8 @@ export const UserSyncService = {
       toolCredits: currentCredits,
       promptRequestsRemaining: mergedData.promptRequestsRemaining || 0,
       unlockedPromptIds: mergedData.unlockedPromptIds || [],
+      planStartedAt: remote.planStartedAt,
+      planExpiresAt: remote.planExpiresAt,
     };
   },
 };

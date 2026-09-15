@@ -208,9 +208,15 @@ export const PromptDetailModal = () => {
 
   const router = useRouter();
   const postsRef = useRef(posts);
-  postsRef.current = posts;
   const historyStackRef = useRef(historyStack);
-  historyStackRef.current = historyStack;
+
+  useEffect(() => {
+    postsRef.current = posts;
+  }, [posts]);
+
+  useEffect(() => {
+    historyStackRef.current = historyStack;
+  }, [historyStack]);
 
   // Cleanly synchronize historyStack whenever selectedPost changes
   useEffect(() => {

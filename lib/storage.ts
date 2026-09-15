@@ -271,7 +271,7 @@ export const StorageService = {
     }
   },
 
-  logoutUserAccount: (): void => {
+  clearAllUserData: (): void => {
     if (typeof window !== 'undefined') {
       const userKeys = [
         STORAGE_KEY_USER_ACCOUNT,
@@ -289,6 +289,8 @@ export const StorageService = {
         'auraprompt_studio_preload',
         'promptcms_studio_preload',
         'promptcms_studio_image_preload',
+        'auraprompt_plan_started_at',
+        'auraprompt_plan_expires_at',
       ];
       userKeys.forEach((k) => {
         try {
@@ -296,11 +298,30 @@ export const StorageService = {
         } catch {}
       });
 
+      // Clear dynamic user-scoped keys from localStorage
+      try {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (
+            key &&
+            (key.startsWith('auraprompt_last_credit_date_') ||
+              key.startsWith('auraprompt_user_') ||
+              key.startsWith('user_sync_'))
+          ) {
+            localStorage.removeItem(key);
+          }
+        }
+      } catch {}
+
       // Clear session storage as well
       try {
         sessionStorage.clear();
       } catch {}
     }
+  },
+
+  logoutUserAccount: (): void => {
+    StorageService.clearAllUserData();
   },
 
   // AI Generation & Extraction History

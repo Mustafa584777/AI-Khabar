@@ -369,7 +369,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const upgradePlan = useCallback((tier: 'starter' | 'pro' | 'vip') => {
-    const creditsMap = { starter: 10, pro: 50, vip: 200 };
+    const creditsMap = { starter: 30, pro: 60, vip: 180 };
     const requestsMap = { starter: 1, pro: 3, vip: 10 };
 
     setIsProUserState(true);
@@ -398,22 +398,30 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return next;
     });
 
+    const now = new Date();
+    const planStartedAt = now.toISOString();
+    const planExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
     if (typeof window !== 'undefined') {
       localStorage.setItem('auraprompt_pro_member', 'true');
       localStorage.setItem('auraprompt_plan_tier', tier);
+      localStorage.setItem('auraprompt_plan_started_at', planStartedAt);
+      localStorage.setItem('auraprompt_plan_expires_at', planExpiresAt);
     }
 
     // Persist SaaS Plan upgrade immediately to Supabase cloud
-    const currentAcc = StorageService.getUserAccount();
+    const currentAcc = userAccount || StorageService.getUserAccount();
     if (currentAcc && currentAcc.isLoggedIn) {
       void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, {
         planTier: tier,
         isProUser: true,
         toolCredits: finalCredits,
         promptRequestsRemaining: finalRequests,
+        planStartedAt,
+        planExpiresAt,
       });
     }
-  }, []);
+  }, [userAccount]);
 
   // AI Studio History State
   const [aiHistory, setAiHistory] = useState<AIHistoryItem[]>([]);
@@ -566,6 +574,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setUnlockedPromptIds(synced.unlockedPromptIds || []);
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds || []));
+        if (synced.planStartedAt) {
+          localStorage.setItem('auraprompt_plan_started_at', synced.planStartedAt);
+        }
+        if (synced.planExpiresAt) {
+          localStorage.setItem('auraprompt_plan_expires_at', synced.planExpiresAt);
+        }
       }
     });
 
@@ -1086,7 +1100,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setToolCreditsState(synced.toolCredits ?? 2);
       if (typeof window !== 'undefined') localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits ?? 2));
       setUnlockedPromptIds(synced.unlockedPromptIds || []);
-      if (typeof window !== 'undefined') localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds || []));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds || []));
+        if (synced.planStartedAt) {
+          localStorage.setItem('auraprompt_plan_started_at', synced.planStartedAt);
+        }
+        if (synced.planExpiresAt) {
+          localStorage.setItem('auraprompt_plan_expires_at', synced.planExpiresAt);
+        }
+      }
     };
 
     // Check Supabase Auth Session (Google OAuth login return or existing session)
