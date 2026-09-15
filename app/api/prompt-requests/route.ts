@@ -290,3 +290,20 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'id is required' }, { status: 400 });
+    }
+    const allRequests = await loadAllPromptRequests();
+    const updatedList = allRequests.filter((r) => r.id !== id);
+    await saveAllPromptRequests(updatedList);
+    return NextResponse.json({ success: true, requests: updatedList });
+  } catch (err: any) {
+    console.error('Error in DELETE /api/prompt-requests:', err);
+    return NextResponse.json({ success: false, error: err.message || 'Internal error' }, { status: 500 });
+  }
+}

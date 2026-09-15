@@ -32,7 +32,8 @@ export interface PromptParameters {
   camera?: string; // e.g. "Sony A7 IV, 85mm f/1.4"
   renderEngine?: string; // e.g. "Unreal Engine 5, Octane Render"
   temperature?: string; // For text models
-  [key: string]: string | undefined;
+  isPremium?: boolean;
+  [key: string]: any;
 }
 
 export interface Author {
@@ -72,6 +73,7 @@ export interface PromptPost {
   isFeatured?: boolean;
   isTrending?: boolean;
   isRequested?: boolean;
+  isPremium?: boolean;
   requestedByName?: string;
   requestedByEmail?: string;
   requestedByAvatar?: string;

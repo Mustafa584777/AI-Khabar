@@ -65,7 +65,8 @@ interface AppContextType {
   promptRequests: PromptRequestItem[];
   addPromptRequest: (requestText: string, category?: string, userEmail?: string) => Promise<boolean>;
   updatePromptRequestStatus: (id: string, status: 'pending' | 'in_progress' | 'completed', fulfilledPostId?: string) => Promise<void>;
-  deletePromptRequest: (id: string) => Promise<void>;
+  fulfillPromptRequest: (id: string, fulfillmentText: string, adminNotes?: string) => Promise<boolean>;
+  deletePromptRequest: (id: string) => Promise<boolean>;
   refreshPromptRequests: () => Promise<void>;
 
   // AI Studio History (Image to Prompt & Prompt to Image)
@@ -105,6 +106,7 @@ interface AppContextType {
   savePost: (post: PromptPost) => Promise<PromptPost>;
   deletePost: (id: string) => Promise<boolean>;
   togglePublishStatus: (id: string) => void;
+  togglePremiumStatus: (id: string) => void;
   copyPromptToClipboard: (text: string, postId?: string) => void;
   toggleLike: (id: string) => void;
   toggleBookmark: (id: string) => void;
@@ -409,7 +411,47 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const deletePromptRequest = async (id: string): Promise<void> => {
+  const fulfillPromptRequest = async (
+    id: string,
+    fulfillmentText: string,
+    adminNotes?: string
+  ): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/prompt-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'fulfill',
+          requestId: id,
+          fulfilledPrompt: fulfillmentText,
+          adminNotes,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPromptRequests((prev) =>
+          prev.map((r) =>
+            r.id === id
+              ? {
+                  ...r,
+                  status: 'completed' as const,
+                  fulfilledPrompt: fulfillmentText,
+                  fulfilledAt: Date.now(),
+                  adminNotes,
+                }
+              : r
+          )
+        );
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Failed to fulfill prompt request:', err);
+      return false;
+    }
+  };
+
+  const deletePromptRequest = async (id: string): Promise<boolean> => {
     setPromptRequests((prev) => prev.filter((r) => r.id !== id));
 
     try {
@@ -417,13 +459,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         method: 'DELETE',
       });
       const data = await res.json();
-      if (data.success && Array.isArray(data.data)) {
-        setPromptRequests(data.data);
+      if (data.success && Array.isArray(data.requests || data.data)) {
+        setPromptRequests(data.requests || data.data);
       }
       showToast('Prompt request deleted');
+      return true;
     } catch (err) {
       console.error('Failed to delete prompt request:', err);
       showToast('Failed to delete request');
+      return false;
     }
   };
 
@@ -1189,6 +1233,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     showToast(`Status changed to ${newStatus}`);
   };
 
+  const togglePremiumStatus = async (id: string) => {
+    const post = posts.find((p) => p.id === id);
+    if (!post) return;
+    const nextPremium = !post.isPremium;
+    const updated: PromptPost = {
+      ...post,
+      isPremium: nextPremium,
+      parameters: {
+        ...(post.parameters || {}),
+        isPremium: nextPremium,
+      },
+    };
+    await savePost(updated);
+    showToast(nextPremium ? 'Prompt set to PRO Premium' : 'Prompt set to Free');
+  };
+
   const copyPromptToClipboard = (text: string, postId?: string) => {
     navigator.clipboard.writeText(text);
     if (postId) {
@@ -1471,6 +1531,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         addPromptRequest,
         refreshPromptRequests,
         updatePromptRequestStatus,
+        fulfillPromptRequest,
         deletePromptRequest,
         aiHistory,
         saveAiHistoryItem,
@@ -1502,6 +1563,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         savePost,
         deletePost,
         togglePublishStatus,
+        togglePremiumStatus,
         copyPromptToClipboard,
         toggleLike,
         toggleBookmark,
