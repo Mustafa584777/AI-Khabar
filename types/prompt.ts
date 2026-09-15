@@ -160,6 +160,10 @@ export interface PromptRequestItem {
   aiTool?: string;
   status: 'pending' | 'in_progress' | 'completed';
   fulfilledPostId?: string;
+  fulfilledPrompt?: string;
+  fulfilledAt?: number;
+  fulfilledBy?: string;
+  adminNotes?: string;
   createdAt: number;
   likesCount: number;
 }

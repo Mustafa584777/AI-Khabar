@@ -654,7 +654,9 @@ export const UsersManager = () => {
               <div className="flex justify-between text-neutral-600 dark:text-neutral-300">
                 <span>Exported Timestamp:</span>
                 <span className="font-mono text-[11px]">
-                  {new Date(previewBackupData.exportedAt || previewBackupData.timestamp || Date.now()).toLocaleString()}
+                  {previewBackupData.exportedAt || previewBackupData.timestamp
+                    ? new Date(previewBackupData.exportedAt || previewBackupData.timestamp || '').toLocaleString()
+                    : 'Recent'}
                 </span>
               </div>
               <div className="pt-2 border-t border-neutral-200 dark:border-neutral-700 text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 font-semibold">

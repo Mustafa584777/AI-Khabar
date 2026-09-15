@@ -19,8 +19,8 @@ interface AppContextType {
   // Navigation & Views
   currentView: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications';
   setCurrentView: (view: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications') => void;
-  adminSubView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'requested-prompts' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history';
-  setAdminSubView: (subView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'requested-prompts' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history') => void;
+  adminSubView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'requested-prompts' | 'notifications' | 'users' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history';
+  setAdminSubView: (subView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'requested-prompts' | 'notifications' | 'users' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history') => void;
   editingPostId: string | null;
   setEditingPostId: (id: string | null) => void;
   selectedPost: PromptPost | null;
@@ -155,7 +155,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Navigation
   const [currentView, setCurrentView] = useState<'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications'>('public');
   const [adminSubView, setAdminSubView] = useState<
-    'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'requested-prompts' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history'
+    'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'requested-prompts' | 'notifications' | 'users' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history'
   >('dashboard');
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [selectedPost, setSelectedPost] = useState<PromptPost | null>(null);
