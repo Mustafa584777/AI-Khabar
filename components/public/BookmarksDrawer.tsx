@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useApp } from '@/context/AppContext';
-import { X, Bookmark, Copy, Trash2, ExternalLink, Sparkles } from 'lucide-react';
+import { X, Bookmark, Copy, Trash2, ExternalLink, Sparkles, Cloud, RefreshCw } from 'lucide-react';
 import Image from 'next/image';
 import { getPromptSlug, getOptimizedImageUrl } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
@@ -17,6 +17,10 @@ export const BookmarksDrawer = () => {
     setSelectedPost,
     toggleBookmark,
     copyPromptToClipboard,
+    userAccount,
+    openAuthModal,
+    syncUserCloudData,
+    isSyncingUserData,
   } = useApp();
 
   if (!isBookmarksDrawerOpen) return null;
@@ -51,7 +55,30 @@ export const BookmarksDrawer = () => {
 
         {/* Bookmarks List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {bookmarkedPosts.length > 0 ? (
+          {!userAccount?.isLoggedIn ? (
+            <div className="text-center py-16 px-4 space-y-4">
+              <div className="w-12 h-12 rounded-full bg-[#E60023]/10 text-[#E60023] flex items-center justify-center mx-auto">
+                <Bookmark className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-bold text-neutral-900 dark:text-white text-base">
+                  Sign in to View Saved Prompts
+                </h4>
+                <p className="text-xs text-neutral-500 max-w-xs mx-auto leading-relaxed">
+                  Saved prompts are strictly linked to your account. Sign in or register to access your personal collection.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setIsBookmarksDrawerOpen(false);
+                  openAuthModal('Sign in to view and manage your saved prompts.');
+                }}
+                className="py-2.5 px-5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-md shadow-red-500/20 transition-all"
+              >
+                Sign In / Create Free Account
+              </button>
+            </div>
+          ) : bookmarkedPosts.length > 0 ? (
             bookmarkedPosts.map((post) => (
               <div
                 key={post.id}
@@ -80,7 +107,7 @@ export const BookmarksDrawer = () => {
                 <div className="flex-1 min-w-0 flex flex-col justify-between">
                   <div>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#efefef] dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300">
-                      {post.aiTool}
+                      {post.category}
                     </span>
                     <h4
                       onClick={() => {
@@ -128,6 +155,45 @@ export const BookmarksDrawer = () => {
             </div>
           )}
         </div>
+        {/* Cloud Sync Status / Guest Sign-in Prompt */}
+        {userAccount?.isLoggedIn ? (
+          <div className="p-3.5 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50/80 dark:bg-neutral-950/60 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400">
+              <Cloud className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Cross-device sync active</span>
+            </div>
+            <button
+              onClick={() => void syncUserCloudData()}
+              disabled={isSyncingUserData}
+              className="flex items-center gap-1.5 text-[11px] font-bold text-neutral-700 dark:text-neutral-300 hover:text-[#E60023] transition-colors disabled:opacity-50"
+              title="Refresh sync from cloud database"
+            >
+              <RefreshCw className={`w-3 h-3 ${isSyncingUserData ? 'animate-spin' : ''}`} />
+              <span>{isSyncingUserData ? 'Syncing...' : 'Sync Now'}</span>
+            </button>
+          </div>
+        ) : (
+          <div className="p-4 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950/60">
+            <div className="p-3 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs space-y-2">
+              <div className="flex items-center gap-2 text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                <Sparkles className="w-4 h-4 text-[#E60023]" />
+                <span>Sync bookmarks across devices</span>
+              </div>
+              <p className="text-[11px] text-neutral-500 leading-relaxed">
+                Sign in or create a free account to never lose your saved prompts, even in incognito or on other browsers.
+              </p>
+              <button
+                onClick={() => {
+                  setIsBookmarksDrawerOpen(false);
+                  openAuthModal('Sign in to sync your saved prompts across all devices.');
+                }}
+                className="w-full py-2 px-3 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-bold hover:opacity-90 transition-opacity text-center block"
+              >
+                Sign In to Cloud Sync
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

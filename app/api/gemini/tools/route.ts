@@ -472,9 +472,45 @@ function generateLocalImageToPrompt(customInstructionsOrStyle?: string) {
     confidence: 'high',
     camera: 'Full-frame sensor with 85mm portrait lens',
     lighting: 'Soft directional key light with subtle rim highlights',
-    composition: 'Rule of thirds portrait framing with shallow depth of field',
-    colorPalette: 'Neutral skin tones, natural contrast and warm midtones',
     tags: ['Reverse Engineered', 'Photorealistic', 'Natural Lighting', 'Master Prompt'],
+  };
+}
+
+// =========================================================================
+// ACTION 2: IDEA TO DETAILED PROMPT GENERATOR
+// =========================================================================
+function generateLocalIdeaToPrompt(
+  idea: string,
+  lighting?: string,
+  colorGrading?: string,
+  gender?: string,
+  aspectRatio = '16:9',
+  customInstructions?: string
+) {
+  const cleanIdea = (idea || 'Cinematic visual composition').trim();
+  const genderClause = gender && gender !== 'Any / None' && gender !== 'Not Applicable' ? `${gender} subject, ` : '';
+  const lightClause = lighting || 'dramatic volumetric cinematic lighting with subtle atmospheric haze';
+  const colorClause = colorGrading || 'delicate cinematic teal and warm orange film color grading';
+  const customClause = customInstructions ? `, ${customInstructions}` : '';
+
+  const promptText = `Award-winning hyperrealistic photograph of ${genderClause}${cleanIdea}. Masterfully composed with ${lightClause}, rich textural micro-details, ${colorClause}. Shot on Hasselblad H6D-100c with 85mm f/1.4 lens, shallow depth of field, delicate bokeh, crisp focus on intricate details, 8k resolution, photorealistic realism, cinematic atmosphere${customClause} --ar ${aspectRatio} --style raw --v 6.1 --s 250`;
+
+  return {
+    title: cleanIdea.length > 40 ? `${cleanIdea.slice(0, 37)}...` : cleanIdea,
+    promptText,
+    negativePrompt: 'low quality, blurry, pixelated, distorted proportions, extra limbs, bad anatomy, flat lighting, watermark, oversaturated, amateur snapshot',
+    aspectRatio,
+    camera: 'Hasselblad H6D-100c, 85mm f/1.4 lens, 1/250s, ISO 64',
+    lighting: lighting || 'Cinematic Volumetric Rays',
+    colorPalette: colorGrading || 'Cinematic Teal & Orange',
+    composition: 'Rule of thirds, centered focal subject, environmental depth',
+    tags: [
+      gender && gender !== 'Any / None' ? gender : null,
+      lighting ? `Light: ${lighting}` : null,
+      colorGrading ? `Grading: ${colorGrading}` : null,
+      'Detailed AI Prompt',
+      'Midjourney v6.1 Ready',
+    ].filter(Boolean) as string[],
   };
 }
 
@@ -484,16 +520,129 @@ export async function POST(req: NextRequest) {
     const {
       action,
       image,
+      idea,
+      lighting,
+      colorGrading,
+      gender,
+      aspectRatio,
       referenceImage,
       styleFocus,
       customInstructions,
       prompt,
-      aspectRatio,
       enhanceWithAi,
       selectedModel,
     } = body;
 
     const apiKey = process.env.GEMINI_API_KEY;
+
+    // =========================================================================
+    // ACTION: IDEA TO DETAILED PROMPT GENERATOR
+    // =========================================================================
+    if (action === 'idea_to_prompt' || action === 'generate_prompt') {
+      const userIdea = (idea || prompt || '').trim();
+      if (!userIdea) {
+        return NextResponse.json({ error: 'Please provide an idea or short description.' }, { status: 400 });
+      }
+
+      const chosenLighting = lighting || 'Cinematic Golden Hour';
+      const chosenColor = colorGrading || 'Cinematic Teal & Orange';
+      const chosenGender = gender || 'Any / None';
+      const chosenRatio = aspectRatio || '16:9';
+
+      if (!apiKey) {
+        const fallback = generateLocalIdeaToPrompt(
+          userIdea,
+          chosenLighting,
+          chosenColor,
+          chosenGender,
+          chosenRatio,
+          customInstructions
+        );
+        return NextResponse.json({ success: true, data: fallback, fallback: true });
+      }
+
+      try {
+        const ai = new GoogleGenAI({ apiKey });
+        const systemPrompt = `You are an elite AI Art Director and Prompt Engineer specializing in Midjourney v6.1, Flux.1, ChatGPT/DALL-E 3, and Imagen 3.
+The user will provide a simple idea or a few words. Your mission is to expand this into a stunning, detailed, hyper-photorealistic masterpiece prompt according to the user's selected parameters.
+
+PARAMETERS:
+- User Idea: "${userIdea}"
+- Lighting Style: "${chosenLighting}"
+- Color Grading Style: "${chosenColor}"
+- Subject Gender: "${chosenGender}"
+- Target Aspect Ratio: "${chosenRatio}"
+- Additional Constraints: "${customInstructions || 'None'}"
+
+CRITICAL REQUIREMENTS:
+1. "promptText": Must be a masterfully written, 80-160 word detailed photo prompt that vividly brings the user's idea to life. Incorporate photographic camera optics (e.g. Hasselblad, Leica, Sony A7R V, focal length, aperture), atmospheric lighting, environmental textures, color harmony, and finish with midjourney parameter flags: --ar ${chosenRatio} --style raw --v 6.1.
+2. "negativePrompt": Specific negative keywords to prevent bad anatomy, oversaturation, blur, watermark, etc.
+3. "camera": Recommended real camera body and prime lens.
+4. "lighting": Brief technical lighting summary.
+5. "colorPalette": Color palette description.
+6. "composition": Composition technique used.
+7. "title": Catchy, short 3-6 word title.
+
+OUTPUT MUST BE VALID JSON ONLY matching this schema:
+{
+  "title": "string",
+  "promptText": "string",
+  "negativePrompt": "string",
+  "aspectRatio": "${chosenRatio}",
+  "camera": "string",
+  "lighting": "string",
+  "colorPalette": "string",
+  "composition": "string",
+  "tags": ["string", "string", "string"]
+}`;
+
+        const { response, modelUsed } = await generateWithModel(ai, undefined, {
+          contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            temperature: 0.7,
+          },
+        });
+
+        const rawText = response.text || '';
+        let parsed: any;
+        try {
+          parsed = JSON.parse(rawText);
+        } catch {
+          const match = rawText.match(/\{[\s\S]*\}/);
+          if (match) {
+            parsed = JSON.parse(match[0]);
+          } else {
+            throw new Error('Could not parse JSON response from Gemini');
+          }
+        }
+
+        const normalizedData = {
+          title: parsed.title || userIdea,
+          promptText: parsed.promptText || parsed.prompt || '',
+          negativePrompt: parsed.negativePrompt || parsed.negative_prompt || '',
+          aspectRatio: parsed.aspectRatio || chosenRatio,
+          camera: parsed.camera || '85mm f/1.4 lens, full frame sensor',
+          lighting: parsed.lighting || chosenLighting,
+          colorPalette: parsed.colorPalette || chosenColor,
+          composition: parsed.composition || 'Cinematic composition',
+          tags: Array.isArray(parsed.tags) ? parsed.tags : [chosenLighting, chosenColor, 'AI Master Prompt'],
+        };
+
+        return NextResponse.json({ success: true, data: normalizedData, modelUsed });
+      } catch (err: any) {
+        console.warn('Gemini idea prompt failed, using local heuristic:', err?.message);
+        const fallback = generateLocalIdeaToPrompt(
+          userIdea,
+          chosenLighting,
+          chosenColor,
+          chosenGender,
+          chosenRatio,
+          customInstructions
+        );
+        return NextResponse.json({ success: true, data: fallback, fallback: true });
+      }
+    }
 
     // =========================================================================
     // ACTION 1: IMAGE TO PROMPT (Reverse-engineering from image)

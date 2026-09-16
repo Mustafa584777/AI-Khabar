@@ -6,8 +6,7 @@ import { PromptPost } from '@/types/prompt';
 import { useApp } from '@/context/AppContext';
 import Image from 'next/image';
 import { Sparkles, Bookmark, Crown } from 'lucide-react';
-import { getPromptSlug, getOptimizedImageUrl, detectPostAspectRatio } from '@/lib/utils';
-import { preloadPostImage, registerLoadedThumbnail } from '@/lib/imagePreloader';
+import { getPromptSlug, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription } from '@/lib/utils';
 
 export const PromptCard = ({ post, priority = false }: { post: PromptPost; priority?: boolean }) => {
   const {
@@ -15,6 +14,10 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
     toggleBookmark,
     bookmarkedIds,
     showToast,
+    isPromptUnlocked,
+    isProUser,
+    userAccount,
+    openAuthModal,
   } = useApp();
 
   const router = useRouter();
@@ -23,16 +26,14 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   const cardRef = useRef<HTMLElement>(null);
 
   const isBookmarked = bookmarkedIds.includes(post.id);
+  const isUnlocked = isPromptUnlocked(post.id, post.isPremium);
   const promptSlug = getPromptSlug(post);
   const detectedRatio = detectPostAspectRatio(post);
   const optimizedImgUrl = getOptimizedImageUrl(post.imageUrl, 600);
 
-  // Viewport IntersectionObserver: strictly loads images and pre-warms modal high-res cache
+  // Viewport IntersectionObserver: strictly loads images only when entering or near viewport
   useEffect(() => {
-    if (inView) {
-      preloadPostImage(post);
-      return;
-    }
+    if (inView) return;
     const el = cardRef.current;
     if (!el) return;
 
@@ -40,16 +41,15 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
       ([entry]) => {
         if (entry.isIntersecting) {
           setInView(true);
-          preloadPostImage(post);
           observer.disconnect();
         }
       },
-      { rootMargin: '350px 0px', threshold: 0.01 }
+      { rootMargin: '150px 0px', threshold: 0.01 }
     );
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, [inView, post]);
+  }, [inView]);
 
   const handleCardClick = (e: React.MouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.button === 1) return;
@@ -63,6 +63,10 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   const handleBookmark = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!userAccount?.isLoggedIn) {
+      openAuthModal('Please sign in or create an account to save prompts to your collection.');
+      return;
+    }
     toggleBookmark(post.id);
   };
 
@@ -83,24 +87,31 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   return (
     <article
       ref={cardRef}
-      onMouseEnter={() => preloadPostImage(post)}
-      onTouchStart={() => preloadPostImage(post)}
+      itemScope
+      itemType="https://schema.org/CreativeWork"
       className="group relative rounded-[20px] sm:rounded-[24px] overflow-hidden bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800/80 cursor-pointer shadow-xs hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 select-none w-full"
       id={`prompt-pin-${post.id}`}
       style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
     >
+      <h2 className="sr-only" itemProp="name">{post.title}</h2>
+      <p className="sr-only" itemProp="description">{getPromptMetaDescription(post)}</p>
       <a
         href={`/${promptSlug}`}
         onClick={handleCardClick}
         style={{ aspectRatio: detectedRatio }}
+        aria-label={`${post.title} - ${post.category} AI Photo Prompt`}
         className="block relative w-full overflow-hidden bg-neutral-100 dark:bg-neutral-800 focus:outline-none"
         onContextMenu={(e) => e.preventDefault()}
       >
+        <span className="sr-only">{post.title} - {post.category} copy paste prompt</span>
         {/* Premium Badge */}
         {post.isPremium && (
-          <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/85 backdrop-blur-md border border-amber-400/60 text-amber-300 text-[10px] font-black tracking-wider uppercase shadow-xl pointer-events-none">
-            <Crown className="w-3 h-3 fill-amber-400 text-amber-400" />
-            <span>PRO</span>
+          <div className={`absolute top-2.5 left-2.5 z-20 flex items-center justify-center w-7 h-7 rounded-full backdrop-blur-md shadow-xl pointer-events-none ${
+            isUnlocked && !isProUser
+              ? 'bg-emerald-950/85 border border-emerald-400/60 text-emerald-300'
+              : 'bg-black/85 border border-amber-400/60 text-amber-300'
+          }`}>
+            <Crown className={`w-3.5 h-3.5 ${isUnlocked && !isProUser ? 'fill-emerald-400 text-emerald-400' : 'fill-amber-400 text-amber-400'}`} />
           </div>
         )}
 
@@ -123,12 +134,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
             draggable={false}
             priority={priority}
-            onLoad={() => {
-              setImageLoaded(true);
-              if (post.id && optimizedImgUrl) {
-                registerLoadedThumbnail(post.id, optimizedImgUrl);
-              }
-            }}
+            onLoad={() => setImageLoaded(true)}
             className={`object-cover group-hover:scale-105 transition-all duration-500 ease-out select-none pointer-events-none relative z-1 ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
@@ -142,23 +148,25 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
           </div>
         ) : null}
 
-        {/* Pinterest Dark Semi-Transparent Overlay with White Popup Action Buttons */}
+        {/* Dark Semi-Transparent Overlay with White Popup Action Buttons */}
         <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto flex items-center justify-center gap-3.5 z-10">
-          <button
-            type="button"
-            onClick={handleBookmark}
-            className={`w-12 h-12 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl flex items-center justify-center transition-all duration-300 ease-out transform scale-75 group-hover:scale-100 hover:scale-110 active:scale-95 ${
-              isBookmarked ? 'ring-2 ring-[#E60023] text-[#E60023]' : 'text-neutral-900'
-            }`}
-            title={isBookmarked ? 'Saved (Click to remove)' : 'Save prompt'}
-            aria-label="Save prompt"
-          >
-            {isBookmarked ? (
-              <Bookmark className="w-5 h-5 fill-[#E60023] text-[#E60023]" />
-            ) : (
-              <Bookmark className="w-5 h-5 text-neutral-800" />
-            )}
-          </button>
+          {userAccount?.isLoggedIn && (
+            <button
+              type="button"
+              onClick={handleBookmark}
+              className={`w-12 h-12 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl flex items-center justify-center transition-all duration-300 ease-out transform scale-75 group-hover:scale-100 hover:scale-110 active:scale-95 ${
+                isBookmarked ? 'ring-2 ring-[#E60023] text-[#E60023]' : 'text-neutral-900'
+              }`}
+              title={isBookmarked ? 'Saved (Click to remove)' : 'Save prompt'}
+              aria-label="Save prompt"
+            >
+              {isBookmarked ? (
+                <Bookmark className="w-5 h-5 fill-[#E60023] text-[#E60023]" />
+              ) : (
+                <Bookmark className="w-5 h-5 text-neutral-800" />
+              )}
+            </button>
+          )}
 
           <button
             type="button"

@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { PromptPost } from '@/types/prompt';
@@ -22,18 +23,21 @@ import {
   Crown,
   Lock,
   ArrowRight,
+  Coins,
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import Image from 'next/image';
 import Link from 'next/link';
 import { PersonalizationEngine } from '@/lib/personalization';
-import { getPromptSlug, slugify, getOptimizedImageUrl, detectPostAspectRatio } from '@/lib/utils';
-import { preloadPostImage, preloadPostList, getLoadedThumbnail, registerLoadedThumbnail } from '@/lib/imagePreloader';
+import { getPromptSlug, slugify, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
 interface RecommendedPinCardProps {
   pin: PromptPost;
   isPinBookmarked: boolean;
   isCopied: boolean;
+  isUnlocked?: boolean;
+  isProUser?: boolean;
   onSelect: (pin: PromptPost) => void;
   onGenerate: (e: React.MouseEvent, pin: PromptPost) => void;
   onCopy: (e: React.MouseEvent, pin: PromptPost) => void;
@@ -44,6 +48,8 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
   pin,
   isPinBookmarked,
   isCopied,
+  isUnlocked,
+  isProUser,
   onSelect,
   onGenerate,
   onCopy,
@@ -55,32 +61,25 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
   const detectedRatio = detectPostAspectRatio(pin);
 
   useEffect(() => {
-    if (inView) {
-      preloadPostImage(pin);
-      return;
-    }
     const el = cardRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setInView(true);
-          preloadPostImage(pin);
           observer.disconnect();
         }
       },
-      { rootMargin: '300px 0px', threshold: 0.01 }
+      { rootMargin: '80px 0px', threshold: 0.01 }
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [inView, pin]);
+  }, []);
 
   return (
     <div
       ref={cardRef}
       onClick={() => onSelect(pin)}
-      onMouseEnter={() => preloadPostImage(pin)}
-      onTouchStart={() => preloadPostImage(pin)}
       style={{ aspectRatio: detectedRatio }}
       className="group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-neutral-200 dark:bg-neutral-900 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-300 border border-neutral-200/60 dark:border-neutral-800/80 w-full"
       id={`masonry-pin-${pin.id}`}
@@ -94,25 +93,23 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
 
       {/* Premium Badge */}
       {pin.isPremium && (
-        <div className="absolute top-2 left-2 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/85 backdrop-blur-md border border-amber-400/60 text-amber-300 text-[9px] font-black uppercase shadow-md pointer-events-none">
-          <Crown className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
-          <span>PRO</span>
+        <div className={`absolute top-2 left-2 z-10 flex items-center justify-center w-6 h-6 rounded-full backdrop-blur-md shadow-md pointer-events-none ${
+          isUnlocked && !isProUser
+            ? 'bg-emerald-950/85 border border-emerald-400/60 text-emerald-300'
+            : 'bg-black/85 border border-amber-400/60 text-amber-300'
+        }`}>
+          <Crown className={`w-3 h-3 ${isUnlocked && !isProUser ? 'fill-emerald-400 text-emerald-400' : 'fill-amber-400 text-amber-400'}`} />
         </div>
       )}
 
-      {/* Photo Pin Image (rendered with preloaded cache) */}
+      {/* Photo Pin Image (rendered ONLY when inView is true) */}
       {pin.imageUrl && inView && (
         <Image
           src={getOptimizedImageUrl(pin.imageUrl, 500)}
           alt={pin.imageAlt || pin.title}
           fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-          onLoad={() => {
-            setLoaded(true);
-            if (pin.id && pin.imageUrl) {
-              registerLoadedThumbnail(pin.id, getOptimizedImageUrl(pin.imageUrl, 500));
-            }
-          }}
+          onLoad={() => setLoaded(true)}
           className={`object-cover group-hover:scale-105 transition-all duration-500 ${
             loaded ? 'opacity-100' : 'opacity-0'
           }`}
@@ -191,44 +188,84 @@ export const PromptDetailModal = () => {
     showToast,
     setCurrentView,
     isProUser,
+    toolCredits,
+    unlockedPromptIds,
+    unlockPromptWithCredit,
+    isPromptUnlocked,
+    userAccount,
+    openAuthModal,
   } = useApp();
 
+  const INITIAL_RECOMMENDED_COUNT = 15;
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [copiedPinId, setCopiedPinId] = useState<string | null>(null);
-  const [displayedCount, setDisplayedCount] = useState<number>(5);
+  const [displayedCount, setDisplayedCount] = useState<number>(INITIAL_RECOMMENDED_COUNT);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [showFullImageModal, setShowFullImageModal] = useState<boolean>(false);
   const [isDownloadingImage, setIsDownloadingImage] = useState<boolean>(false);
   const [isUnlockModalOpen, setIsUnlockModalOpen] = useState<boolean>(false);
   const [historyStack, setHistoryStack] = useState<PromptPost[]>(() => (selectedPost ? [selectedPost] : []));
-  const [prevSelectedId, setPrevSelectedId] = useState<string | null>(selectedPost?.id || null);
 
   const router = useRouter();
+  const postsRef = useRef(posts);
+  const historyStackRef = useRef(historyStack);
 
-  const [isHighResLoaded, setIsHighResLoaded] = useState(false);
-  const detectedRatio = selectedPost ? detectPostAspectRatio(selectedPost) : '3/4';
-  const initialThumb = selectedPost ? (getLoadedThumbnail(selectedPost.id) || getOptimizedImageUrl(selectedPost.imageUrl, 500)) : null;
-
-  // Pre-warm the selected post image on open or change
   useEffect(() => {
-    if (selectedPost) {
-      setIsHighResLoaded(false);
-      preloadPostImage(selectedPost);
-    }
-  }, [selectedPost?.id]);
+    postsRef.current = posts;
+  }, [posts]);
 
-  // Keep historyStack synchronized with selectedPost during render
-  if (selectedPost && selectedPost.id !== prevSelectedId) {
-    setPrevSelectedId(selectedPost.id);
-    if (historyStack.length === 0 || !historyStack.some((p) => p.id === selectedPost.id)) {
-      setHistoryStack((prev) => (prev.length === 0 ? [selectedPost] : [...prev, selectedPost]));
-    }
-  } else if (!selectedPost && prevSelectedId !== null) {
-    setPrevSelectedId(null);
-    if (historyStack.length > 0) {
+  useEffect(() => {
+    historyStackRef.current = historyStack;
+  }, [historyStack]);
+
+  // Cleanly synchronize historyStack whenever selectedPost changes
+  useEffect(() => {
+    if (!selectedPost) {
       setHistoryStack([]);
+      return;
     }
-  }
+    setHistoryStack((prev) => {
+      if (prev.length === 0) return [selectedPost];
+      if (prev[prev.length - 1]?.id === selectedPost.id) return prev;
+      const existingIdx = prev.findIndex((p) => p.id === selectedPost.id);
+      if (existingIdx !== -1) {
+        return prev.slice(0, existingIdx + 1);
+      }
+      return [...prev, selectedPost];
+    });
+    setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
+  }, [selectedPost]);
+
+  // Dynamic SEO description & title updates for active prompt modal
+  useEffect(() => {
+    if (!selectedPost) return;
+    const cleanTitle = `${selectedPost.title} - AI Photo Prompt & Settings`;
+    const metaDesc = getPromptMetaDescription(selectedPost);
+    document.title = cleanTitle;
+
+    let metaDescTag = document.querySelector('meta[name="description"]');
+    if (!metaDescTag) {
+      metaDescTag = document.createElement('meta');
+      metaDescTag.setAttribute('name', 'description');
+      document.head.appendChild(metaDescTag);
+    }
+    metaDescTag.setAttribute('content', metaDesc);
+
+    let ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.setAttribute('content', cleanTitle);
+    let ogDesc = document.querySelector('meta[property="og:description"]');
+    if (ogDesc) ogDesc.setAttribute('content', metaDesc);
+
+    return () => {
+      document.title = 'Trending Copy Paste Photo Prompts';
+      if (metaDescTag) {
+        metaDescTag.setAttribute(
+          'content',
+          'Explore trending copy paste photo prompts for Midjourney, ChatGPT, Flux, Claude and Gemini. Instant copy, high-res previews, and creative AI prompt settings.'
+        );
+      }
+    };
+  }, [selectedPost]);
 
   const isLiked = selectedPost ? likedIds?.includes(selectedPost.id) : false;
   const currentPost = posts.find((p) => p.id === selectedPost?.id) || selectedPost;
@@ -247,15 +284,16 @@ export const PromptDetailModal = () => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
       if (path !== '/' && path !== '/dashboard' && path !== '/create' && !path.startsWith('/admin') && !path.startsWith('/blog')) {
-        window.history.replaceState(null, '', '/');
+        window.history.pushState(null, '', '/');
       }
     }
   }, [setSelectedPost]);
 
   const handleGoBack = useCallback(() => {
     if (historyStack.length > 1) {
+      // Deterministically pop to previous prompt in the stack without crashing into Next.js router
       const newStack = [...historyStack];
-      newStack.pop(); // Remove active prompt
+      newStack.pop();
       const prevPost = newStack[newStack.length - 1];
       setHistoryStack(newStack);
       if (containerRef.current) {
@@ -264,9 +302,9 @@ export const PromptDetailModal = () => {
       setSelectedPost(prevPost);
       if (typeof window !== 'undefined') {
         const prevSlug = getPromptSlug(prevPost);
-        window.history.replaceState({ postId: prevPost.id }, '', `/${prevSlug}`);
+        window.history.replaceState({ postId: prevPost.id, isPromptDetail: true }, '', `/${prevSlug}`);
       }
-      setDisplayedCount(5);
+      setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
     } else {
       closeModal();
     }
@@ -274,51 +312,60 @@ export const PromptDetailModal = () => {
 
   // Handle browser back / forward navigation and Escape key
   useEffect(() => {
-    const handlePopState = () => {
-      if (typeof window !== 'undefined') {
-        const path = window.location.pathname;
-        if (path === '/' || path === '' || path === '/dashboard' || path === '/create' || path.startsWith('/admin') || path.startsWith('/blog')) {
-          setSelectedPost(null);
-          setHistoryStack([]);
-        } else if (path.length > 1) {
-          const rawSlug = path.replace('/', '').split('/')[0];
-          const targetSlug = decodeURIComponent(rawSlug).toLowerCase().trim();
-          const matched = posts.find((p) => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (typeof window === 'undefined') return;
+      const path = window.location.pathname;
+      if (path === '/' || path === '' || path === '/dashboard' || path === '/create' || path.startsWith('/admin') || path.startsWith('/blog')) {
+        setSelectedPost(null);
+        setHistoryStack([]);
+        return;
+      }
+      if (path.length > 1) {
+        const currentPosts = postsRef.current;
+        const currentStack = historyStackRef.current;
+        const statePostId = event.state?.postId;
+        let matched: PromptPost | undefined;
+
+        if (statePostId) {
+          matched = currentPosts.find((p) => p.id === statePostId) || currentStack.find((p) => p.id === statePostId);
+        }
+
+        const rawSlug = path.replace('/', '').split('/')[0];
+        const targetSlug = decodeURIComponent(rawSlug).toLowerCase().trim();
+
+        if (!matched) {
+          matched = currentPosts.find((p) => {
+            if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
+            if (p.id && p.id.toLowerCase() === targetSlug) return true;
+            if (p.title && (p.title.toLowerCase() === targetSlug || slugify(p.title) === targetSlug)) return true;
+            return false;
+          }) || currentStack.find((p) => {
             if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
             if (p.id && p.id.toLowerCase() === targetSlug) return true;
             if (p.title && (p.title.toLowerCase() === targetSlug || slugify(p.title) === targetSlug)) return true;
             return false;
           });
-          if (matched) {
-            if (containerRef.current) {
-              containerRef.current.scrollTop = 0;
-            }
-            setSelectedPost(matched);
-            setHistoryStack((prev) => {
-              const idx = prev.findIndex((p) => p.id === matched.id);
-              if (idx !== -1) return prev.slice(0, idx + 1);
-              return [...prev, matched];
-            });
-            setDisplayedCount(5);
-          } else {
-            fetch(`/api/posts/${encodeURIComponent(targetSlug)}`)
-              .then((res) => (res.ok ? res.json() : Promise.reject(res)))
-              .then((data) => {
-                if (data.success && data.post) {
-                  if (containerRef.current) {
-                    containerRef.current.scrollTop = 0;
-                  }
-                  setSelectedPost(data.post);
-                  setHistoryStack((prev) => {
-                    const idx = prev.findIndex((p) => p.id === data.post.id);
-                    if (idx !== -1) return prev.slice(0, idx + 1);
-                    return [...prev, data.post];
-                  });
-                  setDisplayedCount(5);
-                }
-              })
-              .catch(() => {});
+        }
+
+        if (matched) {
+          if (containerRef.current) {
+            containerRef.current.scrollTop = 0;
           }
+          setSelectedPost(matched);
+          setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
+        } else {
+          fetch(`/api/posts/${encodeURIComponent(targetSlug)}`)
+            .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+            .then((data) => {
+              if (data.success && data.post) {
+                if (containerRef.current) {
+                  containerRef.current.scrollTop = 0;
+                }
+                setSelectedPost(data.post);
+                setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
+              }
+            })
+            .catch(() => {});
         }
       }
     };
@@ -339,7 +386,7 @@ export const PromptDetailModal = () => {
       window.removeEventListener('popstate', handlePopState);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [setSelectedPost, posts, showFullImageModal, selectedPost, handleGoBack]);
+  }, [setSelectedPost, showFullImageModal, selectedPost, handleGoBack]);
 
   const handleLike = () => {
     if (!selectedPost) return;
@@ -348,9 +395,27 @@ export const PromptDetailModal = () => {
 
   const handleGenerateImage = () => {
     if (!selectedPost) return;
-    if (selectedPost.isPremium && !isProUser) {
-      setIsUnlockModalOpen(true);
-      return;
+    const isUnlocked = isPromptUnlocked(selectedPost.id, selectedPost.isPremium);
+    if (!isUnlocked) {
+      if (toolCredits >= 1) {
+        const success = unlockPromptWithCredit(selectedPost.id);
+        if (!success) {
+          setIsUnlockModalOpen(true);
+          return;
+        }
+        try {
+          confetti({
+            particleCount: 60,
+            spread: 50,
+            origin: { y: 0.6 },
+            colors: ['#FFD700', '#FFA500', '#E60023'],
+          });
+        } catch {}
+        showToast('Prompt unlocked! 1 credit used 🎉');
+      } else {
+        setIsUnlockModalOpen(true);
+        return;
+      }
     }
     if (typeof window !== 'undefined') {
       sessionStorage.setItem('auraprompt_studio_preload', selectedPost.promptText);
@@ -436,7 +501,7 @@ export const PromptDetailModal = () => {
     };
   }, [selectedPost]);
 
-  // Recommendation engine: Personalized Category, Tag & Taste-based matching with strict deduplication
+  // Recommendation engine: Relevance Scoring & Matching Algorithm
   const allRecommendedPins = useMemo(() => {
     if (!selectedPost) return [];
 
@@ -446,72 +511,82 @@ export const PromptDetailModal = () => {
     if (selectedPost.id) seenIds.add(selectedPost.id);
     if (selectedPost.imageUrl) seenUrls.add(selectedPost.imageUrl);
 
+    // 1. Filter all available posts excluding the current active post
     const otherPublished = posts.filter((p) => {
-      if (p.id === selectedPost.id || p.status !== 'published') return false;
+      if (!p || p.id === selectedPost.id || p.status !== 'published') return false;
       if (p.imageUrl && seenUrls.has(p.imageUrl)) return false;
       return true;
     });
 
-    // 1. Scored matching based on content relevance + personalized taste profile
-    const targetTags = new Set((selectedPost.tags || []).map((t) => t.toLowerCase()));
-    const targetCategory = selectedPost.category?.toLowerCase();
+    // Target category & tags for matching
+    const targetCategory = selectedPost.category?.trim().toLowerCase();
+    const targetTags = new Set(
+      (selectedPost.tags || [])
+        .map((t) => (typeof t === 'string' ? t.trim().toLowerCase() : ''))
+        .filter(Boolean)
+    );
 
+    // 2. Calculate relevance score for each remaining post based on:
+    //    - Category Match: +5 points if post.category matches current post's category
+    //    - Tag Overlap: +2 points for every matching tag in post.tags and current post's tags
     const scored = otherPublished.map((post) => {
       let score = 0;
-      if (post.category?.toLowerCase() === targetCategory) {
-        score += 15;
+
+      // Category Match: +5 points
+      const postCategory = post.category?.trim().toLowerCase();
+      if (targetCategory && postCategory && postCategory === targetCategory) {
+        score += 5;
       }
-      if (post.tags) {
+
+      // Tag Overlap: +2 points for every matching tag
+      if (Array.isArray(post.tags)) {
         post.tags.forEach((tag) => {
-          if (targetTags.has(tag.toLowerCase())) {
-            score += 8;
+          const cleanTag = typeof tag === 'string' ? tag.trim().toLowerCase() : '';
+          if (cleanTag && targetTags.has(cleanTag)) {
+            score += 2;
           }
         });
       }
-      if (post.aiTool === selectedPost.aiTool) {
-        score += 3;
-      }
-
-      // Add AI Taste Profile personalization score
-      const tasteScore = PersonalizationEngine.scorePrompt(post, tasteProfile, bookmarkedIds).score;
-      score += Math.round(tasteScore / 4);
-
-      // slight boost for popularity
-      score += Math.min((post.viewsCount || 0) / 2000, 5);
-      score += Math.min((post.copiesCount || 0) / 1000, 5);
 
       return { post, score };
     });
 
-    // Sort by relevance score descending
-    scored.sort((a, b) => b.score - a.score);
-    const relevantList = scored.map((item) => item.post);
+    // 3. Sort posts descending by their total relevance score
+    scored.sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+      // Stable secondary tie-breaker: newest first
+      const timeA = new Date(a.post.createdAt || 0).getTime();
+      const timeB = new Date(b.post.createdAt || 0).getTime();
+      return timeB - timeA;
+    });
 
-    // Combine relevant items and deduplicate strictly
+    // 4. Arrange posts in descending score order with deduplication
     const combined: PromptPost[] = [];
 
-    relevantList.forEach((p) => {
+    scored.forEach(({ post }) => {
       if (
-        !seenIds.has(p.id) &&
-        (!p.imageUrl || !seenUrls.has(p.imageUrl))
+        !seenIds.has(post.id) &&
+        (!post.imageUrl || !seenUrls.has(post.imageUrl))
       ) {
-        seenIds.add(p.id);
-        if (p.imageUrl) seenUrls.add(p.imageUrl);
-        combined.push(p);
+        seenIds.add(post.id);
+        if (post.imageUrl) seenUrls.add(post.imageUrl);
+        combined.push(post);
       }
     });
 
     return combined;
-  }, [selectedPost, posts, tasteProfile, bookmarkedIds]);
+  }, [selectedPost, posts]);
 
   const hasMorePins = displayedCount < allRecommendedPins.length;
 
-  // Infinite scroll loader trigger (5 pins per batch)
+  // Infinite scroll loader trigger (10 pins per batch)
   const loadMorePins = useCallback(() => {
     if (isLoadingMore || !hasMorePins) return;
     setIsLoadingMore(true);
     setTimeout(() => {
-      setDisplayedCount((prev) => prev + 5);
+      setDisplayedCount((prev) => prev + 10);
       setIsLoadingMore(false);
     }, 250);
   }, [isLoadingMore, hasMorePins]);
@@ -537,13 +612,6 @@ export const PromptDetailModal = () => {
   const visiblePins = useMemo(() => {
     return allRecommendedPins.slice(0, displayedCount);
   }, [allRecommendedPins, displayedCount]);
-
-  // Preload top recommended pins in background so clicking any of them opens instantly
-  useEffect(() => {
-    if (visiblePins && visiblePins.length > 0) {
-      preloadPostList(visiblePins, 6);
-    }
-  }, [visiblePins]);
 
   const [columnCount, setColumnCount] = useState<number>(2);
 
@@ -577,10 +645,53 @@ export const PromptDetailModal = () => {
   if (!selectedPost) return null;
 
   const isBookmarked = bookmarkedIds.includes(selectedPost.id);
-  const isPromptGated = Boolean(selectedPost.isPremium && !isProUser);
+  const isUnlocked = isPromptUnlocked(selectedPost.id, selectedPost.isPremium);
+  const isPromptGated = Boolean(selectedPost.isPremium && !isUnlocked);
+
+  const handleUnlockWithOneCredit = () => {
+    if (!selectedPost) return;
+    if (toolCredits >= 1) {
+      const success = unlockPromptWithCredit(selectedPost.id);
+      if (success) {
+        try {
+          confetti({
+            particleCount: 80,
+            spread: 60,
+            origin: { y: 0.6 },
+            colors: ['#FFD700', '#FFA500', '#E60023'],
+          });
+        } catch {}
+        showToast('Prompt unlocked! 1 credit used 🎉');
+      } else {
+        showToast('Could not unlock prompt');
+        setIsUnlockModalOpen(true);
+      }
+    } else {
+      showToast(`You need 1 credit to unlock this prompt (Balance: ${toolCredits}). Top up credits or subscribe!`);
+      setIsUnlockModalOpen(true);
+    }
+  };
 
   const handleCopyMasterPrompt = () => {
     if (isPromptGated) {
+      if (toolCredits >= 1) {
+        const success = unlockPromptWithCredit(selectedPost.id);
+        if (success) {
+          copyPromptToClipboard(selectedPost.promptText, selectedPost.id);
+          setCopiedPrompt(true);
+          setTimeout(() => setCopiedPrompt(false), 2000);
+          try {
+            confetti({
+              particleCount: 80,
+              spread: 60,
+              origin: { y: 0.6 },
+              colors: ['#FFD700', '#FFA500', '#E60023'],
+            });
+          } catch {}
+          showToast('Prompt unlocked and copied! 1 credit used 🎉');
+          return;
+        }
+      }
       setIsUnlockModalOpen(true);
       return;
     }
@@ -591,7 +702,26 @@ export const PromptDetailModal = () => {
 
   const handleQuickCopyPin = (e: React.MouseEvent, pin: PromptPost) => {
     e.stopPropagation();
-    if (pin.isPremium && !isProUser) {
+    const isPinUnlocked = isPromptUnlocked(pin.id, pin.isPremium);
+    if (!isPinUnlocked) {
+      if (toolCredits >= 1) {
+        const success = unlockPromptWithCredit(pin.id);
+        if (success) {
+          copyPromptToClipboard(pin.promptText, pin.id);
+          setCopiedPinId(pin.id);
+          setTimeout(() => setCopiedPinId(null), 2000);
+          try {
+            confetti({
+              particleCount: 60,
+              spread: 50,
+              origin: { y: 0.6 },
+              colors: ['#FFD700', '#FFA500', '#E60023'],
+            });
+          } catch {}
+          showToast('Prompt unlocked and copied! 1 credit used 🎉');
+          return;
+        }
+      }
       setIsUnlockModalOpen(true);
       return;
     }
@@ -626,19 +756,15 @@ export const PromptDetailModal = () => {
 
   const handleSelectPin = (pin: PromptPost) => {
     PersonalizationEngine.recordView(pin);
-    setHistoryStack((prev) => {
-      if (prev.length > 0 && prev[prev.length - 1]?.id === pin.id) return prev;
-      return [...prev, pin];
-    });
     if (containerRef.current) {
       containerRef.current.scrollTop = 0;
     }
-    setSelectedPost(pin);
+    const pinSlug = getPromptSlug(pin);
     if (typeof window !== 'undefined') {
-      const pinSlug = getPromptSlug(pin);
-      window.history.replaceState({ postId: pin.id }, '', `/${pinSlug}`);
+      window.history.pushState({ postId: pin.id, isPromptDetail: true }, '', `/${pinSlug}`);
     }
-    setDisplayedCount(5);
+    setSelectedPost(pin);
+    setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
   };
 
   const handleDeconstructImage = () => {
@@ -663,19 +789,22 @@ export const PromptDetailModal = () => {
     <div
       ref={containerRef}
       className="fixed inset-0 z-50 overflow-y-auto bg-neutral-100 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors flex flex-col animate-fade-in"
-      id="pinterest-fullscreen-view"
+      id="fullscreen-prompt-view"
     >
-      {/* Top Pinterest-Style Navigation Bar */}
+      {/* Top Navigation Bar */}
       <header className="sticky top-0 z-40 flex items-center justify-between px-3 sm:px-6 lg:px-8 py-3 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md border-b border-neutral-200/80 dark:border-neutral-800 shadow-sm">
         {/* Left: Back to explore / previous pin button */}
         <div className="flex items-center gap-3">
           <button
             onClick={handleGoBack}
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-bold text-xs sm:text-sm transition-all shadow-sm group"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-bold text-xs sm:text-sm transition-all shadow-sm group min-h-[40px]"
             id="back-to-prompts-btn"
             title={historyStack.length > 1 ? 'Go back to previous prompt card' : 'Back to explore feed'}
           >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform shrink-0" />
+            <span className="inline sm:hidden">
+              {historyStack.length > 1 ? 'Back' : 'Feed'}
+            </span>
             <span className="hidden sm:inline">
               {historyStack.length > 1 ? 'Previous Prompt' : 'Explore Prompts'}
             </span>
@@ -691,19 +820,30 @@ export const PromptDetailModal = () => {
 
         {/* Center/Right: Action Buttons */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Pinterest Red Save Button */}
-          <button
-            onClick={() => toggleBookmark(selectedPost.id)}
-            className={`flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold shadow-sm transition-all ${
-              isBookmarked
-                ? 'bg-neutral-800 text-white dark:bg-neutral-200 dark:text-neutral-900'
-                : 'bg-[#E60023] hover:bg-[#ad081b] text-white shadow-[#E60023]/20'
-            }`}
-            title={isBookmarked ? 'Saved to collection' : 'Save Pin'}
-          >
-            <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />
-            <span>{isBookmarked ? 'Saved' : 'Save'}</span>
-          </button>
+          {/* Red Save Button (Strictly accessible after login) */}
+          {userAccount?.isLoggedIn ? (
+            <button
+              onClick={() => toggleBookmark(selectedPost.id)}
+              className={`flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold shadow-sm transition-all ${
+                isBookmarked
+                  ? 'bg-neutral-800 text-white dark:bg-neutral-200 dark:text-neutral-900'
+                  : 'bg-[#E60023] hover:bg-[#ad081b] text-white shadow-[#E60023]/20'
+              }`}
+              title={isBookmarked ? 'Saved to collection' : 'Save prompt'}
+            >
+              <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />
+              <span>{isBookmarked ? 'Saved' : 'Save'}</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => openAuthModal('Sign in to save this prompt to your private collection.')}
+              className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-bold bg-[#E60023] hover:bg-[#ad081b] text-white shadow-sm transition-all"
+              title="Sign in to save prompt"
+            >
+              <Bookmark className="w-4 h-4" />
+              <span>Sign in to Save</span>
+            </button>
+          )}
 
           {/* Share */}
           <button
@@ -727,7 +867,7 @@ export const PromptDetailModal = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-12">
-        {/* Pinterest Master Pin Card */}
+        {/* Master Prompt Card */}
         <section
           key={selectedPost.id}
           className="bg-white dark:bg-neutral-900 rounded-[28px] sm:rounded-[36px] shadow-2xl border border-neutral-200/80 dark:border-neutral-800 overflow-hidden animate-fade-in transition-all duration-150"
@@ -736,40 +876,21 @@ export const PromptDetailModal = () => {
             {/* Left Column: Edge-to-Edge High-Resolution Photo Showcase */}
             <div
               onContextMenu={(e) => e.preventDefault()}
-              className="lg:col-span-7 bg-neutral-950 flex flex-col justify-center items-center p-2 sm:p-4 lg:p-6 relative group select-none overflow-hidden"
+              className="lg:col-span-7 bg-neutral-100 dark:bg-neutral-900 flex flex-col justify-start items-center p-0 relative group select-none overflow-hidden"
             >
               {selectedPost.imageUrl ? (
                 <div
                   onContextMenu={(e) => e.preventDefault()}
-                  style={{ aspectRatio: detectedRatio }}
-                  className="relative w-full max-h-[70vh] sm:max-h-[76vh] lg:max-h-[82vh] overflow-hidden flex items-center justify-center select-none rounded-2xl bg-neutral-900"
+                  className="relative w-full overflow-hidden flex items-center justify-center select-none"
                 >
-                  {/* Layer 1: Immediate low-latency thumbnail (cached from card view, renders instantly with 0ms lag) */}
-                  {initialThumb && (
-                    <Image
-                      src={initialThumb}
-                      alt={selectedPost.imageAlt || selectedPost.title}
-                      fill
-                      sizes="(max-width: 1024px) 100vw, 60vw"
-                      draggable={false}
-                      className="object-contain select-none pointer-events-none"
-                      referrerPolicy="no-referrer"
-                      priority
-                      decoding="sync"
-                    />
-                  )}
-
-                  {/* Layer 2: High-Resolution Photo with Smooth Transition */}
                   <Image
-                    src={getOptimizedImageUrl(selectedPost.imageUrl, 800)}
+                    src={getOptimizedImageUrl(selectedPost.imageUrl, 1200)}
                     alt={selectedPost.imageAlt || selectedPost.title}
-                    fill
+                    width={selectedPost.imageWidth || 1200}
+                    height={selectedPost.imageHeight || 1600}
                     sizes="(max-width: 1024px) 100vw, 60vw"
                     draggable={false}
-                    onLoad={() => setIsHighResLoaded(true)}
-                    className={`object-contain select-none pointer-events-none transition-opacity duration-300 ${
-                      isHighResLoaded ? 'opacity-100' : initialThumb ? 'opacity-0' : 'opacity-100'
-                    }`}
+                    className="w-full h-auto block select-none pointer-events-none"
                     referrerPolicy="no-referrer"
                     priority
                     decoding="async"
@@ -825,11 +946,6 @@ export const PromptDetailModal = () => {
                     <span className="px-3 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 text-xs font-bold text-neutral-800 dark:text-neutral-200 border border-neutral-200/60 dark:border-neutral-700/60">
                       {selectedPost.category}
                     </span>
-                    {selectedPost.aiTool && (
-                      <span className="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-semibold border border-blue-200/60 dark:border-blue-800/60">
-                        {selectedPost.aiTool}
-                      </span>
-                    )}
                   </div>
 
                   {/* Action Icons: Like, Copy, Generate Image */}
@@ -920,60 +1036,67 @@ export const PromptDetailModal = () => {
 
                 {/* Master Copyable Prompt Box */}
                 <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-800 dark:text-neutral-200">
-                      <Sparkles className="w-4 h-4 text-red-600 dark:text-red-400" />
-                      <span>Master Copy-Paste Prompt</span>
-                    </div>
-                    {selectedPost.isPremium && (
+                  {selectedPost.isPremium && (
+                    <div className="flex items-center justify-end gap-2">
+                      {isUnlocked && !isProUser && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px] font-black tracking-wider uppercase flex items-center gap-1">
+                          <Check className="w-3 h-3" />
+                          <span>UNLOCKED</span>
+                        </span>
+                      )}
                       <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[10px] font-black tracking-wider uppercase flex items-center gap-1">
                         <Crown className="w-3 h-3 fill-amber-500" />
                         <span>PRO PROMPT</span>
                       </span>
-                    )}
-                  </div>
+                    </div>
+                  )}
 
                   {isPromptGated ? (
-                    <div className="relative rounded-2xl bg-gradient-to-b from-neutral-900 to-neutral-950 text-neutral-100 p-6 border border-amber-500/40 shadow-xl overflow-hidden text-center">
-                      {/* Obscured blurred placeholder lines */}
-                      <div className="filter blur-md select-none opacity-20 pointer-events-none space-y-2 font-mono text-xs leading-relaxed">
+                    <div className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-b from-neutral-900 via-neutral-900 to-neutral-950 text-neutral-100 p-4 sm:p-6 lg:p-7 border border-amber-500/40 shadow-xl overflow-hidden text-center flex flex-col items-center justify-center w-full">
+                      {/* Obscured blurred background accents */}
+                      <div
+                        aria-hidden="true"
+                        className="absolute inset-0 filter blur-xs select-none opacity-15 pointer-events-none p-4 font-mono text-xs leading-relaxed overflow-hidden text-left"
+                      >
                         <p>Cinematic hyperrealistic photography shot on Hasselblad 50mm f/1.2 lens, photorealistic studio lighting, delicate cinematic color grading, 8k resolution...</p>
-                        <p>--ar 16:9 --style raw --v 6.1 --s 250 --quality 2</p>
+                        <p>--ar 16:9 --style raw --v 6.1 --s 250 --quality 2 --uplight --no blur, grain</p>
+                        <p>Masterpiece, highly detailed textures, depth of field, volumetric atmospheric glow...</p>
                       </div>
 
-                      {/* Centered Unlock Prompt Message Popup Trigger */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center p-5 bg-black/60 backdrop-blur-xs">
-                        <div className="w-11 h-11 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-2.5 border border-amber-500/40 shadow-md">
+                      {/* Content in natural flow so height dynamically expands and layout never gets cut off */}
+                      <div className="relative z-10 flex flex-col items-center justify-center w-full max-w-md mx-auto space-y-3 sm:space-y-4">
+                        <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/40 shadow-md shrink-0">
                           <Lock className="w-5 h-5" />
                         </div>
-                        <h3 className="text-sm sm:text-base font-black text-white flex items-center gap-2">
-                          <span>Prompt Locked for Subscribers</span>
-                          <span className="px-2 py-0.5 rounded-full bg-amber-500 text-black text-[9px] font-black uppercase">
-                            PRO
-                          </span>
-                        </h3>
-                        <p className="text-[11px] sm:text-xs text-neutral-300 max-w-sm mt-1 mb-4 leading-relaxed font-sans">
-                          Unlock this exclusive prompt along with all premium prompts, 10-200 AI tools credits, and priority prompt requests.
-                        </p>
-                        <div className="flex flex-wrap items-center justify-center gap-2">
+
+                        <div className="space-y-1.5 text-center px-1">
+                          <h3 className="text-base sm:text-lg font-black text-white flex items-center justify-center gap-2 flex-wrap">
+                            <span>Premium Prompt Locked</span>
+                            <span className="px-2 py-0.5 rounded-full bg-amber-500 text-black text-[10px] font-black uppercase tracking-wider">
+                              1 Credit
+                            </span>
+                          </h3>
+                          <p className="text-xs sm:text-sm text-neutral-300 max-w-sm mx-auto leading-relaxed font-sans">
+                            Unlock this prompt permanently with <strong className="text-white">1 credit</strong> (Balance: <strong className="text-amber-400">{toolCredits} Credits</strong>), or subscribe for unlimited access.
+                          </p>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2 sm:gap-2.5 w-full pt-1">
                           <button
                             type="button"
-                            onClick={() => setIsUnlockModalOpen(true)}
-                            className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs shadow-lg shadow-amber-500/25 transition-all active:scale-95 font-sans cursor-pointer"
+                            onClick={handleUnlockWithOneCredit}
+                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition-all active:scale-95 font-sans cursor-pointer text-center"
                           >
-                            <Crown className="w-3.5 h-3.5 fill-black" />
-                            <span>Unlock Premium Prompts</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
+                            <Coins className="w-4 h-4 fill-black shrink-0" />
+                            <span>{toolCredits >= 1 ? `Unlock for 1 Credit (${toolCredits} Left)` : 'Unlock for 1 Credit'}</span>
                           </button>
                           <button
                             type="button"
-                            onClick={() => {
-                              closeModal();
-                              router.push('/pricing');
-                            }}
-                            className="px-4 py-2.5 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold border border-neutral-700 transition-colors font-sans cursor-pointer"
+                            onClick={() => setIsUnlockModalOpen(true)}
+                            className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs sm:text-sm font-bold border border-neutral-700 transition-colors font-sans cursor-pointer text-center"
                           >
-                            View Plans
+                            <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                            <span>Get Credits / Pro</span>
                           </button>
                         </div>
                       </div>
@@ -1035,7 +1158,7 @@ export const PromptDetailModal = () => {
           </div>
         </section>
 
-        {/* Pinterest "More to explore" / "More Prompts" Masonry Image Grid */}
+        {/* "More to explore" / "More Prompts" Masonry Image Grid */}
         <section className="space-y-6 pt-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-200 dark:border-neutral-800 pb-4">
             <div>
@@ -1065,12 +1188,32 @@ export const PromptDetailModal = () => {
                     pin={pin}
                     isPinBookmarked={bookmarkedIds.includes(pin.id)}
                     isCopied={copiedPinId === pin.id}
+                    isUnlocked={isPromptUnlocked(pin.id, pin.isPremium)}
+                    isProUser={isProUser}
                     onSelect={handleSelectPin}
                     onGenerate={(e, p) => {
                       e.stopPropagation();
-                      if (p.isPremium && !isProUser) {
-                        setIsUnlockModalOpen(true);
-                        return;
+                      const isPinUnlocked = isPromptUnlocked(p.id, p.isPremium);
+                      if (!isPinUnlocked) {
+                        if (toolCredits >= 1) {
+                          const success = unlockPromptWithCredit(p.id);
+                          if (!success) {
+                            setIsUnlockModalOpen(true);
+                            return;
+                          }
+                          try {
+                            confetti({
+                              particleCount: 60,
+                              spread: 50,
+                              origin: { y: 0.6 },
+                              colors: ['#FFD700', '#FFA500', '#E60023'],
+                            });
+                          } catch {}
+                          showToast('Prompt unlocked! 1 credit used 🎉');
+                        } else {
+                          setIsUnlockModalOpen(true);
+                          return;
+                        }
                       }
                       if (typeof window !== 'undefined') {
                         sessionStorage.setItem('auraprompt_studio_preload', p.promptText);
@@ -1086,6 +1229,10 @@ export const PromptDetailModal = () => {
                     onCopy={(e, p) => handleQuickCopyPin(e, p)}
                     onToggleBookmark={(e, p) => {
                       e.stopPropagation();
+                      if (!userAccount?.isLoggedIn) {
+                        openAuthModal('Please sign in or create an account to save prompts.');
+                        return;
+                      }
                       toggleBookmark(p.id);
                     }}
                   />

@@ -60,6 +60,30 @@ let memorySearchQueries: SearchQueryItem[] | null = null;
 
 // Helpers to map Supabase snake_case rows to PromptPost
 function mapSupabasePost(row: any): PromptPost {
+  let parsedParams: any = {};
+  if (typeof row.parameters === 'object' && row.parameters !== null) {
+    parsedParams = { ...row.parameters };
+  } else if (typeof row.parameters === 'string') {
+    try {
+      parsedParams = JSON.parse(row.parameters);
+    } catch {
+      parsedParams = {};
+    }
+  }
+
+  const isPremium = Boolean(
+    row.is_premium === true ||
+    row.is_premium === 'true' ||
+    row.isPremium === true ||
+    row.isPremium === 'true' ||
+    parsedParams.isPremium === true ||
+    parsedParams.isPremium === 'true' ||
+    parsedParams.is_premium === true ||
+    parsedParams.is_premium === 'true'
+  );
+
+  parsedParams.isPremium = isPremium;
+
   return {
     id: row.id,
     title: row.title,
@@ -73,14 +97,14 @@ function mapSupabasePost(row: any): PromptPost {
     imageWidth: row.image_width || 1024,
     imageHeight: row.image_height || 1536,
     additionalImages: Array.isArray(row.additional_images) ? row.additional_images : [],
-    parameters: typeof row.parameters === 'object' && row.parameters !== null ? row.parameters : {},
+    parameters: parsedParams,
     variables: Array.isArray(row.variables) ? row.variables : [],
     articleContent: row.article_content || '',
     tags: Array.isArray(row.tags) ? row.tags : [],
     status: row.status || 'published',
     isFeatured: Boolean(row.is_featured),
     isTrending: Boolean(row.is_trending),
-    isPremium: Boolean(row.is_premium ?? row.isPremium),
+    isPremium,
     viewsCount: Number(row.views_count) || 0,
     copiesCount: Number(row.copies_count) || 0,
     likesCount: Number(row.likes_count) || 0,
@@ -104,6 +128,15 @@ function mapSupabasePost(row: any): PromptPost {
 }
 
 function mapPostToSupabase(post: PromptPost) {
+  const isPremium = Boolean(
+    post.isPremium === true ||
+    (post.parameters && (post.parameters.isPremium === true || post.parameters.isPremium === 'true'))
+  );
+  const parameters = {
+    ...(post.parameters || {}),
+    isPremium,
+  };
+
   return {
     id: post.id,
     title: post.title,
@@ -112,19 +145,18 @@ function mapPostToSupabase(post: PromptPost) {
     ai_tool: post.aiTool || 'Midjourney',
     prompt_text: post.promptText,
     negative_prompt: post.negativePrompt || null,
-    image_url: post.imageUrl,
+    image_url: post.imageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe',
     image_alt: post.imageAlt || null,
     image_width: post.imageWidth || 1024,
     image_height: post.imageHeight || 1536,
     additional_images: post.additionalImages || [],
-    parameters: post.parameters || {},
+    parameters,
     variables: post.variables || [],
     article_content: post.articleContent || '',
     tags: post.tags || [],
     status: post.status || 'published',
     is_featured: Boolean(post.isFeatured),
     is_trending: Boolean(post.isTrending),
-    is_premium: Boolean(post.isPremium),
     views_count: Number(post.viewsCount) || 0,
     copies_count: Number(post.copiesCount) || 0,
     likes_count: Number(post.likesCount) || 0,
@@ -143,7 +175,22 @@ function mapPostToSupabase(post: PromptPost) {
   };
 }
 
-const db = () => supabaseAdmin || supabase;
+const db = (token?: string) => {
+  // On the server, supabaseAdmin has the service role key and full database access.
+  if (supabaseAdmin) return supabaseAdmin;
+  if (token) {
+    const { createClient } = require('@supabase/supabase-js');
+    const { supabaseUrl, supabaseAnonKey } = require('./supabase');
+    return createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    });
+  }
+  return supabase;
+};
 
 export const ServerStorage = {
   // Posts
@@ -227,11 +274,23 @@ export const ServerStorage = {
     return posts.find((p) => p.id === id);
   },
 
-  savePost: async (post: PromptPost): Promise<PromptPost> => {
+  savePost: async (post: PromptPost, token?: string): Promise<PromptPost> => {
     const now = new Date().toISOString();
     const id = post.id || `prompt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
     const posts = await ServerStorage.getAllPosts(true);
     const existing = posts.find((p) => p.id === id);
+
+    const isPremium = Boolean(
+      post.isPremium !== undefined
+        ? post.isPremium
+        : (post.parameters?.isPremium ?? existing?.isPremium ?? existing?.parameters?.isPremium)
+    );
+
+    const mergedParameters = {
+      ...(existing?.parameters || {}),
+      ...(post.parameters || {}),
+      isPremium,
+    };
 
     let savedPost: PromptPost;
     if (existing) {
@@ -239,6 +298,8 @@ export const ServerStorage = {
         ...existing,
         ...post,
         id,
+        isPremium,
+        parameters: mergedParameters,
         tags: cleanTagsArray(post.tags || existing.tags || []),
         author: post.author || {
           name: 'tool.reelz',
@@ -254,6 +315,8 @@ export const ServerStorage = {
       savedPost = {
         ...post,
         id,
+        isPremium,
+        parameters: mergedParameters,
         tags: cleanTagsArray(post.tags || []),
         author: post.author || {
           name: 'tool.reelz',
@@ -313,9 +376,10 @@ export const ServerStorage = {
     if (isSupabaseConfigured()) {
       try {
         const payload = mapPostToSupabase(savedPost);
-        const { error } = await db().from('posts').upsert(payload, { onConflict: 'id' });
+        const { error } = await db(token).from('posts').upsert(payload, { onConflict: 'id' });
         if (error) {
           console.error('Supabase savePost error:', error.message, error.details);
+          throw new Error('Supabase savePost error: ' + error.message);
         } else {
           console.log(`Saved post ${savedPost.id} to Supabase successfully.`);
         }
@@ -370,10 +434,10 @@ export const ServerStorage = {
     return savedPost;
   },
 
-  deletePost: async (id: string): Promise<void> => {
+  deletePost: async (id: string, token?: string): Promise<void> => {
     if (isSupabaseConfigured()) {
       try {
-        const { error } = await db().from('posts').delete().eq('id', id);
+        const { error } = await db(token).from('posts').delete().eq('id', id);
         if (error) {
           console.error('Supabase deletePost error:', error.message);
         }
@@ -407,35 +471,35 @@ export const ServerStorage = {
     return ServerStorage.getAllPosts(true);
   },
 
-  incrementViews: async (id: string): Promise<void> => {
+  incrementViews: async (id: string, token?: string): Promise<void> => {
     const post = await ServerStorage.getPostById(id);
     if (post) {
       post.viewsCount = (post.viewsCount || 0) + 1;
-      await ServerStorage.savePost(post);
+      await ServerStorage.savePost(post, token);
     }
   },
 
-  incrementCopies: async (id: string): Promise<void> => {
+  incrementCopies: async (id: string, token?: string): Promise<void> => {
     const post = await ServerStorage.getPostById(id);
     if (post) {
       post.copiesCount = (post.copiesCount || 0) + 1;
-      await ServerStorage.savePost(post);
+      await ServerStorage.savePost(post, token);
     }
   },
 
-  incrementCopyCount: async (id: string): Promise<void> => {
-    return await ServerStorage.incrementCopies(id);
+  incrementCopyCount: async (id: string, token?: string): Promise<void> => {
+    return await ServerStorage.incrementCopies(id, token);
   },
 
-  incrementViewCount: async (id: string): Promise<void> => {
-    return await ServerStorage.incrementViews(id);
+  incrementViewCount: async (id: string, token?: string): Promise<void> => {
+    return await ServerStorage.incrementViews(id, token);
   },
 
-  toggleLike: async (id: string): Promise<void> => {
+  toggleLike: async (id: string, token?: string): Promise<void> => {
     const post = await ServerStorage.getPostById(id);
     if (post) {
       post.likesCount = (post.likesCount || 0) + 1;
-      await ServerStorage.savePost(post);
+      await ServerStorage.savePost(post, token);
     }
   },
 
@@ -584,7 +648,7 @@ export const ServerStorage = {
           .select('*')
           .order('count', { ascending: false });
         if (!error && data && data.length > 0) {
-          return data.map((d) => ({
+          return data.map((d: any) => ({
             id: d.id,
             query: d.query,
             count: d.count,

@@ -3,11 +3,9 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useApp } from '@/context/AppContext';
 import { PromptCard } from './PromptCard';
-import { HomepageGeminiGenerator } from './HomepageGeminiGenerator';
 import { SearchX, Filter, Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { PromptPost } from '@/types/prompt';
 import { PersonalizationEngine } from '@/lib/personalization';
-import { preloadPostList } from '@/lib/imagePreloader';
 
 const INITIAL_BATCH_SIZE = 12;
 const SCROLL_BATCH_SIZE = 12;
@@ -134,12 +132,13 @@ export const PromptGrid = () => {
           if (diff !== 0) return diff;
           return (b.createdAt || '').localeCompare(a.createdAt || '') || a.id.localeCompare(b.id);
         });
-      } else if (selectedSort === 'newest') {
+      } else {
+        // Default / 'newest': Always prioritize newest/latest posts first
         list = [...list].sort((a, b) => {
-          const timeB = new Date(b.createdAt).getTime();
-          const timeA = new Date(a.createdAt).getTime();
-          if (timeB !== timeA) return timeB - timeA;
-          return a.id.localeCompare(b.id);
+          const timeB = new Date(b.publishedAt || b.createdAt || 0).getTime();
+          const timeA = new Date(a.publishedAt || a.createdAt || 0).getTime();
+          if (timeB !== timeA && !isNaN(timeB) && !isNaN(timeA)) return timeB - timeA;
+          return (b.createdAt || '').localeCompare(a.createdAt || '') || b.id.localeCompare(a.id);
         });
       }
     }
@@ -244,20 +243,8 @@ export const PromptGrid = () => {
     return posts.filter((p) => p.status === 'published').length;
   }, [posts]);
 
-  // Preload top visible posts in background so card click opens immediately with 0ms lag
-  useEffect(() => {
-    if (filteredPosts && filteredPosts.length > 0) {
-      preloadPostList(filteredPosts, 8);
-    }
-  }, [filteredPosts]);
-
   return (
     <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-      {/* Recreated Gemini Prompt Generator (When on "For You" / All Feed) */}
-      {selectedCategory === 'all' && !searchQuery.trim() && (
-        <HomepageGeminiGenerator />
-      )}
-
       {/* Gemini AI Smart Search Results Header */}
       {searchQuery.trim() && (
         <div className="mb-6 p-4 sm:p-5 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
@@ -342,7 +329,7 @@ export const PromptGrid = () => {
       {/* Visual Prompt Grid */}
       {filteredPosts.length > 0 ? (
         <>
-          <div className="flex gap-3 sm:gap-4 items-start w-full" id="pinterest-vertical-masonry-feed">
+          <div className="flex gap-3 sm:gap-4 items-start w-full" id="vertical-masonry-feed">
             {columns.map((colPosts, colIdx) => (
               <div key={colIdx} className="flex-1 flex flex-col gap-3 sm:gap-4 min-w-0">
                 {colPosts.map((post, postIdx) => (
@@ -363,7 +350,7 @@ export const PromptGrid = () => {
           {hasMore ? (
             <div className="flex items-center justify-center py-6 gap-2 text-xs text-neutral-500 font-semibold">
               <Loader2 className="w-4 h-4 animate-spin text-[#E60023]" />
-              <span>Loading more visual pins...</span>
+              <span>Loading more prompts...</span>
             </div>
           ) : (
             <div className="text-center py-12 px-4 mt-6 border-t border-neutral-200/70 dark:border-neutral-800/70 max-w-md mx-auto">
@@ -374,7 +361,7 @@ export const PromptGrid = () => {
           )}
         </>
       ) : isLoadingPosts ? (
-        /* Pinterest-Style Shimmer Skeleton Loading Grid for Viewport */
+        /* Shimmer Skeleton Loading Grid for Viewport */
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
           {Array.from({ length: 10 }).map((_, idx) => (
             <div

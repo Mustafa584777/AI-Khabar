@@ -75,7 +75,7 @@ export default function PrivacyPolicyPage() {
               <ul className="list-disc pl-5 space-y-1">
                 <li>Provide, maintain, and optimize our copy-paste prompt directory and AI Studio.</li>
                 <li>Personalize your feed based on your selected aesthetic categories and styles.</li>
-                <li>Prevent abuse, spam, and unauthorized access to our CMS and services.</li>
+                <li>Prevent abuse, spam, and unauthorized access to our platform and services.</li>
                 <li>Analyze aggregate metrics to improve prompt quality and site loading speed.</li>
               </ul>
             </section>

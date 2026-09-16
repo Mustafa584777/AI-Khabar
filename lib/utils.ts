@@ -31,6 +31,33 @@ export function getPromptSlug(post: { slug?: string; title?: string; id?: string
   return post.id || 'prompt';
 }
 
+export function getPromptMetaDescription(post: {
+  title?: string;
+  category?: string;
+  aiTool?: string;
+  tags?: string[];
+  seoDescription?: string;
+  seo?: { metaDescription?: string };
+  promptText?: string;
+  parameters?: { aspectRatio?: string; lighting?: string; camera?: string; shotType?: string; style?: string };
+}): string {
+  if (post.seoDescription && post.seoDescription.trim().length > 15) {
+    return post.seoDescription.trim();
+  }
+  if (post.seo?.metaDescription && post.seo.metaDescription.trim().length > 15) {
+    return post.seo.metaDescription.trim();
+  }
+  const toolName = post.aiTool || 'Midjourney, ChatGPT, Gemini and Flux';
+  const category = post.category || 'AI Photography';
+  const title = post.title || 'Creative AI Photo Prompt';
+  const tagsStr = post.tags && post.tags.length > 0 ? ` featuring ${post.tags.slice(0, 3).join(', ')}` : '';
+  const lightingStr = post.parameters?.lighting ? ` with ${post.parameters.lighting}` : '';
+  const cameraStr = post.parameters?.camera ? ` (${post.parameters.camera})` : '';
+  const ratioStr = post.parameters?.aspectRatio ? ` [--ar ${post.parameters.aspectRatio}]` : '';
+  
+  return `Copy and paste this ${title} photo prompt for ${toolName}. Curated ${category.toLowerCase()} aesthetic${lightingStr}${cameraStr}${tagsStr}${ratioStr}. Instant 1-click copy.`;
+}
+
 export function getOptimizedImageUrl(url?: string, width = 550): string {
   if (!url || typeof url !== 'string') return url || '';
   if (url.includes('res.cloudinary.com') && url.includes('/image/upload/')) {
@@ -79,7 +106,7 @@ export function detectPostAspectRatio(post: {
     return `${post.imageWidth} / ${post.imageHeight}`;
   }
 
-  // 6. Default fallback (Pinterest aesthetic 3:4 standard portrait)
+  // 6. Default fallback (3:4 standard portrait)
   return '3 / 4';
 }
 

@@ -11,6 +11,7 @@ export interface RazorpayCheckoutButtonProps {
   currency?: string;
   planName?: string;
   planTier?: 'starter' | 'pro' | 'vip';
+  creditsToAdd?: number; // Added directly to toolCredits balance upon payment
   description?: string;
   buttonText?: string;
   className?: string;
@@ -27,6 +28,7 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
   currency = 'INR',
   planName = 'Pro Creator Pass',
   planTier = 'pro',
+  creditsToAdd,
   description = 'Unlimited AI Studio Generations & VIP Prompts',
   buttonText,
   className = '',
@@ -39,7 +41,7 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const { showToast, setIsProUser, upgradePlan, userAccount } = useApp();
+  const { showToast, setIsProUser, upgradePlan, addToolCredits, userAccount } = useApp();
 
   const handleCheckout = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -67,8 +69,15 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
         onSuccess: (verifyData) => {
           setIsLoading(false);
           setIsSuccess(true);
-          setIsProUser(true);
-          upgradePlan(planTier);
+
+          if (creditsToAdd && creditsToAdd > 0) {
+            addToolCredits(creditsToAdd);
+            showToast(`Payment Verified! Added ${creditsToAdd} Credits to your account 🎉`);
+          } else {
+            setIsProUser(true);
+            upgradePlan(planTier);
+            showToast(`Payment Verified! Order ${verifyData.order_id.slice(-6)} successful 🎉`);
+          }
 
           try {
             confetti({
@@ -81,7 +90,6 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
             // ignore confetti fallback
           }
 
-          showToast(`Payment Verified! Order ${verifyData.order_id.slice(-6)} successful 🎉`);
           if (onSuccess) {
             onSuccess(verifyData);
           }

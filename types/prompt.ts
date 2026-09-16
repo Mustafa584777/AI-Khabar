@@ -32,7 +32,8 @@ export interface PromptParameters {
   camera?: string; // e.g. "Sony A7 IV, 85mm f/1.4"
   renderEngine?: string; // e.g. "Unreal Engine 5, Octane Render"
   temperature?: string; // For text models
-  [key: string]: string | undefined;
+  isPremium?: boolean | string;
+  [key: string]: string | boolean | undefined;
 }
 
 export interface Author {
@@ -142,18 +143,68 @@ export interface UserAccount {
   generationsCountForPoints: number;
   sharesCountForPoints: number;
   referralsCountForPoints: number;
+  isPremium?: boolean;
+  membershipPlan?: 'free' | 'starter' | 'pro' | 'vip';
+  planTier?: PlanTier;
+  planExpiresAt?: string;
+  planStartedAt?: string;
+  toolCredits?: number;
+  unlockedPromptIds?: string[];
+  credits?: number;
+  lastCreditRefresh?: string;
+  promptRequestsAllowed?: number;
+}
+
+export interface RegisteredUserRecord {
+  id: string;
+  email: string;
+  name: string;
+  username?: string;
+  avatar?: string;
+  planTier: PlanTier;
+  isProUser: boolean;
+  planExpiresAt?: string;
+  toolCredits: number;
+  points: number;
+  unlockedPromptIds: string[];
+  promptRequestsRemaining?: number;
+  aiHistoryCount?: number;
+  bookmarksCount?: number;
+  likesCount?: number;
+  joinedDate: string;
+  lastSyncedAt?: string;
+  source: 'supabase_auth' | 'supabase_sync' | 'local_store' | 'razorpay' | 'razorpay_verified';
+  paymentAmount?: number;
+  paymentId?: string;
+  paymentDate?: string;
+  paymentMethod?: string;
+  rawSyncData?: any;
+}
+
+export interface UsersBackupPayload {
+  version: string;
+  exportedAt: string;
+  system: string;
+  totalUsers: number;
+  users: RegisteredUserRecord[];
 }
 
 export interface PromptRequestItem {
   id: string;
   userId: string;
+  userEmail: string;
   userName: string;
   userAvatar?: string;
   requestText: string;
   category?: string;
-  status: 'pending' | 'in_progress' | 'completed';
+  aiTool?: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'rejected';
   createdAt: number;
-  likesCount: number;
+  likesCount?: number;
+  fulfilledPrompt?: string;
+  fulfilledAt?: number | string;
+  adminNotes?: string;
+  fulfilledBy?: string;
 }
 
 export interface AIHistoryItem {
@@ -191,5 +242,8 @@ export interface AiSearchResult {
   explanation: string;
   isAiPowered: boolean;
 }
+
+export type { UserTasteProfile, GenderVibe } from '@/lib/personalization';
+
 
 
