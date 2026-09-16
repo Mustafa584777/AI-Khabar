@@ -1,7 +1,6 @@
 'use client';
-/* eslint-disable react-hooks/set-state-in-effect */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { PromptPost, Category } from '@/types/prompt';
 import {
@@ -25,11 +24,9 @@ import {
   X,
   Check,
   Crown,
-  Bell,
 } from 'lucide-react';
 import Image from 'next/image';
 import { cleanTagsArray, canonicalizeTag, slugify } from '@/lib/utils';
-import { SendPushNotificationModal } from './SendPushNotificationModal';
 
 const generateImageFileNameFromTitle = (titleText: string, currentFileName?: string): string => {
   const fallback = 'photo-prompt.webp';
@@ -105,14 +102,8 @@ export const PostEditor = () => {
     () => (existingPost?.status === 'draft' ? 'draft' : 'published')
   );
   const [isPremium, setIsPremium] = useState<boolean>(
-    () => Boolean(existingPost?.isPremium || existingPost?.parameters?.isPremium)
+    () => Boolean(existingPost?.isPremium)
   );
-
-  useEffect(() => {
-    if (existingPost) {
-      setIsPremium(Boolean(existingPost.isPremium || existingPost.parameters?.isPremium));
-    }
-  }, [existingPost]);
   const [articleContent, setArticleContent] = useState(
     () =>
       existingPost?.articleContent ||
@@ -132,7 +123,6 @@ export const PostEditor = () => {
   const [aiSuggestedTags, setAiSuggestedTags] = useState<string[]>([]);
   const [isAddingCustomCat, setIsAddingCustomCat] = useState(false);
   const [customCatInput, setCustomCatInput] = useState('');
-  const [isPushModalOpen, setIsPushModalOpen] = useState(false);
 
   const handleCreateAndAssignCategory = async (rawCatName: string) => {
     const trimmed = rawCatName.trim();
@@ -601,7 +591,7 @@ export const PostEditor = () => {
       title,
       slug: slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       category: chosenCat,
-      aiTool: existingPost?.aiTool || 'Midjourney',
+      aiTool: 'ChatGPT',
       promptText,
       imageUrl: imageUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80',
       imageAlt: finalAlt,
@@ -611,10 +601,6 @@ export const PostEditor = () => {
       tags: cleanTagsArray(tags.length > 0 ? tags : [chosenCat || 'AI Prompt']),
       status: publishStatus,
       isPremium: Boolean(isPremium),
-      parameters: {
-        ...(existingPost?.parameters || {}),
-        isPremium: Boolean(isPremium),
-      },
       viewsCount: existingPost?.viewsCount || 0,
       copiesCount: existingPost?.copiesCount || 0,
       likesCount: existingPost?.likesCount || 0,
@@ -666,27 +652,13 @@ export const PostEditor = () => {
             <h1 className="text-2xl font-extrabold text-neutral-900 dark:text-white">
               {isEditing ? 'Edit Prompt Article' : 'Create New Prompt Article'}
             </h1>
+            <p className="text-xs text-neutral-500 mt-0.5">
+              Author: <span className="font-semibold text-neutral-800 dark:text-neutral-200">tool.reelz</span>
+            </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={() => {
-              if (!title.trim()) {
-                showToast('Please enter a title before sending notification.');
-                return;
-              }
-              setIsPushModalOpen(true);
-            }}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-lg shadow-red-500/20 transition-all transform active:scale-95"
-            id="btn-send-prompt-notification"
-            title="Broadcast Push Notification for this Prompt"
-          >
-            <Bell className="w-4 h-4" />
-            <span>Send Notification</span>
-          </button>
-
           <button
             type="button"
             disabled={isSavingPost}
@@ -1449,16 +1421,6 @@ export const PostEditor = () => {
           </div>
         </div>
       </div>
-
-      <SendPushNotificationModal
-        isOpen={isPushModalOpen}
-        onClose={() => setIsPushModalOpen(false)}
-        defaultTitle={title}
-        defaultCategory={category}
-        defaultImageUrl={imageUrl}
-        defaultUrl={`/${slug || slugify(title) || 'explore'}`}
-        defaultPromptText={promptText}
-      />
     </div>
   );
 };

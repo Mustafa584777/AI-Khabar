@@ -94,8 +94,26 @@ function SingleBlogPostContent({ slug }: { slug: string }) {
             {post.excerpt}
           </p>
 
-          {/* Metadata Card */}
+          {/* Author and Metadata Card */}
           <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-neutral-200 dark:border-neutral-800 text-xs text-neutral-500">
+            <div className="flex items-center gap-3">
+              <div className="relative w-10 h-10 rounded-full overflow-hidden border border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800">
+                <Image
+                  src="/logo.png"
+                  alt={post.author.name}
+                  fill
+                  className="object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+              <div>
+                <div className="font-bold text-neutral-900 dark:text-white text-sm">
+                  {post.author.name}
+                </div>
+                <div className="text-[11px] text-neutral-500">{post.author.role}</div>
+              </div>
+            </div>
+
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5" />

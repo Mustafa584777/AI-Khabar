@@ -11,9 +11,7 @@ import {
   Sparkles,
   Search,
   Crown,
-  Bell,
 } from 'lucide-react';
-import { NotificationService } from '@/lib/notifications';
 import Link from 'next/link';
 
 export const Header = () => {
@@ -32,46 +30,16 @@ export const Header = () => {
     isProUser,
     planTier,
     setIsProCheckoutModalOpen,
-    userAccount,
-    openAuthModal,
   } = useApp();
 
-  const [unreadNotifs, setUnreadNotifs] = React.useState(0);
-
-  React.useEffect(() => {
-    const update = () => {
-      const list = NotificationService.getNotifications();
-      setUnreadNotifs(list.filter((n) => !n.read).length);
-    };
-    update();
-    const timer = setInterval(update, 8000);
-    return () => clearInterval(timer);
-  }, []);
-
   const handleHomeClick = () => {
+    if (pathname !== '/') {
+      window.location.href = '/';
+      return;
+    }
     setCurrentView('public');
     setSelectedCategory('all');
     setSearchQuery('');
-    if (pathname !== '/') {
-      window.location.href = '/';
-    }
-  };
-
-  const handleNotificationsClick = () => {
-    setCurrentView('notifications');
-    if (pathname !== '/') {
-      router.push('/');
-    } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
-  const handleBookmarksClick = () => {
-    if (!userAccount?.isLoggedIn) {
-      openAuthModal('Please sign in or create an account to access your saved collection.');
-      return;
-    }
-    setIsBookmarksDrawerOpen(true);
   };
 
   return (
@@ -111,8 +79,10 @@ export const Header = () => {
             </button>
 
             {/* Create / AI Studio Route Link */}
-            <Link
-              href="/create"
+            <button
+              onClick={() => {
+                window.location.href = '/create';
+              }}
               className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 flex items-center gap-1.5 ${
                 pathname === '/create'
                   ? 'bg-[#E60023] text-white shadow-sm'
@@ -123,7 +93,7 @@ export const Header = () => {
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Create</span>
-            </Link>
+            </button>
 
             <Link
               href="/blog"
@@ -153,35 +123,16 @@ export const Header = () => {
 
         {/* Right: Saved, Account & Admin Actions */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Notifications Button (Hidden on Mobile, use BottomNav instead) */}
+          {/* Saved Prompts (Pinterest Red Pill) */}
           <button
-            onClick={handleNotificationsClick}
-            className={`hidden sm:flex relative items-center justify-center p-2 rounded-full transition-colors ${
-              currentView === 'notifications'
-                ? 'bg-[#E60023] text-white shadow-xs'
-                : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-            }`}
-            title="Notifications & Updates"
-            id="header-notifications-btn"
-          >
-            <Bell className="w-4 h-4" />
-            {unreadNotifs > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#E60023] text-white text-[9px] font-black flex items-center justify-center ring-2 ring-white dark:ring-neutral-950 animate-pulse">
-                {unreadNotifs > 9 ? '9+' : unreadNotifs}
-              </span>
-            )}
-          </button>
-
-          {/* Saved Prompts */}
-          <button
-            onClick={handleBookmarksClick}
+            onClick={() => setIsBookmarksDrawerOpen(true)}
             className="flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs sm:text-sm font-bold shadow-sm transition-all transform active:scale-95"
             title="View Saved Prompts"
             id="header-bookmarks-btn"
           >
             <Bookmark className="w-4 h-4 fill-current" />
             <span className="hidden sm:inline">Saved</span>
-            {userAccount?.isLoggedIn && bookmarkedIds.length > 0 && (
+            {bookmarkedIds.length > 0 && (
               <span className="px-1.5 py-0.2 rounded-full bg-white text-[#E60023] text-[11px] font-black">
                 {bookmarkedIds.length}
               </span>
@@ -203,45 +154,20 @@ export const Header = () => {
             <span>{isProUser ? (planTier ? planTier.toUpperCase() : 'PRO') : 'PRO'}</span>
           </Link>
 
-          {/* User Profile / Dashboard Button (Hidden on mobile devices) */}
-          {userAccount?.isLoggedIn ? (
-            <Link
-              href="/dashboard"
-              className={`hidden sm:flex px-3.5 py-2 rounded-full text-xs font-bold transition-colors items-center gap-1.5 ${
-                pathname === '/dashboard'
-                  ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950'
-                  : 'bg-[#efefef] dark:bg-neutral-800 hover:bg-[#e2e2e2] dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200'
-              }`}
-              title="My Creative Dashboard"
-              id="header-user-dashboard-btn"
-            >
-              {userAccount.avatar ? (
-                <Image
-                  src={userAccount.avatar}
-                  alt={userAccount.name || 'User'}
-                  width={18}
-                  height={18}
-                  className="w-4 h-4 rounded-full object-cover border border-emerald-500/50"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <User className="w-4 h-4" />
-              )}
-              <span className="hidden md:inline">
-                {userAccount.name ? userAccount.name.split(' ')[0] : 'Dashboard'}
-              </span>
-            </Link>
-          ) : (
-            <button
-              onClick={() => openAuthModal('Sign in to access your creative dashboard, credits, and saved prompts.')}
-              className="hidden sm:flex px-4 py-2 rounded-full text-xs font-bold bg-[#efefef] dark:bg-neutral-800 hover:bg-[#e2e2e2] dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 transition-colors items-center gap-1.5"
-              title="Sign In / Register"
-              id="header-user-signin-btn"
-            >
-              <User className="w-4 h-4" />
-              <span>Sign In</span>
-            </button>
-          )}
+          {/* User Profile / Dashboard Button */}
+          <a
+            href="/dashboard"
+            className={`p-2 sm:px-3.5 sm:py-2 rounded-full text-xs font-bold transition-colors flex items-center gap-1.5 ${
+              pathname === '/dashboard'
+                ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950'
+                : 'bg-[#efefef] dark:bg-neutral-800 hover:bg-[#e2e2e2] dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200'
+            }`}
+            title="My Creative Dashboard"
+            id="header-user-dashboard-btn"
+          >
+            <User className="w-4 h-4" />
+            <span className="hidden md:inline">Dashboard</span>
+          </a>
         </div>
       </div>
     </header>

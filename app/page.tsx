@@ -19,12 +19,10 @@ const TasteProfileModal = dynamic(() => import('@/components/public/TasteProfile
 const UserDashboard = dynamic(() => import('@/components/public/UserDashboard').then((m) => m.UserDashboard), { ssr: false });
 const AIStudioTool = dynamic(() => import('@/components/public/AIStudioTool').then((m) => m.AIStudioTool), { ssr: false });
 const UserAuthModal = dynamic(() => import('@/components/public/UserAuthModal').then((m) => m.UserAuthModal), { ssr: false });
-const NotificationsView = dynamic(() => import('@/components/public/NotificationsView').then((m) => m.NotificationsView), { ssr: false });
 const AdminLayout = dynamic(() => import('@/components/admin/AdminLayout').then((m) => m.AdminLayout), { ssr: false });
 const AdminLoginModal = dynamic(() => import('@/components/admin/AdminLoginModal').then((m) => m.AdminLoginModal), { ssr: false });
 const SearchExploreModal = dynamic(() => import('@/components/public/SearchExploreModal').then((m) => m.SearchExploreModal), { ssr: false });
 const RazorpayCheckoutModal = dynamic(() => import('@/components/public/RazorpayCheckoutModal').then((m) => m.RazorpayCheckoutModal), { ssr: false });
-const UnlockPremiumModal = dynamic(() => import('@/components/public/UnlockPremiumModal').then((m) => m.UnlockPremiumModal), { ssr: false });
 
 function MainApp() {
   const { currentView } = useApp();
@@ -39,11 +37,22 @@ function MainApp() {
     );
   }
 
-  if (currentView === 'notifications' || currentView === 'for-you') {
+  if (currentView === 'for-you') {
     return (
       <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col pb-20 sm:pb-8">
         <Header />
-        <NotificationsView />
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="mb-6 bg-gradient-to-r from-red-500/10 via-amber-500/10 to-red-500/10 p-6 rounded-3xl border border-red-200/50 dark:border-red-900/40">
+            <h1 className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-[#E60023]" />
+              <span>Personalized For You Feed</span>
+            </h1>
+            <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-1">
+              Curated visual prompt cards tailored strictly to your creative taste profile, bookmark history, and aesthetic preferences.
+            </p>
+          </div>
+          <PromptGrid />
+        </div>
         <BottomNav />
         <SearchExploreModal />
         <PromptDetailModal />
@@ -53,7 +62,6 @@ function MainApp() {
         <AdminLoginModal />
         <ToastNotification />
         <RazorpayCheckoutModal />
-        <UnlockPremiumModal />
       </div>
     );
   }
@@ -71,7 +79,6 @@ function MainApp() {
         <ToastNotification />
         <BottomNav />
         <RazorpayCheckoutModal />
-        <UnlockPremiumModal />
       </div>
     );
   }
@@ -90,7 +97,6 @@ function MainApp() {
         <ToastNotification />
         <BottomNav />
         <RazorpayCheckoutModal />
-        <UnlockPremiumModal />
       </div>
     );
   }
@@ -104,7 +110,7 @@ function MainApp() {
       <SEOContentSection />
       <Footer />
 
-      {/* Mobile Bottom Navigation */}
+      {/* Pinterest Mobile Bottom Navigation */}
       <BottomNav />
 
       {/* Global Modals & Overlays */}
@@ -116,7 +122,6 @@ function MainApp() {
       <AdminLoginModal />
       <ToastNotification />
       <RazorpayCheckoutModal />
-      <UnlockPremiumModal />
     </div>
   );
 }

@@ -85,7 +85,6 @@ export const AIStudioTool = () => {
     saveAiHistoryItem,
     toolCredits,
     deductToolCredit,
-    isAuthenticated,
   } = useApp();
 
   const [uploadedImage, setUploadedImage] = useState<string | null>(() => {
@@ -110,10 +109,7 @@ export const AIStudioTool = () => {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    if (!userAccount?.isLoggedIn) {
-      openAuthModal('Please sign in or create an account to use the AI Studio tools.');
-    }
-  }, [userAccount?.isLoggedIn, openAuthModal]);
+  }, []);
 
   const copyToClipboard = (text: string, key: string, label = 'Copied to clipboard!') => {
     navigator.clipboard.writeText(text);
@@ -143,20 +139,14 @@ export const AIStudioTool = () => {
   };
 
   const handleExtractPrompt = async () => {
-    if (!userAccount?.isLoggedIn) {
-      openAuthModal('Please sign in or create a free account to use the AI Studio Reverse-Engineering tool.');
-      return;
-    }
-
     if (!uploadedImage) {
       showToast('Please upload or select an image first');
       return;
     }
 
-    const IMAGE_TO_PROMPT_COST = 3;
-    if (toolCredits < IMAGE_TO_PROMPT_COST) {
+    if (toolCredits <= 0) {
       setIsOutOfCreditsModalOpen(true);
-      showToast(`Image-to-prompt requires 3 credits (You have ${toolCredits}). Top up credits or upgrade!`);
+      showToast('No tool credits remaining. Daily 2 free credits reset tomorrow, or upgrade your plan for instant credits!');
       return;
     }
 
@@ -177,9 +167,9 @@ export const AIStudioTool = () => {
 
       const json = await res.json();
       if (json.success && json.data) {
-        deductToolCredit(IMAGE_TO_PROMPT_COST);
+        deductToolCredit();
         setExtractedData(json.data);
-        showToast(`Prompt reverse-engineered! 3 credits used (${Math.max(0, toolCredits - IMAGE_TO_PROMPT_COST)} left)`);
+        showToast(`Prompt reverse-engineered! 1 credit used (${Math.max(0, toolCredits - 1)} left)`);
       } else {
         showToast(json.error || 'Failed to extract prompt from image');
       }
@@ -220,42 +210,6 @@ export const AIStudioTool = () => {
     showToast('Saved to your AI Studio History!');
   };
 
-  // Strict Login Gate: Unauthenticated users cannot use or see tool workspace
-  if (!userAccount?.isLoggedIn) {
-    return (
-      <main className="min-h-[80vh] flex items-center justify-center px-4 py-16 bg-[#fafafa] dark:bg-neutral-950">
-        <div className="max-w-md w-full p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xl text-center space-y-6">
-          <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-[#E60023] to-amber-500 text-white flex items-center justify-center mx-auto shadow-lg shadow-red-500/20">
-            <Sparkles className="w-8 h-8" />
-          </div>
-          <div className="space-y-2">
-            <h1 className="text-2xl font-black text-neutral-900 dark:text-white">
-              Sign In to Access AI Studio
-            </h1>
-            <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-              Image-to-Prompt extraction, AI reverse-engineering, and prompt generation require an active account. Sign in or register to get started with your daily free credits.
-            </p>
-          </div>
-          <div className="space-y-3 pt-2">
-            <button
-              onClick={() => openAuthModal('Sign in to access the AI Studio Creation Tool.')}
-              className="w-full py-3.5 px-6 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-sm font-bold shadow-lg shadow-red-500/25 transition-all transform active:scale-95 flex items-center justify-center gap-2"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>Sign In / Create Free Account</span>
-            </button>
-            <button
-              onClick={() => router.push('/')}
-              className="w-full py-3 px-6 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-bold transition-colors"
-            >
-              Back to Home Feed
-            </button>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
   return (
     <main className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 pb-28">
       {/* Top Sticky Header */}
@@ -266,7 +220,6 @@ export const AIStudioTool = () => {
               setCurrentView('public');
               if (setSelectedCategory) setSelectedCategory('all');
               if (setSearchQuery) setSearchQuery('');
-              router.push('/');
             }}
             className="flex items-center gap-2 text-xs sm:text-sm font-bold text-neutral-600 dark:text-neutral-300 hover:text-[#E60023] dark:hover:text-white transition-colors"
           >
@@ -279,12 +232,12 @@ export const AIStudioTool = () => {
             <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 text-xs font-bold shadow-xs">
               <Coins className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
               <span>{toolCredits} Credits</span>
-              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium hidden sm:inline">• 3 cr / extraction</span>
+              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium hidden sm:inline">• 1 / run</span>
               <Link
                 href="/pricing"
                 className="text-[11px] font-black text-[#E60023] hover:underline ml-1"
               >
-                + Top Up
+                + Get More
               </Link>
             </div>
 
@@ -495,7 +448,7 @@ export const AIStudioTool = () => {
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4" />
-                    <span>Extract AI Prompt from Image (3 Credits)</span>
+                    <span>Extract AI Prompt from Image (1 Credit)</span>
                   </>
                 )}
               </button>
@@ -682,19 +635,19 @@ export const AIStudioTool = () => {
                 Out of Tool Credits
               </h3>
               <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                Image-to-prompt extraction requires <strong className="text-neutral-900 dark:text-white">3 credits</strong>. Every user receives <strong className="text-neutral-900 dark:text-white">2 free credits daily</strong>, or you can top up anytime.
+                You have used your free credits. Every user receives <strong className="text-neutral-900 dark:text-white">2 free credits daily</strong>, which reset tomorrow at midnight.
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-left space-y-2 text-xs text-neutral-700 dark:text-neutral-300">
+            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-left space-y-1.5 text-xs text-neutral-700 dark:text-neutral-300">
               <div className="font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
-                <Coins className="w-3.5 h-3.5 text-amber-500" />
-                <span>Instant Pay-As-You-Go Credits Packs:</span>
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>Instant Upgrade Options:</span>
               </div>
               <ul className="space-y-1 text-[11px] text-neutral-600 dark:text-neutral-400">
-                <li>• <strong>100 Credits (₹49)</strong>: ~33 image extractions or 100 prompt unlocks</li>
-                <li>• <strong>250 Credits (₹99)</strong>: ~83 image extractions (Most Popular)</li>
-                <li>• <strong>499 Credits (₹199)</strong>: ~166 image extractions (Best Value)</li>
+                <li>• <strong>Starter (₹49/mo)</strong>: 10 tool credits + 1 prompt request</li>
+                <li>• <strong>Pro (₹199/mo)</strong>: 50 tool credits + 3 prompt requests</li>
+                <li>• <strong>VIP (₹499/mo)</strong>: 200 tool credits + 10 prompt requests</li>
               </ul>
             </div>
 

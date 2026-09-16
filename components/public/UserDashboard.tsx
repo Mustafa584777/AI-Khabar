@@ -31,11 +31,6 @@ import {
   Camera,
   Crown,
   ShieldCheck,
-  Cloud,
-  RefreshCw,
-  CheckCircle2,
-  MessageSquarePlus,
-  ExternalLink,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -65,12 +60,6 @@ export const UserDashboard = () => {
     awardPoints,
     isProUser,
     setIsProCheckoutModalOpen,
-    planTier,
-    toolCredits,
-    promptRequestsRemaining,
-    syncUserCloudData,
-    isSyncingUserData,
-    unlockedPromptIds,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'saved' | 'history' | 'taste' | 'request'>('saved');
@@ -78,59 +67,21 @@ export const UserDashboard = () => {
   const [historySearch, setHistorySearch] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Strict paid tier resolution for Dashboard display
-  const isPaid = Boolean(
-    isProUser && (planTier === 'starter' || planTier === 'pro' || planTier === 'vip')
-  );
-  const effectivePlanTier = isPaid ? planTier : 'free';
-
-  // Automatically prompt auth modal if unauthenticated
-  React.useEffect(() => {
-    if (!userAccount?.isLoggedIn) {
-      openAuthModal('Please sign in or create an account to access your Creator Dashboard.');
-    }
-  }, [userAccount?.isLoggedIn, openAuthModal]);
-
   // Request a prompt form state
   const [requestText, setRequestText] = useState('');
   const [requestCategory, setRequestCategory] = useState('Photorealistic');
-  const [requestAiTool, setRequestAiTool] = useState('Midjourney');
-  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
-  const [copiedRequestId, setCopiedRequestId] = useState<string | null>(null);
 
-  const handleRequestSubmit = async (e: React.FormEvent) => {
+  const handleRequestSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!requestText.trim()) {
-      showToast('Please describe the prompt you want our experts to craft');
+      showToast('Please enter your prompt request description');
       return;
     }
-    setIsSubmittingRequest(true);
-    try {
-      const success = await addPromptRequest(requestText, requestCategory, requestAiTool);
-      if (success) {
-        setRequestText('');
-      }
-    } finally {
-      setIsSubmittingRequest(false);
+    const success = addPromptRequest(requestText, requestCategory);
+    if (success) {
+      setRequestText('');
     }
   };
-
-  const handleCopyFulfilledPrompt = (promptText: string, reqId: string) => {
-    navigator.clipboard.writeText(promptText);
-    setCopiedRequestId(reqId);
-    showToast('Prompt copied to clipboard!');
-    setTimeout(() => setCopiedRequestId(null), 2500);
-  };
-
-  // Filter requests belonging specifically to this logged in user
-  const userRequests = promptRequests.filter((r) => {
-    if (!userAccount) return false;
-    const cleanUserEmail = userAccount.email?.trim().toLowerCase();
-    const cleanReqEmail = r.userEmail?.trim().toLowerCase();
-    const emailMatch = cleanUserEmail && cleanReqEmail && cleanUserEmail === cleanReqEmail;
-    const idMatch = userAccount.id && r.userId === userAccount.id;
-    return Boolean(emailMatch || idMatch);
-  });
 
   // Filtered saved posts
   const savedPosts = posts.filter((p) => bookmarkedIds.includes(p.id));
@@ -185,41 +136,6 @@ export const UserDashboard = () => {
     });
   };
 
-  // Strict Login Gate: Unauthenticated users see zero private dashboard data
-  if (!userAccount?.isLoggedIn) {
-    return (
-      <main className="min-h-[80vh] flex items-center justify-center px-4 py-16 bg-[#fafafa] dark:bg-neutral-950">
-        <div className="max-w-md w-full p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xl text-center space-y-6">
-          <div className="w-16 h-16 rounded-3xl bg-[#E60023]/10 text-[#E60023] flex items-center justify-center mx-auto shadow-inner">
-            <User className="w-8 h-8" />
-          </div>
-          <div className="space-y-2">
-            <h1 className="text-2xl font-black text-neutral-900 dark:text-white">
-              Sign In to Your Dashboard
-            </h1>
-            <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-              Your Creator Dashboard, saved bookmarks, AI generation history, and daily credits require an active account.
-            </p>
-          </div>
-          <div className="space-y-3 pt-2">
-            <button
-              onClick={() => openAuthModal('Sign in to access your Creator Dashboard.')}
-              className="w-full py-3.5 px-6 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-sm font-bold shadow-lg shadow-red-500/25 transition-all transform active:scale-95"
-            >
-              Sign In / Create Free Account
-            </button>
-            <button
-              onClick={() => router.push('/')}
-              className="w-full py-3 px-6 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-bold transition-colors"
-            >
-              Back to Home Feed
-            </button>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
   return (
     <main className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 pb-24">
       {/* Top Banner Navigation */}
@@ -227,8 +143,7 @@ export const UserDashboard = () => {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <button
             onClick={() => {
-              setCurrentView('public');
-              router.push('/');
+              window.location.href = '/';
             }}
             className="flex items-center gap-2 text-xs sm:text-sm font-bold text-neutral-600 dark:text-neutral-300 hover:text-[#E60023] dark:hover:text-white transition-colors"
           >
@@ -302,35 +217,6 @@ export const UserDashboard = () => {
                     Guest Session
                   </span>
                 )}
-                {/* Strict Paid / Free Tier Badge */}
-                <span
-                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold flex items-center gap-1 border ${
-                    isPaid
-                      ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300'
-                      : 'bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400'
-                  }`}
-                >
-                  {isPaid ? (
-                    <>
-                      <Crown className="w-3 h-3 text-amber-500 fill-amber-500" />
-                      <span>PAID ({effectivePlanTier.toUpperCase()})</span>
-                    </>
-                  ) : (
-                    <span>FREE TIER</span>
-                  )}
-                </span>
-                {userAccount?.isLoggedIn && (
-                  <button
-                    onClick={() => void syncUserCloudData()}
-                    disabled={isSyncingUserData}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-[11px] font-medium transition-colors disabled:opacity-50"
-                    title="Synchronize bookmarks and taste profile with Supabase cloud"
-                  >
-                    <Cloud className="w-3 h-3 text-emerald-500" />
-                    <RefreshCw className={`w-3 h-3 ${isSyncingUserData ? 'animate-spin text-[#E60023]' : ''}`} />
-                    <span>{isSyncingUserData ? 'Syncing...' : 'Cloud Synced'}</span>
-                  </button>
-                )}
                 <span className="px-2.5 py-0.5 rounded-full bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800/60 text-[#E60023] text-[11px] font-bold">
                   {tasteProfile.genderVibe === 'all'
                     ? 'All Aesthetics'
@@ -345,19 +231,7 @@ export const UserDashboard = () => {
           </div>
 
           {/* Quick Metrics */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 border-t md:border-t-0 md:border-l border-neutral-100 dark:border-neutral-800 pt-4 md:pt-0 md:pl-6">
-            <div className="text-center md:text-left">
-              <div className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400">
-                {toolCredits}
-              </div>
-              <div className="text-[11px] text-neutral-500 font-medium">Credits Available</div>
-            </div>
-            <div className="text-center md:text-left">
-              <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
-                {isProUser ? 'All (Pro)' : unlockedPromptIds.length}
-              </div>
-              <div className="text-[11px] text-neutral-500 font-medium">Unlocked Prompts</div>
-            </div>
+          <div className="grid grid-cols-3 gap-3 sm:gap-4 border-t md:border-t-0 md:border-l border-neutral-100 dark:border-neutral-800 pt-4 md:pt-0 md:pl-6">
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
                 {savedPosts.length}
@@ -369,6 +243,12 @@ export const UserDashboard = () => {
                 {aiHistory.length}
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">AI Generations</div>
+            </div>
+            <div className="text-center md:text-left">
+              <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
+                {Object.values(tasteProfile.categoryAffinities || {}).reduce((a, b) => a + b, 0)}
+              </div>
+              <div className="text-[11px] text-neutral-500 font-medium">Taste Points</div>
             </div>
           </div>
         </div>
@@ -398,53 +278,41 @@ export const UserDashboard = () => {
           </div>
         )}
 
-        {/* Membership Tier Banner */}
+        {/* Razorpay Pro Membership Banner */}
         <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            <div
-              className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border ${
-                isPaid
-                  ? 'bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500/20'
-                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 border-neutral-200 dark:border-neutral-700'
-              }`}
-            >
-              <Crown className={`w-6 h-6 ${isPaid ? 'fill-amber-500 text-amber-500' : ''}`} />
+            <div className="w-11 h-11 rounded-2xl bg-amber-500/10 text-amber-500 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20">
+              <Crown className="w-6 h-6" />
             </div>
             <div className="space-y-0.5">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm sm:text-base font-black text-neutral-900 dark:text-white">
-                  {isPaid ? `${effectivePlanTier.toUpperCase()} Membership Active` : 'Upgrade to Creator Pro'}
+                  {isProUser ? 'VIP Pro Membership Active' : 'Upgrade to Creator Pro with Razorpay'}
                 </h3>
-                <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-                    isPaid
-                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
-                      : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
-                  }`}
-                >
-                  {isPaid ? `PAID (${effectivePlanTier.toUpperCase()})` : 'FREE TIER'}
+                <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 text-[10px] font-mono font-bold">
+                  Verified
                 </span>
               </div>
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                {isPaid
-                  ? `${toolCredits} prompt tools credits available • All premium prompts unlocked • Unlimited prompt & history saves.`
-                  : `${toolCredits} credits available. 1 credit unlocks any premium prompt • 3 credits per image extraction. Top up credits anytime.`}
+                {isProUser
+                  ? 'Enjoy unlimited AI Studio prompt reverse-engineering and priority high-resolution generations.'
+                  : 'Get unlimited photo deconstructions, Midjourney stacks, and priority prompt downloads.'}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0 self-start md:self-auto">
-            {!isPaid ? (
+            {!isProUser ? (
               <>
                 <RazorpayCheckoutButton
-                  amount={9900}
+                  amount={19900}
                   planName="Pro Creator"
-                  buttonText="Get Pro (₹99)"
+                  buttonText="Get Pro (₹199)"
                   variant="pill"
                   size="sm"
                 />
                 <button
-                  onClick={() => router.push('/pricing')}
+                  onClick={() => setIsProCheckoutModalOpen(true)}
                   className="px-3.5 py-2 rounded-full border border-neutral-300 dark:border-neutral-700 hover:border-neutral-400 text-xs font-bold text-neutral-700 dark:text-neutral-200 transition-colors"
                 >
                   All Plans
@@ -452,10 +320,10 @@ export const UserDashboard = () => {
               </>
             ) : (
               <button
-                onClick={() => router.push('/pricing')}
+                onClick={() => router.push('/checkout')}
                 className="px-4 py-2 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 text-xs font-bold hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
               >
-                View Plans & Upgrade
+                Manage Billing
               </button>
             )}
           </div>
@@ -489,9 +357,7 @@ export const UserDashboard = () => {
             <span>AI Studio History ({aiHistory.length})</span>
           </button>
 
-          {/* Request a Prompt tab */}
           <button
-            id="tab-request-prompt"
             onClick={() => setActiveTab('request')}
             className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shrink-0 ${
               activeTab === 'request'
@@ -501,31 +367,19 @@ export const UserDashboard = () => {
           >
             <Target className="w-4 h-4 text-[#E60023]" />
             <span>Request a Prompt</span>
-            {userRequests.length > 0 && (
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                activeTab === 'request'
-                  ? 'bg-red-500/20 text-red-500 dark:bg-red-500/30'
-                  : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300'
-              }`}>
-                {userRequests.length}
-              </span>
-            )}
           </button>
 
-          {/* Temporarily hidden: AI Taste Preferences tab */}
-          {false && (
-            <button
-              onClick={() => setActiveTab('taste')}
-              className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shrink-0 ${
-                activeTab === 'taste'
-                  ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-sm'
-                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-              }`}
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-              <span>AI Taste Preferences</span>
-            </button>
-          )}
+          <button
+            onClick={() => setActiveTab('taste')}
+            className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shrink-0 ${
+              activeTab === 'taste'
+                ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-sm'
+                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+            }`}
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            <span>AI Taste Preferences</span>
+          </button>
         </div>
 
         {/* TAB 1: Saved Prompts */}
@@ -545,10 +399,7 @@ export const UserDashboard = () => {
                   </p>
                 </div>
                 <button
-                  onClick={() => {
-                    setCurrentView('public');
-                    router.push('/');
-                  }}
+                  onClick={() => { window.location.href = '/'; }}
                   className="px-5 py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold transition-all inline-flex items-center gap-1.5 shadow-md shadow-red-500/20"
                 >
                   <Compass className="w-4 h-4" />
@@ -587,7 +438,7 @@ export const UserDashboard = () => {
                       {/* Top Overlay Badge */}
                       <div className="absolute top-2.5 left-2.5 z-10">
                         <span className="px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-bold">
-                          {post.category}
+                          {post.aiTool}
                         </span>
                       </div>
 
@@ -848,8 +699,8 @@ export const UserDashboard = () => {
           </div>
         )}
 
-        {/* TAB 3: AI Taste Profile Controls (Temporarily Hidden) */}
-        {false && activeTab === 'taste' && (
+        {/* TAB 3: AI Taste Profile Controls */}
+        {activeTab === 'taste' && (
           <div className="space-y-6">
             <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
               <div>
@@ -966,137 +817,96 @@ export const UserDashboard = () => {
         {/* TAB 4: Request a Prompt */}
         {activeTab === 'request' && (
           <div className="space-y-6 animate-in fade-in duration-300">
-            {/* Hero Card & Form */}
             <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="p-2 rounded-2xl bg-red-50 dark:bg-red-950/60 text-[#E60023]">
-                      <Target className="w-5 h-5" />
-                    </span>
-                    <h3 className="text-xl font-black text-neutral-900 dark:text-white">
-                      Request a Custom AI Prompt
-                    </h3>
-                  </div>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 max-w-xl">
-                    Describe any scene, style, or subject you want. Our expert prompt creators will design a high-precision prompt and deliver it right here to your dashboard.
+                  <h3 className="text-lg font-black text-neutral-900 dark:text-white flex items-center gap-2">
+                    <Target className="w-5 h-5 text-[#E60023]" />
+                    <span>Request a Custom AI Prompt</span>
+                  </h3>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                    Complete activities to fill your 10-point progress bar and request custom AI prompt generation from our expert creators.
                   </p>
                 </div>
 
-                {/* Quota / Points Badge */}
-                <div className="px-5 py-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex items-center gap-3">
-                  {promptRequestsRemaining > 0 ? (
-                    <div>
-                      <div className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                        <Crown className="w-3.5 h-3.5" />
-                        <span>Pro Plan Requests</span>
-                      </div>
-                      <div className="text-lg font-black text-neutral-900 dark:text-white">
-                        {promptRequestsRemaining} Available
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <div className="text-[11px] font-bold text-neutral-500">Available Activity Points</div>
-                      <div className="text-lg font-black text-[#E60023]">
-                        {userAccount?.points || 0} Points
-                      </div>
-                    </div>
-                  )}
+                {/* Progress Bar Badge */}
+                <div className="px-4 py-2 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-right">
+                  <div className="text-xs font-bold text-neutral-500">Current Cycle Points</div>
+                  <div className="text-lg font-black text-[#E60023]">
+                    {userAccount?.points || 0} / 10 Points
+                  </div>
                 </div>
               </div>
 
-              {/* Progress & Activities Bar */}
-              {promptRequestsRemaining <= 0 && (
-                <div className="space-y-3 pt-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-neutral-600 dark:text-neutral-400">
-                    <span>
-                      {(userAccount?.points || 0) >= 10 || (userAccount?.requestsMade || 0) === 0
-                        ? '1 Request Ready'
-                        : `Need ${Math.max(0, 10 - (userAccount?.points || 0))} more points to request`}
-                    </span>
-                    <span>{Math.min(100, Math.round(((userAccount?.points || 0) / 10) * 100))}%</span>
-                  </div>
-                  <div className="w-full h-2.5 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-[#E60023] to-amber-500 transition-all duration-500 rounded-full"
-                      style={{
-                        width: (userAccount?.requestsMade || 0) === 0 ? '100%' : `${Math.min(100, ((userAccount?.points || 0) / 10) * 100)}%`,
-                      }}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-                    <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-center">
-                      <div className="text-[10px] text-neutral-500">Like 10 Prompts</div>
-                      <div className="text-xs font-bold text-neutral-900 dark:text-white">+1 Point</div>
-                    </div>
-                    <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-center">
-                      <div className="text-[10px] text-neutral-500">Save 5 Prompts</div>
-                      <div className="text-xs font-bold text-neutral-900 dark:text-white">+1 Point</div>
-                    </div>
-                    <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-center">
-                      <div className="text-[10px] text-neutral-500">Generate Art in Studio</div>
-                      <div className="text-xs font-bold text-neutral-900 dark:text-white">+1 Point</div>
-                    </div>
-                    <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-center">
-                      <div className="text-[10px] text-neutral-500">Refer a Creator</div>
-                      <div className="text-xs font-bold text-neutral-900 dark:text-white">+5 Points</div>
-                    </div>
-                  </div>
+              {/* Progress Bar */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold">
+                  <span>Progress to Request</span>
+                  <span>{Math.min(100, ((userAccount?.points || 0) % 10) * 10)}%</span>
                 </div>
-              )}
+                <div className="w-full h-3 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-[#E60023] to-amber-500 transition-all duration-500 rounded-full"
+                    style={{ width: `${Math.min(100, ((userAccount?.points || 0) % 10) * 10)}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Activity Guide */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2">
+                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1">
+                  <div className="font-bold text-neutral-900 dark:text-white">10 Likes</div>
+                  <div className="text-neutral-500">+1 Point</div>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1">
+                  <div className="font-bold text-neutral-900 dark:text-white">5 Saves / Bookmarks</div>
+                  <div className="text-neutral-500">+1 Point</div>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1">
+                  <div className="font-bold text-neutral-900 dark:text-white">AI Image / Prompt Gen</div>
+                  <div className="text-neutral-500">+1 Point</div>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1">
+                  <div className="font-bold text-neutral-900 dark:text-white">Share with Friend</div>
+                  <div className="text-neutral-500">+2 Points</div>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs space-y-1">
+                  <div className="font-bold text-neutral-900 dark:text-white">Friend Login / Referral</div>
+                  <div className="text-neutral-500">+5 Points</div>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
+                  <span className="text-xs font-bold">Quick Test Activity</span>
+                  <button
+                    onClick={() => awardPoints(2, 'generation')}
+                    className="px-3 py-1 rounded-xl bg-[#E60023] text-white text-[11px] font-bold hover:bg-red-700"
+                  >
+                    +2 Points
+                  </button>
+                </div>
+              </div>
 
               {/* Request Form */}
               <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-bold text-neutral-900 dark:text-white">
-                    Submit a New Prompt Request
-                  </h4>
-                  <span className="text-[11px] text-neutral-500 font-medium">
-                    Logged in as: <strong className="text-neutral-900 dark:text-white">{userAccount?.email}</strong>
-                  </span>
-                </div>
+                <h4 className="text-sm font-bold text-neutral-900 dark:text-white">
+                  Submit Prompt Request {((userAccount?.points || 0) < 10) && '(Requires 10 Points)'}
+                </h4>
 
                 <form onSubmit={handleRequestSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-1.5">
-                        Style / Category
-                      </label>
-                      <select
-                        value={requestCategory}
-                        onChange={(e) => setRequestCategory(e.target.value)}
-                        className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-red-500"
-                      >
-                        <option value="Photorealistic">Photorealistic & Portraits</option>
-                        <option value="Cyberpunk">Cyberpunk & Sci-Fi</option>
-                        <option value="Cinematic">Cinematic 8K</option>
-                        <option value="Anime">Anime Masterpiece</option>
-                        <option value="3D Render">3D Unreal Engine</option>
-                        <option value="Fantasy & Magic">Fantasy & Mythology</option>
-                        <option value="Architecture">Architecture & Interiors</option>
-                        <option value="Logo & Vector">Logo & Vector Art</option>
-                        <option value="Fashion">Haute Couture & Fashion</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-1.5">
-                        Preferred AI Engine
-                      </label>
-                      <select
-                        value={requestAiTool}
-                        onChange={(e) => setRequestAiTool(e.target.value)}
-                        className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-red-500"
-                      >
-                        <option value="Midjourney">Midjourney (v6 / Niji)</option>
-                        <option value="Flux.1">Flux.1 Schnell / Dev</option>
-                        <option value="Stable Diffusion">Stable Diffusion XL</option>
-                        <option value="DALL-E 3">DALL-E 3</option>
-                        <option value="Ideogram">Ideogram (Typography)</option>
-                      </select>
-                    </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-1.5">
+                      Category
+                    </label>
+                    <select
+                      value={requestCategory}
+                      onChange={(e) => setRequestCategory(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-bold"
+                    >
+                      <option value="Photorealistic">Photorealistic & Portraits</option>
+                      <option value="Cyberpunk">Cyberpunk & Sci-Fi</option>
+                      <option value="Cinematic">Cinematic 8K</option>
+                      <option value="Anime">Anime Masterpiece</option>
+                      <option value="3D Render">3D Unreal Engine</option>
+                    </select>
                   </div>
 
                   <div>
@@ -1107,203 +917,48 @@ export const UserDashboard = () => {
                       rows={3}
                       value={requestText}
                       onChange={(e) => setRequestText(e.target.value)}
-                      placeholder="e.g. A futuristic neon tea shop in Neo-Tokyo with raining hologram cherry blossoms, cinematic bokeh, 8k..."
+                      placeholder="e.g. A futuristic cyberpunk geisha standing in a neon Tokyo alleyway with volumetric teal lighting..."
                       className="w-full p-3.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-red-500 focus:outline-none"
                     />
                   </div>
 
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-1">
-                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                      {promptRequestsRemaining > 0
-                        ? `Using 1 of ${promptRequestsRemaining} included plan requests.`
-                        : (userAccount?.requestsMade || 0) === 0
-                        ? '1st prompt request is free on us!'
-                        : 'Requires 10 activity points.'}
-                    </p>
-
-                    <button
-                      id="btn-submit-prompt-request"
-                      type="submit"
-                      disabled={
-                        isSubmittingRequest ||
-                        (promptRequestsRemaining <= 0 &&
-                          (userAccount?.points || 0) < 10 &&
-                          (userAccount?.requestsMade || 0) > 0)
-                      }
-                      className="px-6 py-2.5 rounded-2xl bg-[#E60023] hover:bg-[#ad081b] disabled:opacity-50 text-white text-xs font-black shadow-md flex items-center gap-2 transition-all"
-                    >
-                      {isSubmittingRequest ? (
-                        <>
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                          <span>Submitting...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-3.5 h-3.5" />
-                          <span>Submit Request</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
+                  <button
+                    type="submit"
+                    disabled={(userAccount?.points || 0) < 10}
+                    className="px-6 py-3 rounded-2xl bg-[#E60023] hover:bg-[#ad081b] disabled:opacity-50 text-white text-xs font-black shadow-md flex items-center gap-2"
+                  >
+                    <Send className="w-4 h-4" />
+                    <span>Submit Prompt Request (10 Points)</span>
+                  </button>
                 </form>
               </div>
             </div>
 
-            {/* User's Submitted & Fulfilled Requests */}
-            <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-black text-neutral-900 dark:text-white flex items-center gap-2">
-                    <MessageSquarePlus className="w-4 h-4 text-[#E60023]" />
-                    <span>Your Prompt Requests & Fulfilled Prompts</span>
-                  </h3>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                    Track the status of your requests and view prompts crafted by our team.
-                  </p>
-                </div>
-                <span className="px-3 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 text-xs font-bold text-neutral-700 dark:text-neutral-300">
-                  {userRequests.length} Total
-                </span>
-              </div>
-
-              {userRequests.length === 0 ? (
-                <div className="p-8 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-dashed border-neutral-200 dark:border-neutral-800 text-center space-y-2">
-                  <div className="w-10 h-10 mx-auto rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-400">
-                    <Target className="w-5 h-5" />
-                  </div>
-                  <h4 className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
-                    No Prompt Requests Yet
-                  </h4>
-                  <p className="text-xs text-neutral-500 max-w-sm mx-auto">
-                    Fill out the form above to submit your creative concept. Once our team fulfills it, your custom prompt will appear right here!
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {userRequests.map((req) => (
-                    <div
-                      key={req.id}
-                      className="p-5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-4 transition-all"
-                    >
-                      {/* Top Meta Bar */}
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-red-100 dark:bg-red-950/70 text-[#E60023]">
-                            {req.category || 'Photorealistic'}
-                          </span>
-                          {req.aiTool && (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300">
-                              {req.aiTool}
-                            </span>
-                          )}
-                          <span className="text-[11px] text-neutral-400 flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {new Date(req.createdAt).toLocaleDateString(undefined, {
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </span>
-                        </div>
-
-                        {/* Status Badge */}
-                        {req.status === 'completed' ? (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 text-xs font-black">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Fulfilled & Ready!</span>
-                          </span>
-                        ) : req.status === 'in_progress' ? (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 text-xs font-black">
-                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                            <span>In Progress</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 text-xs font-black">
-                            <Clock className="w-3.5 h-3.5" />
-                            <span>Under Creator Review</span>
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Your Requested Text */}
+            {/* User's Previous Requests */}
+            {promptRequests && promptRequests.length > 0 && (
+              <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
+                <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
+                  Your Submitted Requests
+                </h3>
+                <div className="space-y-3">
+                  {promptRequests.map((req) => (
+                    <div key={req.id} className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex items-center justify-between gap-4">
                       <div className="space-y-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
-                          Your Requested Idea:
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-950/60 text-[#E60023]">
+                          {req.category}
                         </span>
-                        <p className="text-xs text-neutral-800 dark:text-neutral-200 leading-relaxed font-medium bg-white dark:bg-neutral-900 p-3 rounded-xl border border-neutral-200 dark:border-neutral-800">
-                          &ldquo;{req.requestText}&rdquo;
+                        <p className="text-xs font-medium text-neutral-800 dark:text-neutral-200">
+                          {req.promptDescription}
                         </p>
                       </div>
-
-                      {/* FULFILLED PROMPT SECTION */}
-                      {req.status === 'completed' && req.fulfilledPrompt ? (
-                        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/30 dark:border-emerald-500/20 space-y-3">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <Sparkles className="w-4 h-4 text-emerald-500" />
-                              <span className="text-xs font-black text-emerald-700 dark:text-emerald-300">
-                                Crafted Prompt by {req.fulfilledBy || 'Admin Creator'}
-                              </span>
-                            </div>
-
-                            <button
-                              id={`btn-copy-fulfilled-${req.id}`}
-                              onClick={() => handleCopyFulfilledPrompt(req.fulfilledPrompt!, req.id)}
-                              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
-                            >
-                              {copiedRequestId === req.id ? (
-                                <>
-                                  <Check className="w-3.5 h-3.5" />
-                                  <span>Copied!</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Copy className="w-3.5 h-3.5" />
-                                  <span>Copy Prompt</span>
-                                </>
-                              )}
-                            </button>
-                          </div>
-
-                          {/* Prompt Text Box */}
-                          <div className="p-3.5 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
-                            <p className="text-xs font-mono text-neutral-900 dark:text-white select-all leading-relaxed whitespace-pre-wrap">
-                              {req.fulfilledPrompt}
-                            </p>
-                          </div>
-
-                          {/* Admin Notes / Recommendations if available */}
-                          {req.adminNotes && (
-                            <div className="text-[11px] text-emerald-800 dark:text-emerald-300/90 bg-emerald-50/50 dark:bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-200/50 dark:border-emerald-800/50">
-                              <strong className="font-bold">Creator Tip:</strong> {req.adminNotes}
-                            </div>
-                          )}
-
-                          {/* Quick action to test in Studio */}
-                          <div className="flex items-center justify-end pt-1">
-                            <button
-                              onClick={() => {
-                                handleCopyFulfilledPrompt(req.fulfilledPrompt!, req.id);
-                                setCurrentView('studio-tool');
-                              }}
-                              className="text-xs font-bold text-neutral-700 dark:text-neutral-300 hover:text-[#E60023] flex items-center gap-1 transition-colors"
-                            >
-                              <span>Test in AI Studio</span>
-                              <ArrowUpRight className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-xs text-neutral-500 dark:text-neutral-400 italic bg-amber-50/30 dark:bg-amber-950/20 p-3 rounded-xl border border-amber-200/40 dark:border-amber-800/40">
-                          Our prompt creators are currently preparing this prompt. Once ready, the completed prompt and usage parameters will appear directly here.
-                        </div>
-                      )}
+                      <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-xl">
+                        {req.status}
+                      </span>
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         )}
       </div>

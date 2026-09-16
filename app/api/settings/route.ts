@@ -1,19 +1,12 @@
 import { ServerStorage } from '@/lib/server-storage';
 import { NextRequest, NextResponse } from 'next/server';
 
-export const revalidate = 86400;
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
     const settings = await ServerStorage.getSettings();
-    return NextResponse.json(
-      { success: true, settings },
-      {
-        headers: {
-          'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=172800',
-        },
-      }
-    );
+    return NextResponse.json({ success: true, settings });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
