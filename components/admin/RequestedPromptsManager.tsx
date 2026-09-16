@@ -1,5 +1,4 @@
 'use client';
-/* eslint-disable react-hooks/set-state-in-effect */
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
@@ -54,6 +53,11 @@ export const RequestedPromptsManager = () => {
   // Copied state
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  // Auto refresh on mount
+  useEffect(() => {
+    handleRefresh();
+  }, []);
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
@@ -65,12 +69,6 @@ export const RequestedPromptsManager = () => {
       setIsRefreshing(false);
     }
   };
-
-  // Auto refresh on mount
-  useEffect(() => {
-    handleRefresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Open fulfillment editor
   const handleOpenFulfill = (req: PromptRequestItem) => {

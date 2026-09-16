@@ -7,7 +7,6 @@ import { PushNotificationItem } from '@/types/notification';
 import { NotificationService } from '@/lib/notifications';
 import { NotificationCard } from './NotificationCard';
 import { InterestSelectionModal } from './InterestSelectionModal';
-import { NotificationHelpModal } from './NotificationHelpModal';
 import {
   Bell,
   BellRing,
@@ -19,20 +18,15 @@ import {
   Volume2,
   Trash2,
   Info,
-  Lock,
-  AlertCircle,
-  HelpCircle,
-  RefreshCw,
 } from 'lucide-react';
 
 export const NotificationsView: React.FC = () => {
-  const { categories, showToast, userAccount, openAuthModal } = useApp();
+  const { categories, showToast } = useApp();
 
   const [notifications, setNotifications] = useState<PushNotificationItem[]>([]);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
   const [unreadOnly, setUnreadOnly] = useState<boolean>(false);
   const [isInterestModalOpen, setIsInterestModalOpen] = useState<boolean>(false);
-  const [isHelpModalOpen, setIsHelpModalOpen] = useState<boolean>(false);
   const [browserPushPermission, setBrowserPushPermission] = useState<NotificationPermission | 'unsupported'>('default');
   const [userInterests, setUserInterests] = useState<string[]>([]);
 
@@ -67,10 +61,9 @@ export const NotificationsView: React.FC = () => {
   }, []);
 
   const handleEnableBrowserPush = async () => {
-    const result = await NotificationService.requestPushPermissionWithDetails();
-    setBrowserPushPermission(result.status);
-
-    if (result.granted) {
+    const granted = await NotificationService.requestPushPermission();
+    setBrowserPushPermission(NotificationService.getBrowserPermissionStatus());
+    if (granted) {
       showToast('Browser notifications enabled! You will now receive instant drops.');
       // Immediate real browser notification popup with sound chime
       await NotificationService.showNativeNotification({
@@ -79,34 +72,12 @@ export const NotificationsView: React.FC = () => {
         subtitle: 'Browser Push Notifications Active! 🔔',
         body: 'You are now ready! Whenever trending prompts drop in your chosen categories, you will receive native alerts directly.',
         category: 'all',
-        imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1280&auto=format&fit=crop&q=80&ar=16:9',
+        imageUrl: '/logo.png',
         url: '/notifications',
         sentAt: new Date().toISOString(),
       });
     } else {
-      showToast(result.message || 'Notification permission was not granted.');
-      // If blocked in incognito or site settings, open help modal
-      if (
-        result.reason === 'incognito' ||
-        result.reason === 'blocked_in_settings' ||
-        result.reason === 'ios_not_pwa' ||
-        result.status === 'denied'
-      ) {
-        setIsHelpModalOpen(true);
-      }
-    }
-  };
-
-  const handleRecheckPermission = () => {
-    const status = NotificationService.getBrowserPermissionStatus();
-    setBrowserPushPermission(status);
-    if (status === 'granted') {
-      showToast('Notifications are active!');
-    } else if (status === 'denied') {
-      showToast('Notifications are blocked in this browser. Tap "How to Unblock".');
-      setIsHelpModalOpen(true);
-    } else {
-      showToast('Status is ready to request.');
+      showToast('Notification permission was not granted in your browser.');
     }
   };
 
@@ -120,9 +91,9 @@ export const NotificationsView: React.FC = () => {
       id: `notif-test-${Date.now()}`,
       title: 'tool.reelz: Trending AI Photo Prompts',
       subtitle: 'Instant Browser Push Test 🔔',
-      body: 'Live browser notification popup is working in 16:9 widescreen on your device!',
+      body: 'Live browser notification popup is working perfectly on your device!',
       category: 'all',
-      imageUrl: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=1280&auto=format&fit=crop&q=80&ar=16:9',
+      imageUrl: '/logo.png',
       url: '/explore',
       sentAt: new Date().toISOString(),
     });
@@ -212,117 +183,42 @@ export const NotificationsView: React.FC = () => {
           </div>
         </div>
 
-        {/* 1. GUEST STATE: Prompt user to log in before enabling notifications */}
-        {!userAccount?.isLoggedIn && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 p-4 rounded-2xl bg-gradient-to-r from-red-50 to-amber-50/60 dark:from-red-950/30 dark:to-neutral-900 border border-red-200/80 dark:border-red-900/40 animate-in fade-in duration-300 shadow-xs">
+        {/* Browser Push Permission Banner temporarily hidden */}
+        {false && browserPushPermission !== 'granted' && browserPushPermission !== 'unsupported' && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[#E60023]/10 border border-[#E60023]/30">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#E60023]/15 text-[#E60023] flex items-center justify-center shrink-0 shadow-xs">
-                <Lock className="w-5 h-5" />
-              </div>
+              <BellRing className="w-5 h-5 text-[#E60023] shrink-0 animate-bounce" />
               <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-xs sm:text-sm font-black text-neutral-900 dark:text-white">
-                    Sign In to Turn on Push Notifications
-                  </p>
-                  <span className="px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-950 text-[#E60023] text-[9px] font-black uppercase">
-                    Member Feature
-                  </span>
-                </div>
-                <p className="text-[11px] text-neutral-600 dark:text-neutral-400 mt-0.5">
-                  Log in to your account to enable instant 16:9 prompt drops tailored strictly to your selected interests.
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => openAuthModal('Sign in to enable browser push notifications')}
-              className="px-4 py-2.5 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-black shadow-md shadow-red-500/20 transition-all shrink-0 cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
-              id="btn-login-to-allow-notifications"
-            >
-              <Sparkles className="w-3.5 h-3.5 fill-current" />
-              <span>Sign In to Enable</span>
-            </button>
-          </div>
-        )}
-
-        {/* 2. LOGGED-IN: Blocked / Denied State (Incognito or Browser Setting) */}
-        {userAccount?.isLoggedIn && browserPushPermission === 'denied' && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 animate-in fade-in duration-300">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                <AlertCircle className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-xs sm:text-sm font-black text-amber-950 dark:text-amber-100">
-                  Notifications are Blocked in your Browser
-                </p>
-                <p className="text-[11px] text-amber-800/90 dark:text-amber-300/80">
-                  Blocked by browser privacy settings (common in Incognito / Private tabs, Brave shields, or Site Settings).
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => setIsHelpModalOpen(true)}
-                className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
-                id="btn-how-to-unblock-notifications"
-              >
-                <HelpCircle className="w-3.5 h-3.5" />
-                <span>How to Unblock</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleRecheckPermission}
-                className="px-3 py-2 rounded-xl bg-white dark:bg-neutral-800 border border-amber-300 dark:border-neutral-700 text-xs font-bold text-neutral-800 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-all flex items-center gap-1.5 cursor-pointer"
-                title="Re-check permission status"
-              >
-                <RefreshCw className="w-3.5 h-3.5 text-neutral-500" />
-                <span>Re-check</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* 3. LOGGED-IN: Default / Ready to Allow State */}
-        {userAccount?.isLoggedIn && browserPushPermission === 'default' && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[#E60023]/10 border border-[#E60023]/30 animate-in fade-in duration-300">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#E60023]/20 flex items-center justify-center shrink-0">
-                <BellRing className="w-5 h-5 text-[#E60023] animate-bounce" />
-              </div>
-              <div>
-                <p className="text-xs sm:text-sm font-black text-neutral-900 dark:text-white">
+                <p className="text-xs font-bold text-neutral-900 dark:text-white">
                   Turn on Browser Push Notifications
                 </p>
                 <p className="text-[11px] text-neutral-600 dark:text-neutral-400">
-                  Receive instant 16:9 lockscreen drops when viral prompts match your selected categories.
+                  Receive instant lockscreen drops when viral prompts match your categories.
                 </p>
               </div>
             </div>
             <button
               type="button"
               onClick={handleEnableBrowserPush}
-              className="px-4 py-2.5 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-black shadow-md shadow-red-500/20 transition-all shrink-0 cursor-pointer flex items-center justify-center gap-1.5"
+              className="px-4 py-2.5 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-md shadow-red-500/20 transition-all shrink-0 cursor-pointer"
               id="btn-allow-push-notifications"
             >
-              <Bell className="w-3.5 h-3.5 fill-white" />
-              <span>Allow Notifications</span>
+              🔔 Enable Browser Notifications
             </button>
           </div>
         )}
 
-        {/* 4. LOGGED-IN: Active Granted State */}
-        {userAccount?.isLoggedIn && browserPushPermission === 'granted' && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 animate-in fade-in duration-300">
+        {/* Active Browser Push Status Banner temporarily hidden */}
+        {false && browserPushPermission === 'granted' && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60">
             <div className="flex items-center gap-2.5">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <div>
                 <p className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
                   Browser Push Notifications Active
                 </p>
                 <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80">
-                  This device is registered to receive instant real-time 16:9 prompt drops.
+                  This device is registered to receive instant real-time prompt drops.
                 </p>
               </div>
             </div>
@@ -332,8 +228,8 @@ export const NotificationsView: React.FC = () => {
               className="px-3.5 py-1.5 rounded-xl bg-white dark:bg-neutral-800 hover:bg-emerald-100 dark:hover:bg-neutral-700 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 text-xs font-bold transition-all shadow-xs shrink-0 flex items-center gap-1.5 cursor-pointer"
               id="btn-test-notification-popup"
             >
-              <Zap className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>Send Test Popup</span>
+              <Bell className="w-3.5 h-3.5" />
+              <span>Test Notification Popup</span>
             </button>
           </div>
         )}
@@ -461,17 +357,6 @@ export const NotificationsView: React.FC = () => {
         onClose={() => setIsInterestModalOpen(false)}
         onSaved={(newInterests) => {
           setUserInterests(newInterests);
-          loadNotifications();
-        }}
-      />
-
-      {/* Unblock & Setup Help Modal */}
-      <NotificationHelpModal
-        isOpen={isHelpModalOpen}
-        onClose={() => setIsHelpModalOpen(false)}
-        onPermissionGranted={() => {
-          setBrowserPushPermission('granted');
-          showToast('Notifications enabled successfully!');
           loadNotifications();
         }}
       />

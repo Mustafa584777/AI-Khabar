@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
             });
           } else {
             // Merge non-destructively giving priority to paid state
-            const updatedUnlocks = Array.from(new Set([...(existing.unlockedPromptIds || []), ...(unlockedPromptIds || [])]));
+            const updatedUnlocks = Array.from(new Set([...existing.unlockedPromptIds, ...unlockedPromptIds]));
             existing.unlockedPromptIds = updatedUnlocks;
             if (toolCredits > existing.toolCredits) existing.toolCredits = toolCredits;
             if (points > existing.points) existing.points = points;
@@ -161,16 +161,14 @@ export async function GET(req: NextRequest) {
     const rzpKeySecret = process.env.RAZORPAY_KEY_SECRET;
     if (rzpKeyId && rzpKeySecret) {
       try {
-        const authHeader = `Basic ${Buffer.from(`${rzpKeyId}:${rzpKeySecret}`).toString('base64')}`;
-        const rzpRes = await fetch('https://api.razorpay.com/v1/payments?count=100', {
-          headers: {
-            Authorization: authHeader,
-          },
+        const Razorpay = (await import('razorpay')).default;
+        const razorpay = new Razorpay({
+          key_id: rzpKeyId,
+          key_secret: rzpKeySecret,
         });
-        if (rzpRes.ok) {
-          const payments = await rzpRes.json();
-          if (payments && Array.isArray(payments.items)) {
-            for (const p of payments.items) {
+        const payments = await razorpay.payments.all({ count: 100 });
+        if (payments && Array.isArray((payments as any).items)) {
+          for (const p of (payments as any).items) {
             if (p.status === 'captured') {
               const payEmail = getCleanEmail(p.email);
               const amountRupees = Math.round(Number(p.amount) / 100);
@@ -217,7 +215,6 @@ export async function GET(req: NextRequest) {
             }
           }
         }
-      }
       } catch (rzpErr) {
         console.warn('Razorpay API fetch notice:', rzpErr);
       }

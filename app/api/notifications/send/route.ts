@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { NotificationServerStore } from '@/lib/notification-storage';
 import { PushNotificationItem } from '@/types/notification';
-import { formatNotificationImage16x9 } from '@/lib/notifications';
 
 export async function GET() {
   try {
@@ -48,10 +47,8 @@ export async function POST(req: NextRequest) {
       subtitle: subtitle?.trim() || 'Trending AI Photo Prompts',
       body: (contentBody || subtitle || '').trim(),
       category: category || 'all',
-      imageUrl: formatNotificationImage16x9(imageUrl) || '',
-      collageImages: Array.isArray(collageImages)
-        ? collageImages.slice(0, 4).map((u: string) => formatNotificationImage16x9(u))
-        : [],
+      imageUrl: imageUrl || '',
+      collageImages: Array.isArray(collageImages) ? collageImages.slice(0, 4) : [],
       url: url || '/',
       actionButtons: Array.isArray(actionButtons) ? actionButtons : [],
       sentAt: new Date().toISOString(),

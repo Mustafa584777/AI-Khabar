@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { PushNotificationItem, PushNotificationAction, PushSubscriber } from '@/types/notification';
-import { NotificationService, formatNotificationImage16x9 } from '@/lib/notifications';
+import { NotificationService } from '@/lib/notifications';
 import {
   Bell,
   Send,
@@ -40,17 +40,15 @@ export const PushNotificationsManager: React.FC = () => {
   const [targetCategory, setTargetCategory] = useState<string>('all');
   const [destinationUrl, setDestinationUrl] = useState<string>('/explore?q=pink+aesthetic');
   const [mainImageUrl, setMainImageUrl] = useState<string>(
-    posts[0]?.imageUrl
-      ? formatNotificationImage16x9(posts[0].imageUrl)
-      : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=1280&h=720&auto=format&fit=crop&q=80'
+    posts[0]?.imageUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80'
   );
 
-  // 4 Collage images (4-photo card strip) formatted to 16:9
+  // 4 Collage images (4-photo card strip)
   const [collageImages, setCollageImages] = useState<string[]>([
-    'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=1280&h=720&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=1280&h=720&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1280&h=720&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=1280&h=720&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=600&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=600&auto=format&fit=crop&q=80',
   ]);
 
   const [actionButton1Label, setActionButton1Label] = useState<string>('Explore Searches');
@@ -158,10 +156,8 @@ export const PushNotificationsManager: React.FC = () => {
         subtitle: subtitle.trim(),
         body: body.trim(),
         category: targetCategory,
-        imageUrl: formatNotificationImage16x9(mainImageUrl),
-        collageImages: collageImages
-          .filter((u) => u && u.trim().length > 0)
-          .map((img) => formatNotificationImage16x9(img)),
+        imageUrl: mainImageUrl,
+        collageImages: collageImages.filter((u) => u && u.trim().length > 0),
         url: destinationUrl || '/',
         actionButtons,
         sentBy: 'admin',

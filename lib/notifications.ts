@@ -91,29 +91,6 @@ export const SEED_NOTIFICATIONS: PushNotificationItem[] = [
   },
 ];
 
-// Ensure notification image is properly formatted in 16:9 widescreen aspect ratio
-export const formatNotificationImage16x9 = (url?: string): string => {
-  if (!url) return '/logo.png';
-  if (url.startsWith('/')) return url;
-  if (url.includes('images.unsplash.com')) {
-    try {
-      const u = new URL(url);
-      u.searchParams.set('ar', '16:9');
-      u.searchParams.set('fit', 'crop');
-      u.searchParams.set('w', '1280');
-      u.searchParams.set('h', '720');
-      u.searchParams.set('auto', 'format');
-      u.searchParams.set('q', '80');
-      return u.toString();
-    } catch {
-      return url;
-    }
-  }
-  return url;
-};
-
-export const formatNotification169Image = formatNotificationImage16x9;
-
 // Play soft ambient notification chime using Web Audio API
 export const playNotificationChime = () => {
   if (typeof window === 'undefined') return;
@@ -187,143 +164,14 @@ export const NotificationService = {
     return Notification.permission;
   },
 
-  // Check comprehensive browser environment diagnostics
-  checkBrowserEnvironment: async (): Promise<{
-    supported: boolean;
-    permission: NotificationPermission | 'unsupported';
-    isIncognito: boolean;
-    isIOS: boolean;
-    isStandalonePWA: boolean;
-    isSecure: boolean;
-  }> => {
-    if (typeof window === 'undefined') {
-      return {
-        supported: false,
-        permission: 'unsupported',
-        isIncognito: false,
-        isIOS: false,
-        isStandalonePWA: false,
-        isSecure: true,
-      };
-    }
-
-    const isSecure = window.isSecureContext ?? true;
-    const supported = 'Notification' in window;
-    const permission: NotificationPermission | 'unsupported' = supported ? Notification.permission : 'unsupported';
-
-    // Check iOS
-    const ua = navigator.userAgent || '';
-    const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    const isStandalonePWA =
-      window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true;
-
-    // Check Incognito / Private browsing
-    let isIncognito = false;
-    try {
-      if ('storage' in navigator && 'estimate' in navigator.storage) {
-        const { quota } = await navigator.storage.estimate();
-        // Chromium incognito has small quota (< 250MB) compared to normal tabs (> 2GB to 100GB+)
-        if (quota && quota < 250 * 1024 * 1024) {
-          isIncognito = true;
-        }
-      }
-    } catch {
-      // Ignore estimation errors
-    }
-
-    return {
-      supported,
-      permission,
-      isIncognito,
-      isIOS,
-      isStandalonePWA,
-      isSecure,
-    };
-  },
-
-  // Request browser push permission with detailed diagnostic reason
-  requestPushPermissionWithDetails: async (): Promise<{
-    granted: boolean;
-    status: NotificationPermission | 'unsupported';
-    reason?: 'incognito' | 'blocked_in_settings' | 'ios_not_pwa' | 'insecure_origin' | 'denied_by_user' | 'unsupported';
-    message: string;
-  }> => {
+  // Request browser permission and register subscriber with backend
+  requestPushPermission: async (): Promise<boolean> => {
     if (typeof window === 'undefined' || !('Notification' in window)) {
-      return {
-        granted: false,
-        status: 'unsupported',
-        reason: 'unsupported',
-        message: 'Push notifications are not supported by this browser.',
-      };
-    }
-
-    // Check secure context
-    if (!window.isSecureContext) {
-      return {
-        granted: false,
-        status: Notification.permission,
-        reason: 'insecure_origin',
-        message: 'Push notifications require a secure (HTTPS) connection.',
-      };
-    }
-
-    // Check iOS PWA requirement
-    const ua = navigator.userAgent || '';
-    const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    const isStandalonePWA =
-      window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true;
-
-    if (isIOS && !isStandalonePWA) {
-      return {
-        granted: false,
-        status: Notification.permission,
-        reason: 'ios_not_pwa',
-        message: 'On iPhone/iPad, tap Share in Safari and select "Add to Home Screen" to enable notifications.',
-      };
-    }
-
-    // Check Incognito
-    let isIncognito = false;
-    try {
-      if ('storage' in navigator && 'estimate' in navigator.storage) {
-        const { quota } = await navigator.storage.estimate();
-        if (quota && quota < 250 * 1024 * 1024) {
-          isIncognito = true;
-        }
-      }
-    } catch {
-      // Ignore
-    }
-
-    // If permission was already permanently blocked in browser site settings or incognito
-    if (Notification.permission === 'denied') {
-      return {
-        granted: false,
-        status: 'denied',
-        reason: isIncognito ? 'incognito' : 'blocked_in_settings',
-        message: isIncognito
-          ? 'Notifications are automatically blocked in Incognito / Private tabs. Please switch to a normal tab.'
-          : 'Notifications are blocked in your browser site settings. Tap the lock/tune icon in the address bar to allow.',
-      };
+      return false;
     }
 
     try {
-      let permission: NotificationPermission;
-      try {
-        const res = Notification.requestPermission();
-        if (res && typeof (res as any).then === 'function') {
-          permission = await res;
-        } else {
-          permission = await new Promise<NotificationPermission>((resolve) => {
-            Notification.requestPermission((p) => resolve(p));
-          });
-        }
-      } catch {
-        permission = await new Promise<NotificationPermission>((resolve) => {
-          Notification.requestPermission((p) => resolve(p));
-        });
-      }
-
+      const permission = await Notification.requestPermission();
       const granted = permission === 'granted';
 
       // Update preferences
@@ -343,44 +191,13 @@ export const NotificationService = {
       // Record subscriber on server
       if (granted) {
         await NotificationService.registerSubscriber(prefs.selectedInterests);
-        return {
-          granted: true,
-          status: 'granted',
-          message: 'Browser push notifications successfully enabled!',
-        };
       }
 
-      // If denied, explain clearly based on context
-      if (isIncognito) {
-        return {
-          granted: false,
-          status: 'denied',
-          reason: 'incognito',
-          message: 'Notifications are automatically blocked in Incognito / Private tabs. Please open in a normal tab.',
-        };
-      }
-
-      return {
-        granted: false,
-        status: 'denied',
-        reason: 'denied_by_user',
-        message: 'Notification permission was not granted. You can enable it anytime from browser site settings.',
-      };
+      return granted;
     } catch (e) {
       console.error('Failed to request push notification permission:', e);
-      return {
-        granted: false,
-        status: Notification.permission || 'denied',
-        reason: isIncognito ? 'incognito' : 'blocked_in_settings',
-        message: 'Could not request notification permission in this browser session.',
-      };
+      return false;
     }
-  },
-
-  // Request browser permission and register subscriber with backend (backward compatible)
-  requestPushPermission: async (): Promise<boolean> => {
-    const res = await NotificationService.requestPushPermissionWithDetails();
-    return res.granted;
   },
 
   // Trigger Native Browser Notification Popup
@@ -402,8 +219,7 @@ export const NotificationService = {
 
       const iconPath = '/logo.png';
       const badgePath = '/logo.png';
-      const rawImage = item.imageUrl || item.collageImages?.[0] || '/logo.png';
-      const displayImage = formatNotification169Image(rawImage);
+      const displayImage = item.imageUrl || item.collageImages?.[0] || '/logo.png';
 
       let shown = false;
 
@@ -573,7 +389,6 @@ export const NotificationService = {
   ): Promise<PushNotificationItem> => {
     const newItem: PushNotificationItem = {
       ...item,
-      imageUrl: item.imageUrl ? formatNotification169Image(item.imageUrl) : '',
       id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       sentAt: new Date().toISOString(),
       clicksCount: 0,

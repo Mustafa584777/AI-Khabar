@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
-import { NotificationService, formatNotificationImage16x9 } from '@/lib/notifications';
+import { NotificationService } from '@/lib/notifications';
 import { PushNotificationAction } from '@/types/notification';
 import { X, Send, Bell, Sparkles, RefreshCw, Check } from 'lucide-react';
 import Image from 'next/image';
@@ -83,8 +83,8 @@ export const SendPushNotificationModal: React.FC<SendPushNotificationModalProps>
         subtitle: subtitle.trim(),
         body: body.trim(),
         category,
-        imageUrl: formatNotificationImage16x9(imageUrl),
-        collageImages: collage.map(formatNotificationImage16x9),
+        imageUrl,
+        collageImages: collage,
         url: targetUrl,
         actionButtons,
         sentBy: 'admin',
@@ -195,19 +195,19 @@ export const SendPushNotificationModal: React.FC<SendPushNotificationModalProps>
             </div>
           </div>
 
-          {/* Preview snippet (16:9 aspect ratio) */}
+          {/* Preview snippet */}
           {imageUrl && (
-            <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-2">
-              <div className="w-full aspect-[16/9] rounded-xl overflow-hidden relative shrink-0">
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
+              <div className="w-12 h-12 rounded-xl overflow-hidden relative shrink-0">
                 <Image
-                  src={formatNotificationImage16x9(imageUrl)}
+                  src={imageUrl}
                   alt="Preview"
                   fill
                   className="object-cover"
                   referrerPolicy="no-referrer"
                 />
               </div>
-              <div className="min-w-0">
+              <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold text-neutral-900 dark:text-white truncate">{title}</p>
                 <p className="text-[11px] text-neutral-500 truncate">{subtitle}</p>
                 <p className="text-[10px] text-[#E60023] font-semibold mt-0.5">URL: {targetUrl}</p>
