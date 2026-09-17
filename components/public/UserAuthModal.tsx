@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { supabase } from '@/lib/supabase';
 import {
@@ -29,6 +30,8 @@ export const UserAuthModal = () => {
     showToast,
   } = useApp();
 
+  const router = useRouter();
+
   const [mode, setMode] = useState<'login' | 'signup'>('signup');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -51,6 +54,18 @@ export const UserAuthModal = () => {
           showToast(`Welcome back, ${name}! Signed in via Google.`);
           setIsLoading(false);
           setIsUserAuthModalOpen(false);
+
+          // Handle pending redirect if user was prompted during action
+          if (typeof window !== 'undefined') {
+            const pendingRedirect =
+              sessionStorage.getItem('pending_auth_redirect') ||
+              localStorage.getItem('pending_auth_redirect');
+            if (pendingRedirect) {
+              sessionStorage.removeItem('pending_auth_redirect');
+              localStorage.removeItem('pending_auth_redirect');
+              router.push(pendingRedirect);
+            }
+          }
         }
       } else if (event.data?.type === 'SUPABASE_AUTH_FAILED') {
         setErrorMessage(event.data.error || 'Google sign-in could not be completed.');
@@ -61,7 +76,7 @@ export const UserAuthModal = () => {
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [loginUser, showToast, setIsUserAuthModalOpen]);
+  }, [loginUser, showToast, setIsUserAuthModalOpen, router]);
 
   if (!isUserAuthModalOpen) return null;
 
@@ -217,6 +232,17 @@ export const UserAuthModal = () => {
         setEmail('');
         setPassword('');
         setFullName('');
+
+        if (typeof window !== 'undefined') {
+          const pendingRedirect =
+            sessionStorage.getItem('pending_auth_redirect') ||
+            localStorage.getItem('pending_auth_redirect');
+          if (pendingRedirect) {
+            sessionStorage.removeItem('pending_auth_redirect');
+            localStorage.removeItem('pending_auth_redirect');
+            router.push(pendingRedirect);
+          }
+        }
       } else {
         // Mode: LOGIN
         // 1. Attempt login with auto-confirm support via /api/auth/login
@@ -246,6 +272,17 @@ export const UserAuthModal = () => {
         setIsUserAuthModalOpen(false);
         setEmail('');
         setPassword('');
+
+        if (typeof window !== 'undefined') {
+          const pendingRedirect =
+            sessionStorage.getItem('pending_auth_redirect') ||
+            localStorage.getItem('pending_auth_redirect');
+          if (pendingRedirect) {
+            sessionStorage.removeItem('pending_auth_redirect');
+            localStorage.removeItem('pending_auth_redirect');
+            router.push(pendingRedirect);
+          }
+        }
       }
     } catch (err: any) {
       console.error('Auth submit error:', err);

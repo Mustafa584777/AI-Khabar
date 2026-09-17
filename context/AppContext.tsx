@@ -459,7 +459,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } catch (e) {
       console.warn('Notice loading prompt requests from API:', e);
     }
-  }, []);
+  }, [setPromptRequests]);
 
   const addPromptRequest = async (requestText: string, category?: string, aiTool?: string): Promise<boolean> => {
     if (!userAccount || !userAccount.isLoggedIn) {
@@ -1392,7 +1392,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('taste_profile_updated', handleTasteProfileEvent);
     };
-  }, [syncFromRemote]);
+  }, [syncFromRemote, refreshPromptRequests]);
 
   const updateTasteProfile = (updates: Partial<UserTasteProfile>) => {
     const current = PersonalizationEngine.getProfile();

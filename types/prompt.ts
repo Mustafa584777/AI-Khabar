@@ -171,7 +171,7 @@ export interface PromptRequestItem {
 
 export interface AIHistoryItem {
   id: string;
-  type: 'image_to_prompt' | 'prompt_to_image';
+  type: 'image_to_prompt' | 'prompt_to_image' | 'text_to_prompt' | 'prompt_enhancer' | 'prompt_editor';
   title: string;
   promptText: string;
   negativePrompt?: string;
