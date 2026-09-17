@@ -416,11 +416,12 @@ QUALITY STANDARD:
 
 async function generateWithModel(ai: GoogleGenAI, preferredModel: string | undefined, payload: any) {
   const candidateModels = [
-    preferredModel && preferredModel !== 'imagen-3.0-generate-002' ? preferredModel : 'gemini-2.5-flash',
-    'gemini-2.5-flash',
-    'gemini-3.7-flash',
+    preferredModel && preferredModel !== 'imagen-3.0-generate-002' ? preferredModel : 'gemini-3.8-flash',
+    'gemini-3.8-flash',
+    'gemini-3.1-pro-preview',
     'gemini-3.1-flash-lite',
     'gemini-flash-latest',
+    'gemini-2.5-flash',
     'gemini-2.5-pro',
   ];
 
@@ -525,6 +526,8 @@ export async function POST(req: NextRequest) {
       colorGrading,
       gender,
       aspectRatio,
+      camera,
+      targetEngine,
       referenceImage,
       styleFocus,
       customInstructions,
@@ -536,9 +539,9 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.GEMINI_API_KEY;
 
     // =========================================================================
-    // ACTION: IDEA TO DETAILED PROMPT GENERATOR
+    // ACTION: TEXT TO DETAILED PROMPT GENERATOR
     // =========================================================================
-    if (action === 'idea_to_prompt' || action === 'generate_prompt') {
+    if (action === 'text_to_prompt' || action === 'idea_to_prompt' || action === 'generate_prompt') {
       const userIdea = (idea || prompt || '').trim();
       if (!userIdea) {
         return NextResponse.json({ error: 'Please provide an idea or short description.' }, { status: 400 });
@@ -548,6 +551,8 @@ export async function POST(req: NextRequest) {
       const chosenColor = colorGrading || 'Cinematic Teal & Orange';
       const chosenGender = gender || 'Any / None';
       const chosenRatio = aspectRatio || '16:9';
+      const chosenCamera = camera || 'Hasselblad H6D-100c, 85mm f/1.4 lens';
+      const chosenEngine = targetEngine || 'Midjourney v6.1';
 
       if (!apiKey) {
         const fallback = generateLocalIdeaToPrompt(
@@ -570,14 +575,16 @@ PARAMETERS:
 - User Idea: "${userIdea}"
 - Lighting Style: "${chosenLighting}"
 - Color Grading Style: "${chosenColor}"
+- Camera Body & Optics: "${chosenCamera}"
+- Target AI Generator Engine: "${chosenEngine}"
 - Subject Gender: "${chosenGender}"
 - Target Aspect Ratio: "${chosenRatio}"
 - Additional Constraints: "${customInstructions || 'None'}"
 
 CRITICAL REQUIREMENTS:
-1. "promptText": Must be a masterfully written, 80-160 word detailed photo prompt that vividly brings the user's idea to life. Incorporate photographic camera optics (e.g. Hasselblad, Leica, Sony A7R V, focal length, aperture), atmospheric lighting, environmental textures, color harmony, and finish with midjourney parameter flags: --ar ${chosenRatio} --style raw --v 6.1.
+1. "promptText": Must be a masterfully written, 80-160 word detailed photo prompt that vividly brings the user's idea to life. Incorporate photographic camera optics (e.g. Hasselblad, Leica, Sony A7R V, focal length, aperture), atmospheric lighting, environmental textures, color harmony, and finish with target generator parameter flags (e.g. for Midjourney: --ar ${chosenRatio} --style raw --v 6.1).
 2. "negativePrompt": Specific negative keywords to prevent bad anatomy, oversaturation, blur, watermark, etc.
-3. "camera": Recommended real camera body and prime lens.
+3. "camera": Recommended real camera body and prime lens matching or refining "${chosenCamera}".
 4. "lighting": Brief technical lighting summary.
 5. "colorPalette": Color palette description.
 6. "composition": Composition technique used.

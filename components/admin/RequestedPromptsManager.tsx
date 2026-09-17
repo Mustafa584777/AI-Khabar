@@ -53,12 +53,7 @@ export const RequestedPromptsManager = () => {
   // Copied state
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Auto refresh on mount
-  useEffect(() => {
-    handleRefresh();
-  }, []);
-
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
       await refreshPromptRequests();
@@ -68,7 +63,12 @@ export const RequestedPromptsManager = () => {
     } finally {
       setIsRefreshing(false);
     }
-  };
+  }, [refreshPromptRequests, showToast]);
+
+  // Auto refresh on mount
+  useEffect(() => {
+    void refreshPromptRequests();
+  }, [refreshPromptRequests]);
 
   // Open fulfillment editor
   const handleOpenFulfill = (req: PromptRequestItem) => {
