@@ -283,7 +283,7 @@ export const PromptDetailModal = () => {
     setHistoryStack([]);
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
-      if (path !== '/' && path !== '/dashboard' && path !== '/create' && !path.startsWith('/admin')) {
+      if (path !== '/' && path !== '/dashboard' && path !== '/create' && !path.startsWith('/admin') && !path.startsWith('/blog')) {
         window.history.pushState(null, '', '/');
       }
     }
@@ -315,7 +315,7 @@ export const PromptDetailModal = () => {
     const handlePopState = (event: PopStateEvent) => {
       if (typeof window === 'undefined') return;
       const path = window.location.pathname;
-      if (path === '/' || path === '' || path === '/dashboard' || path === '/create' || path.startsWith('/admin')) {
+      if (path === '/' || path === '' || path === '/dashboard' || path === '/create' || path.startsWith('/admin') || path.startsWith('/blog')) {
         setSelectedPost(null);
         setHistoryStack([]);
         return;
