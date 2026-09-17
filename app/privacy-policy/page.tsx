@@ -47,7 +47,7 @@ export default function PrivacyPolicyPage() {
               </h2>
               <p>
                 Welcome to <strong>Trending Copy Paste Photo Prompts</strong> (accessible at geminipromptgenerator.online).
-                We respect your privacy and are committed to protecting any personal data or information you may share while browsing our curated AI prompts, tutorials, and creative tools.
+                We respect your privacy and are committed to protecting any personal data or information you may share while browsing our curated AI prompts and creative tools.
               </p>
             </section>
 

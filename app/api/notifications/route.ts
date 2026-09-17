@@ -13,7 +13,7 @@ export async function GET() {
     });
   } catch (error: any) {
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch notifications' },
+      { error: error.message || 'Failed to fetch notifications from database' },
       { status: 500 }
     );
   }
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
     if (!title || (!contentBody && !subtitle)) {
       return NextResponse.json(
-        { error: 'Title and content body are required' },
+        { error: 'Title and content are required' },
         { status: 400 }
       );
     }
@@ -63,11 +63,11 @@ export async function POST(req: NextRequest) {
       success: true,
       notification: newNotification,
       totalSent,
-      message: 'Push notification saved to database and broadcasted successfully!',
+      message: 'Notification saved to database successfully!',
     });
   } catch (error: any) {
     return NextResponse.json(
-      { error: error.message || 'Failed to send notification' },
+      { error: error.message || 'Failed to save notification to database' },
       { status: 500 }
     );
   }
@@ -81,16 +81,29 @@ export async function DELETE(req: NextRequest) {
 
     if (all === 'true') {
       await NotificationServerStore.clearAllNotifications();
-      return NextResponse.json({ success: true, message: 'All notifications deleted' });
+      return NextResponse.json({
+        success: true,
+        message: 'All notifications deleted from database successfully',
+      });
     }
 
     if (!id) {
-      return NextResponse.json({ error: 'Notification ID required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Notification id is required for deletion' },
+        { status: 400 }
+      );
     }
 
     const remaining = await NotificationServerStore.deleteNotification(id);
-    return NextResponse.json({ success: true, remainingCount: remaining.length });
+    return NextResponse.json({
+      success: true,
+      remainingCount: remaining.length,
+      message: `Notification ${id} deleted from database successfully`,
+    });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Failed to delete' }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || 'Failed to delete notification from database' },
+      { status: 500 }
+    );
   }
 }

@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { PushNotificationItem } from '@/types/notification';
 import { NotificationService } from '@/lib/notifications';
-import { Bell, ChevronUp, ChevronDown, ExternalLink, Sparkles, Check, ArrowRight } from 'lucide-react';
+import { Bell, ChevronUp, ChevronDown, ExternalLink, Sparkles, Check, ArrowRight, Trash2 } from 'lucide-react';
 
 interface NotificationCardProps {
   notification: PushNotificationItem;
@@ -110,18 +110,35 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
           </div>
         </div>
 
-        {/* Expand / Collapse button */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsExpanded(!isExpanded);
-          }}
-          className="p-1 rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-white transition-colors"
-          title={isExpanded ? 'Collapse' : 'Expand'}
-        >
-          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </button>
+        {/* Header Actions: Delete and Expand/Collapse buttons */}
+        <div className="flex items-center gap-1">
+          {onDelete && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(notification.id);
+              }}
+              className="p-1.5 rounded-full text-neutral-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+              title="Delete notification"
+              id={`delete-notif-${notification.id}`}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(!isExpanded);
+            }}
+            className="p-1.5 rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-white transition-colors cursor-pointer"
+            title={isExpanded ? 'Collapse' : 'Expand'}
+          >
+            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+        </div>
       </div>
 
       {/* Prominent Bold Title (Replicating "Why is Pink Background everywhere right now?") */}

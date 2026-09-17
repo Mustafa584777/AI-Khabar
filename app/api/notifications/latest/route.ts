@@ -5,7 +5,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const since = searchParams.get('since');
-    const allNotifications = NotificationServerStore.getNotifications();
+    const allNotifications = await NotificationServerStore.getNotifications();
 
     if (!since) {
       return NextResponse.json({

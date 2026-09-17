@@ -12,6 +12,8 @@ import {
   Sliders,
   ChevronDown,
   Wand2,
+  Lock,
+  Zap,
 } from 'lucide-react';
 
 const LIGHTING_OPTIONS = [
@@ -80,12 +82,12 @@ export const GeminiPromptBox = () => {
     }
 
     if (!userAccount?.isLoggedIn) {
-      openAuthModal('Please sign in or create a free account to use the Gemini Prompt Generator with your daily free credits.');
+      openAuthModal('Login is required to use the Gemini Prompt Generator tool. Each prompt generation consumes 1 credit.');
       return;
     }
 
     if (toolCredits < 1) {
-      showToast('You need at least 1 credit to generate prompts. Top up or wait for daily reset.');
+      showToast('You need at least 1 credit to generate prompts. Your daily free credits reset every 24 hours.');
       return;
     }
 
@@ -110,7 +112,7 @@ export const GeminiPromptBox = () => {
       if (json.success && json.data) {
         deductToolCredit(1);
         setGeneratedResult(json.data);
-        showToast('Detailed prompt generated with Gemini!');
+        showToast('Detailed prompt generated with Gemini! (1 credit consumed)');
       } else {
         showToast(json.error || 'Could not generate prompt. Please try again.');
       }
@@ -141,34 +143,60 @@ export const GeminiPromptBox = () => {
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto my-6 text-left" id="gemini-prompt-generator-box">
+    <div className="w-full max-w-3xl mx-auto my-6 px-4 sm:px-0 text-left" id="gemini-prompt-generator-box">
       {/* Container with subtle Gemini-inspired gradient ring */}
       <div className="relative rounded-3xl bg-gradient-to-b from-white via-white to-neutral-50 dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-950 p-4 sm:p-6 border border-neutral-200/90 dark:border-neutral-800 shadow-xl shadow-neutral-200/40 dark:shadow-black/50 transition-all">
-        {/* Header with Gemini Sparkle styling */}
-        <div className="flex items-center justify-between gap-3 mb-3">
+        {/* Header with Gemini Sparkle styling and Credits indicator */}
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-600 via-purple-600 to-red-500 flex items-center justify-center text-white shadow-xs">
               <Sparkles className="w-3.5 h-3.5" />
             </div>
             <div>
-              <span className="text-xs sm:text-sm font-black bg-gradient-to-r from-blue-600 via-purple-600 to-red-600 dark:from-blue-400 dark:via-purple-300 dark:to-red-400 bg-clip-text text-transparent">
-                Gemini Prompt Generator
-              </span>
-              <span className="hidden sm:inline-block ml-2 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900">
-                1 Line → Detailed Master Prompt
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm font-black bg-gradient-to-r from-blue-600 via-purple-600 to-red-600 dark:from-blue-400 dark:via-purple-300 dark:to-red-400 bg-clip-text text-transparent">
+                  Gemini Prompt Generator
+                </span>
+                <span className="hidden sm:inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900">
+                  1 Line → Detailed Master Prompt
+                </span>
+              </div>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setShowOptions(!showOptions)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-bold transition-colors cursor-pointer"
-          >
-            <Sliders className="w-3 h-3 text-neutral-500" />
-            <span className="hidden sm:inline">Settings</span>
-            <ChevronDown className={`w-3 h-3 transition-transform ${showOptions ? 'rotate-180' : ''}`} />
-          </button>
+          <div className="flex items-center gap-2 ml-auto">
+            {/* Login & Credit Indicator Badge */}
+            {userAccount?.isLoggedIn ? (
+              <div
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/60 text-[11px] font-bold text-amber-700 dark:text-amber-300"
+                title="Consumes 1 credit per generation"
+              >
+                <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
+                <span>{toolCredits} {toolCredits === 1 ? 'Credit' : 'Credits'}</span>
+                <span className="text-[10px] opacity-75 font-normal">(1 / result)</span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => openAuthModal('Login is required to use the Gemini Prompt Generator tool. Each prompt generation consumes 1 credit.')}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 text-[11px] font-bold text-blue-700 dark:text-blue-300 transition-colors cursor-pointer"
+                title="Sign in required"
+              >
+                <Lock className="w-3 h-3" />
+                <span>Login Required (1 Credit / Result)</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setShowOptions(!showOptions)}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-bold transition-colors cursor-pointer"
+            >
+              <Sliders className="w-3 h-3 text-neutral-500" />
+              <span className="hidden sm:inline">Settings</span>
+              <ChevronDown className={`w-3 h-3 transition-transform ${showOptions ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
         </div>
 
         {/* Form */}
