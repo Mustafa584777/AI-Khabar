@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const SAMPLE_IMAGES = [
   {
@@ -121,6 +121,7 @@ interface GeneratedPromptData {
 
 export const AIStudioTool = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const {
     setCurrentView,
     setSelectedCategory,
@@ -149,16 +150,20 @@ export const AIStudioTool = () => {
   // ==========================================
   const [textIdea, setTextIdea] = useState<string>(() => {
     if (typeof window !== 'undefined') {
-      const pendingText =
-        sessionStorage.getItem('pending_text_to_prompt') ||
-        sessionStorage.getItem('promptcms_studio_preload') ||
-        sessionStorage.getItem('auraprompt_studio_preload');
-      if (pendingText) {
-        sessionStorage.removeItem('pending_text_to_prompt');
-        sessionStorage.removeItem('promptcms_studio_preload');
-        sessionStorage.removeItem('auraprompt_studio_preload');
-        return pendingText;
-      }
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlIdea = urlParams.get('idea') || urlParams.get('prompt');
+        if (urlIdea && urlIdea.trim()) return urlIdea.trim();
+
+        const pendingText =
+          sessionStorage.getItem('pending_text_to_prompt') ||
+          sessionStorage.getItem('promptcms_studio_preload') ||
+          sessionStorage.getItem('auraprompt_studio_preload') ||
+          localStorage.getItem('pending_text_to_prompt');
+        if (pendingText && pendingText.trim()) {
+          return pendingText.trim();
+        }
+      } catch {}
     }
     return '';
   });
@@ -215,6 +220,37 @@ export const AIStudioTool = () => {
       openAuthModal('Please sign in or create an account to use the AI Studio tools with your free credits.');
     }
   }, [userAccount?.isLoggedIn, openAuthModal]);
+
+  // Synchronize preloaded idea from URL query params or storage across redirects/mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        const queryIdea = searchParams?.get('idea') || searchParams?.get('prompt');
+        const storedIdea =
+          sessionStorage.getItem('pending_text_to_prompt') ||
+          sessionStorage.getItem('promptcms_studio_preload') ||
+          sessionStorage.getItem('auraprompt_studio_preload') ||
+          localStorage.getItem('pending_text_to_prompt');
+
+        const incoming = (queryIdea && queryIdea.trim()) || (storedIdea && storedIdea.trim());
+        if (incoming) {
+          setTextIdea((prev) => (prev ? prev : incoming));
+          setPreloadedFromHome(true);
+          setActiveTool('text_to_prompt');
+
+          // Clean up temporary storage so subsequent visits start fresh
+          sessionStorage.removeItem('pending_text_to_prompt');
+          sessionStorage.removeItem('promptcms_studio_preload');
+          sessionStorage.removeItem('auraprompt_studio_preload');
+          localStorage.removeItem('pending_text_to_prompt');
+        }
+      } catch (err) {
+        console.warn('Could not sync preloaded prompt idea:', err);
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [searchParams, userAccount?.isLoggedIn]);
 
   const copyToClipboard = (text: string, key: string, label = 'Copied to clipboard!') => {
     navigator.clipboard.writeText(text);
@@ -472,7 +508,14 @@ export const AIStudioTool = () => {
           </div>
           <div className="space-y-3 pt-2">
             <button
-              onClick={() => openAuthModal('Sign in to access the AI Studio Creation Tools.')}
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  const currentTarget = window.location.pathname + window.location.search;
+                  sessionStorage.setItem('pending_auth_redirect', currentTarget);
+                  localStorage.setItem('pending_auth_redirect', currentTarget);
+                }
+                openAuthModal('Sign in to access the AI Studio Creation Tools.');
+              }}
               className="w-full py-3.5 px-6 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-sm font-bold shadow-lg shadow-red-500/25 transition-all transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
             >
               <Sparkles className="w-4 h-4" />

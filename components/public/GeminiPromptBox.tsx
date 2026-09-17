@@ -18,26 +18,38 @@ export const GeminiPromptBox = () => {
       return;
     }
 
-    // Persist pending prompt text into session storage so it pre-fills on /create
+    const redirectPath = `/create?idea=${encodeURIComponent(cleanIdea)}`;
+
+    // Persist pending prompt text into both sessionStorage and localStorage for guaranteed handoff
     if (typeof window !== 'undefined') {
-      sessionStorage.setItem('pending_text_to_prompt', cleanIdea);
-      sessionStorage.setItem('promptcms_studio_preload', cleanIdea);
-      sessionStorage.setItem('auraprompt_studio_preload', cleanIdea);
-      sessionStorage.setItem('pending_auth_redirect', '/create');
+      try {
+        sessionStorage.setItem('pending_text_to_prompt', cleanIdea);
+        sessionStorage.setItem('promptcms_studio_preload', cleanIdea);
+        sessionStorage.setItem('auraprompt_studio_preload', cleanIdea);
+        localStorage.setItem('pending_text_to_prompt', cleanIdea);
+
+        sessionStorage.setItem('pending_auth_redirect', redirectPath);
+        localStorage.setItem('pending_auth_redirect', redirectPath);
+      } catch (err) {
+        console.warn('Storage persistence notice:', err);
+      }
     }
 
-    // Check if user is logged in
+    // If user is not logged in, trigger login popup immediately
     if (!userAccount?.isLoggedIn) {
-      openAuthModal('Please sign in or create a free account to generate master prompts with your daily free credits.');
+      openAuthModal('Please sign in or create a free account to generate master prompts with your daily credits.');
       return;
     }
 
-    // If already logged in, redirect directly to create page prompt generator tool
+    // If already logged in, redirect directly to create page with prompt pre-filled
     if (typeof window !== 'undefined') {
-      sessionStorage.removeItem('pending_auth_redirect');
+      try {
+        sessionStorage.removeItem('pending_auth_redirect');
+        localStorage.removeItem('pending_auth_redirect');
+      } catch {}
     }
     showToast('Opening prompt generator studio...');
-    router.push('/create');
+    router.push(redirectPath);
   };
 
   return (

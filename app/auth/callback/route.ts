@@ -184,6 +184,18 @@ export async function GET(request: Request) {
             } catch(e) {}
           }
 
+          var getPendingUrl = function() {
+            try {
+              var p = sessionStorage.getItem('pending_auth_redirect') || localStorage.getItem('pending_auth_redirect');
+              if (p) {
+                sessionStorage.removeItem('pending_auth_redirect');
+                localStorage.removeItem('pending_auth_redirect');
+                return p;
+              }
+            } catch(ex) {}
+            return '/dashboard';
+          };
+
           if (window.opener) {
             try {
               window.opener.postMessage({
@@ -195,10 +207,10 @@ export async function GET(request: Request) {
                 window.close();
               }, 400);
             } catch(e) {
-              window.location.href = '/dashboard';
+              window.location.href = getPendingUrl();
             }
           } else {
-            window.location.href = '/dashboard';
+            window.location.href = getPendingUrl();
           }
         } else {
           // If neither session nor error could be parsed yet

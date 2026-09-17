@@ -57,9 +57,12 @@ export const UserAuthModal = () => {
 
           // Handle pending redirect if user was prompted during action
           if (typeof window !== 'undefined') {
-            const pendingRedirect = sessionStorage.getItem('pending_auth_redirect');
+            const pendingRedirect =
+              sessionStorage.getItem('pending_auth_redirect') ||
+              localStorage.getItem('pending_auth_redirect');
             if (pendingRedirect) {
               sessionStorage.removeItem('pending_auth_redirect');
+              localStorage.removeItem('pending_auth_redirect');
               router.push(pendingRedirect);
             }
           }
@@ -231,9 +234,12 @@ export const UserAuthModal = () => {
         setFullName('');
 
         if (typeof window !== 'undefined') {
-          const pendingRedirect = sessionStorage.getItem('pending_auth_redirect');
+          const pendingRedirect =
+            sessionStorage.getItem('pending_auth_redirect') ||
+            localStorage.getItem('pending_auth_redirect');
           if (pendingRedirect) {
             sessionStorage.removeItem('pending_auth_redirect');
+            localStorage.removeItem('pending_auth_redirect');
             router.push(pendingRedirect);
           }
         }
@@ -268,9 +274,12 @@ export const UserAuthModal = () => {
         setPassword('');
 
         if (typeof window !== 'undefined') {
-          const pendingRedirect = sessionStorage.getItem('pending_auth_redirect');
+          const pendingRedirect =
+            sessionStorage.getItem('pending_auth_redirect') ||
+            localStorage.getItem('pending_auth_redirect');
           if (pendingRedirect) {
             sessionStorage.removeItem('pending_auth_redirect');
+            localStorage.removeItem('pending_auth_redirect');
             router.push(pendingRedirect);
           }
         }
