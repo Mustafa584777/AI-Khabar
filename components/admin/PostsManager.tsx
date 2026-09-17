@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Clock,
   Sparkles,
+  Crown,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -22,6 +23,7 @@ export const PostsManager = () => {
     categories,
     deletePost,
     togglePublishStatus,
+    togglePremiumStatus,
     setAdminSubView,
     setEditingPostId,
     setCurrentView,
@@ -125,7 +127,7 @@ export const PostsManager = () => {
         </button>
       </div>
 
-      {/* WordPress Status Tabs */}
+      {/* Editorial Status Tabs */}
       <div className="flex items-center gap-3 text-xs font-semibold border-b border-neutral-200 dark:border-neutral-800 pb-3">
         <button
           onClick={() => setStatusFilter('all')}
@@ -285,15 +287,33 @@ export const PostsManager = () => {
                             </div>
                           )}
                           <div className="min-w-0">
-                            <h4
-                              onClick={() => {
-                                setEditingPostId(post.id);
-                                setAdminSubView('edit-post');
-                              }}
-                              className="font-bold text-neutral-900 dark:text-white text-xs hover:text-blue-600 cursor-pointer line-clamp-1"
-                            >
-                              {post.title}
-                            </h4>
+                            <div className="flex items-center gap-1.5">
+                              <h4
+                                onClick={() => {
+                                  setEditingPostId(post.id);
+                                  setAdminSubView('edit-post');
+                                }}
+                                className="font-bold text-neutral-900 dark:text-white text-xs hover:text-blue-600 cursor-pointer line-clamp-1"
+                              >
+                                {post.title}
+                              </h4>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  togglePremiumStatus(post.id);
+                                }}
+                                title={post.isPremium ? 'Currently PRO Premium (Click to change to Free)' : 'Currently Free (Click to upgrade to PRO Premium)'}
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase shrink-0 transition-all cursor-pointer ${
+                                  post.isPremium
+                                    ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-xs'
+                                    : 'bg-neutral-100 hover:bg-amber-100 dark:bg-neutral-800 dark:hover:bg-amber-950/60 text-neutral-400 hover:text-amber-600'
+                                }`}
+                              >
+                                <Crown className={`w-2.5 h-2.5 ${post.isPremium ? 'fill-white' : ''}`} />
+                                <span>{post.isPremium ? 'PRO' : 'FREE'}</span>
+                              </button>
+                            </div>
                             <p className="text-[11px] text-neutral-400 font-mono truncate">
                               /{post.slug}
                             </p>

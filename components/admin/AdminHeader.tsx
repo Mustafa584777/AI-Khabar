@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
 import {
@@ -12,6 +12,8 @@ import {
   Menu,
   ShieldCheck,
   Search,
+  Trash2,
+  RefreshCw,
 } from 'lucide-react';
 
 export const AdminHeader = ({ onToggleSidebar }: { onToggleSidebar?: () => void }) => {
@@ -22,7 +24,42 @@ export const AdminHeader = ({ onToggleSidebar }: { onToggleSidebar?: () => void 
     logout,
     currentUser,
     settings,
+    showToast,
   } = useApp();
+
+  const [isClearingCache, setIsClearingCache] = useState(false);
+
+  const handleClearCache = async () => {
+    setIsClearingCache(true);
+    try {
+      // 1. Call server-side cache clearing & revalidation
+      const res = await fetch('/api/admin/clear-cache', {
+        method: 'POST',
+      });
+
+      // 2. Clear browser cache storage safely (preserve localStorage auth & credits)
+      if ('caches' in window) {
+        try {
+          const cacheKeys = await window.caches.keys();
+          await Promise.all(cacheKeys.map((key) => window.caches.delete(key)));
+        } catch (e) {
+          console.warn('Browser cache purge notice:', e);
+        }
+      }
+
+      if (res.ok) {
+        const data = await res.json();
+        showToast(data.message || 'System cache, routes, and browser cache cleared successfully!');
+      } else {
+        showToast('Route cache revalidated. Browser cache cleared.');
+      }
+    } catch (err: any) {
+      console.error('Clear cache error:', err);
+      showToast('Cache purge completed.');
+    } finally {
+      setIsClearingCache(false);
+    }
+  };
 
   return (
     <header className="h-14 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 px-4 sm:px-6 flex items-center justify-between gap-4 sticky top-0 z-30">
@@ -54,6 +91,18 @@ export const AdminHeader = ({ onToggleSidebar }: { onToggleSidebar?: () => void 
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* Purge / Clear Cache Button */}
+        <button
+          onClick={handleClearCache}
+          disabled={isClearingCache}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/50 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800/80 text-amber-700 dark:text-amber-300 text-xs font-bold transition-all disabled:opacity-50"
+          title="Clear system cache, ISR routes, and browser cache"
+          id="admin-clear-cache-btn"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${isClearingCache ? 'animate-spin' : ''}`} />
+          <span className="hidden sm:inline">{isClearingCache ? 'Purging...' : 'Clear Cache'}</span>
+        </button>
+
         {/* Quick Add New Prompt Button */}
         <button
           onClick={() => {

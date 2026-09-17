@@ -154,20 +154,9 @@ function BlogArchiveContent() {
                 </div>
 
                 <div className="pt-4 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="relative w-7 h-7 rounded-full overflow-hidden border border-neutral-200 dark:border-neutral-700">
-                      <Image
-                        src="/logo.png"
-                        alt={featuredPost.author.name}
-                        fill
-                        className="object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                    </div>
-                    <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200">
-                      {featuredPost.author.name}
-                    </span>
-                  </div>
+                  <span className="text-xs text-neutral-500 font-medium">
+                    {featuredPost.readTime}
+                  </span>
 
                   <span className="inline-flex items-center gap-1 text-xs font-bold text-[#E60023] group-hover:translate-x-1 transition-transform">
                     <span>Read Complete Guide</span>
@@ -224,20 +213,9 @@ function BlogArchiveContent() {
               </div>
 
               <div className="px-5 pb-5 pt-2 border-t border-neutral-100 dark:border-neutral-800/80 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="relative w-6 h-6 rounded-full overflow-hidden border border-neutral-200 dark:border-neutral-700">
-                    <Image
-                      src="/logo.webp"
-                      alt={post.author.name}
-                      fill
-                      className="object-cover"
-                      referrerPolicy="no-referrer"
-                    />
-                  </div>
-                  <span className="text-[11px] font-medium text-neutral-600 dark:text-neutral-400">
-                    {post.author.name}
-                  </span>
-                </div>
+                <span className="text-[11px] font-medium text-neutral-500">
+                  {post.readTime}
+                </span>
 
                 <Link
                   href={`/blog/${post.slug}`}

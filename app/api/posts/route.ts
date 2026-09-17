@@ -1,8 +1,7 @@
 import { ServerStorage } from '@/lib/server-storage';
 import { NextRequest, NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 21600;
 
 export async function GET(req: NextRequest) {
   try {
@@ -34,13 +33,15 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    const cacheHeader = includeDrafts
+      ? 'no-store, no-cache, must-revalidate'
+      : 'public, s-maxage=21600, stale-while-revalidate=43200';
+
     return NextResponse.json(
       { success: true, posts },
       {
         headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-          Pragma: 'no-cache',
-          Expires: '0',
+          'Cache-Control': cacheHeader,
         },
       }
     );
@@ -59,7 +60,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const saved = await ServerStorage.savePost(body);
+    const authHeader = req.headers.get('Authorization');
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : undefined;
+
+    const saved = await ServerStorage.savePost(body, token);
     const allPosts = await ServerStorage.getAllPosts(true);
 
     return NextResponse.json(
@@ -83,9 +87,12 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Post ID is required' }, { status: 400 });
     }
 
-    const deleted = await ServerStorage.deletePost(id);
+    const authHeader = req.headers.get('Authorization');
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : undefined;
+
+    await ServerStorage.deletePost(id, token);
     const allPosts = await ServerStorage.getAllPosts(true);
-    return NextResponse.json({ success: deleted, posts: allPosts });
+    return NextResponse.json({ success: true, posts: allPosts });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
