@@ -91,7 +91,12 @@ const CREDIT_PACKS: CreditPack[] = [
 ];
 
 export default function CheckoutPage() {
-  const { isProUser, planTier, toolCredits, promptRequestsRemaining } = useApp();
+  const { userAccount } = useApp();
+  const isProUser = userAccount?.isPremium || false;
+  const planTier = userAccount?.planTier || 'free';
+  const toolCredits = userAccount?.toolCredits || 0;
+  const promptRequestsRemaining = userAccount?.promptRequestsAllowed || 0;
+  
   const [billingView, setBillingView] = useState<'credits' | 'subscription'>('credits');
 
   return (

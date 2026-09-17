@@ -3,7 +3,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { AIHistoryItem } from '@/types/prompt';
-import confetti from 'canvas-confetti';
 import {
   Sparkles,
   Copy,
@@ -18,21 +17,10 @@ import {
   Zap,
   Coins,
   X,
-  Wand2,
-  Image as ImageIcon,
-  CheckCircle2,
-  Layers,
-  ChevronDown,
-  SlidersHorizontal,
-  Edit3,
-  ArrowRight,
-  FileText,
-  Lightbulb,
-  Undo2,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 const SAMPLE_IMAGES = [
   {
@@ -57,98 +45,12 @@ const SAMPLE_IMAGES = [
   },
 ];
 
-const TEXT_PROMPT_PRESETS = [
-  'Cyberpunk samurai walking in rainy neon Tokyo street',
-  'Vintage 35mm film portrait in Parisian sidewalk café',
-  'Futuristic astronaut exploring a glowing bioluminescent crystal cave',
-  'High-fashion streetwear model in brutalist concrete architecture',
-  'Hyperrealistic wildlife macro photo of an iridescent hummingbird',
-];
-
-const ENHANCER_PRESETS = [
-  'A cat sitting on a windowsill in the rain',
-  'Futuristic sports car racing on a desert highway',
-  'Cyberpunk samurai standing in neon alleyway',
-  'Portrait of an old wise sea captain',
-  'Minimalist coffee cup with steam on morning wooden table',
-  'Ancient mystical temple deep in an overgrown jungle',
-];
-
-const ENHANCER_STYLES = [
-  { label: 'Photorealistic 8K Masterpiece', desc: 'Ultra-authentic skin microtexture, medium format sensor, natural bokeh' },
-  { label: 'Cinematic Movie Still', desc: 'ARRI Alexa 65, 2.39:1 scope, atmospheric haze, moody film grade' },
-  { label: 'Editorial & High Fashion', desc: 'Vogue editorial studio, clean rim lighting, sharp avant-garde styling' },
-  { label: 'Digital Concept Art', desc: 'Unreal Engine 5 render, volumetric god rays, epic scale, Octane render' },
-  { label: 'Anime & Makoto Shinkai Style', desc: 'Vibrant sky, luminous clouds, rich cell shading, emotional ambiance' },
-  { label: 'Vintage 35mm Analog Film', desc: 'Kodak Portra 400, organic film grain, warm nostalgic tones, light leaks' },
-];
-
-const EDITOR_QUICK_MODIFIERS = [
-  { label: '+ Golden Hour Lighting', action: 'Change lighting to warm golden hour with soft rim light and delicate glow' },
-  { label: '+ Volumetric Rain & Reflections', action: 'Add heavy cinematic rain, wet asphalt reflections, and atmospheric mist' },
-  { label: '+ 85mm Portrait Optics', action: 'Switch optics to Hasselblad 85mm f/1.4 prime lens with creamy shallow depth of field' },
-  { label: '+ Cyberpunk Neon Noir', action: 'Shift color palette to neon cyan and hot magenta with dark rainy noir ambiance' },
-  { label: '+ 35mm Analog Film Grain', action: 'Incorporate 35mm Kodak Portra film grain, soft halation, and analog tone' },
-  { label: '+ Studio Softbox Lighting', action: 'Convert to commercial studio setup with giant diffused softbox and clean backdrop' },
-  { label: '+ Epic Rolling Fog', action: 'Inject thick rolling volumetric fog, god rays, and mysterious moody depth' },
-  { label: '+ Minimalist Clean Composition', action: 'Strip extraneous elements, emphasize generous negative space and stark elegance' },
-];
-
-const LIGHTING_OPTIONS = [
-  'Cinematic Golden Hour',
-  'Volumetric Fog & Neon',
-  'Softbox Studio Portrait',
-  'Dramatic Rembrandt Chiaroscuro',
-  'Harsh Direct Sunlight',
-  'Moody Low-Key Noir',
-  'Ethereal Sunset Backlight',
-  'Natural Overcast Diffused',
-];
-
-const COLOR_OPTIONS = [
-  'Cinematic Teal & Orange',
-  'Vibrant Kodachrome 64',
-  'Moody Desaturated 35mm',
-  'Pastel Film Glow',
-  'Monochrome High-Contrast Noir',
-  'Cyberpunk Neon Palette',
-  'Warm Golden Hour Tone',
-];
-
-const CAMERA_OPTIONS = [
-  'Hasselblad H6D-100c, 85mm f/1.4',
-  'Leica M11, 35mm f/1.4 Summilux',
-  'Sony A7R V, 50mm f/1.2 GM',
-  'Canon EOS R5, 100mm f/2.8 Macro',
-  'ARRI Alexa Mini, 24mm Anamorphic',
-];
-
-const ENGINE_OPTIONS = [
-  'Midjourney v6.1',
-  'Flux.1 Schnell / Dev',
-  'Google Imagen 3 / Gemini',
-  'ChatGPT / DALL-E 3',
-];
-
-const RATIO_OPTIONS = [
-  { label: '16:9 Landscape', value: '16:9' },
-  { label: '9:16 Story / Reel', value: '9:16' },
-  { label: '1:1 Square', value: '1:1' },
-  { label: '4:5 Instagram Portrait', value: '4:5' },
-  { label: '4:3 Classic', value: '4:3' },
-];
-
-interface GeneratedPromptData {
+interface ExtractedPromptData {
   title?: string;
   summary?: string;
+  confidence?: 'high' | 'medium' | 'low' | string;
   promptText: string;
   prompt?: string;
-  enhancedPrompt?: string;
-  editedPrompt?: string;
-  originalPrompt?: string;
-  previousPrompt?: string;
-  improvements?: string[];
-  changesApplied?: string[];
   negativePrompt?: string;
   negative_prompt?: string;
   camera?: string;
@@ -156,13 +58,23 @@ interface GeneratedPromptData {
   composition?: string;
   colorPalette?: string;
   aspectRatio?: string;
+  aspect_ratio?: string;
+  analysis?: {
+    subject?: string;
+    pose?: string;
+    composition?: string;
+    environment?: string;
+    camera?: string;
+    lighting?: string;
+    color_grading?: string;
+    effects?: string;
+    text_and_layout?: string;
+  };
   tags?: string[];
-  analysis?: any;
 }
 
 export const AIStudioTool = () => {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const {
     setCurrentView,
     setSelectedCategory,
@@ -173,178 +85,35 @@ export const AIStudioTool = () => {
     saveAiHistoryItem,
     toolCredits,
     deductToolCredit,
+    isAuthenticated,
   } = useApp();
 
-  // Active Tool Switch: 'text_to_prompt' | 'prompt_enhancer' | 'prompt_editor' | 'image_to_prompt'
-  const [activeTool, setActiveTool] = useState<
-    'text_to_prompt' | 'prompt_enhancer' | 'prompt_editor' | 'image_to_prompt'
-  >(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlTool = urlParams.get('tool');
-        if (urlTool === 'enhancer' || urlTool === 'prompt_enhancer') return 'prompt_enhancer';
-        if (urlTool === 'editor' || urlTool === 'prompt_editor') return 'prompt_editor';
-        if (urlTool === 'image_to_prompt') return 'image_to_prompt';
-        if (urlTool === 'text_to_prompt') return 'text_to_prompt';
-
-        const hasImage =
-          sessionStorage.getItem('promptcms_studio_image_preload') ||
-          sessionStorage.getItem('auraprompt_studio_image_preload');
-        if (hasImage) return 'image_to_prompt';
-      } catch {}
-    }
-    return 'text_to_prompt';
-  });
-
-  // ==========================================
-  // TEXT TO PROMPT STATE (2 Credits)
-  // ==========================================
-  const [textIdea, setTextIdea] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlIdea = urlParams.get('idea') || urlParams.get('prompt');
-        if (urlIdea && urlIdea.trim()) return urlIdea.trim();
-
-        const pendingText =
-          sessionStorage.getItem('pending_text_to_prompt') ||
-          sessionStorage.getItem('promptcms_studio_preload') ||
-          sessionStorage.getItem('auraprompt_studio_preload') ||
-          localStorage.getItem('pending_text_to_prompt');
-        if (pendingText && pendingText.trim()) {
-          return pendingText.trim();
-        }
-      } catch {}
-    }
-    return '';
-  });
-
-  const [preloadedFromHome, setPreloadedFromHome] = useState<boolean>(() => {
-    return Boolean(textIdea);
-  });
-
-  const [lighting, setLighting] = useState<string>('Cinematic Golden Hour');
-  const [colorGrading, setColorGrading] = useState<string>('Cinematic Teal & Orange');
-  const [camera, setCamera] = useState<string>('Hasselblad H6D-100c, 85mm f/1.4');
-  const [targetEngine, setTargetEngine] = useState<string>('Midjourney v6.1');
-  const [aspectRatio, setAspectRatio] = useState<string>('16:9');
-  const [negativeConstraints, setNegativeConstraints] = useState<string>('');
-  const [showAdvancedTextOptions, setShowAdvancedTextOptions] = useState<boolean>(false);
-
-  const [isGeneratingTextPrompt, setIsGeneratingTextPrompt] = useState<boolean>(false);
-  const [generatedTextData, setGeneratedTextData] = useState<GeneratedPromptData | null>(null);
-  const [isSavedTextPrompt, setIsSavedTextPrompt] = useState<boolean>(false);
-
-  // ==========================================
-  // PROMPT ENHANCER STATE (2 Credits)
-  // ==========================================
-  const [enhancerBasicPrompt, setEnhancerBasicPrompt] = useState<string>('');
-  const [enhancerStyle, setEnhancerStyle] = useState<string>('Photorealistic 8K Masterpiece');
-  const [enhancerEngine, setEnhancerEngine] = useState<string>('Midjourney v6.1');
-  const [enhancerRatio, setEnhancerRatio] = useState<string>('16:9');
-  const [enhancerLighting, setEnhancerLighting] = useState<string>('Cinematic Volumetric Rays');
-  const [enhancerCamera, setEnhancerCamera] = useState<string>('Hasselblad H6D-100c, 85mm f/1.4');
-  const [isEnhancingPrompt, setIsEnhancingPrompt] = useState<boolean>(false);
-  const [enhancedData, setEnhancedData] = useState<GeneratedPromptData | null>(null);
-  const [isSavedEnhancedPrompt, setIsSavedEnhancedPrompt] = useState<boolean>(false);
-
-  // ==========================================
-  // PROMPT EDITOR STATE (2 Credits)
-  // ==========================================
-  const [editorCurrentPrompt, setEditorCurrentPrompt] = useState<string>('');
-  const [editorInstructions, setEditorInstructions] = useState<string>('');
-  const [editorLighting, setEditorLighting] = useState<string>('');
-  const [editorCamera, setEditorCamera] = useState<string>('');
-  const [editorColor, setEditorColor] = useState<string>('');
-  const [editorEngine, setEditorEngine] = useState<string>('Midjourney v6.1');
-  const [editorRatio, setEditorRatio] = useState<string>('16:9');
-  const [isEditingPrompt, setIsEditingPrompt] = useState<boolean>(false);
-  const [editedData, setEditedData] = useState<GeneratedPromptData | null>(null);
-  const [isSavedEditedPrompt, setIsSavedEditedPrompt] = useState<boolean>(false);
-
-  // ==========================================
-  // IMAGE TO PROMPT STATE (3 Credits)
-  // ==========================================
   const [uploadedImage, setUploadedImage] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
-      const pendingImage =
-        sessionStorage.getItem('promptcms_studio_image_preload') ||
-        sessionStorage.getItem('auraprompt_studio_image_preload');
-      if (pendingImage) {
+      const img = sessionStorage.getItem('promptcms_studio_image_preload') || sessionStorage.getItem('auraprompt_studio_image_preload');
+      if (img) {
         sessionStorage.removeItem('promptcms_studio_image_preload');
         sessionStorage.removeItem('auraprompt_studio_image_preload');
-        return pendingImage;
+        return img;
       }
     }
     return null;
   });
 
-  const [imageInstructions, setImageInstructions] = useState<string>('');
-  const [isExtractingImagePrompt, setIsExtractingImagePrompt] = useState<boolean>(false);
-  const [extractedImageData, setExtractedImageData] = useState<GeneratedPromptData | null>(null);
-  const [isSavedImageExtracted, setIsSavedImageExtracted] = useState<boolean>(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Global Tool State
+  const [customInstructions, setCustomInstructions] = useState<string>('');
+  const [isExtractingPrompt, setIsExtractingPrompt] = useState<boolean>(false);
+  const [extractedData, setExtractedData] = useState<ExtractedPromptData | null>(null);
+  const [isSavedExtracted, setIsSavedExtracted] = useState<boolean>(false);
   const [isOutOfCreditsModalOpen, setIsOutOfCreditsModalOpen] = useState<boolean>(false);
-  const [requiredCreditsForModal, setRequiredCreditsForModal] = useState<number>(2);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  // Scroll to top and verify authentication on mount
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-
     if (!userAccount?.isLoggedIn) {
-      openAuthModal('Please sign in or create an account to use the AI Studio tools with your free credits.');
+      openAuthModal('Please sign in or create an account to use the AI Studio tools.');
     }
   }, [userAccount?.isLoggedIn, openAuthModal]);
-
-  // Synchronize preloaded idea from URL query params or storage across redirects/mount
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      try {
-        const urlTool = searchParams?.get('tool');
-        if (urlTool === 'enhancer' || urlTool === 'prompt_enhancer') {
-          setActiveTool('prompt_enhancer');
-        } else if (urlTool === 'editor' || urlTool === 'prompt_editor') {
-          setActiveTool('prompt_editor');
-        } else if (urlTool === 'image_to_prompt') {
-          setActiveTool('image_to_prompt');
-        }
-
-        const queryIdea = searchParams?.get('idea') || searchParams?.get('prompt');
-        const storedIdea =
-          sessionStorage.getItem('pending_text_to_prompt') ||
-          sessionStorage.getItem('promptcms_studio_preload') ||
-          sessionStorage.getItem('auraprompt_studio_preload') ||
-          localStorage.getItem('pending_text_to_prompt');
-
-        const incoming = (queryIdea && queryIdea.trim()) || (storedIdea && storedIdea.trim());
-        if (incoming) {
-          if (urlTool === 'enhancer' || urlTool === 'prompt_enhancer') {
-            setEnhancerBasicPrompt((prev) => (prev ? prev : incoming));
-          } else if (urlTool === 'editor' || urlTool === 'prompt_editor') {
-            setEditorCurrentPrompt((prev) => (prev ? prev : incoming));
-          } else {
-            setTextIdea((prev) => (prev ? prev : incoming));
-            setPreloadedFromHome(true);
-            setActiveTool('text_to_prompt');
-          }
-
-          // Clean up temporary storage so subsequent visits start fresh
-          sessionStorage.removeItem('pending_text_to_prompt');
-          sessionStorage.removeItem('promptcms_studio_preload');
-          sessionStorage.removeItem('auraprompt_studio_preload');
-          localStorage.removeItem('pending_text_to_prompt');
-        }
-      } catch (err) {
-        console.warn('Could not sync preloaded prompt idea:', err);
-      }
-    }, 0);
-
-    return () => clearTimeout(timer);
-  }, [searchParams, userAccount?.isLoggedIn]);
 
   const copyToClipboard = (text: string, key: string, label = 'Copied to clipboard!') => {
     navigator.clipboard.writeText(text);
@@ -353,348 +122,6 @@ export const AIStudioTool = () => {
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  // ==========================================
-  // HANDLER: GENERATE TEXT TO PROMPT (2 Credits)
-  // ==========================================
-  const handleGenerateTextPrompt = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-
-    const cleanIdea = textIdea.trim();
-    if (!cleanIdea) {
-      showToast('Please enter a photo prompt idea or description');
-      return;
-    }
-
-    if (!userAccount?.isLoggedIn) {
-      openAuthModal('Please sign in or register to generate AI prompts with your credits.');
-      return;
-    }
-
-    const TEXT_TO_PROMPT_COST = 2;
-    if (toolCredits < TEXT_TO_PROMPT_COST) {
-      setRequiredCreditsForModal(TEXT_TO_PROMPT_COST);
-      setIsOutOfCreditsModalOpen(true);
-      showToast(`Text to Prompt generator requires 2 credits (You have ${toolCredits}). Top up or upgrade!`);
-      return;
-    }
-
-    setIsGeneratingTextPrompt(true);
-    setGeneratedTextData(null);
-    setIsSavedTextPrompt(false);
-
-    try {
-      const res = await fetch('/api/gemini/tools', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'text_to_prompt',
-          idea: cleanIdea,
-          lighting,
-          colorGrading,
-          camera,
-          targetEngine,
-          aspectRatio,
-          customInstructions: negativeConstraints,
-        }),
-      });
-
-      const json = await res.json();
-      if (json.success && json.data) {
-        // Deduct exactly 2 credits for text-to-prompt generator
-        deductToolCredit(TEXT_TO_PROMPT_COST);
-        setGeneratedTextData(json.data);
-
-        // Automatically persist to user history
-        const promptResult = json.data.promptText || json.data.prompt || '';
-        const historyItem: AIHistoryItem = {
-          id: 'txt_' + Date.now(),
-          type: 'text_to_prompt',
-          title: json.data.title || cleanIdea.slice(0, 45),
-          promptText: promptResult,
-          negativePrompt: json.data.negativePrompt || json.data.negative_prompt,
-          camera: json.data.camera || camera,
-          lighting: json.data.lighting || lighting,
-          composition: json.data.composition,
-          colorPalette: json.data.colorPalette || colorGrading,
-          aspectRatio: json.data.aspectRatio || aspectRatio,
-          tags: json.data.tags || [lighting, colorGrading, targetEngine],
-          createdAt: Date.now(),
-        };
-        saveAiHistoryItem(historyItem);
-        setIsSavedTextPrompt(true);
-
-        confetti({ particleCount: 70, spread: 60, origin: { y: 0.65 } });
-        showToast(`Master prompt generated! 2 credits used (${Math.max(0, toolCredits - TEXT_TO_PROMPT_COST)} remaining)`);
-      } else {
-        showToast(json.error || 'Failed to generate master prompt with Gemini');
-      }
-    } catch (err) {
-      console.error('Text prompt generation error:', err);
-      showToast('An error occurred during prompt generation');
-    } finally {
-      setIsGeneratingTextPrompt(false);
-    }
-  };
-
-  const handleSaveTextPromptToHistory = () => {
-    if (!generatedTextData) return;
-    if (!userAccount?.isLoggedIn) {
-      openAuthModal('Please sign in or create an account to save prompts.');
-      return;
-    }
-
-    const historyItem: AIHistoryItem = {
-      id: 'txt_' + Date.now(),
-      type: 'text_to_prompt',
-      title: generatedTextData.title || textIdea.slice(0, 45),
-      promptText: generatedTextData.promptText || generatedTextData.prompt || '',
-      negativePrompt: generatedTextData.negativePrompt,
-      camera: generatedTextData.camera || camera,
-      lighting: generatedTextData.lighting || lighting,
-      composition: generatedTextData.composition,
-      colorPalette: generatedTextData.colorPalette || colorGrading,
-      aspectRatio: generatedTextData.aspectRatio || aspectRatio,
-      tags: generatedTextData.tags || [lighting, colorGrading, targetEngine],
-      createdAt: Date.now(),
-    };
-
-    saveAiHistoryItem(historyItem);
-    setIsSavedTextPrompt(true);
-    showToast('Saved to your AI Studio History!');
-  };
-
-  // ==========================================
-  // HANDLER: PROMPT ENHANCER (2 Credits)
-  // ==========================================
-  const handleEnhancePrompt = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-
-    const cleanPrompt = enhancerBasicPrompt.trim();
-    if (!cleanPrompt) {
-      showToast('Please enter a basic prompt to enhance');
-      return;
-    }
-
-    if (!userAccount?.isLoggedIn) {
-      openAuthModal('Please sign in or register to enhance AI prompts with your credits.');
-      return;
-    }
-
-    const ENHANCER_COST = 2;
-    if (toolCredits < ENHANCER_COST) {
-      setRequiredCreditsForModal(ENHANCER_COST);
-      setIsOutOfCreditsModalOpen(true);
-      showToast(`Prompt Enhancer requires 2 credits (You have ${toolCredits}). Top up or upgrade!`);
-      return;
-    }
-
-    setIsEnhancingPrompt(true);
-    setEnhancedData(null);
-    setIsSavedEnhancedPrompt(false);
-
-    try {
-      const res = await fetch('/api/gemini/tools', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'enhance_prompt',
-          basicPrompt: cleanPrompt,
-          enhancementStyle: enhancerStyle,
-          targetEngine: enhancerEngine,
-          aspectRatio: enhancerRatio,
-          lighting: enhancerLighting,
-          camera: enhancerCamera,
-        }),
-      });
-
-      const json = await res.json();
-      if (json.success && json.data) {
-        deductToolCredit(ENHANCER_COST);
-        setEnhancedData(json.data);
-
-        const promptResult = json.data.enhancedPrompt || json.data.promptText || '';
-        const historyItem: AIHistoryItem = {
-          id: 'enh_' + Date.now(),
-          type: 'prompt_enhancer',
-          title: json.data.title || `Enhanced: ${cleanPrompt.slice(0, 35)}`,
-          promptText: promptResult,
-          negativePrompt: json.data.negativePrompt,
-          camera: json.data.camera || enhancerCamera,
-          lighting: json.data.lighting || enhancerLighting,
-          composition: json.data.composition,
-          colorPalette: json.data.colorPalette,
-          aspectRatio: json.data.aspectRatio || enhancerRatio,
-          tags: json.data.tags || [enhancerStyle, enhancerEngine, 'Prompt Enhancer'],
-          createdAt: Date.now(),
-        };
-        saveAiHistoryItem(historyItem);
-        setIsSavedEnhancedPrompt(true);
-
-        confetti({ particleCount: 75, spread: 65, origin: { y: 0.65 } });
-        showToast(`Prompt enhanced into studio master prompt! 2 credits used (${Math.max(0, toolCredits - ENHANCER_COST)} remaining)`);
-      } else {
-        showToast(json.error || 'Failed to enhance prompt with Gemini');
-      }
-    } catch (err) {
-      console.error('Prompt enhancer error:', err);
-      showToast('An error occurred during prompt enhancement');
-    } finally {
-      setIsEnhancingPrompt(false);
-    }
-  };
-
-  const handleSaveEnhancedPromptToHistory = () => {
-    if (!enhancedData) return;
-    if (!userAccount?.isLoggedIn) {
-      openAuthModal('Please sign in or create an account to save prompts.');
-      return;
-    }
-
-    const historyItem: AIHistoryItem = {
-      id: 'enh_' + Date.now(),
-      type: 'prompt_enhancer',
-      title: enhancedData.title || `Enhanced: ${enhancerBasicPrompt.slice(0, 35)}`,
-      promptText: enhancedData.enhancedPrompt || enhancedData.promptText || '',
-      negativePrompt: enhancedData.negativePrompt,
-      camera: enhancedData.camera || enhancerCamera,
-      lighting: enhancedData.lighting || enhancerLighting,
-      composition: enhancedData.composition,
-      colorPalette: enhancedData.colorPalette,
-      aspectRatio: enhancedData.aspectRatio || enhancerRatio,
-      tags: enhancedData.tags || [enhancerStyle, enhancerEngine, 'Prompt Enhancer'],
-      createdAt: Date.now(),
-    };
-
-    saveAiHistoryItem(historyItem);
-    setIsSavedEnhancedPrompt(true);
-    showToast('Saved to your AI Studio History!');
-  };
-
-  // ==========================================
-  // HANDLER: PROMPT EDITOR (2 Credits)
-  // ==========================================
-  const handleEditPrompt = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-
-    const cleanPrompt = editorCurrentPrompt.trim();
-    if (!cleanPrompt) {
-      showToast('Please enter an existing prompt to edit');
-      return;
-    }
-
-    if (!userAccount?.isLoggedIn) {
-      openAuthModal('Please sign in or register to edit AI prompts with your credits.');
-      return;
-    }
-
-    const EDITOR_COST = 2;
-    if (toolCredits < EDITOR_COST) {
-      setRequiredCreditsForModal(EDITOR_COST);
-      setIsOutOfCreditsModalOpen(true);
-      showToast(`Prompt Editor requires 2 credits (You have ${toolCredits}). Top up or upgrade!`);
-      return;
-    }
-
-    setIsEditingPrompt(true);
-    setEditedData(null);
-    setIsSavedEditedPrompt(false);
-
-    try {
-      const res = await fetch('/api/gemini/tools', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'edit_prompt',
-          currentPrompt: cleanPrompt,
-          editInstructions: editorInstructions.trim(),
-          lighting: editorLighting,
-          camera: editorCamera,
-          colorGrading: editorColor,
-          targetEngine: editorEngine,
-          aspectRatio: editorRatio,
-        }),
-      });
-
-      const json = await res.json();
-      if (json.success && json.data) {
-        deductToolCredit(EDITOR_COST);
-        setEditedData(json.data);
-
-        const promptResult = json.data.editedPrompt || json.data.promptText || '';
-        const historyItem: AIHistoryItem = {
-          id: 'edt_' + Date.now(),
-          type: 'prompt_editor',
-          title: json.data.title || `Edited: ${cleanPrompt.slice(0, 35)}`,
-          promptText: promptResult,
-          negativePrompt: json.data.negativePrompt,
-          camera: json.data.camera || editorCamera,
-          lighting: json.data.lighting || editorLighting,
-          composition: json.data.composition,
-          colorPalette: json.data.colorPalette || editorColor,
-          aspectRatio: json.data.aspectRatio || editorRatio,
-          tags: json.data.tags || ['Prompt Editor', editorEngine],
-          createdAt: Date.now(),
-        };
-        saveAiHistoryItem(historyItem);
-        setIsSavedEditedPrompt(true);
-
-        confetti({ particleCount: 75, spread: 65, origin: { y: 0.65 } });
-        showToast(`Prompt surgically edited! 2 credits used (${Math.max(0, toolCredits - EDITOR_COST)} remaining)`);
-      } else {
-        showToast(json.error || 'Failed to edit prompt with Gemini');
-      }
-    } catch (err) {
-      console.error('Prompt editor error:', err);
-      showToast('An error occurred during prompt editing');
-    } finally {
-      setIsEditingPrompt(false);
-    }
-  };
-
-  const handleSaveEditedPromptToHistory = () => {
-    if (!editedData) return;
-    if (!userAccount?.isLoggedIn) {
-      openAuthModal('Please sign in or create an account to save prompts.');
-      return;
-    }
-
-    const historyItem: AIHistoryItem = {
-      id: 'edt_' + Date.now(),
-      type: 'prompt_editor',
-      title: editedData.title || `Edited: ${editorCurrentPrompt.slice(0, 35)}`,
-      promptText: editedData.editedPrompt || editedData.promptText || '',
-      negativePrompt: editedData.negativePrompt,
-      camera: editedData.camera || editorCamera,
-      lighting: editedData.lighting || editorLighting,
-      composition: editedData.composition,
-      colorPalette: editedData.colorPalette || editorColor,
-      aspectRatio: editedData.aspectRatio || editorRatio,
-      tags: editedData.tags || ['Prompt Editor', editorEngine],
-      createdAt: Date.now(),
-    };
-
-    saveAiHistoryItem(historyItem);
-    setIsSavedEditedPrompt(true);
-    showToast('Saved to your AI Studio History!');
-  };
-
-  const handleSendToEditor = (promptToEdit: string) => {
-    setEditorCurrentPrompt(promptToEdit);
-    setActiveTool('prompt_editor');
-    showToast('Loaded into Prompt Editor! Customize or type your edits.');
-    window.scrollTo({ top: 100, behavior: 'smooth' });
-  };
-
-  const handleSendToEnhancer = (promptToEnhance: string) => {
-    setEnhancerBasicPrompt(promptToEnhance);
-    setActiveTool('prompt_enhancer');
-    showToast('Loaded into Prompt Enhancer! Select your style and enhance.');
-    window.scrollTo({ top: 100, behavior: 'smooth' });
-  };
-
-  // ==========================================
-  // HANDLER: IMAGE TO PROMPT (3 Credits)
-  // ==========================================
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -708,16 +135,16 @@ export const AIStudioTool = () => {
     reader.onload = (event) => {
       const base64 = event.target?.result as string;
       setUploadedImage(base64);
-      setExtractedImageData(null);
-      setIsSavedImageExtracted(false);
+      setExtractedData(null);
+      setIsSavedExtracted(false);
       showToast('Image loaded! Click "Extract AI Prompt" to analyze.');
     };
     reader.readAsDataURL(file);
   };
 
-  const handleExtractImagePrompt = async () => {
+  const handleExtractPrompt = async () => {
     if (!userAccount?.isLoggedIn) {
-      openAuthModal('Please sign in or create a free account to use the AI Reverse-Engineering tool.');
+      openAuthModal('Please sign in or create a free account to use the AI Studio Reverse-Engineering tool.');
       return;
     }
 
@@ -728,15 +155,14 @@ export const AIStudioTool = () => {
 
     const IMAGE_TO_PROMPT_COST = 3;
     if (toolCredits < IMAGE_TO_PROMPT_COST) {
-      setRequiredCreditsForModal(IMAGE_TO_PROMPT_COST);
       setIsOutOfCreditsModalOpen(true);
       showToast(`Image-to-prompt requires 3 credits (You have ${toolCredits}). Top up credits or upgrade!`);
       return;
     }
 
-    setIsExtractingImagePrompt(true);
-    setExtractedImageData(null);
-    setIsSavedImageExtracted(false);
+    setIsExtractingPrompt(true);
+    setExtractedData(null);
+    setIsSavedExtracted(false);
 
     try {
       const res = await fetch('/api/gemini/tools', {
@@ -745,34 +171,14 @@ export const AIStudioTool = () => {
         body: JSON.stringify({
           action: 'image_to_prompt',
           image: uploadedImage,
-          customInstructions: imageInstructions,
+          customInstructions,
         }),
       });
 
       const json = await res.json();
       if (json.success && json.data) {
         deductToolCredit(IMAGE_TO_PROMPT_COST);
-        setExtractedImageData(json.data);
-
-        const historyItem: AIHistoryItem = {
-          id: 'ext_' + Date.now(),
-          type: 'image_to_prompt',
-          title: json.data.title || 'Extracted Studio Prompt',
-          promptText: json.data.promptText || json.data.prompt || '',
-          negativePrompt: json.data.negativePrompt,
-          referenceImageUrl: uploadedImage || undefined,
-          camera: json.data.camera,
-          lighting: json.data.lighting,
-          composition: json.data.composition,
-          colorPalette: json.data.colorPalette,
-          aspectRatio: json.data.aspectRatio || '16:9',
-          tags: json.data.tags,
-          createdAt: Date.now(),
-        };
-        saveAiHistoryItem(historyItem);
-        setIsSavedImageExtracted(true);
-
-        confetti({ particleCount: 70, spread: 60, origin: { y: 0.65 } });
+        setExtractedData(json.data);
         showToast(`Prompt reverse-engineered! 3 credits used (${Math.max(0, toolCredits - IMAGE_TO_PROMPT_COST)} left)`);
       } else {
         showToast(json.error || 'Failed to extract prompt from image');
@@ -781,35 +187,36 @@ export const AIStudioTool = () => {
       console.error('Extraction error:', err);
       showToast('An error occurred during prompt extraction');
     } finally {
-      setIsExtractingImagePrompt(false);
+      setIsExtractingPrompt(false);
     }
   };
 
-  const handleSaveImageExtractedToHistory = () => {
-    if (!extractedImageData) return;
+  const handleSaveExtractedToHistory = () => {
+    if (!extractedData) return;
+
     if (!userAccount?.isLoggedIn) {
-      openAuthModal('Please sign in or create an account to save extracted prompts.');
+      openAuthModal('Please sign in or create a free account to save extracted prompts to your history.');
       return;
     }
 
     const historyItem: AIHistoryItem = {
       id: 'ext_' + Date.now(),
       type: 'image_to_prompt',
-      title: extractedImageData.title || 'Extracted Studio Prompt',
-      promptText: extractedImageData.promptText || extractedImageData.prompt || '',
-      negativePrompt: extractedImageData.negativePrompt,
+      title: extractedData.title || 'Extracted Studio Prompt',
+      promptText: extractedData.promptText,
+      negativePrompt: extractedData.negativePrompt,
       referenceImageUrl: uploadedImage || undefined,
-      camera: extractedImageData.camera,
-      lighting: extractedImageData.lighting,
-      composition: extractedImageData.composition,
-      colorPalette: extractedImageData.colorPalette,
-      aspectRatio: extractedImageData.aspectRatio || '16:9',
-      tags: extractedImageData.tags,
+      camera: extractedData.camera,
+      lighting: extractedData.lighting,
+      composition: extractedData.composition,
+      colorPalette: extractedData.colorPalette,
+      aspectRatio: extractedData.aspectRatio || '16:9',
+      tags: extractedData.tags,
       createdAt: Date.now(),
     };
 
     saveAiHistoryItem(historyItem);
-    setIsSavedImageExtracted(true);
+    setIsSavedExtracted(true);
     showToast('Saved to your AI Studio History!');
   };
 
@@ -818,7 +225,7 @@ export const AIStudioTool = () => {
     return (
       <main className="min-h-[80vh] flex items-center justify-center px-4 py-16 bg-[#fafafa] dark:bg-neutral-950">
         <div className="max-w-md w-full p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xl text-center space-y-6">
-          <div className="w-16 h-16 rounded-3xl bg-[#E60023] text-white flex items-center justify-center mx-auto shadow-lg shadow-red-500/20">
+          <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-[#E60023] to-amber-500 text-white flex items-center justify-center mx-auto shadow-lg shadow-red-500/20">
             <Sparkles className="w-8 h-8" />
           </div>
           <div className="space-y-2">
@@ -826,27 +233,20 @@ export const AIStudioTool = () => {
               Sign In to Access AI Studio
             </h1>
             <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-              Text-to-Prompt generator and Image Reverse-Engineering tools require an active account. Sign in or register to get started with your daily free credits.
+              Image-to-Prompt extraction, AI reverse-engineering, and prompt generation require an active account. Sign in or register to get started with your daily free credits.
             </p>
           </div>
           <div className="space-y-3 pt-2">
             <button
-              onClick={() => {
-                if (typeof window !== 'undefined') {
-                  const currentTarget = window.location.pathname + window.location.search;
-                  sessionStorage.setItem('pending_auth_redirect', currentTarget);
-                  localStorage.setItem('pending_auth_redirect', currentTarget);
-                }
-                openAuthModal('Sign in to access the AI Studio Creation Tools.');
-              }}
-              className="w-full py-3.5 px-6 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-sm font-bold shadow-lg shadow-red-500/25 transition-all transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+              onClick={() => openAuthModal('Sign in to access the AI Studio Creation Tool.')}
+              className="w-full py-3.5 px-6 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-sm font-bold shadow-lg shadow-red-500/25 transition-all transform active:scale-95 flex items-center justify-center gap-2"
             >
               <Sparkles className="w-4 h-4" />
               <span>Sign In / Create Free Account</span>
             </button>
             <button
               onClick={() => router.push('/')}
-              className="w-full py-3 px-6 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-bold transition-colors cursor-pointer"
+              className="w-full py-3 px-6 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-bold transition-colors"
             >
               Back to Home Feed
             </button>
@@ -868,7 +268,7 @@ export const AIStudioTool = () => {
               if (setSearchQuery) setSearchQuery('');
               router.push('/');
             }}
-            className="flex items-center gap-2 text-xs sm:text-sm font-bold text-neutral-600 dark:text-neutral-300 hover:text-[#E60023] dark:hover:text-white transition-colors cursor-pointer"
+            className="flex items-center gap-2 text-xs sm:text-sm font-bold text-neutral-600 dark:text-neutral-300 hover:text-[#E60023] dark:hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Feed</span>
@@ -879,9 +279,7 @@ export const AIStudioTool = () => {
             <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 text-xs font-bold shadow-xs">
               <Coins className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
               <span>{toolCredits} Credits</span>
-              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium hidden sm:inline">
-                • {activeTool === 'text_to_prompt' ? '2 cr / generation' : '3 cr / extraction'}
-              </span>
+              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium hidden sm:inline">• 3 cr / extraction</span>
               <Link
                 href="/pricing"
                 className="text-[11px] font-black text-[#E60023] hover:underline ml-1"
@@ -895,12 +293,11 @@ export const AIStudioTool = () => {
                 setCurrentView('user-dashboard');
                 router.push('/dashboard');
               }}
-              className="flex items-center gap-1.5 text-xs font-bold text-neutral-600 dark:text-neutral-300 hover:text-[#E60023] px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 text-xs font-bold text-neutral-600 dark:text-neutral-300 hover:text-[#E60023] px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
             >
               <History className="w-3.5 h-3.5 text-[#E60023]" />
               <span>View History</span>
             </button>
-
             <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800 text-[#E60023] text-xs font-black">
               <Zap className="w-3.5 h-3.5 fill-current" />
               <span>AI Studio Lab</span>
@@ -910,1838 +307,370 @@ export const AIStudioTool = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 space-y-8">
-        {/* Tool Page Title & Tool Switcher Tabs */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-neutral-200 dark:border-neutral-800">
+        {/* Hero Title */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-neutral-200 dark:border-neutral-800">
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-neutral-900 dark:text-white tracking-tight flex items-center gap-2.5">
               <Sparkles className="w-7 h-7 text-[#E60023]" />
-              <span>AI Studio Tools</span>
+              <span>AI Image-to-Prompt Studio</span>
             </h1>
             <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-              {activeTool === 'text_to_prompt' &&
-                'Turn 1-line ideas into cinematic master prompts with custom camera optics & lighting (2 credits).'}
-              {activeTool === 'prompt_enhancer' &&
-                'Elevate basic or simple prompts into hyper-detailed studio masterpieces with real optics & sensory textures (2 credits).'}
-              {activeTool === 'prompt_editor' &&
-                'Surgically tweak, refine, or re-tune any prompt with 1-click modifiers or custom instructions (2 credits).'}
-              {activeTool === 'image_to_prompt' &&
-                'Reverse-engineer precise, high-fidelity AI prompts from any photo with optical analysis (3 credits).'}
+              Reverse-engineer precise, high-fidelity AI prompts from any photo or visual with optical analysis.
             </p>
-          </div>
-
-          {/* Primary Tool Switcher Tabs */}
-          <div className="flex items-center gap-1 sm:gap-1.5 bg-neutral-100 dark:bg-neutral-900 p-1.5 rounded-full border border-neutral-200 dark:border-neutral-800 self-start lg:self-auto overflow-x-auto max-w-full">
-            <button
-              onClick={() => setActiveTool('text_to_prompt')}
-              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer shrink-0 ${
-                activeTool === 'text_to_prompt'
-                  ? 'bg-[#E60023] text-white shadow-md shadow-red-500/20'
-                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-              }`}
-              id="tool-tab-text-to-prompt"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Text to Prompt</span>
-              <span
-                className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                  activeTool === 'text_to_prompt'
-                    ? 'bg-white/20 text-white'
-                    : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300'
-                }`}
-              >
-                2 Cr
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTool('prompt_enhancer')}
-              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer shrink-0 ${
-                activeTool === 'prompt_enhancer'
-                  ? 'bg-[#E60023] text-white shadow-md shadow-red-500/20'
-                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-              }`}
-              id="tool-tab-prompt-enhancer"
-            >
-              <Wand2 className="w-3.5 h-3.5" />
-              <span>Prompt Enhancer</span>
-              <span
-                className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                  activeTool === 'prompt_enhancer'
-                    ? 'bg-white/20 text-white'
-                    : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300'
-                }`}
-              >
-                2 Cr
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTool('prompt_editor')}
-              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer shrink-0 ${
-                activeTool === 'prompt_editor'
-                  ? 'bg-[#E60023] text-white shadow-md shadow-red-500/20'
-                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-              }`}
-              id="tool-tab-prompt-editor"
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>Prompt Editor</span>
-              <span
-                className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                  activeTool === 'prompt_editor'
-                    ? 'bg-white/20 text-white'
-                    : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300'
-                }`}
-              >
-                2 Cr
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTool('image_to_prompt')}
-              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer shrink-0 ${
-                activeTool === 'image_to_prompt'
-                  ? 'bg-[#E60023] text-white shadow-md shadow-red-500/20'
-                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-              }`}
-              id="tool-tab-image-to-prompt"
-            >
-              <Camera className="w-3.5 h-3.5" />
-              <span>Image to Prompt</span>
-              <span
-                className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                  activeTool === 'image_to_prompt'
-                    ? 'bg-white/20 text-white'
-                    : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300'
-                }`}
-              >
-                3 Cr
-              </span>
-            </button>
           </div>
         </div>
 
-        {/* ================================================================ */}
-        {/* TOOL 1: TEXT TO PROMPT GENERATOR (2 Credits)                     */}
-        {/* ================================================================ */}
-        {activeTool === 'text_to_prompt' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in">
-            {/* Left Column: Text Input & Photographic Controls (5 cols) */}
-            <div className="lg:col-span-5 space-y-6">
-              <form onSubmit={handleGenerateTextPrompt} className="space-y-6">
-                {/* Text Idea Input Card */}
-                <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-[#E60023]" />
-                      <span>Photo Prompt Concept</span>
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      {preloadedFromHome && (
-                        <span className="px-2.5 py-0.5 rounded-full bg-red-50 dark:bg-red-950/60 text-[#E60023] text-[10px] font-bold border border-red-200 dark:border-red-900">
-                          ✨ Pre-filled from Home
-                        </span>
-                      )}
-                      {textIdea && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setTextIdea('');
-                            setPreloadedFromHome(false);
-                            setGeneratedTextData(null);
-                          }}
-                          className="text-xs font-semibold text-neutral-400 hover:text-red-500 transition-colors"
-                        >
-                          Clear
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-1.5">
-                      Describe your photo or artistic vision in 1 line or a few details:
-                    </label>
-                    <textarea
-                      rows={4}
-                      value={textIdea}
-                      onChange={(e) => setTextIdea(e.target.value)}
-                      placeholder="e.g. Cyberpunk samurai walking in rainy neon Tokyo street, editorial photography, moody reflection on wet pavement..."
-                      className="w-full px-3.5 py-3 text-xs sm:text-sm rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:ring-2 focus:ring-[#E60023] focus:outline-none resize-none leading-relaxed transition-all shadow-inner"
-                      id="text-to-prompt-input"
-                    />
-                    <div className="flex items-center justify-between text-[11px] text-neutral-400 pt-1">
-                      <span>{textIdea.trim().length} characters</span>
-                      <span>⚡ Consumes 2 Credits</span>
-                    </div>
-                  </div>
-
-                  {/* Sample Inspiration Chips */}
-                  <div className="space-y-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
-                    <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block">
-                      Quick Inspiration Ideas:
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {TEXT_PROMPT_PRESETS.map((preset) => (
-                        <button
-                          key={preset}
-                          type="button"
-                          onClick={() => {
-                            setTextIdea(preset);
-                            setPreloadedFromHome(false);
-                          }}
-                          className="px-2.5 py-1 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-[11px] font-medium transition-colors cursor-pointer text-left"
-                        >
-                          {preset}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Photographic Fine-Tuning Controls */}
-                <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                      <Sliders className="w-4 h-4 text-[#E60023]" />
-                      <span>Photographic Parameters</span>
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={() => setShowAdvancedTextOptions(!showAdvancedTextOptions)}
-                      className="text-xs font-bold text-neutral-500 hover:text-neutral-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
-                    >
-                      <span>{showAdvancedTextOptions ? 'Collapse' : 'Customize'}</span>
-                      <ChevronDown
-                        className={`w-3.5 h-3.5 transition-transform ${
-                          showAdvancedTextOptions ? 'rotate-180' : ''
-                        }`}
-                      />
-                    </button>
-                  </div>
-
-                  {/* Quick summary line when collapsed */}
-                  {!showAdvancedTextOptions && (
-                    <div className="flex flex-wrap gap-1.5 text-[11px]">
-                      <span className="px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 font-medium">
-                        💡 {lighting}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 font-medium">
-                        🎨 {colorGrading}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 font-medium">
-                        📸 {camera.split(',')[0]}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 font-medium">
-                        📐 {aspectRatio}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Collapsible Full Controls */}
-                  {showAdvancedTextOptions && (
-                    <div className="space-y-3 pt-2 animate-fade-in">
-                      {/* Lighting */}
-                      <div>
-                        <label className="block text-[11px] font-bold text-neutral-600 dark:text-neutral-400 mb-1">
-                          Lighting Dynamics
-                        </label>
-                        <select
-                          value={lighting}
-                          onChange={(e) => setLighting(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-xs font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]"
-                        >
-                          {LIGHTING_OPTIONS.map((opt) => (
-                            <option key={opt} value={opt}>
-                              {opt}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Color Grading */}
-                      <div>
-                        <label className="block text-[11px] font-bold text-neutral-600 dark:text-neutral-400 mb-1">
-                          Color Palette & Film Stock
-                        </label>
-                        <select
-                          value={colorGrading}
-                          onChange={(e) => setColorGrading(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-xs font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]"
-                        >
-                          {COLOR_OPTIONS.map((opt) => (
-                            <option key={opt} value={opt}>
-                              {opt}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Camera Optics */}
-                      <div>
-                        <label className="block text-[11px] font-bold text-neutral-600 dark:text-neutral-400 mb-1">
-                          Camera Optics & Prime Lens
-                        </label>
-                        <select
-                          value={camera}
-                          onChange={(e) => setCamera(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-xs font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]"
-                        >
-                          {CAMERA_OPTIONS.map((opt) => (
-                            <option key={opt} value={opt}>
-                              {opt}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Target Engine & Aspect Ratio Grid */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-[11px] font-bold text-neutral-600 dark:text-neutral-400 mb-1">
-                            Target AI Generator
-                          </label>
-                          <select
-                            value={targetEngine}
-                            onChange={(e) => setTargetEngine(e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-xs font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]"
-                          >
-                            {ENGINE_OPTIONS.map((opt) => (
-                              <option key={opt} value={opt}>
-                                {opt}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-bold text-neutral-600 dark:text-neutral-400 mb-1">
-                            Aspect Ratio
-                          </label>
-                          <select
-                            value={aspectRatio}
-                            onChange={(e) => setAspectRatio(e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-xs font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]"
-                          >
-                            {RATIO_OPTIONS.map((opt) => (
-                              <option key={opt.value} value={opt.value}>
-                                {opt.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-
-                      {/* Custom Exclusions / Negative Rules */}
-                      <div>
-                        <label className="block text-[11px] font-bold text-neutral-600 dark:text-neutral-400 mb-1">
-                          Custom Exclusions or Style Rules (Optional)
-                        </label>
-                        <input
-                          type="text"
-                          value={negativeConstraints}
-                          onChange={(e) => setNegativeConstraints(e.target.value)}
-                          placeholder="e.g. no watermark, no text, clean bokeh, high contrast"
-                          className="w-full px-3 py-2 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-xs font-medium text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#E60023]"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Generate Master Prompt CTA (2 Credits) */}
-                <div className="p-4 rounded-3xl bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 space-y-3">
-                  <div className="flex items-center justify-between text-xs px-1">
-                    <span className="text-neutral-500 dark:text-neutral-400">Available Credits:</span>
-                    <span className="font-bold text-neutral-900 dark:text-white">
-                      {toolCredits} Credits
-                    </span>
-                  </div>
-
+        {/* IMAGE TO PROMPT STUDIO */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Column: Input Image & Options (5 cols) */}
+          <div className="lg:col-span-5 space-y-6">
+            <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                  <Upload className="w-4 h-4 text-[#E60023]" />
+                  <span>Upload Image to Reverse</span>
+                </h3>
+                {uploadedImage && (
                   <button
-                    type="submit"
-                    disabled={isGeneratingTextPrompt || !textIdea.trim()}
-                    className="w-full py-4 px-6 rounded-full bg-[#E60023] hover:bg-[#ad081b] active:scale-[0.98] text-white font-black text-sm shadow-md shadow-red-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                    id="generate-master-prompt-btn"
+                    onClick={() => {
+                      setUploadedImage(null);
+                      setExtractedData(null);
+                      setIsSavedExtracted(false);
+                    }}
+                    className="text-xs font-semibold text-red-500 hover:underline"
                   >
-                    {isGeneratingTextPrompt ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Crafting Master Prompt with Gemini...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4" />
-                        <span>Generate Master Prompt (2 Credits)</span>
-                      </>
-                    )}
+                    Clear
                   </button>
-                  <p className="text-[11px] text-center text-neutral-500 dark:text-neutral-400">
-                    ⚡ Deducts 2 credits • Formulated for {targetEngine}
-                  </p>
-                </div>
-              </form>
-            </div>
+                )}
+              </div>
 
-            {/* Right Column: Generated Master Prompt Output (7 cols) */}
-            <div className="lg:col-span-7 space-y-6">
-              {generatedTextData ? (
-                <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6 animate-fade-in">
-                  {/* Top Bar with Title and Actions */}
-                  <div className="flex items-center justify-between gap-3 flex-wrap pb-4 border-b border-neutral-200 dark:border-neutral-800">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                        <h2 className="text-base sm:text-lg font-black text-neutral-900 dark:text-white">
-                          {generatedTextData.title || 'Generated Master Prompt'}
-                        </h2>
-                      </div>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                        Crafted for {targetEngine} • {aspectRatio} Aspect Ratio
-                      </p>
-                    </div>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageFileChange}
+                accept="image/*"
+                className="hidden"
+              />
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={handleSaveTextPromptToHistory}
-                        disabled={isSavedTextPrompt}
-                        className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                          isSavedTextPrompt
-                            ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
-                            : 'bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
-                        }`}
-                      >
-                        {isSavedTextPrompt ? <Check className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
-                        <span>{isSavedTextPrompt ? 'Saved in History' : 'Save to History'}</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          copyToClipboard(
-                            generatedTextData.promptText || generatedTextData.prompt || '',
-                            'main_text_prompt',
-                            'Master prompt copied!'
-                          )
-                        }
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
-                      >
-                        {copiedKey === 'main_text_prompt' ? (
-                          <Check className="w-3.5 h-3.5" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5" />
-                        )}
-                        <span>{copiedKey === 'main_text_prompt' ? 'Copied!' : 'Copy Master Prompt'}</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Primary Master Prompt Box */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-[#E60023]" />
-                        <span>Master AI Image Prompt</span>
-                      </span>
-                      <button
-                        onClick={() =>
-                          copyToClipboard(
-                            generatedTextData.promptText || generatedTextData.prompt || '',
-                            'main_text_prompt',
-                            'Master prompt copied!'
-                          )
-                        }
-                        className="text-xs text-[#E60023] hover:underline font-bold"
-                      >
-                        {copiedKey === 'main_text_prompt' ? 'Copied' : 'Copy'}
-                      </button>
-                    </div>
-
-                    <div className="p-4 sm:p-5 rounded-2xl bg-neutral-950 text-neutral-100 font-mono text-xs sm:text-sm leading-relaxed border border-neutral-800 shadow-inner relative group">
-                      <p className="whitespace-pre-wrap select-all selection:bg-red-600 selection:text-white">
-                        {generatedTextData.promptText || generatedTextData.prompt}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Negative Prompt Box */}
-                  {(generatedTextData.negativePrompt || generatedTextData.negative_prompt) && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-neutral-700 dark:text-neutral-300">
-                          Negative Prompt (Exclusions)
-                        </span>
-                        <button
-                          onClick={() =>
-                            copyToClipboard(
-                              generatedTextData.negativePrompt || generatedTextData.negative_prompt || '',
-                              'neg_text_prompt',
-                              'Negative prompt copied!'
-                            )
-                          }
-                          className="text-xs text-[#E60023] hover:underline font-bold"
-                        >
-                          {copiedKey === 'neg_text_prompt' ? 'Copied' : 'Copy'}
-                        </button>
-                      </div>
-                      <div className="p-3.5 rounded-2xl bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-mono text-xs leading-relaxed border border-neutral-200 dark:border-neutral-700">
-                        {generatedTextData.negativePrompt || generatedTextData.negative_prompt}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Photographic Optical Breakdown */}
-                  <div className="space-y-3 pt-2">
-                    <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider block">
-                      Photographic Optics Breakdown
-                    </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                      {generatedTextData.camera && (
-                        <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-                          <span className="text-[10px] font-bold text-neutral-400 uppercase block">Camera & Optics</span>
-                          <span className="font-semibold text-neutral-900 dark:text-white">
-                            📸 {generatedTextData.camera}
-                          </span>
-                        </div>
-                      )}
-                      {generatedTextData.lighting && (
-                        <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-                          <span className="text-[10px] font-bold text-neutral-400 uppercase block">Lighting Style</span>
-                          <span className="font-semibold text-neutral-900 dark:text-white">
-                            💡 {generatedTextData.lighting}
-                          </span>
-                        </div>
-                      )}
-                      {generatedTextData.colorPalette && (
-                        <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-                          <span className="text-[10px] font-bold text-neutral-400 uppercase block">Color & Film</span>
-                          <span className="font-semibold text-neutral-900 dark:text-white">
-                            🎨 {generatedTextData.colorPalette}
-                          </span>
-                        </div>
-                      )}
-                      {generatedTextData.composition && (
-                        <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-                          <span className="text-[10px] font-bold text-neutral-400 uppercase block">Composition</span>
-                          <span className="font-semibold text-neutral-900 dark:text-white">
-                            📐 {generatedTextData.composition}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Action row at bottom */}
-                  <div className="flex items-center justify-between pt-4 border-t border-neutral-200 dark:border-neutral-800">
+              {uploadedImage ? (
+                <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 group">
+                  <Image
+                    src={uploadedImage}
+                    alt="Uploaded target"
+                    fill
+                    className="object-contain"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
                     <button
-                      type="button"
-                      onClick={() => {
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                      className="text-xs font-bold text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-3.5 py-1.5 rounded-full bg-white text-neutral-900 text-xs font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-1.5"
                     >
-                      ↑ Back to Top
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setTextIdea('');
-                        setGeneratedTextData(null);
-                        setPreloadedFromHome(false);
-                      }}
-                      className="px-4 py-2 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-colors"
-                    >
-                      Create Another Prompt
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Change Photo</span>
                     </button>
                   </div>
                 </div>
               ) : (
-                /* Empty / Waiting State */
-                <div className="p-8 sm:p-12 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm text-center space-y-5">
-                  <div className="w-16 h-16 rounded-3xl bg-red-50 dark:bg-red-950/60 text-[#E60023] flex items-center justify-center mx-auto">
-                    <Sparkles className="w-8 h-8" />
-                  </div>
-                  <div className="space-y-2 max-w-md mx-auto">
-                    <h3 className="text-lg font-black text-neutral-900 dark:text-white">
-                      Ready to Craft Master Prompts
-                    </h3>
-                    <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
-                      Enter your prompt idea on the left and click <strong>Generate Master Prompt (2 Credits)</strong>. Gemini will expand it into a production-ready prompt complete with real camera settings, prime lens optics, lighting direction, and negative keywords.
-                    </p>
-                  </div>
-
-                  <div className="pt-4 border-t border-neutral-100 dark:border-neutral-800 grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
-                    <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-                      <span className="text-[11px] font-bold text-[#E60023] block mb-1">⚡ 2 Credits</span>
-                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                        Economical consumption with high-fidelity Gemini 3 expansion.
-                      </p>
-                    </div>
-                    <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-                      <span className="text-[11px] font-bold text-[#E60023] block mb-1">📸 Real Optics</span>
-                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                        Incorporate Hasselblad, Leica, and Sony A7R V focal lengths.
-                      </p>
-                    </div>
-                    <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-                      <span className="text-[11px] font-bold text-[#E60023] block mb-1">🎯 Multi-Engine</span>
-                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                        Outputs tuned flags for Midjourney, Flux, and Imagen.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ================================================================ */}
-        {/* TOOL 2: PROMPT ENHANCER STUDIO (2 Credits)                       */}
-        {/* ================================================================ */}
-        {activeTool === 'prompt_enhancer' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in">
-            {/* Left Column: Basic Prompt Input & Enhancement Controls (5 cols) */}
-            <div className="lg:col-span-5 space-y-6">
-              <form onSubmit={handleEnhancePrompt} className="space-y-6">
-                {/* Basic Prompt Input Card */}
-                <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
-                  <div className="flex items-center justify-between">
-                    <label
-                      htmlFor="enhancer-basic-input"
-                      className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2"
-                    >
-                      <Wand2 className="w-4 h-4 text-[#E60023]" />
-                      <span>Basic Prompt to Enhance</span>
-                    </label>
-                    {enhancerBasicPrompt && (
-                      <button
-                        type="button"
-                        onClick={() => setEnhancerBasicPrompt('')}
-                        className="text-xs font-semibold text-neutral-400 hover:text-red-500 transition-colors"
-                      >
-                        Clear
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="relative">
-                    <textarea
-                      id="enhancer-basic-input"
-                      rows={4}
-                      value={enhancerBasicPrompt}
-                      onChange={(e) => setEnhancerBasicPrompt(e.target.value)}
-                      placeholder="e.g. A cat sitting on a windowsill in the rain, or an astronaut exploring an ancient alien temple..."
-                      className="w-full p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#E60023] focus:border-transparent transition-all resize-none"
-                    />
-                    <div className="flex items-center justify-between text-[11px] text-neutral-400 px-1 mt-1">
-                      <span>Enter any short or raw prompt idea</span>
-                      <span>{enhancerBasicPrompt.length} chars</span>
-                    </div>
-                  </div>
-
-                  {/* Preset Idea Chips */}
-                  <div className="space-y-2 pt-1 border-t border-neutral-100 dark:border-neutral-800">
-                    <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Lightbulb className="w-3 h-3 text-amber-500" />
-                      <span>Quick Basic Prompts to Test</span>
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {ENHANCER_PRESETS.map((preset, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => setEnhancerBasicPrompt(preset)}
-                          className="px-2.5 py-1 rounded-xl text-[11px] font-medium bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors text-left cursor-pointer"
-                        >
-                          {preset}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Enhancement Style Selector */}
-                <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
-                  <span className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-[#E60023]" />
-                    <span>Target Aesthetic & Style</span>
-                  </span>
-
-                  <div className="grid grid-cols-1 gap-2">
-                    {ENHANCER_STYLES.map((style) => (
-                      <button
-                        key={style.label}
-                        type="button"
-                        onClick={() => setEnhancerStyle(style.label)}
-                        className={`p-3 rounded-2xl text-left transition-all border flex flex-col gap-0.5 cursor-pointer ${
-                          enhancerStyle === style.label
-                            ? 'bg-red-50/70 dark:bg-red-950/30 border-[#E60023] text-neutral-900 dark:text-white shadow-xs'
-                            : 'bg-neutral-50 dark:bg-neutral-950 border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:border-neutral-300 dark:hover:border-neutral-700'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-neutral-900 dark:text-white">
-                            {style.label}
-                          </span>
-                          {enhancerStyle === style.label && (
-                            <CheckCircle2 className="w-3.5 h-3.5 text-[#E60023]" />
-                          )}
-                        </div>
-                        <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                          {style.desc}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Engine, Aspect Ratio, & Optics Grid */}
-                <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
-                  <span className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                    <Sliders className="w-4 h-4 text-[#E60023]" />
-                    <span>Target Engine & Optics Tuning</span>
-                  </span>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Engine */}
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider block">
-                        Target AI Engine
-                      </label>
-                      <select
-                        value={enhancerEngine}
-                        onChange={(e) => setEnhancerEngine(e.target.value)}
-                        className="w-full p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-xs font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]"
-                      >
-                        {ENGINE_OPTIONS.map((eng) => (
-                          <option key={eng} value={eng}>
-                            {eng}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Aspect Ratio */}
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider block">
-                        Aspect Ratio
-                      </label>
-                      <select
-                        value={enhancerRatio}
-                        onChange={(e) => setEnhancerRatio(e.target.value)}
-                        className="w-full p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-xs font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]"
-                      >
-                        {RATIO_OPTIONS.map((rat) => (
-                          <option key={rat.value} value={rat.value}>
-                            {rat.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Preferred Lighting */}
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider block">
-                        Atmospheric Lighting
-                      </label>
-                      <select
-                        value={enhancerLighting}
-                        onChange={(e) => setEnhancerLighting(e.target.value)}
-                        className="w-full p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-xs font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]"
-                      >
-                        {LIGHTING_OPTIONS.map((lgt) => (
-                          <option key={lgt} value={lgt}>
-                            {lgt}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Optical Camera */}
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider block">
-                        Camera / Optics Rig
-                      </label>
-                      <select
-                        value={enhancerCamera}
-                        onChange={(e) => setEnhancerCamera(e.target.value)}
-                        className="w-full p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-xs font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]"
-                      >
-                        {CAMERA_OPTIONS.map((cam) => (
-                          <option key={cam} value={cam}>
-                            {cam}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Submit Action Button */}
-                <button
-                  type="submit"
-                  disabled={isEnhancingPrompt || !enhancerBasicPrompt.trim()}
-                  className={`w-full py-4 px-6 rounded-full font-bold text-sm shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                    isEnhancingPrompt || !enhancerBasicPrompt.trim()
-                      ? 'bg-neutral-200 dark:bg-neutral-800 text-neutral-400 cursor-not-allowed shadow-none'
-                      : 'bg-[#E60023] hover:bg-[#ad081b] text-white shadow-red-500/25 hover:shadow-red-500/40 transform active:scale-98'
-                  }`}
-                  id="btn-enhance-prompt-submit"
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full aspect-[4/3] rounded-2xl border-2 border-dashed border-neutral-300 dark:border-neutral-700 hover:border-[#E60023] dark:hover:border-[#E60023] bg-neutral-50 dark:bg-neutral-950 flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-colors group"
                 >
-                  {isEnhancingPrompt ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Enhancing into Master Prompt (Gemini AI)...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Wand2 className="w-4 h-4" />
-                      <span>Enhance Prompt (2 Credits)</span>
-                    </>
-                  )}
-                </button>
-              </form>
-            </div>
-
-            {/* Right Column: Enhanced Result Display (7 cols) */}
-            <div className="lg:col-span-7">
-              {enhancedData ? (
-                <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
-                  {/* Top Bar with Title & Actions */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-neutral-200 dark:border-neutral-800">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase tracking-wider border border-amber-200 dark:border-amber-900">
-                          ✨ Enhanced Masterpiece
-                        </span>
-                        <span className="text-xs text-neutral-400">2 Credits Used</span>
-                      </div>
-                      <h3 className="text-lg font-bold text-neutral-900 dark:text-white mt-1">
-                        {enhancedData.title || 'Studio Enhanced Prompt'}
-                      </h3>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={handleSaveEnhancedPromptToHistory}
-                        disabled={isSavedEnhancedPrompt}
-                        className={`p-2.5 rounded-full border text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                          isSavedEnhancedPrompt
-                            ? 'bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-900 text-[#E60023]'
-                            : 'border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800'
-                        }`}
-                        title="Save to AI History"
-                      >
-                        <Bookmark className="w-4 h-4" />
-                        <span className="hidden sm:inline">
-                          {isSavedEnhancedPrompt ? 'Saved' : 'Save'}
-                        </span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleSendToEditor(
-                            enhancedData.enhancedPrompt || enhancedData.promptText || ''
-                          )
-                        }
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200 text-xs font-bold transition-all cursor-pointer"
-                        title="Send to Prompt Editor for further tweaks"
-                      >
-                        <SlidersHorizontal className="w-3.5 h-3.5" />
-                        <span>Edit in Editor</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          copyToClipboard(
-                            enhancedData.enhancedPrompt || enhancedData.promptText || '',
-                            'enhanced_master_prompt',
-                            'Enhanced master prompt copied!'
-                          )
-                        }
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
-                      >
-                        {copiedKey === 'enhanced_master_prompt' ? (
-                          <Check className="w-3.5 h-3.5" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5" />
-                        )}
-                        <span>
-                          {copiedKey === 'enhanced_master_prompt' ? 'Copied!' : 'Copy Enhanced Prompt'}
-                        </span>
-                      </button>
-                    </div>
+                  <div className="w-12 h-12 rounded-full bg-red-50 dark:bg-red-950/60 text-[#E60023] flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <Upload className="w-6 h-6" />
                   </div>
-
-                  {/* Before vs After Comparison */}
-                  <div className="space-y-4">
-                    {/* Before: Raw Prompt */}
-                    <div className="p-3.5 rounded-2xl bg-neutral-100 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-800">
-                      <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block mb-1">
-                        Original Basic Input:
-                      </span>
-                      <p className="text-xs text-neutral-600 dark:text-neutral-300 italic">
-                        &ldquo;{enhancedData.originalPrompt || enhancerBasicPrompt}&rdquo;
-                      </p>
-                    </div>
-
-                    {/* After: Enhanced Master Prompt */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-neutral-900 dark:text-white flex items-center gap-1.5">
-                          <Wand2 className="w-3.5 h-3.5 text-[#E60023]" />
-                          <span>Enhanced Master Prompt</span>
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            copyToClipboard(
-                              enhancedData.enhancedPrompt || enhancedData.promptText || '',
-                              'enhanced_master_prompt',
-                              'Enhanced master prompt copied!'
-                            )
-                          }
-                          className="text-xs text-[#E60023] hover:underline font-bold"
-                        >
-                          {copiedKey === 'enhanced_master_prompt' ? 'Copied' : 'Copy'}
-                        </button>
-                      </div>
-
-                      <div className="p-4 sm:p-5 rounded-2xl bg-neutral-950 text-neutral-100 font-mono text-xs sm:text-sm leading-relaxed border border-neutral-800 shadow-inner relative group">
-                        <p className="whitespace-pre-wrap select-all selection:bg-red-600 selection:text-white">
-                          {enhancedData.enhancedPrompt || enhancedData.promptText}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Improvements Injected */}
-                  {enhancedData.improvements && enhancedData.improvements.length > 0 && (
-                    <div className="space-y-2 pt-1">
-                      <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block">
-                        Key Enhancements Injected
-                      </span>
-                      <div className="flex flex-wrap gap-2">
-                        {enhancedData.improvements.map((imp, idx) => (
-                          <span
-                            key={idx}
-                            className="px-3 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-900/60 text-xs font-medium flex items-center gap-1.5"
-                          >
-                            <CheckCircle2 className="w-3 h-3 text-amber-500" />
-                            <span>{imp}</span>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Negative Prompt Box */}
-                  {enhancedData.negativePrompt && (
-                    <div className="space-y-2 pt-1">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-neutral-700 dark:text-neutral-300">
-                          Negative Prompt (Exclusions)
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            copyToClipboard(
-                              enhancedData.negativePrompt || '',
-                              'neg_enh_prompt',
-                              'Negative prompt copied!'
-                            )
-                          }
-                          className="text-xs text-[#E60023] hover:underline font-bold"
-                        >
-                          {copiedKey === 'neg_enh_prompt' ? 'Copied' : 'Copy'}
-                        </button>
-                      </div>
-                      <div className="p-3.5 rounded-2xl bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-mono text-xs leading-relaxed border border-neutral-200 dark:border-neutral-700">
-                        {enhancedData.negativePrompt}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Optical Breakdown Grid */}
-                  <div className="space-y-3 pt-2">
-                    <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider block">
-                      Photographic Parameters
-                    </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                      {enhancedData.camera && (
-                        <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-                          <span className="text-[10px] font-bold text-neutral-400 uppercase block">Camera & Optics</span>
-                          <span className="font-semibold text-neutral-900 dark:text-white">
-                            📸 {enhancedData.camera}
-                          </span>
-                        </div>
-                      )}
-                      {enhancedData.lighting && (
-                        <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-                          <span className="text-[10px] font-bold text-neutral-400 uppercase block">Lighting Dynamic</span>
-                          <span className="font-semibold text-neutral-900 dark:text-white">
-                            💡 {enhancedData.lighting}
-                          </span>
-                        </div>
-                      )}
-                      {enhancedData.colorPalette && (
-                        <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-                          <span className="text-[10px] font-bold text-neutral-400 uppercase block">Color Palette</span>
-                          <span className="font-semibold text-neutral-900 dark:text-white">
-                            🎨 {enhancedData.colorPalette}
-                          </span>
-                        </div>
-                      )}
-                      {enhancedData.composition && (
-                        <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-                          <span className="text-[10px] font-bold text-neutral-400 uppercase block">Composition</span>
-                          <span className="font-semibold text-neutral-900 dark:text-white">
-                            📐 {enhancedData.composition}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Action Footer */}
-                  <div className="flex items-center justify-between pt-4 border-t border-neutral-200 dark:border-neutral-800">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                      className="text-xs font-bold text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
-                    >
-                      ↑ Back to Top
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEnhancerBasicPrompt('');
-                        setEnhancedData(null);
-                      }}
-                      className="px-4 py-2 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-colors"
-                    >
-                      Enhance Another Prompt
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                /* Empty / Waiting State for Enhancer */
-                <div className="p-8 sm:p-12 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm text-center space-y-5">
-                  <div className="w-16 h-16 rounded-3xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 flex items-center justify-center mx-auto">
-                    <Wand2 className="w-8 h-8" />
-                  </div>
-                  <div className="space-y-2 max-w-md mx-auto">
-                    <h3 className="text-lg font-black text-neutral-900 dark:text-white">
-                      Transform Basic Prompts into Masterpieces
-                    </h3>
-                    <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
-                      Type any simple or raw prompt idea on the left and click <strong>Enhance Prompt (2 Credits)</strong>. Gemini will rewrite it with prime lenses, optical depth, atmospheric lighting, and engine parameters.
-                    </p>
-                  </div>
-
-                  <div className="pt-4 border-t border-neutral-100 dark:border-neutral-800 grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
-                    <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-                      <span className="text-[11px] font-bold text-amber-600 block mb-1">🌟 Master Detail</span>
-                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                        Adds rich textures, skin micro-pores, natural fabric weave, and depth.
-                      </p>
-                    </div>
-                    <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-                      <span className="text-[11px] font-bold text-amber-600 block mb-1">💡 Volumetric Light</span>
-                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                        Applies ray tracing, rim lighting, atmospheric mist, and soft bokeh.
-                      </p>
-                    </div>
-                    <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-                      <span className="text-[11px] font-bold text-amber-600 block mb-1">🎯 Engine Optimized</span>
-                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                        Outputs tailored flags (--ar, --v 6.1, --style raw) ready for Midjourney and Flux.
-                      </p>
-                    </div>
-                  </div>
+                  <span className="text-xs sm:text-sm font-bold text-neutral-800 dark:text-neutral-200">
+                    Click to upload or drag & drop photo
+                  </span>
+                  <span className="text-[11px] text-neutral-400 mt-1">
+                    PNG, JPG, WebP up to 10MB
+                  </span>
                 </div>
               )}
-            </div>
-          </div>
-        )}
 
-        {/* ================================================================ */}
-        {/* TOOL 3: PROMPT EDITOR STUDIO (2 Credits)                         */}
-        {/* ================================================================ */}
-        {activeTool === 'prompt_editor' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in">
-            {/* Left Column: Current Prompt & Surgical Edit Instructions (5 cols) */}
-            <div className="lg:col-span-5 space-y-6">
-              <form onSubmit={handleEditPrompt} className="space-y-6">
-                {/* Current Prompt Card */}
-                <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
-                  <div className="flex items-center justify-between">
-                    <label
-                      htmlFor="editor-current-prompt"
-                      className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2"
-                    >
-                      <SlidersHorizontal className="w-4 h-4 text-[#E60023]" />
-                      <span>Existing Prompt to Edit</span>
-                    </label>
-                    {editorCurrentPrompt && (
-                      <button
-                        type="button"
-                        onClick={() => setEditorCurrentPrompt('')}
-                        className="text-xs font-semibold text-neutral-400 hover:text-red-500 transition-colors"
-                      >
-                        Clear
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="relative">
-                    <textarea
-                      id="editor-current-prompt"
-                      rows={4}
-                      value={editorCurrentPrompt}
-                      onChange={(e) => setEditorCurrentPrompt(e.target.value)}
-                      placeholder="Paste your existing prompt here (from Midjourney, Civitai, or previous generations)..."
-                      className="w-full p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#E60023] focus:border-transparent transition-all resize-none"
-                    />
-                    <div className="flex items-center justify-between text-[11px] text-neutral-400 px-1 mt-1">
-                      <span>The prompt you wish to surgically adjust</span>
-                      <span>{editorCurrentPrompt.length} chars</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 1-Click Modifier Chips */}
-                <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-3">
-                  <span className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-amber-500" />
-                    <span>1-Click Modifier Chips</span>
-                  </span>
-                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                    Click any modifier to instantly inject targeted instructions:
-                  </p>
-
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {EDITOR_QUICK_MODIFIERS.map((mod, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => {
-                          setEditorInstructions((prev) => {
-                            if (!prev.trim()) return mod.action;
-                            return `${prev.trim()}, ${mod.action}`;
-                          });
-                          showToast(`Added: ${mod.label}`);
-                        }}
-                        className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700 hover:border-red-400 transition-all text-left flex items-center gap-1 cursor-pointer"
-                      >
-                        <span>{mod.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Edit Instructions Textarea */}
-                <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
-                  <div className="flex items-center justify-between">
-                    <label
-                      htmlFor="editor-instructions"
-                      className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2"
-                    >
-                      <Edit3 className="w-4 h-4 text-[#E60023]" />
-                      <span>Edit Instructions (What to change?)</span>
-                    </label>
-                    {editorInstructions && (
-                      <button
-                        type="button"
-                        onClick={() => setEditorInstructions('')}
-                        className="text-xs font-semibold text-neutral-400 hover:text-red-500 transition-colors"
-                      >
-                        Clear
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="relative">
-                    <textarea
-                      id="editor-instructions"
-                      rows={3}
-                      value={editorInstructions}
-                      onChange={(e) => setEditorInstructions(e.target.value)}
-                      placeholder="e.g. Change background to rainy Tokyo night, remove sunglasses, add neon signs, change lens to 85mm portrait..."
-                      className="w-full p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#E60023] focus:border-transparent transition-all resize-none"
-                    />
-                    <div className="flex items-center justify-between text-[11px] text-neutral-400 px-1 mt-1">
-                      <span>Specific modifications you want Gemini to apply</span>
-                      <span>{editorInstructions.length} chars</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Overrides & Target Engine */}
-                <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
-                  <span className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                    <Sliders className="w-4 h-4 text-[#E60023]" />
-                    <span>Optional Parameter Overrides</span>
-                  </span>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Target Engine */}
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider block">
-                        Target Engine
-                      </label>
-                      <select
-                        value={editorEngine}
-                        onChange={(e) => setEditorEngine(e.target.value)}
-                        className="w-full p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-xs font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]"
-                      >
-                        {ENGINE_OPTIONS.map((eng) => (
-                          <option key={eng} value={eng}>
-                            {eng}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Aspect Ratio */}
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider block">
-                        Aspect Ratio
-                      </label>
-                      <select
-                        value={editorRatio}
-                        onChange={(e) => setEditorRatio(e.target.value)}
-                        className="w-full p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-xs font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]"
-                      >
-                        {RATIO_OPTIONS.map((rat) => (
-                          <option key={rat.value} value={rat.value}>
-                            {rat.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Lighting Override */}
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider block">
-                        Override Lighting
-                      </label>
-                      <select
-                        value={editorLighting}
-                        onChange={(e) => setEditorLighting(e.target.value)}
-                        className="w-full p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-xs font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]"
-                      >
-                        <option value="">Keep / Infer from instructions</option>
-                        {LIGHTING_OPTIONS.map((lgt) => (
-                          <option key={lgt} value={lgt}>
-                            {lgt}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Camera Override */}
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider block">
-                        Override Camera Optics
-                      </label>
-                      <select
-                        value={editorCamera}
-                        onChange={(e) => setEditorCamera(e.target.value)}
-                        className="w-full p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-xs font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]"
-                      >
-                        <option value="">Keep / Infer from instructions</option>
-                        {CAMERA_OPTIONS.map((cam) => (
-                          <option key={cam} value={cam}>
-                            {cam}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Submit Action Button */}
-                <button
-                  type="submit"
-                  disabled={isEditingPrompt || !editorCurrentPrompt.trim()}
-                  className={`w-full py-4 px-6 rounded-full font-bold text-sm shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                    isEditingPrompt || !editorCurrentPrompt.trim()
-                      ? 'bg-neutral-200 dark:bg-neutral-800 text-neutral-400 cursor-not-allowed shadow-none'
-                      : 'bg-[#E60023] hover:bg-[#ad081b] text-white shadow-red-500/25 hover:shadow-red-500/40 transform active:scale-98'
-                  }`}
-                  id="btn-edit-prompt-submit"
-                >
-                  {isEditingPrompt ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Refining & Editing Prompt (Gemini AI)...</span>
-                    </>
-                  ) : (
-                    <>
-                      <SlidersHorizontal className="w-4 h-4" />
-                      <span>Apply Edits & Refine (2 Credits)</span>
-                    </>
-                  )}
-                </button>
-              </form>
-            </div>
-
-            {/* Right Column: Edited Result Display (7 cols) */}
-            <div className="lg:col-span-7">
-              {editedData ? (
-                <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
-                  {/* Top Bar with Title & Actions */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-neutral-200 dark:border-neutral-800">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase tracking-wider border border-blue-200 dark:border-blue-900">
-                          🎯 Surgically Edited Prompt
-                        </span>
-                        <span className="text-xs text-neutral-400">2 Credits Used</span>
-                      </div>
-                      <h3 className="text-lg font-bold text-neutral-900 dark:text-white mt-1">
-                        {editedData.title || 'Edited Master Prompt'}
-                      </h3>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={handleSaveEditedPromptToHistory}
-                        disabled={isSavedEditedPrompt}
-                        className={`p-2.5 rounded-full border text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                          isSavedEditedPrompt
-                            ? 'bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-900 text-[#E60023]'
-                            : 'border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800'
-                        }`}
-                        title="Save to AI History"
-                      >
-                        <Bookmark className="w-4 h-4" />
-                        <span className="hidden sm:inline">
-                          {isSavedEditedPrompt ? 'Saved' : 'Save'}
-                        </span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleSendToEnhancer(
-                            editedData.editedPrompt || editedData.promptText || ''
-                          )
-                        }
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200 text-xs font-bold transition-all cursor-pointer"
-                        title="Enhance this edited prompt in Prompt Enhancer"
-                      >
-                        <Wand2 className="w-3.5 h-3.5" />
-                        <span>Send to Enhancer</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          copyToClipboard(
-                            editedData.editedPrompt || editedData.promptText || '',
-                            'edited_master_prompt',
-                            'Edited master prompt copied!'
-                          )
-                        }
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
-                      >
-                        {copiedKey === 'edited_master_prompt' ? (
-                          <Check className="w-3.5 h-3.5" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5" />
-                        )}
-                        <span>
-                          {copiedKey === 'edited_master_prompt' ? 'Copied!' : 'Copy Edited Prompt'}
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Previous vs Edited Cards */}
-                  <div className="space-y-4">
-                    {/* Previous Prompt */}
-                    <div className="p-3.5 rounded-2xl bg-neutral-100 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-800">
-                      <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block mb-1">
-                        Previous Version:
-                      </span>
-                      <p className="text-xs text-neutral-600 dark:text-neutral-300 italic line-clamp-3">
-                        &ldquo;{editedData.previousPrompt || editorCurrentPrompt}&rdquo;
-                      </p>
-                    </div>
-
-                    {/* Edited Master Prompt */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-neutral-900 dark:text-white flex items-center gap-1.5">
-                          <SlidersHorizontal className="w-3.5 h-3.5 text-[#E60023]" />
-                          <span>Refined & Edited Masterpiece</span>
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            copyToClipboard(
-                              editedData.editedPrompt || editedData.promptText || '',
-                              'edited_master_prompt',
-                              'Edited master prompt copied!'
-                            )
-                          }
-                          className="text-xs text-[#E60023] hover:underline font-bold"
-                        >
-                          {copiedKey === 'edited_master_prompt' ? 'Copied' : 'Copy'}
-                        </button>
-                      </div>
-
-                      <div className="p-4 sm:p-5 rounded-2xl bg-neutral-950 text-neutral-100 font-mono text-xs sm:text-sm leading-relaxed border border-neutral-800 shadow-inner relative group">
-                        <p className="whitespace-pre-wrap select-all selection:bg-red-600 selection:text-white">
-                          {editedData.editedPrompt || editedData.promptText}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Changes Applied Breakdown */}
-                  {((editedData.changesApplied && editedData.changesApplied.length > 0) ||
-                    (editedData.improvements && editedData.improvements.length > 0)) && (
-                    <div className="space-y-2 pt-1">
-                      <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block">
-                        Modifications Applied
-                      </span>
-                      <div className="flex flex-wrap gap-2">
-                        {(editedData.changesApplied || editedData.improvements || []).map((chg, idx) => (
-                          <span
-                            key={idx}
-                            className="px-3 py-1 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-900/60 text-xs font-medium flex items-center gap-1.5"
-                          >
-                            <CheckCircle2 className="w-3 h-3 text-blue-500" />
-                            <span>{chg}</span>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Negative Prompt Box */}
-                  {editedData.negativePrompt && (
-                    <div className="space-y-2 pt-1">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-neutral-700 dark:text-neutral-300">
-                          Negative Prompt (Exclusions)
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            copyToClipboard(
-                              editedData.negativePrompt || '',
-                              'neg_edt_prompt',
-                              'Negative prompt copied!'
-                            )
-                          }
-                          className="text-xs text-[#E60023] hover:underline font-bold"
-                        >
-                          {copiedKey === 'neg_edt_prompt' ? 'Copied' : 'Copy'}
-                        </button>
-                      </div>
-                      <div className="p-3.5 rounded-2xl bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-mono text-xs leading-relaxed border border-neutral-200 dark:border-neutral-700">
-                        {editedData.negativePrompt}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Optical Parameters */}
-                  <div className="space-y-3 pt-2">
-                    <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider block">
-                      Refined Output Optics
-                    </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                      {editedData.camera && (
-                        <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-                          <span className="text-[10px] font-bold text-neutral-400 uppercase block">Camera & Optics</span>
-                          <span className="font-semibold text-neutral-900 dark:text-white">
-                            📸 {editedData.camera}
-                          </span>
-                        </div>
-                      )}
-                      {editedData.lighting && (
-                        <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-                          <span className="text-[10px] font-bold text-neutral-400 uppercase block">Lighting Style</span>
-                          <span className="font-semibold text-neutral-900 dark:text-white">
-                            💡 {editedData.lighting}
-                          </span>
-                        </div>
-                      )}
-                      {editedData.colorPalette && (
-                        <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-                          <span className="text-[10px] font-bold text-neutral-400 uppercase block">Color & Grade</span>
-                          <span className="font-semibold text-neutral-900 dark:text-white">
-                            🎨 {editedData.colorPalette}
-                          </span>
-                        </div>
-                      )}
-                      {editedData.composition && (
-                        <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-                          <span className="text-[10px] font-bold text-neutral-400 uppercase block">Composition</span>
-                          <span className="font-semibold text-neutral-900 dark:text-white">
-                            📐 {editedData.composition}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Action Footer */}
-                  <div className="flex items-center justify-between pt-4 border-t border-neutral-200 dark:border-neutral-800">
+              {/* Sample Presets */}
+              <div className="space-y-2 pt-2">
+                <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block">
+                  Or Pick a Sample Photo:
+                </span>
+                <div className="grid grid-cols-4 gap-2">
+                  {SAMPLE_IMAGES.map((sample) => (
                     <button
+                      key={sample.name}
+                      onClick={() => {
+                        setUploadedImage(sample.url);
+                        setExtractedData(null);
+                        setIsSavedExtracted(false);
+                      }}
+                      className="group relative rounded-xl overflow-hidden aspect-square border border-neutral-200 dark:border-neutral-700 hover:ring-2 hover:ring-[#E60023] transition-all"
+                    >
+                      <Image
+                        src={sample.url}
+                        alt={sample.name}
+                        fill
+                        className="object-cover group-hover:scale-110 transition-transform duration-300"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-x-0 bottom-0 bg-black/70 py-0.5 px-1 text-[9px] font-bold text-white text-center truncate">
+                        {sample.name}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Custom Instructions */}
+            <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                  <Sliders className="w-4 h-4 text-[#E60023]" />
+                  <span>Custom Instructions</span>
+                </h3>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400">
+                  Optional
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-1.5">
+                  Custom prompt instructions & constraints
+                </label>
+                <textarea
+                  rows={3}
+                  value={customInstructions}
+                  onChange={(e) => setCustomInstructions(e.target.value)}
+                  placeholder="remove watermark, 250 words minimum length, remove text or add something"
+                  className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:ring-2 focus:ring-[#E60023] focus:outline-none resize-none leading-relaxed transition-all"
+                />
+
+                {/* Quick Instruction Presets */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-2">
+                  <span className="text-[10px] font-semibold text-neutral-400">Add rule:</span>
+                  {[
+                    'remove watermark',
+                    '250 words minimum length',
+                    'remove text',
+                    'add cinematic lighting',
+                  ].map((preset) => (
+                    <button
+                      key={preset}
                       type="button"
                       onClick={() => {
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        setCustomInstructions((prev) => {
+                          const trimmed = prev.trim();
+                          if (!trimmed) return preset;
+                          if (trimmed.toLowerCase().includes(preset.toLowerCase())) return prev;
+                          return `${trimmed}, ${preset}`;
+                        });
                       }}
-                      className="text-xs font-bold text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                      className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition-colors"
                     >
-                      ↑ Back to Top
+                      +{preset}
                     </button>
+                  ))}
+                  {customInstructions && (
                     <button
                       type="button"
-                      onClick={() => {
-                        setEditorInstructions('');
-                        setEditedData(null);
-                      }}
-                      className="px-4 py-2 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-colors"
-                    >
-                      Perform Another Edit
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                /* Empty / Waiting State for Editor */
-                <div className="p-8 sm:p-12 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm text-center space-y-5">
-                  <div className="w-16 h-16 rounded-3xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center mx-auto">
-                    <SlidersHorizontal className="w-8 h-8" />
-                  </div>
-                  <div className="space-y-2 max-w-md mx-auto">
-                    <h3 className="text-lg font-black text-neutral-900 dark:text-white">
-                      Precision Prompt Surgery & Refinement
-                    </h3>
-                    <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
-                      Paste any existing prompt on the left, tap our 1-click modifier chips, or write custom change requests. Gemini will re-tune the scene, camera optics, or lighting while preserving your core composition.
-                    </p>
-                  </div>
-
-                  <div className="pt-4 border-t border-neutral-100 dark:border-neutral-800 grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
-                    <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-                      <span className="text-[11px] font-bold text-blue-600 block mb-1">🎯 Targeted Changes</span>
-                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                        Adjust lighting, change lenses, swap backgrounds, or adjust mood without losing your subject.
-                      </p>
-                    </div>
-                    <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-                      <span className="text-[11px] font-bold text-blue-600 block mb-1">⚡ 1-Click Modifiers</span>
-                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                        Instantly inject Golden Hour, 85mm Prime Lens, Cyberpunk Neon, or 35mm Film Grain.
-                      </p>
-                    </div>
-                    <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-                      <span className="text-[11px] font-bold text-blue-600 block mb-1">🔄 Integrated Flow</span>
-                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                        Easily hand off outputs between Text to Prompt, Enhancer, and Editor in one studio.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ================================================================ */}
-        {/* TOOL 4: IMAGE TO PROMPT STUDIO (3 Credits)                       */}
-        {/* ================================================================ */}
-        {activeTool === 'image_to_prompt' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in">
-            {/* Left Column: Image Upload & Custom Rules (5 cols) */}
-            <div className="lg:col-span-5 space-y-6">
-              <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                    <Upload className="w-4 h-4 text-[#E60023]" />
-                    <span>Upload Image to Reverse</span>
-                  </h3>
-                  {uploadedImage && (
-                    <button
-                      onClick={() => {
-                        setUploadedImage(null);
-                        setExtractedImageData(null);
-                        setIsSavedImageExtracted(false);
-                      }}
-                      className="text-xs font-semibold text-red-500 hover:underline cursor-pointer"
+                      onClick={() => setCustomInstructions('')}
+                      className="text-[10px] font-bold text-red-500 hover:underline ml-auto"
                     >
                       Clear
                     </button>
                   )}
                 </div>
+              </div>
 
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleImageFileChange}
-                  accept="image/*"
-                  className="hidden"
-                />
-
-                {uploadedImage ? (
-                  <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 group">
-                    <Image
-                      src={uploadedImage}
-                      alt="Uploaded target"
-                      fill
-                      className="object-contain"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="px-3.5 py-1.5 rounded-full bg-white text-neutral-900 text-xs font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <RefreshCw className="w-3.5 h-3.5" />
-                        <span>Change Photo</span>
-                      </button>
-                    </div>
-                  </div>
+              <button
+                type="button"
+                disabled={!uploadedImage || isExtractingPrompt}
+                onClick={handleExtractPrompt}
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#E60023] to-[#ff3b56] hover:from-red-700 hover:to-red-600 text-white text-xs sm:text-sm font-black shadow-md shadow-red-500/25 flex items-center justify-center gap-2 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isExtractingPrompt ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Reverse-Engineering Photographic DNA...</span>
+                  </>
                 ) : (
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full aspect-[4/3] rounded-2xl border-2 border-dashed border-neutral-300 dark:border-neutral-700 hover:border-[#E60023] dark:hover:border-[#E60023] bg-neutral-50 dark:bg-neutral-950 flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-colors group"
-                  >
-                    <div className="w-12 h-12 rounded-full bg-red-50 dark:bg-red-950/60 text-[#E60023] flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                      <Upload className="w-6 h-6" />
-                    </div>
-                    <span className="text-xs sm:text-sm font-bold text-neutral-800 dark:text-neutral-200">
-                      Click to upload or drag & drop photo
-                    </span>
-                    <span className="text-[11px] text-neutral-400 mt-1">PNG, JPG, WebP up to 10MB</span>
-                  </div>
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span>Extract AI Prompt from Image (3 Credits)</span>
+                  </>
                 )}
-
-                {/* Sample Presets */}
-                <div className="space-y-2 pt-2">
-                  <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block">
-                    Or Pick a Sample Photo:
-                  </span>
-                  <div className="grid grid-cols-4 gap-2">
-                    {SAMPLE_IMAGES.map((sample) => (
-                      <button
-                        key={sample.name}
-                        onClick={() => {
-                          setUploadedImage(sample.url);
-                          setExtractedImageData(null);
-                          setIsSavedImageExtracted(false);
-                        }}
-                        className="group relative rounded-xl overflow-hidden aspect-square border border-neutral-200 dark:border-neutral-700 hover:ring-2 hover:ring-[#E60023] transition-all cursor-pointer"
-                      >
-                        <Image
-                          src={sample.url}
-                          alt={sample.name}
-                          fill
-                          className="object-cover group-hover:scale-110 transition-transform duration-300"
-                          referrerPolicy="no-referrer"
-                        />
-                        <div className="absolute inset-x-0 bottom-0 bg-black/70 py-0.5 px-1 text-[9px] font-bold text-white text-center truncate">
-                          {sample.name}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Custom Instructions */}
-              <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                    <Sliders className="w-4 h-4 text-[#E60023]" />
-                    <span>Custom Instructions</span>
-                  </h3>
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400">
-                    Optional
-                  </span>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-1.5">
-                    Custom prompt instructions & constraints
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={imageInstructions}
-                    onChange={(e) => setImageInstructions(e.target.value)}
-                    placeholder="remove watermark, focus on portrait lighting, 200 words minimum..."
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:ring-2 focus:ring-[#E60023] focus:outline-none resize-none leading-relaxed transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* Action Button (3 Credits) */}
-              <div className="p-4 rounded-3xl bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 space-y-3">
-                <div className="flex items-center justify-between text-xs px-1">
-                  <span className="text-neutral-500 dark:text-neutral-400">Available Balance:</span>
-                  <span className="font-bold text-neutral-900 dark:text-white">{toolCredits} Credits</span>
-                </div>
-                <button
-                  onClick={handleExtractImagePrompt}
-                  disabled={isExtractingImagePrompt || !uploadedImage}
-                  className="w-full py-4 px-6 rounded-full bg-[#E60023] hover:bg-[#ad081b] active:scale-[0.98] text-white font-black text-sm shadow-md shadow-red-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                  id="extract-image-prompt-btn"
-                >
-                  {isExtractingImagePrompt ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Analyzing Visual DNA with Gemini...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Camera className="w-4 h-4" />
-                      <span>Extract AI Prompt (3 Credits)</span>
-                    </>
-                  )}
-                </button>
-                <p className="text-[11px] text-center text-neutral-500 dark:text-neutral-400">
-                  🖼️ Deducts 3 credits • Multimodal optical analysis
-                </p>
-              </div>
-            </div>
-
-            {/* Right Column: Extracted Image Prompt (7 cols) */}
-            <div className="lg:col-span-7 space-y-6">
-              {extractedImageData ? (
-                <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6 animate-fade-in">
-                  {/* Top Bar */}
-                  <div className="flex items-center justify-between gap-3 flex-wrap pb-4 border-b border-neutral-200 dark:border-neutral-800">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                        <h2 className="text-base sm:text-lg font-black text-neutral-900 dark:text-white">
-                          {extractedImageData.title || 'Extracted Studio Prompt'}
-                        </h2>
-                      </div>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                        Reverse-engineered optical DNA from uploaded photo
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={handleSaveImageExtractedToHistory}
-                        disabled={isSavedImageExtracted}
-                        className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                          isSavedImageExtracted
-                            ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
-                            : 'bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
-                        }`}
-                      >
-                        {isSavedImageExtracted ? <Check className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
-                        <span>{isSavedImageExtracted ? 'Saved in History' : 'Save to History'}</span>
-                      </button>
-
-                      <button
-                        onClick={() =>
-                          copyToClipboard(
-                            extractedImageData.promptText || extractedImageData.prompt || '',
-                            'main_img_prompt',
-                            'Master prompt copied!'
-                          )
-                        }
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
-                      >
-                        {copiedKey === 'main_img_prompt' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                        <span>{copiedKey === 'main_img_prompt' ? 'Copied!' : 'Copy Prompt'}</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Prompt Box */}
-                  <div className="space-y-2">
-                    <span className="text-xs font-bold text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-[#E60023]" />
-                      <span>Reverse-Engineered Prompt Text</span>
-                    </span>
-                    <div className="p-4 sm:p-5 rounded-2xl bg-neutral-950 text-neutral-100 font-mono text-xs sm:text-sm leading-relaxed border border-neutral-800 shadow-inner">
-                      <p className="whitespace-pre-wrap select-all selection:bg-red-600 selection:text-white">
-                        {extractedImageData.promptText || extractedImageData.prompt}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Negative Prompt */}
-                  {(extractedImageData.negativePrompt || extractedImageData.negative_prompt) && (
-                    <div className="space-y-2">
-                      <span className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
-                        Negative Prompt (Tokens)
-                      </span>
-                      <div className="p-3.5 rounded-2xl bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-mono text-xs leading-relaxed">
-                        {extractedImageData.negativePrompt || extractedImageData.negative_prompt}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Micro Breakdown Tags */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-2">
-                    {extractedImageData.camera && (
-                      <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-                        <span className="text-[10px] font-bold text-neutral-400 uppercase block">Camera Optics</span>
-                        <span className="font-semibold text-neutral-900 dark:text-white">
-                          📸 {extractedImageData.camera}
-                        </span>
-                      </div>
-                    )}
-                    {extractedImageData.lighting && (
-                      <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-                        <span className="text-[10px] font-bold text-neutral-400 uppercase block">Lighting Style</span>
-                        <span className="font-semibold text-neutral-900 dark:text-white">
-                          💡 {extractedImageData.lighting}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                /* Empty Image State */
-                <div className="p-8 sm:p-12 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm text-center space-y-5">
-                  <div className="w-16 h-16 rounded-3xl bg-red-50 dark:bg-red-950/60 text-[#E60023] flex items-center justify-center mx-auto">
-                    <Camera className="w-8 h-8" />
-                  </div>
-                  <div className="space-y-2 max-w-md mx-auto">
-                    <h3 className="text-lg font-black text-neutral-900 dark:text-white">
-                      Upload an Image to Extract Prompt
-                    </h3>
-                    <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
-                      Upload any artwork, photograph, or render on the left to extract its exact prompt structure, composition rules, and photographic parameters.
-                    </p>
-                  </div>
-                </div>
-              )}
+              </button>
             </div>
           </div>
-        )}
+
+          {/* Right Column: Output Extracted Prompt & Breakdown (7 cols) */}
+          <div className="lg:col-span-7 space-y-6">
+            {extractedData ? (
+              <div className="space-y-6 animate-in fade-in duration-300">
+                <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-neutral-900 border-2 border-red-100 dark:border-red-950/80 shadow-md space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-[#E60023] animate-ping" />
+                      <h3 className="text-base font-black text-neutral-900 dark:text-white">
+                        {extractedData.title || 'Extracted AI Prompt'}
+                      </h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {extractedData.confidence && (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                          {extractedData.confidence} Confidence
+                        </span>
+                      )}
+                      <span className="px-2.5 py-0.5 rounded-full bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800 text-[#E60023] text-[11px] font-bold">
+                        Master Prompt
+                      </span>
+                    </div>
+                  </div>
+
+                  {extractedData.summary && (
+                    <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs font-medium text-neutral-700 dark:text-neutral-300 italic flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-[#E60023] shrink-0 not-italic" />
+                      <span>{extractedData.summary}</span>
+                    </div>
+                  )}
+
+                  <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 font-mono text-xs sm:text-sm text-neutral-900 dark:text-neutral-100 leading-relaxed break-words select-all">
+                    {extractedData.promptText}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                    <button
+                      onClick={() => copyToClipboard(extractedData.promptText, 'extracted-prompt', 'Master prompt copied!')}
+                      className="px-4 py-2.5 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm"
+                    >
+                      {copiedKey === 'extracted-prompt' ? (
+                        <>
+                          <Check className="w-4 h-4 text-white" />
+                          <span>Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4" />
+                          <span>Copy Prompt</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={handleSaveExtractedToHistory}
+                      className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
+                        isSavedExtracted
+                          ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400'
+                          : 'bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 hover:border-red-400'
+                      }`}
+                      title="Save to your personal generation history"
+                    >
+                      {isSavedExtracted ? (
+                        <>
+                          <Check className="w-4 h-4 text-emerald-500" />
+                          <span>Saved to History</span>
+                        </>
+                      ) : (
+                        <>
+                          <Bookmark className="w-4 h-4 text-[#E60023]" />
+                          <span>Save to My History</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Detailed Photographic Breakdown */}
+                <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
+                  <h4 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                    <Camera className="w-4 h-4 text-[#E60023]" />
+                    <span>Detailed Photographic & Visual Breakdown</span>
+                  </h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-1">
+                      <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                        1. Subject & Presentation
+                      </span>
+                      <span className="font-semibold text-neutral-800 dark:text-neutral-200 block leading-relaxed">
+                        {extractedData.analysis?.subject || 'Primary visible subject identified and preserved'}
+                      </span>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-1">
+                      <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                        2. Pose & Body Language
+                      </span>
+                      <span className="font-semibold text-neutral-800 dark:text-neutral-200 block leading-relaxed">
+                        {extractedData.analysis?.pose || 'Reconstructed physical posture and alignment'}
+                      </span>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-1">
+                      <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                        3. Composition & Framing
+                      </span>
+                      <span className="font-semibold text-neutral-800 dark:text-neutral-200 block leading-relaxed">
+                        {extractedData.analysis?.composition || extractedData.composition || 'Center Focused Studio Framing'}
+                      </span>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-1">
+                      <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                        4. Camera & Optical Physics
+                      </span>
+                      <span className="font-semibold text-neutral-800 dark:text-neutral-200 block leading-relaxed">
+                        {extractedData.analysis?.camera || extractedData.camera || 'Full-frame sensor with portrait optics'}
+                      </span>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-1">
+                      <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                        5. Lighting Dynamics
+                      </span>
+                      <span className="font-semibold text-neutral-800 dark:text-neutral-200 block leading-relaxed">
+                        {extractedData.analysis?.lighting || extractedData.lighting || 'Directional key light with ambient fill'}
+                      </span>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-1">
+                      <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                        6. Color Grading & Palette
+                      </span>
+                      <span className="font-semibold text-neutral-800 dark:text-neutral-200 block leading-relaxed">
+                        {extractedData.analysis?.color_grading || extractedData.colorPalette || 'Natural authentic skin tones and contrast'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-10 sm:p-16 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-950/50 text-[#E60023] flex items-center justify-center mx-auto">
+                  <Camera className="w-8 h-8" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-lg font-bold text-neutral-900 dark:text-white">
+                    Ready to Reverse Any Photo
+                  </h3>
+                  <p className="text-xs sm:text-sm text-neutral-500 max-w-md mx-auto">
+                    Upload an image on the left or select a sample photo, then click &quot;Extract AI Prompt&quot;. Our AI will decode its photographic DNA into an exact prompt.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* OUT OF CREDITS MODAL */}
+      {/* Out of Credits Modal */}
       {isOutOfCreditsModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="max-w-md w-full p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-2xl text-center space-y-5 relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-white dark:bg-neutral-900 rounded-3xl p-6 sm:p-7 shadow-2xl border border-neutral-200 dark:border-neutral-800 space-y-5 text-center relative">
             <button
               onClick={() => setIsOutOfCreditsModalOpen(false)}
-              className="absolute top-4 right-4 p-2 rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors cursor-pointer"
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 hover:text-neutral-700 dark:hover:text-white transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
 
             <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-500 mx-auto flex items-center justify-center shadow-inner">
@@ -2753,21 +682,19 @@ export const AIStudioTool = () => {
                 Out of Tool Credits
               </h3>
               <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                This AI tool requires{' '}
-                <strong className="text-neutral-900 dark:text-white">{requiredCreditsForModal} credits</strong>. You currently have{' '}
-                <strong className="text-[#E60023]">{toolCredits} credits</strong>.
+                Image-to-prompt extraction requires <strong className="text-neutral-900 dark:text-white">3 credits</strong>. Every user receives <strong className="text-neutral-900 dark:text-white">2 free credits daily</strong>, or you can top up anytime.
               </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-left space-y-2 text-xs text-neutral-700 dark:text-neutral-300">
               <div className="font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
                 <Coins className="w-3.5 h-3.5 text-amber-500" />
-                <span>Instant Pay-As-You-Go Credits:</span>
+                <span>Instant Pay-As-You-Go Credits Packs:</span>
               </div>
               <ul className="space-y-1 text-[11px] text-neutral-600 dark:text-neutral-400">
-                <li>• <strong>100 Credits (₹49)</strong>: 50 text-to-prompt generations</li>
-                <li>• <strong>250 Credits (₹99)</strong>: 125 text-to-prompt generations (Most Popular)</li>
-                <li>• <strong>499 Credits (₹199)</strong>: 250 text-to-prompt generations (Best Value)</li>
+                <li>• <strong>100 Credits (₹49)</strong>: ~33 image extractions or 100 prompt unlocks</li>
+                <li>• <strong>250 Credits (₹99)</strong>: ~83 image extractions (Most Popular)</li>
+                <li>• <strong>499 Credits (₹199)</strong>: ~166 image extractions (Best Value)</li>
               </ul>
             </div>
 
@@ -2777,13 +704,13 @@ export const AIStudioTool = () => {
                   setIsOutOfCreditsModalOpen(false);
                   router.push('/pricing');
                 }}
-                className="w-full py-3 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs sm:text-sm font-black shadow-md shadow-red-500/20 transition-all cursor-pointer"
+                className="w-full py-3 rounded-full bg-gradient-to-r from-[#E60023] to-[#ff3b56] hover:from-red-700 hover:to-red-600 text-white text-xs sm:text-sm font-black shadow-md shadow-red-500/20 transition-all"
               >
-                View Pricing Plans & Top Up
+                View Pricing Plans & Get Credits
               </button>
               <button
                 onClick={() => setIsOutOfCreditsModalOpen(false)}
-                className="w-full py-2.5 rounded-full text-xs font-semibold text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                className="w-full py-2.5 rounded-full text-xs font-semibold text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
               >
                 Wait for Daily Free Credits
               </button>

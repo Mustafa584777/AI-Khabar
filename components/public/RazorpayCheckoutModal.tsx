@@ -112,9 +112,7 @@ export const RazorpayCheckoutModal: React.FC = () => {
   const {
     isProCheckoutModalOpen,
     setIsProCheckoutModalOpen,
-    setIsProUser,
-    upgradePlan,
-    addToolCredits,
+    updateUserProfile,
     toolCredits,
     userAccount,
     showToast,

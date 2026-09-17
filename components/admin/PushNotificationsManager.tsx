@@ -68,7 +68,6 @@ export const PushNotificationsManager: React.FC = () => {
 
   const loadHistory = async () => {
     try {
-      await NotificationService.syncWithServer();
       const [subsData, statsData] = await Promise.all([
         NotificationService.fetchRealSubscribers(),
         NotificationService.fetchRealStats(),
@@ -189,10 +188,10 @@ export const PushNotificationsManager: React.FC = () => {
     }
   };
 
-  const handleDeleteHistory = async (id: string) => {
-    await NotificationService.deleteNotification(id);
-    await loadHistory();
-    showToast('Notification deleted from database');
+  const handleDeleteHistory = (id: string) => {
+    NotificationService.deleteNotification(id);
+    loadHistory();
+    showToast('Notification removed from history');
   };
 
   const handleResend = async (item: PushNotificationItem) => {

@@ -14,7 +14,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('Error loading posts for dynamic sitemap:', err);
   }
 
-  // 1. Homepage & Essential Legal Pages
+  // 1. Homepage & Essential Pages (Contact, Privacy Policy, Disclaimer)
   const corePages: MetadataRoute.Sitemap = [
     {
       url: `${baseUrl}`,

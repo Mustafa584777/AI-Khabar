@@ -111,23 +111,23 @@ export const NotificationsView: React.FC = () => {
     showToast('All notifications marked as read.');
   };
 
-  const handleDeleteNotification = async (id: string) => {
-    await NotificationService.deleteNotification(id);
-    loadNotifications();
-    showToast('Notification deleted from database.');
-  };
-
-  const handleClearAll = async () => {
-    if (confirm('Delete all notifications from database?')) {
-      await NotificationService.clearAllNotifications();
+  const handleClearAll = () => {
+    if (confirm('Clear all notifications from your feed?')) {
+      NotificationService.saveNotifications([]);
       setNotifications([]);
-      showToast('All notifications removed from database.');
+      showToast('Notification feed cleared.');
     }
   };
 
   const handleSingleRead = (id: string) => {
     NotificationService.markAsRead(id);
     loadNotifications();
+  };
+
+  const handleSingleDelete = (id: string) => {
+    NotificationService.deleteNotification(id);
+    loadNotifications();
+    showToast('Notification deleted.');
   };
 
   // Filtered list
@@ -176,6 +176,18 @@ export const NotificationsView: React.FC = () => {
               <span>Select Interests</span>
             </button>
 
+            {/* Clear All */}
+            {notifications.length > 0 && (
+              <button
+                type="button"
+                onClick={handleClearAll}
+                className="px-3.5 py-2 rounded-2xl bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 hover:text-red-500 hover:border-red-200 dark:hover:border-red-900 text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-all flex items-center gap-1.5 shadow-xs"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Clear</span>
+              </button>
+            )}
+
             {/* Mark All as Read */}
             {unreadCount > 0 && (
               <button
@@ -184,19 +196,6 @@ export const NotificationsView: React.FC = () => {
                 className="px-3 py-2 rounded-2xl bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors"
               >
                 Mark Read
-              </button>
-            )}
-
-            {/* Clear All from Database */}
-            {notifications.length > 0 && (
-              <button
-                type="button"
-                onClick={handleClearAll}
-                className="px-3 py-2 rounded-2xl bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/40 text-xs font-semibold text-red-600 dark:text-red-400 transition-colors flex items-center gap-1"
-                title="Clear all notifications from database"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Clear All</span>
               </button>
             )}
           </div>
@@ -334,7 +333,7 @@ export const NotificationsView: React.FC = () => {
               key={notif.id}
               notification={notif}
               onRead={handleSingleRead}
-              onDelete={handleDeleteNotification}
+              onDelete={handleSingleDelete}
             />
           ))
         ) : (
@@ -343,37 +342,29 @@ export const NotificationsView: React.FC = () => {
               <Bell className="w-6 h-6" />
             </div>
             <h3 className="text-base font-bold text-neutral-900 dark:text-white">
-              {notifications.length === 0 ? 'No updates in database yet' : 'No notifications matching your filter'}
+              No notifications matching your filter
             </h3>
             <p className="text-xs text-neutral-500 max-w-sm mx-auto">
-              {notifications.length === 0
-                ? 'All notification cards are saved and deleted in the database like prompt cards. Newly published prompts and updates will appear here dynamically.'
-                : "You're all caught up! Clear filters to view all database updates."}
+              You&apos;re all caught up! As soon as new prompts are published in your selected categories, they will appear here.
             </p>
             <div className="pt-2 flex items-center justify-center gap-2">
-              {notifications.length > 0 ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedCategoryFilter('all');
-                    setUnreadOnly(false);
-                  }}
-                  className="px-4 py-2 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-bold"
-                >
-                  Show All Notifications
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCurrentView('public');
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                  className="px-4 py-2 rounded-xl bg-[#E60023] text-white text-xs font-bold"
-                >
-                  Explore Prompts
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedCategoryFilter('all');
+                  setUnreadOnly(false);
+                }}
+                className="px-4 py-2 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-bold"
+              >
+                Show All Notifications
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsInterestModalOpen(true)}
+                className="px-4 py-2 rounded-xl bg-[#E60023] text-white text-xs font-bold"
+              >
+                Add More Categories
+              </button>
             </div>
           </div>
         )}

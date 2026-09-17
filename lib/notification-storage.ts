@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import { PushNotificationItem, PushSubscriber } from '@/types/notification';
-import { supabaseAdmin, supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const SUBSCRIBERS_FILE = path.join(DATA_DIR, 'subscribers.json');
@@ -14,9 +13,6 @@ export interface NotificationServerStats {
   totalClicks: number;
   lastSentAt?: string;
 }
-
-let memoryNotifications: PushNotificationItem[] | null = null;
-let memorySubscribers: PushSubscriber[] | null = null;
 
 function ensureDataDir(): void {
   try {
@@ -50,17 +46,10 @@ function writeJson<T>(filePath: string, data: T): void {
   }
 }
 
-function getDbClient() {
-  return supabaseAdmin || supabase;
-}
-
 export const NotificationServerStore = {
   // SUBSCRIBERS
   getSubscribers: (): PushSubscriber[] => {
-    if (memorySubscribers !== null) return memorySubscribers;
-    const list = readJson<PushSubscriber[]>(SUBSCRIBERS_FILE, []);
-    memorySubscribers = list;
-    return list;
+    return readJson<PushSubscriber[]>(SUBSCRIBERS_FILE, []);
   },
 
   addOrUpdateSubscriber: (sub: PushSubscriber): { subscribers: PushSubscriber[]; count: number } => {
@@ -84,7 +73,6 @@ export const NotificationServerStore = {
     }
 
     writeJson(SUBSCRIBERS_FILE, list);
-    memorySubscribers = list;
     return { subscribers: list, count: list.length };
   },
 
@@ -92,80 +80,18 @@ export const NotificationServerStore = {
     const list = readJson<PushSubscriber[]>(SUBSCRIBERS_FILE, []);
     const filtered = list.filter((s) => s.id !== id);
     writeJson(SUBSCRIBERS_FILE, filtered);
-    memorySubscribers = filtered;
     return { count: filtered.length };
   },
 
-  // NOTIFICATIONS (DATABASE DRIVEN)
-  getNotifications: async (): Promise<PushNotificationItem[]> => {
-    // 1. Try Supabase Database first
-    if (isSupabaseConfigured()) {
-      try {
-        const client = getDbClient();
-        // Check settings table under 'system_notifications'
-        const { data, error } = await client
-          .from('settings')
-          .select('*')
-          .eq('id', 'system_notifications')
-          .maybeSingle();
-
-        if (!error && data && data.data && Array.isArray(data.data)) {
-          memoryNotifications = data.data;
-          writeJson(NOTIFICATIONS_FILE, data.data);
-          return data.data;
-        }
-      } catch (dbErr) {
-        console.warn('Supabase getNotifications error:', dbErr);
-      }
-    }
-
-    // 2. Fallback to cached memory or local JSON
-    if (memoryNotifications !== null) {
-      return memoryNotifications;
-    }
-
-    const localList = readJson<PushNotificationItem[]>(NOTIFICATIONS_FILE, []);
-    memoryNotifications = localList;
-    return localList;
+  // NOTIFICATIONS
+  getNotifications: (): PushNotificationItem[] => {
+    return readJson<PushNotificationItem[]>(NOTIFICATIONS_FILE, []);
   },
 
-  // Synchronous getter for quick in-memory access
-  getNotificationsSync: (): PushNotificationItem[] => {
-    if (memoryNotifications !== null) return memoryNotifications;
-    const local = readJson<PushNotificationItem[]>(NOTIFICATIONS_FILE, []);
-    memoryNotifications = local;
-    return local;
-  },
-
-  saveNotifications: async (items: PushNotificationItem[]): Promise<PushNotificationItem[]> => {
-    memoryNotifications = items;
-    writeJson(NOTIFICATIONS_FILE, items);
-
-    // Persist to Supabase database
-    if (isSupabaseConfigured()) {
-      try {
-        const client = getDbClient();
-        await client.from('settings').upsert(
-          {
-            id: 'system_notifications',
-            data: items,
-          },
-          { onConflict: 'id' }
-        );
-      } catch (dbErr) {
-        console.error('Supabase saveNotifications error:', dbErr);
-      }
-    }
-
-    return items;
-  },
-
-  addNotification: async (
-    item: PushNotificationItem
-  ): Promise<{ notification: PushNotificationItem; totalSent: number }> => {
-    const list = await NotificationServerStore.getNotifications();
-    const updated = [item, ...list.filter((n) => n.id !== item.id)];
-    await NotificationServerStore.saveNotifications(updated);
+  addNotification: (item: PushNotificationItem): { notification: PushNotificationItem; totalSent: number } => {
+    const list = readJson<PushNotificationItem[]>(NOTIFICATIONS_FILE, []);
+    list.unshift(item);
+    writeJson(NOTIFICATIONS_FILE, list);
 
     // Update Stats
     const stats = readJson<NotificationServerStats>(STATS_FILE, {
@@ -180,15 +106,15 @@ export const NotificationServerStore = {
     return { notification: item, totalSent: stats.totalSent };
   },
 
-  deleteNotification: async (id: string): Promise<PushNotificationItem[]> => {
-    const list = await NotificationServerStore.getNotifications();
-    const updated = list.filter((n) => n.id !== id);
-    await NotificationServerStore.saveNotifications(updated);
-    return updated;
-  },
-
-  clearAllNotifications: async (): Promise<void> => {
-    await NotificationServerStore.saveNotifications([]);
+  deleteNotification: (id: string): boolean => {
+    const list = readJson<PushNotificationItem[]>(NOTIFICATIONS_FILE, []);
+    const initialLength = list.length;
+    const filtered = list.filter(n => n.id !== id);
+    if (filtered.length !== initialLength) {
+      writeJson(NOTIFICATIONS_FILE, filtered);
+      return true;
+    }
+    return false;
   },
 
   getStats: (): NotificationServerStats => {

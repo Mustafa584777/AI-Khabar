@@ -41,7 +41,7 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const { showToast, setIsProUser, upgradePlan, addToolCredits, userAccount } = useApp();
+  const { showToast, updateUserProfile, userAccount } = useApp();
 
   const handleCheckout = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -71,11 +71,16 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
           setIsSuccess(true);
 
           if (creditsToAdd && creditsToAdd > 0) {
-            addToolCredits(creditsToAdd);
+            updateUserProfile({ toolCredits: (userAccount?.toolCredits || 0) + creditsToAdd });
             showToast(`Payment Verified! Added ${creditsToAdd} Credits to your account 🎉`);
           } else {
-            setIsProUser(true);
-            upgradePlan(planTier);
+            const creditsForPlan = planTier === 'vip' ? 180 : planTier === 'pro' ? 60 : planTier === 'starter' ? 30 : 0;
+            updateUserProfile({ 
+              isPremium: true, 
+              planTier: planTier as any,
+              toolCredits: (userAccount?.toolCredits || 0) + creditsForPlan,
+              promptRequestsAllowed: 100
+            });
             showToast(`Payment Verified! Order ${verifyData.order_id.slice(-6)} successful 🎉`);
           }
 

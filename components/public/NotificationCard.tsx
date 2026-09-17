@@ -88,7 +88,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
         <span className="absolute top-4 right-4 w-2 h-2 rounded-full bg-[#E60023] animate-pulse" />
       )}
 
-      {/* Header Row: Red Badge + App Name + Time + Bell */}
+          {/* Header Row: Red Badge + App Name + Time + Bell */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           {/* App Logo Badge with /logo.png */}
@@ -110,7 +110,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
           </div>
         </div>
 
-        {/* Header Actions: Delete and Expand/Collapse buttons */}
+        {/* Action Buttons: Delete and Expand / Collapse */}
         <div className="flex items-center gap-1">
           {onDelete && (
             <button
@@ -119,21 +119,19 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
                 e.stopPropagation();
                 onDelete(notification.id);
               }}
-              className="p-1.5 rounded-full text-neutral-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
-              title="Delete notification"
-              id={`delete-notif-${notification.id}`}
+              className="p-1 rounded-full text-neutral-400 hover:text-red-500 transition-colors action-btn"
+              title="Delete Notification"
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="w-4 h-4" />
             </button>
           )}
-
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               setIsExpanded(!isExpanded);
             }}
-            className="p-1.5 rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-white transition-colors cursor-pointer"
+            className="p-1 rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-white transition-colors action-btn"
             title={isExpanded ? 'Collapse' : 'Expand'}
           >
             {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}

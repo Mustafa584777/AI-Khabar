@@ -4,7 +4,7 @@ import { PushNotificationItem } from '@/types/notification';
 
 export async function GET() {
   try {
-    const notifications = await NotificationServerStore.getNotifications();
+    const notifications = NotificationServerStore.getNotifications();
     const stats = NotificationServerStore.getStats();
     return NextResponse.json({
       success: true,
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       collageImages,
       url,
       actionButtons,
-      id,
+      sendBrowserPush,
     } = body;
 
     if (!title || (!contentBody && !subtitle)) {
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     }
 
     const newNotification: PushNotificationItem = {
-      id: id || `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       title: title.trim(),
       subtitle: subtitle?.trim() || 'Trending AI Photo Prompts',
       body: (contentBody || subtitle || '').trim(),
@@ -57,40 +57,18 @@ export async function POST(req: NextRequest) {
       read: false,
     };
 
-    const { totalSent } = await NotificationServerStore.addNotification(newNotification);
+    const { totalSent } = NotificationServerStore.addNotification(newNotification);
 
     return NextResponse.json({
       success: true,
       notification: newNotification,
       totalSent,
-      message: 'Push notification saved to database and broadcasted successfully!',
+      message: 'Push notification queued and broadcasted successfully!',
     });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Failed to send notification' },
       { status: 500 }
     );
-  }
-}
-
-export async function DELETE(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get('id');
-    const all = searchParams.get('all');
-
-    if (all === 'true') {
-      await NotificationServerStore.clearAllNotifications();
-      return NextResponse.json({ success: true, message: 'All notifications deleted' });
-    }
-
-    if (!id) {
-      return NextResponse.json({ error: 'Notification ID required' }, { status: 400 });
-    }
-
-    const remaining = await NotificationServerStore.deleteNotification(id);
-    return NextResponse.json({ success: true, remainingCount: remaining.length });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Failed to delete' }, { status: 500 });
   }
 }

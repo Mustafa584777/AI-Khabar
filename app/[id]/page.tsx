@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const slug = getPromptSlug(post);
   const cleanTitle = `${post.title} - AI Photo Prompt & Settings`;
-  const cleanDesc = getPromptMetaDescription(post);
+  const cleanDesc = getPromptMetaDescription(post.promptText);
   const pageUrl = `https://geminipromptgenerator.online/${slug}`;
 
   return {
@@ -157,7 +157,7 @@ export default async function SinglePromptDetailPage({ params }: PageProps) {
       {post && (
         <article className="sr-only" aria-hidden="false">
           <h1>{post.title}</h1>
-          <p>{getPromptMetaDescription(post)}</p>
+          <p>{getPromptMetaDescription(post.promptText)}</p>
           <blockquote>{post.promptText}</blockquote>
           <div>Category: {post.category}</div>
           {post.tags && <div>Tags: {post.tags.join(', ')}</div>}

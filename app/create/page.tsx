@@ -22,15 +22,7 @@ export default function CreatePage() {
     <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col pb-20 sm:pb-8">
       <Header />
       <main className="flex-1 w-full" id="create-studio-page-main">
-        <React.Suspense
-          fallback={
-            <div className="min-h-[60vh] flex items-center justify-center">
-              <div className="w-8 h-8 border-2 border-[#E60023] border-t-transparent rounded-full animate-spin" />
-            </div>
-          }
-        >
-          <AIStudioTool />
-        </React.Suspense>
+        <AIStudioTool />
       </main>
       <Footer />
       <BottomNav />

@@ -19,7 +19,7 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   soundEnabled: true,
 };
 
-// Seed notifications: Empty by default. All notifications are database-driven like prompt cards.
+// Seed notifications styled like viral drops
 export const SEED_NOTIFICATIONS: PushNotificationItem[] = [];
 
 // Play soft ambient notification chime using Web Audio API
@@ -245,65 +245,50 @@ export const NotificationService = {
     }
   },
 
-  // Sync with Server (fetches any notifications from the database)
+  // Sync with Server (fetches any newly broadcasted notifications)
   syncWithServer: async (): Promise<void> => {
     if (typeof window === 'undefined') return;
     try {
-      const res = await fetch('/api/notifications');
+      const lastSyncStr = localStorage.getItem(STORAGE_KEY_LAST_SYNC) || '0';
+      const res = await fetch(`/api/notifications/latest?since=${lastSyncStr}`);
       if (!res.ok) return;
 
       const data = await res.json();
       if (data.success && Array.isArray(data.notifications)) {
-        // Strip legacy static IDs if any exist
-        const staticIds = new Set([
-          'notif-pink-viral-aesthetic',
-          'notif-cyberpunk-neon-drop',
-          'notif-3d-character-unreal',
-        ]);
-        const cleaned = data.notifications.filter(
-          (n: PushNotificationItem) => n && !staticIds.has(n.id)
-        );
-        NotificationService.saveNotifications(cleaned);
-        window.dispatchEvent(new CustomEvent('promptcms_new_notification'));
+        for (const notif of data.notifications) {
+          await NotificationService.handleIncomingRealNotification(notif);
+        }
+        if (data.timestamp) {
+          localStorage.setItem(STORAGE_KEY_LAST_SYNC, String(data.timestamp));
+        }
       }
     } catch {
       // Ignore background sync errors
     }
   },
 
-  // Get notifications from local storage (filtering out any old legacy static seed cards)
+  // Get notifications from local storage
   getNotifications: (): PushNotificationItem[] => {
-    if (typeof window === 'undefined') return [];
+    if (typeof window === 'undefined') return SEED_NOTIFICATIONS;
     try {
       const stored = localStorage.getItem(STORAGE_KEY_NOTIFICATIONS);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          const staticIds = new Set([
-            'notif-pink-viral-aesthetic',
-            'notif-cyberpunk-neon-drop',
-            'notif-3d-character-unreal',
-          ]);
-          return parsed.filter((n) => n && !staticIds.has(n.id));
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
         }
       }
     } catch (e) {
       console.error('Error loading notifications:', e);
     }
-    return [];
+    return SEED_NOTIFICATIONS;
   },
 
   // Save notifications
   saveNotifications: (items: PushNotificationItem[]): void => {
     if (typeof window === 'undefined') return;
     try {
-      const staticIds = new Set([
-        'notif-pink-viral-aesthetic',
-        'notif-cyberpunk-neon-drop',
-        'notif-3d-character-unreal',
-      ]);
-      const cleaned = items.filter((n) => n && !staticIds.has(n.id));
-      localStorage.setItem(STORAGE_KEY_NOTIFICATIONS, JSON.stringify(cleaned));
+      localStorage.setItem(STORAGE_KEY_NOTIFICATIONS, JSON.stringify(items));
     } catch (e) {
       console.error('Error saving notifications:', e);
     }
@@ -328,7 +313,7 @@ export const NotificationService = {
     });
   },
 
-  // Broadcast & Add notification (saves directly to Database like prompt cards)
+  // Broadcast & Add notification (e.g. from Admin or Prompt creation)
   addNotification: async (
     item: Omit<PushNotificationItem, 'id' | 'sentAt' | 'clicksCount' | 'read'>,
     sendNativePush = true
@@ -343,19 +328,8 @@ export const NotificationService = {
 
     // Save locally
     const current = NotificationService.getNotifications();
-    const updated = [newItem, ...current.filter((n) => n.id !== newItem.id)];
+    const updated = [newItem, ...current];
     NotificationService.saveNotifications(updated);
-
-    // Save to Database via API
-    try {
-      await fetch('/api/notifications', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newItem),
-      });
-    } catch (err) {
-      console.error('Failed to save notification to database:', err);
-    }
 
     // Broadcast across tabs on same device
     if (pushChannel) {
@@ -392,38 +366,18 @@ export const NotificationService = {
   },
 
   deleteNotification: async (id: string): Promise<void> => {
+    // Delete locally
     const list = NotificationService.getNotifications();
     const updated = list.filter((n) => n.id !== id);
     NotificationService.saveNotifications(updated);
 
-    // Delete from Database via API
-    try {
-      await fetch(`/api/notifications?id=${encodeURIComponent(id)}`, {
-        method: 'DELETE',
-      });
-    } catch (err) {
-      console.error('Failed to delete notification from database:', err);
-    }
-
+    // Delete on server
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('promptcms_new_notification', { detail: { deletedId: id } }));
-    }
-  },
-
-  clearAllNotifications: async (): Promise<void> => {
-    NotificationService.saveNotifications([]);
-
-    // Delete all from Database via API
-    try {
-      await fetch('/api/notifications?all=true', {
-        method: 'DELETE',
-      });
-    } catch (err) {
-      console.error('Failed to clear notifications from database:', err);
-    }
-
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('promptcms_new_notification', { detail: { cleared: true } }));
+      try {
+        await fetch(`/api/notifications/latest?id=${id}`, { method: 'DELETE' });
+      } catch (err) {
+        console.error('Error deleting notification from server', err);
+      }
     }
   },
 
