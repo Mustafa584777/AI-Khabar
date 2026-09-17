@@ -135,6 +135,7 @@ interface AppContextType {
   setIsProUser: (isPro: boolean) => void;
   planTier: PlanTier;
   setPlanTier: (tier: PlanTier) => void;
+  planExpiresAt: string | null;
   toolCredits: number;
   deductToolCredit: (amount?: number) => boolean;
   useToolCredit: (amount?: number) => boolean;
@@ -210,6 +211,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       }
     }
     return 'free';
+  });
+
+  const [planExpiresAt, setPlanExpiresAtState] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const acc = StorageService.getUserAccount();
+      if (acc && acc.isLoggedIn) {
+        return localStorage.getItem('auraprompt_plan_expires_at');
+      }
+    }
+    return null;
   });
 
   const setPlanTier = useCallback((tier: PlanTier) => {
@@ -373,7 +384,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const upgradePlan = useCallback((tier: 'starter' | 'pro' | 'vip') => {
     const creditsMap = { starter: 30, pro: 60, vip: 180 };
-    const requestsMap = { starter: 1, pro: 3, vip: 10 };
+    const requestsMap = { starter: 1, pro: 2, vip: 5 };
 
     setIsProUserState(true);
     setPlanTierState(tier);
@@ -403,13 +414,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const now = new Date();
     const planStartedAt = now.toISOString();
-    const planExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const planExpires = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    setPlanExpiresAtState(planExpires);
 
     if (typeof window !== 'undefined') {
       localStorage.setItem('auraprompt_pro_member', 'true');
       localStorage.setItem('auraprompt_plan_tier', tier);
       localStorage.setItem('auraprompt_plan_started_at', planStartedAt);
-      localStorage.setItem('auraprompt_plan_expires_at', planExpiresAt);
+      localStorage.setItem('auraprompt_plan_expires_at', planExpires);
     }
 
     // Persist SaaS Plan upgrade immediately to Supabase cloud
@@ -421,7 +433,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         toolCredits: finalCredits,
         promptRequestsRemaining: finalRequests,
         planStartedAt,
-        planExpiresAt,
+        planExpiresAt: planExpires,
       });
     }
   }, [userAccount]);
@@ -764,6 +776,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setAiHistory([]);
       setPlanTierState('free');
       setIsProUserState(false);
+      setPlanExpiresAtState(null);
       setToolCreditsState(synced.toolCredits ?? 2);
       setUnlockedPromptIds([]);
       if (typeof window !== 'undefined') {
@@ -791,6 +804,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setUserAccount(null);
     setIsProUserState(false);
     setPlanTierState('free');
+    setPlanExpiresAtState(null);
     setToolCreditsState(0);
     setPromptRequestsRemainingState(0);
     setUnlockedPromptIds([]);
@@ -808,11 +822,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // Premium Monthly exclusive feature with unlimited saves
     if (!isProUser && planTier === 'free') {
-      showToast('AI history save is a Premium feature! Upgrade to Monthly Plan for unlimited saves.');
-      setIsUnlockPremiumModalOpen(true);
-      return;
+      if (aiHistory.length >= 10) {
+        showToast('Free plan allows up to 10 history saves. Upgrade to Monthly Plan for unlimited saves.');
+        setIsUnlockPremiumModalOpen(true);
+        return;
+      }
     }
 
     const itemWithUser: AIHistoryItem = {
@@ -925,6 +940,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (synced.isProUser !== undefined) {
         setIsProUserState(synced.isProUser);
         if (typeof window !== 'undefined') localStorage.setItem('auraprompt_pro_member', String(synced.isProUser));
+      }
+      if (synced.planExpiresAt) {
+        setPlanExpiresAtState(synced.planExpiresAt);
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_plan_expires_at', synced.planExpiresAt);
       }
       if (synced.toolCredits !== undefined) {
         setToolCreditsState(synced.toolCredits);
@@ -1667,6 +1686,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
+    if (!bookmarkedIds.includes(id) && !isProUser && planTier === 'free' && bookmarkedIds.length >= 10) {
+      showToast('Free plan allows up to 10 saved prompts. Upgrade to Pro for unlimited saves.');
+      setIsUnlockPremiumModalOpen(true);
+      return;
+    }
+
     const isNowSaved = StorageService.toggleBookmark(id);
     const updatedBookmarks = StorageService.getBookmarkedIds();
     setBookmarkedIds(updatedBookmarks);
@@ -1970,6 +1995,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         lockedPromptContext,
         setLockedPromptContext,
         applyPlan,
+        planExpiresAt,
       }}
     >
       {children}

@@ -66,6 +66,7 @@ export const UserDashboard = () => {
     isProUser,
     setIsProCheckoutModalOpen,
     planTier,
+    planExpiresAt,
     toolCredits,
     promptRequestsRemaining,
     syncUserCloudData,
@@ -427,7 +428,7 @@ export const UserDashboard = () => {
               </div>
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
                 {isPaid
-                  ? `${toolCredits} prompt tools credits available • All premium prompts unlocked • Unlimited prompt & history saves.`
+                  ? `${toolCredits} prompt tools credits available • All premium prompts unlocked • Unlimited prompt & history saves.${planExpiresAt ? ` (Plan expires: ${new Date(planExpiresAt).toLocaleDateString()})` : ''}`
                   : `${toolCredits} credits available. 1 credit unlocks any premium prompt • 3 credits per image extraction. Top up credits anytime.`}
               </p>
             </div>

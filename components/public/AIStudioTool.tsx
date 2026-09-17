@@ -134,8 +134,8 @@ export const AIStudioTool = () => {
     deductToolCredit,
   } = useApp();
 
-  // Active Tool Switch: 'text_to_prompt' (2 credits) or 'image_to_prompt' (3 credits)
-  const [activeTool, setActiveTool] = useState<'text_to_prompt' | 'image_to_prompt'>(() => {
+  // Active Tool Switch: 'text_to_prompt' (2 credits), 'image_to_prompt' (3 credits), 'prompt_enhancer' (1 credit), or 'prompt_editor' (1 credit)
+  const [activeTool, setActiveTool] = useState<'text_to_prompt' | 'image_to_prompt' | 'prompt_enhancer' | 'prompt_editor'>(() => {
     if (typeof window !== 'undefined') {
       const hasImage =
         sessionStorage.getItem('promptcms_studio_image_preload') ||
@@ -206,6 +206,23 @@ export const AIStudioTool = () => {
   const [extractedImageData, setExtractedImageData] = useState<GeneratedPromptData | null>(null);
   const [isSavedImageExtracted, setIsSavedImageExtracted] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ==========================================
+  // PROMPT ENHANCER STATE (1 Credit)
+  // ==========================================
+  const [basicPrompt, setBasicPrompt] = useState<string>('');
+  const [isEnhancing, setIsEnhancing] = useState<boolean>(false);
+  const [enhancedData, setEnhancedData] = useState<GeneratedPromptData | null>(null);
+  const [isSavedEnhanced, setIsSavedEnhanced] = useState<boolean>(false);
+
+  // ==========================================
+  // PROMPT EDITOR STATE (1 Credit)
+  // ==========================================
+  const [editorOriginalPrompt, setEditorOriginalPrompt] = useState<string>('');
+  const [editorInstructions, setEditorInstructions] = useState<string>('');
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [editedData, setEditedData] = useState<GeneratedPromptData | null>(null);
+  const [isSavedEdited, setIsSavedEdited] = useState<boolean>(false);
 
   // Global Tool State
   const [isOutOfCreditsModalOpen, setIsOutOfCreditsModalOpen] = useState<boolean>(false);
@@ -490,6 +507,198 @@ export const AIStudioTool = () => {
     showToast('Saved to your AI Studio History!');
   };
 
+  // ==========================================
+  // HANDLER: PROMPT ENHANCER (1 Credit)
+  // ==========================================
+  const handleEnhancePrompt = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+
+    const cleanPrompt = basicPrompt.trim();
+    if (!cleanPrompt) {
+      showToast('Please enter a basic prompt to enhance');
+      return;
+    }
+
+    if (!userAccount?.isLoggedIn) {
+      openAuthModal('Please sign in to enhance prompts with your credits.');
+      return;
+    }
+
+    const ENHANCE_COST = 1;
+    if (toolCredits < ENHANCE_COST) {
+      setRequiredCreditsForModal(ENHANCE_COST);
+      setIsOutOfCreditsModalOpen(true);
+      showToast(`Prompt Enhancer requires 1 credit (You have ${toolCredits}). Top up or upgrade!`);
+      return;
+    }
+
+    setIsEnhancing(true);
+    setEnhancedData(null);
+    setIsSavedEnhanced(false);
+
+    try {
+      const res = await fetch('/api/gemini/tools', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'prompt_enhancer',
+          idea: cleanPrompt,
+        }),
+      });
+
+      const json = await res.json();
+      if (json.success && json.data) {
+        deductToolCredit(ENHANCE_COST);
+        setEnhancedData(json.data);
+
+        const historyItem: AIHistoryItem = {
+          id: 'enh_' + Date.now(),
+          type: 'text_to_prompt',
+          title: json.data.title || 'Enhanced Prompt',
+          promptText: json.data.promptText || json.data.prompt || '',
+          negativePrompt: json.data.negativePrompt,
+          camera: json.data.camera,
+          lighting: json.data.lighting,
+          composition: json.data.composition,
+          colorPalette: json.data.colorPalette,
+          aspectRatio: json.data.aspectRatio || '16:9',
+          tags: json.data.tags || ['Enhanced'],
+          createdAt: Date.now(),
+        };
+        saveAiHistoryItem(historyItem);
+        setIsSavedEnhanced(true);
+
+        confetti({ particleCount: 70, spread: 60, origin: { y: 0.65 } });
+        showToast(`Prompt enhanced! 1 credit used (${Math.max(0, toolCredits - ENHANCE_COST)} remaining)`);
+      } else {
+        showToast(json.error || 'Failed to enhance prompt with Gemini');
+      }
+    } catch (err) {
+      console.error('Enhancer error:', err);
+      showToast('An error occurred during prompt enhancement');
+    } finally {
+      setIsEnhancing(false);
+    }
+  };
+
+  const handleSaveEnhancedToHistory = () => {
+    if (!enhancedData) return;
+    if (!userAccount?.isLoggedIn) {
+      openAuthModal('Please sign in or create an account to save prompts.');
+      return;
+    }
+
+    const historyItem: AIHistoryItem = {
+      id: 'enh_' + Date.now(),
+      type: 'text_to_prompt',
+      title: enhancedData.title || 'Enhanced Prompt',
+      promptText: enhancedData.promptText || enhancedData.prompt || '',
+      negativePrompt: enhancedData.negativePrompt,
+      camera: enhancedData.camera,
+      lighting: enhancedData.lighting,
+      composition: enhancedData.composition,
+      colorPalette: enhancedData.colorPalette,
+      aspectRatio: enhancedData.aspectRatio || '16:9',
+      tags: enhancedData.tags || ['Enhanced'],
+      createdAt: Date.now(),
+    };
+
+    saveAiHistoryItem(historyItem);
+    setIsSavedEnhanced(true);
+    showToast('Saved to your AI Studio History!');
+  };
+
+  // ==========================================
+  // HANDLER: PROMPT EDITOR (1 Credit)
+  // ==========================================
+  const handleEditPrompt = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+
+    const cleanPrompt = editorOriginalPrompt.trim();
+    const cleanInstructions = editorInstructions.trim();
+    if (!cleanPrompt || !cleanInstructions) {
+      showToast('Please provide both an original prompt and edit instructions.');
+      return;
+    }
+
+    if (!userAccount?.isLoggedIn) {
+      openAuthModal('Please sign in to edit prompts with your credits.');
+      return;
+    }
+
+    const EDIT_COST = 1;
+    if (toolCredits < EDIT_COST) {
+      setRequiredCreditsForModal(EDIT_COST);
+      setIsOutOfCreditsModalOpen(true);
+      showToast(`Prompt Editor requires 1 credit (You have ${toolCredits}). Top up or upgrade!`);
+      return;
+    }
+
+    setIsEditing(true);
+    setEditedData(null);
+    setIsSavedEdited(false);
+
+    try {
+      const res = await fetch('/api/gemini/tools', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'prompt_editor',
+          text: cleanPrompt,
+          editInstruction: cleanInstructions,
+        }),
+      });
+
+      const json = await res.json();
+      if (json.success && json.data) {
+        deductToolCredit(EDIT_COST);
+        setEditedData(json.data);
+
+        const historyItem: AIHistoryItem = {
+          id: 'edit_' + Date.now(),
+          type: 'text_to_prompt',
+          title: json.data.title || 'Edited Prompt',
+          promptText: json.data.promptText || json.data.prompt || '',
+          tags: json.data.tags || ['Edited'],
+          createdAt: Date.now(),
+        };
+        saveAiHistoryItem(historyItem);
+        setIsSavedEdited(true);
+
+        confetti({ particleCount: 70, spread: 60, origin: { y: 0.65 } });
+        showToast(`Prompt edited! 1 credit used (${Math.max(0, toolCredits - EDIT_COST)} remaining)`);
+      } else {
+        showToast(json.error || 'Failed to edit prompt with Gemini');
+      }
+    } catch (err) {
+      console.error('Editor error:', err);
+      showToast('An error occurred during prompt editing');
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
+  const handleSaveEditedToHistory = () => {
+    if (!editedData) return;
+    if (!userAccount?.isLoggedIn) {
+      openAuthModal('Please sign in or create an account to save prompts.');
+      return;
+    }
+
+    const historyItem: AIHistoryItem = {
+      id: 'edit_' + Date.now(),
+      type: 'text_to_prompt',
+      title: editedData.title || 'Edited Prompt',
+      promptText: editedData.promptText || editedData.prompt || '',
+      tags: editedData.tags || ['Edited'],
+      createdAt: Date.now(),
+    };
+
+    saveAiHistoryItem(historyItem);
+    setIsSavedEdited(true);
+    showToast('Saved to your AI Studio History!');
+  };
+
   // Strict Login Gate: Unauthenticated users cannot use or see tool workspace
   if (!userAccount?.isLoggedIn) {
     return (
@@ -557,7 +766,7 @@ export const AIStudioTool = () => {
               <Coins className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
               <span>{toolCredits} Credits</span>
               <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium hidden sm:inline">
-                • {activeTool === 'text_to_prompt' ? '2 cr / generation' : '3 cr / extraction'}
+                • {activeTool === 'text_to_prompt' ? '2 cr / generation' : activeTool === 'image_to_prompt' ? '3 cr / extraction' : '1 cr / enhancement'}
               </span>
               <Link
                 href="/pricing"
@@ -597,7 +806,11 @@ export const AIStudioTool = () => {
             <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1">
               {activeTool === 'text_to_prompt'
                 ? 'Turn 1-line ideas into cinematic master prompts with custom camera optics & lighting (2 credits).'
-                : 'Reverse-engineer precise, high-fidelity AI prompts from any photo with optical analysis (3 credits).'}
+                : activeTool === 'image_to_prompt'
+                ? 'Reverse-engineer precise, high-fidelity AI prompts from any photo with optical analysis (3 credits).'
+                : activeTool === 'prompt_enhancer'
+                ? 'Enhance and refine a basic prompt into a highly detailed, professional prompt (1 credit).'
+                : 'Modify and iterate on existing prompts with precise instructions (1 credit).'}
             </p>
           </div>
 
@@ -644,6 +857,50 @@ export const AIStudioTool = () => {
                 }`}
               >
                 3 Credits
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTool('prompt_enhancer')}
+              className={`flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                activeTool === 'prompt_enhancer'
+                  ? 'bg-[#E60023] text-white shadow-md shadow-red-500/20'
+                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+              }`}
+              id="tool-tab-prompt-enhancer"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Prompt Enhancer</span>
+              <span
+                className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                  activeTool === 'prompt_enhancer'
+                    ? 'bg-white/20 text-white'
+                    : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300'
+                }`}
+              >
+                1 Credit
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTool('prompt_editor')}
+              className={`flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                activeTool === 'prompt_editor'
+                  ? 'bg-[#E60023] text-white shadow-md shadow-red-500/20'
+                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+              }`}
+              id="tool-tab-prompt-editor"
+            >
+              <Wand2 className="w-3.5 h-3.5" />
+              <span>Prompt Editor</span>
+              <span
+                className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                  activeTool === 'prompt_editor'
+                    ? 'bg-white/20 text-white'
+                    : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300'
+                }`}
+              >
+                1 Credit
               </span>
             </button>
           </div>
@@ -1389,6 +1646,313 @@ export const AIStudioTool = () => {
                       Upload any artwork, photograph, or render on the left to extract its exact prompt structure, composition rules, and photographic parameters.
                     </p>
                   </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ================================================================ */}
+        {/* TOOL 3: PROMPT ENHANCER (1 Credit)                               */}
+        {/* ================================================================ */}
+        {activeTool === 'prompt_enhancer' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in">
+            {/* Left Column: Basic Prompt Input */}
+            <div className="lg:col-span-5 space-y-6">
+              <form onSubmit={handleEnhancePrompt} className="space-y-6">
+                <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-[#E60023]" />
+                      <span>Basic Prompt</span>
+                    </h3>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-1.5">
+                      Paste a basic or weak prompt to enhance it:
+                    </label>
+                    <textarea
+                      rows={6}
+                      value={basicPrompt}
+                      onChange={(e) => setBasicPrompt(e.target.value)}
+                      placeholder="e.g. A cat sitting on a table..."
+                      className="w-full px-3.5 py-3 text-xs sm:text-sm rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:ring-2 focus:ring-[#E60023] focus:outline-none resize-none leading-relaxed transition-all shadow-inner"
+                      id="prompt-enhancer-input"
+                    />
+                    <div className="flex items-center justify-between text-[11px] text-neutral-400 pt-1">
+                      <span>{basicPrompt.trim().length} characters</span>
+                      <span>⚡ Consumes 1 Credit</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-3xl bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 space-y-3">
+                  <div className="flex items-center justify-between text-xs px-1">
+                    <span className="text-neutral-500 dark:text-neutral-400">Available Credits:</span>
+                    <span className="font-bold text-neutral-900 dark:text-white">
+                      {toolCredits} Credits
+                    </span>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isEnhancing || !basicPrompt.trim()}
+                    className="w-full py-4 px-6 rounded-full bg-[#E60023] hover:bg-[#ad081b] active:scale-[0.98] text-white font-black text-sm shadow-md shadow-red-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {isEnhancing ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Enhancing Prompt...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        <span>Enhance Prompt (1 Credit)</span>
+                      </>
+                    )}
+                  </button>
+                  <p className="text-[11px] text-center text-neutral-500 dark:text-neutral-400">
+                    ⚡ Deducts 1 credit • Expands with professional details
+                  </p>
+                </div>
+              </form>
+            </div>
+
+            {/* Right Column: Enhanced Output */}
+            <div className="lg:col-span-7 space-y-6">
+              {enhancedData ? (
+                <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6 animate-fade-in">
+                  <div className="flex items-center justify-between gap-3 flex-wrap pb-4 border-b border-neutral-200 dark:border-neutral-800">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <h2 className="text-base sm:text-lg font-black text-neutral-900 dark:text-white">
+                          {enhancedData.title || 'Enhanced Prompt'}
+                        </h2>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSaveEnhancedToHistory}
+                        disabled={isSavedEnhanced}
+                        className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                          isSavedEnhanced
+                            ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+                            : 'bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
+                        }`}
+                      >
+                        {isSavedEnhanced ? <Check className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
+                        <span>{isSavedEnhanced ? 'Saved' : 'Save'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          copyToClipboard(
+                            enhancedData.promptText || enhancedData.prompt || '',
+                            'enh_prompt',
+                            'Enhanced prompt copied!'
+                          )
+                        }
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
+                      >
+                        {copiedKey === 'enh_prompt' ? (
+                          <Check className="w-3.5 h-3.5" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                        <span>{copiedKey === 'enh_prompt' ? 'Copied!' : 'Copy Prompt'}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-amber-500/5 rounded-2xl pointer-events-none" />
+                      <div className="p-4 sm:p-5 rounded-2xl bg-neutral-50 dark:bg-[#111111] border border-neutral-200 dark:border-neutral-800 shadow-inner">
+                        <p className="text-sm sm:text-base text-neutral-900 dark:text-white leading-relaxed font-mono select-all">
+                          {enhancedData.promptText || enhancedData.prompt}
+                        </p>
+                      </div>
+                    </div>
+
+                    {(enhancedData.negativePrompt || enhancedData.negative_prompt) && (
+                      <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30">
+                        <h4 className="text-xs font-black text-red-600 dark:text-red-400 mb-1.5 uppercase tracking-wider">
+                          Negative Parameters
+                        </h4>
+                        <p className="text-xs sm:text-sm text-red-800 dark:text-red-200 font-mono leading-relaxed select-all">
+                          {enhancedData.negativePrompt || enhancedData.negative_prompt}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="h-full min-h-[400px] rounded-3xl border-2 border-dashed border-neutral-200 dark:border-neutral-800 flex flex-col items-center justify-center p-8 text-center bg-white/50 dark:bg-neutral-900/20">
+                  <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-400 flex items-center justify-center mb-4">
+                    <Wand2 className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-lg font-black text-neutral-900 dark:text-white mb-2">
+                    Professional Prompt Enhancer
+                  </h3>
+                  <p className="text-sm text-neutral-500 max-w-sm">
+                    Enter a basic prompt on the left and our AI will expand it into a detailed, high-quality prompt suitable for advanced image generators.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ================================================================ */}
+        {/* TOOL 4: PROMPT EDITOR (1 Credit)                                 */}
+        {/* ================================================================ */}
+        {activeTool === 'prompt_editor' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in">
+            {/* Left Column: Editor Inputs */}
+            <div className="lg:col-span-5 space-y-6">
+              <form onSubmit={handleEditPrompt} className="space-y-6">
+                <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                      <Wand2 className="w-4 h-4 text-[#E60023]" />
+                      <span>Original Prompt & Edits</span>
+                    </h3>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-1.5">
+                        Original Prompt:
+                      </label>
+                      <textarea
+                        rows={4}
+                        value={editorOriginalPrompt}
+                        onChange={(e) => setEditorOriginalPrompt(e.target.value)}
+                        placeholder="Paste the prompt you want to modify..."
+                        className="w-full px-3.5 py-3 text-xs sm:text-sm rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:ring-2 focus:ring-[#E60023] focus:outline-none resize-none leading-relaxed transition-all shadow-inner"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-1.5">
+                        What to change?
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={editorInstructions}
+                        onChange={(e) => setEditorInstructions(e.target.value)}
+                        placeholder="e.g. Change the lighting to cinematic, make it cyberpunk style, etc."
+                        className="w-full px-3.5 py-3 text-xs sm:text-sm rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:ring-2 focus:ring-[#E60023] focus:outline-none resize-none leading-relaxed transition-all shadow-inner"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-3xl bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 space-y-3">
+                  <div className="flex items-center justify-between text-xs px-1">
+                    <span className="text-neutral-500 dark:text-neutral-400">Available Credits:</span>
+                    <span className="font-bold text-neutral-900 dark:text-white">
+                      {toolCredits} Credits
+                    </span>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isEditing || !editorOriginalPrompt.trim() || !editorInstructions.trim()}
+                    className="w-full py-4 px-6 rounded-full bg-[#E60023] hover:bg-[#ad081b] active:scale-[0.98] text-white font-black text-sm shadow-md shadow-red-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {isEditing ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Editing Prompt...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="w-4 h-4" />
+                        <span>Edit Prompt (1 Credit)</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Right Column: Edited Output */}
+            <div className="lg:col-span-7 space-y-6">
+              {editedData ? (
+                <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6 animate-fade-in">
+                  <div className="flex items-center justify-between gap-3 flex-wrap pb-4 border-b border-neutral-200 dark:border-neutral-800">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#E60023] animate-pulse" />
+                        <h2 className="text-base sm:text-lg font-black text-neutral-900 dark:text-white">
+                          {editedData.title || 'Edited Prompt'}
+                        </h2>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSaveEditedToHistory}
+                        disabled={isSavedEdited}
+                        className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                          isSavedEdited
+                            ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+                            : 'bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
+                        }`}
+                      >
+                        {isSavedEdited ? <Check className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
+                        <span>{isSavedEdited ? 'Saved' : 'Save'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          copyToClipboard(
+                            editedData.promptText || editedData.prompt || '',
+                            'edit_prompt',
+                            'Edited prompt copied!'
+                          )
+                        }
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
+                      >
+                        {copiedKey === 'edit_prompt' ? (
+                          <Check className="w-3.5 h-3.5" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                        <span>{copiedKey === 'edit_prompt' ? 'Copied!' : 'Copy Prompt'}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 to-amber-500/5 rounded-2xl pointer-events-none" />
+                      <div className="p-4 sm:p-5 rounded-2xl bg-neutral-50 dark:bg-[#111111] border border-neutral-200 dark:border-neutral-800 shadow-inner">
+                        <p className="text-sm sm:text-base text-neutral-900 dark:text-white leading-relaxed font-mono select-all">
+                          {editedData.promptText || editedData.prompt}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-full min-h-[400px] rounded-3xl border-2 border-dashed border-neutral-200 dark:border-neutral-800 flex flex-col items-center justify-center p-8 text-center bg-white/50 dark:bg-neutral-900/20">
+                  <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-400 flex items-center justify-center mb-4">
+                    <Wand2 className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-lg font-black text-neutral-900 dark:text-white mb-2">
+                    Professional Prompt Editor
+                  </h3>
+                  <p className="text-sm text-neutral-500 max-w-sm">
+                    Enter an existing prompt and tell our AI what changes you want to make. It will rewrite the prompt professionally.
+                  </p>
                 </div>
               )}
             </div>

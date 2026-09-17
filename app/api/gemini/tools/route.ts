@@ -777,6 +777,124 @@ Return the final response strictly conforming to the required JSON schema.`;
       }
     }
 
+    // =========================================================================
+    // ACTION 3: PROMPT ENHANCER
+    // =========================================================================
+    if (action === 'prompt_enhancer') {
+      const userIdea = (idea || prompt || '').trim();
+      if (!userIdea) {
+        return NextResponse.json({ error: 'Please provide a basic prompt.' }, { status: 400 });
+      }
+
+      if (!apiKey) {
+        return NextResponse.json({
+          success: true,
+          data: {
+            title: 'Enhanced Prompt',
+            promptText: `${userIdea} -- highly detailed, masterpiece, 8k resolution, cinematic lighting, ultra-realistic`,
+            negativePrompt: 'low quality, blurry, deformed',
+            tags: ['Enhanced'],
+          },
+        });
+      }
+
+      try {
+        const ai = new GoogleGenAI({ apiKey });
+        const systemPrompt = `You are an expert AI Prompt Engineer. The user will provide a basic or weak prompt. Your job is to analyze it, expand it, and turn it into a highly detailed, professional-grade prompt suitable for Midjourney, Stable Diffusion, or DALL-E.
+
+Add rich details about lighting, camera angles, color grading, atmosphere, and composition that fit the original intent. Include negative prompt suggestions.
+
+OUTPUT MUST BE VALID JSON ONLY matching this schema:
+{
+  "title": "Short catchy title",
+  "promptText": "The fully enhanced, detailed prompt",
+  "negativePrompt": "Negative prompt terms",
+  "tags": ["Tag1", "Tag2"]
+}`;
+
+        const { response, modelUsed } = await generateWithModel(ai, undefined, {
+          contents: [{ role: 'user', parts: [{ text: `Basic Prompt: "${userIdea}"\nEnhance it.` }] }],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            temperature: 0.7,
+          },
+        });
+
+        const rawText = response.text || '';
+        let parsed: any;
+        try {
+          parsed = JSON.parse(rawText);
+        } catch {
+          const match = rawText.match(/\{[\s\S]*\}/);
+          if (match) {
+            parsed = JSON.parse(match[0]);
+          } else {
+            throw new Error('Could not parse JSON response from Gemini');
+          }
+        }
+
+        return NextResponse.json({ success: true, data: parsed, modelUsed });
+      } catch (err: any) {
+        console.warn('Gemini enhancer failed:', err?.message);
+        return NextResponse.json({
+          success: true,
+          data: {
+            title: 'Enhanced Prompt',
+            promptText: `${userIdea} -- highly detailed, masterpiece, 8k resolution, cinematic lighting, ultra-realistic`,
+            negativePrompt: 'low quality, blurry, deformed',
+            tags: ['Enhanced'],
+          },
+        });
+      }
+    }
+
+    // =========================================================================
+    // ACTION 4: PROMPT EDITOR
+    // =========================================================================
+    if (action === 'prompt_editor') {
+      const { text, editInstruction } = await req.json().catch(() => ({ text: '', editInstruction: '' }));
+      if (!text || !editInstruction) {
+        return NextResponse.json({ error: 'Please provide both original prompt and edit instructions.' }, { status: 400 });
+      }
+
+      if (!apiKey) {
+        return NextResponse.json({
+          success: true,
+          data: {
+            title: 'Edited Prompt',
+            promptText: `[Mock Edited] ${text} (Changes: ${editInstruction})`,
+            tags: ['Edited'],
+          },
+        });
+      }
+
+      try {
+        const ai = new GoogleGenAI({ apiKey });
+        const systemPrompt = `You are an expert AI Prompt Editor. The user will provide an original prompt and some instructions on how they want to change it. Your job is to modify the prompt exactly as requested while maintaining its core professional structure. Output MUST BE VALID JSON ONLY matching this schema: { "title": "Catchy title for the new prompt", "promptText": "The fully edited prompt", "tags": ["Tag1", "Tag2"] }`;
+
+        const { response, modelUsed } = await generateWithModel(ai, undefined, {
+          contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\nOriginal Prompt: "${text}"\n\nEdit Instructions: "${editInstruction}"\n\nApply the edits and return the JSON.` }] }],
+          generationConfig: { responseMimeType: 'application/json', temperature: 0.7 },
+        });
+
+        const rawText = response.text || '';
+        let parsed: any;
+        try {
+          parsed = JSON.parse(rawText);
+        } catch {
+          const match = rawText.match(/\{[\s\S]*\}/);
+          if (match) {
+            parsed = JSON.parse(match[0]);
+          } else {
+            throw new Error('Could not parse JSON response from Gemini');
+          }
+        }
+        return NextResponse.json({ success: true, data: parsed, modelUsed });
+      } catch (err: any) {
+        return NextResponse.json({ success: false, error: err?.message || 'Failed to edit prompt' }, { status: 500 });
+      }
+    }
+
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (error: any) {
     console.error('AI Studio Tools Error:', error);

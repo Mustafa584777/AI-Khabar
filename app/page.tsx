@@ -4,11 +4,8 @@ import React from 'react';
 import dynamic from 'next/dynamic';
 import { AppProvider, useApp } from '@/context/AppContext';
 import { Header } from '@/components/public/Header';
-import { HeroSection } from '@/components/public/HeroSection';
-import { ToolFilterBar } from '@/components/public/ToolFilterBar';
-import { PromptGrid } from '@/components/public/PromptGrid';
+import { GeminiPromptBox } from '@/components/public/GeminiPromptBox';
 import { Footer } from '@/components/public/Footer';
-import { SEOContentSection } from '@/components/public/SEOContentSection';
 import { ToastNotification } from '@/components/public/ToastNotification';
 import { BottomNav } from '@/components/public/BottomNav';
 import { Sparkles } from 'lucide-react';
@@ -98,10 +95,12 @@ function MainApp() {
   return (
     <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col pb-20 sm:pb-8">
       <Header />
-      <HeroSection />
-      <ToolFilterBar />
-      <PromptGrid />
-      <SEOContentSection />
+      
+      {/* Simplified Homepage Content */}
+      <div className="flex-1 flex flex-col items-center justify-center p-4">
+        <GeminiPromptBox />
+      </div>
+
       <Footer />
 
       {/* Mobile Bottom Navigation */}
