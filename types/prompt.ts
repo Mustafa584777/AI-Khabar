@@ -32,8 +32,7 @@ export interface PromptParameters {
   camera?: string; // e.g. "Sony A7 IV, 85mm f/1.4"
   renderEngine?: string; // e.g. "Unreal Engine 5, Octane Render"
   temperature?: string; // For text models
-  isPremium?: boolean | string;
-  [key: string]: string | boolean | undefined;
+  [key: string]: string | undefined;
 }
 
 export interface Author {
@@ -72,7 +71,11 @@ export interface PromptPost {
   status: 'published' | 'draft' | 'scheduled';
   isFeatured?: boolean;
   isTrending?: boolean;
-  isPremium?: boolean;
+  isRequested?: boolean;
+  requestedByName?: string;
+  requestedByEmail?: string;
+  requestedByAvatar?: string;
+  requestedPromptDescription?: string;
   viewsCount: number;
   copiesCount: number;
   likesCount: number;
@@ -85,8 +88,6 @@ export interface PromptPost {
   updatedAt: string;
   publishedAt?: string;
 }
-
-export type PlanTier = 'free' | 'starter' | 'pro' | 'vip';
 
 export interface Category {
   id: string;
@@ -106,6 +107,8 @@ export interface SiteSettings {
   siteTagline: string;
   siteUrl: string;
   logoText: string;
+  logoUrl?: string;
+  faviconUrl?: string;
   heroHeadline: string;
   heroSubheadline: string;
   defaultTool: AITool;
@@ -117,6 +120,7 @@ export interface SiteSettings {
   cloudinaryApiKey?: string;
   cloudinaryApiSecret?: string;
   cloudinaryUploadPreset?: string;
+  geminiCustomInstructions?: string;
 }
 
 export interface AdminUser {
@@ -143,73 +147,26 @@ export interface UserAccount {
   generationsCountForPoints: number;
   sharesCountForPoints: number;
   referralsCountForPoints: number;
-  isPremium?: boolean;
-  membershipPlan?: 'free' | 'starter' | 'pro' | 'vip';
-  planTier?: PlanTier;
-  planExpiresAt?: string;
-  planStartedAt?: string;
-  toolCredits?: number;
-  unlockedPromptIds?: string[];
-  credits?: number;
-  lastCreditRefresh?: string;
-  promptRequestsAllowed?: number;
-}
-
-export interface RegisteredUserRecord {
-  id: string;
-  email: string;
-  name: string;
-  username?: string;
-  avatar?: string;
-  planTier: PlanTier;
-  isProUser: boolean;
-  planExpiresAt?: string;
-  toolCredits: number;
-  points: number;
-  unlockedPromptIds: string[];
-  promptRequestsRemaining?: number;
-  aiHistoryCount?: number;
-  bookmarksCount?: number;
-  likesCount?: number;
-  joinedDate: string;
-  lastSyncedAt?: string;
-  source: 'supabase_auth' | 'supabase_sync' | 'local_store' | 'razorpay' | 'razorpay_verified';
-  paymentAmount?: number;
-  paymentId?: string;
-  paymentDate?: string;
-  paymentMethod?: string;
-  rawSyncData?: any;
-}
-
-export interface UsersBackupPayload {
-  version: string;
-  exportedAt: string;
-  system: string;
-  totalUsers: number;
-  users: RegisteredUserRecord[];
 }
 
 export interface PromptRequestItem {
   id: string;
   userId: string;
-  userEmail: string;
   userName: string;
+  userEmail?: string;
   userAvatar?: string;
   requestText: string;
   category?: string;
   aiTool?: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'rejected';
+  status: 'pending' | 'in_progress' | 'completed';
+  fulfilledPostId?: string;
   createdAt: number;
-  likesCount?: number;
-  fulfilledPrompt?: string;
-  fulfilledAt?: number | string;
-  adminNotes?: string;
-  fulfilledBy?: string;
+  likesCount: number;
 }
 
 export interface AIHistoryItem {
   id: string;
-  type: 'image_to_prompt' | 'prompt_to_image' | 'text_to_prompt';
+  type: 'image_to_prompt' | 'prompt_to_image';
   title: string;
   promptText: string;
   negativePrompt?: string;
@@ -233,17 +190,4 @@ export interface SearchQueryItem {
   count: number;
   lastSearched: number;
 }
-
-export interface AiSearchResult {
-  query: string;
-  correctedQuery: string;
-  expandedKeywords: string[];
-  matchedPostIds: string[];
-  explanation: string;
-  isAiPowered: boolean;
-}
-
-export type { UserTasteProfile, GenderVibe } from '@/lib/personalization';
-
-
 

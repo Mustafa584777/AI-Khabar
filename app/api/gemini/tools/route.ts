@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
+import { ServerStorage } from '@/lib/server-storage';
 
 const IMAGE_TO_PROMPT_SYSTEM_INSTRUCTION = `You are an expert AI Image Prompt Reverse-Engineering Engine.
 
@@ -416,12 +417,11 @@ QUALITY STANDARD:
 
 async function generateWithModel(ai: GoogleGenAI, preferredModel: string | undefined, payload: any) {
   const candidateModels = [
-    preferredModel && preferredModel !== 'imagen-3.0-generate-002' ? preferredModel : 'gemini-3.8-flash',
-    'gemini-3.8-flash',
-    'gemini-3.1-pro-preview',
+    preferredModel && preferredModel !== 'imagen-3.0-generate-002' ? preferredModel : 'gemini-2.5-flash',
+    'gemini-2.5-flash',
+    'gemini-3.7-flash',
     'gemini-3.1-flash-lite',
     'gemini-flash-latest',
-    'gemini-2.5-flash',
     'gemini-2.5-pro',
   ];
 
@@ -448,8 +448,8 @@ async function generateWithModel(ai: GoogleGenAI, preferredModel: string | undef
 }
 
 // Fallback reverse-prompt generator when offline or API key missing
-function generateLocalImageToPrompt(customInstructionsOrStyle?: string) {
-  const customRules = customInstructionsOrStyle ? ` | Rules: ${customInstructionsOrStyle}` : '';
+function generateLocalImageToPrompt(customInstructions?: string) {
+  const instructions = customInstructions ? ` with user custom modifications: ${customInstructions}` : '';
   return {
     title: 'Photographic Visual Reconstruction',
     summary: 'A precision-reconstructed composition featuring authentic textures, balanced natural lighting, and photographic realism.',
@@ -464,54 +464,18 @@ function generateLocalImageToPrompt(customInstructionsOrStyle?: string) {
       effects: 'Natural optical depth blur, subtle organic grain, crisp in-focus subject without digital over-sharpening',
       text_and_layout: 'None visible',
     },
-    prompt: `Masterful realistic photograph of the subject with authentic physical presence. Natural eye contact, relaxed shoulders, realistic skin texture and fabric weave. Shot with natural portrait lens perspective, soft balanced key and fill lighting, shallow depth of field, natural color grade and true black levels${customRules} --ar 16:9 --v 6.1 --style raw`,
-    promptText: `Masterful realistic photograph of the subject with authentic physical presence. Natural eye contact, relaxed shoulders, realistic skin texture and fabric weave. Shot with natural portrait lens perspective, soft balanced key and fill lighting, shallow depth of field, natural color grade and true black levels${customRules} --ar 16:9 --v 6.1 --style raw`,
-    negative_prompt: 'cartoon, anime, CGI, plastic skin, altered face, distorted anatomy, extra fingers, extra limbs, unrealistic hands, incorrect object geometry, unnatural shadows, excessive blur, oversaturation, watermark',
-    negativePrompt: 'cartoon, anime, CGI, plastic skin, altered face, distorted anatomy, extra fingers, extra limbs, unrealistic hands, incorrect object geometry, unnatural shadows, excessive blur, oversaturation, watermark',
+    prompt: `Masterful photorealistic photograph of the subject with authentic physical presence${instructions}. Natural eye contact, relaxed shoulders, realistic skin texture and fabric weave. Shot with natural portrait lens perspective, soft balanced key and fill lighting, shallow depth of field, natural color grade and true black levels --ar 16:9 --v 6.1 --style raw`,
+    promptText: `Masterful photorealistic photograph of the subject with authentic physical presence${instructions}. Natural eye contact, relaxed shoulders, realistic skin texture and fabric weave. Shot with natural portrait lens perspective, soft balanced key and fill lighting, shallow depth of field, natural color grade and true black levels --ar 16:9 --v 6.1 --style raw`,
+    negative_prompt: 'cartoon, anime, CGI, plastic skin, altered face, distorted anatomy, extra fingers, extra limbs, unrealistic hands, incorrect object geometry, unnatural shadows, excessive blur, oversaturation, watermark, text',
+    negativePrompt: 'cartoon, anime, CGI, plastic skin, altered face, distorted anatomy, extra fingers, extra limbs, unrealistic hands, incorrect object geometry, unnatural shadows, excessive blur, oversaturation, watermark, text',
     aspect_ratio: '16:9',
     aspectRatio: '16:9',
     confidence: 'high',
     camera: 'Full-frame sensor with 85mm portrait lens',
     lighting: 'Soft directional key light with subtle rim highlights',
+    composition: 'Rule of thirds portrait framing with shallow depth of field',
+    colorPalette: 'Neutral skin tones, natural contrast and warm midtones',
     tags: ['Reverse Engineered', 'Photorealistic', 'Natural Lighting', 'Master Prompt'],
-  };
-}
-
-// =========================================================================
-// ACTION 2: IDEA TO DETAILED PROMPT GENERATOR
-// =========================================================================
-function generateLocalIdeaToPrompt(
-  idea: string,
-  lighting?: string,
-  colorGrading?: string,
-  gender?: string,
-  aspectRatio = '16:9',
-  customInstructions?: string
-) {
-  const cleanIdea = (idea || 'Cinematic visual composition').trim();
-  const genderClause = gender && gender !== 'Any / None' && gender !== 'Not Applicable' ? `${gender} subject, ` : '';
-  const lightClause = lighting || 'dramatic volumetric cinematic lighting with subtle atmospheric haze';
-  const colorClause = colorGrading || 'delicate cinematic teal and warm orange film color grading';
-  const customClause = customInstructions ? `, ${customInstructions}` : '';
-
-  const promptText = `Award-winning hyperrealistic photograph of ${genderClause}${cleanIdea}. Masterfully composed with ${lightClause}, rich textural micro-details, ${colorClause}. Shot on Hasselblad H6D-100c with 85mm f/1.4 lens, shallow depth of field, delicate bokeh, crisp focus on intricate details, 8k resolution, photorealistic realism, cinematic atmosphere${customClause} --ar ${aspectRatio} --style raw --v 6.1 --s 250`;
-
-  return {
-    title: cleanIdea.length > 40 ? `${cleanIdea.slice(0, 37)}...` : cleanIdea,
-    promptText,
-    negativePrompt: 'low quality, blurry, pixelated, distorted proportions, extra limbs, bad anatomy, flat lighting, watermark, oversaturated, amateur snapshot',
-    aspectRatio,
-    camera: 'Hasselblad H6D-100c, 85mm f/1.4 lens, 1/250s, ISO 64',
-    lighting: lighting || 'Cinematic Volumetric Rays',
-    colorPalette: colorGrading || 'Cinematic Teal & Orange',
-    composition: 'Rule of thirds, centered focal subject, environmental depth',
-    tags: [
-      gender && gender !== 'Any / None' ? gender : null,
-      lighting ? `Light: ${lighting}` : null,
-      colorGrading ? `Grading: ${colorGrading}` : null,
-      'Detailed AI Prompt',
-      'Midjourney v6.1 Ready',
-    ].filter(Boolean) as string[],
   };
 }
 
@@ -521,135 +485,16 @@ export async function POST(req: NextRequest) {
     const {
       action,
       image,
-      idea,
-      lighting,
-      colorGrading,
-      gender,
-      aspectRatio,
-      camera,
-      targetEngine,
       referenceImage,
-      styleFocus,
       customInstructions,
+      styleFocus,
       prompt,
+      aspectRatio,
       enhanceWithAi,
       selectedModel,
     } = body;
 
     const apiKey = process.env.GEMINI_API_KEY;
-
-    // =========================================================================
-    // ACTION: TEXT TO DETAILED PROMPT GENERATOR
-    // =========================================================================
-    if (action === 'text_to_prompt' || action === 'idea_to_prompt' || action === 'generate_prompt') {
-      const userIdea = (idea || prompt || '').trim();
-      if (!userIdea) {
-        return NextResponse.json({ error: 'Please provide an idea or short description.' }, { status: 400 });
-      }
-
-      const chosenLighting = lighting || 'Cinematic Golden Hour';
-      const chosenColor = colorGrading || 'Cinematic Teal & Orange';
-      const chosenGender = gender || 'Any / None';
-      const chosenRatio = aspectRatio || '16:9';
-      const chosenCamera = camera || 'Hasselblad H6D-100c, 85mm f/1.4 lens';
-      const chosenEngine = targetEngine || 'Midjourney v6.1';
-
-      if (!apiKey) {
-        const fallback = generateLocalIdeaToPrompt(
-          userIdea,
-          chosenLighting,
-          chosenColor,
-          chosenGender,
-          chosenRatio,
-          customInstructions
-        );
-        return NextResponse.json({ success: true, data: fallback, fallback: true });
-      }
-
-      try {
-        const ai = new GoogleGenAI({ apiKey });
-        const systemPrompt = `You are an elite AI Art Director and Prompt Engineer specializing in Midjourney v6.1, Flux.1, ChatGPT/DALL-E 3, and Imagen 3.
-The user will provide a simple idea or a few words. Your mission is to expand this into a stunning, detailed, hyper-photorealistic masterpiece prompt according to the user's selected parameters.
-
-PARAMETERS:
-- User Idea: "${userIdea}"
-- Lighting Style: "${chosenLighting}"
-- Color Grading Style: "${chosenColor}"
-- Camera Body & Optics: "${chosenCamera}"
-- Target AI Generator Engine: "${chosenEngine}"
-- Subject Gender: "${chosenGender}"
-- Target Aspect Ratio: "${chosenRatio}"
-- Additional Constraints: "${customInstructions || 'None'}"
-
-CRITICAL REQUIREMENTS:
-1. "promptText": Must be a masterfully written, 80-160 word detailed photo prompt that vividly brings the user's idea to life. Incorporate photographic camera optics (e.g. Hasselblad, Leica, Sony A7R V, focal length, aperture), atmospheric lighting, environmental textures, color harmony, and finish with target generator parameter flags (e.g. for Midjourney: --ar ${chosenRatio} --style raw --v 6.1).
-2. "negativePrompt": Specific negative keywords to prevent bad anatomy, oversaturation, blur, watermark, etc.
-3. "camera": Recommended real camera body and prime lens matching or refining "${chosenCamera}".
-4. "lighting": Brief technical lighting summary.
-5. "colorPalette": Color palette description.
-6. "composition": Composition technique used.
-7. "title": Catchy, short 3-6 word title.
-
-OUTPUT MUST BE VALID JSON ONLY matching this schema:
-{
-  "title": "string",
-  "promptText": "string",
-  "negativePrompt": "string",
-  "aspectRatio": "${chosenRatio}",
-  "camera": "string",
-  "lighting": "string",
-  "colorPalette": "string",
-  "composition": "string",
-  "tags": ["string", "string", "string"]
-}`;
-
-        const { response, modelUsed } = await generateWithModel(ai, undefined, {
-          contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
-          generationConfig: {
-            responseMimeType: 'application/json',
-            temperature: 0.7,
-          },
-        });
-
-        const rawText = response.text || '';
-        let parsed: any;
-        try {
-          parsed = JSON.parse(rawText);
-        } catch {
-          const match = rawText.match(/\{[\s\S]*\}/);
-          if (match) {
-            parsed = JSON.parse(match[0]);
-          } else {
-            throw new Error('Could not parse JSON response from Gemini');
-          }
-        }
-
-        const normalizedData = {
-          title: parsed.title || userIdea,
-          promptText: parsed.promptText || parsed.prompt || '',
-          negativePrompt: parsed.negativePrompt || parsed.negative_prompt || '',
-          aspectRatio: parsed.aspectRatio || chosenRatio,
-          camera: parsed.camera || '85mm f/1.4 lens, full frame sensor',
-          lighting: parsed.lighting || chosenLighting,
-          colorPalette: parsed.colorPalette || chosenColor,
-          composition: parsed.composition || 'Cinematic composition',
-          tags: Array.isArray(parsed.tags) ? parsed.tags : [chosenLighting, chosenColor, 'AI Master Prompt'],
-        };
-
-        return NextResponse.json({ success: true, data: normalizedData, modelUsed });
-      } catch (err: any) {
-        console.warn('Gemini idea prompt failed, using local heuristic:', err?.message);
-        const fallback = generateLocalIdeaToPrompt(
-          userIdea,
-          chosenLighting,
-          chosenColor,
-          chosenGender,
-          chosenRatio,
-          customInstructions
-        );
-        return NextResponse.json({ success: true, data: fallback, fallback: true });
-      }
-    }
 
     // =========================================================================
     // ACTION 1: IMAGE TO PROMPT (Reverse-engineering from image)
@@ -659,8 +504,12 @@ OUTPUT MUST BE VALID JSON ONLY matching this schema:
         return NextResponse.json({ error: 'Image data is required' }, { status: 400 });
       }
 
+      const settings = await ServerStorage.getSettings().catch(() => null);
+      const globalCustom = settings?.geminiCustomInstructions || '';
+      const activeInstructions = [globalCustom, customInstructions, styleFocus].filter(Boolean).join('\n\n');
+
       if (!apiKey) {
-        const fallback = generateLocalImageToPrompt(customInstructions || styleFocus);
+        const fallback = generateLocalImageToPrompt(activeInstructions);
         return NextResponse.json({ success: true, data: fallback, fallback: true });
       }
 
@@ -688,15 +537,16 @@ OUTPUT MUST BE VALID JSON ONLY matching this schema:
       }
 
       if (!base64Data) {
-        const fallback = generateLocalImageToPrompt(customInstructions || styleFocus);
+        const fallback = generateLocalImageToPrompt(activeInstructions);
         return NextResponse.json({ success: true, data: fallback, fallback: true });
       }
 
       const promptInstruction = `Inspect this uploaded reference image with extreme technical and artistic precision.
 Follow the ANALYSIS PIPELINE and reconstruct the exact AI prompt that would reproduce this image in an AI image generator.
-${customInstructions ? `CRITICAL USER CUSTOM INSTRUCTIONS & CONSTRAINTS:
-"${customInstructions}"
-You MUST strictly obey these custom instructions (e.g. if the user requests removing watermarks, maintaining a minimum length such as 250 words minimum, removing text, adding specific objects, or adjusting lighting/mood). Incorporate them directly into the reconstructed prompt.` : styleFocus ? `User requested aesthetic/style: "${styleFocus}". Remember the uploaded image is the PRIMARY SOURCE OF TRUTH.` : ''}
+${activeInstructions ? `CRITICAL USER CUSTOM INSTRUCTIONS & MODIFICATIONS:
+The user explicitly requests the following instructions to be incorporated into the prompt reconstruction:
+"${activeInstructions}"
+(e.g., if asked to remove watermarks, remove text, ignore background, modify clothing, or adjust lighting/style, apply these modifications into the generated prompt and negative prompt while keeping the rest of the visual composition faithful to the image).` : ''}
 Return the final response strictly conforming to the required JSON schema.`;
 
       const jsonSchemaConfig = {
@@ -772,126 +622,8 @@ Return the final response strictly conforming to the required JSON schema.`;
         return NextResponse.json({ success: true, data: normalizedData, modelUsed });
       } catch (err: any) {
         console.warn('Gemini vision failed, using heuristic reverse prompt:', err?.message);
-        const fallback = generateLocalImageToPrompt(customInstructions || styleFocus);
+        const fallback = generateLocalImageToPrompt(styleFocus);
         return NextResponse.json({ success: true, data: fallback, fallback: true });
-      }
-    }
-
-    // =========================================================================
-    // ACTION 3: PROMPT ENHANCER
-    // =========================================================================
-    if (action === 'prompt_enhancer') {
-      const userIdea = (idea || prompt || '').trim();
-      if (!userIdea) {
-        return NextResponse.json({ error: 'Please provide a basic prompt.' }, { status: 400 });
-      }
-
-      if (!apiKey) {
-        return NextResponse.json({
-          success: true,
-          data: {
-            title: 'Enhanced Prompt',
-            promptText: `${userIdea} -- highly detailed, masterpiece, 8k resolution, cinematic lighting, ultra-realistic`,
-            negativePrompt: 'low quality, blurry, deformed',
-            tags: ['Enhanced'],
-          },
-        });
-      }
-
-      try {
-        const ai = new GoogleGenAI({ apiKey });
-        const systemPrompt = `You are an expert AI Prompt Engineer. The user will provide a basic or weak prompt. Your job is to analyze it, expand it, and turn it into a highly detailed, professional-grade prompt suitable for Midjourney, Stable Diffusion, or DALL-E.
-
-Add rich details about lighting, camera angles, color grading, atmosphere, and composition that fit the original intent. Include negative prompt suggestions.
-
-OUTPUT MUST BE VALID JSON ONLY matching this schema:
-{
-  "title": "Short catchy title",
-  "promptText": "The fully enhanced, detailed prompt",
-  "negativePrompt": "Negative prompt terms",
-  "tags": ["Tag1", "Tag2"]
-}`;
-
-        const { response, modelUsed } = await generateWithModel(ai, undefined, {
-          contents: [{ role: 'user', parts: [{ text: `Basic Prompt: "${userIdea}"\nEnhance it.` }] }],
-          generationConfig: {
-            responseMimeType: 'application/json',
-            temperature: 0.7,
-          },
-        });
-
-        const rawText = response.text || '';
-        let parsed: any;
-        try {
-          parsed = JSON.parse(rawText);
-        } catch {
-          const match = rawText.match(/\{[\s\S]*\}/);
-          if (match) {
-            parsed = JSON.parse(match[0]);
-          } else {
-            throw new Error('Could not parse JSON response from Gemini');
-          }
-        }
-
-        return NextResponse.json({ success: true, data: parsed, modelUsed });
-      } catch (err: any) {
-        console.warn('Gemini enhancer failed:', err?.message);
-        return NextResponse.json({
-          success: true,
-          data: {
-            title: 'Enhanced Prompt',
-            promptText: `${userIdea} -- highly detailed, masterpiece, 8k resolution, cinematic lighting, ultra-realistic`,
-            negativePrompt: 'low quality, blurry, deformed',
-            tags: ['Enhanced'],
-          },
-        });
-      }
-    }
-
-    // =========================================================================
-    // ACTION 4: PROMPT EDITOR
-    // =========================================================================
-    if (action === 'prompt_editor') {
-      const { text, editInstruction } = await req.json().catch(() => ({ text: '', editInstruction: '' }));
-      if (!text || !editInstruction) {
-        return NextResponse.json({ error: 'Please provide both original prompt and edit instructions.' }, { status: 400 });
-      }
-
-      if (!apiKey) {
-        return NextResponse.json({
-          success: true,
-          data: {
-            title: 'Edited Prompt',
-            promptText: `[Mock Edited] ${text} (Changes: ${editInstruction})`,
-            tags: ['Edited'],
-          },
-        });
-      }
-
-      try {
-        const ai = new GoogleGenAI({ apiKey });
-        const systemPrompt = `You are an expert AI Prompt Editor. The user will provide an original prompt and some instructions on how they want to change it. Your job is to modify the prompt exactly as requested while maintaining its core professional structure. Output MUST BE VALID JSON ONLY matching this schema: { "title": "Catchy title for the new prompt", "promptText": "The fully edited prompt", "tags": ["Tag1", "Tag2"] }`;
-
-        const { response, modelUsed } = await generateWithModel(ai, undefined, {
-          contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\nOriginal Prompt: "${text}"\n\nEdit Instructions: "${editInstruction}"\n\nApply the edits and return the JSON.` }] }],
-          generationConfig: { responseMimeType: 'application/json', temperature: 0.7 },
-        });
-
-        const rawText = response.text || '';
-        let parsed: any;
-        try {
-          parsed = JSON.parse(rawText);
-        } catch {
-          const match = rawText.match(/\{[\s\S]*\}/);
-          if (match) {
-            parsed = JSON.parse(match[0]);
-          } else {
-            throw new Error('Could not parse JSON response from Gemini');
-          }
-        }
-        return NextResponse.json({ success: true, data: parsed, modelUsed });
-      } catch (err: any) {
-        return NextResponse.json({ success: false, error: err?.message || 'Failed to edit prompt' }, { status: 500 });
       }
     }
 

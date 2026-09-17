@@ -1,8 +1,9 @@
 'use client';
+
 import React from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
-import { Sparkles, BookOpen, HelpCircle, Coins } from 'lucide-react';
+import { Sparkles, BookOpen, HelpCircle } from 'lucide-react';
 import Image from 'next/image';
 
 export const Footer = () => {
@@ -13,45 +14,50 @@ export const Footer = () => {
   } = useApp();
 
   return (
-    <footer className="mt-16 border-t border-neutral-200/80 dark:border-neutral-800/80 bg-neutral-50 dark:bg-neutral-950 text-neutral-600 dark:text-neutral-400 text-xs pb-16 sm:pb-0">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8 mb-12">
+    <footer className="mt-16 border-t border-neutral-200/80 dark:border-neutral-800/80 bg-white dark:bg-neutral-950 text-neutral-600 dark:text-neutral-400 text-xs">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mb-8">
           {/* Col 1: Brand */}
-          <div className="space-y-4 lg:col-span-1">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-[#E60023]/30 shadow-sm">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full overflow-hidden shrink-0">
                 <Image
                   src="/logo.png"
                   alt="tool.reelz"
-                  width={40}
-                  height={40}
+                  width={32}
+                  height={32}
                   className="w-full h-full object-cover"
                 />
               </div>
-              <span className="font-black text-lg text-neutral-900 dark:text-white tracking-tight">
+              <span className="font-bold text-base text-neutral-900 dark:text-white">
                 {settings.siteName || 'Trending Copy Paste Photo Prompts'}
               </span>
             </div>
-            <p className="text-sm leading-relaxed text-neutral-500 dark:text-neutral-400 max-w-xs">
+            <p className="text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
               {settings.siteTagline ||
-                'The premier copy-paste photo prompt directory for Midjourney, ChatGPT, Flux, and Gemini.'}
+                'The premier Pinterest-style copy-paste photo prompt directory for Midjourney, ChatGPT, Flux, and Gemini.'}
             </p>
+            <div className="pt-1">
+              <span className="text-[11px] font-semibold text-neutral-700 dark:text-neutral-300">
+                Author & Curation: <span className="text-[#E60023]">tool.reelz</span>
+              </span>
+            </div>
           </div>
 
           {/* Col 2: Categories */}
           <div>
-            <h4 className="font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-widest text-[11px] mb-4">
-              Popular Categories
+            <h4 className="font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider text-[11px] mb-3">
+              Popular Boards & Categories
             </h4>
-            <ul className="space-y-2.5">
-              {categories.slice(0, 6).map((cat) => (
+            <ul className="space-y-2">
+              {categories.slice(0, 5).map((cat) => (
                 <li key={cat.id}>
                   <button
                     onClick={() => {
                       setSelectedCategory(cat.name);
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
-                    className="hover:text-[#E60023] hover:translate-x-1 inline-block transition-all font-medium text-sm"
+                    className="hover:text-[#E60023] transition-colors"
                   >
                     {cat.name}
                   </button>
@@ -60,63 +66,34 @@ export const Footer = () => {
             </ul>
           </div>
 
-          {/* Col 3: Quick Links */}
+          {/* Col 3: Blog & Guides Archive */}
           <div>
-            <h4 className="font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-widest text-[11px] mb-4">
-              Explore
+            <h4 className="font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider text-[11px] mb-3 flex items-center gap-1.5">
+              <BookOpen className="w-3.5 h-3.5 text-[#E60023]" />
+              <span>Guides & Tutorials</span>
             </h4>
-            <ul className="space-y-2.5">
+            <ul className="space-y-2">
               <li>
                 <Link
-                  href="/pricing"
-                  className="hover:text-amber-500 inline-flex items-center gap-1.5 transition-all font-medium text-sm group"
+                  href="/blog"
+                  className="font-bold text-[#E60023] hover:underline flex items-center gap-1"
                 >
-                  <Coins className="w-4 h-4 text-amber-500 group-hover:animate-bounce" />
-                  <span>Pricing & Credits</span>
+                  <span>Blog Archive & Tutorials</span>
                 </Link>
               </li>
-              <li>
-                <Link
-                  href="/create"
-                  className="hover:text-[#E60023] inline-flex items-center gap-1.5 transition-all font-medium text-sm group"
-                >
-                  <Sparkles className="w-4 h-4 text-[#E60023] group-hover:scale-110" />
-                  <span>AI Studio</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/blog" className="hover:text-[#E60023] hover:translate-x-1 inline-block transition-all font-medium text-sm">
-                  Blog Archive
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="hover:text-[#E60023] hover:translate-x-1 inline-block transition-all font-medium text-sm">
-                  Contact Us
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Col 4: Guides */}
-          <div>
-            <h4 className="font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-widest text-[11px] mb-4 flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-[#E60023]" />
-              <span>Tutorials</span>
-            </h4>
-            <ul className="space-y-2.5">
               <li>
                 <Link
                   href="/blog/how-to-use-photo-prompts"
-                  className="hover:text-[#E60023] inline-flex items-center gap-2 transition-all font-medium text-sm"
+                  className="hover:text-[#E60023] transition-colors flex items-center gap-1"
                 >
-                  <HelpCircle className="w-4 h-4 text-[#E60023]" />
-                  <span>How to Use Prompts</span>
+                  <HelpCircle className="w-3 h-3 text-[#E60023]" />
+                  <span>How to Use AI Prompts Guide</span>
                 </Link>
               </li>
               <li>
                 <Link
                   href="/blog/best-camera-settings-for-ai-photography"
-                  className="hover:text-[#E60023] inline-block transition-all font-medium text-sm"
+                  className="hover:text-[#E60023] transition-colors"
                 >
                   Camera & Lens Optics Guide
                 </Link>
@@ -124,26 +101,24 @@ export const Footer = () => {
               <li>
                 <Link
                   href="/blog/top-10-ai-prompting-mistakes-to-avoid"
-                  className="hover:text-[#E60023] inline-block transition-all font-medium text-sm"
+                  className="hover:text-[#E60023] transition-colors"
                 >
-                  10 Mistakes to Avoid
+                  10 Prompting Mistakes to Avoid
                 </Link>
               </li>
             </ul>
           </div>
         </div>
 
-        {/* Copyright & Legal Links */}
-        <div className="pt-8 border-t border-neutral-200 dark:border-neutral-800/80 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-neutral-500 dark:text-neutral-500">
-          <p className="font-medium text-center md:text-left">
-            © {new Date().getFullYear()} Trending Copy Paste Photo Prompts. All rights reserved.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-            <Link href="/privacy-policy" className="hover:text-neutral-900 dark:hover:text-neutral-200 transition-colors">
-              Privacy Policy
+        {/* Copyright */}
+        <div className="pt-6 border-t border-neutral-100 dark:border-neutral-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-neutral-400">
+          <p>© {new Date().getFullYear()} Trending Copy Paste Photo Prompts. All rights reserved.</p>
+          <div className="flex items-center gap-4">
+            <Link href="/blog" className="hover:text-neutral-600 dark:hover:text-neutral-200">
+              Blog
             </Link>
-            <Link href="/disclaimer" className="hover:text-neutral-900 dark:hover:text-neutral-200 transition-colors">
-              Disclaimer
+            <Link href="/blog/how-to-use-photo-prompts" className="hover:text-neutral-600 dark:hover:text-neutral-200">
+              How to Use Prompts
             </Link>
           </div>
         </div>
