@@ -17,7 +17,6 @@ import {
   Sliders,
 } from 'lucide-react';
 import { getPromptSlug, getDynamicPopularTags, getOptimizedImageUrl } from '@/lib/utils';
-import { GeminiPromptBox } from './GeminiPromptBox';
 
 export const HeroSection = () => {
   const {
@@ -118,11 +117,6 @@ export const HeroSection = () => {
         {settings.heroSubheadline ||
           'Explore 1,000+ curated photo prompts for Gemini and ChatGPT. Copy with 1 click.'}
       </p>
-
-      {/* Quick AI Generator Box */}
-      <div className="animate-fade-in [animation-delay:250ms]">
-        <GeminiPromptBox />
-      </div>
 
       {/* Action Bar: Search & Trending/Sort Dropdown */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 animate-fade-in [animation-delay:300ms]">

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
-import { Sparkles, HelpCircle } from 'lucide-react';
+import { Sparkles, BookOpen, HelpCircle } from 'lucide-react';
 import Image from 'next/image';
 
 export const Footer = () => {
@@ -16,7 +16,7 @@ export const Footer = () => {
   return (
     <footer className="mt-16 border-t border-neutral-200/80 dark:border-neutral-800/80 bg-white dark:bg-neutral-950 text-neutral-600 dark:text-neutral-400 text-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mb-8">
           {/* Col 1: Brand */}
           <div className="space-y-3">
             <div className="flex items-center gap-2.5">
@@ -65,11 +65,62 @@ export const Footer = () => {
               ))}
             </ul>
           </div>
+
+          {/* Col 3: Blog & Guides Archive */}
+          <div>
+            <h4 className="font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider text-[11px] mb-3 flex items-center gap-1.5">
+              <BookOpen className="w-3.5 h-3.5 text-[#E60023]" />
+              <span>Guides & Tutorials</span>
+            </h4>
+            <ul className="space-y-2">
+              <li>
+                <Link
+                  href="/blog"
+                  className="font-bold text-[#E60023] hover:underline flex items-center gap-1"
+                >
+                  <span>Blog Archive & Tutorials</span>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/blog/how-to-use-photo-prompts"
+                  className="hover:text-[#E60023] transition-colors flex items-center gap-1"
+                >
+                  <HelpCircle className="w-3 h-3 text-[#E60023]" />
+                  <span>How to Use AI Prompts Guide</span>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/blog/best-camera-settings-for-ai-photography"
+                  className="hover:text-[#E60023] transition-colors"
+                >
+                  Camera & Lens Optics Guide
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/blog/top-10-ai-prompting-mistakes-to-avoid"
+                  className="hover:text-[#E60023] transition-colors"
+                >
+                  10 Prompting Mistakes to Avoid
+                </Link>
+              </li>
+            </ul>
+          </div>
         </div>
 
         {/* Copyright */}
         <div className="pt-6 border-t border-neutral-100 dark:border-neutral-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-neutral-400">
           <p>© {new Date().getFullYear()} Trending Copy Paste Photo Prompts. All rights reserved.</p>
+          <div className="flex items-center gap-4">
+            <Link href="/blog" className="hover:text-neutral-600 dark:hover:text-neutral-200">
+              Blog
+            </Link>
+            <Link href="/blog/how-to-use-photo-prompts" className="hover:text-neutral-600 dark:hover:text-neutral-200">
+              How to Use Prompts
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

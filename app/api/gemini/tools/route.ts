@@ -416,11 +416,12 @@ QUALITY STANDARD:
 
 async function generateWithModel(ai: GoogleGenAI, preferredModel: string | undefined, payload: any) {
   const candidateModels = [
-    preferredModel && preferredModel !== 'imagen-3.0-generate-002' ? preferredModel : 'gemini-2.5-flash',
-    'gemini-2.5-flash',
-    'gemini-3.7-flash',
+    preferredModel && preferredModel !== 'imagen-3.0-generate-002' ? preferredModel : 'gemini-3.8-flash',
+    'gemini-3.8-flash',
+    'gemini-3.1-pro-preview',
     'gemini-3.1-flash-lite',
     'gemini-flash-latest',
+    'gemini-2.5-flash',
     'gemini-2.5-pro',
   ];
 
@@ -514,6 +515,86 @@ function generateLocalIdeaToPrompt(
   };
 }
 
+// Fallback prompt enhancer
+function generateLocalPromptEnhancement(
+  basicPrompt: string,
+  style = 'Photorealistic 8K Masterpiece',
+  engine = 'Midjourney v6.1',
+  aspectRatio = '16:9',
+  customInstructions?: string
+) {
+  const cleanPrompt = (basicPrompt || 'A creative visual scene').trim();
+  const customClause = customInstructions ? `, ${customInstructions}` : '';
+  const promptText = `Masterful ${style.toLowerCase()} capturing ${cleanPrompt}. Meticulously rendered with atmospheric depth, authentic sensory materials, volumetric lighting, and intricate textural fidelity. Photographed with Hasselblad H6D-100c medium format camera, 85mm f/1.4 prime lens, subtle film grain, rich dynamic range, delicate depth of field${customClause} --ar ${aspectRatio} --style raw --v 6.1`;
+
+  return {
+    title: `Enhanced: ${cleanPrompt.slice(0, 35)}`,
+    enhancedPrompt: promptText,
+    promptText,
+    originalPrompt: cleanPrompt,
+    negativePrompt: 'low quality, blurry, distorted anatomy, artificial textures, cartoonish, oversaturated, watermark, bad geometry, amateur framing',
+    improvements: [
+      'Injected 85mm f/1.4 Hasselblad medium format optical physics',
+      'Added volumetric ambient lighting & environmental specular reflections',
+      'Refined material micro-textures and dynamic range',
+      `Appended optimal flags for ${engine}`,
+    ],
+    camera: 'Hasselblad H6D-100c, 85mm f/1.4 prime lens, ISO 64',
+    lighting: 'Volumetric cinematic key & rim lighting with soft ambient fill',
+    colorPalette: 'Rich dynamic range with authentic film tonality',
+    composition: 'Golden ratio composition with deep depth-of-field separation',
+    aspectRatio,
+    tags: ['Prompt Enhancer', style, engine, 'Studio Masterpiece'],
+  };
+}
+
+// Fallback prompt editor
+function generateLocalPromptEdit(
+  currentPrompt: string,
+  editInstructions?: string,
+  lighting?: string,
+  camera?: string,
+  colorGrading?: string,
+  aspectRatio = '16:9'
+) {
+  const cleanPrompt = (currentPrompt || 'A cinematic scene').trim();
+  const instructions = (editInstructions || 'Fine-tuned adjustments').trim();
+
+  let modified = cleanPrompt;
+  const changes: string[] = [];
+
+  if (lighting) {
+    modified += `, illuminated by ${lighting.toLowerCase()}`;
+    changes.push(`Updated lighting to ${lighting}`);
+  }
+  if (camera) {
+    modified += `, captured with ${camera}`;
+    changes.push(`Set camera optics to ${camera}`);
+  }
+  if (colorGrading) {
+    modified += `, graded in ${colorGrading.toLowerCase()}`;
+    changes.push(`Adjusted color palette to ${colorGrading}`);
+  }
+  if (instructions) {
+    modified += `, ${instructions}`;
+    changes.push(`Applied edit: "${instructions}"`);
+  }
+
+  return {
+    title: 'Edited Prompt',
+    editedPrompt: modified,
+    promptText: modified,
+    previousPrompt: cleanPrompt,
+    changesApplied: changes.length > 0 ? changes : ['Polished composition & lighting coherence'],
+    negativePrompt: 'blurry, low resolution, bad anatomy, deformed limbs, watermark, oversaturated',
+    camera: camera || 'Hasselblad H6D-100c, 85mm f/1.4',
+    lighting: lighting || 'Cinematic Atmospheric Light',
+    colorPalette: colorGrading || 'Natural Film Tones',
+    aspectRatio,
+    tags: ['Prompt Editor', 'Custom Refined', 'AI Studio'],
+  };
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -525,20 +606,28 @@ export async function POST(req: NextRequest) {
       colorGrading,
       gender,
       aspectRatio,
+      camera,
+      targetEngine,
       referenceImage,
       styleFocus,
       customInstructions,
       prompt,
       enhanceWithAi,
       selectedModel,
+      basicPrompt,
+      enhancementStyle,
+      currentPrompt,
+      editInstructions,
+      editType,
+      intensity,
     } = body;
 
     const apiKey = process.env.GEMINI_API_KEY;
 
     // =========================================================================
-    // ACTION: IDEA TO DETAILED PROMPT GENERATOR
+    // ACTION: TEXT TO DETAILED PROMPT GENERATOR
     // =========================================================================
-    if (action === 'idea_to_prompt' || action === 'generate_prompt') {
+    if (action === 'text_to_prompt' || action === 'idea_to_prompt' || action === 'generate_prompt') {
       const userIdea = (idea || prompt || '').trim();
       if (!userIdea) {
         return NextResponse.json({ error: 'Please provide an idea or short description.' }, { status: 400 });
@@ -548,6 +637,8 @@ export async function POST(req: NextRequest) {
       const chosenColor = colorGrading || 'Cinematic Teal & Orange';
       const chosenGender = gender || 'Any / None';
       const chosenRatio = aspectRatio || '16:9';
+      const chosenCamera = camera || 'Hasselblad H6D-100c, 85mm f/1.4 lens';
+      const chosenEngine = targetEngine || 'Midjourney v6.1';
 
       if (!apiKey) {
         const fallback = generateLocalIdeaToPrompt(
@@ -570,14 +661,16 @@ PARAMETERS:
 - User Idea: "${userIdea}"
 - Lighting Style: "${chosenLighting}"
 - Color Grading Style: "${chosenColor}"
+- Camera Body & Optics: "${chosenCamera}"
+- Target AI Generator Engine: "${chosenEngine}"
 - Subject Gender: "${chosenGender}"
 - Target Aspect Ratio: "${chosenRatio}"
 - Additional Constraints: "${customInstructions || 'None'}"
 
 CRITICAL REQUIREMENTS:
-1. "promptText": Must be a masterfully written, 80-160 word detailed photo prompt that vividly brings the user's idea to life. Incorporate photographic camera optics (e.g. Hasselblad, Leica, Sony A7R V, focal length, aperture), atmospheric lighting, environmental textures, color harmony, and finish with midjourney parameter flags: --ar ${chosenRatio} --style raw --v 6.1.
+1. "promptText": Must be a masterfully written, 80-160 word detailed photo prompt that vividly brings the user's idea to life. Incorporate photographic camera optics (e.g. Hasselblad, Leica, Sony A7R V, focal length, aperture), atmospheric lighting, environmental textures, color harmony, and finish with target generator parameter flags (e.g. for Midjourney: --ar ${chosenRatio} --style raw --v 6.1).
 2. "negativePrompt": Specific negative keywords to prevent bad anatomy, oversaturation, blur, watermark, etc.
-3. "camera": Recommended real camera body and prime lens.
+3. "camera": Recommended real camera body and prime lens matching or refining "${chosenCamera}".
 4. "lighting": Brief technical lighting summary.
 5. "colorPalette": Color palette description.
 6. "composition": Composition technique used.
@@ -639,6 +732,233 @@ OUTPUT MUST BE VALID JSON ONLY matching this schema:
           chosenGender,
           chosenRatio,
           customInstructions
+        );
+        return NextResponse.json({ success: true, data: fallback, fallback: true });
+      }
+    }
+
+    // =========================================================================
+    // ACTION: PROMPT ENHANCER (Elevate simple/basic prompts into master prompts)
+    // =========================================================================
+    if (action === 'enhance_prompt' || action === 'prompt_enhancer') {
+      const inputPrompt = (basicPrompt || prompt || idea || '').trim();
+      if (!inputPrompt) {
+        return NextResponse.json({ error: 'Please provide a prompt to enhance.' }, { status: 400 });
+      }
+
+      const chosenStyle = enhancementStyle || styleFocus || 'Photorealistic 8K Masterpiece';
+      const chosenEngine = targetEngine || 'Midjourney v6.1';
+      const chosenRatio = aspectRatio || '16:9';
+      const chosenLighting = lighting || 'Cinematic Volumetric Rays';
+      const chosenCamera = camera || 'Hasselblad H6D-100c, 85mm f/1.4 lens';
+
+      if (!apiKey) {
+        const fallback = generateLocalPromptEnhancement(
+          inputPrompt,
+          chosenStyle,
+          chosenEngine,
+          chosenRatio,
+          customInstructions
+        );
+        return NextResponse.json({ success: true, data: fallback, fallback: true });
+      }
+
+      try {
+        const ai = new GoogleGenAI({ apiKey });
+        const systemPrompt = `You are a world-renowned AI Prompt Engineer and Cinematographer specializing in Midjourney v6.1, Flux.1, and Google Imagen 3.
+The user will provide a basic, raw, or brief image prompt.
+Your task is to ENHANCE this basic prompt into an award-winning, production-ready, hyper-photorealistic master prompt according to the specified parameters.
+
+BASIC PROMPT:
+"${inputPrompt}"
+
+PARAMETERS:
+- Enhancement Style: "${chosenStyle}"
+- Target AI Generator Engine: "${chosenEngine}"
+- Target Aspect Ratio: "${chosenRatio}"
+- Lighting Dynamic: "${chosenLighting}"
+- Camera Optics: "${chosenCamera}"
+- Additional Directives: "${customInstructions || 'None'}"
+
+CRITICAL RULES:
+1. "enhancedPrompt": Write a vivid, sensory-rich 90-160 word master prompt. Retain the user's core visual idea while elevating it with authentic physical textures, photographic optics (camera, prime lens, aperture, shutter), atmospheric lighting, environmental depth, and finish with proper generator flags (e.g. for Midjourney: --ar ${chosenRatio} --style raw --v 6.1).
+2. "improvements": Array of 3-5 concise bullet points detailing EXACTLY what visual enhancements were injected (e.g. "Injected 85mm f/1.4 prime lens optics & bokeh", "Added volumetric golden hour rim lighting", "Added tactile fabric weaves and raindrops on glass").
+3. "negativePrompt": Specific negative keywords to prevent bad anatomy, oversaturation, blur, watermark, etc.
+4. "camera", "lighting", "colorPalette", "composition", "title".
+
+OUTPUT MUST BE STRICT VALID JSON ONLY:
+{
+  "title": "string",
+  "enhancedPrompt": "string",
+  "originalPrompt": "${inputPrompt}",
+  "improvements": ["string", "string", "string"],
+  "negativePrompt": "string",
+  "camera": "string",
+  "lighting": "string",
+  "colorPalette": "string",
+  "composition": "string",
+  "aspectRatio": "${chosenRatio}",
+  "tags": ["string", "string", "string"]
+}`;
+
+        const { response, modelUsed } = await generateWithModel(ai, undefined, {
+          contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            temperature: 0.7,
+          },
+        });
+
+        const rawText = response.text || '';
+        let parsed: any;
+        try {
+          parsed = JSON.parse(rawText);
+        } catch {
+          const match = rawText.match(/\{[\s\S]*\}/);
+          if (match) parsed = JSON.parse(match[0]);
+          else throw new Error('Could not parse JSON from Gemini');
+        }
+
+        const normalizedData = {
+          title: parsed.title || `Enhanced: ${inputPrompt.slice(0, 30)}`,
+          enhancedPrompt: parsed.enhancedPrompt || parsed.promptText || parsed.prompt || '',
+          promptText: parsed.enhancedPrompt || parsed.promptText || parsed.prompt || '',
+          originalPrompt: parsed.originalPrompt || inputPrompt,
+          improvements: Array.isArray(parsed.improvements)
+            ? parsed.improvements
+            : ['Enhanced atmospheric lighting & texture', 'Calibrated photographic optics', 'Added generator parameters'],
+          negativePrompt: parsed.negativePrompt || parsed.negative_prompt || '',
+          aspectRatio: parsed.aspectRatio || chosenRatio,
+          camera: parsed.camera || chosenCamera,
+          lighting: parsed.lighting || chosenLighting,
+          colorPalette: parsed.colorPalette || 'Rich dynamic range with authentic film tonality',
+          composition: parsed.composition || 'Cinematic composition with depth separation',
+          tags: Array.isArray(parsed.tags) ? parsed.tags : [chosenStyle, chosenEngine, 'Prompt Enhancer'],
+        };
+
+        return NextResponse.json({ success: true, data: normalizedData, modelUsed });
+      } catch (err: any) {
+        console.warn('Gemini prompt enhancement failed, using local fallback:', err?.message);
+        const fallback = generateLocalPromptEnhancement(
+          inputPrompt,
+          chosenStyle,
+          chosenEngine,
+          chosenRatio,
+          customInstructions
+        );
+        return NextResponse.json({ success: true, data: fallback, fallback: true });
+      }
+    }
+
+    // =========================================================================
+    // ACTION: PROMPT EDITOR (Surgically modify and refine any prompt)
+    // =========================================================================
+    if (action === 'edit_prompt' || action === 'prompt_editor') {
+      const inputPrompt = (currentPrompt || prompt || idea || '').trim();
+      if (!inputPrompt) {
+        return NextResponse.json({ error: 'Please provide a prompt to edit.' }, { status: 400 });
+      }
+
+      const instructions = (editInstructions || customInstructions || '').trim();
+      const chosenEngine = targetEngine || 'Midjourney v6.1';
+      const chosenRatio = aspectRatio || '16:9';
+
+      if (!apiKey) {
+        const fallback = generateLocalPromptEdit(
+          inputPrompt,
+          instructions,
+          lighting,
+          camera,
+          colorGrading,
+          chosenRatio
+        );
+        return NextResponse.json({ success: true, data: fallback, fallback: true });
+      }
+
+      try {
+        const ai = new GoogleGenAI({ apiKey });
+        const systemPrompt = `You are a precision AI Prompt Editor and Art Director for Midjourney, Flux.1, and Imagen 3.
+The user wants to surgically edit or tweak an existing prompt according to specific instructions.
+
+CURRENT PROMPT:
+"${inputPrompt}"
+
+REQUESTED EDITS / INSTRUCTIONS:
+"${instructions || 'Improve lighting, optics, and details while preserving the scene'}"
+
+SPECIFIC OVERRIDES (if requested):
+- Lighting: "${lighting || 'Preserve or improve naturally'}"
+- Camera Optics: "${camera || 'Preserve or improve naturally'}"
+- Color Grading: "${colorGrading || 'Preserve or improve naturally'}"
+- Target Generator: "${chosenEngine}"
+- Target Aspect Ratio: "${chosenRatio}"
+
+CRITICAL RULES:
+1. "editedPrompt": Surgically rewrite the prompt applying the user's requested modifications. Keep elements that weren't requested to change, but seamlessly blend the new lighting, camera, environment, or style changes. Finish with proper engine flags (e.g. for Midjourney: --ar ${chosenRatio} --style raw --v 6.1).
+2. "changesApplied": Array of 2-4 bullet points summarizing what was adjusted or added.
+3. "negativePrompt": Updated negative keywords.
+4. "camera", "lighting", "colorPalette", "composition", "title".
+
+OUTPUT MUST BE STRICT VALID JSON ONLY:
+{
+  "title": "string",
+  "editedPrompt": "string",
+  "previousPrompt": "${inputPrompt}",
+  "changesApplied": ["string", "string"],
+  "negativePrompt": "string",
+  "camera": "string",
+  "lighting": "string",
+  "colorPalette": "string",
+  "composition": "string",
+  "aspectRatio": "${chosenRatio}",
+  "tags": ["string", "string"]
+}`;
+
+        const { response, modelUsed } = await generateWithModel(ai, undefined, {
+          contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            temperature: 0.7,
+          },
+        });
+
+        const rawText = response.text || '';
+        let parsed: any;
+        try {
+          parsed = JSON.parse(rawText);
+        } catch {
+          const match = rawText.match(/\{[\s\S]*\}/);
+          if (match) parsed = JSON.parse(match[0]);
+          else throw new Error('Could not parse JSON from Gemini');
+        }
+
+        const normalizedData = {
+          title: parsed.title || 'Edited Master Prompt',
+          editedPrompt: parsed.editedPrompt || parsed.promptText || parsed.prompt || '',
+          promptText: parsed.editedPrompt || parsed.promptText || parsed.prompt || '',
+          previousPrompt: parsed.previousPrompt || inputPrompt,
+          changesApplied: Array.isArray(parsed.changesApplied)
+            ? parsed.changesApplied
+            : ['Applied requested visual adjustments and parameter updates'],
+          negativePrompt: parsed.negativePrompt || parsed.negative_prompt || '',
+          aspectRatio: parsed.aspectRatio || chosenRatio,
+          camera: parsed.camera || camera || 'Hasselblad H6D-100c, 85mm f/1.4',
+          lighting: parsed.lighting || lighting || 'Cinematic Atmospheric Light',
+          colorPalette: parsed.colorPalette || colorGrading || 'Natural Film Tones',
+          composition: parsed.composition || 'Cinematic composition',
+          tags: Array.isArray(parsed.tags) ? parsed.tags : ['Prompt Editor', 'Custom Refined'],
+        };
+
+        return NextResponse.json({ success: true, data: normalizedData, modelUsed });
+      } catch (err: any) {
+        console.warn('Gemini prompt edit failed, using local fallback:', err?.message);
+        const fallback = generateLocalPromptEdit(
+          inputPrompt,
+          instructions,
+          lighting,
+          camera,
+          colorGrading,
+          chosenRatio
         );
         return NextResponse.json({ success: true, data: fallback, fallback: true });
       }

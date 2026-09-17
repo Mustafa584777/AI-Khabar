@@ -1,4 +1,4 @@
-import { Category, PromptPost, SiteSettings, SearchQueryItem } from '@/types/prompt';
+import { Category, PromptPost, SiteSettings, SearchQueryItem, PromptRequestItem } from '@/types/prompt';
 import { INITIAL_CATEGORIES, INITIAL_SETTINGS, INITIAL_POSTS } from './initial-data';
 import { supabase, supabaseAdmin, isSupabaseConfigured } from './supabase';
 import { cleanTagsArray, canonicalizeTag } from './tag-utils';
@@ -12,6 +12,7 @@ const CATEGORIES_FILE = path.join(DATA_DIR, 'categories.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const TAGS_FILE = path.join(DATA_DIR, 'tags.json');
 const SEARCH_QUERIES_FILE = path.join(DATA_DIR, 'search_queries.json');
+const PROMPT_REQUESTS_FILE = path.join(DATA_DIR, 'prompt_requests.json');
 
 const DEFAULT_TAGS = [
   'Portrait', '35mm', 'Cinematic', 'Street Photography', 'Fashion',
@@ -57,33 +58,10 @@ let memoryCategories: Category[] | null = null;
 let memorySettings: SiteSettings | null = null;
 let memoryTags: string[] | null = null;
 let memorySearchQueries: SearchQueryItem[] | null = null;
+let memoryPromptRequests: PromptRequestItem[] | null = null;
 
 // Helpers to map Supabase snake_case rows to PromptPost
 function mapSupabasePost(row: any): PromptPost {
-  let parsedParams: any = {};
-  if (typeof row.parameters === 'object' && row.parameters !== null) {
-    parsedParams = { ...row.parameters };
-  } else if (typeof row.parameters === 'string') {
-    try {
-      parsedParams = JSON.parse(row.parameters);
-    } catch {
-      parsedParams = {};
-    }
-  }
-
-  const isPremium = Boolean(
-    row.is_premium === true ||
-    row.is_premium === 'true' ||
-    row.isPremium === true ||
-    row.isPremium === 'true' ||
-    parsedParams.isPremium === true ||
-    parsedParams.isPremium === 'true' ||
-    parsedParams.is_premium === true ||
-    parsedParams.is_premium === 'true'
-  );
-
-  parsedParams.isPremium = isPremium;
-
   return {
     id: row.id,
     title: row.title,
@@ -97,14 +75,18 @@ function mapSupabasePost(row: any): PromptPost {
     imageWidth: row.image_width || 1024,
     imageHeight: row.image_height || 1536,
     additionalImages: Array.isArray(row.additional_images) ? row.additional_images : [],
-    parameters: parsedParams,
+    parameters: typeof row.parameters === 'object' && row.parameters !== null ? row.parameters : {},
     variables: Array.isArray(row.variables) ? row.variables : [],
     articleContent: row.article_content || '',
     tags: Array.isArray(row.tags) ? row.tags : [],
     status: row.status || 'published',
     isFeatured: Boolean(row.is_featured),
     isTrending: Boolean(row.is_trending),
-    isPremium,
+    isRequested: Boolean(row.is_requested || row.isRequested),
+    requestedByName: row.requested_by_name || row.requestedByName || undefined,
+    requestedByEmail: row.requested_by_email || row.requestedByEmail || undefined,
+    requestedByAvatar: row.requested_by_avatar || row.requestedByAvatar || undefined,
+    requestedPromptDescription: row.requested_prompt_description || row.requestedPromptDescription || undefined,
     viewsCount: Number(row.views_count) || 0,
     copiesCount: Number(row.copies_count) || 0,
     likesCount: Number(row.likes_count) || 0,
@@ -128,15 +110,6 @@ function mapSupabasePost(row: any): PromptPost {
 }
 
 function mapPostToSupabase(post: PromptPost) {
-  const isPremium = Boolean(
-    post.isPremium === true ||
-    (post.parameters && (post.parameters.isPremium === true || post.parameters.isPremium === 'true'))
-  );
-  const parameters = {
-    ...(post.parameters || {}),
-    isPremium,
-  };
-
   return {
     id: post.id,
     title: post.title,
@@ -145,18 +118,22 @@ function mapPostToSupabase(post: PromptPost) {
     ai_tool: post.aiTool || 'Midjourney',
     prompt_text: post.promptText,
     negative_prompt: post.negativePrompt || null,
-    image_url: post.imageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe',
+    image_url: post.imageUrl,
     image_alt: post.imageAlt || null,
     image_width: post.imageWidth || 1024,
     image_height: post.imageHeight || 1536,
     additional_images: post.additionalImages || [],
-    parameters,
+    parameters: post.parameters || {},
     variables: post.variables || [],
     article_content: post.articleContent || '',
     tags: post.tags || [],
     status: post.status || 'published',
     is_featured: Boolean(post.isFeatured),
     is_trending: Boolean(post.isTrending),
+    is_requested: Boolean(post.isRequested),
+    requested_by_name: post.requestedByName || null,
+    requested_by_email: post.requestedByEmail || null,
+    requested_prompt_description: post.requestedPromptDescription || null,
     views_count: Number(post.viewsCount) || 0,
     copies_count: Number(post.copiesCount) || 0,
     likes_count: Number(post.likesCount) || 0,
@@ -175,26 +152,22 @@ function mapPostToSupabase(post: PromptPost) {
   };
 }
 
-const db = (token?: string) => {
-  // On the server, supabaseAdmin has the service role key and full database access.
-  if (supabaseAdmin) return supabaseAdmin;
-  if (token) {
-    const { createClient } = require('@supabase/supabase-js');
-    const { supabaseUrl, supabaseAnonKey } = require('./supabase');
-    return createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    });
-  }
-  return supabase;
-};
+const db = () => supabaseAdmin || supabase;
 
 export const ServerStorage = {
   // Posts
   getAllPosts: async (includeDrafts = true): Promise<PromptPost[]> => {
+    let localPosts: PromptPost[] = [];
+    try {
+      const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
+      localPosts = rawPosts.map((p) => ({
+        ...p,
+        tags: cleanTagsArray(p.tags || []),
+      }));
+    } catch (e) {
+      localPosts = INITIAL_POSTS || [];
+    }
+
     if (isSupabaseConfigured()) {
       try {
         let query = db().from('posts').select('*').order('created_at', { ascending: false });
@@ -203,18 +176,30 @@ export const ServerStorage = {
         }
         const { data, error } = await query;
         if (!error && data && Array.isArray(data)) {
-          const posts = data.map((d) => {
+          const supabasePosts = data.map((d) => {
             const mapped = mapSupabasePost(d);
             mapped.tags = cleanTagsArray(mapped.tags || []);
             return mapped;
           });
-          if (posts.length > 0) {
-            memoryPosts = posts;
-            writeJsonFile(POSTS_FILE, posts);
-            return posts;
-          }
-        } else if (error) {
-          console.warn('Supabase getAllPosts notice:', error.message);
+
+          // Merge localPosts and supabasePosts by ID, prioritizing the most recent updatedAt/createdAt
+          const map = new Map<string, PromptPost>();
+          // Put local posts first, then overwrite/merge with Supabase posts
+          localPosts.forEach(p => map.set(p.id, p));
+          supabasePosts.forEach(p => {
+            const existing = map.get(p.id);
+            if (!existing || new Date(p.updatedAt || p.createdAt || 0).getTime() >= new Date(existing.updatedAt || existing.createdAt || 0).getTime()) {
+              map.set(p.id, p);
+            }
+          });
+
+          const merged = Array.from(map.values()).sort((a, b) => 
+            new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+          );
+
+          memoryPosts = merged;
+          writeJsonFile(POSTS_FILE, merged);
+          return includeDrafts ? merged : merged.filter((p) => p.status === 'published');
         }
       } catch (err) {
         console.warn('Supabase getAllPosts fallback:', err);
@@ -222,11 +207,7 @@ export const ServerStorage = {
     }
 
     if (memoryPosts === null) {
-      const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
-      memoryPosts = rawPosts.map((p) => ({
-        ...p,
-        tags: cleanTagsArray(p.tags || []),
-      }));
+      memoryPosts = localPosts;
     }
     return includeDrafts ? memoryPosts : memoryPosts.filter((p) => p.status === 'published');
   },
@@ -274,23 +255,11 @@ export const ServerStorage = {
     return posts.find((p) => p.id === id);
   },
 
-  savePost: async (post: PromptPost, token?: string): Promise<PromptPost> => {
+  savePost: async (post: PromptPost): Promise<PromptPost> => {
     const now = new Date().toISOString();
     const id = post.id || `prompt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
     const posts = await ServerStorage.getAllPosts(true);
     const existing = posts.find((p) => p.id === id);
-
-    const isPremium = Boolean(
-      post.isPremium !== undefined
-        ? post.isPremium
-        : (post.parameters?.isPremium ?? existing?.isPremium ?? existing?.parameters?.isPremium)
-    );
-
-    const mergedParameters = {
-      ...(existing?.parameters || {}),
-      ...(post.parameters || {}),
-      isPremium,
-    };
 
     let savedPost: PromptPost;
     if (existing) {
@@ -298,8 +267,6 @@ export const ServerStorage = {
         ...existing,
         ...post,
         id,
-        isPremium,
-        parameters: mergedParameters,
         tags: cleanTagsArray(post.tags || existing.tags || []),
         author: post.author || {
           name: 'tool.reelz',
@@ -315,8 +282,6 @@ export const ServerStorage = {
       savedPost = {
         ...post,
         id,
-        isPremium,
-        parameters: mergedParameters,
         tags: cleanTagsArray(post.tags || []),
         author: post.author || {
           name: 'tool.reelz',
@@ -376,15 +341,16 @@ export const ServerStorage = {
     if (isSupabaseConfigured()) {
       try {
         const payload = mapPostToSupabase(savedPost);
-        const { error } = await db(token).from('posts').upsert(payload, { onConflict: 'id' });
+        const { error } = await db().from('posts').upsert(payload, { onConflict: 'id' });
         if (error) {
           console.error('Supabase savePost error:', error.message, error.details);
-          throw new Error('Supabase savePost error: ' + error.message);
+          throw new Error(`Supabase database error: ${error.message}`);
         } else {
           console.log(`Saved post ${savedPost.id} to Supabase successfully.`);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Supabase savePost exception:', err);
+        throw err;
       }
     }
 
@@ -434,10 +400,10 @@ export const ServerStorage = {
     return savedPost;
   },
 
-  deletePost: async (id: string, token?: string): Promise<void> => {
+  deletePost: async (id: string): Promise<void> => {
     if (isSupabaseConfigured()) {
       try {
-        const { error } = await db(token).from('posts').delete().eq('id', id);
+        const { error } = await db().from('posts').delete().eq('id', id);
         if (error) {
           console.error('Supabase deletePost error:', error.message);
         }
@@ -471,35 +437,35 @@ export const ServerStorage = {
     return ServerStorage.getAllPosts(true);
   },
 
-  incrementViews: async (id: string, token?: string): Promise<void> => {
+  incrementViews: async (id: string): Promise<void> => {
     const post = await ServerStorage.getPostById(id);
     if (post) {
       post.viewsCount = (post.viewsCount || 0) + 1;
-      await ServerStorage.savePost(post, token);
+      await ServerStorage.savePost(post);
     }
   },
 
-  incrementCopies: async (id: string, token?: string): Promise<void> => {
+  incrementCopies: async (id: string): Promise<void> => {
     const post = await ServerStorage.getPostById(id);
     if (post) {
       post.copiesCount = (post.copiesCount || 0) + 1;
-      await ServerStorage.savePost(post, token);
+      await ServerStorage.savePost(post);
     }
   },
 
-  incrementCopyCount: async (id: string, token?: string): Promise<void> => {
-    return await ServerStorage.incrementCopies(id, token);
+  incrementCopyCount: async (id: string): Promise<void> => {
+    return await ServerStorage.incrementCopies(id);
   },
 
-  incrementViewCount: async (id: string, token?: string): Promise<void> => {
-    return await ServerStorage.incrementViews(id, token);
+  incrementViewCount: async (id: string): Promise<void> => {
+    return await ServerStorage.incrementViews(id);
   },
 
-  toggleLike: async (id: string, token?: string): Promise<void> => {
+  toggleLike: async (id: string): Promise<void> => {
     const post = await ServerStorage.getPostById(id);
     if (post) {
       post.likesCount = (post.likesCount || 0) + 1;
-      await ServerStorage.savePost(post, token);
+      await ServerStorage.savePost(post);
     }
   },
 
@@ -637,26 +603,22 @@ export const ServerStorage = {
   },
 
   getTopSearchQueries: async (limitCount = 12): Promise<SearchQueryItem[]> => {
-    return (await ServerStorage.getAllSearchQueries()).slice(0, limitCount);
-  },
-
-  getAllSearchQueries: async (): Promise<SearchQueryItem[]> => {
     if (isSupabaseConfigured()) {
       try {
         const { data, error } = await db()
           .from('search_queries')
           .select('*')
-          .order('count', { ascending: false });
+          .order('count', { ascending: false })
+          .limit(limitCount);
         if (!error && data && data.length > 0) {
-          return data.map((d: any) => ({
-            id: d.id,
+          return data.map((d) => ({
             query: d.query,
             count: d.count,
             lastSearched: new Date(d.last_searched_at || Date.now()).getTime(),
           }));
         }
       } catch (e) {
-        console.warn('Supabase getAllSearchQueries error:', e);
+        console.warn('Supabase getTopSearchQueries error:', e);
       }
     }
 
@@ -664,57 +626,29 @@ export const ServerStorage = {
       memorySearchQueries = readJsonFile<SearchQueryItem[]>(SEARCH_QUERIES_FILE, []);
     }
     if (memorySearchQueries && memorySearchQueries.length > 0) {
-      return [...memorySearchQueries].sort((a, b) => b.count - a.count);
+      return [...memorySearchQueries]
+        .sort((a, b) => b.count - a.count)
+        .slice(0, limitCount);
     }
 
-    const defaultQueries: SearchQueryItem[] = [
-      { query: 'Traditional saree', count: 42, lastSearched: Date.now() - 1000 * 60 * 15 },
-      { query: 'Cyberpunk neon portrait', count: 38, lastSearched: Date.now() - 1000 * 60 * 45 },
-      { query: 'Cinematic golden hour', count: 31, lastSearched: Date.now() - 1000 * 60 * 90 },
-      { query: 'Vintage 35mm film', count: 27, lastSearched: Date.now() - 1000 * 60 * 120 },
-      { query: 'Anime masterpiece', count: 24, lastSearched: Date.now() - 1000 * 60 * 180 },
-      { query: 'Minimalist aesthetic logo', count: 21, lastSearched: Date.now() - 1000 * 60 * 240 },
-      { query: 'Hyperrealistic 8K model', count: 18, lastSearched: Date.now() - 1000 * 60 * 300 },
-      { query: 'Indian fashion portrait', count: 16, lastSearched: Date.now() - 1000 * 60 * 360 },
-      { query: 'Moody luxury portrait', count: 14, lastSearched: Date.now() - 1000 * 60 * 420 },
-      { query: 'Unreal Engine 3D render', count: 12, lastSearched: Date.now() - 1000 * 60 * 480 },
-      { query: 'Japandi aesthetic living room', count: 9, lastSearched: Date.now() - 1000 * 60 * 600 },
-      { query: 'Dark academia aesthetic', count: 7, lastSearched: Date.now() - 1000 * 60 * 720 },
-    ];
+    const defaultQueries = [
+      'Cyberpunk neon portrait',
+      'Cinematic golden hour',
+      'Vintage 35mm film',
+      'Anime masterpiece',
+      'Minimalist aesthetic logo',
+      'Hyperrealistic 8K model',
+      'Moody luxury portrait',
+      'Unreal Engine 3D render',
+      'Japandi aesthetic living room',
+      'Dark academia aesthetic',
+    ].map((q, i) => ({
+      query: q,
+      count: 50 - i * 3,
+      lastSearched: Date.now(),
+    }));
 
-    memorySearchQueries = defaultQueries;
-    writeJsonFile(SEARCH_QUERIES_FILE, defaultQueries);
-    return defaultQueries;
-  },
-
-  deleteSearchQuery: async (queryText: string): Promise<SearchQueryItem[]> => {
-    const clean = queryText.trim();
-    if (isSupabaseConfigured()) {
-      try {
-        const id = `q_${clean.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
-        await db().from('search_queries').delete().or(`id.eq.${id},query.ilike.${clean}`);
-      } catch (e) {
-        console.error('Supabase deleteSearchQuery error:', e);
-      }
-    }
-
-    const current = await ServerStorage.getAllSearchQueries();
-    const updated = current.filter((q) => q.query.toLowerCase() !== clean.toLowerCase());
-    memorySearchQueries = updated;
-    writeJsonFile(SEARCH_QUERIES_FILE, updated);
-    return updated;
-  },
-
-  clearAllSearchQueries: async (): Promise<void> => {
-    if (isSupabaseConfigured()) {
-      try {
-        await db().from('search_queries').delete().neq('id', '___guard___');
-      } catch (e) {
-        console.error('Supabase clearAllSearchQueries error:', e);
-      }
-    }
-    memorySearchQueries = [];
-    writeJsonFile(SEARCH_QUERIES_FILE, []);
+    return defaultQueries.slice(0, limitCount);
   },
 
   // Settings
@@ -824,6 +758,166 @@ export const ServerStorage = {
 
     memoryTags = filtered;
     writeJsonFile(TAGS_FILE, filtered);
+    return filtered;
+  },
+
+  // Prompt Requests (User-submitted custom prompt requests)
+  getAllPromptRequests: async (): Promise<PromptRequestItem[]> => {
+    if (isSupabaseConfigured()) {
+      try {
+        const { data, error } = await db()
+          .from('prompt_requests')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && data && Array.isArray(data)) {
+          const mapped: PromptRequestItem[] = data.map((d: any) => ({
+            id: d.id,
+            userId: d.user_id || 'anonymous',
+            userName: d.user_name || 'Community Creator',
+            userEmail: d.user_email || undefined,
+            userAvatar: d.user_avatar || undefined,
+            requestText: d.request_text || d.prompt_description || '',
+            category: d.category || 'Photorealistic & Portraits',
+            aiTool: d.ai_tool || 'Midjourney',
+            status: (d.status as 'pending' | 'in_progress' | 'completed') || 'pending',
+            fulfilledPostId: d.fulfilled_post_id || undefined,
+            createdAt: d.created_at ? (typeof d.created_at === 'number' ? d.created_at : new Date(d.created_at).getTime()) : Date.now(),
+            likesCount: Number(d.likes_count) || 0,
+          }));
+
+          memoryPromptRequests = mapped;
+          writeJsonFile(PROMPT_REQUESTS_FILE, mapped);
+          return mapped;
+        }
+      } catch (err) {
+        console.warn('Supabase getAllPromptRequests notice:', err);
+      }
+    }
+
+    if (memoryPromptRequests === null) {
+      memoryPromptRequests = readJsonFile<PromptRequestItem[]>(PROMPT_REQUESTS_FILE, [
+        {
+          id: 'req_1',
+          userId: 'u_mock1',
+          userName: 'Alex Visuals',
+          userEmail: 'alex.creator@example.com',
+          userAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
+          requestText: 'Cinematic 8K portrait of a neon cyberpunk geisha with intricate golden kintsugi porcelain skin in rainy Shibuya alleyway',
+          category: 'Photorealistic & Portraits',
+          aiTool: 'Midjourney',
+          status: 'completed',
+          createdAt: Date.now() - 3600000 * 24,
+          likesCount: 18,
+        },
+        {
+          id: 'req_2',
+          userId: 'u_mock2',
+          userName: 'Elena Art',
+          userEmail: 'elena.designs@gmail.com',
+          userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80',
+          requestText: 'Ethereal floating bioluminescent island with crystal waterfalls, volumetric golden hour haze, and ancient glowing runes',
+          category: 'Fantasy & Concept Art',
+          aiTool: 'Flux',
+          status: 'pending',
+          createdAt: Date.now() - 3600000 * 5,
+          likesCount: 9,
+        },
+      ]);
+    }
+    return memoryPromptRequests;
+  },
+
+  savePromptRequest: async (req: Partial<PromptRequestItem> & { requestText: string }): Promise<PromptRequestItem> => {
+    const current = await ServerStorage.getAllPromptRequests();
+    const id = req.id || `req_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const now = Date.now();
+
+    const newRequest: PromptRequestItem = {
+      id,
+      userId: req.userId || 'anonymous',
+      userName: req.userName || 'Community Creator',
+      userEmail: req.userEmail || '',
+      userAvatar: req.userAvatar || undefined,
+      requestText: req.requestText,
+      category: req.category || 'Photorealistic & Portraits',
+      aiTool: req.aiTool || 'Midjourney',
+      status: req.status || 'pending',
+      fulfilledPostId: req.fulfilledPostId || undefined,
+      createdAt: req.createdAt || now,
+      likesCount: req.likesCount || 0,
+    };
+
+    if (isSupabaseConfigured()) {
+      try {
+        await db().from('prompt_requests').upsert({
+          id: newRequest.id,
+          user_id: newRequest.userId,
+          user_name: newRequest.userName,
+          user_email: newRequest.userEmail,
+          user_avatar: newRequest.userAvatar,
+          request_text: newRequest.requestText,
+          category: newRequest.category,
+          ai_tool: newRequest.aiTool,
+          status: newRequest.status,
+          fulfilled_post_id: newRequest.fulfilledPostId,
+          created_at: new Date(newRequest.createdAt).toISOString(),
+          likes_count: newRequest.likesCount,
+        }, { onConflict: 'id' });
+      } catch (err) {
+        console.warn('Supabase savePromptRequest fallback:', err);
+      }
+    }
+
+    const filtered = current.filter((r) => r.id !== id);
+    const updated = [newRequest, ...filtered];
+    memoryPromptRequests = updated;
+    writeJsonFile(PROMPT_REQUESTS_FILE, updated);
+    return newRequest;
+  },
+
+  updatePromptRequestStatus: async (id: string, status: 'pending' | 'in_progress' | 'completed', fulfilledPostId?: string): Promise<PromptRequestItem[]> => {
+    const current = await ServerStorage.getAllPromptRequests();
+    const target = current.find((r) => r.id === id);
+    if (!target) return current;
+
+    const updatedItem: PromptRequestItem = {
+      ...target,
+      status,
+      fulfilledPostId: fulfilledPostId !== undefined ? fulfilledPostId : target.fulfilledPostId,
+    };
+
+    if (isSupabaseConfigured()) {
+      try {
+        await db().from('prompt_requests').update({
+          status,
+          fulfilled_post_id: updatedItem.fulfilledPostId || null,
+        }).eq('id', id);
+      } catch (err) {
+        console.warn('Supabase updatePromptRequestStatus exception:', err);
+      }
+    }
+
+    const updatedList = current.map((r) => (r.id === id ? updatedItem : r));
+    memoryPromptRequests = updatedList;
+    writeJsonFile(PROMPT_REQUESTS_FILE, updatedList);
+    return updatedList;
+  },
+
+  deletePromptRequest: async (id: string): Promise<PromptRequestItem[]> => {
+    const current = await ServerStorage.getAllPromptRequests();
+    const filtered = current.filter((r) => r.id !== id);
+
+    if (isSupabaseConfigured()) {
+      try {
+        await db().from('prompt_requests').delete().eq('id', id);
+      } catch (err) {
+        console.warn('Supabase deletePromptRequest exception:', err);
+      }
+    }
+
+    memoryPromptRequests = filtered;
+    writeJsonFile(PROMPT_REQUESTS_FILE, filtered);
     return filtered;
   },
 };

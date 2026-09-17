@@ -19,6 +19,7 @@ import {
 import { Category, PromptPost } from '@/types/prompt';
 import { getPromptSlug, getOptimizedImageUrl } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { semanticSearchPosts } from '@/lib/semantic-search';
 
 export const SearchExploreModal = () => {
   const router = useRouter();
@@ -124,14 +125,7 @@ export const SearchExploreModal = () => {
     if (!query || query.length < 2) return [];
 
     const published = posts.filter((p) => p.status === 'published');
-    const queryLower = query.toLowerCase();
-    
-    return published.filter((post) => 
-      post.title.toLowerCase().includes(queryLower) ||
-      post.promptText.toLowerCase().includes(queryLower) ||
-      (post.category && post.category.toLowerCase().includes(queryLower)) ||
-      (post.tags && post.tags.some(tag => tag.toLowerCase().includes(queryLower)))
-    );
+    return semanticSearchPosts(published, query);
   }, [localInput, posts]);
 
 

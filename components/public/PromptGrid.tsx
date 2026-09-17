@@ -7,6 +7,7 @@ import { AIPersonalizedBanner } from './AIPersonalizedBanner';
 import { SearchX, Filter, Loader2 } from 'lucide-react';
 import { PromptPost } from '@/types/prompt';
 import { PersonalizationEngine } from '@/lib/personalization';
+import { semanticSearchPosts } from '@/lib/semantic-search';
 
 const INITIAL_BATCH_SIZE = 10;
 const SCROLL_BATCH_SIZE = 6;
@@ -53,14 +54,8 @@ export const PromptGrid = () => {
     }
 
     if (searchQuery.trim()) {
-      // Use basic search matching
-      const queryLower = searchQuery.toLowerCase().trim();
-      list = list.filter((post) => 
-        post.title.toLowerCase().includes(queryLower) ||
-        post.promptText.toLowerCase().includes(queryLower) ||
-        post.category.toLowerCase().includes(queryLower) ||
-        (post.tags && post.tags.some((tag: string) => tag.toLowerCase().includes(queryLower)))
-      );
+      // Use intelligent AI & multilingual semantic fuzzy search
+      list = semanticSearchPosts(list, searchQuery.trim());
     } else {
       if (selectedCategory === 'all' && selectedSort === 'trending') {
         list = [...list].sort((a, b) => {

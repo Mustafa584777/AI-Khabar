@@ -42,10 +42,5 @@ export function getOptimizedImageUrl(url?: string, width = 550): string {
   return url;
 }
 
-export function getPromptMetaDescription(prompt?: string): string {
-  if (!prompt) return '';
-  return prompt.length > 150 ? prompt.substring(0, 147) + '...' : prompt;
-}
-
 export * from './tag-utils';
 

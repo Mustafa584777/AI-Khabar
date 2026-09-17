@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-export const SUPABASE_PROJECT_ID = 'kigytienokbvwetbemac';
+const SUPABASE_PROJECT_ID = 'kigytienokbvwetbemac';
 const DEFAULT_SUPABASE_URL = `https://${SUPABASE_PROJECT_ID}.supabase.co`;
 const DEFAULT_ANON_KEY = 'sb_publishable_oTJSJYwT3r03WELyu9L3uw_JjtCLqa7';
 
-export const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_URL;
-export const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_ANON_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_ANON_KEY;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey;
 
 // Standard Supabase client (client & server)

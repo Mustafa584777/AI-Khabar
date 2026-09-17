@@ -2,13 +2,13 @@
 
 import React from 'react';
 import { AppProvider } from '@/context/AppContext';
-import { CMSLoginPage } from '@/components/admin/CMSLoginPage';
+import { WordPressLoginPage } from '@/components/admin/WordPressLoginPage';
 import { ToastNotification } from '@/components/public/ToastNotification';
 
-export default function CMSLoginRoute() {
+export default function CMSLoginPage() {
   return (
     <AppProvider>
-      <CMSLoginPage />
+      <WordPressLoginPage />
       <ToastNotification />
     </AppProvider>
   );

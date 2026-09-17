@@ -54,10 +54,6 @@ interface AppContextType {
   logoutUser: () => void;
   updateUserProfile: (updates: Partial<UserAccount>) => void;
   awardPoints: (amount: number, type: 'like' | 'save' | 'generation' | 'share' | 'referral') => void;
-  toolCredits: number;
-  deductToolCredit: (amount: number) => boolean;
-  isProCheckoutModalOpen: boolean;
-  setIsProCheckoutModalOpen: (open: boolean) => void;
 
   // Persistent Reference Photo & Prompt Requests
   persistentRefImage: string | null;
@@ -144,7 +140,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [userAccount, setUserAccount] = useState<UserAccount | null>(null);
   const [isUserAuthModalOpen, setIsUserAuthModalOpen] = useState<boolean>(false);
   const [authModalMessage, setAuthModalMessage] = useState<string | null>(null);
-  const [isProCheckoutModalOpen, setIsProCheckoutModalOpen] = useState<boolean>(false);
 
   // AI Studio History State
   const [aiHistory, setAiHistory] = useState<AIHistoryItem[]>([]);
@@ -311,20 +306,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     setUserAccount(updatedAccount);
     StorageService.saveUserAccount(updatedAccount);
-  };
-
-  const deductToolCredit = (amount: number): boolean => {
-    if (!userAccount || !userAccount.isLoggedIn) return false;
-    const currentCredits = userAccount.toolCredits || 0;
-    if (currentCredits < amount) return false;
-    
-    const updatedAccount: UserAccount = {
-      ...userAccount,
-      toolCredits: currentCredits - amount,
-    };
-    setUserAccount(updatedAccount);
-    StorageService.saveUserAccount(updatedAccount);
-    return true;
   };
 
   const loginUser = (email: string, _pass: string, username?: string, avatar?: string): boolean => {
@@ -1121,8 +1102,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setUserAccount,
         isUserAuthModalOpen,
         setIsUserAuthModalOpen,
-        isProCheckoutModalOpen,
-        setIsProCheckoutModalOpen,
         authModalMessage,
         setAuthModalMessage,
         openAuthModal,
@@ -1132,8 +1111,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         logoutUser,
         updateUserProfile,
         awardPoints,
-        toolCredits: userAccount?.toolCredits || 0,
-        deductToolCredit,
         persistentRefImage,
         setPersistentRefImage,
         promptRequests,

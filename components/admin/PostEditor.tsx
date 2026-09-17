@@ -1598,7 +1598,7 @@ export const PostEditor = () => {
                     <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-none">
                       {CARTOON_AVATARS.slice(0, 8).map((av) => (
                         <button
-                          key={av.url}
+                          key={av.id}
                           type="button"
                           onClick={() => setRequestedByAvatar(av.url)}
                           className={`w-9 h-9 rounded-full border-2 overflow-hidden transition-all shrink-0 relative ${
