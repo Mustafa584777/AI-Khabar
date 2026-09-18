@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next';
 import { ServerStorage } from '@/lib/server-storage';
 import { getPromptSlug } from '@/lib/utils';
+import { BLOG_POSTS } from '@/lib/blog-data';
 
 export const revalidate = 86400;
 
@@ -14,7 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('Error loading posts for dynamic sitemap:', err);
   }
 
-  // 1. Homepage & Essential Pages (Contact, Privacy Policy, Disclaimer)
+  // 1. Homepage & Essential Pages (Contact, Privacy Policy, Disclaimer, Blog)
   const corePages: MetadataRoute.Sitemap = [
     {
       url: `${baseUrl}`,
@@ -40,9 +41,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.7,
     },
+    {
+      url: `${baseUrl}/blog`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.8,
+    },
   ];
 
-  // 2. Dynamic Prompts (Strictly https://geminipromptgenerator.online/[slug] - NO 'prompt' word, NO images)
+  // 2. Blog Articles
+  const blogUrls: MetadataRoute.Sitemap = (BLOG_POSTS || []).map((post) => ({
+    url: `${baseUrl}/blog/${post.slug}`,
+    lastModified: new Date(post.publishedAt || new Date()),
+    changeFrequency: 'monthly',
+    priority: 0.7,
+  }));
+
+  // 3. Dynamic Prompts (Strictly https://geminipromptgenerator.online/[slug] - NO 'prompt' word, NO images)
   const promptUrls: MetadataRoute.Sitemap = posts.map((post) => {
     const slug = getPromptSlug(post);
     return {
@@ -53,6 +68,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     };
   });
 
-  return [...corePages, ...promptUrls];
+  return [...corePages, ...blogUrls, ...promptUrls];
 }
 

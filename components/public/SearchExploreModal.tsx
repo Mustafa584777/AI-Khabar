@@ -434,7 +434,7 @@ export const SearchExploreModal = () => {
               </span>
             </div>
 
-            {/* Visual Category Cards Grid */}
+            {/* Pinterest-Style Visual Category Cards Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {mostViewedCategories.map((cat) => (
                 <div

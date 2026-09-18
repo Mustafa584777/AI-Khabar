@@ -24,8 +24,6 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
     setCurrentView,
     setIsTasteModalOpen,
     setIsSearchModalOpen,
-    userAccount,
-    openAuthModal,
   } = useApp();
 
   const [unreadNotifs, setUnreadNotifs] = useState(0);
@@ -62,7 +60,7 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
   const handleNotificationsClick = () => {
     setCurrentView('notifications');
     setSelectedCategory('all');
-    setSelectedSort('newest');
+    setSelectedSort('trending');
     setSearchQuery('');
     if (pathname !== '/') {
       router.push('/');
@@ -72,18 +70,10 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
   };
 
   const handleCreateStudioClick = () => {
-    if (!userAccount?.isLoggedIn) {
-      openAuthModal('Sign in or register to access the AI Studio creation tools.');
-      return;
-    }
     router.push('/create');
   };
 
   const handleAccountClick = () => {
-    if (!userAccount?.isLoggedIn) {
-      openAuthModal('Sign in to access your Creator Dashboard and saved prompts.');
-      return;
-    }
     router.push('/dashboard');
   };
 
@@ -175,9 +165,7 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
         id="bottom-nav-account"
       >
         <User className={`w-6 h-6 ${pathname === '/dashboard' ? 'fill-current' : ''}`} />
-        <span className="text-[10px] mt-0.5 font-medium">
-          {userAccount?.isLoggedIn ? 'Dashboard' : 'Sign In'}
-        </span>
+        <span className="text-[10px] mt-0.5 font-medium">Dashboard</span>
       </button>
     </nav>
   );

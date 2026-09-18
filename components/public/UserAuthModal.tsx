@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { supabase } from '@/lib/supabase';
 import {
@@ -21,7 +20,6 @@ import {
 } from 'lucide-react';
 
 export const UserAuthModal = () => {
-  const router = useRouter();
   const {
     isUserAuthModalOpen,
     setIsUserAuthModalOpen,
@@ -40,17 +38,6 @@ export const UserAuthModal = () => {
 
   const defaultAvatar = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80';
 
-  const checkAndRedirectStudio = React.useCallback(() => {
-    if (typeof window !== 'undefined') {
-      const hasPreload = sessionStorage.getItem('promptcms_studio_preload') || sessionStorage.getItem('auraprompt_studio_preload');
-      if (hasPreload) {
-        router.push('/create');
-        return true;
-      }
-    }
-    return false;
-  }, [router]);
-
   // Listen for callback messages from /auth/callback popup
   React.useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -64,7 +51,6 @@ export const UserAuthModal = () => {
           showToast(`Welcome back, ${name}! Signed in via Google.`);
           setIsLoading(false);
           setIsUserAuthModalOpen(false);
-          checkAndRedirectStudio();
         }
       } else if (event.data?.type === 'SUPABASE_AUTH_FAILED') {
         setErrorMessage(event.data.error || 'Google sign-in could not be completed.');
@@ -75,7 +61,7 @@ export const UserAuthModal = () => {
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [loginUser, showToast, setIsUserAuthModalOpen, checkAndRedirectStudio]);
+  }, [loginUser, showToast, setIsUserAuthModalOpen]);
 
   if (!isUserAuthModalOpen) return null;
 
@@ -231,7 +217,6 @@ export const UserAuthModal = () => {
         setEmail('');
         setPassword('');
         setFullName('');
-        checkAndRedirectStudio();
       } else {
         // Mode: LOGIN
         // 1. Attempt login with auto-confirm support via /api/auth/login
@@ -261,7 +246,6 @@ export const UserAuthModal = () => {
         setIsUserAuthModalOpen(false);
         setEmail('');
         setPassword('');
-        checkAndRedirectStudio();
       }
     } catch (err: any) {
       console.error('Auth submit error:', err);

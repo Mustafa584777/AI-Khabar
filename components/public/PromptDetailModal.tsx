@@ -1,5 +1,4 @@
 'use client';
-/* eslint-disable react-hooks/set-state-in-effect */
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { PromptPost } from '@/types/prompt';
@@ -29,7 +28,7 @@ import confetti from 'canvas-confetti';
 import Image from 'next/image';
 import Link from 'next/link';
 import { PersonalizationEngine } from '@/lib/personalization';
-import { getPromptSlug, slugify, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription } from '@/lib/utils';
+import { getPromptSlug, slugify, getOptimizedImageUrl, detectPostAspectRatio, getPromptSeoTitle, getPromptSeoDescription } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
 interface RecommendedPinCardProps {
@@ -192,8 +191,6 @@ export const PromptDetailModal = () => {
     unlockedPromptIds,
     unlockPromptWithCredit,
     isPromptUnlocked,
-    userAccount,
-    openAuthModal,
   } = useApp();
 
   const INITIAL_RECOMMENDED_COUNT = 15;
@@ -205,67 +202,56 @@ export const PromptDetailModal = () => {
   const [isDownloadingImage, setIsDownloadingImage] = useState<boolean>(false);
   const [isUnlockModalOpen, setIsUnlockModalOpen] = useState<boolean>(false);
   const [historyStack, setHistoryStack] = useState<PromptPost[]>(() => (selectedPost ? [selectedPost] : []));
+  const [prevSelectedId, setPrevSelectedId] = useState<string | null>(selectedPost?.id || null);
 
-  const router = useRouter();
-  const postsRef = useRef(posts);
-  const historyStackRef = useRef(historyStack);
-
-  useEffect(() => {
-    postsRef.current = posts;
-  }, [posts]);
-
+  const historyStackRef = useRef<PromptPost[]>(historyStack);
   useEffect(() => {
     historyStackRef.current = historyStack;
   }, [historyStack]);
 
-  // Cleanly synchronize historyStack whenever selectedPost changes
-  useEffect(() => {
-    if (!selectedPost) {
-      setHistoryStack([]);
-      return;
-    }
-    setHistoryStack((prev) => {
-      if (prev.length === 0) return [selectedPost];
-      if (prev[prev.length - 1]?.id === selectedPost.id) return prev;
-      const existingIdx = prev.findIndex((p) => p.id === selectedPost.id);
-      if (existingIdx !== -1) {
-        return prev.slice(0, existingIdx + 1);
-      }
-      return [...prev, selectedPost];
-    });
-    setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
-  }, [selectedPost]);
+  const router = useRouter();
 
-  // Dynamic SEO description & title updates for active prompt modal
+  // Dynamic SEO Title & Meta Description update for each prompt card
   useEffect(() => {
     if (!selectedPost) return;
-    const cleanTitle = `${selectedPost.title} - AI Photo Prompt & Settings`;
-    const metaDesc = getPromptMetaDescription(selectedPost);
-    document.title = cleanTitle;
 
-    let metaDescTag = document.querySelector('meta[name="description"]');
-    if (!metaDescTag) {
-      metaDescTag = document.createElement('meta');
-      metaDescTag.setAttribute('name', 'description');
-      document.head.appendChild(metaDescTag);
-    }
-    metaDescTag.setAttribute('content', metaDesc);
+    const originalTitle = document.title;
+    const metaDescEl = document.querySelector('meta[name="description"]');
+    const ogDescEl = document.querySelector('meta[property="og:description"]');
+    const ogTitleEl = document.querySelector('meta[property="og:title"]');
+    const twitterDescEl = document.querySelector('meta[name="twitter:description"]');
+    const twitterTitleEl = document.querySelector('meta[name="twitter:title"]');
+    const originalDesc = metaDescEl?.getAttribute('content') || '';
 
-    let ogTitle = document.querySelector('meta[property="og:title"]');
-    if (ogTitle) ogTitle.setAttribute('content', cleanTitle);
-    let ogDesc = document.querySelector('meta[property="og:description"]');
-    if (ogDesc) ogDesc.setAttribute('content', metaDesc);
+    const seoTitle = getPromptSeoTitle(selectedPost);
+    const seoDesc = getPromptSeoDescription(selectedPost);
+
+    document.title = seoTitle;
+    if (metaDescEl) metaDescEl.setAttribute('content', seoDesc);
+    if (ogDescEl) ogDescEl.setAttribute('content', seoDesc);
+    if (ogTitleEl) ogTitleEl.setAttribute('content', seoTitle);
+    if (twitterDescEl) twitterDescEl.setAttribute('content', seoDesc);
+    if (twitterTitleEl) twitterTitleEl.setAttribute('content', seoTitle);
 
     return () => {
-      document.title = 'Trending Copy Paste Photo Prompts';
-      if (metaDescTag) {
-        metaDescTag.setAttribute(
-          'content',
-          'Explore trending copy paste photo prompts for Midjourney, ChatGPT, Flux, Claude and Gemini. Instant copy, high-res previews, and creative AI prompt settings.'
-        );
-      }
+      document.title = originalTitle;
+      if (metaDescEl && originalDesc) metaDescEl.setAttribute('content', originalDesc);
     };
   }, [selectedPost]);
+
+  // Keep historyStack synchronized with selectedPost during render
+  if (selectedPost && selectedPost.id !== prevSelectedId) {
+    setPrevSelectedId(selectedPost.id);
+    setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
+    if (historyStack.length === 0 || !historyStack.some((p) => p.id === selectedPost.id)) {
+      setHistoryStack((prev) => (prev.length === 0 ? [selectedPost] : [...prev, selectedPost]));
+    }
+  } else if (!selectedPost && prevSelectedId !== null) {
+    setPrevSelectedId(null);
+    if (historyStack.length > 0) {
+      setHistoryStack([]);
+    }
+  }
 
   const isLiked = selectedPost ? likedIds?.includes(selectedPost.id) : false;
   const currentPost = posts.find((p) => p.id === selectedPost?.id) || selectedPost;
@@ -283,7 +269,7 @@ export const PromptDetailModal = () => {
     setHistoryStack([]);
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
-      if (path !== '/' && path !== '/dashboard' && path !== '/create' && !path.startsWith('/admin')) {
+      if (path !== '/' && path !== '/dashboard' && path !== '/create' && !path.startsWith('/admin') && !path.startsWith('/blog')) {
         window.history.pushState(null, '', '/');
       }
     }
@@ -291,20 +277,23 @@ export const PromptDetailModal = () => {
 
   const handleGoBack = useCallback(() => {
     if (historyStack.length > 1) {
-      // Deterministically pop to previous prompt in the stack without crashing into Next.js router
-      const newStack = [...historyStack];
-      newStack.pop();
-      const prevPost = newStack[newStack.length - 1];
-      setHistoryStack(newStack);
-      if (containerRef.current) {
-        containerRef.current.scrollTop = 0;
+      if (typeof window !== 'undefined' && window.history.length > 1) {
+        window.history.back();
+      } else {
+        const newStack = [...historyStack];
+        newStack.pop(); // Remove active prompt
+        const prevPost = newStack[newStack.length - 1];
+        setHistoryStack(newStack);
+        if (containerRef.current) {
+          containerRef.current.scrollTop = 0;
+        }
+        setSelectedPost(prevPost);
+        if (typeof window !== 'undefined') {
+          const prevSlug = getPromptSlug(prevPost);
+          window.history.pushState({ postId: prevPost.id }, '', `/${prevSlug}`);
+        }
+        setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
       }
-      setSelectedPost(prevPost);
-      if (typeof window !== 'undefined') {
-        const prevSlug = getPromptSlug(prevPost);
-        window.history.replaceState({ postId: prevPost.id, isPromptDetail: true }, '', `/${prevSlug}`);
-      }
-      setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
     } else {
       closeModal();
     }
@@ -312,60 +301,59 @@ export const PromptDetailModal = () => {
 
   // Handle browser back / forward navigation and Escape key
   useEffect(() => {
-    const handlePopState = (event: PopStateEvent) => {
-      if (typeof window === 'undefined') return;
-      const path = window.location.pathname;
-      if (path === '/' || path === '' || path === '/dashboard' || path === '/create' || path.startsWith('/admin')) {
-        setSelectedPost(null);
-        setHistoryStack([]);
-        return;
-      }
-      if (path.length > 1) {
-        const currentPosts = postsRef.current;
-        const currentStack = historyStackRef.current;
-        const statePostId = event.state?.postId;
-        let matched: PromptPost | undefined;
+    const handlePopState = (e: PopStateEvent) => {
+      if (typeof window !== 'undefined') {
+        const path = window.location.pathname;
+        if (path === '/' || path === '' || path === '/dashboard' || path === '/create' || path.startsWith('/admin') || path.startsWith('/blog')) {
+          setSelectedPost(null);
+          setHistoryStack([]);
+        } else if (path.length > 1) {
+          const rawSlug = path.replace('/', '').split('/')[0];
+          const targetSlug = decodeURIComponent(rawSlug).toLowerCase().trim();
+          const statePostId = (e.state && typeof e.state === 'object' && 'postId' in e.state) ? (e.state as { postId?: string }).postId : null;
 
-        if (statePostId) {
-          matched = currentPosts.find((p) => p.id === statePostId) || currentStack.find((p) => p.id === statePostId);
-        }
+          const matchedFromStack = historyStackRef.current.find(
+            (p) => (statePostId && p.id === statePostId) || (p.slug && p.slug.toLowerCase() === targetSlug) || p.id.toLowerCase() === targetSlug
+          );
 
-        const rawSlug = path.replace('/', '').split('/')[0];
-        const targetSlug = decodeURIComponent(rawSlug).toLowerCase().trim();
-
-        if (!matched) {
-          matched = currentPosts.find((p) => {
-            if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
-            if (p.id && p.id.toLowerCase() === targetSlug) return true;
-            if (p.title && (p.title.toLowerCase() === targetSlug || slugify(p.title) === targetSlug)) return true;
-            return false;
-          }) || currentStack.find((p) => {
+          const matched = matchedFromStack || posts.find((p) => {
+            if (statePostId && p.id === statePostId) return true;
             if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
             if (p.id && p.id.toLowerCase() === targetSlug) return true;
             if (p.title && (p.title.toLowerCase() === targetSlug || slugify(p.title) === targetSlug)) return true;
             return false;
           });
-        }
 
-        if (matched) {
-          if (containerRef.current) {
-            containerRef.current.scrollTop = 0;
-          }
-          setSelectedPost(matched);
-          setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
-        } else {
-          fetch(`/api/posts/${encodeURIComponent(targetSlug)}`)
-            .then((res) => (res.ok ? res.json() : Promise.reject(res)))
-            .then((data) => {
-              if (data.success && data.post) {
-                if (containerRef.current) {
-                  containerRef.current.scrollTop = 0;
+          if (matched) {
+            if (containerRef.current) {
+              containerRef.current.scrollTop = 0;
+            }
+            setSelectedPost(matched);
+            setHistoryStack((prev) => {
+              const idx = prev.findIndex((p) => p.id === matched.id);
+              if (idx !== -1) return prev.slice(0, idx + 1);
+              return [...prev, matched];
+            });
+            setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
+          } else {
+            fetch(`/api/posts/${encodeURIComponent(targetSlug)}`)
+              .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+              .then((data) => {
+                if (data.success && data.post) {
+                  if (containerRef.current) {
+                    containerRef.current.scrollTop = 0;
+                  }
+                  setSelectedPost(data.post);
+                  setHistoryStack((prev) => {
+                    const idx = prev.findIndex((p) => p.id === data.post.id);
+                    if (idx !== -1) return prev.slice(0, idx + 1);
+                    return [...prev, data.post];
+                  });
+                  setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
                 }
-                setSelectedPost(data.post);
-                setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
-              }
-            })
-            .catch(() => {});
+              })
+              .catch(() => {});
+          }
         }
       }
     };
@@ -386,7 +374,7 @@ export const PromptDetailModal = () => {
       window.removeEventListener('popstate', handlePopState);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [setSelectedPost, showFullImageModal, selectedPost, handleGoBack]);
+  }, [setSelectedPost, posts, showFullImageModal, selectedPost, handleGoBack]);
 
   const handleLike = () => {
     if (!selectedPost) return;
@@ -756,14 +744,18 @@ export const PromptDetailModal = () => {
 
   const handleSelectPin = (pin: PromptPost) => {
     PersonalizationEngine.recordView(pin);
+    setHistoryStack((prev) => {
+      if (prev.length > 0 && prev[prev.length - 1]?.id === pin.id) return prev;
+      return [...prev, pin];
+    });
     if (containerRef.current) {
       containerRef.current.scrollTop = 0;
     }
-    const pinSlug = getPromptSlug(pin);
-    if (typeof window !== 'undefined') {
-      window.history.pushState({ postId: pin.id, isPromptDetail: true }, '', `/${pinSlug}`);
-    }
     setSelectedPost(pin);
+    if (typeof window !== 'undefined') {
+      const pinSlug = getPromptSlug(pin);
+      window.history.pushState({ postId: pin.id }, '', `/${pinSlug}`);
+    }
     setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
   };
 
@@ -789,22 +781,19 @@ export const PromptDetailModal = () => {
     <div
       ref={containerRef}
       className="fixed inset-0 z-50 overflow-y-auto bg-neutral-100 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors flex flex-col animate-fade-in"
-      id="fullscreen-prompt-view"
+      id="pinterest-fullscreen-view"
     >
-      {/* Top Navigation Bar */}
+      {/* Top Pinterest-Style Navigation Bar */}
       <header className="sticky top-0 z-40 flex items-center justify-between px-3 sm:px-6 lg:px-8 py-3 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md border-b border-neutral-200/80 dark:border-neutral-800 shadow-sm">
         {/* Left: Back to explore / previous pin button */}
         <div className="flex items-center gap-3">
           <button
             onClick={handleGoBack}
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-bold text-xs sm:text-sm transition-all shadow-sm group min-h-[40px]"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-bold text-xs sm:text-sm transition-all shadow-sm group"
             id="back-to-prompts-btn"
             title={historyStack.length > 1 ? 'Go back to previous prompt card' : 'Back to explore feed'}
           >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform shrink-0" />
-            <span className="inline sm:hidden">
-              {historyStack.length > 1 ? 'Back' : 'Feed'}
-            </span>
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
             <span className="hidden sm:inline">
               {historyStack.length > 1 ? 'Previous Prompt' : 'Explore Prompts'}
             </span>
@@ -820,30 +809,19 @@ export const PromptDetailModal = () => {
 
         {/* Center/Right: Action Buttons */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Red Save Button (Strictly accessible after login) */}
-          {userAccount?.isLoggedIn ? (
-            <button
-              onClick={() => toggleBookmark(selectedPost.id)}
-              className={`flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold shadow-sm transition-all ${
-                isBookmarked
-                  ? 'bg-neutral-800 text-white dark:bg-neutral-200 dark:text-neutral-900'
-                  : 'bg-[#E60023] hover:bg-[#ad081b] text-white shadow-[#E60023]/20'
-              }`}
-              title={isBookmarked ? 'Saved to collection' : 'Save prompt'}
-            >
-              <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />
-              <span>{isBookmarked ? 'Saved' : 'Save'}</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => openAuthModal('Sign in to save this prompt to your private collection.')}
-              className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-bold bg-[#E60023] hover:bg-[#ad081b] text-white shadow-sm transition-all"
-              title="Sign in to save prompt"
-            >
-              <Bookmark className="w-4 h-4" />
-              <span>Sign in to Save</span>
-            </button>
-          )}
+          {/* Pinterest Red Save Button */}
+          <button
+            onClick={() => toggleBookmark(selectedPost.id)}
+            className={`flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold shadow-sm transition-all ${
+              isBookmarked
+                ? 'bg-neutral-800 text-white dark:bg-neutral-200 dark:text-neutral-900'
+                : 'bg-[#E60023] hover:bg-[#ad081b] text-white shadow-[#E60023]/20'
+            }`}
+            title={isBookmarked ? 'Saved to collection' : 'Save Pin'}
+          >
+            <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />
+            <span>{isBookmarked ? 'Saved' : 'Save'}</span>
+          </button>
 
           {/* Share */}
           <button
@@ -867,7 +845,7 @@ export const PromptDetailModal = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-12">
-        {/* Master Prompt Card */}
+        {/* Pinterest Master Pin Card */}
         <section
           key={selectedPost.id}
           className="bg-white dark:bg-neutral-900 rounded-[28px] sm:rounded-[36px] shadow-2xl border border-neutral-200/80 dark:border-neutral-800 overflow-hidden animate-fade-in transition-all duration-150"
@@ -1052,50 +1030,46 @@ export const PromptDetailModal = () => {
                   )}
 
                   {isPromptGated ? (
-                    <div className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-b from-neutral-900 via-neutral-900 to-neutral-950 text-neutral-100 p-4 sm:p-6 lg:p-7 border border-amber-500/40 shadow-xl overflow-hidden text-center flex flex-col items-center justify-center w-full">
-                      {/* Obscured blurred background accents */}
-                      <div
-                        aria-hidden="true"
-                        className="absolute inset-0 filter blur-xs select-none opacity-15 pointer-events-none p-4 font-mono text-xs leading-relaxed overflow-hidden text-left"
-                      >
-                        <p>Cinematic hyperrealistic photography shot on Hasselblad 50mm f/1.2 lens, photorealistic studio lighting, delicate cinematic color grading, 8k resolution...</p>
-                        <p>--ar 16:9 --style raw --v 6.1 --s 250 --quality 2 --uplight --no blur, grain</p>
-                        <p>Masterpiece, highly detailed textures, depth of field, volumetric atmospheric glow...</p>
+                    <div className="relative rounded-2xl bg-gradient-to-b from-neutral-900 via-neutral-950 to-black text-neutral-100 p-5 sm:p-7 border border-amber-500/40 shadow-xl overflow-hidden text-center min-h-[220px] flex flex-col items-center justify-center">
+                      {/* Background obscured blurred placeholder lines */}
+                      <div className="absolute inset-0 select-none opacity-15 pointer-events-none filter blur-[3px] p-4 font-mono text-[11px] leading-relaxed overflow-hidden text-neutral-400">
+                        <p>Cinematic hyperrealistic photography shot on Hasselblad 50mm f/1.2 lens, studio lighting, delicate cinematic color grading, 8k resolution...</p>
+                        <p>--ar 16:9 --style raw --v 6.1 --s 250 --quality 2</p>
+                        <p>Award-winning professional photorealistic portrait with dramatic rim lighting and volumetric depth of field.</p>
                       </div>
 
-                      {/* Content in natural flow so height dynamically expands and layout never gets cut off */}
-                      <div className="relative z-10 flex flex-col items-center justify-center w-full max-w-md mx-auto space-y-3 sm:space-y-4">
-                        <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/40 shadow-md shrink-0">
+                      {/* Prominent Golden Amber Glow Accent in center */}
+                      <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-48 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+
+                      {/* Foreground Flow Content */}
+                      <div className="relative z-10 w-full flex flex-col items-center justify-center py-1">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 text-amber-400 flex items-center justify-center mb-3 border border-amber-500/40 shadow-lg shadow-amber-500/10 shrink-0">
                           <Lock className="w-5 h-5" />
                         </div>
-
-                        <div className="space-y-1.5 text-center px-1">
-                          <h3 className="text-base sm:text-lg font-black text-white flex items-center justify-center gap-2 flex-wrap">
-                            <span>Premium Prompt Locked</span>
-                            <span className="px-2 py-0.5 rounded-full bg-amber-500 text-black text-[10px] font-black uppercase tracking-wider">
-                              1 Credit
-                            </span>
-                          </h3>
-                          <p className="text-xs sm:text-sm text-neutral-300 max-w-sm mx-auto leading-relaxed font-sans">
-                            Unlock this prompt permanently with <strong className="text-white">1 credit</strong> (Balance: <strong className="text-amber-400">{toolCredits} Credits</strong>), or subscribe for unlimited access.
-                          </p>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2 sm:gap-2.5 w-full pt-1">
+                        <h3 className="text-base sm:text-lg font-black text-white flex flex-wrap items-center justify-center gap-2">
+                          <span>Premium Prompt Locked</span>
+                          <span className="px-2.5 py-0.5 rounded-full bg-amber-500 text-black text-[10px] font-black uppercase tracking-wide shadow-sm">
+                            1 Credit
+                          </span>
+                        </h3>
+                        <p className="text-xs sm:text-sm text-neutral-300 max-w-md mt-1.5 mb-4 leading-relaxed font-sans px-2">
+                          Unlock this prompt permanently with <strong>1 credit</strong> (Balance: <strong className="text-amber-400">{toolCredits} Credits</strong>), or upgrade for unlimited access.
+                        </p>
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 w-full sm:w-auto">
                           <button
                             type="button"
                             onClick={handleUnlockWithOneCredit}
-                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition-all active:scale-95 font-sans cursor-pointer text-center"
+                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 sm:py-3 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition-all active:scale-95 font-sans cursor-pointer"
                           >
-                            <Coins className="w-4 h-4 fill-black shrink-0" />
-                            <span>{toolCredits >= 1 ? `Unlock for 1 Credit (${toolCredits} Left)` : 'Unlock for 1 Credit'}</span>
+                            <Coins className="w-4 h-4 fill-black" />
+                            <span>{toolCredits >= 1 ? `Unlock for 1 Credit (${toolCredits} Left)` : 'Unlock for 1 Credit (0 Left)'}</span>
                           </button>
                           <button
                             type="button"
                             onClick={() => setIsUnlockModalOpen(true)}
-                            className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs sm:text-sm font-bold border border-neutral-700 transition-colors font-sans cursor-pointer text-center"
+                            className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-3 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs sm:text-sm font-semibold border border-neutral-700 transition-colors font-sans cursor-pointer"
                           >
-                            <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                            <Crown className="w-4 h-4 text-amber-400" />
                             <span>Get Credits / Pro</span>
                           </button>
                         </div>
@@ -1158,7 +1132,7 @@ export const PromptDetailModal = () => {
           </div>
         </section>
 
-        {/* "More to explore" / "More Prompts" Masonry Image Grid */}
+        {/* Pinterest "More to explore" / "More Prompts" Masonry Image Grid */}
         <section className="space-y-6 pt-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-200 dark:border-neutral-800 pb-4">
             <div>
@@ -1229,10 +1203,6 @@ export const PromptDetailModal = () => {
                     onCopy={(e, p) => handleQuickCopyPin(e, p)}
                     onToggleBookmark={(e, p) => {
                       e.stopPropagation();
-                      if (!userAccount?.isLoggedIn) {
-                        openAuthModal('Please sign in or create an account to save prompts.');
-                        return;
-                      }
                       toggleBookmark(p.id);
                     }}
                   />
