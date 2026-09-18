@@ -294,7 +294,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (lastDate !== today) {
       addToolCredits(2);
       localStorage.setItem(creditDateKey, today);
-      showToast('+2 Daily Login Bonus Credits Added! 🎁', 'success');
+      showToast('+2 Daily Login Bonus Credits Added! 🎁');
     }
   }, [userAccount]);
 
