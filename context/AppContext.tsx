@@ -104,6 +104,8 @@ interface AppContextType {
   setSearchQuery: (query: string) => void;
   isSearchModalOpen: boolean;
   setIsSearchModalOpen: (open: boolean) => void;
+  isNotificationsModalOpen: boolean;
+  setIsNotificationsModalOpen: (open: boolean) => void;
   popularSearchQueries: string[];
   recordSearchQuery: (query: string) => void;
   aiSearchResults: AiSearchResult | null;
@@ -1051,6 +1053,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSearchModalOpen, setIsSearchModalOpen] = useState<boolean>(false);
+  const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState<boolean>(false);
   const [popularSearchQueries, setPopularSearchQueries] = useState<string[]>([
     'Traditional saree',
     'Cyberpunk neon portrait',
@@ -1992,6 +1995,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setSearchQuery,
         isSearchModalOpen,
         setIsSearchModalOpen,
+        isNotificationsModalOpen,
+        setIsNotificationsModalOpen,
         popularSearchQueries,
         recordSearchQuery,
         aiSearchResults,

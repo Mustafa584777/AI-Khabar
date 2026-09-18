@@ -184,6 +184,15 @@ export async function GET(request: Request) {
             } catch(e) {}
           }
 
+          let redirectTarget = '/dashboard';
+          try {
+            const stored = localStorage.getItem('auraprompt_auth_redirect');
+            if (stored) {
+              redirectTarget = stored;
+              localStorage.removeItem('auraprompt_auth_redirect');
+            }
+          } catch(e) {}
+
           if (window.opener) {
             try {
               window.opener.postMessage({
@@ -195,10 +204,10 @@ export async function GET(request: Request) {
                 window.close();
               }, 400);
             } catch(e) {
-              window.location.href = '/dashboard';
+              window.location.href = redirectTarget;
             }
           } else {
-            window.location.href = '/dashboard';
+            window.location.href = redirectTarget;
           }
         } else {
           // If neither session nor error could be parsed yet

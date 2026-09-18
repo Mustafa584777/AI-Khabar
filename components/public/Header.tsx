@@ -29,32 +29,25 @@ export const Header = () => {
     searchQuery,
     setSearchQuery,
     setIsSearchModalOpen,
+    setIsNotificationsModalOpen,
+    isNotificationsModalOpen,
     isProUser,
     planTier,
     setIsProCheckoutModalOpen,
     userAccount,
+    openAuthModal,
   } = useApp();
 
   const [unreadNotifs, setUnreadNotifs] = React.useState(0);
 
   React.useEffect(() => {
     const update = () => {
-      NotificationService.syncWithServer().then(() => {
-        const list = NotificationService.getNotifications();
-        setUnreadNotifs(list.filter((n) => !n.read).length);
-      });
-    };
-    update();
-    const handleNewNotif = () => {
       const list = NotificationService.getNotifications();
       setUnreadNotifs(list.filter((n) => !n.read).length);
     };
-    window.addEventListener('promptcms_new_notification', handleNewNotif);
-    const timer = setInterval(update, 10000);
-    return () => {
-      window.removeEventListener('promptcms_new_notification', handleNewNotif);
-      clearInterval(timer);
-    };
+    update();
+    const timer = setInterval(update, 8000);
+    return () => clearInterval(timer);
   }, []);
 
   const handleHomeClick = () => {
@@ -67,12 +60,15 @@ export const Header = () => {
   };
 
   const handleNotificationsClick = () => {
-    setCurrentView('notifications');
-    if (pathname !== '/') {
-      router.push('/');
-    } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    setIsNotificationsModalOpen(true);
+  };
+
+  const handleBookmarksClick = () => {
+    if (!userAccount?.isLoggedIn) {
+      openAuthModal('Please sign in or create an account to access your saved collection.');
+      return;
     }
+    setIsBookmarksDrawerOpen(true);
   };
 
   return (
@@ -125,14 +121,6 @@ export const Header = () => {
               <Sparkles className="w-3.5 h-3.5" />
               <span>Create</span>
             </Link>
-
-            <Link
-              href="/blog"
-              className="hidden lg:flex px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold text-neutral-700 dark:text-neutral-300 hover:bg-[#efefef] dark:hover:bg-neutral-800 transition-colors items-center gap-1.5"
-            >
-              <BookOpen className="w-4 h-4 text-[#E60023]" />
-              <span>Explore Guides</span>
-            </Link>
           </nav>
         </div>
 
@@ -154,11 +142,11 @@ export const Header = () => {
 
         {/* Right: Saved, Account & Admin Actions */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Notifications Button */}
+          {/* Notifications Button (Hidden on Mobile, use BottomNav instead) */}
           <button
             onClick={handleNotificationsClick}
-            className={`relative flex items-center justify-center p-2 rounded-full transition-colors ${
-              currentView === 'notifications'
+            className={`hidden sm:flex relative items-center justify-center p-2 rounded-full transition-colors ${
+              isNotificationsModalOpen
                 ? 'bg-[#E60023] text-white shadow-xs'
                 : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
             }`}
@@ -173,16 +161,16 @@ export const Header = () => {
             )}
           </button>
 
-          {/* Saved Prompts (Pinterest Red Pill) */}
+          {/* Saved Prompts */}
           <button
-            onClick={() => setIsBookmarksDrawerOpen(true)}
+            onClick={handleBookmarksClick}
             className="flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs sm:text-sm font-bold shadow-sm transition-all transform active:scale-95"
             title="View Saved Prompts"
             id="header-bookmarks-btn"
           >
             <Bookmark className="w-4 h-4 fill-current" />
             <span className="hidden sm:inline">Saved</span>
-            {bookmarkedIds.length > 0 && (
+            {userAccount?.isLoggedIn && bookmarkedIds.length > 0 && (
               <span className="px-1.5 py-0.2 rounded-full bg-white text-[#E60023] text-[11px] font-black">
                 {bookmarkedIds.length}
               </span>
@@ -205,32 +193,44 @@ export const Header = () => {
           </Link>
 
           {/* User Profile / Dashboard Button (Hidden on mobile devices) */}
-          <Link
-            href="/dashboard"
-            className={`hidden sm:flex px-3.5 py-2 rounded-full text-xs font-bold transition-colors items-center gap-1.5 ${
-              pathname === '/dashboard'
-                ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950'
-                : 'bg-[#efefef] dark:bg-neutral-800 hover:bg-[#e2e2e2] dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200'
-            }`}
-            title="My Creative Dashboard"
-            id="header-user-dashboard-btn"
-          >
-            {userAccount?.isLoggedIn && userAccount.avatar ? (
-              <Image
-                src={userAccount.avatar}
-                alt={userAccount.name || 'User'}
-                width={18}
-                height={18}
-                className="w-4 h-4 rounded-full object-cover border border-emerald-500/50"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
+          {userAccount?.isLoggedIn ? (
+            <Link
+              href="/dashboard"
+              className={`hidden sm:flex px-3.5 py-2 rounded-full text-xs font-bold transition-colors items-center gap-1.5 ${
+                pathname === '/dashboard'
+                  ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950'
+                  : 'bg-[#efefef] dark:bg-neutral-800 hover:bg-[#e2e2e2] dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200'
+              }`}
+              title="My Creative Dashboard"
+              id="header-user-dashboard-btn"
+            >
+              {userAccount.avatar ? (
+                <Image
+                  src={userAccount.avatar}
+                  alt={userAccount.name || 'User'}
+                  width={18}
+                  height={18}
+                  className="w-4 h-4 rounded-full object-cover border border-emerald-500/50"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <User className="w-4 h-4" />
+              )}
+              <span className="hidden md:inline">
+                {userAccount.name ? userAccount.name.split(' ')[0] : 'Dashboard'}
+              </span>
+            </Link>
+          ) : (
+            <button
+              onClick={() => openAuthModal('Sign in to access your creative dashboard, credits, and saved prompts.')}
+              className="hidden sm:flex px-4 py-2 rounded-full text-xs font-bold bg-[#efefef] dark:bg-neutral-800 hover:bg-[#e2e2e2] dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 transition-colors items-center gap-1.5"
+              title="Sign In / Register"
+              id="header-user-signin-btn"
+            >
               <User className="w-4 h-4" />
-            )}
-            <span className="hidden md:inline">
-              {userAccount?.isLoggedIn ? userAccount.name.split(' ')[0] : 'Dashboard'}
-            </span>
-          </Link>
+              <span>Sign In</span>
+            </button>
+          )}
         </div>
       </div>
     </header>

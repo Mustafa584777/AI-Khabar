@@ -3,6 +3,7 @@ import Script from 'next/script';
 import { Poppins } from 'next/font/google';
 import './globals.css';
 import { AppProvider } from '@/context/AppContext';
+import { AppGlobalOverlays } from '@/components/public/AppGlobalOverlays';
 
 import { InAppNotificationBanner } from '@/components/public/InAppNotificationBanner';
 
@@ -71,6 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={`${poppins.variable} ${poppins.className} font-sans antialiased selection:bg-[#E60023] selection:text-white`} suppressHydrationWarning>
         <AppProvider>
+          <AppGlobalOverlays />
           {children}
           <InAppNotificationBanner />
         </AppProvider>

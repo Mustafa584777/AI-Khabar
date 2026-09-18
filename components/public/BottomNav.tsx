@@ -24,6 +24,10 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
     setCurrentView,
     setIsTasteModalOpen,
     setIsSearchModalOpen,
+    setIsNotificationsModalOpen,
+    isNotificationsModalOpen,
+    userAccount,
+    openAuthModal,
   } = useApp();
 
   const [unreadNotifs, setUnreadNotifs] = useState(0);
@@ -58,22 +62,22 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
   };
 
   const handleNotificationsClick = () => {
-    setCurrentView('notifications');
-    setSelectedCategory('all');
-    setSelectedSort('trending');
-    setSearchQuery('');
-    if (pathname !== '/') {
-      router.push('/');
-    } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    setIsNotificationsModalOpen(true);
   };
 
   const handleCreateStudioClick = () => {
+    if (!userAccount?.isLoggedIn) {
+      openAuthModal('Sign in or register to access the AI Studio creation tools.');
+      return;
+    }
     router.push('/create');
   };
 
   const handleAccountClick = () => {
+    if (!userAccount?.isLoggedIn) {
+      openAuthModal('Sign in to access your Creator Dashboard and saved prompts.');
+      return;
+    }
     router.push('/dashboard');
   };
 
@@ -136,14 +140,14 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
         onClick={handleNotificationsClick}
         id="bottom-nav-notifications"
         className={`relative flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 ${
-          currentView === 'notifications'
+          isNotificationsModalOpen
             ? 'text-[#E60023] scale-105 font-bold'
             : 'text-neutral-500 hover:text-[#E60023] dark:hover:text-white'
         }`}
         title="Notifications & Trending Drops"
       >
         <div className="relative">
-          <Bell className={`w-6 h-6 ${currentView === 'notifications' ? 'fill-current' : ''}`} />
+          <Bell className={`w-6 h-6 ${isNotificationsModalOpen ? 'fill-current' : ''}`} />
           {unreadNotifs > 0 && (
             <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#E60023] text-white text-[9px] font-black flex items-center justify-center ring-2 ring-white dark:ring-neutral-950 animate-pulse">
               {unreadNotifs > 9 ? '9+' : unreadNotifs}
@@ -165,7 +169,9 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
         id="bottom-nav-account"
       >
         <User className={`w-6 h-6 ${pathname === '/dashboard' ? 'fill-current' : ''}`} />
-        <span className="text-[10px] mt-0.5 font-medium">Dashboard</span>
+        <span className="text-[10px] mt-0.5 font-medium">
+          {userAccount?.isLoggedIn ? 'Dashboard' : 'Sign In'}
+        </span>
       </button>
     </nav>
   );
