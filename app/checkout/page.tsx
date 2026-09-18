@@ -288,6 +288,10 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
+                      <span><strong>10 Monthly Prompt Requests</strong></span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-emerald-500 font-bold">✓</span>
                       <span className="font-bold text-emerald-600 dark:text-emerald-400">Unlimited prompt & history saves</span>
                     </li>
                   </ul>
@@ -335,6 +339,10 @@ export default function CheckoutPage() {
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
                       <span><strong>60</strong> monthly prompt tool credits</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-[#E60023] font-bold">✓</span>
+                      <span><strong>20 Monthly Prompt Requests</strong></span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
@@ -386,6 +394,10 @@ export default function CheckoutPage() {
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
                       <span><strong>180</strong> monthly prompt tool credits</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-purple-500 font-bold">✓</span>
+                      <span><strong>50 Monthly Prompt Requests</strong></span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>

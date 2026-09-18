@@ -310,6 +310,10 @@ export const UnlockPremiumModal: React.FC = () => {
                   </li>
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <span><strong>10 Monthly Prompt Requests</strong></span>
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                     <span className="font-bold text-emerald-600 dark:text-emerald-400">Unlimited prompt & history saves</span>
                   </li>
                 </ul>
@@ -348,6 +352,10 @@ export const UnlockPremiumModal: React.FC = () => {
                   </li>
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <span><strong>20 Monthly Prompt Requests</strong></span>
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                     <span className="font-bold text-[#E60023]">Unlimited prompt & history saves</span>
                   </li>
                 </ul>
@@ -380,6 +388,10 @@ export const UnlockPremiumModal: React.FC = () => {
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                     <span>180 tool credits / mo</span>
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <span><strong>50 Monthly Prompt Requests</strong></span>
                   </li>
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
