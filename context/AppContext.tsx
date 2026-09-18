@@ -137,6 +137,7 @@ interface AppContextType {
   setIsProUser: (isPro: boolean) => void;
   planTier: PlanTier;
   setPlanTier: (tier: PlanTier) => void;
+  planExpiresAt: string | null;
   toolCredits: number;
   deductToolCredit: (amount?: number) => boolean;
   useToolCredit: (amount?: number) => boolean;
@@ -212,6 +213,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       }
     }
     return 'free';
+  });
+
+  const [planExpiresAt, setPlanExpiresAtState] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('auraprompt_plan_expires_at') || null;
+    }
+    return null;
   });
 
   const setPlanTier = useCallback((tier: PlanTier) => {
@@ -376,12 +384,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const upgradePlan = useCallback((tier: 'starter' | 'pro' | 'vip') => {
     const creditsMap = { starter: 30, pro: 60, vip: 180 };
     const requestsMap = { starter: 1, pro: 3, vip: 10 };
+    const pointsMap = { starter: 10, pro: 20, vip: 50 };
 
     setIsProUserState(true);
     setPlanTierState(tier);
 
     const addedCredits = creditsMap[tier];
     const addedRequests = requestsMap[tier];
+    const addedPoints = pointsMap[tier];
 
     let finalCredits = 0;
     setToolCreditsState((prev) => {
@@ -403,9 +413,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return next;
     });
 
+    let finalPoints = 0;
+    setUserAccount((prev) => {
+      if (!prev) return prev;
+      const nextPoints = (prev.points || 0) + addedPoints;
+      finalPoints = nextPoints;
+      const updated = { ...prev, points: nextPoints };
+      StorageService.saveUserAccount(updated);
+      return updated;
+    });
+
     const now = new Date();
     const planStartedAt = now.toISOString();
     const planExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    setPlanExpiresAtState(planExpiresAt);
 
     if (typeof window !== 'undefined') {
       localStorage.setItem('auraprompt_pro_member', 'true');
@@ -422,6 +443,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         isProUser: true,
         toolCredits: finalCredits,
         promptRequestsRemaining: finalRequests,
+        points: currentAcc.points ? currentAcc.points + addedPoints : addedPoints,
         planStartedAt,
         planExpiresAt,
       });
@@ -1961,6 +1983,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setIsProUser,
         planTier,
         setPlanTier,
+        planExpiresAt,
         toolCredits,
         deductToolCredit,
         useToolCredit,

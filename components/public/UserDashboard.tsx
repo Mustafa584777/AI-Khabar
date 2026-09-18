@@ -71,6 +71,7 @@ export const UserDashboard = () => {
     syncUserCloudData,
     isSyncingUserData,
     unlockedPromptIds,
+    planExpiresAt,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'saved' | 'history' | 'taste' | 'request'>('saved');
@@ -430,6 +431,11 @@ export const UserDashboard = () => {
                   ? `${toolCredits} prompt tools credits available • All premium prompts unlocked • Unlimited prompt & history saves.`
                   : `${toolCredits} credits available. 1 credit unlocks any premium prompt • 3 credits per image extraction. Top up credits anytime.`}
               </p>
+              {isPaid && planExpiresAt && (
+                <p className="text-[11px] text-amber-600 dark:text-amber-400 font-bold mt-1">
+                  Plan Subscription Expires on: {new Date(planExpiresAt).toLocaleDateString()}
+                </p>
+              )}
             </div>
           </div>
 

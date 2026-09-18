@@ -15,13 +15,28 @@ const LoadingOverlayInner = () => {
       setIsLoading(false);
     }, 450);
 
-    const slowTimer = setTimeout(() => {
-      setShowSlowWarning(true);
-    }, 3000);
+    let slowTimer: NodeJS.Timeout | null = null;
+    let hideSlowTimer: NodeJS.Timeout | null = null;
+
+    try {
+      const countStr = localStorage.getItem('auraprompt_slow_warning_count') || '0';
+      const count = parseInt(countStr, 10);
+      if (count < 2) {
+        slowTimer = setTimeout(() => {
+          setShowSlowWarning(true);
+          localStorage.setItem('auraprompt_slow_warning_count', (count + 1).toString());
+
+          hideSlowTimer = setTimeout(() => {
+            setShowSlowWarning(false);
+          }, 2000);
+        }, 3000);
+      }
+    } catch (e) {}
 
     return () => {
       clearTimeout(timer);
-      clearTimeout(slowTimer);
+      if (slowTimer) clearTimeout(slowTimer);
+      if (hideSlowTimer) clearTimeout(hideSlowTimer);
     };
   }, [pathname, searchParams]);
 
