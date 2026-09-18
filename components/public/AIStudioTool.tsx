@@ -110,10 +110,26 @@ export const AIStudioTool = () => {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Tab State
-  const [activeStudioTab, setActiveStudioTab] = useState<'reverse' | 'generator'>('reverse');
+  const [activeStudioTab, setActiveStudioTab] = useState<'reverse' | 'generator'>(() => {
+    if (typeof window !== 'undefined') {
+      const preload = sessionStorage.getItem('promptcms_studio_preload') || sessionStorage.getItem('auraprompt_studio_preload');
+      if (preload) return 'generator';
+    }
+    return 'reverse';
+  });
 
   // AI Prompt Generator States
-  const [promptIdea, setPromptIdea] = useState<string>('');
+  const [promptIdea, setPromptIdea] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const preload = sessionStorage.getItem('promptcms_studio_preload') || sessionStorage.getItem('auraprompt_studio_preload');
+      if (preload) {
+        sessionStorage.removeItem('promptcms_studio_preload');
+        sessionStorage.removeItem('auraprompt_studio_preload');
+        return preload;
+      }
+    }
+    return '';
+  });
   const [selectedLighting, setSelectedLighting] = useState<string>('Cinematic Golden Hour');
   const [selectedColor, setSelectedColor] = useState<string>('Cinematic Teal & Orange');
   const [selectedGender, setSelectedGender] = useState<string>('Any / None');
@@ -203,10 +219,7 @@ export const AIStudioTool = () => {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    if (!userAccount?.isLoggedIn) {
-      openAuthModal('Please sign in or create an account to use the AI Studio tools.');
-    }
-  }, [userAccount?.isLoggedIn, openAuthModal]);
+  }, []);
 
   const copyToClipboard = (text: string, key: string, label = 'Copied to clipboard!') => {
     navigator.clipboard.writeText(text);
