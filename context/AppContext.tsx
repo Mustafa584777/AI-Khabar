@@ -261,42 +261,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return 0;
   });
 
-  const [isUnlockPremiumModalOpen, setIsUnlockPremiumModalOpen] = useState<boolean>(false);
-  const [isFirstLoginModalOpen, setIsFirstLoginModalOpen] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      const acc = StorageService.getUserAccount();
-      if (acc && acc.isLoggedIn && !localStorage.getItem('auraprompt_first_login_claimed')) {
-        return true;
-      }
-    }
-    return false;
-  });
-  const [lockedPromptContext, setLockedPromptContext] = useState<PromptPost | null>(null);
+  // Toast
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // First-Time & Daily Free Credits Grant Logic
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const acc = userAccount || StorageService.getUserAccount();
-    if (!acc || !acc.isLoggedIn) return;
-
-    // First time login bonus check
-    if (!localStorage.getItem('auraprompt_first_login_claimed')) {
-      localStorage.setItem('auraprompt_first_login_claimed', 'true');
-      setIsFirstLoginModalOpen(true);
-      addToolCredits(2);
-    }
-
-    const userKey = acc.email ? acc.email.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_') : acc.id;
-    const today = new Date().toISOString().split('T')[0];
-    const creditDateKey = `auraprompt_last_credit_date_${userKey}`;
-    const lastDate = localStorage.getItem(creditDateKey);
-
-    if (lastDate !== today) {
-      addToolCredits(2);
-      localStorage.setItem(creditDateKey, today);
-      showToast('+2 Daily Login Bonus Credits Added! 🎁');
-    }
-  }, [userAccount]);
+  const showToast = useCallback((msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((prev) => (prev === msg ? null : prev));
+    }, 3000);
+  }, []);
 
   const deductToolCredit = useCallback((amount: number = 1): boolean => {
     const acc = StorageService.getUserAccount();
@@ -335,6 +308,43 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return next;
     });
   }, []);
+
+  const [isUnlockPremiumModalOpen, setIsUnlockPremiumModalOpen] = useState<boolean>(false);
+  const [isFirstLoginModalOpen, setIsFirstLoginModalOpen] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const acc = StorageService.getUserAccount();
+      if (acc && acc.isLoggedIn && !localStorage.getItem('auraprompt_first_login_claimed')) {
+        return true;
+      }
+    }
+    return false;
+  });
+  const [lockedPromptContext, setLockedPromptContext] = useState<PromptPost | null>(null);
+
+  // First-Time & Daily Free Credits Grant Logic
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const acc = userAccount || StorageService.getUserAccount();
+    if (!acc || !acc.isLoggedIn) return;
+
+    // First time login bonus check
+    if (!localStorage.getItem('auraprompt_first_login_claimed')) {
+      localStorage.setItem('auraprompt_first_login_claimed', 'true');
+      setIsFirstLoginModalOpen(true);
+      addToolCredits(2);
+    }
+
+    const userKey = acc.email ? acc.email.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_') : acc.id;
+    const today = new Date().toISOString().split('T')[0];
+    const creditDateKey = `auraprompt_last_credit_date_${userKey}`;
+    const lastDate = localStorage.getItem(creditDateKey);
+
+    if (lastDate !== today) {
+      addToolCredits(2);
+      localStorage.setItem(creditDateKey, today);
+      showToast('+2 Daily Login Bonus Credits Added! 🎁');
+    }
+  }, [userAccount, addToolCredits, showToast]);
 
   // Unlocked Prompts (Unlocked via 1 credit per prompt or subscription)
   const [unlockedPromptIds, setUnlockedPromptIds] = useState<string[]>(() => {
@@ -1100,20 +1110,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Toast
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage((prev) => (prev === msg ? null : prev));
-    }, 3000);
-  };
-
   const applyPlan = useCallback((tier: 'starter' | 'pro' | 'vip') => {
     upgradePlan(tier);
     showToast(`Success! You have unlocked the ${tier.toUpperCase()} plan.`);
-  }, [upgradePlan]);
+  }, [upgradePlan, showToast]);
 
   const isSavingRef = React.useRef(false);
 
