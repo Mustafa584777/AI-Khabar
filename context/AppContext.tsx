@@ -396,7 +396,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const upgradePlan = useCallback((tier: 'starter' | 'pro' | 'vip') => {
     const creditsMap = { starter: 30, pro: 60, vip: 180 };
-    const requestsMap = { starter: 1, pro: 3, vip: 10 };
+    const requestsMap = { starter: 10, pro: 20, vip: 50 };
     const pointsMap = { starter: 10, pro: 20, vip: 50 };
 
     setIsProUserState(true);
@@ -1296,6 +1296,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         }
         if (synced.planExpiresAt) {
           localStorage.setItem('auraprompt_plan_expires_at', synced.planExpiresAt);
+          setPlanExpiresAtState(synced.planExpiresAt);
+        } else {
+          setPlanExpiresAtState(null);
+          localStorage.removeItem('auraprompt_plan_expires_at');
         }
       }
     };
