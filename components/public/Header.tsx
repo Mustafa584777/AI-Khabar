@@ -6,7 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import {
   Bookmark,
-  BookOpen,
+  Bell,
   User,
   Sparkles,
   Search,
@@ -95,13 +95,25 @@ export const Header = () => {
               <span>AI Studio</span>
             </button>
 
-            <Link
-              href="/blog"
-              className="hidden lg:flex px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold text-neutral-700 dark:text-neutral-300 hover:bg-[#efefef] dark:hover:bg-neutral-800 transition-colors items-center gap-1.5"
+            {/* Updates Section */}
+            <button
+              onClick={() => {
+                setCurrentView('for-you');
+                if (pathname !== '/') {
+                  router.push('/');
+                }
+              }}
+              className={`hidden sm:flex px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 items-center gap-1.5 ${
+                currentView === 'for-you'
+                  ? 'bg-[#E60023] text-white shadow-sm'
+                  : 'text-neutral-700 dark:text-neutral-300 hover:bg-[#efefef] dark:hover:bg-neutral-800'
+              }`}
+              id="header-updates-btn"
+              title="Community Updates & Notifications"
             >
-              <BookOpen className="w-4 h-4 text-[#E60023]" />
-              <span>Explore Guides</span>
-            </Link>
+              <Bell className="w-3.5 h-3.5 text-[#E60023]" />
+              <span>Updates</span>
+            </button>
           </nav>
         </div>
 

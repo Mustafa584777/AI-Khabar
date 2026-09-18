@@ -22,7 +22,7 @@ const UserAuthModal = dynamic(() => import('@/components/public/UserAuthModal').
 const AdminLayout = dynamic(() => import('@/components/admin/AdminLayout').then((m) => m.AdminLayout), { ssr: false });
 const AdminLoginModal = dynamic(() => import('@/components/admin/AdminLoginModal').then((m) => m.AdminLoginModal), { ssr: false });
 const SearchExploreModal = dynamic(() => import('@/components/public/SearchExploreModal').then((m) => m.SearchExploreModal), { ssr: false });
-const RequestedPromptsFeed = dynamic(() => import('@/components/public/RequestedPromptsFeed').then((m) => m.RequestedPromptsFeed), { ssr: false });
+const NotificationsView = dynamic(() => import('@/components/public/NotificationsView').then((m) => m.NotificationsView), { ssr: false });
 
 function MainApp() {
   const { currentView } = useApp();
@@ -41,7 +41,7 @@ function MainApp() {
     return (
       <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col pb-20 sm:pb-8">
         <Header />
-        <RequestedPromptsFeed />
+        <NotificationsView />
         <Footer />
         <BottomNav />
         <SearchExploreModal />
