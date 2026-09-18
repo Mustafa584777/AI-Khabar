@@ -82,12 +82,12 @@ export const Header = () => {
             id="brand-logo-btn"
             title="Trending Copy Paste Photo Prompts"
           >
-            <div className="w-10 h-10 rounded-full overflow-hidden shadow-sm group-hover:scale-105 transition-transform shrink-0 relative bg-gradient-to-tr from-[#E60023] via-[#ff3b56] to-[#E60023] flex items-center justify-center p-0.5">
+            <div className="w-10 h-10 rounded-full overflow-hidden shadow-sm group-hover:scale-105 transition-transform shrink-0 relative flex items-center justify-center">
               <Image
                 src="/logo.png"
                 alt="tool.reelz"
-                width={38}
-                height={38}
+                width={40}
+                height={40}
                 className="w-full h-full object-cover rounded-full"
                 priority
               />

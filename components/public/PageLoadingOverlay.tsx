@@ -21,10 +21,15 @@ const LoadingOverlayInner = () => {
     try {
       const countStr = localStorage.getItem('auraprompt_slow_warning_count') || '0';
       const count = parseInt(countStr, 10);
-      if (count < 2) {
+      const lastTimeStr = localStorage.getItem('auraprompt_last_slow_warning_time') || '0';
+      const lastTime = parseInt(lastTimeStr, 10);
+      const now = Date.now();
+
+      if (count < 2 && (now - lastTime > 2000)) {
         slowTimer = setTimeout(() => {
           setShowSlowWarning(true);
           localStorage.setItem('auraprompt_slow_warning_count', (count + 1).toString());
+          localStorage.setItem('auraprompt_last_slow_warning_time', Date.now().toString());
 
           hideSlowTimer = setTimeout(() => {
             setShowSlowWarning(false);
