@@ -1,48 +1,64 @@
-export interface CartoonAvatar {
-  id: string;
-  name: string;
-  url: string;
-}
-
-export const CARTOON_AVATARS: CartoonAvatar[] = [
+export const CARTOON_AVATARS = [
   {
-    id: 'av-1',
-    name: 'Alex (3D Anime)',
-    url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
+    id: '3d-boy-headphones',
+    name: 'Sparky 3D Bot',
+    url: 'https://api.dicebear.com/7.x/bottts/svg?seed=Sparky&backgroundColor=d1d4f9',
+    type: '3d',
   },
   {
-    id: 'av-2',
-    name: 'Sophia (Pastel)',
-    url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80',
+    id: '3d-girl-creative',
+    name: 'Creative Zoe 3D',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Zoe&backgroundColor=ffd5dc',
+    type: '3d',
   },
   {
-    id: 'av-3',
-    name: 'Liam (Cyberpunk)',
-    url: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=120&q=80',
+    id: '3d-boy-adventurer',
+    name: 'Explorer Leo 3D',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Leo&backgroundColor=c0aede',
+    type: '3d',
   },
   {
-    id: 'av-4',
-    name: 'Emma (Cinematic)',
-    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
+    id: '2d-notion-style',
+    name: 'Notionist Nala 2D',
+    url: 'https://api.dicebear.com/7.x/notionists/svg?seed=Nala&backgroundColor=d1d4f9',
+    type: '2d',
   },
   {
-    id: 'av-5',
-    name: 'Noah (Retro)',
-    url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80',
+    id: '2d-cartoon-artist',
+    name: 'Artisan Aneka 2D',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Aneka&backgroundColor=ffdfbf',
+    type: '2d',
   },
   {
-    id: 'av-6',
-    name: 'Mia (Fantasy)',
-    url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=120&q=80',
+    id: '2d-lorelei-chic',
+    name: 'Chic Aria 2D',
+    url: 'https://api.dicebear.com/7.x/lorelei/svg?seed=Aria&backgroundColor=b6e3f4',
+    type: '2d',
   },
   {
-    id: 'av-7',
-    name: 'Ethan (Sci-Fi)',
-    url: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=120&q=80',
+    id: '3d-fun-emoji',
+    name: 'Happy Milo 3D',
+    url: 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=Milo&backgroundColor=ffd5dc',
+    type: '3d',
   },
   {
-    id: 'av-8',
-    name: 'Ava (Monochrome)',
-    url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=120&q=80',
+    id: '3d-bot-cyber',
+    name: 'Cyber Bot 3D',
+    url: 'https://api.dicebear.com/7.x/bottts/svg?seed=Felix&backgroundColor=b6e3f4',
+    type: '3d',
+  },
+  {
+    id: '2d-retro-cool',
+    name: 'Retro Sam 2D',
+    url: 'https://api.dicebear.com/7.x/notionists/svg?seed=Sam&backgroundColor=ffdfbf',
+    type: '2d',
+  },
+  {
+    id: '3d-pixel-hero',
+    name: 'Hero Max 3D',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Max&backgroundColor=c0aede',
+    type: '3d',
   },
 ];
+
+export const DEFAULT_AVATAR = CARTOON_AVATARS[0].url;

@@ -30,13 +30,10 @@ export const DashboardOverview = () => {
     setSelectedPost,
     togglePublishStatus,
     showToast,
-    promptRequests,
   } = useApp();
 
   const [quickTitle, setQuickTitle] = useState('');
   const [quickPrompt, setQuickPrompt] = useState('');
-
-  const pendingRequestsCount = promptRequests.filter((r) => r.status === 'pending').length;
 
   const publishedCount = posts.filter((p) => p.status === 'published').length;
   const draftCount = posts.filter((p) => p.status === 'draft').length;
@@ -124,33 +121,6 @@ export const DashboardOverview = () => {
           </button>
         </div>
       </div>
-
-      {/* Pending Prompt Requests Banner if any */}
-      {pendingRequestsCount > 0 && (
-        <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-amber-500 text-white shadow-sm">
-              <Clock className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-amber-900 dark:text-amber-200">
-                {pendingRequestsCount} Pending Prompt Request{pendingRequestsCount > 1 ? 's' : ''} from Users
-              </h4>
-              <p className="text-xs text-amber-700 dark:text-amber-400">
-                Logged-in users have requested custom AI prompts. Review and fulfill them to deliver directly to their dashboard.
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={() => setAdminSubView('requested-prompts')}
-            className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shrink-0 shadow-sm flex items-center gap-1.5 self-start sm:self-auto"
-          >
-            <span>Review & Fulfill</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
 
       {/* KPI Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">

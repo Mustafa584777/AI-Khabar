@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useApp } from '@/context/AppContext';
-import { Home, Search, Plus, User, Sparkles, Bell } from 'lucide-react';
+import { Home, Search, Plus, User, Sparkles } from 'lucide-react';
 
 interface BottomNavProps {
   onSearchClick?: () => void;
@@ -107,19 +107,19 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
         </span>
       </button>
 
-      {/* 4. Updates & Notifications Feed Button */}
+      {/* 4. Requested Prompts Feed Button */}
       <button
         onClick={handleForYouClick}
-        id="bottom-nav-updates"
+        id="bottom-nav-requested"
         className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 ${
           currentView === 'for-you'
             ? 'text-[#E60023] scale-105 font-bold'
             : 'text-neutral-500 hover:text-[#E60023] dark:hover:text-white'
         }`}
-        title="Community Updates & Notifications"
+        title="Community Requested Prompts"
       >
-        <Bell className="w-6 h-6 text-[#E60023]" />
-        <span className="text-[10px] mt-0.5 font-medium">Updates</span>
+        <Sparkles className="w-6 h-6 text-[#E60023]" />
+        <span className="text-[10px] mt-0.5 font-medium">Requested</span>
       </button>
 
       {/* 5. Account / Profile Button */}

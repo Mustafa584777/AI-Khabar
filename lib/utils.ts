@@ -42,21 +42,5 @@ export function getOptimizedImageUrl(url?: string, width = 550): string {
   return url;
 }
 
-export function getPromptMetaDescription(post?: { title?: string; prompt?: string; category?: string } | null): string {
-  if (!post) return 'Discover and copy trending AI image prompts, photorealistic portraits, and creative art styles on PromptCMS.';
-  const title = post.title ? post.title.trim() : '';
-  const promptText = post.prompt ? post.prompt.trim().replace(/\s+/g, ' ') : '';
-  const category = post.category ? post.category.trim() : '';
-
-  if (promptText) {
-    const snippet = promptText.length > 150 ? `${promptText.slice(0, 147)}...` : promptText;
-    return `${title ? `${title}: ` : ''}${snippet}`;
-  }
-  if (title) {
-    return `${title} - Free AI photo prompt, tags, and creative styling guide${category ? ` in ${category}` : ''}.`;
-  }
-  return 'Discover and copy trending AI image prompts, photorealistic portraits, and creative art styles.';
-}
-
 export * from './tag-utils';
 

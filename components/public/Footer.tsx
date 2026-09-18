@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
-import { Sparkles, Shield, Mail, Bell } from 'lucide-react';
+import { Sparkles, BookOpen, HelpCircle } from 'lucide-react';
 import Image from 'next/image';
 
 export const Footer = () => {
@@ -11,7 +11,6 @@ export const Footer = () => {
     settings,
     categories,
     setSelectedCategory,
-    setCurrentView,
   } = useApp();
 
   return (
@@ -58,7 +57,7 @@ export const Footer = () => {
                       setSelectedCategory(cat.name);
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
-                    className="hover:text-[#E60023] transition-colors cursor-pointer"
+                    className="hover:text-[#E60023] transition-colors"
                   >
                     {cat.name}
                   </button>
@@ -67,49 +66,44 @@ export const Footer = () => {
             </ul>
           </div>
 
-          {/* Col 3: Community & Legal */}
+          {/* Col 3: Blog & Guides Archive */}
           <div>
             <h4 className="font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider text-[11px] mb-3 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#E60023]" />
-              <span>Community & Legal</span>
+              <BookOpen className="w-3.5 h-3.5 text-[#E60023]" />
+              <span>Guides & Tutorials</span>
             </h4>
             <ul className="space-y-2">
               <li>
-                <button
-                  onClick={() => {
-                    setCurrentView('for-you');
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                  className="hover:text-[#E60023] transition-colors flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Bell className="w-3.5 h-3.5 text-[#E60023]" />
-                  <span>Updates & Notifications</span>
-                </button>
-              </li>
-              <li>
                 <Link
-                  href="/contact"
-                  className="hover:text-[#E60023] transition-colors flex items-center gap-1.5"
+                  href="/blog"
+                  className="font-bold text-[#E60023] hover:underline flex items-center gap-1"
                 >
-                  <Mail className="w-3.5 h-3.5 text-neutral-400" />
-                  <span>Contact Support</span>
+                  <span>Blog Archive & Tutorials</span>
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/privacy-policy"
-                  className="hover:text-[#E60023] transition-colors flex items-center gap-1.5"
+                  href="/blog/how-to-use-photo-prompts"
+                  className="hover:text-[#E60023] transition-colors flex items-center gap-1"
                 >
-                  <Shield className="w-3.5 h-3.5 text-neutral-400" />
-                  <span>Privacy Policy</span>
+                  <HelpCircle className="w-3 h-3 text-[#E60023]" />
+                  <span>How to Use AI Prompts Guide</span>
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/disclaimer"
+                  href="/blog/best-camera-settings-for-ai-photography"
                   className="hover:text-[#E60023] transition-colors"
                 >
-                  Disclaimer & Terms
+                  Camera & Lens Optics Guide
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/blog/top-10-ai-prompting-mistakes-to-avoid"
+                  className="hover:text-[#E60023] transition-colors"
+                >
+                  10 Prompting Mistakes to Avoid
                 </Link>
               </li>
             </ul>
@@ -120,14 +114,11 @@ export const Footer = () => {
         <div className="pt-6 border-t border-neutral-100 dark:border-neutral-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-neutral-400">
           <p>© {new Date().getFullYear()} Trending Copy Paste Photo Prompts. All rights reserved.</p>
           <div className="flex items-center gap-4">
-            <Link href="/privacy-policy" className="hover:text-neutral-600 dark:hover:text-neutral-200">
-              Privacy Policy
+            <Link href="/blog" className="hover:text-neutral-600 dark:hover:text-neutral-200">
+              Blog
             </Link>
-            <Link href="/disclaimer" className="hover:text-neutral-600 dark:hover:text-neutral-200">
-              Disclaimer
-            </Link>
-            <Link href="/contact" className="hover:text-neutral-600 dark:hover:text-neutral-200">
-              Contact
+            <Link href="/blog/how-to-use-photo-prompts" className="hover:text-neutral-600 dark:hover:text-neutral-200">
+              How to Use Prompts
             </Link>
           </div>
         </div>
