@@ -40,6 +40,9 @@ export async function PATCH(
       decodedId = decodeURIComponent(id);
     } catch {}
 
+    const authHeader = req.headers.get('Authorization');
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : undefined;
+
     const body = await req.json();
 
     const existing =
@@ -51,11 +54,11 @@ export async function PATCH(
     const targetId = existing?.id || id;
 
     if (body.action === 'copy') {
-      await ServerStorage.incrementCopyCount(targetId);
+      await ServerStorage.incrementCopyCount(targetId, token);
     } else if (body.action === 'view') {
-      await ServerStorage.incrementViewCount(targetId);
+      await ServerStorage.incrementViewCount(targetId, token);
     } else if (body.action === 'like') {
-      await ServerStorage.toggleLike(targetId);
+      await ServerStorage.toggleLike(targetId, token);
     }
 
     const updated = await ServerStorage.getPostById(targetId);

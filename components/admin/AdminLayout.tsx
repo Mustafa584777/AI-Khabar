@@ -10,8 +10,10 @@ import { PostEditor } from './PostEditor';
 import { CategoriesManager } from './CategoriesManager';
 import { SettingsView } from './SettingsView';
 import { BackupRestoreView } from './BackupRestoreView';
-import { RequestedPromptsManager } from './RequestedPromptsManager';
 import { SearchHistoryManager } from './SearchHistoryManager';
+import { UsersManager } from './UsersManager';
+import { PushNotificationsManager } from './PushNotificationsManager';
+import { RequestedPromptsManager } from './RequestedPromptsManager';
 import { X } from 'lucide-react';
 
 export const AdminLayout = () => {
@@ -24,7 +26,7 @@ export const AdminLayout = () => {
         <div className="text-center space-y-4 max-w-md bg-neutral-950 p-8 rounded-3xl border border-neutral-800 text-white">
           <h2 className="text-xl font-bold">Authentication Required</h2>
           <p className="text-xs text-neutral-400">
-            You must log in to access the WordPress Editorial CMS.
+            You must log in to access the Editorial CMS.
           </p>
           <button
             onClick={() => setShowLoginModal(true)}
@@ -48,12 +50,16 @@ export const AdminLayout = () => {
         return <PostEditor key={editingPostId || 'new-post'} />;
       case 'categories':
         return <CategoriesManager key={settings.popularTags?.join(',') || 'categories'} />;
-      case 'backup-restore':
-        return <BackupRestoreView />;
       case 'requested-prompts':
         return <RequestedPromptsManager />;
+      case 'notifications':
+        return <PushNotificationsManager />;
       case 'search-history':
         return <SearchHistoryManager />;
+      case 'users':
+        return <UsersManager />;
+      case 'backup-restore':
+        return <BackupRestoreView />;
       case 'settings':
         return <SettingsView key={settings.siteName + (settings.popularTags?.join(',') || '')} />;
       default:

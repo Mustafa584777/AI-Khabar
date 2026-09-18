@@ -74,7 +74,7 @@ export const UserDashboard = () => {
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'saved' | 'history' | 'taste' | 'request'>('saved');
-  const [historyFilter, setHistoryFilter] = useState<'all' | 'image_to_prompt' | 'text_to_prompt' | 'prompt_enhancer' | 'prompt_editor'>('all');
+  const [historyFilter, setHistoryFilter] = useState<'all' | 'image_to_prompt'>('all');
   const [historySearch, setHistorySearch] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -659,39 +659,6 @@ export const UserDashboard = () => {
                   All ({aiHistory.length})
                 </button>
                 <button
-                  onClick={() => setHistoryFilter('text_to_prompt')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    historyFilter === 'text_to_prompt'
-                      ? 'bg-[#E60023] text-white'
-                      : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-                  }`}
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Text to Prompt ({aiHistory.filter((i) => i.type === 'text_to_prompt').length})</span>
-                </button>
-                <button
-                  onClick={() => setHistoryFilter('prompt_enhancer')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    historyFilter === 'prompt_enhancer'
-                      ? 'bg-[#E60023] text-white'
-                      : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-                  }`}
-                >
-                  <Wand2 className="w-3.5 h-3.5" />
-                  <span>Enhancer ({aiHistory.filter((i) => i.type === 'prompt_enhancer').length})</span>
-                </button>
-                <button
-                  onClick={() => setHistoryFilter('prompt_editor')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    historyFilter === 'prompt_editor'
-                      ? 'bg-[#E60023] text-white'
-                      : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-                  }`}
-                >
-                  <SlidersHorizontal className="w-3.5 h-3.5" />
-                  <span>Editor ({aiHistory.filter((i) => i.type === 'prompt_editor').length})</span>
-                </button>
-                <button
                   onClick={() => setHistoryFilter('image_to_prompt')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                     historyFilter === 'image_to_prompt'
@@ -699,7 +666,7 @@ export const UserDashboard = () => {
                       : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
                   }`}
                 >
-                  <Camera className="w-3.5 h-3.5" />
+                  <Sparkles className="w-3.5 h-3.5" />
                   <span>Image to Prompt ({aiHistory.filter((i) => i.type === 'image_to_prompt').length})</span>
                 </button>
               </div>
@@ -762,35 +729,14 @@ export const UserDashboard = () => {
                       <div className="flex items-center justify-between gap-2 mb-3">
                         <span
                           className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 ${
-                            item.type === 'text_to_prompt'
+                            item.type === 'image_to_prompt'
                               ? 'bg-red-50 dark:bg-red-950/60 text-[#E60023] border border-red-200 dark:border-red-900'
-                              : item.type === 'prompt_enhancer'
-                              ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900'
-                              : item.type === 'prompt_editor'
-                              ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900'
-                              : item.type === 'image_to_prompt'
-                              ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-900'
-                              : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900'
+                              : 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900'
                           }`}
                         >
-                          {item.type === 'text_to_prompt' ? (
+                          {item.type === 'image_to_prompt' ? (
                             <>
-                              <Sparkles className="w-3 h-3 text-[#E60023]" />
-                              <span>Text to Prompt</span>
-                            </>
-                          ) : item.type === 'prompt_enhancer' ? (
-                            <>
-                              <Wand2 className="w-3 h-3 text-amber-500" />
-                              <span>Prompt Enhancer</span>
-                            </>
-                          ) : item.type === 'prompt_editor' ? (
-                            <>
-                              <SlidersHorizontal className="w-3 h-3 text-blue-500" />
-                              <span>Prompt Editor</span>
-                            </>
-                          ) : item.type === 'image_to_prompt' ? (
-                            <>
-                              <Camera className="w-3 h-3 text-purple-500" />
+                              <Sparkles className="w-3 h-3" />
                               <span>Image to Prompt</span>
                             </>
                           ) : (
