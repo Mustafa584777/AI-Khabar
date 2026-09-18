@@ -4,8 +4,8 @@ import { PushNotificationItem } from '@/types/notification';
 
 export async function GET() {
   try {
-    const notifications = NotificationServerStore.getNotifications();
-    const stats = NotificationServerStore.getStats();
+    const notifications = await NotificationServerStore.getNotifications();
+    const stats = await NotificationServerStore.getStats();
     return NextResponse.json({
       success: true,
       notifications,
@@ -31,7 +31,6 @@ export async function POST(req: NextRequest) {
       collageImages,
       url,
       actionButtons,
-      sendBrowserPush,
     } = body;
 
     if (!title || (!contentBody && !subtitle)) {
@@ -57,13 +56,13 @@ export async function POST(req: NextRequest) {
       read: false,
     };
 
-    const { totalSent } = NotificationServerStore.addNotification(newNotification);
+    const { totalSent } = await NotificationServerStore.addNotification(newNotification);
 
     return NextResponse.json({
       success: true,
       notification: newNotification,
       totalSent,
-      message: 'Push notification queued and broadcasted successfully!',
+      message: 'Push notification queued and saved in Supabase successfully!',
     });
   } catch (error: any) {
     return NextResponse.json(
@@ -80,12 +79,12 @@ export async function DELETE(req: NextRequest) {
     const clearAll = searchParams.get('clearAll');
 
     if (clearAll === 'true') {
-      NotificationServerStore.clearNotifications();
+      await NotificationServerStore.clearNotifications();
       return NextResponse.json({ success: true, message: 'All notifications cleared' });
     }
 
     if (id) {
-      NotificationServerStore.deleteNotification(id);
+      await NotificationServerStore.deleteNotification(id);
       return NextResponse.json({ success: true, message: 'Notification deleted' });
     }
 
@@ -97,4 +96,3 @@ export async function DELETE(req: NextRequest) {
     );
   }
 }
-
