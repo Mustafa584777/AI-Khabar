@@ -20,76 +20,7 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
 };
 
 // Seed notifications styled like viral drops
-export const SEED_NOTIFICATIONS: PushNotificationItem[] = [
-  {
-    id: 'notif-pink-viral-aesthetic',
-    title: 'Why is Pink Background everywhere right now?',
-    subtitle: 'You might like these searches',
-    body: 'Explore high-contrast aesthetics, vaporwave aesthetics, and pastel glow prompts dominating modern photography and Instagram.',
-    category: 'Photorealistic & Portraits',
-    imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80',
-    collageImages: [
-      'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=600&auto=format&fit=crop&q=80',
-    ],
-    url: '/explore?q=pink+aesthetic',
-    actionButtons: [
-      { label: 'Explore Searches', url: '/explore?q=pink+aesthetic' },
-      { label: 'Try in Studio', url: '/create' },
-    ],
-    sentAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-    sentBy: 'admin',
-    clicksCount: 142,
-    read: false,
-  },
-  {
-    id: 'notif-cyberpunk-neon-drop',
-    title: 'Neon Cyberpunk 8K: Master Prompts Just Dropped',
-    subtitle: 'Trending in Anime & Cyberpunk',
-    body: 'Top photorealistic prompts with rainy reflections, volumetric neon lighting, and cinematic Sony A7 IV depth of field.',
-    category: 'Anime & Cyberpunk',
-    imageUrl: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=800&auto=format&fit=crop&q=80',
-    collageImages: [
-      'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1563089145-599997674d42?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80',
-    ],
-    url: '/explore?category=Anime+%26+Cyberpunk',
-    actionButtons: [
-      { label: 'Copy Prompts', url: '/explore?category=Anime+%26+Cyberpunk' },
-      { label: 'AI Generator', url: '/create' },
-    ],
-    sentAt: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
-    sentBy: 'admin',
-    clicksCount: 389,
-    read: false,
-  },
-  {
-    id: 'notif-3d-character-unreal',
-    title: 'Unreal Engine 5 Character Renders are Blowing Up',
-    subtitle: 'You might like these prompt ideas',
-    body: 'Curated 3D hyper-detailed figures with Octane clay shading, subsurface scattering, and isometric perspective.',
-    category: '3D Art & CGI Renders',
-    imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
-    collageImages: [
-      'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1614680376593-902f749f7ffc?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop&q=80',
-    ],
-    url: '/explore?category=3D+Art+%26+CGI+Renders',
-    actionButtons: [
-      { label: 'View Gallery', url: '/explore?category=3D+Art+%26+CGI+Renders' },
-    ],
-    sentAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-    sentBy: 'admin',
-    clicksCount: 512,
-    read: true,
-  },
-];
+export const SEED_NOTIFICATIONS: PushNotificationItem[] = [];
 
 // Play soft ambient notification chime using Web Audio API
 export const playNotificationChime = () => {
@@ -434,10 +365,15 @@ export const NotificationService = {
     NotificationService.saveNotifications(updated);
   },
 
-  deleteNotification: (id: string): void => {
+  deleteNotification: async (id: string): Promise<void> => {
     const list = NotificationService.getNotifications();
     const updated = list.filter((n) => n.id !== id);
     NotificationService.saveNotifications(updated);
+    try {
+      await fetch(`/api/notifications/send?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+    } catch (e) {
+      console.warn('Failed to delete notification on server:', e);
+    }
   },
 
   recordNotificationClick: (id: string): void => {

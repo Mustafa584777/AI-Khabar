@@ -111,10 +111,15 @@ export const NotificationsView: React.FC = () => {
     showToast('All notifications marked as read.');
   };
 
-  const handleClearAll = () => {
+  const handleClearAll = async () => {
     if (confirm('Clear all notifications from your feed?')) {
       NotificationService.saveNotifications([]);
       setNotifications([]);
+      try {
+        await fetch('/api/notifications/send?clearAll=true', { method: 'DELETE' });
+      } catch (e) {
+        console.warn('Failed to clear notifications on server:', e);
+      }
       showToast('Notification feed cleared.');
     }
   };

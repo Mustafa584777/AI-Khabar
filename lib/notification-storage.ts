@@ -88,6 +88,17 @@ export const NotificationServerStore = {
     return readJson<PushNotificationItem[]>(NOTIFICATIONS_FILE, []);
   },
 
+  deleteNotification: (id: string): { count: number } => {
+    const list = readJson<PushNotificationItem[]>(NOTIFICATIONS_FILE, []);
+    const filtered = list.filter((n) => n.id !== id);
+    writeJson(NOTIFICATIONS_FILE, filtered);
+    return { count: filtered.length };
+  },
+
+  clearNotifications: (): void => {
+    writeJson(NOTIFICATIONS_FILE, []);
+  },
+
   addNotification: (item: PushNotificationItem): { notification: PushNotificationItem; totalSent: number } => {
     const list = readJson<PushNotificationItem[]>(NOTIFICATIONS_FILE, []);
     list.unshift(item);

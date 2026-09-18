@@ -72,3 +72,29 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+    const clearAll = searchParams.get('clearAll');
+
+    if (clearAll === 'true') {
+      NotificationServerStore.clearNotifications();
+      return NextResponse.json({ success: true, message: 'All notifications cleared' });
+    }
+
+    if (id) {
+      NotificationServerStore.deleteNotification(id);
+      return NextResponse.json({ success: true, message: 'Notification deleted' });
+    }
+
+    return NextResponse.json({ error: 'Notification ID required' }, { status: 400 });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message || 'Failed to delete notification' },
+      { status: 500 }
+    );
+  }
+}
+
