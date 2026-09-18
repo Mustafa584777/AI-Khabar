@@ -200,7 +200,7 @@ export const AIStudioTool = () => {
 
     const historyItem: AIHistoryItem = {
       id: 'gen_' + Date.now(),
-      type: 'image_to_prompt',
+      type: 'idea_to_prompt',
       title: generatedPromptData.title || 'Generated Studio Prompt',
       promptText: generatedPromptData.promptText,
       negativePrompt: generatedPromptData.negativePrompt,

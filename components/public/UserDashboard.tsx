@@ -74,7 +74,7 @@ export const UserDashboard = () => {
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'saved' | 'history' | 'taste' | 'request'>('saved');
-  const [historyFilter, setHistoryFilter] = useState<'all' | 'image_to_prompt'>('all');
+  const [historyFilter, setHistoryFilter] = useState<'all' | 'image_to_prompt' | 'idea_to_prompt'>('all');
   const [historySearch, setHistorySearch] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -669,6 +669,17 @@ export const UserDashboard = () => {
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>Image to Prompt ({aiHistory.filter((i) => i.type === 'image_to_prompt').length})</span>
                 </button>
+                <button
+                  onClick={() => setHistoryFilter('idea_to_prompt')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    historyFilter === 'idea_to_prompt'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Wand2 className="w-3.5 h-3.5" />
+                  <span>Prompt Generator ({aiHistory.filter((i) => i.type === 'idea_to_prompt').length})</span>
+                </button>
               </div>
 
               <div className="flex items-center gap-2">
@@ -731,6 +742,8 @@ export const UserDashboard = () => {
                           className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 ${
                             item.type === 'image_to_prompt'
                               ? 'bg-red-50 dark:bg-red-950/60 text-[#E60023] border border-red-200 dark:border-red-900'
+                              : item.type === 'idea_to_prompt'
+                              ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900'
                               : 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900'
                           }`}
                         >
@@ -738,6 +751,11 @@ export const UserDashboard = () => {
                             <>
                               <Sparkles className="w-3 h-3" />
                               <span>Image to Prompt</span>
+                            </>
+                          ) : item.type === 'idea_to_prompt' ? (
+                            <>
+                              <Wand2 className="w-3 h-3" />
+                              <span>Prompt Generator</span>
                             </>
                           ) : (
                             <>
