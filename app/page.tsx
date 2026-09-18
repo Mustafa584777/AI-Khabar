@@ -39,25 +39,6 @@ function MainApp() {
     );
   }
 
-  if (currentView === 'notifications' || currentView === 'for-you') {
-    return (
-      <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col pb-20 sm:pb-8">
-        <Header />
-        <NotificationsView />
-        <BottomNav />
-        <SearchExploreModal />
-        <PromptDetailModal />
-        <BookmarksDrawer />
-        <TasteProfileModal />
-        <UserAuthModal />
-        <AdminLoginModal />
-        <ToastNotification />
-        <RazorpayCheckoutModal />
-        <UnlockPremiumModal />
-      </div>
-    );
-  }
-
   if (currentView === 'user-dashboard') {
     return (
       <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col">
@@ -97,12 +78,22 @@ function MainApp() {
 
   return (
     <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col pb-20 sm:pb-8">
-      <Header />
-      <HeroSection />
-      <ToolFilterBar />
-      <PromptGrid />
-      <SEOContentSection />
-      <Footer />
+      {/* Homepage view */}
+      <div className={currentView === 'public' ? 'block' : 'hidden'}>
+        <Header />
+        <HeroSection />
+        <ToolFilterBar />
+        <PromptGrid />
+        <SEOContentSection />
+        <Footer />
+      </div>
+
+      {/* Notifications view (full page, preloaded with homepage for 0 delay) */}
+      <div className={currentView === 'notifications' || currentView === 'for-you' ? 'block' : 'hidden'}>
+        <Header />
+        <NotificationsView />
+        <Footer />
+      </div>
 
       {/* Mobile Bottom Navigation */}
       <BottomNav />

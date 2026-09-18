@@ -152,6 +152,8 @@ interface AppContextType {
 
   isUnlockPremiumModalOpen: boolean;
   setIsUnlockPremiumModalOpen: (open: boolean) => void;
+  isFirstLoginModalOpen: boolean;
+  setIsFirstLoginModalOpen: (open: boolean) => void;
   lockedPromptContext: PromptPost | null;
   setLockedPromptContext: (post: PromptPost | null) => void;
   applyPlan: (planTier: 'starter' | 'pro' | 'vip') => void;
@@ -260,13 +262,29 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const [isUnlockPremiumModalOpen, setIsUnlockPremiumModalOpen] = useState<boolean>(false);
+  const [isFirstLoginModalOpen, setIsFirstLoginModalOpen] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const acc = StorageService.getUserAccount();
+      if (acc && acc.isLoggedIn && !localStorage.getItem('auraprompt_first_login_claimed')) {
+        return true;
+      }
+    }
+    return false;
+  });
   const [lockedPromptContext, setLockedPromptContext] = useState<PromptPost | null>(null);
 
-  // Daily 2 Free Credits Grant Logic - Strictly only runs for authenticated accounts
+  // First-Time & Daily Free Credits Grant Logic
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const acc = userAccount || StorageService.getUserAccount();
     if (!acc || !acc.isLoggedIn) return;
+
+    // First time login bonus check
+    if (!localStorage.getItem('auraprompt_first_login_claimed')) {
+      localStorage.setItem('auraprompt_first_login_claimed', 'true');
+      setIsFirstLoginModalOpen(true);
+      addToolCredits(2);
+    }
 
     const userKey = acc.email ? acc.email.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_') : acc.id;
     const today = new Date().toISOString().split('T')[0];
@@ -274,14 +292,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const lastDate = localStorage.getItem(creditDateKey);
 
     if (lastDate !== today) {
-      const currentSaved = parseInt(localStorage.getItem('auraprompt_tool_credits') || '0', 10);
-      const newCredits = Math.max(currentSaved, 2);
-      setToolCreditsState(newCredits);
-      localStorage.setItem('auraprompt_tool_credits', newCredits.toString());
+      addToolCredits(2);
       localStorage.setItem(creditDateKey, today);
-      void UserSyncService.pushUserData(acc.id, acc.email, {
-        toolCredits: newCredits,
-      });
+      showToast('+2 Daily Login Bonus Credits Added! 🎁', 'success');
     }
   }, [userAccount]);
 
@@ -1995,6 +2008,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         unlockPromptWithCredit,
         isUnlockPremiumModalOpen,
         setIsUnlockPremiumModalOpen,
+        isFirstLoginModalOpen,
+        setIsFirstLoginModalOpen,
         lockedPromptContext,
         setLockedPromptContext,
         applyPlan,
