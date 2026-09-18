@@ -62,7 +62,7 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
   };
 
   const handleNotificationsClick = () => {
-    setIsNotificationsModalOpen(true);
+    router.push('/notifications');
   };
 
   const handleCreateStudioClick = () => {
@@ -140,14 +140,14 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
         onClick={handleNotificationsClick}
         id="bottom-nav-notifications"
         className={`relative flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 ${
-          isNotificationsModalOpen
+          pathname === '/notifications'
             ? 'text-[#E60023] scale-105 font-bold'
             : 'text-neutral-500 hover:text-[#E60023] dark:hover:text-white'
         }`}
         title="Notifications & Trending Drops"
       >
         <div className="relative">
-          <Bell className={`w-6 h-6 ${isNotificationsModalOpen ? 'fill-current' : ''}`} />
+          <Bell className={`w-6 h-6 ${pathname === '/notifications' ? 'fill-current' : ''}`} />
           {unreadNotifs > 0 && (
             <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#E60023] text-white text-[9px] font-black flex items-center justify-center ring-2 ring-white dark:ring-neutral-950 animate-pulse">
               {unreadNotifs > 9 ? '9+' : unreadNotifs}

@@ -60,7 +60,7 @@ export const Header = () => {
   };
 
   const handleNotificationsClick = () => {
-    setIsNotificationsModalOpen(true);
+    router.push('/notifications');
   };
 
   const handleBookmarksClick = () => {
@@ -146,7 +146,7 @@ export const Header = () => {
           <button
             onClick={handleNotificationsClick}
             className={`hidden sm:flex relative items-center justify-center p-2 rounded-full transition-colors ${
-              isNotificationsModalOpen
+              pathname === '/notifications'
                 ? 'bg-[#E60023] text-white shadow-xs'
                 : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
             }`}

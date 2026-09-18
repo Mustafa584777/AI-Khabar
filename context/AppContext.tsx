@@ -224,6 +224,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return null;
   });
 
+  useEffect(() => {
+    if (isProUser && !planExpiresAt) {
+      const defaultExp = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      setPlanExpiresAtState(defaultExp);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auraprompt_plan_expires_at', defaultExp);
+      }
+    }
+  }, [isProUser, planExpiresAt]);
+
   const setPlanTier = useCallback((tier: PlanTier) => {
     setPlanTierState(tier);
     if (typeof window !== 'undefined') {

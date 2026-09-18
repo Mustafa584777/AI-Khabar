@@ -79,6 +79,8 @@ export const UserDashboard = () => {
   const [historySearch, setHistorySearch] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  const expiryDisplay = planExpiresAt ? new Date(planExpiresAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : 'Active';
+
   // Strict paid tier resolution for Dashboard display
   const isPaid = Boolean(
     isProUser && (planTier === 'starter' || planTier === 'pro' || planTier === 'vip')
@@ -431,9 +433,9 @@ export const UserDashboard = () => {
                   ? `${toolCredits} prompt tools credits available • All premium prompts unlocked • Unlimited prompt & history saves.`
                   : `${toolCredits} credits available. 1 credit unlocks any premium prompt • 3 credits per image extraction. Top up credits anytime.`}
               </p>
-              {isPaid && planExpiresAt && (
+              {isPaid && (
                 <p className="text-[11px] text-amber-600 dark:text-amber-400 font-bold mt-1">
-                  Plan Subscription Expires on: {new Date(planExpiresAt).toLocaleDateString()}
+                  Plan Subscription Expires on: {expiryDisplay}
                 </p>
               )}
             </div>
