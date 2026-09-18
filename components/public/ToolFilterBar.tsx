@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
-import { Sliders, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { getCategoryIcon } from '@/lib/icons';
 import { PersonalizationEngine } from '@/lib/personalization';
 
@@ -14,10 +14,7 @@ export const ToolFilterBar = () => {
     selectedCategory,
     setSelectedCategory,
     categories,
-    selectedSort,
-    setSelectedSort,
     tasteProfile,
-    setIsTasteModalOpen,
   } = useApp();
 
   const isMounted = useIsMounted();
@@ -31,9 +28,9 @@ export const ToolFilterBar = () => {
   return (
     <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-3 pb-2">
       <div className="flex items-center gap-2">
-        {/* Pinterest Style Pill Tabs Slider */}
+        {/* Style Pill Tabs Slider */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1.5 no-scrollbar flex-1 scroll-smooth">
-          {/* 1. "For You" (AI Personalized Default Main Tab) */}
+          {/* 1. "Latest Posts" (Default Main Tab) */}
           <button
             onClick={() => {
               setSelectedCategory('all');
@@ -45,10 +42,10 @@ export const ToolFilterBar = () => {
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>For You</span>
+            <span>Latest Posts</span>
           </button>
 
-          {/* 2. AI Ranked Personalized Category Tabs */}
+          {/* AI Ranked Personalized Category Tabs */}
           {personalizedCategories.map((cat) => {
             const isSelected =
               selectedCategory.toLowerCase() === cat.name.toLowerCase();

@@ -1,4 +1,4 @@
-import { UserAccount, AIHistoryItem, PlanTier } from '@/types/prompt';
+import { UserAccount, AIHistoryItem, PlanTier, PromptRequestItem } from '@/types/prompt';
 import { INITIAL_TASTE_PROFILE, UserTasteProfile } from './personalization';
 
 export interface UserSyncData {
@@ -14,8 +14,12 @@ export interface UserSyncData {
   planTier?: PlanTier;
   isProUser?: boolean;
   toolCredits?: number;
+  lastDailyCreditDate?: string;
   promptRequestsRemaining?: number;
   unlockedPromptIds?: string[];
+  planStartedAt?: string;
+  planExpiresAt?: string;
+  promptRequests?: PromptRequestItem[];
   updatedAt?: string;
 }
 
@@ -25,14 +29,6 @@ const TIER_WEIGHT: Record<PlanTier, number> = {
   pro: 2,
   vip: 3,
 };
-
-function resolveHighestTier(t1?: PlanTier, t2?: PlanTier): PlanTier {
-  const w1 = t1 && TIER_WEIGHT[t1] !== undefined ? TIER_WEIGHT[t1] : 0;
-  const w2 = t2 && TIER_WEIGHT[t2] !== undefined ? TIER_WEIGHT[t2] : 0;
-  if (w1 >= w2 && w1 > 0) return t1!;
-  if (w2 > w1) return t2!;
-  return 'free';
-}
 
 export const UserSyncService = {
   /**
@@ -111,17 +107,10 @@ export const UserSyncService = {
 
   /**
    * Called whenever a user logs in. Pulls remote user data from database.
-   * Ensures all bookmarks, likes, history, points, plans, credits, and unlocked content come from database and merge safely without data loss.
+   * STRICT GUARANTEE: Never inherits or leaks credits, plans, or bookmarks from previous sessions or guests.
    */
   reconcileOnLogin: async (
-    user: UserAccount,
-    localState?: {
-      planTier?: PlanTier;
-      isProUser?: boolean;
-      toolCredits?: number;
-      promptRequestsRemaining?: number;
-      unlockedPromptIds?: string[];
-    }
+    user: UserAccount
   ): Promise<{
     bookmarkedIds: string[];
     likedIds: string[];
@@ -133,48 +122,30 @@ export const UserSyncService = {
     toolCredits: number;
     promptRequestsRemaining: number;
     unlockedPromptIds: string[];
+    planStartedAt?: string;
+    planExpiresAt?: string;
   }> => {
-    const currentPoints = user.points || 10;
+    const todayStr = new Date().toISOString().split('T')[0];
     const remote = await UserSyncService.pullUserData(user.id, user.email);
 
-    // Resolve Highest Tier to prevent accidental downgrades across app updates
-    const resolvedTier = resolveHighestTier(localState?.planTier, remote?.planTier);
-    const resolvedIsPro = resolvedTier !== 'free' || Boolean(localState?.isProUser || remote?.isProUser);
-
-    // Resolve Credits: highest balance is maintained
-    const resolvedCredits = Math.max(
-      localState?.toolCredits || 0,
-      remote?.toolCredits !== undefined ? Number(remote.toolCredits) : 0,
-      2 // minimum 2 daily base
-    );
-
-    // Resolve Unlocked Prompts: non-destructive union
-    const resolvedUnlocks = Array.from(
-      new Set([...(localState?.unlockedPromptIds || []), ...(remote?.unlockedPromptIds || [])])
-    );
-
-    const resolvedRequestsRemaining = Math.max(
-      localState?.promptRequestsRemaining || 0,
-      remote?.promptRequestsRemaining || 0
-    );
-
     if (!remote) {
-      // First time login or no remote record yet: initialize database record with defaults and local state
+      // First time login for this specific user: grant 2 daily credits for today on clean free tier
       const initialData: UserSyncData = {
         userId: user.id,
         email: user.email,
         name: user.name,
         avatar: user.avatar,
-        points: currentPoints,
+        points: user.points || 10,
         bookmarkedIds: [],
         likedIds: [],
         aiHistory: [],
         tasteProfile: INITIAL_TASTE_PROFILE,
-        planTier: resolvedTier,
-        isProUser: resolvedIsPro,
-        toolCredits: resolvedCredits,
-        promptRequestsRemaining: resolvedRequestsRemaining,
-        unlockedPromptIds: resolvedUnlocks,
+        planTier: 'free',
+        isProUser: false,
+        toolCredits: 2, // 2 daily credits start after login
+        lastDailyCreditDate: todayStr,
+        promptRequestsRemaining: 0,
+        unlockedPromptIds: [],
         updatedAt: new Date().toISOString(),
       };
 
@@ -183,49 +154,86 @@ export const UserSyncService = {
       return {
         bookmarkedIds: [],
         likedIds: [],
-        points: currentPoints,
+        points: user.points || 10,
         aiHistory: [],
         tasteProfile: INITIAL_TASTE_PROFILE,
-        planTier: resolvedTier,
-        isProUser: resolvedIsPro,
-        toolCredits: resolvedCredits,
-        promptRequestsRemaining: resolvedRequestsRemaining,
-        unlockedPromptIds: resolvedUnlocks,
+        planTier: 'free',
+        isProUser: false,
+        toolCredits: 2,
+        promptRequestsRemaining: 0,
+        unlockedPromptIds: [],
       };
     }
 
-    // Remote exists - merge non-destructively and push back if local had additional items
+    // Remote account exists for this user: use strictly their remote verified plan & credits
+    let resolvedTier: PlanTier = (remote.planTier && ['starter', 'pro', 'vip', 'free'].includes(remote.planTier))
+      ? remote.planTier
+      : (remote.isProUser ? 'pro' : 'free');
+    
+    let resolvedIsPro: boolean = resolvedTier !== 'free' || Boolean(remote.isProUser);
+
+    // Validate plan expiration if an expiration date is present
+    if (resolvedTier !== 'free' && remote.planExpiresAt) {
+      const expTime = new Date(remote.planExpiresAt).getTime();
+      if (!isNaN(expTime) && expTime < Date.now()) {
+        resolvedTier = 'free';
+        resolvedIsPro = false;
+      }
+    }
+
+    let currentCredits = Number(remote.toolCredits ?? 0);
+    let lastCreditDate = remote.lastDailyCreditDate;
+
+    // Daily 2 credits refresh logic: if free user logs in on a new day, refresh daily credits to at least 2
+    if (!resolvedIsPro && resolvedTier === 'free') {
+      if (lastCreditDate !== todayStr) {
+        currentCredits = Math.max(currentCredits, 2);
+        lastCreditDate = todayStr;
+      }
+    }
+
     const mergedData: UserSyncData = {
       userId: user.id,
       email: user.email,
       name: user.name,
       avatar: user.avatar,
-      points: remote.points !== undefined ? Number(remote.points) : currentPoints,
+      points: remote.points !== undefined ? Number(remote.points) : (user.points || 10),
       bookmarkedIds: Array.isArray(remote.bookmarkedIds) ? remote.bookmarkedIds : [],
       likedIds: Array.isArray(remote.likedIds) ? remote.likedIds : [],
       aiHistory: Array.isArray(remote.aiHistory) ? remote.aiHistory : [],
       tasteProfile: remote.tasteProfile || INITIAL_TASTE_PROFILE,
       planTier: resolvedTier,
       isProUser: resolvedIsPro,
-      toolCredits: resolvedCredits,
-      promptRequestsRemaining: resolvedRequestsRemaining,
-      unlockedPromptIds: resolvedUnlocks,
+      toolCredits: currentCredits,
+      lastDailyCreditDate: lastCreditDate,
+      promptRequestsRemaining: Number(remote.promptRequestsRemaining || 0),
+      unlockedPromptIds: Array.isArray(remote.unlockedPromptIds) ? remote.unlockedPromptIds : [],
+      planStartedAt: remote.planStartedAt,
+      planExpiresAt: remote.planExpiresAt,
       updatedAt: new Date().toISOString(),
     };
 
-    void UserSyncService.pushUserData(user.id, user.email, mergedData);
+    // Keep database in sync with any daily credit refresh
+    if (lastCreditDate === todayStr && remote.lastDailyCreditDate !== todayStr) {
+      void UserSyncService.pushUserData(user.id, user.email, {
+        toolCredits: currentCredits,
+        lastDailyCreditDate: lastCreditDate,
+      });
+    }
 
     return {
       bookmarkedIds: mergedData.bookmarkedIds || [],
       likedIds: mergedData.likedIds || [],
-      points: mergedData.points !== undefined ? mergedData.points : currentPoints,
+      points: mergedData.points !== undefined ? mergedData.points : 10,
       aiHistory: mergedData.aiHistory || [],
       tasteProfile: mergedData.tasteProfile || INITIAL_TASTE_PROFILE,
       planTier: resolvedTier,
       isProUser: resolvedIsPro,
-      toolCredits: resolvedCredits,
-      promptRequestsRemaining: resolvedRequestsRemaining,
-      unlockedPromptIds: resolvedUnlocks,
+      toolCredits: currentCredits,
+      promptRequestsRemaining: mergedData.promptRequestsRemaining || 0,
+      unlockedPromptIds: mergedData.unlockedPromptIds || [],
+      planStartedAt: remote.planStartedAt,
+      planExpiresAt: remote.planExpiresAt,
     };
   },
 };

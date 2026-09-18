@@ -104,7 +104,7 @@ function MainApp() {
       <SEOContentSection />
       <Footer />
 
-      {/* Pinterest Mobile Bottom Navigation */}
+      {/* Mobile Bottom Navigation */}
       <BottomNav />
 
       {/* Global Modals & Overlays */}

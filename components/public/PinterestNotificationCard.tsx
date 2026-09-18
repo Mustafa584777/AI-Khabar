@@ -139,9 +139,9 @@ export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps>
       {/* Expanded Content: Visual Collage Strip & Actions */}
       {isExpanded && (
         <div className="mt-3 space-y-3">
-          {/* Visual Cards Strip: Exactly 4 rounded vertical columns (Pinterest style) in 16:9 */}
+          {/* Visual Cards Strip: Exactly 4 rounded vertical columns (Pinterest style) */}
           {images.length > 1 ? (
-            <div className="grid grid-cols-4 gap-1.5 sm:gap-2.5 rounded-2xl overflow-hidden aspect-[16/9]">
+            <div className="grid grid-cols-4 gap-1.5 sm:gap-2.5 rounded-2xl overflow-hidden aspect-[16/9] sm:aspect-[20/9]">
               {images.map((img, idx) => (
                 <div
                   key={idx}
@@ -160,7 +160,7 @@ export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps>
               ))}
             </div>
           ) : images.length === 1 ? (
-            <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 shadow-xs">
+            <div className="relative w-full h-44 sm:h-52 rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 shadow-xs">
               <Image
                 src={images[0]}
                 alt={notification.title}

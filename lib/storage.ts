@@ -1,4 +1,4 @@
-import { Category, PromptPost, SiteSettings, UserAccount, AIHistoryItem } from '@/types/prompt';
+import { Category, PromptPost, SiteSettings, UserAccount, AIHistoryItem, PromptRequestItem } from '@/types/prompt';
 import { INITIAL_CATEGORIES, INITIAL_SETTINGS, INITIAL_POSTS } from './initial-data';
 
 const STORAGE_KEY_BOOKMARKS = 'promptcms_user_bookmarks';
@@ -271,10 +271,57 @@ export const StorageService = {
     }
   },
 
-  logoutUserAccount: (): void => {
+  clearAllUserData: (): void => {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem(STORAGE_KEY_USER_ACCOUNT);
+      const userKeys = [
+        STORAGE_KEY_USER_ACCOUNT,
+        STORAGE_KEY_BOOKMARKS,
+        STORAGE_KEY_LIKES,
+        STORAGE_KEY_AI_HISTORY,
+        'auraprompt_pro_member',
+        'auraprompt_plan_tier',
+        'auraprompt_tool_credits',
+        'auraprompt_last_credit_date',
+        'auraprompt_unlocked_prompts',
+        'auraprompt_prompt_requests',
+        'promptcms_user_taste',
+        'auraprompt_user_taste',
+        'auraprompt_studio_preload',
+        'promptcms_studio_preload',
+        'promptcms_studio_image_preload',
+        'auraprompt_plan_started_at',
+        'auraprompt_plan_expires_at',
+      ];
+      userKeys.forEach((k) => {
+        try {
+          localStorage.removeItem(k);
+        } catch {}
+      });
+
+      // Clear dynamic user-scoped keys from localStorage
+      try {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (
+            key &&
+            (key.startsWith('auraprompt_last_credit_date_') ||
+              key.startsWith('auraprompt_user_') ||
+              key.startsWith('user_sync_'))
+          ) {
+            localStorage.removeItem(key);
+          }
+        }
+      } catch {}
+
+      // Clear session storage as well
+      try {
+        sessionStorage.clear();
+      } catch {}
     }
+  },
+
+  logoutUserAccount: (): void => {
+    StorageService.clearAllUserData();
   },
 
   // AI Generation & Extraction History
@@ -350,7 +397,7 @@ export const StorageService = {
   },
 
   // Prompt Requests
-  getPromptRequests: (): any[] => {
+  getPromptRequests: (): PromptRequestItem[] => {
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem('promptcms_prompt_requests');
@@ -359,42 +406,37 @@ export const StorageService = {
         console.error(e);
       }
     }
-    return [
-      {
-        id: 'req_1',
-        userId: 'u_mock1',
-        userName: 'Prompt Master',
-        userAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
-        requestText: 'Cyberpunk Tokyo street vendor at night with hyper-detailed ramen steam and neon reflections',
-        category: 'Cyberpunk',
-        status: 'completed',
-        createdAt: Date.now() - 3600000 * 4,
-        likesCount: 14,
-      },
-      {
-        id: 'req_2',
-        userId: 'u_mock2',
-        userName: 'Elena Art',
-        userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80',
-        requestText: 'Ethereal fantasy floating island with crystal waterfall and golden hour volumetric fog',
-        category: 'Fantasy & Magic',
-        status: 'in_progress',
-        createdAt: Date.now() - 3600000 * 12,
-        likesCount: 8,
-      },
-    ];
+    return [];
   },
 
-  savePromptRequest: (request: any): any[] => {
+  savePromptRequest: (request: PromptRequestItem): PromptRequestItem[] => {
     const current = StorageService.getPromptRequests();
-    const updated = [request, ...current];
+    const updated = [request, ...current.filter((r) => r.id !== request.id)];
     if (typeof window !== 'undefined') {
       localStorage.setItem('promptcms_prompt_requests', JSON.stringify(updated));
     }
     return updated;
   },
 
-  setPromptRequests: (reqs: any[]): void => {
+  updatePromptRequest: (updatedReq: PromptRequestItem): PromptRequestItem[] => {
+    const current = StorageService.getPromptRequests();
+    const updated = current.map((r) => (r.id === updatedReq.id ? updatedReq : r));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('promptcms_prompt_requests', JSON.stringify(updated));
+    }
+    return updated;
+  },
+
+  deletePromptRequest: (requestId: string): PromptRequestItem[] => {
+    const current = StorageService.getPromptRequests();
+    const updated = current.filter((r) => r.id !== requestId);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('promptcms_prompt_requests', JSON.stringify(updated));
+    }
+    return updated;
+  },
+
+  setPromptRequests: (reqs: PromptRequestItem[]): void => {
     if (typeof window !== 'undefined' && Array.isArray(reqs)) {
       try {
         localStorage.setItem('promptcms_prompt_requests', JSON.stringify(reqs));

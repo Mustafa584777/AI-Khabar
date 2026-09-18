@@ -681,7 +681,7 @@ export const PostEditor = () => {
             }}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-lg shadow-red-500/20 transition-all transform active:scale-95"
             id="btn-send-prompt-notification"
-            title="Broadcast Pinterest-style Push Notification for this Prompt"
+            title="Broadcast Push Notification for this Prompt"
           >
             <Bell className="w-4 h-4" />
             <span>Send Notification</span>

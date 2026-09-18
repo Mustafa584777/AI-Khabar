@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { NotificationServerStore } from '@/lib/notification-storage';
-import { PushSubscriber } from '@/types/notification';
 
 export async function GET() {
   try {
-    const subscribers = NotificationServerStore.getSubscribers();
+    const subscribers = await NotificationServerStore.getSubscribers();
     return NextResponse.json({
       success: true,
       subscribers,
@@ -21,33 +20,25 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const {
-      subscriberId,
-      interests = [],
+    const { interests, subscriberId, userAgent, endpoint } = body;
+
+    const sub = {
+      id: subscriberId || `sub-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       endpoint,
-      userAgent,
-      auth,
-      p256dh,
-    } = body;
-
-    const userAgentHeader = req.headers.get('user-agent') || userAgent || 'Browser Device';
-
-    const sub: PushSubscriber = {
-      id: subscriberId || `sub-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      endpoint: endpoint || undefined,
       subscribedAt: new Date().toISOString(),
       interests: Array.isArray(interests) ? interests : [],
-      userAgent: userAgentHeader.slice(0, 150),
+      userAgent: userAgent || 'Browser',
       lastActiveAt: new Date().toISOString(),
     };
 
-    const { subscribers, count } = NotificationServerStore.addOrUpdateSubscriber(sub);
+    const { subscribers, count } = await NotificationServerStore.addOrUpdateSubscriber(sub);
 
     return NextResponse.json({
       success: true,
-      message: 'Subscription registered successfully',
-      count,
+      message: 'Subscription registered successfully in Supabase',
       subscriber: sub,
+      subscribers,
+      count,
     });
   } catch (error: any) {
     return NextResponse.json(

@@ -4,13 +4,18 @@ import { getClientIp, checkRateLimit, createRateLimitResponse, sanitizePayload }
 
 export const dynamic = 'force-dynamic';
 
-function getSyncKey(userId?: string, email?: string): string {
-  if (userId) return `user_sync_${userId}`;
-  if (email) {
-    const clean = email.toLowerCase().replace(/[^a-z0-9_]/g, '_');
-    return `user_sync_email_${clean}`;
-  }
-  return '';
+function cleanEmailString(email?: string | null): string {
+  if (!email || typeof email !== 'string') return '';
+  return email.trim().toLowerCase();
+}
+
+function getEmailKey(email: string): string {
+  const clean = cleanEmailString(email).replace(/[^a-z0-9_]/g, '_');
+  return `user_sync_email_${clean}`;
+}
+
+function getUserKey(userId: string): string {
+  return `user_sync_${userId.trim()}`;
 }
 
 export async function POST(req: NextRequest) {
@@ -26,41 +31,76 @@ export async function POST(req: NextRequest) {
     const body = sanitizePayload(rawBody);
     const { action, userId, email, data } = body;
 
-    const key = getSyncKey(userId, email);
-    if (!key) {
-      return NextResponse.json({ success: false, error: 'User ID or Email is required' }, { status: 400 });
+    const cleanEmail = cleanEmailString(email || data?.email);
+    const emailKey = cleanEmail ? getEmailKey(cleanEmail) : '';
+    const userKey = userId ? getUserKey(userId) : '';
+
+    if (!emailKey && !userKey) {
+      return NextResponse.json(
+        { success: false, error: 'User Email or User ID is required to save and sync data' },
+        { status: 400 }
+      );
     }
 
     const client = supabaseAdmin || supabase;
 
+    // Helper: fetch existing row checking emailKey first, then userKey
+    const fetchExistingData = async () => {
+      if (emailKey) {
+        const { data: row } = await client
+          .from('settings')
+          .select('data')
+          .eq('id', emailKey)
+          .single();
+        if (row?.data) return row.data;
+      }
+      if (userKey) {
+        const { data: row } = await client
+          .from('settings')
+          .select('data')
+          .eq('id', userKey)
+          .single();
+        if (row?.data) return row.data;
+      }
+      return null;
+    };
+
     // 1. PULL: Retrieve synced data for user
     if (action === 'pull' || !action) {
-      const { data: row, error } = await client
-        .from('settings')
-        .select('*')
-        .eq('id', key)
-        .single();
+      let syncData = await fetchExistingData();
 
-      if (error && error.code !== 'PGRST116') {
-        // Fallback: If searched by userId, also check email key
-        if (email) {
-          const emailKey = getSyncKey(undefined, email);
-          const { data: emailRow } = await client
-            .from('settings')
-            .select('*')
-            .eq('id', emailKey)
-            .single();
+      // If found under userKey but not yet mirrored to emailKey, backfill immediately
+      if (syncData && emailKey) {
+        try {
+          await client.from('settings').upsert({ id: emailKey, data: syncData });
+        } catch {}
+      }
 
-          if (emailRow?.data) {
-            return NextResponse.json({ success: true, syncData: emailRow.data });
+      if (syncData) {
+        const cloned = { ...syncData };
+        let tier = cloned.planTier || (cloned.isProUser ? 'pro' : 'free');
+
+        // Check if plan has expired
+        if (tier !== 'free' && cloned.planExpiresAt) {
+          const exp = new Date(cloned.planExpiresAt).getTime();
+          if (!isNaN(exp) && exp < Date.now()) {
+            tier = 'free';
+            cloned.isProUser = false;
           }
         }
-        return NextResponse.json({ success: true, syncData: null });
+
+        cloned.planTier = tier;
+        cloned.isProUser = tier !== 'free' || Boolean(cloned.isProUser);
+
+        return NextResponse.json({
+          success: true,
+          syncData: cloned,
+        });
       }
 
       return NextResponse.json({
         success: true,
-        syncData: row?.data || null,
+        syncData: null,
       });
     }
 
@@ -70,25 +110,26 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: 'Invalid data payload' }, { status: 400 });
       }
 
-      // Fetch existing to merge
-      const { data: existingRow } = await client
-        .from('settings')
-        .select('*')
-        .eq('id', key)
-        .single();
+      // Fetch existing data to safely merge without overwriting existing achievements/credits
+      const existingData = (await fetchExistingData()) || {};
 
-      const existingData = existingRow?.data || {};
-
-      // Merge arrays uniquely
+      // Merge bookmarks uniquely
       const mergedBookmarks = Array.from(
         new Set([...(existingData.bookmarkedIds || []), ...(data.bookmarkedIds || [])])
       );
+      // Merge likes uniquely
       const mergedLikes = Array.from(
         new Set([...(existingData.likedIds || []), ...(data.likedIds || [])])
       );
+      // Merge unlocked prompts uniquely
       const mergedUnlockedPromptIds = Array.from(
         new Set([...(existingData.unlockedPromptIds || []), ...(data.unlockedPromptIds || [])])
       );
+
+      // Safe Tool Credits (maintain balance, never drop unexpectedly)
+      const resolvedToolCredits = data.toolCredits !== undefined
+        ? Number(data.toolCredits)
+        : (existingData.toolCredits !== undefined ? Number(existingData.toolCredits) : 2);
 
       // Safe Plan Tier resolution (vip > pro > starter > free)
       const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3 };
@@ -96,16 +137,19 @@ export async function POST(req: NextRequest) {
       const incomingTier = data.planTier;
       let resolvedPlanTier = currentTier;
       if (incomingTier && TIER_RANK[incomingTier] !== undefined) {
-        if (TIER_RANK[incomingTier] >= (TIER_RANK[currentTier] || 0) || !existingData.planTier) {
-          resolvedPlanTier = incomingTier;
+        resolvedPlanTier = incomingTier;
+      }
+      let resolvedIsPro = resolvedPlanTier !== 'free' || Boolean(data.isProUser ?? existingData.isProUser);
+
+      // Check plan expiration if provided
+      const resolvedPlanExpiresAt = data.planExpiresAt || existingData.planExpiresAt;
+      if (resolvedPlanTier !== 'free' && resolvedPlanExpiresAt) {
+        const exp = new Date(resolvedPlanExpiresAt).getTime();
+        if (!isNaN(exp) && exp < Date.now()) {
+          resolvedPlanTier = 'free';
+          resolvedIsPro = false;
         }
       }
-      const resolvedIsPro = resolvedPlanTier !== 'free' || Boolean(data.isProUser ?? existingData.isProUser);
-
-      // Safe Tool Credits (maintain balance, never drop to 0 unexpectedly)
-      const resolvedToolCredits = data.toolCredits !== undefined
-        ? data.toolCredits
-        : (existingData.toolCredits !== undefined ? existingData.toolCredits : 2);
 
       // Merge aiHistory safely
       let mergedAiHistory = existingData.aiHistory || [];
@@ -128,7 +172,6 @@ export async function POST(req: NextRequest) {
         if (!existingData.tasteProfile) {
           mergedTasteProfile = data.tasteProfile;
         } else {
-          // Merge taste profile settings and affinities
           const existingTP = existingData.tasteProfile;
           const incomingTP = data.tasteProfile;
 
@@ -169,6 +212,8 @@ export async function POST(req: NextRequest) {
       const mergedPayload = {
         ...existingData,
         ...data,
+        email: cleanEmail || existingData.email,
+        userId: userId || existingData.userId,
         bookmarkedIds: data.bookmarkedIds !== undefined ? data.bookmarkedIds : mergedBookmarks,
         likedIds: data.likedIds !== undefined ? data.likedIds : mergedLikes,
         unlockedPromptIds: data.unlockedPromptIds !== undefined ? data.unlockedPromptIds : mergedUnlockedPromptIds,
@@ -177,25 +222,30 @@ export async function POST(req: NextRequest) {
         toolCredits: resolvedToolCredits,
         aiHistory: mergedAiHistory,
         tasteProfile: mergedTasteProfile !== undefined ? mergedTasteProfile : existingData.tasteProfile,
-        userId: userId || existingData.userId,
-        email: email || existingData.email,
+        planStartedAt: data.planStartedAt || existingData.planStartedAt,
+        planExpiresAt: resolvedPlanExpiresAt,
         updatedAt: new Date().toISOString(),
       };
 
-      const { error: upsertError } = await client
-        .from('settings')
-        .upsert({ id: key, data: mergedPayload });
+      // 1. Primary Save: Always save to emailKey if email is provided
+      if (emailKey) {
+        const { error: emailUpsertError } = await client
+          .from('settings')
+          .upsert({ id: emailKey, data: mergedPayload });
 
-      if (upsertError) {
-        console.error('User sync upsert error:', upsertError);
-        return NextResponse.json({ success: false, error: upsertError.message }, { status: 500 });
+        if (emailUpsertError) {
+          console.error('User sync email upsert error:', emailUpsertError);
+        }
       }
 
-      // Also mirror to email key if available for multi-device cross-resolution
-      if (email) {
-        const emailKey = getSyncKey(undefined, email);
-        if (emailKey !== key) {
-          await client.from('settings').upsert({ id: emailKey, data: mergedPayload });
+      // 2. Secondary Mirror: Save to userKey if provided
+      if (userKey && userKey !== emailKey) {
+        const { error: userUpsertError } = await client
+          .from('settings')
+          .upsert({ id: userKey, data: mergedPayload });
+
+        if (userUpsertError) {
+          console.error('User sync user upsert error:', userUpsertError);
         }
       }
 
@@ -207,13 +257,7 @@ export async function POST(req: NextRequest) {
       const { postId, isBookmarked } = data || {};
       if (!postId) return NextResponse.json({ success: false, error: 'postId required' }, { status: 400 });
 
-      const { data: existingRow } = await client
-        .from('settings')
-        .select('*')
-        .eq('id', key)
-        .single();
-
-      const existingData = existingRow?.data || {};
+      const existingData = (await fetchExistingData()) || {};
       const currentList: string[] = Array.isArray(existingData.bookmarkedIds) ? existingData.bookmarkedIds : [];
 
       let updatedList: string[];
@@ -227,17 +271,15 @@ export async function POST(req: NextRequest) {
         ...existingData,
         bookmarkedIds: updatedList,
         userId: userId || existingData.userId,
-        email: email || existingData.email,
+        email: cleanEmail || existingData.email,
         updatedAt: new Date().toISOString(),
       };
 
-      await client.from('settings').upsert({ id: key, data: mergedPayload });
-
-      if (email) {
-        const emailKey = getSyncKey(undefined, email);
-        if (emailKey !== key) {
-          await client.from('settings').upsert({ id: emailKey, data: mergedPayload });
-        }
+      if (emailKey) {
+        await client.from('settings').upsert({ id: emailKey, data: mergedPayload });
+      }
+      if (userKey && userKey !== emailKey) {
+        await client.from('settings').upsert({ id: userKey, data: mergedPayload });
       }
 
       return NextResponse.json({ success: true, bookmarkedIds: updatedList });
@@ -250,13 +292,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: 'tasteProfile data required' }, { status: 400 });
       }
 
-      const { data: existingRow } = await client
-        .from('settings')
-        .select('*')
-        .eq('id', key)
-        .single();
-
-      const existingData = existingRow?.data || {};
+      const existingData = (await fetchExistingData()) || {};
       const existingTP = existingData.tasteProfile || {};
 
       const mergedTasteProfile = {
@@ -295,17 +331,15 @@ export async function POST(req: NextRequest) {
         ...existingData,
         tasteProfile: mergedTasteProfile,
         userId: userId || existingData.userId,
-        email: email || existingData.email,
+        email: cleanEmail || existingData.email,
         updatedAt: new Date().toISOString(),
       };
 
-      await client.from('settings').upsert({ id: key, data: mergedPayload });
-
-      if (email) {
-        const emailKey = getSyncKey(undefined, email);
-        if (emailKey !== key) {
-          await client.from('settings').upsert({ id: emailKey, data: mergedPayload });
-        }
+      if (emailKey) {
+        await client.from('settings').upsert({ id: emailKey, data: mergedPayload });
+      }
+      if (userKey && userKey !== emailKey) {
+        await client.from('settings').upsert({ id: userKey, data: mergedPayload });
       }
 
       return NextResponse.json({ success: true, tasteProfile: mergedTasteProfile });

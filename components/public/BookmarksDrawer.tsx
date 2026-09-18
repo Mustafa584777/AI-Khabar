@@ -55,7 +55,30 @@ export const BookmarksDrawer = () => {
 
         {/* Bookmarks List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {bookmarkedPosts.length > 0 ? (
+          {!userAccount?.isLoggedIn ? (
+            <div className="text-center py-16 px-4 space-y-4">
+              <div className="w-12 h-12 rounded-full bg-[#E60023]/10 text-[#E60023] flex items-center justify-center mx-auto">
+                <Bookmark className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-bold text-neutral-900 dark:text-white text-base">
+                  Sign in to View Saved Prompts
+                </h4>
+                <p className="text-xs text-neutral-500 max-w-xs mx-auto leading-relaxed">
+                  Saved prompts are strictly linked to your account. Sign in or register to access your personal collection.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setIsBookmarksDrawerOpen(false);
+                  openAuthModal('Sign in to view and manage your saved prompts.');
+                }}
+                className="py-2.5 px-5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-md shadow-red-500/20 transition-all"
+              >
+                Sign In / Create Free Account
+              </button>
+            </div>
+          ) : bookmarkedPosts.length > 0 ? (
             bookmarkedPosts.map((post) => (
               <div
                 key={post.id}

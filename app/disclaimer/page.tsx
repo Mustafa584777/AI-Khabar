@@ -55,7 +55,7 @@ export default function DisclaimerPage() {
                 2. Trademark & Affiliate Notice
               </h2>
               <p>
-                Names such as Midjourney, OpenAI, ChatGPT, DALL-E, Google Gemini, Google DeepMind, Flux, Anthropic Claude, and Pinterest are trademarks of their respective owners. Their mention on this website is purely for descriptive, contextual, and reference purposes and does not imply any official affiliation, sponsorship, or endorsement.
+                Names such as Midjourney, OpenAI, ChatGPT, DALL-E, Google Gemini, Google DeepMind, Flux, and Anthropic Claude are trademarks of their respective owners. Their mention on this website is purely for descriptive, contextual, and reference purposes and does not imply any official affiliation, sponsorship, or endorsement.
               </p>
             </section>
 

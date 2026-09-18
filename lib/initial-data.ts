@@ -52,7 +52,7 @@ export const INITIAL_CATEGORIES: Category[] = [
     name: 'SEO & Copywriting',
     slug: 'seo-copywriting',
     iconName: 'FileText',
-    description: 'High-ranking blog posts, viral marketing hooks, ad copies, and YouTube scripts',
+    description: 'High-ranking content, viral marketing hooks, ad copies, and YouTube scripts',
     color: '#6366F1',
     badgeBg: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800',
   },

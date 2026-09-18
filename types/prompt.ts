@@ -88,13 +88,6 @@ export interface PromptPost {
 
 export type PlanTier = 'free' | 'starter' | 'pro' | 'vip';
 
-export const PLAN_MONTHLY_REQUEST_LIMITS: Record<PlanTier, number> = {
-  free: 0,
-  starter: 1,
-  pro: 3,
-  vip: 10,
-};
-
 export interface Category {
   id: string;
   name: string;
@@ -153,6 +146,8 @@ export interface UserAccount {
   isPremium?: boolean;
   membershipPlan?: 'free' | 'starter' | 'pro' | 'vip';
   planTier?: PlanTier;
+  planExpiresAt?: string;
+  planStartedAt?: string;
   toolCredits?: number;
   unlockedPromptIds?: string[];
   credits?: number;
@@ -168,6 +163,7 @@ export interface RegisteredUserRecord {
   avatar?: string;
   planTier: PlanTier;
   isProUser: boolean;
+  planExpiresAt?: string;
   toolCredits: number;
   points: number;
   unlockedPromptIds: string[];
@@ -177,7 +173,11 @@ export interface RegisteredUserRecord {
   likesCount?: number;
   joinedDate: string;
   lastSyncedAt?: string;
-  source: 'supabase_auth' | 'supabase_sync' | 'local_store';
+  source: 'supabase_auth' | 'supabase_sync' | 'local_store' | 'razorpay' | 'razorpay_verified';
+  paymentAmount?: number;
+  paymentId?: string;
+  paymentDate?: string;
+  paymentMethod?: string;
   rawSyncData?: any;
 }
 
@@ -192,34 +192,24 @@ export interface UsersBackupPayload {
 export interface PromptRequestItem {
   id: string;
   userId: string;
+  userEmail: string;
   userName: string;
-  userEmail?: string;
   userAvatar?: string;
-  userPlanTier?: PlanTier;
-  planRequestsAllowed?: number;
-  planRequestsRemaining?: number;
-  requestedVia?: 'plan_quota' | 'points';
   requestText: string;
   category?: string;
-  aiToolPreference?: string;
-  aspectRatio?: string;
-  referenceImageUrl?: string;
-  status: 'pending' | 'in_progress' | 'fulfilled' | 'completed' | 'rejected';
+  aiTool?: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'rejected';
   createdAt: number;
-  likesCount: number;
-  // Admin Fulfillment Fields (delivered directly & privately to user's dashboard):
+  likesCount?: number;
   fulfilledPrompt?: string;
-  fulfilledImageUrl?: string;
-  fulfilledAiTool?: string;
-  fulfilledNotes?: string;
+  fulfilledAt?: number | string;
   adminNotes?: string;
-  fulfilledAt?: number;
-  requestSource?: 'points' | 'plan';
+  fulfilledBy?: string;
 }
 
 export interface AIHistoryItem {
   id: string;
-  type: 'image_to_prompt' | 'prompt_to_image';
+  type: 'image_to_prompt' | 'idea_to_prompt' | 'prompt_to_image';
   title: string;
   promptText: string;
   negativePrompt?: string;
@@ -254,19 +244,6 @@ export interface AiSearchResult {
 }
 
 export type { UserTasteProfile, GenderVibe } from '@/lib/personalization';
-
-export interface AppNotification {
-  id: string;
-  title: string;
-  message: string;
-  category?: string;
-  imageUrl?: string;
-  targetUrl?: string;
-  targetPostId?: string;
-  createdAt: number;
-  read?: boolean;
-  sentBy?: string;
-}
 
 
 

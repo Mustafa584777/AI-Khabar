@@ -127,7 +127,7 @@ export const PostsManager = () => {
         </button>
       </div>
 
-      {/* WordPress Status Tabs */}
+      {/* Editorial Status Tabs */}
       <div className="flex items-center gap-3 text-xs font-semibold border-b border-neutral-200 dark:border-neutral-800 pb-3">
         <button
           onClick={() => setStatusFilter('all')}
