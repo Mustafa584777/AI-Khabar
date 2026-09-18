@@ -1012,7 +1012,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     'Hyperrealistic 8K model',
     'Indian fashion portrait',
   ]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCategory, setSelectedCategoryState] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('selectedCategory') || 'all';
+    }
+    return 'all';
+  });
+
+  const setSelectedCategory = (cat: string) => {
+    setSelectedCategoryState(cat);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('selectedCategory', cat);
+    }
+  };
   const [selectedTool, setSelectedTool] = useState<string>('all');
   const [selectedSort, setSelectedSort] = useState<
     'trending' | 'most-popular' | 'most-liked' | 'most-copied' | 'newest'

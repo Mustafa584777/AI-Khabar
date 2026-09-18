@@ -6,10 +6,6 @@ import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import {
   Sparkles,
-  Instagram,
-  Facebook,
-  Send,
-  Globe,
   MessageCircle,
   HelpCircle,
   Coins,
@@ -19,9 +15,7 @@ import {
 } from 'lucide-react';
 
 export const Footer = () => {
-  const { categories, setSelectedCategory } = useApp();
-
-  const topCategories = categories.slice(0, 5);
+  const { categories, setSelectedCategory, setCurrentView } = useApp();
 
   return (
     <footer className="mt-20 border-t border-neutral-200/80 dark:border-neutral-800/80 bg-neutral-50 dark:bg-neutral-950 text-neutral-600 dark:text-neutral-400 text-xs pb-24 sm:pb-12">
@@ -49,26 +43,8 @@ export const Footer = () => {
           </p>
         </div>
 
-        {/* Social Icon Circles */}
-        <div className="flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
-          <a
-            href="https://instagram.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full border border-neutral-300 dark:border-neutral-700 hover:border-[#E60023] hover:text-[#E60023] dark:hover:text-white flex items-center justify-center transition-all bg-white dark:bg-neutral-900 shadow-xs hover:scale-110"
-            title="Instagram"
-          >
-            <Instagram className="w-4 h-4" />
-          </a>
-          <a
-            href="https://facebook.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full border border-neutral-300 dark:border-neutral-700 hover:border-[#E60023] hover:text-[#E60023] dark:hover:text-white flex items-center justify-center transition-all bg-white dark:bg-neutral-900 shadow-xs hover:scale-110"
-            title="Facebook"
-          >
-            <Facebook className="w-4 h-4" />
-          </a>
+        {/* WhatsApp Social Icon Only */}
+        <div className="flex items-center justify-center gap-3 flex-wrap">
           <a
             href="https://whatsapp.com/channel/0029VbBdohQHltY7L6LJu703"
             target="_blank"
@@ -77,24 +53,6 @@ export const Footer = () => {
             title="WhatsApp Channel"
           >
             <MessageCircle className="w-4 h-4 text-emerald-500 fill-emerald-500/20" />
-          </a>
-          <a
-            href="https://pinterest.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full border border-neutral-300 dark:border-neutral-700 hover:border-[#E60023] hover:text-[#E60023] dark:hover:text-white flex items-center justify-center transition-all bg-white dark:bg-neutral-900 shadow-xs hover:scale-110"
-            title="Pinterest"
-          >
-            <Globe className="w-4 h-4" />
-          </a>
-          <a
-            href="https://telegram.org"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full border border-neutral-300 dark:border-neutral-700 hover:border-blue-500 hover:text-blue-500 flex items-center justify-center transition-all bg-white dark:bg-neutral-900 shadow-xs hover:scale-110"
-            title="Telegram"
-          >
-            <Send className="w-4 h-4 text-blue-500" />
           </a>
         </div>
 
@@ -105,20 +63,21 @@ export const Footer = () => {
           </h4>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-center sm:text-left">
-            {/* Top 5 Categories */}
+            {/* Top Categories */}
             <div className="space-y-3">
               <h5 className="font-bold text-xs text-neutral-900 dark:text-white uppercase tracking-wider">
-                Top 5 Categories
+                Top Categories
               </h5>
               <ul className="space-y-2">
-                {topCategories.map((cat) => (
+                {categories.map((cat) => (
                   <li key={cat.id}>
                     <button
                       onClick={() => {
                         setSelectedCategory(cat.name);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        setCurrentView('public');
+                        window.location.href = '/';
                       }}
-                      className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium"
+                      className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium text-left"
                     >
                       {cat.name}
                     </button>
