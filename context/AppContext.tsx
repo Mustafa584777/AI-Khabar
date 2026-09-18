@@ -445,7 +445,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Prompt Requests State
   const [promptRequests, setPromptRequests] = useState<PromptRequestItem[]>([]);
 
-  const refreshPromptRequests = useCallback(async (userEmail?: string) => {
+  const refreshPromptRequests = async (userEmail?: string) => {
     try {
       const url = userEmail ? `/api/prompt-requests?email=${encodeURIComponent(userEmail)}` : '/api/prompt-requests';
       const res = await fetch(url);
@@ -459,7 +459,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } catch (e) {
       console.warn('Notice loading prompt requests from API:', e);
     }
-  }, []);
+  };
 
   const addPromptRequest = async (requestText: string, category?: string, aiTool?: string): Promise<boolean> => {
     if (!userAccount || !userAccount.isLoggedIn) {

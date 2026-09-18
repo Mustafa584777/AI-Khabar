@@ -124,14 +124,6 @@ export const Header = () => {
               <Sparkles className="w-3.5 h-3.5" />
               <span>Create</span>
             </Link>
-
-            <Link
-              href="/blog"
-              className="hidden lg:flex px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold text-neutral-700 dark:text-neutral-300 hover:bg-[#efefef] dark:hover:bg-neutral-800 transition-colors items-center gap-1.5"
-            >
-              <BookOpen className="w-4 h-4 text-[#E60023]" />
-              <span>Explore Guides</span>
-            </Link>
           </nav>
         </div>
 

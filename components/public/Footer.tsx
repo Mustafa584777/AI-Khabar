@@ -15,7 +15,7 @@ export const Footer = () => {
   return (
     <footer className="mt-16 border-t border-neutral-200/80 dark:border-neutral-800/80 bg-neutral-50 dark:bg-neutral-950 text-neutral-600 dark:text-neutral-400 text-xs pb-16 sm:pb-0">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 lg:gap-8 mb-12">
           {/* Col 1: Brand */}
           <div className="space-y-4 lg:col-span-1">
             <div className="flex items-center gap-3">
@@ -85,48 +85,8 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/blog" className="hover:text-[#E60023] hover:translate-x-1 inline-block transition-all font-medium text-sm">
-                  Blog Archive
-                </Link>
-              </li>
-              <li>
                 <Link href="/contact" className="hover:text-[#E60023] hover:translate-x-1 inline-block transition-all font-medium text-sm">
                   Contact Us
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Col 4: Guides */}
-          <div>
-            <h4 className="font-bold text-neutral-900 dark:text-neutral-100 uppercase tracking-widest text-[11px] mb-4 flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-[#E60023]" />
-              <span>Tutorials</span>
-            </h4>
-            <ul className="space-y-2.5">
-              <li>
-                <Link
-                  href="/blog/how-to-use-photo-prompts"
-                  className="hover:text-[#E60023] inline-flex items-center gap-2 transition-all font-medium text-sm"
-                >
-                  <HelpCircle className="w-4 h-4 text-[#E60023]" />
-                  <span>How to Use Prompts</span>
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/blog/best-camera-settings-for-ai-photography"
-                  className="hover:text-[#E60023] inline-block transition-all font-medium text-sm"
-                >
-                  Camera & Lens Optics Guide
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/blog/top-10-ai-prompting-mistakes-to-avoid"
-                  className="hover:text-[#E60023] inline-block transition-all font-medium text-sm"
-                >
-                  10 Mistakes to Avoid
                 </Link>
               </li>
             </ul>
