@@ -90,14 +90,14 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
       <button
         onClick={handleHomeClick}
         className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 ${
-          currentView === 'public' && selectedCategory === 'all'
+          pathname === '/' && currentView === 'public' && selectedCategory === 'all'
             ? 'text-[#E60023] scale-105 font-bold'
             : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
         }`}
         title="Home Feed"
         id="bottom-nav-home"
       >
-        <Home className={`w-6 h-6 ${currentView === 'public' && selectedCategory === 'all' ? 'fill-current' : ''}`} />
+        <Home className={`w-6 h-6 ${pathname === '/' && currentView === 'public' && selectedCategory === 'all' ? 'fill-current' : ''}`} />
         <span className="text-[10px] mt-0.5 font-medium">Home</span>
       </button>
 

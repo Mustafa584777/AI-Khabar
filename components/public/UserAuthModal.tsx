@@ -83,15 +83,6 @@ export const UserAuthModal = () => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      if (typeof window !== 'undefined') {
-        const hasPreload = sessionStorage.getItem('promptcms_studio_preload') || sessionStorage.getItem('auraprompt_studio_preload');
-        if (hasPreload) {
-          localStorage.setItem('auraprompt_auth_redirect', '/create');
-        } else {
-          localStorage.removeItem('auraprompt_auth_redirect');
-        }
-      }
-
       const origin = typeof window !== 'undefined'
         ? window.location.origin
         : 'https://geminipromptgenerator.online';

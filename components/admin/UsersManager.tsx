@@ -549,11 +549,6 @@ export const UsersManager = () => {
                               ✓ Razorpay Verified
                             </span>
                           ) : null}
-                          {u.planExpiresAt && (
-                            <span className="text-[10px] text-neutral-500 dark:text-neutral-400 font-mono mt-0.5">
-                              Expires: {new Date(u.planExpiresAt).toLocaleDateString()}
-                            </span>
-                          )}
                         </div>
                       </td>
 
