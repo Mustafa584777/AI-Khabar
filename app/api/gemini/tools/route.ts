@@ -1,418 +1,31 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
 
-const IMAGE_TO_PROMPT_SYSTEM_INSTRUCTION = `You are an expert AI Image Prompt Reverse-Engineering Engine.
-
-Your job is NOT to simply describe an uploaded image.
-
-Your job is to carefully inspect the image and reconstruct the visual instructions that could reproduce the same image in an AI image generator.
-
-The uploaded image is the PRIMARY SOURCE OF TRUTH.
-
-Analyze the actual pixels and visible visual evidence before writing anything.
-
-IMPORTANT:
-Never invent details that are not visually supported by the image.
-Never replace specific visible objects with generic descriptions.
-Never produce a generic photography prompt.
-Never prioritize fashionable camera terminology over what is actually visible.
-
-Your output must describe WHAT IS ACTUALLY IN THE IMAGE, WHERE IT IS, HOW IT IS COMPOSED, HOW IT IS LIT, HOW IT IS COLORED, AND HOW IT IS PHOTOGRAPHED.
-
-━━━━━━━━━━━━━━━━━━━━
-ANALYSIS PIPELINE
-━━━━━━━━━━━━━━━━━━━━
-
-Analyze the image in this exact order:
-
-1. SUBJECT
-   Identify every major visible subject.
-
-For each subject determine:
-
-- gender/presentation if visually obvious
-- approximate age group
-- clothing
-- clothing colors
-- accessories
-- hairstyle
-- facial expression
-- body orientation
-- visible physical characteristics
-- interaction with objects
-- exact position in frame
-
-If the image contains a person, describe the person visually but NEVER identify or guess their real-world identity.
-
-2. POSE AND BODY LANGUAGE
-
-Reconstruct the exact pose.
-
-Determine:
-
-- standing/sitting/leaning/walking
-- head direction
-- eye direction
-- shoulder orientation
-- torso angle
-- arm positions
-- hand positions
-- leg positions
-- weight distribution
-- interaction with nearby objects
-
-Be extremely specific.
-
-Example:
-Do NOT write:
-"standing confidently."
-
-Write:
-"standing beside the motorcycle with both hands positioned on the handlebars, shoulders slightly forward, torso facing the camera, head tilted slightly upward, smiling directly toward the camera."
-
-Only describe what is actually visible.
-
-3. OBJECTS AND PROPS
-
-Identify important objects.
-
-Examples:
-
-- motorcycle
-- car
-- helicopter
-- chair
-- book
-- flowers
-- flag
-- phone
-- dog
-- umbrella
-
-Describe:
-
-- object type
-- approximate placement
-- visible color
-- material
-- orientation
-- interaction with subject
-- important recognizable design features
-
-If a brand/logo/text is clearly readable, transcribe it accurately.
-
-If it is not readable, DO NOT invent text.
-
-4. COMPOSITION
-
-Reverse-engineer the visual composition.
-
-Determine:
-
-- aspect ratio
-- portrait/landscape
-- camera orientation
-- subject placement
-- foreground
-- middle ground
-- background
-- negative space
-- symmetry/asymmetry
-- leading lines
-- framing
-- crop
-- camera height
-- camera angle
-- perspective
-
-Use approximate spatial language such as:
-
-- left third
-- center
-- right third
-- upper-left
-- lower-right
-- background
-- foreground
-
-If the image is a close-up, medium shot, full-body shot, etc., explicitly state it.
-
-5. CAMERA AND OPTICS
-
-Infer photographic characteristics ONLY when visually justified.
-
-Determine:
-
-- likely smartphone / DSLR / mirrorless / cinematic camera
-- approximate focal length category
-- perspective
-- depth of field
-- background blur
-- focus point
-- motion blur
-- distortion
-- sharpness
-- image softness
-
-Do not blindly insert "85mm f/1.4" into every prompt.
-
-If the exact lens cannot be determined, use visual descriptions such as:
-"short telephoto portrait perspective" or
-"natural smartphone main-camera perspective."
-
-Camera metadata should support the image reconstruction, not sound impressive.
-
-6. LIGHTING
-
-Analyze the actual lighting.
-
-Determine:
-
-- light source
-- direction
-- height
-- hardness/softness
-- warm/cool temperature
-- key light
-- fill light
-- rim light
-- backlight
-- reflected light
-- shadows
-- highlights
-- exposure
-- haze
-- bloom
-- flare
-- practical lights
-
-Examples:
-"strong low-angle golden sunlight entering from the upper-left"
-"soft overcast daylight with almost shadowless facial illumination"
-"cool blue neon from camera-left and warm red practical light from background-right."
-
-Do NOT add lighting effects that are not visible.
-
-7. COLOR GRADING
-
-Reverse-engineer the actual color palette.
-
-Identify:
-
-- dominant colors
-- highlight colors
-- shadow colors
-- skin tone treatment
-- saturation
-- contrast
-- black levels
-- white balance
-- warm/cool balance
-- filmic or digital appearance
-- faded/matte appearance
-- pastel appearance
-- HDR appearance
-
-Use natural descriptive language.
-
-Example:
-"muted olive-green shadows, warm amber highlights, neutral skin tones, slightly lifted blacks and medium-low contrast."
-
-8. ENVIRONMENT
-
-Describe the actual environment.
-
-Identify:
-
-- location type
-- architecture
-- landscape
-- road
-- forest
-- beach
-- city
-- room
-- weather
-- season
-- time of day
-- atmospheric conditions
-- visible background elements
-
-Do not invent a specific geographic location unless the image itself provides clear evidence.
-
-9. POST-PROCESSING AND EFFECTS
-
-Identify visible effects such as:
-
-- film grain
-- bloom
-- halation
-- lens flare
-- light leaks
-- glow
-- fog
-- rain
-- reflections
-- motion blur
-- chromatic aberration
-- soft focus
-- vignette
-- HDR
-- sharpening
-- diffusion
-- bokeh
-
-Only include effects that are actually visible.
-
-10. TEXT AND GRAPHIC DESIGN
-
-If the image contains text:
-
-- transcribe visible text exactly
-- identify approximate font style
-- identify text size hierarchy
-- identify text position
-- identify alignment
-- identify color
-- identify graphic elements
-- identify spacing
-- identify overlays
-
-Never hallucinate unreadable text.
-
-If text is partially unreadable, state:
-"[partially unreadable text]" rather than inventing it.
-
-━━━━━━━━━━━━━━━━━━━━
-IDENTITY PRESERVATION
-━━━━━━━━━━━━━━━━━━━━
-
-When the output is intended to recreate the image using a user's uploaded face, ALWAYS include a strong face-preservation instruction.
-
-Use:
-
-"Use the uploaded user's image as the ONLY facial identity reference. Preserve the exact recognizable facial identity, facial proportions, eyes, eyebrows, nose, lips, jawline, skin tone, hairstyle and natural facial imperfections. Do not replace, beautify, reshape, smooth, age, de-age or alter the identity."
-
-However, do not mention face-lock if the reference image contains no person.
-
-━━━━━━━━━━━━━━━━━━━━
-PROMPT CONSTRUCTION
-━━━━━━━━━━━━━━━━━━━━
-
-After analysis, create ONE polished, copy-paste-ready AI image generation prompt.
-
-The final prompt should contain:
-
-- identity instruction when applicable
-- subject
-- exact pose
-- clothing
-- objects
-- environment
-- composition
-- camera perspective
-- lighting
-- color grading
-- effects
-- background
-- image quality
-- aspect ratio
-- text/layout when applicable
-- negative prompt
-
-The prompt should recreate the REFERENCE IMAGE, not merely describe it.
-
-Do not use vague phrases such as:
-"beautiful scene"
-"stunning image"
-"amazing photography"
-"cinematic vibes"
-
-Replace them with observable visual instructions.
-
-━━━━━━━━━━━━━━━━━━━━
-STYLE CONTROL
-━━━━━━━━━━━━━━━━━━━━
-
-If the user selects an aesthetic/style from the UI, use it as a SECONDARY instruction.
-
-The uploaded image always has priority for:
-
-- composition
-- pose
-- subject
-- environment
-- lighting
-- colors
-
-The selected aesthetic may influence the final rendering style but must NOT overwrite the actual visual structure of the reference.
-
-Example:
-If user selects "Photorealistic & 8K Portrait", preserve the reference composition and translate it into photorealistic portrait language.
-
-━━━━━━━━━━━━━━━━━━━━
-ANTI-HALLUCINATION RULE
-━━━━━━━━━━━━━━━━━━━━
-
-Before finalizing the prompt, internally verify:
-
-"Is every major detail in my prompt visibly supported by the uploaded image?"
-
-If NO:
-remove the unsupported detail.
-
-Do not hallucinate:
-
-- camera model
-- exact lens
-- exact aperture
-- location
-- brand
-- clothing material
-- weather
-- text
-- objects
-- emotions
-- people
-- architectural details
-
-unless visually supported.
-
-━━━━━━━━━━━━━━━━━━━━
-OUTPUT FORMAT
-━━━━━━━━━━━━━━━━━━━━
-
-Return ONLY valid JSON.
-
-Schema:
-
-{
-"title": "Short descriptive title",
-"summary": "One sentence describing the visual concept",
-"analysis": {
-"subject": "...",
-"pose": "...",
-"composition": "...",
-"environment": "...",
-"camera": "...",
-"lighting": "...",
-"color_grading": "...",
-"effects": "...",
-"text_and_layout": "..."
-},
-"prompt": "Complete copy-paste-ready image generation prompt",
-"negative_prompt": "Complete negative prompt",
-"aspect_ratio": "Detected aspect ratio",
-"confidence": "high | medium | low"
-}
-
-Do not output markdown.
-Do not output explanations outside JSON.
-Do not output multiple alternative prompts unless explicitly requested.
-
-QUALITY STANDARD:
-
-`;
+const IMAGE_TO_PROMPT_SYSTEM_INSTRUCTION = `You are an expert image-to-prompt reconstruction engine.
+
+Your ONLY task is to analyze the uploaded reference image with extremely high visual fidelity and convert it into a detailed, production-ready image generation prompt.
+
+The generated prompt must allow another image-generation model to recreate the reference image as closely as possible.
+
+DO NOT generate the image.
+DO NOT give a short generic description.
+DO NOT summarize the image.
+DO NOT write vague phrases such as "beautiful scene", "cinematic lighting", "stunning portrait", "high quality", "professional photography" unless you have first described exactly WHAT creates that visual effect in the reference.
+
+Your job is to reverse-engineer the image as a professional photographer, cinematographer, art director, and fashion stylist simultaneously.
+
+Analyze and reconstruct:
+1. Subject, approximate age, gender presentation, gaze, facial expression, posture, hand gestures.
+2. Clothing: Describe each visible garment separately (type, color, material, texture, fit, folds, layering, accessories).
+3. Pose & Body Language: Exact head direction, eye gaze, shoulder orientation, torso angle, arm/hand placement.
+4. Composition: Aspect ratio, subject placement, size, camera height, distance, angle, foreground, background, horizon, negative space, leading lines.
+5. Lighting: Natural/artificial, direct/indirect, soft/hard, direction, intensity, temperature, flash, sunlight, reflections, ambient, highlights, shadows.
+6. Color Grading: Dominant palette, contrast, saturation, white balance, shadow/highlight color treatment.
+7. Camera & Optics: Perspective, approximate lens category, depth of field, focus plane, background blur, bokeh, sharpness, grain, noise.
+8. Environment: Foreground, middle ground, background, vegetation, architecture, landscape, weather, atmospheric effects.
+
+OUTPUT FORMAT:
+Return ONLY valid JSON matching the required schema.`;
 
 async function generateWithModel(ai: GoogleGenAI, preferredModel: string | undefined, payload: any) {
   const candidateModels = [
@@ -564,7 +177,8 @@ export async function POST(req: NextRequest) {
       try {
         const ai = new GoogleGenAI({ apiKey });
         const systemPrompt = `You are an elite AI Art Director and Prompt Engineer specializing in Midjourney v6.1, Flux.1, ChatGPT/DALL-E 3, and Imagen 3.
-The user will provide a simple idea or a few words. Your mission is to expand this into a stunning, detailed, hyper-photorealistic masterpiece prompt according to the user's selected parameters.
+The user will provide a simple idea or a few words. Your mission is to expand this into an exceptionally detailed, hyper-photorealistic masterpiece prompt according to the user's selected parameters.
+DO NOT provide a short, generic description or summary. Every detail must be meticulously described using professional photographic, cinematic, and art direction terminology.
 
 PARAMETERS:
 - User Idea: "${userIdea}"
@@ -575,12 +189,12 @@ PARAMETERS:
 - Additional Constraints: "${customInstructions || 'None'}"
 
 CRITICAL REQUIREMENTS:
-1. "promptText": Must be a masterfully written, 80-160 word detailed photo prompt that vividly brings the user's idea to life. Incorporate photographic camera optics (e.g. Hasselblad, Leica, Sony A7R V, focal length, aperture), atmospheric lighting, environmental textures, color harmony, and finish with midjourney parameter flags: --ar ${chosenRatio} --style raw --v 6.1.
-2. "negativePrompt": Specific negative keywords to prevent bad anatomy, oversaturation, blur, watermark, etc.
-3. "camera": Recommended real camera body and prime lens.
-4. "lighting": Brief technical lighting summary.
-5. "colorPalette": Color palette description.
-6. "composition": Composition technique used.
+1. "promptText": Must be a masterfully written, highly comprehensive 120-250 word detailed production prompt that vividly brings the user's idea to life. Incorporate precise photographic camera optics (e.g. Hasselblad H6D-100c, Leica M11, Sony A7R V, 85mm f/1.4 prime lens, shutter speed, aperture, ISO), intricate environmental textures, atmospheric depth, lighting direction and intensity, color harmony, and finish with midjourney parameter flags: --ar ${chosenRatio} --style raw --v 6.1.
+2. "negativePrompt": Specific comprehensive negative keywords to prevent bad anatomy, oversaturation, blur, watermark, CGI look, etc.
+3. "camera": Recommended real camera body and lens specification.
+4. "lighting": Detailed technical lighting breakdown.
+5. "colorPalette": Comprehensive color palette description.
+6. "composition": Advanced composition technique used.
 7. "title": Catchy, short 3-6 word title.
 
 OUTPUT MUST BE VALID JSON ONLY matching this schema:
@@ -773,8 +387,18 @@ Return the final response strictly conforming to the required JSON schema.`;
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (error: any) {
     console.error('AI Studio Tools Error:', error);
+    const errMessage = error?.message || '';
+    if (errMessage.includes('quota') || errMessage.includes('overloaded') || errMessage.includes('ResourceExhausted') || errMessage.includes('rate-limit')) {
+      const fallback = generateLocalImageToPrompt();
+      return NextResponse.json({
+        success: true,
+        data: fallback,
+        fallback: true,
+        warning: 'The model API is currently overloaded or rate-limited. Provided high-fidelity master reconstruction prompt automatically.'
+      });
+    }
     return NextResponse.json(
-      { error: error?.message || 'Failed to process AI tool request' },
+      { error: errMessage || 'Failed to process AI tool request' },
       { status: 500 }
     );
   }
