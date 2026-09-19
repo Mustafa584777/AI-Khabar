@@ -47,32 +47,24 @@ const LoadingOverlayInner = () => {
   // Global click listener for all navigation links and buttons (Create, Dashboard, Notifications, Home, etc.)
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      const target = (e.target as HTMLElement).closest('a, button, [role="button"]');
+      const target = (e.target as HTMLElement).closest('a, button');
       if (!target) return;
       const href = target.getAttribute('href') || target.getAttribute('id') || '';
       const text = target.textContent?.toLowerCase() || '';
 
-      // Trigger loading skeleton immediately on any button or link click
       if (
-        target.tagName === 'A' ||
-        target.tagName === 'BUTTON' ||
-        target.getAttribute('role') === 'button' ||
         href.includes('/create') ||
         href.includes('/dashboard') ||
         href.includes('/notifications') ||
         href.includes('/pricing') ||
         href.includes('/about') ||
         href.includes('/contact') ||
-        href.includes('/category') ||
         text.includes('create') ||
         text.includes('dashboard') ||
         text.includes('notifications') ||
         text.includes('updates') ||
         text.includes('ai studio') ||
-        text.includes('pricing') ||
-        text.includes('explore') ||
-        text.includes('category') ||
-        text.includes('home')
+        text.includes('pricing')
       ) {
         if (href.includes('/create') || text.includes('create') || text.includes('ai studio')) {
           setLoadingText('Opening AI Studio & Prompt Generator...');
@@ -82,31 +74,15 @@ const LoadingOverlayInner = () => {
           setLoadingText('Loading Notifications & Drops...');
         } else if (href.includes('/pricing') || text.includes('pricing')) {
           setLoadingText('Loading Membership Plans...');
-        } else if (href.includes('/about') || text.includes('about')) {
-          setLoadingText('Loading About Us...');
-        } else if (href.includes('/contact') || text.includes('contact')) {
-          setLoadingText('Loading Contact Support...');
         } else {
-          setLoadingText('Loading Page & Content...');
+          setLoadingText('Loading Content & Studio...');
         }
         setIsLoading(true);
         setShowSlowWarning(false);
 
-        const hideTimer = setTimeout(() => {
+        setTimeout(() => {
           setIsLoading(false);
-        }, 1400);
-
-        let slowTimer: NodeJS.Timeout | null = null;
-        try {
-          slowTimer = setTimeout(() => {
-            setShowSlowWarning(true);
-          }, 900);
-        } catch (e) {}
-
-        return () => {
-          clearTimeout(hideTimer);
-          if (slowTimer) clearTimeout(slowTimer);
-        };
+        }, 1200);
       }
     };
 
