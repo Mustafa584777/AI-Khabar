@@ -50,8 +50,8 @@ interface AppContextType {
   authModalMessage: string | null;
   setAuthModalMessage: (msg: string | null) => void;
   openAuthModal: (message?: string) => void;
-  loginUser: (email: string, pass: string, username?: string, avatar?: string) => boolean;
-  signupUser: (name: string, username: string, email: string, pass: string, avatar?: string) => UserAccount;
+  loginUser: (email: string, pass: string, username?: string, avatar?: string) => Promise<boolean>;
+  signupUser: (name: string, username: string, email: string, pass: string, avatar?: string) => Promise<UserAccount>;
   logoutUser: () => void;
   awardPoints: (amount: number, type: 'like' | 'save' | 'generation' | 'share' | 'referral') => void;
 
@@ -712,7 +712,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const loginUser = (email: string, _pass: string, username?: string, avatar?: string): boolean => {
+  const loginUser = async (email: string, _pass: string, username?: string, avatar?: string): Promise<boolean> => {
     const cleanEmail = email.trim().toLowerCase();
 
     // Aggressively clear any existing session storage to prevent cross-account data leakage
@@ -738,8 +738,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     StorageService.saveUserAccount(account);
     setUserAccount(account);
 
-    // Reconcile and load all cloud data strictly for this specific account
-    void UserSyncService.reconcileOnLogin(account).then((synced) => {
+    // Reconcile and load all cloud data strictly for this specific account from Supabase
+    try {
+      const synced = await UserSyncService.reconcileOnLogin(account);
       setBookmarkedIds(synced.bookmarkedIds || []);
       StorageService.setBookmarkedIds(synced.bookmarkedIds || []);
 
@@ -778,17 +779,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds || []));
         if (synced.planStartedAt) {
           localStorage.setItem('auraprompt_plan_started_at', synced.planStartedAt);
+        } else {
+          localStorage.removeItem('auraprompt_plan_started_at');
         }
         if (synced.planExpiresAt) {
           localStorage.setItem('auraprompt_plan_expires_at', synced.planExpiresAt);
+          setPlanExpiresAtState(synced.planExpiresAt);
+        } else {
+          setPlanExpiresAtState(null);
+          localStorage.removeItem('auraprompt_plan_expires_at');
         }
       }
-    });
+    } catch (e) {
+      console.warn('Login reconciliation sync error:', e);
+    }
 
     return true;
   };
 
-  const signupUser = (name: string, username: string, email: string, _pass: string, avatar?: string): UserAccount => {
+  const signupUser = async (name: string, username: string, email: string, _pass: string, avatar?: string): Promise<UserAccount> => {
     const cleanEmail = email.trim().toLowerCase();
 
     // Aggressively clear any existing session storage to prevent cross-account data leakage
@@ -814,22 +823,27 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     StorageService.saveUserAccount(account);
     setUserAccount(account);
 
-    // Initial registration: clean free tier and 2 starter credits
-    void UserSyncService.reconcileOnLogin(account).then((synced) => {
-      setBookmarkedIds([]);
-      setLikedIds([]);
-      setAiHistory([]);
-      setPlanTierState('free');
-      setIsProUserState(false);
+    try {
+      const synced = await UserSyncService.reconcileOnLogin(account);
+      setBookmarkedIds(synced.bookmarkedIds || []);
+      StorageService.setBookmarkedIds(synced.bookmarkedIds || []);
+      setLikedIds(synced.likedIds || []);
+      StorageService.setLikedIds(synced.likedIds || []);
+      setAiHistory(synced.aiHistory || []);
+      StorageService.setAiHistory(synced.aiHistory || []);
+      setPlanTierState(synced.planTier || 'free');
+      setIsProUserState(synced.isProUser || false);
       setToolCreditsState(synced.toolCredits ?? 2);
-      setUnlockedPromptIds([]);
+      setUnlockedPromptIds(synced.unlockedPromptIds || []);
       if (typeof window !== 'undefined') {
-        localStorage.setItem('auraprompt_plan_tier', 'free');
-        localStorage.setItem('auraprompt_pro_member', 'false');
+        localStorage.setItem('auraprompt_plan_tier', synced.planTier || 'free');
+        localStorage.setItem('auraprompt_pro_member', String(synced.isProUser || false));
         localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits ?? 2));
-        localStorage.setItem('auraprompt_unlocked_prompts', '[]');
+        localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds || []));
       }
-    });
+    } catch (e) {
+      console.warn('Signup reconciliation sync error:', e);
+    }
 
     return account;
   };

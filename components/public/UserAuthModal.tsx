@@ -53,14 +53,14 @@ export const UserAuthModal = () => {
 
   // Listen for callback messages from /auth/callback popup
   React.useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
+    const handleMessage = async (event: MessageEvent) => {
       if (event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
         const session = event.data.session;
         const u = event.data.user || session?.user;
         if (u) {
           const name = u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split('@')[0] || 'Creator';
           const avatar = u.user_metadata?.avatar_url || u.user_metadata?.picture || defaultAvatar;
-          loginUser(u.email || '', '', name, avatar);
+          await loginUser(u.email || '', '', name, avatar);
           showToast(`Welcome back, ${name}! Signed in via Google.`);
           setIsLoading(false);
           setIsUserAuthModalOpen(false);
@@ -224,7 +224,7 @@ export const UserAuthModal = () => {
         }
 
         // 3. Initialize account in App state (which triggers cloud sync)
-        signupUser(userName, userHandle, cleanEmail, password, defaultAvatar);
+        await signupUser(userName, userHandle, cleanEmail, password, defaultAvatar);
         showToast(`Welcome ${userName}! Account created & cloud sync active.`);
         setIsLoading(false);
         setIsUserAuthModalOpen(false);
@@ -255,7 +255,7 @@ export const UserAuthModal = () => {
         const userName = loginData.user?.user_metadata?.full_name || cleanEmail.split('@')[0];
         const userAvatar = loginData.user?.user_metadata?.avatar_url || defaultAvatar;
 
-        loginUser(cleanEmail, password, userName, userAvatar);
+        await loginUser(cleanEmail, password, userName, userAvatar);
         showToast(`Welcome back, ${userName}! Logged in successfully.`);
         setIsLoading(false);
         setIsUserAuthModalOpen(false);
