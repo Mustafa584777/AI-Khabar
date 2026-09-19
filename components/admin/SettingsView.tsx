@@ -23,8 +23,10 @@ export const SettingsView = () => {
   const [multiplierFactor, setMultiplierFactor] = useState<number>(2);
   const [minViewsFloor, setMinViewsFloor] = useState<number>(50);
   const [minLikesFloor, setMinLikesFloor] = useState<number>(20);
+  const [minCopiesPercentage, setMinCopiesPercentage] = useState<number>(25);
   const [isApplyingMultiplier, setIsApplyingMultiplier] = useState(false);
   const [isApplyingFloor, setIsApplyingFloor] = useState(false);
+  const [isApplyingCopies, setIsApplyingCopies] = useState(false);
 
   const handleApplyMultiplier = async () => {
     if (!posts || posts.length === 0) {
@@ -90,6 +92,42 @@ export const SettingsView = () => {
       showToast(`Failed to apply minimum floor: ${err.message || 'Unknown error'}`);
     } finally {
       setIsApplyingFloor(false);
+    }
+  };
+
+  const handleApplyMinCopiesPercentage = async () => {
+    if (!posts || posts.length === 0) {
+      showToast('No prompt posts found.');
+      return;
+    }
+    if (!confirm(`Apply minimum copies floor as ${minCopiesPercentage}% of each prompt's views? All resulting numbers will be rounded to whole integers (no decimals).`)) {
+      return;
+    }
+
+    setIsApplyingCopies(true);
+    try {
+      let countBoosted = 0;
+      const updatedPosts = posts.map((p) => {
+        const views = p.viewsCount || 0;
+        const currentCopies = p.copiesCount || 0;
+        const minRequiredCopies = Math.round(views * (minCopiesPercentage / 100));
+
+        if (currentCopies < minRequiredCopies) {
+          countBoosted++;
+          return {
+            ...p,
+            copiesCount: minRequiredCopies,
+          };
+        }
+        return p;
+      });
+
+      await restorePromptCards(updatedPosts, 'replace', categories, tags);
+      showToast(`Successfully applied minimum copies percentage (${minCopiesPercentage}%)! ${countBoosted} prompt(s) updated with rounded whole numbers.`);
+    } catch (err: any) {
+      showToast(`Failed to apply minimum copies percentage: ${err.message || 'Unknown error'}`);
+    } finally {
+      setIsApplyingCopies(false);
     }
   };
 
@@ -583,7 +621,7 @@ export const SettingsView = () => {
           Multiply all existing views and likes by a custom factor, or set minimum view/like thresholds for prompts with low engagement. Changes are saved permanently to the database.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
           {/* Multiplier Section */}
           <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-4">
             <h4 className="text-xs font-bold text-neutral-900 dark:text-white uppercase tracking-wider">
@@ -660,6 +698,40 @@ export const SettingsView = () => {
                 <Sparkles className="w-4 h-4" />
               )}
               <span>Apply Minimum Floors (Views ≥ {minViewsFloor}, Likes ≥ {minLikesFloor})</span>
+            </button>
+          </div>
+
+          {/* Minimum Copies Percentage Section */}
+          <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-4">
+            <h4 className="text-xs font-bold text-neutral-900 dark:text-white uppercase tracking-wider">
+              Min Copies % of Views
+            </h4>
+            <div>
+              <label className="block text-[11px] font-semibold text-neutral-500 mb-1">Copies Percentage (%)</label>
+              <input
+                type="number"
+                value={minCopiesPercentage}
+                onChange={(e) => setMinCopiesPercentage(Number(e.target.value))}
+                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                min={1}
+                max={100}
+              />
+              <p className="text-[10px] text-neutral-400 mt-1">
+                Calculated as {minCopiesPercentage}% of views & rounded off to whole integer (no decimals).
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleApplyMinCopiesPercentage}
+              disabled={isApplyingCopies}
+              className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isApplyingCopies ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )}
+              <span>Apply Min Copies ({minCopiesPercentage}%)</span>
             </button>
           </div>
         </div>
