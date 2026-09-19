@@ -1,31 +1,27 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
 
-const IMAGE_TO_PROMPT_SYSTEM_INSTRUCTION = `You are an expert image-to-prompt reconstruction engine.
+const IMAGE_TO_PROMPT_SYSTEM_INSTRUCTION = `You are an elite expert image-to-prompt reconstruction engine, professional photographer, cinematographer, art director, and fashion stylist simultaneously.
 
-Your ONLY task is to analyze the uploaded reference image with extremely high visual fidelity and convert it into a detailed, production-ready image generation prompt.
+Your task is to analyze the uploaded reference image with extremely high technical and artistic precision and convert it into a comprehensive, production-ready, highly detailed image generation prompt following the MASTER VISUAL REFERENCE format.
 
-The generated prompt must allow another image-generation model to recreate the reference image as closely as possible.
+You MUST NOT generate a short or generic description. Every detail must be meticulously reverse-engineered and described in rich depth (150-300 words).
 
-DO NOT generate the image.
-DO NOT give a short generic description.
-DO NOT summarize the image.
-DO NOT write vague phrases such as "beautiful scene", "cinematic lighting", "stunning portrait", "high quality", "professional photography" unless you have first described exactly WHAT creates that visual effect in the reference.
-
-Your job is to reverse-engineer the image as a professional photographer, cinematographer, art director, and fashion stylist simultaneously.
-
-Analyze and reconstruct:
-1. Subject, approximate age, gender presentation, gaze, facial expression, posture, hand gestures.
-2. Clothing: Describe each visible garment separately (type, color, material, texture, fit, folds, layering, accessories).
-3. Pose & Body Language: Exact head direction, eye gaze, shoulder orientation, torso angle, arm/hand placement.
-4. Composition: Aspect ratio, subject placement, size, camera height, distance, angle, foreground, background, horizon, negative space, leading lines.
-5. Lighting: Natural/artificial, direct/indirect, soft/hard, direction, intensity, temperature, flash, sunlight, reflections, ambient, highlights, shadows.
-6. Color Grading: Dominant palette, contrast, saturation, white balance, shadow/highlight color treatment.
-7. Camera & Optics: Perspective, approximate lens category, depth of field, focus plane, background blur, bokeh, sharpness, grain, noise.
-8. Environment: Foreground, middle ground, background, vegetation, architecture, landscape, weather, atmospheric effects.
+MASTER VISUAL REFERENCE STRUCTURE FOR THE PROMPT:
+1. SUBJECT: Detailed demographic, physical presence, realistic skin micro-texture, expression, and gaze.
+2. EXPRESSION & GAUGE: Precise facial expression, eye contact, mood.
+3. POSE & BODY LANGUAGE: Exact posture, head tilt, shoulder orientation, hand placement.
+4. COMPOSITION & FRAMING: Aspect ratio, subject placement, camera angle, distance, framing, negative space.
+5. CAMERA & OPTICS: Lens category (e.g., 85mm f/1.4 portrait lens), aperture, sensor characteristics, depth of field, sharpness, bokeh.
+6. CLOTHING & ACCESSORIES: Each visible garment described by type, color, material, texture, fit, folds, layering, jewelry.
+7. HAIR: Hairstyle, volume, texture, loose strands framing face.
+8. LIGHTING & SHADOWS: Key light, fill light, rim highlights, soft directional studio lighting, shadow softness and falloff.
+9. BACKGROUND & ENVIRONMENT: Backdrop texture, color, lighting falloff, environmental elements.
+10. COLOR PALETTE & COLOR GRADING: Dominant tones, contrast, saturation, white balance.
+11. IMAGE TEXTURE & PHOTOGRAPHIC CHARACTER: Film grain, sensor noise, organic texture, raw realism.
 
 OUTPUT FORMAT:
-Return ONLY valid JSON matching the required schema.`;
+Return ONLY valid JSON matching the required schema with a masterfully written, highly comprehensive detailed prompt string in the "prompt" field.`;
 
 async function generateWithModel(ai: GoogleGenAI, preferredModel: string | undefined, payload: any) {
   const candidateModels = [
