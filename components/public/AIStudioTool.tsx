@@ -995,7 +995,7 @@ export const AIStudioTool = () => {
                           Artistic Lighting
                         </span>
                         <span className="font-semibold text-neutral-800 dark:text-neutral-200 block leading-relaxed">
-                          {generatedPromptData.lighting || 'Cinematic Golden Hour'}
+                          {generatedPromptData.lighting || selectedLighting}
                         </span>
                       </div>
 
@@ -1004,7 +1004,7 @@ export const AIStudioTool = () => {
                           Color Palette & Grading
                         </span>
                         <span className="font-semibold text-neutral-800 dark:text-neutral-200 block leading-relaxed">
-                          {generatedPromptData.colorPalette || 'Cinematic Teal & Orange'}
+                          {generatedPromptData.colorPalette || selectedColor}
                         </span>
                       </div>
 

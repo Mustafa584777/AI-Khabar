@@ -158,10 +158,6 @@ interface AppContextType {
   lockedPromptContext: PromptPost | null;
   setLockedPromptContext: (post: PromptPost | null) => void;
   applyPlan: (planTier: 'starter' | 'pro' | 'vip') => void;
-
-  // Theme State
-  isDarkMode: boolean;
-  toggleTheme: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -1099,31 +1095,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, [pathname, userAccount]);
-
-  // Theme State
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('auraprompt_theme');
-      if (saved) return saved === 'dark';
-      return document.documentElement.classList.contains('dark') || true;
-    }
-    return true;
-  });
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('auraprompt_theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('auraprompt_theme', 'light');
-    }
-  }, [isDarkMode]);
-
-  const toggleTheme = () => {
-    setIsDarkMode((prev) => !prev);
-  };
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -2166,8 +2137,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         lockedPromptContext,
         setLockedPromptContext,
         applyPlan,
-        isDarkMode,
-        toggleTheme,
       }}
     >
       {children}
