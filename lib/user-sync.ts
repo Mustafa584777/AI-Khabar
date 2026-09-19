@@ -236,4 +236,28 @@ export const UserSyncService = {
       planExpiresAt: remote.planExpiresAt,
     };
   },
+
+  /**
+   * Server-side session validator that forces re-fetch of user profile,
+   * subscription status, and credit balance from Supabase directly.
+   */
+  validateSession: async (userId?: string, email?: string): Promise<UserSyncData | null> => {
+    if (!userId && !email) return null;
+    try {
+      const res = await fetch('/api/user/validate-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, email }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.valid && json.syncData) {
+          return json.syncData;
+        }
+      }
+    } catch (e) {
+      console.warn('UserSyncService: Session validation notice:', e);
+    }
+    return null;
+  },
 };

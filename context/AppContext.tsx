@@ -3,6 +3,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem, AiSearchResult, PlanTier, PromptRequestItem } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
@@ -162,6 +163,8 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
+  const pathname = usePathname();
+
   // Navigation
   const [currentView, setCurrentView] = useState<'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications'>('public');
   const [adminSubView, setAdminSubView] = useState<
@@ -1011,6 +1014,87 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setIsSyncingUserData(false);
     }
   };
+
+  // Server-side session validator that forces re-fetch of user profile, subscription status, and credit balance from Supabase directly on every authenticated navigation or window focus
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const currentAcc = userAccount || StorageService.getUserAccount();
+    if (!currentAcc || !currentAcc.isLoggedIn) return;
+
+    let isMounted = true;
+    const validateServerSession = async () => {
+      try {
+        const synced = await UserSyncService.validateSession(currentAcc.id, currentAcc.email);
+        if (!synced || !isMounted) return;
+
+        setBookmarkedIds(synced.bookmarkedIds || []);
+        StorageService.setBookmarkedIds(synced.bookmarkedIds || []);
+
+        setLikedIds(synced.likedIds || []);
+        StorageService.setLikedIds(synced.likedIds || []);
+
+        if (synced.tasteProfile) {
+          setTasteProfile(synced.tasteProfile);
+          PersonalizationEngine.saveProfile(synced.tasteProfile);
+        }
+
+        setAiHistory(synced.aiHistory || []);
+        StorageService.setAiHistory(synced.aiHistory || []);
+
+        if (synced.points !== undefined) {
+          setUserAccount((prev) => (prev ? { ...prev, points: synced.points ?? prev.points, name: synced.name || prev.name, avatar: synced.avatar || prev.avatar } : prev));
+        }
+
+        const tier = synced.planTier || 'free';
+        setPlanTierState(tier);
+        localStorage.setItem('auraprompt_plan_tier', tier);
+
+        const isPro = Boolean(synced.isProUser || tier !== 'free');
+        setIsProUserState(isPro);
+        localStorage.setItem('auraprompt_pro_member', String(isPro));
+
+        if (synced.toolCredits !== undefined) {
+          setToolCreditsState(synced.toolCredits);
+          localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits));
+        }
+
+        if (synced.unlockedPromptIds) {
+          setUnlockedPromptIds(synced.unlockedPromptIds);
+          localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds));
+        }
+
+        if (synced.planExpiresAt) {
+          localStorage.setItem('auraprompt_plan_expires_at', synced.planExpiresAt);
+          setPlanExpiresAtState(synced.planExpiresAt);
+        } else {
+          setPlanExpiresAtState(null);
+          localStorage.removeItem('auraprompt_plan_expires_at');
+        }
+      } catch (err) {
+        console.warn('Server-side session validation error:', err);
+      }
+    };
+
+    void validateServerSession();
+
+    const handleFocus = () => {
+      void validateServerSession();
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        void validateServerSession();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [pathname, userAccount]);
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState<string>('');
