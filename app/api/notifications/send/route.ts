@@ -96,3 +96,20 @@ export async function DELETE(req: NextRequest) {
     );
   }
 }
+
+export async function PUT(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { notifications } = body;
+    if (Array.isArray(notifications)) {
+      await NotificationServerStore.saveNotifications(notifications);
+      return NextResponse.json({ success: true, message: 'Notifications saved successfully in Supabase' });
+    }
+    return NextResponse.json({ error: 'Invalid notifications array' }, { status: 400 });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message || 'Failed to update notifications' },
+      { status: 500 }
+    );
+  }
+}
