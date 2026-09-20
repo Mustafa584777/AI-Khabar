@@ -312,6 +312,10 @@ export const ServerStorage = {
           : existing.publishedAt || (post.status === 'published' ? now : undefined),
       };
     } else {
+      const defaultViews = post.viewsCount && post.viewsCount > 0 ? post.viewsCount : (Math.floor(Math.random() * (99672 - 2860 + 1)) + 2860);
+      const defaultLikes = post.likesCount !== undefined && post.likesCount > 0 ? post.likesCount : Math.round(defaultViews * 0.30);
+      const defaultCopies = post.copiesCount !== undefined && post.copiesCount > 0 ? post.copiesCount : Math.round(defaultViews * 0.42);
+
       savedPost = {
         ...post,
         id,
@@ -326,9 +330,9 @@ export const ServerStorage = {
         createdAt: post.createdAt || now,
         updatedAt: now,
         publishedAt: post.status === 'published' ? (post.publishedAt || now) : undefined,
-        viewsCount: post.viewsCount || 0,
-        copiesCount: post.copiesCount || 0,
-        likesCount: post.likesCount || 0,
+        viewsCount: defaultViews,
+        copiesCount: defaultCopies,
+        likesCount: defaultLikes,
         bookmarksCount: post.bookmarksCount || 0,
       };
     }

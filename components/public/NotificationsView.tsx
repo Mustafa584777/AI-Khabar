@@ -30,10 +30,24 @@ export const NotificationsView: React.FC = () => {
   const [browserPushPermission, setBrowserPushPermission] = useState<NotificationPermission | 'unsupported'>('default');
   const [userInterests, setUserInterests] = useState<string[]>([]);
 
-  // Load initial data & sync
-  const loadNotifications = () => {
-    const list = NotificationService.getNotifications();
-    setNotifications(list);
+  // Load initial data & sync from Supabase
+  const loadNotifications = async () => {
+    try {
+      const res = await fetch('/api/notifications/send');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.notifications)) {
+          setNotifications(data.notifications);
+          NotificationService.saveNotifications(data.notifications);
+        } else {
+          setNotifications(NotificationService.getNotifications());
+        }
+      } else {
+        setNotifications(NotificationService.getNotifications());
+      }
+    } catch {
+      setNotifications(NotificationService.getNotifications());
+    }
     const prefs = NotificationService.getPreferences();
     setUserInterests(prefs.selectedInterests || []);
     setBrowserPushPermission(NotificationService.getBrowserPermissionStatus());

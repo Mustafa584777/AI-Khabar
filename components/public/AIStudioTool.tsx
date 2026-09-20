@@ -864,7 +864,7 @@ export const AIStudioTool = () => {
                       </select>
                     </div>
 
-                    {/* Gender Demographic */}
+                     {/* Gender Demographic */}
                     <div className="space-y-1.5">
                       <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300">
                         Subject Gender
@@ -877,47 +877,6 @@ export const AIStudioTool = () => {
                         <option value="Any / None">Any / None</option>
                         <option value="Female">Female</option>
                         <option value="Male">Male</option>
-                        <option value="Androgynous">Androgynous</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Lighting */}
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300">
-                        Artistic Lighting
-                      </label>
-                      <select
-                        value={selectedLighting}
-                        onChange={(e) => setSelectedLighting(e.target.value)}
-                        className="w-full text-xs px-3 py-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023] transition-all"
-                      >
-                        <option value="Cinematic Golden Hour">Cinematic Golden Hour</option>
-                        <option value="Studio Softbox">Studio Softbox</option>
-                        <option value="Moody Neon Accent">Moody Neon Accent</option>
-                        <option value="Dramatic Rembrandt">Dramatic Rembrandt</option>
-                        <option value="Natural Sunlight">Natural Sunlight</option>
-                        <option value="Cyberpunk Glow">Cyberpunk Glow</option>
-                      </select>
-                    </div>
-
-                    {/* Color Grading */}
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300">
-                        Color Palette
-                      </label>
-                      <select
-                        value={selectedColor}
-                        onChange={(e) => setSelectedColor(e.target.value)}
-                        className="w-full text-xs px-3 py-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023] transition-all"
-                      >
-                        <option value="Cinematic Teal & Orange">Teal & Orange</option>
-                        <option value="Vintage Warm Kodak">Vintage Warm Kodak</option>
-                        <option value="Cool Cyberpunk Blues">Cyberpunk Blues</option>
-                        <option value="Muted Earthy Tones">Muted Earthy</option>
-                        <option value="High-Contrast Monochromatic">Black & White</option>
-                        <option value="Vibrant Editorial">Vibrant Editorial</option>
                       </select>
                     </div>
                   </div>
