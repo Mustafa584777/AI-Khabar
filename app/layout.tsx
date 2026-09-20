@@ -3,6 +3,7 @@ import Script from 'next/script';
 import { Poppins } from 'next/font/google';
 import './globals.css';
 import { AppProvider } from '@/context/AppContext';
+import { AppGlobalOverlays } from '@/components/public/AppGlobalOverlays';
 
 const poppins = Poppins({
   weight: ['300', '400', '500', '600', '700', '800'],
@@ -70,6 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${poppins.variable} ${poppins.className} font-sans antialiased selection:bg-[#E60023] selection:text-white`} suppressHydrationWarning>
         <AppProvider>
           {children}
+          <AppGlobalOverlays />
         </AppProvider>
       </body>
     </html>

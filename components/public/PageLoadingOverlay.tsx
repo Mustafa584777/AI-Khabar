@@ -11,15 +11,14 @@ const LoadingOverlayInner = () => {
   const [loadingText, setLoadingText] = useState<string>('Loading Page & Studio...');
   const [showSlowWarning, setShowSlowWarning] = useState<boolean>(false);
 
-  // Trigger loading on pathname change or navigation (wrapped in setTimeout to avoid sync setState in effect)
+  // Trigger loading on pathname change or navigation
   useEffect(() => {
     let title = 'Loading Page & Studio...';
     if (pathname === '/create') title = 'Opening AI Studio & Prompt Generator...';
     else if (pathname === '/dashboard') title = 'Loading Creator Dashboard & History...';
     else if (pathname === '/notifications') title = 'Loading Notifications & Drops...';
     else if (pathname === '/pricing') title = 'Loading Membership Plans...';
-    else if (pathname === '/about') title = 'Loading About Us...';
-    else if (pathname === '/contact') title = 'Loading Contact Support...';
+    else if (pathname === '/') title = 'Loading Home Feed & Prompts...';
 
     const t = setTimeout(() => {
       setLoadingText(title);
@@ -28,13 +27,13 @@ const LoadingOverlayInner = () => {
 
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 800);
+    }, 1000);
 
     let slowTimer: NodeJS.Timeout | null = null;
     try {
       slowTimer = setTimeout(() => {
         setShowSlowWarning(true);
-      }, 1200);
+      }, 1500);
     } catch (e) {}
 
     return () => {
@@ -44,7 +43,7 @@ const LoadingOverlayInner = () => {
     };
   }, [pathname, searchParams]);
 
-  // Global click listener for all navigation links and buttons (Create, Dashboard, Notifications, Home, etc.)
+  // Global click listener for all navigation buttons and links (Home, Search, Create, Notifications, Dashboard, etc.)
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       const target = (e.target as HTMLElement).closest('a, button');
@@ -57,31 +56,45 @@ const LoadingOverlayInner = () => {
         href.includes('/dashboard') ||
         href.includes('/notifications') ||
         href.includes('/pricing') ||
-        href.includes('/about') ||
-        href.includes('/contact') ||
+        href.includes('/') ||
         text.includes('create') ||
         text.includes('dashboard') ||
         text.includes('notifications') ||
         text.includes('updates') ||
         text.includes('ai studio') ||
-        text.includes('pricing')
+        text.includes('pricing') ||
+        text.includes('home') ||
+        text.includes('explore') ||
+        text.includes('search') ||
+        text.includes('saved') ||
+        text.includes('sign in')
       ) {
         if (href.includes('/create') || text.includes('create') || text.includes('ai studio')) {
           setLoadingText('Opening AI Studio & Prompt Generator...');
-        } else if (href.includes('/dashboard') || text.includes('dashboard')) {
-          setLoadingText('Loading Creator Dashboard...');
+        } else if (href.includes('/dashboard') || text.includes('dashboard') || text.includes('sign in') || text.includes('saved')) {
+          setLoadingText('Loading Creator Dashboard & Account...');
         } else if (href.includes('/notifications') || text.includes('notifications') || text.includes('updates')) {
           setLoadingText('Loading Notifications & Drops...');
         } else if (href.includes('/pricing') || text.includes('pricing')) {
           setLoadingText('Loading Membership Plans...');
+        } else if (text.includes('explore') || text.includes('search')) {
+          setLoadingText('Opening Search & Explore...');
         } else {
-          setLoadingText('Loading Content & Studio...');
+          setLoadingText('Loading Home Feed & Content...');
         }
         setIsLoading(true);
         setShowSlowWarning(false);
 
+        let slowCheck: NodeJS.Timeout | null = null;
+        try {
+          slowCheck = setTimeout(() => {
+            setShowSlowWarning(true);
+          }, 1500);
+        } catch (e) {}
+
         setTimeout(() => {
           setIsLoading(false);
+          if (slowCheck) clearTimeout(slowCheck);
         }, 1200);
       }
     };
