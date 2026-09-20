@@ -195,24 +195,31 @@ const db = (token?: string) => {
 export const ServerStorage = {
   // Posts
   getAllPosts: async (includeDrafts = true): Promise<PromptPost[]> => {
+    let localPosts: PromptPost[] = [];
+    try {
+      const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
+      localPosts = rawPosts.map((p) => ({
+        ...p,
+        tags: cleanTagsArray(p.tags || []),
+      }));
+    } catch (e) {
+      localPosts = INITIAL_POSTS || [];
+    }
+
+    let remotePosts: PromptPost[] = [];
     if (isSupabaseConfigured()) {
       try {
-        let query = db().from('posts').select('*').order('created_at', { ascending: false });
+        let query = db().from('posts').select('*').order('created_at', { ascending: false }).range(0, 9999);
         if (!includeDrafts) {
           query = query.eq('status', 'published');
         }
         const { data, error } = await query;
         if (!error && data && Array.isArray(data)) {
-          const posts = data.map((d) => {
+          remotePosts = data.map((d) => {
             const mapped = mapSupabasePost(d);
             mapped.tags = cleanTagsArray(mapped.tags || []);
             return mapped;
           });
-          if (posts.length > 0) {
-            memoryPosts = posts;
-            writeJsonFile(POSTS_FILE, posts);
-            return posts;
-          }
         } else if (error) {
           console.warn('Supabase getAllPosts notice:', error.message);
         }
@@ -221,14 +228,30 @@ export const ServerStorage = {
       }
     }
 
-    if (memoryPosts === null) {
-      const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
-      memoryPosts = rawPosts.map((p) => ({
-        ...p,
-        tags: cleanTagsArray(p.tags || []),
-      }));
+    // Merge remotePosts and localPosts by ID to ensure NO prompt is ever lost
+    const postMap = new Map<string, PromptPost>();
+    for (const p of localPosts) {
+      if (p.id) postMap.set(p.id, p);
     }
-    return includeDrafts ? memoryPosts : memoryPosts.filter((p) => p.status === 'published');
+    for (const p of remotePosts) {
+      if (p.id) {
+        const existing = postMap.get(p.id);
+        if (!existing || new Date(p.updatedAt || p.createdAt || 0).getTime() >= new Date(existing.updatedAt || existing.createdAt || 0).getTime()) {
+          postMap.set(p.id, p);
+        }
+      }
+    }
+
+    const merged = Array.from(postMap.values()).sort((a, b) => {
+      const timeA = new Date(a.createdAt || 0).getTime();
+      const timeB = new Date(b.createdAt || 0).getTime();
+      return timeB - timeA;
+    });
+
+    memoryPosts = merged;
+    writeJsonFile(POSTS_FILE, merged);
+
+    return includeDrafts ? merged : merged.filter((p) => p.status === 'published');
   },
 
   getPostBySlug: async (slug: string): Promise<PromptPost | undefined> => {
