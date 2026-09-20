@@ -121,6 +121,21 @@ export const Header = () => {
               <Sparkles className="w-3.5 h-3.5" />
               <span>Create</span>
             </Link>
+
+            {/* Prompt Editor Route Link */}
+            <Link
+              href="/prompt-editor"
+              className={`hidden lg:flex px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 items-center gap-1.5 ${
+                pathname === '/prompt-editor'
+                  ? 'bg-[#E60023] text-white shadow-sm'
+                  : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+              }`}
+              id="header-prompt-editor-btn"
+              title="AI Prompt Editor & Refiner"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Prompt Editor</span>
+            </Link>
           </nav>
         </div>
 
