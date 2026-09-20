@@ -245,16 +245,21 @@ export const NotificationService = {
     }
   },
 
-  // Sync with Server (fetches notifications from Supabase backend)
+  // Sync with Server (fetches any newly broadcasted notifications)
   syncWithServer: async (): Promise<void> => {
     if (typeof window === 'undefined') return;
     try {
-      const res = await fetch('/api/notifications/send');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && Array.isArray(data.notifications)) {
-          localStorage.setItem(STORAGE_KEY_NOTIFICATIONS, JSON.stringify(data.notifications));
-          window.dispatchEvent(new CustomEvent('promptcms_new_notification'));
+      const lastSyncStr = localStorage.getItem(STORAGE_KEY_LAST_SYNC) || '0';
+      const res = await fetch(`/api/notifications/latest?since=${lastSyncStr}`);
+      if (!res.ok) return;
+
+      const data = await res.json();
+      if (data.success && Array.isArray(data.notifications)) {
+        for (const notif of data.notifications) {
+          await NotificationService.handleIncomingRealNotification(notif);
+        }
+        if (data.timestamp) {
+          localStorage.setItem(STORAGE_KEY_LAST_SYNC, String(data.timestamp));
         }
       }
     } catch {
@@ -262,7 +267,7 @@ export const NotificationService = {
     }
   },
 
-  // Get notifications from local storage cache
+  // Get notifications from local storage
   getNotifications: (): PushNotificationItem[] => {
     if (typeof window === 'undefined') return SEED_NOTIFICATIONS;
     try {
@@ -279,18 +284,13 @@ export const NotificationService = {
     return SEED_NOTIFICATIONS;
   },
 
-  // Save notifications locally and sync with Supabase
-  saveNotifications: async (items: PushNotificationItem[]): Promise<void> => {
+  // Save notifications
+  saveNotifications: (items: PushNotificationItem[]): void => {
     if (typeof window === 'undefined') return;
     try {
       localStorage.setItem(STORAGE_KEY_NOTIFICATIONS, JSON.stringify(items));
-      await fetch('/api/notifications/send', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notifications: items }),
-      });
     } catch (e) {
-      console.error('Error saving notifications to Supabase:', e);
+      console.error('Error saving notifications:', e);
     }
   },
 
