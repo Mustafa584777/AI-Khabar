@@ -62,10 +62,15 @@ export const PromptEditorTool = () => {
 
         saveAiHistoryItem?.({
           id: 'prompt_edit_' + Date.now(),
-          type: 'text_prompt',
-          prompt: inputPrompt,
-          resultText: data.enhancedPrompt,
-          createdAt: new Date().toISOString(),
+          type: 'idea_to_prompt',
+          title: 'AI Enhanced Prompt',
+          promptText: data.enhancedPrompt,
+          negativePrompt: data.negativePrompt,
+          camera: data.parameters?.camera,
+          lighting: data.parameters?.lighting,
+          aspectRatio: data.parameters?.aspectRatio || '16:9',
+          tags: ['Prompt Editor', 'AI Refined', enhancementGoal],
+          createdAt: Date.now(),
         });
       } else {
         showToast(data.error || 'Failed to enhance prompt', 'error');
