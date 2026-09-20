@@ -40,9 +40,13 @@ const LoadingOverlayInner = () => {
     }, 1000);
 
     let slowTimer: NodeJS.Timeout | null = null;
+    let hideSlowTimer: NodeJS.Timeout | null = null;
     try {
       slowTimer = setTimeout(() => {
         setShowSlowWarning(true);
+        hideSlowTimer = setTimeout(() => {
+          setShowSlowWarning(false);
+        }, 3000);
       }, 1500);
     } catch (e) {}
 
@@ -50,6 +54,7 @@ const LoadingOverlayInner = () => {
       clearTimeout(t);
       clearTimeout(timer);
       if (slowTimer) clearTimeout(slowTimer);
+      if (hideSlowTimer) clearTimeout(hideSlowTimer);
     };
   }, [pathname, searchParams]);
 
@@ -94,9 +99,13 @@ const LoadingOverlayInner = () => {
         setShowSlowWarning(false);
 
         let slowCheck: NodeJS.Timeout | null = null;
+        let hideSlowCheck: NodeJS.Timeout | null = null;
         try {
           slowCheck = setTimeout(() => {
             setShowSlowWarning(true);
+            hideSlowCheck = setTimeout(() => {
+              setShowSlowWarning(false);
+            }, 3000);
           }, 1500);
         } catch (e) {}
 
@@ -106,6 +115,7 @@ const LoadingOverlayInner = () => {
             sessionStorage.setItem(visitKey, 'true');
           } catch (err) {}
           if (slowCheck) clearTimeout(slowCheck);
+          if (hideSlowCheck) clearTimeout(hideSlowCheck);
         }, 1000);
       }
     };

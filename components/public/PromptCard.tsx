@@ -115,16 +115,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
           </div>
         )}
 
-        {/* Full-Height Shimmer Skeleton Placeholder */}
-        {(!imageLoaded || !inView) && post.imageUrl && (
-          <div className="absolute inset-0 z-0 bg-neutral-200 dark:bg-neutral-800 animate-pulse flex flex-col items-center justify-center p-4">
-            <div className="w-10 h-10 rounded-full bg-neutral-300 dark:bg-neutral-700 mb-2 flex items-center justify-center shadow-xs">
-              <Sparkles className="w-5 h-5 text-neutral-400 dark:text-neutral-500 animate-spin" style={{ animationDuration: '4s' }} />
-            </div>
-            <div className="w-20 h-2 rounded-full bg-neutral-300 dark:bg-neutral-700" />
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 dark:via-white/5 to-transparent animate-shimmer pointer-events-none" />
-          </div>
-        )}
+        {/* Full-Height Shimmer Skeleton Placeholder removed */}
 
         {inView && optimizedImgUrl ? (
           <Image
