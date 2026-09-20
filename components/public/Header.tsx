@@ -12,8 +12,6 @@ import {
   Search,
   Crown,
   Bell,
-  Sun,
-  Moon,
 } from 'lucide-react';
 import { NotificationService } from '@/lib/notifications';
 import Link from 'next/link';
@@ -38,8 +36,6 @@ export const Header = () => {
     setIsProCheckoutModalOpen,
     userAccount,
     openAuthModal,
-    isDarkMode,
-    toggleTheme,
   } = useApp();
 
   const [unreadNotifs, setUnreadNotifs] = React.useState(0);
@@ -146,16 +142,6 @@ export const Header = () => {
 
         {/* Right: Saved, Account & Admin Actions */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Theme Toggle Button */}
-          <button
-            onClick={toggleTheme}
-            className="flex items-center justify-center p-2 rounded-full text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-            title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            id="header-theme-toggle-btn"
-          >
-            {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-neutral-700" />}
-          </button>
-
           {/* Notifications Button (Hidden on Mobile, use BottomNav instead) */}
           <button
             onClick={handleNotificationsClick}

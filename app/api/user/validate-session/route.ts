@@ -21,7 +21,7 @@ function getUserKey(userId: string): string {
 export async function POST(req: NextRequest) {
   // Rate limiting protection (120 session validation req/min per IP)
   const clientIp = getClientIp(req);
-  const rateLimit = checkRateLimit('sync', clientIp);
+  const rateLimit = checkRateLimit('validate-session', clientIp);
   if (!rateLimit.allowed) {
     return createRateLimitResponse(rateLimit.resetInMs);
   }

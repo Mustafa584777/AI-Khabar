@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
-import { Search, User, Bell, Sun, Moon } from 'lucide-react';
+import { Home, Search, Plus, User, Bell } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { NotificationService } from '@/lib/notifications';
 
@@ -28,8 +28,6 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
     isNotificationsModalOpen,
     userAccount,
     openAuthModal,
-    isDarkMode,
-    toggleTheme,
   } = useApp();
 
   const [unreadNotifs, setUnreadNotifs] = useState(0);
@@ -44,6 +42,17 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
     return () => clearInterval(interval);
   }, []);
 
+  const handleHomeClick = () => {
+    setCurrentView('public');
+    setSelectedCategory('all');
+    setSearchQuery('');
+    if (pathname !== '/') {
+      router.push('/');
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   const handleSearchClick = () => {
     if (onSearchClick) {
       onSearchClick();
@@ -54,6 +63,14 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
 
   const handleNotificationsClick = () => {
     router.push('/notifications');
+  };
+
+  const handleCreateStudioClick = () => {
+    if (!userAccount?.isLoggedIn) {
+      openAuthModal('Sign in or register to access the AI Studio creation tools.');
+      return;
+    }
+    router.push('/create');
   };
 
   const handleAccountClick = () => {
@@ -67,17 +84,21 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
   return (
     <nav
       aria-label="Mobile navigation"
-      className="fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-2xl border-t border-neutral-200/70 dark:border-neutral-800/70 py-2 px-6 flex sm:hidden items-center justify-between shadow-2xl transition-all"
+      className="fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-2xl border-t border-neutral-200/70 dark:border-neutral-800/70 py-1.5 px-4 flex sm:hidden items-center justify-around shadow-2xl transition-all"
     >
-      {/* 1. Theme Toggle Button */}
+      {/* 1. Home Button */}
       <button
-        onClick={toggleTheme}
-        className="flex flex-col items-center justify-center p-2 rounded-2xl text-neutral-600 dark:text-neutral-300 hover:text-[#E60023] transition-all duration-200"
-        title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-        id="bottom-nav-theme-toggle"
+        onClick={handleHomeClick}
+        className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 ${
+          pathname === '/' && currentView === 'public' && selectedCategory === 'all'
+            ? 'text-[#E60023] scale-105 font-bold'
+            : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+        }`}
+        title="Home Feed"
+        id="bottom-nav-home"
       >
-        {isDarkMode ? <Sun className="w-6 h-6 text-amber-400" /> : <Moon className="w-6 h-6 text-neutral-700" />}
-        <span className="text-[10px] mt-0.5 font-medium">{isDarkMode ? 'Light' : 'Dark'}</span>
+        <Home className={`w-6 h-6 ${pathname === '/' && currentView === 'public' && selectedCategory === 'all' ? 'fill-current' : ''}`} />
+        <span className="text-[10px] mt-0.5 font-medium">Home</span>
       </button>
 
       {/* 2. Explore & Categories Button */}
@@ -91,7 +112,30 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
         <span className="text-[10px] mt-0.5 font-medium">Explore</span>
       </button>
 
-      {/* 3. Notifications Tab */}
+      {/* 3. Create (+) Button (Prominent Center/Action) */}
+      <button
+        onClick={handleCreateStudioClick}
+        className={`flex flex-col items-center justify-center p-1.5 transition-all duration-200 ${
+          pathname === '/create' ? 'scale-110' : 'hover:scale-105'
+        }`}
+        title="Create - Image to Prompt & Text to Image"
+        id="bottom-nav-create-tool"
+      >
+        <div
+          className={`w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-colors ${
+            pathname === '/create'
+              ? 'bg-[#E60023] text-white shadow-red-500/40 ring-2 ring-red-400'
+              : 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:bg-[#E60023]'
+          }`}
+        >
+          <Plus className="w-6 h-6 stroke-[2.5]" />
+        </div>
+        <span className={`text-[10px] mt-0.5 font-black ${pathname === '/create' ? 'text-[#E60023]' : 'text-neutral-600 dark:text-neutral-400'}`}>
+          Create
+        </span>
+      </button>
+
+      {/* 4. Notifications Tab (Replacing For You) */}
       <button
         onClick={handleNotificationsClick}
         id="bottom-nav-notifications"
@@ -113,7 +157,7 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
         <span className="text-[10px] mt-0.5 font-medium">Updates</span>
       </button>
 
-      {/* 4. Account / Profile Button */}
+      {/* 5. Account / Profile Button */}
       <button
         onClick={handleAccountClick}
         className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 ${
