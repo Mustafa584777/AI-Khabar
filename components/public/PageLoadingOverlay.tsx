@@ -11,8 +11,15 @@ const LoadingOverlayInner = () => {
   const [loadingText, setLoadingText] = useState<string>('Loading Page & Studio...');
   const [showSlowWarning, setShowSlowWarning] = useState<boolean>(false);
 
-  // Trigger loading on pathname change or navigation
+  // Trigger loading on pathname change or navigation (only on first visit per route in session)
   useEffect(() => {
+    const visitKey = `visited_route_${pathname}`;
+    try {
+      if (sessionStorage.getItem(visitKey)) {
+        return;
+      }
+    } catch (e) {}
+
     let title = 'Loading Page & Studio...';
     if (pathname === '/create') title = 'Opening AI Studio & Prompt Generator...';
     else if (pathname === '/dashboard') title = 'Loading Creator Dashboard & History...';
@@ -27,6 +34,9 @@ const LoadingOverlayInner = () => {
 
     const timer = setTimeout(() => {
       setIsLoading(false);
+      try {
+        sessionStorage.setItem(visitKey, 'true');
+      } catch (e) {}
     }, 1000);
 
     let slowTimer: NodeJS.Timeout | null = null;
@@ -43,7 +53,7 @@ const LoadingOverlayInner = () => {
     };
   }, [pathname, searchParams]);
 
-  // Global click listener for all navigation buttons and links (Home, Search, Create, Notifications, Dashboard, etc.)
+  // Global click listener for navigation buttons and links
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       const target = (e.target as HTMLElement).closest('a, button');
@@ -51,37 +61,35 @@ const LoadingOverlayInner = () => {
       const href = target.getAttribute('href') || target.getAttribute('id') || '';
       const text = target.textContent?.toLowerCase() || '';
 
-      if (
-        href.includes('/create') ||
-        href.includes('/dashboard') ||
-        href.includes('/notifications') ||
-        href.includes('/pricing') ||
-        href.includes('/') ||
-        text.includes('create') ||
-        text.includes('dashboard') ||
-        text.includes('notifications') ||
-        text.includes('updates') ||
-        text.includes('ai studio') ||
-        text.includes('pricing') ||
-        text.includes('home') ||
-        text.includes('explore') ||
-        text.includes('search') ||
-        text.includes('saved') ||
-        text.includes('sign in')
-      ) {
-        if (href.includes('/create') || text.includes('create') || text.includes('ai studio')) {
+      // Determine target route key
+      let targetPath = '';
+      if (href.includes('/create') || text.includes('create') || text.includes('ai studio')) targetPath = '/create';
+      else if (href.includes('/dashboard') || text.includes('dashboard') || text.includes('sign in') || text.includes('saved')) targetPath = '/dashboard';
+      else if (href.includes('/notifications') || text.includes('notifications') || text.includes('updates')) targetPath = '/notifications';
+      else if (href.includes('/pricing') || text.includes('pricing')) targetPath = '/pricing';
+      else if (href.includes('/') || text.includes('home') || text.includes('explore') || text.includes('search')) targetPath = '/';
+
+      if (targetPath) {
+        const visitKey = `visited_route_${targetPath}`;
+        const isAlreadyVisited = sessionStorage.getItem(visitKey);
+
+        if (isAlreadyVisited) {
+          // Already visited, do not show loading overlay
+          return;
+        }
+
+        if (targetPath === '/create') {
           setLoadingText('Opening AI Studio & Prompt Generator...');
-        } else if (href.includes('/dashboard') || text.includes('dashboard') || text.includes('sign in') || text.includes('saved')) {
+        } else if (targetPath === '/dashboard') {
           setLoadingText('Loading Creator Dashboard & Account...');
-        } else if (href.includes('/notifications') || text.includes('notifications') || text.includes('updates')) {
+        } else if (targetPath === '/notifications') {
           setLoadingText('Loading Notifications & Drops...');
-        } else if (href.includes('/pricing') || text.includes('pricing')) {
+        } else if (targetPath === '/pricing') {
           setLoadingText('Loading Membership Plans...');
-        } else if (text.includes('explore') || text.includes('search')) {
-          setLoadingText('Opening Search & Explore...');
         } else {
           setLoadingText('Loading Home Feed & Content...');
         }
+
         setIsLoading(true);
         setShowSlowWarning(false);
 
@@ -94,8 +102,11 @@ const LoadingOverlayInner = () => {
 
         setTimeout(() => {
           setIsLoading(false);
+          try {
+            sessionStorage.setItem(visitKey, 'true');
+          } catch (err) {}
           if (slowCheck) clearTimeout(slowCheck);
-        }, 1200);
+        }, 1000);
       }
     };
 
