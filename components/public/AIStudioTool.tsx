@@ -18,10 +18,12 @@ import {
   Coins,
   X,
   Wand2,
+  Edit3,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { PromptEditorTool } from '@/components/public/PromptEditorTool';
 
 const SAMPLE_IMAGES = [
   {
@@ -110,7 +112,7 @@ export const AIStudioTool = () => {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Tab State
-  const [activeStudioTab, setActiveStudioTab] = useState<'reverse' | 'generator'>(() => {
+  const [activeStudioTab, setActiveStudioTab] = useState<'reverse' | 'generator' | 'editor'>(() => {
     if (typeof window !== 'undefined') {
       const preload = sessionStorage.getItem('promptcms_studio_preload') || sessionStorage.getItem('auraprompt_studio_preload');
       if (preload) return 'generator';
@@ -431,8 +433,8 @@ export const AIStudioTool = () => {
         </div>
 
         {/* Modern Segmented Tab Control */}
-        <div className="flex border-b border-neutral-200 dark:border-neutral-800 pb-px">
-          <div className="flex gap-6">
+        <div className="flex border-b border-neutral-200 dark:border-neutral-800 pb-px overflow-x-auto">
+          <div className="flex gap-6 whitespace-nowrap">
             <button
               onClick={() => setActiveStudioTab('reverse')}
               className={`pb-4 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
@@ -455,19 +457,25 @@ export const AIStudioTool = () => {
               <Wand2 className="w-4 h-4" />
               <span>AI Prompt Generator (Idea to Prompt)</span>
             </button>
-          </div>
-          <div className="ml-auto pb-3">
-            <Link
-              href="/prompt-editor"
-              className="px-3.5 py-1.5 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs transition-all flex items-center gap-1.5 border border-emerald-500/30"
-              title="Open AI Prompt Editor Tool"
+            <button
+              onClick={() => setActiveStudioTab('editor')}
+              className={`pb-4 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+                activeStudioTab === 'editor'
+                  ? 'border-[#E60023] text-[#E60023]'
+                  : 'border-transparent text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200'
+              }`}
             >
-              <Sparkles className="w-3.5 h-3.5" /> Prompt Editor Tool ↗
-            </Link>
+              <Edit3 className="w-4 h-4 text-emerald-500" />
+              <span>AI Prompt Editor &amp; Modifier</span>
+            </button>
           </div>
         </div>
 
-        {activeStudioTab === 'reverse' ? (
+        {activeStudioTab === 'editor' ? (
+          <div className="py-4">
+            <PromptEditorTool />
+          </div>
+        ) : activeStudioTab === 'reverse' ? (
           /* IMAGE TO PROMPT STUDIO */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Left Column: Input Image & Options (5 cols) */}
