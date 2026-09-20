@@ -124,7 +124,7 @@ interface AppContextType {
   deleteTag: (tag: string) => Promise<void>;
   saveSettings: (settings: Partial<SiteSettings>) => Promise<SiteSettings>;
   resetAllData: () => void;
-  showToast: (msg: string) => void;
+  showToast: (msg: string, type?: string) => void;
   toastMessage: string | null;
 
   // Cloud Sync for Cross-Device Persistence
@@ -277,7 +277,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Toast
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const showToast = useCallback((msg: string) => {
+  const showToast = useCallback((msg: string, type?: string) => {
     setToastMessage(msg);
     setTimeout(() => {
       setToastMessage((prev) => (prev === msg ? null : prev));
