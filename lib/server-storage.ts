@@ -326,9 +326,9 @@ export const ServerStorage = {
         createdAt: post.createdAt || now,
         updatedAt: now,
         publishedAt: post.status === 'published' ? (post.publishedAt || now) : undefined,
-        viewsCount: post.viewsCount || 0,
-        copiesCount: post.copiesCount || 0,
-        likesCount: post.likesCount || 0,
+        viewsCount: post.viewsCount !== undefined ? post.viewsCount : (Math.floor(Math.random() * (99672 - 2860 + 1)) + 2860),
+        copiesCount: post.copiesCount !== undefined ? post.copiesCount : Math.round((post.viewsCount !== undefined ? post.viewsCount : (Math.floor(Math.random() * (99672 - 2860 + 1)) + 2860)) * 0.42),
+        likesCount: post.likesCount !== undefined ? post.likesCount : Math.round((post.viewsCount !== undefined ? post.viewsCount : (Math.floor(Math.random() * (99672 - 2860 + 1)) + 2860)) * 0.30),
         bookmarksCount: post.bookmarksCount || 0,
       };
     }
