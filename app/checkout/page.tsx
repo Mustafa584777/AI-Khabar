@@ -16,6 +16,11 @@ import {
   ArrowRight,
   Lock,
   ImageIcon,
+  ChevronDown,
+  ChevronUp,
+  HelpCircle,
+  Check,
+  X,
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 
@@ -90,10 +95,34 @@ const CREDIT_PACKS: CreditPack[] = [
   },
 ];
 
+const FAQS = [
+  {
+    question: 'Do tool credits expire?',
+    answer: 'No! Pay-as-you-go credit packs never expire. You can use them whenever you need to unlock prompts or run image-to-prompt extractions. Monthly subscription credits refresh every billing cycle.',
+  },
+  {
+    question: 'Can I cancel or change my monthly subscription anytime?',
+    answer: 'Yes, you can upgrade, downgrade, or cancel your subscription at any time directly from your account settings. Your active tier benefits remain active until the end of your billing cycle.',
+  },
+  {
+    question: 'What payment methods are supported via Razorpay?',
+    answer: 'We accept all major Indian and international payment methods via secure Razorpay checkout, including UPI (Google Pay, PhonePe, Paytm), Credit/Debit Cards (Visa, MasterCard, RuPay), NetBanking, and Wallets.',
+  },
+  {
+    question: 'What is AI Search and how does it work?',
+    answer: 'AI Search allows you to search across thousands of curated visual prompts using natural conversational queries. Paid monthly plans include generous AI Search quotas ranging from 100 searches up to unlimited in Studio 499.',
+  },
+  {
+    question: 'How do prompt requests work for custom creations?',
+    answer: 'Depending on your plan tier (Starter, Pro, VIP, Studio 499), you receive monthly custom prompt generation requests where our system crafts hyper-optimized prompts for your exact creative vision.',
+  },
+];
+
 export default function CheckoutPage() {
   const { isProUser, planTier, toolCredits, promptRequestsRemaining } = useApp();
   const [billingView, setBillingView] = useState<'credits' | 'subscription'>('credits');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
   return (
     <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col pb-20 sm:pb-8">
@@ -537,43 +566,127 @@ export default function CheckoutPage() {
           </div>
         )}
 
-        {/* FAQ Section */}
-        <div className="max-w-4xl mx-auto p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
-          <div className="border-b border-neutral-200 dark:border-neutral-800 pb-4">
-            <h2 className="text-lg font-black text-neutral-900 dark:text-white flex items-center gap-2">
-              <span className="text-[#E60023]">❓</span> Frequently Asked Questions
+        {/* Features Comparison Table */}
+        <div className="max-w-5xl mx-auto p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
+          <div className="text-center space-y-2 max-w-2xl mx-auto">
+            <h2 className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white">
+              Compare Plan Features
             </h2>
-            <p className="text-xs text-neutral-500 mt-1">Everything you need to know about plans, credits, and secure billing</p>
+            <p className="text-xs sm:text-sm text-neutral-500">
+              Find the exact plan tailored to your creative workflow and production volume.
+            </p>
           </div>
 
-          <div className="space-y-4 text-xs">
-            <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200/80 dark:border-neutral-700/80 space-y-1.5">
-              <h3 className="font-bold text-sm text-neutral-900 dark:text-white">What is the difference between Credits and Subscriptions?</h3>
-              <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                Credits are pay-as-you-go top-ups that never expire, ideal for sporadic prompt unlocking. Monthly and Yearly subscriptions provide recurring monthly credit allowances, AI searches, prompt requests, and full access to all features.
-              </p>
-            </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs sm:text-sm">
+              <thead>
+                <tr className="border-b border-neutral-200 dark:border-neutral-800 text-neutral-400 font-bold">
+                  <th className="py-3 px-4">Feature / Benefit</th>
+                  <th className="py-3 px-4 text-center">Free</th>
+                  <th className="py-3 px-4 text-center">Starter</th>
+                  <th className="py-3 px-4 text-center">Pro</th>
+                  <th className="py-3 px-4 text-center">VIP</th>
+                  <th className="py-3 px-4 text-center text-amber-500">Studio 499</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800 text-neutral-700 dark:text-neutral-300">
+                <tr>
+                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Monthly Tool Credits</td>
+                  <td className="py-3.5 px-4 text-center">2 / day</td>
+                  <td className="py-3.5 px-4 text-center font-bold">100 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-bold">250 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-bold">600 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-bold text-amber-600 dark:text-amber-400">1,500 / mo</td>
+                </tr>
+                <tr>
+                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">AI Search Quota</td>
+                  <td className="py-3.5 px-4 text-center">Basic</td>
+                  <td className="py-3.5 px-4 text-center">100 / mo</td>
+                  <td className="py-3.5 px-4 text-center">250 / mo</td>
+                  <td className="py-3.5 px-4 text-center">600 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-bold text-amber-600 dark:text-amber-400">Unlimited</td>
+                </tr>
+                <tr>
+                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Custom Prompt Requests</td>
+                  <td className="py-3.5 px-4 text-center text-neutral-400"><X className="w-4 h-4 mx-auto" /></td>
+                  <td className="py-3.5 px-4 text-center">10 / mo</td>
+                  <td className="py-3.5 px-4 text-center">20 / mo</td>
+                  <td className="py-3.5 px-4 text-center">50 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-bold">10 / mo</td>
+                </tr>
+                <tr>
+                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Saves & History</td>
+                  <td className="py-3.5 px-4 text-center">Limited</td>
+                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold">Unlimited</td>
+                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold">Unlimited</td>
+                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold">Unlimited</td>
+                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold">Unlimited</td>
+                </tr>
+                <tr>
+                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Unlock Premium Prompts</td>
+                  <td className="py-3.5 px-4 text-center">1 cr each</td>
+                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold"><Check className="w-4 h-4 mx-auto" /></td>
+                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold"><Check className="w-4 h-4 mx-auto" /></td>
+                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold"><Check className="w-4 h-4 mx-auto" /></td>
+                  <td className="py-3.5 px-4 text-center text-amber-500 font-bold"><Check className="w-4 h-4 mx-auto" /></td>
+                </tr>
+                <tr>
+                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Image-to-Prompt Extraction</td>
+                  <td className="py-3.5 px-4 text-center">3 cr each</td>
+                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold"><Check className="w-4 h-4 mx-auto" /></td>
+                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold"><Check className="w-4 h-4 mx-auto" /></td>
+                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold"><Check className="w-4 h-4 mx-auto" /></td>
+                  <td className="py-3.5 px-4 text-center text-amber-500 font-bold"><Check className="w-4 h-4 mx-auto" /></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-            <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200/80 dark:border-neutral-700/80 space-y-1.5">
-              <h3 className="font-bold text-sm text-neutral-900 dark:text-white">How does the Yearly billing discount work?</h3>
-              <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                Selecting Yearly billing gives you approximately 2 months free (~17% to 20% savings) compared to monthly renewals.
+        {/* FAQ Section */}
+        <div className="max-w-4xl mx-auto p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
+          <div className="flex items-center gap-3 border-b border-neutral-200 dark:border-neutral-800 pb-4">
+            <div className="w-9 h-9 rounded-full bg-red-50 dark:bg-red-950/60 text-[#E60023] flex items-center justify-center shrink-0">
+              <HelpCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-black text-neutral-900 dark:text-white">
+                Frequently Asked Questions
+              </h2>
+              <p className="text-xs text-neutral-500">
+                Everything you need to know about plans, payments, and credits
               </p>
             </div>
+          </div>
 
-            <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200/80 dark:border-neutral-700/80 space-y-1.5">
-              <h3 className="font-bold text-sm text-neutral-900 dark:text-white">Can I change or cancel my plan anytime?</h3>
-              <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                Yes! You can manage your subscription or top up credits instantly from your User Dashboard at any time.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200/80 dark:border-neutral-700/80 space-y-1.5">
-              <h3 className="font-bold text-sm text-neutral-900 dark:text-white">What payment methods are supported?</h3>
-              <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                All transactions are processed through official secure Razorpay checkout supporting UPI (Google Pay, PhonePe, Paytm), Credit/Debit Cards, NetBanking, and Wallets.
-              </p>
-            </div>
+          <div className="space-y-3">
+            {FAQS.map((faq, idx) => {
+              const isOpen = openFaqIndex === idx;
+              return (
+                <div
+                  key={idx}
+                  className="rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200/80 dark:border-neutral-700/80 overflow-hidden transition-all"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
+                    className="w-full px-5 py-4 text-left flex items-center justify-between gap-4 font-bold text-xs sm:text-sm text-neutral-900 dark:text-white hover:bg-neutral-100/60 dark:hover:bg-neutral-800/80 transition-colors"
+                  >
+                    <span>{faq.question}</span>
+                    {isOpen ? (
+                      <ChevronUp className="w-4 h-4 text-neutral-500 shrink-0" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-neutral-500 shrink-0" />
+                    )}
+                  </button>
+                  {isOpen && (
+                    <div className="px-5 pb-4 text-xs sm:text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed border-t border-neutral-200/40 dark:border-neutral-700/40 pt-3">
+                      {faq.answer}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
