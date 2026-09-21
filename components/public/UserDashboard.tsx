@@ -570,7 +570,9 @@ export const UserDashboard = () => {
                     key={post.id}
                     onClick={() => {
                       setSelectedPost(post);
-                      router.push(`/${getPromptSlug(post)}`, { scroll: false });
+                      if (typeof window !== 'undefined') {
+                        window.history.pushState({ postId: post.id }, '', `/${getPromptSlug(post)}`);
+                      }
                     }}
                     className="group relative rounded-2xl overflow-hidden bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer w-full"
                   >

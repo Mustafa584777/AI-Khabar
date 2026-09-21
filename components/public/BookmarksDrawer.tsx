@@ -88,7 +88,9 @@ export const BookmarksDrawer = () => {
                   <div
                     onClick={() => {
                       setSelectedPost(post);
-                      router.push(`/${getPromptSlug(post)}`, { scroll: false });
+                      if (typeof window !== 'undefined') {
+                        window.history.pushState({ postId: post.id }, '', `/${getPromptSlug(post)}`);
+                      }
                       setIsBookmarksDrawerOpen(false);
                     }}
                     className="relative w-16 h-20 rounded-xl overflow-hidden bg-neutral-900 shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
@@ -110,7 +112,9 @@ export const BookmarksDrawer = () => {
                     <h4
                       onClick={() => {
                         setSelectedPost(post);
-                        router.push(`/${getPromptSlug(post)}`, { scroll: false });
+                        if (typeof window !== 'undefined') {
+                          window.history.pushState({ postId: post.id }, '', `/${getPromptSlug(post)}`);
+                        }
                         setIsBookmarksDrawerOpen(false);
                       }}
                       className="text-xs font-bold text-neutral-900 dark:text-neutral-100 line-clamp-2 mt-1 cursor-pointer hover:text-[#E60023] transition-colors"

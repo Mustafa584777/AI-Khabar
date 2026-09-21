@@ -31,8 +31,6 @@ export const Header = () => {
     searchQuery,
     setSearchQuery,
     setIsSearchModalOpen,
-    setIsNotificationsModalOpen,
-    isNotificationsModalOpen,
     isProUser,
     planTier,
     setIsProCheckoutModalOpen,

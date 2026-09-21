@@ -55,7 +55,9 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
     if (e.metaKey || e.ctrlKey || e.button === 1) return;
     e.preventDefault();
     setSelectedPost(post);
-    router.push(`/${promptSlug}`, { scroll: false });
+    if (typeof window !== 'undefined') {
+      window.history.pushState({ postId: post.id }, '', `/${promptSlug}`);
+    }
   };
 
   const handleBookmark = (e: React.MouseEvent) => {
