@@ -93,6 +93,7 @@ const CREDIT_PACKS: CreditPack[] = [
 export default function CheckoutPage() {
   const { isProUser, planTier, toolCredits, promptRequestsRemaining } = useApp();
   const [billingView, setBillingView] = useState<'credits' | 'subscription'>('credits');
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
   return (
     <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col pb-20 sm:pb-8">
@@ -257,8 +258,39 @@ export default function CheckoutPage() {
         {/* View 2: Monthly Subscriptions */}
         {billingView === 'subscription' && (
           <div className="space-y-8 animate-in fade-in duration-300">
+            {/* Monthly / Yearly Billing Toggle */}
+            <div className="flex justify-center">
+              <div className="inline-flex p-1 rounded-xl bg-neutral-200/80 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs font-bold shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => setBillingCycle('monthly')}
+                  className={`px-5 py-2 rounded-lg transition-all ${
+                    billingCycle === 'monthly'
+                      ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm'
+                      : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                  }`}
+                >
+                  Monthly Billing
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBillingCycle('yearly')}
+                  className={`px-5 py-2 rounded-lg transition-all flex items-center gap-1.5 ${
+                    billingCycle === 'yearly'
+                      ? 'bg-white dark:bg-neutral-900 text-[#E60023] dark:text-red-400 shadow-sm'
+                      : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                  }`}
+                >
+                  <span>Yearly Billing</span>
+                  <span className="px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-950 text-[#E60023] text-[10px] font-black uppercase tracking-wide">
+                    Save ~20%
+                  </span>
+                </button>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-              {/* Tier 1: Starter (100) */}
+              {/* Tier 1: Starter */}
               <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col justify-between space-y-6 hover:shadow-md transition-shadow">
                 <div className="space-y-4">
                   <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-500 flex items-center justify-center">
@@ -267,14 +299,16 @@ export default function CheckoutPage() {
 
                   <div>
                     <h3 className="text-lg font-black text-neutral-900 dark:text-white">Starter</h3>
-                    <p className="text-xs text-neutral-500">Essential monthly membership</p>
+                    <p className="text-xs text-neutral-500">Essential membership</p>
                   </div>
 
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl font-black text-neutral-900 dark:text-white">
-                      ₹99
+                      {billingCycle === 'monthly' ? '₹99' : '₹950'}
                     </span>
-                    <span className="text-xs text-neutral-400">/ month</span>
+                    <span className="text-xs text-neutral-400">
+                      {billingCycle === 'monthly' ? '/ month' : '/ year (save ₹238)'}
+                    </span>
                   </div>
 
                   <ul className="space-y-2.5 text-xs text-neutral-600 dark:text-neutral-300">
@@ -284,7 +318,7 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
-                      <span><strong>100</strong> monthly prompt tool credits</span>
+                      <span><strong>100</strong> prompt tool credits / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
@@ -292,7 +326,7 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
-                      <span><strong>10 Monthly Prompt Requests</strong></span>
+                      <span><strong>10 Prompt Requests</strong></span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
@@ -302,17 +336,17 @@ export default function CheckoutPage() {
                 </div>
 
                 <RazorpayCheckoutButton
-                  amount={9900}
+                  amount={billingCycle === 'monthly' ? 9900 : 95000}
                   planTier="starter"
-                  planName="Starter"
-                  description="Monthly Starter - 100 Credits, 100 AI Searches, Unlimited Saves"
-                  buttonText="Get Starter for ₹99/mo"
+                  planName={billingCycle === 'monthly' ? 'Starter Monthly' : 'Starter Yearly'}
+                  description={billingCycle === 'monthly' ? 'Monthly Starter - 100 Credits, 100 AI Searches' : 'Yearly Starter - 100 Credits/mo, 100 AI Searches/mo (2 Months Free)'}
+                  buttonText={billingCycle === 'monthly' ? 'Get Starter for ₹99/mo' : 'Get Starter Yearly for ₹950'}
                   variant="secondary"
                   className="w-full text-xs"
                 />
               </div>
 
-              {/* Tier 2: Pro (250) */}
+              {/* Tier 2: Pro */}
               <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border-2 border-[#E60023] shadow-lg flex flex-col justify-between space-y-6 relative hover:shadow-xl transition-shadow">
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-[#E60023] text-white text-[10px] font-black uppercase tracking-wider">
                   Most Popular
@@ -330,9 +364,11 @@ export default function CheckoutPage() {
 
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl font-black text-neutral-900 dark:text-white">
-                      ₹199
+                      {billingCycle === 'monthly' ? '₹199' : '₹1,900'}
                     </span>
-                    <span className="text-xs text-neutral-400">/ month</span>
+                    <span className="text-xs text-neutral-400">
+                      {billingCycle === 'monthly' ? '/ month' : '/ year (save ₹488)'}
+                    </span>
                   </div>
 
                   <ul className="space-y-2.5 text-xs text-neutral-600 dark:text-neutral-300">
@@ -342,7 +378,7 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
-                      <span><strong>250</strong> monthly prompt tool credits</span>
+                      <span><strong>250</strong> prompt tool credits / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
@@ -350,7 +386,7 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
-                      <span><strong>20 Monthly Prompt Requests</strong></span>
+                      <span><strong>20 Prompt Requests</strong></span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
@@ -360,18 +396,18 @@ export default function CheckoutPage() {
                 </div>
 
                 <RazorpayCheckoutButton
-                  amount={19900}
+                  amount={billingCycle === 'monthly' ? 19900 : 190000}
                   planTier="pro"
-                  planName="Pro"
-                  description="Monthly Pro - 250 Credits, 250 AI Searches, Unlimited Saves"
-                  buttonText="Get Pro for ₹199/mo"
+                  planName={billingCycle === 'monthly' ? 'Pro Monthly' : 'Pro Yearly'}
+                  description={billingCycle === 'monthly' ? 'Monthly Pro - 250 Credits, 250 AI Searches' : 'Yearly Pro - 250 Credits/mo, 250 AI Searches/mo (2 Months Free)'}
+                  buttonText={billingCycle === 'monthly' ? 'Get Pro for ₹199/mo' : 'Get Pro Yearly for ₹1,900'}
                   variant="pill"
                   size="md"
                   className="w-full text-xs"
                 />
               </div>
 
-              {/* Tier 3: VIP (600) */}
+              {/* Tier 3: VIP */}
               <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col justify-between space-y-6 hover:shadow-md transition-shadow">
                 <div className="space-y-4">
                   <div className="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-950/50 text-purple-500 flex items-center justify-center">
@@ -385,9 +421,11 @@ export default function CheckoutPage() {
 
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl font-black text-neutral-900 dark:text-white">
-                      ₹399
+                      {billingCycle === 'monthly' ? '₹399' : '₹3,800'}
                     </span>
-                    <span className="text-xs text-neutral-400">/ month</span>
+                    <span className="text-xs text-neutral-400">
+                      {billingCycle === 'monthly' ? '/ month' : '/ year (save ₹988)'}
+                    </span>
                   </div>
 
                   <ul className="space-y-2.5 text-xs text-neutral-600 dark:text-neutral-300">
@@ -397,7 +435,7 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
-                      <span><strong>600</strong> monthly prompt tool credits</span>
+                      <span><strong>600</strong> prompt tool credits / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
@@ -405,7 +443,7 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
-                      <span><strong>50 Monthly Prompt Requests</strong></span>
+                      <span><strong>50 Prompt Requests</strong></span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
@@ -415,17 +453,17 @@ export default function CheckoutPage() {
                 </div>
 
                 <RazorpayCheckoutButton
-                  amount={39900}
+                  amount={billingCycle === 'monthly' ? 39900 : 380000}
                   planTier="vip"
-                  planName="VIP"
-                  description="Monthly VIP - 600 Credits, 600 AI Searches, Unlimited Saves"
-                  buttonText="Get VIP for ₹399/mo"
+                  planName={billingCycle === 'monthly' ? 'VIP Monthly' : 'VIP Yearly'}
+                  description={billingCycle === 'monthly' ? 'Monthly VIP - 600 Credits, 600 AI Searches' : 'Yearly VIP - 600 Credits/mo, 600 AI Searches/mo (2 Months Free)'}
+                  buttonText={billingCycle === 'monthly' ? 'Get VIP for ₹399/mo' : 'Get VIP Yearly for ₹3,800'}
                   variant="secondary"
                   className="w-full text-xs"
                 />
               </div>
 
-              {/* Tier 4: Ultra Studio (499) */}
+              {/* Tier 4: Ultra Studio */}
               <div className="p-6 rounded-3xl bg-gradient-to-b from-neutral-900 to-neutral-950 text-white border-2 border-amber-500/80 shadow-xl flex flex-col justify-between space-y-6 relative">
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-amber-500 text-black text-[10px] font-black uppercase tracking-wider shadow-md">
                   Ultimate Studio
@@ -443,9 +481,11 @@ export default function CheckoutPage() {
 
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl font-black text-amber-400">
-                      ₹499
+                      {billingCycle === 'monthly' ? '₹499' : '₹4,790'}
                     </span>
-                    <span className="text-xs text-neutral-400">/ month</span>
+                    <span className="text-xs text-neutral-400">
+                      {billingCycle === 'monthly' ? '/ month' : '/ year (save ₹1,198)'}
+                    </span>
                   </div>
 
                   <ul className="space-y-2.5 text-xs text-neutral-300">
@@ -473,11 +513,11 @@ export default function CheckoutPage() {
                 </div>
 
                 <RazorpayCheckoutButton
-                  amount={49900}
+                  amount={billingCycle === 'monthly' ? 49900 : 479000}
                   planTier="ultra"
-                  planName="Studio 499"
-                  description="Studio 499 - 1500 Credits, Unlimited AI Search, Unlimited Saves, 10 Prompt Requests"
-                  buttonText="Get 499 Plan for ₹499/mo"
+                  planName={billingCycle === 'monthly' ? 'Studio 499 Monthly' : 'Studio 499 Yearly'}
+                  description={billingCycle === 'monthly' ? 'Studio 499 - 1500 Credits, Unlimited AI Search' : 'Yearly Studio 499 - 1500 Credits/mo, Unlimited AI Search (2 Months Free)'}
+                  buttonText={billingCycle === 'monthly' ? 'Get 499 Plan for ₹499/mo' : 'Get Studio Yearly for ₹4,790'}
                   variant="dark"
                   className="w-full text-xs font-black bg-amber-500 hover:bg-amber-400 text-black"
                 />
@@ -496,6 +536,46 @@ export default function CheckoutPage() {
             </div>
           </div>
         )}
+
+        {/* FAQ Section */}
+        <div className="max-w-4xl mx-auto p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
+          <div className="border-b border-neutral-200 dark:border-neutral-800 pb-4">
+            <h2 className="text-lg font-black text-neutral-900 dark:text-white flex items-center gap-2">
+              <span className="text-[#E60023]">❓</span> Frequently Asked Questions
+            </h2>
+            <p className="text-xs text-neutral-500 mt-1">Everything you need to know about plans, credits, and secure billing</p>
+          </div>
+
+          <div className="space-y-4 text-xs">
+            <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200/80 dark:border-neutral-700/80 space-y-1.5">
+              <h3 className="font-bold text-sm text-neutral-900 dark:text-white">What is the difference between Credits and Subscriptions?</h3>
+              <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                Credits are pay-as-you-go top-ups that never expire, ideal for sporadic prompt unlocking. Monthly and Yearly subscriptions provide recurring monthly credit allowances, AI searches, prompt requests, and full access to all features.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200/80 dark:border-neutral-700/80 space-y-1.5">
+              <h3 className="font-bold text-sm text-neutral-900 dark:text-white">How does the Yearly billing discount work?</h3>
+              <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                Selecting Yearly billing gives you approximately 2 months free (~17% to 20% savings) compared to monthly renewals.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200/80 dark:border-neutral-700/80 space-y-1.5">
+              <h3 className="font-bold text-sm text-neutral-900 dark:text-white">Can I change or cancel my plan anytime?</h3>
+              <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                Yes! You can manage your subscription or top up credits instantly from your User Dashboard at any time.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200/80 dark:border-neutral-700/80 space-y-1.5">
+              <h3 className="font-bold text-sm text-neutral-900 dark:text-white">What payment methods are supported?</h3>
+              <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                All transactions are processed through official secure Razorpay checkout supporting UPI (Google Pay, PhonePe, Paytm), Credit/Debit Cards, NetBanking, and Wallets.
+              </p>
+            </div>
+          </div>
+        </div>
 
         {/* How Credits Work Section */}
         <div className="max-w-4xl mx-auto p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
