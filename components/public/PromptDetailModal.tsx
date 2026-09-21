@@ -701,6 +701,7 @@ export const PromptDetailModal = () => {
     if (typeof window !== 'undefined') {
       sessionStorage.setItem('promptcms_editor_preload', text);
     }
+    setSelectedPost(null);
     router.push('/prompt-editor');
     showToast('Prompt loaded into Prompt Editor!');
   };
@@ -710,6 +711,7 @@ export const PromptDetailModal = () => {
       sessionStorage.setItem('promptcms_studio_preload', `generate a new version of this prompt: ${text}`);
       sessionStorage.setItem('promptcms_studio_tab', 'generator');
     }
+    setSelectedPost(null);
     router.push('/create');
     showToast('Prompt loaded into Prompt Generator!');
   };

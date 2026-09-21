@@ -313,11 +313,13 @@ export const AIStudioTool = () => {
   };
 
   const handleGenerateNewVersion = (text: string) => {
+    const formatted = `generate a new version of this prompt: ${text}`;
     if (typeof window !== 'undefined') {
-      sessionStorage.setItem('promptcms_studio_preload', `generate a new version of this prompt: ${text}`);
+      sessionStorage.setItem('promptcms_studio_preload', formatted);
       sessionStorage.setItem('promptcms_studio_tab', 'generator');
     }
-    router.push('/create');
+    setActiveStudioTab('generator');
+    setIdeaInput(formatted);
     showToast('Prompt loaded into Prompt Generator!');
   };
 
