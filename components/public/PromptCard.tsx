@@ -164,11 +164,11 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
             onClick={handleDeconstructImagePrompt}
             data-action="decode-prompt"
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl transition-all duration-300 ease-out transform scale-75 group-hover:scale-100 hover:scale-110 active:scale-95 text-xs font-bold"
-            title="Generate"
-            aria-label="Generate"
+            title="Decode"
+            aria-label="Decode"
           >
             <Sparkles className="w-4 h-4 text-amber-600" />
-            <span>Generate</span>
+            <span>Decode</span>
           </button>
         </div>
       </a>

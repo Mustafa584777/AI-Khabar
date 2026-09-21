@@ -9,8 +9,9 @@ const LoadingOverlayInner = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [loadingText, setLoadingText] = useState<string>('Loading Page & Studio...');
   const [showSlowWarning, setShowSlowWarning] = useState<boolean>(false);
+  const [pendingTarget, setPendingTarget] = useState<string | null>(null);
 
-  // Trigger loading on pathname change or initial visit in session
+  // Clear session visited flags on page reload (F5 / browser refresh)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -27,71 +28,27 @@ const LoadingOverlayInner = () => {
         // ignore
       }
     }
+  }, []);
 
-    // Exclude prompt detail modal opens and individual prompt slugs
-    const isMainRoute =
-      pathname === '/' ||
-      pathname === '/create' ||
-      pathname === '/dashboard' ||
-      pathname === '/notifications' ||
-      pathname === '/pricing' ||
-      pathname === '/prompt-editor';
+  // Monitor route changes to dismiss loading overlay once user has successfully landed on target page
+  useEffect(() => {
+    if (!pendingTarget) return;
 
-    if (!isMainRoute) {
-      return;
+    if (pathname === pendingTarget) {
+      // User has landed on target page! Ensure minimum aesthetic loading time (800ms) then dismiss
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+        try {
+          sessionStorage.setItem(`visited_route_${pendingTarget}`, 'true');
+        } catch {
+          // ignore
+        }
+        setPendingTarget(null);
+      }, 800);
+
+      return () => clearTimeout(timer);
     }
-
-    const visitKey = `visited_route_${pathname}`;
-    try {
-      if (sessionStorage.getItem(visitKey)) {
-        return;
-      }
-    } catch {
-      // ignore
-    }
-
-    let title = 'Loading Page & Studio...';
-    if (pathname === '/create') title = 'Opening AI Studio & Prompt Generator...';
-    else if (pathname === '/dashboard') title = 'Loading Creator Dashboard & History...';
-    else if (pathname === '/notifications') title = 'Loading Notifications & Drops...';
-    else if (pathname === '/pricing') title = 'Loading Membership Plans...';
-    else if (pathname === '/') title = 'Loading Home Feed & Prompts...';
-
-    let startTimer: NodeJS.Timeout | null = null;
-    startTimer = setTimeout(() => {
-      setLoadingText(title);
-      setIsLoading(true);
-    }, 0);
-
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-      try {
-        sessionStorage.setItem(visitKey, 'true');
-      } catch {
-        // ignore
-      }
-    }, 700);
-
-    let slowTimer: NodeJS.Timeout | null = null;
-    let hideSlowTimer: NodeJS.Timeout | null = null;
-    try {
-      slowTimer = setTimeout(() => {
-        setShowSlowWarning(true);
-        hideSlowTimer = setTimeout(() => {
-          setShowSlowWarning(false);
-        }, 3000);
-      }, 1500);
-    } catch {
-      // ignore
-    }
-
-    return () => {
-      if (startTimer) clearTimeout(startTimer);
-      clearTimeout(timer);
-      if (slowTimer) clearTimeout(slowTimer);
-      if (hideSlowTimer) clearTimeout(hideSlowTimer);
-    };
-  }, [pathname]);
+  }, [pathname, pendingTarget]);
 
   // Click listener for navigation and action buttons (Decode, Edit, Generate new version)
   useEffect(() => {
@@ -113,12 +70,12 @@ const LoadingOverlayInner = () => {
         actionAttr === 'decode-prompt' ||
         titleAttr.includes('edit') ||
         titleAttr.includes('generate new version') ||
-        text === 'generate' ||
+        text === 'decode' ||
         text === 'edit' ||
         text === 'generate new version'
       ) {
         targetPath = '/create';
-        if (actionAttr === 'decode-prompt' || text === 'generate') {
+        if (actionAttr === 'decode-prompt' || text === 'decode') {
           customLoadingText = 'Opening Image-to-Prompt & Studio...';
         } else if (titleAttr.includes('edit') || text === 'edit') {
           customLoadingText = 'Loading Prompt Editor...';
@@ -150,25 +107,22 @@ const LoadingOverlayInner = () => {
 
       if (!targetPath) return;
 
-      // If already on this path, do not trigger loading overlay unnecessarily
+      // If already on this path, do not trigger loading overlay
       if (pathname === targetPath && !actionAttr) return;
 
       const visitKey = `visited_route_${targetPath}`;
       try {
         if (sessionStorage.getItem(visitKey)) {
-          return; // If already fully loaded in this session, don't trigger loading skeleton again
+          return; // Already loaded this session, do not trigger again
         }
       } catch {
         // ignore
       }
 
       setLoadingText(customLoadingText);
-
-      // Trigger overlay asynchronously
-      setTimeout(() => {
-        setIsLoading(true);
-        setShowSlowWarning(false);
-      }, 0);
+      setPendingTarget(targetPath);
+      setIsLoading(true);
+      setShowSlowWarning(false);
 
       let slowCheck: NodeJS.Timeout | null = null;
       let hideSlowCheck: NodeJS.Timeout | null = null;
@@ -178,21 +132,17 @@ const LoadingOverlayInner = () => {
           hideSlowCheck = setTimeout(() => {
             setShowSlowWarning(false);
           }, 3000);
-        }, 1500);
+        }, 2000);
       } catch {
         // ignore
       }
 
-      setTimeout(() => {
-        setIsLoading(false);
-        try {
-          sessionStorage.setItem(visitKey, 'true');
-        } catch {
-          // ignore
-        }
+      // Cleanup slow warning on unmount or landing
+      const cleanupSlow = () => {
         if (slowCheck) clearTimeout(slowCheck);
         if (hideSlowCheck) clearTimeout(hideSlowCheck);
-      }, 700);
+      };
+      // Store cleanup ref if needed or handled by effect
     };
 
     window.addEventListener('click', handleClick);
