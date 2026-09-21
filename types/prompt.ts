@@ -86,7 +86,7 @@ export interface PromptPost {
   publishedAt?: string;
 }
 
-export type PlanTier = 'free' | 'starter' | 'pro' | 'vip';
+export type PlanTier = 'free' | 'starter' | 'pro' | 'vip' | 'ultra';
 
 export interface Category {
   id: string;

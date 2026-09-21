@@ -28,6 +28,7 @@ const TIER_WEIGHT: Record<PlanTier, number> = {
   starter: 1,
   pro: 2,
   vip: 3,
+  ultra: 4,
 };
 
 export const UserSyncService = {
@@ -166,7 +167,7 @@ export const UserSyncService = {
     }
 
     // Remote account exists for this user: use strictly their remote verified plan & credits
-    let resolvedTier: PlanTier = (remote.planTier && ['starter', 'pro', 'vip', 'free'].includes(remote.planTier))
+    let resolvedTier: PlanTier = (remote.planTier && ['starter', 'pro', 'vip', 'ultra', 'free'].includes(remote.planTier))
       ? remote.planTier
       : (remote.isProUser ? 'pro' : 'free');
     

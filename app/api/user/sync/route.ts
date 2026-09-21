@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
         : (existingData.toolCredits !== undefined ? Number(existingData.toolCredits) : 2);
 
       // Safe Plan Tier resolution (vip > pro > starter > free)
-      const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3 };
+      const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3, ultra: 4 };
       const currentTier = existingData.planTier || (existingData.isProUser ? 'pro' : 'free');
       const incomingTier = data.planTier;
       let resolvedPlanTier = currentTier;

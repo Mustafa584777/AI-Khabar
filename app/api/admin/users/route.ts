@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
         .like('id', 'user_sync_%');
 
       if (!syncError && Array.isArray(syncRows)) {
-        const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3 };
+        const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3, ultra: 4 };
 
         for (const row of syncRows) {
           const syncData = row.data || {};

@@ -1,8 +1,16 @@
 'use client';
 
 import React from 'react';
+import { NotificationsModal } from './NotificationsModal';
+import { PageLoadingOverlay } from './PageLoadingOverlay';
+import { FirstLoginBonusModal } from './FirstLoginBonusModal';
 
 export const AppGlobalOverlays = () => {
-  return null;
+  return (
+    <>
+      <NotificationsModal />
+      <PageLoadingOverlay />
+      <FirstLoginBonusModal />
+    </>
+  );
 };
-

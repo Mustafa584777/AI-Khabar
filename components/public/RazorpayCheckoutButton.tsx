@@ -10,7 +10,7 @@ export interface RazorpayCheckoutButtonProps {
   amount?: number; // in paise (e.g. 100 = ₹1.00, 19900 = ₹199.00)
   currency?: string;
   planName?: string;
-  planTier?: 'starter' | 'pro' | 'vip';
+  planTier?: 'starter' | 'pro' | 'vip' | 'ultra';
   creditsToAdd?: number; // Added directly to toolCredits balance upon payment
   description?: string;
   buttonText?: string;

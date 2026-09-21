@@ -35,7 +35,7 @@ const SUBSCRIPTION_PLANS: PlanOption[] = [
     amountPaise: 4900,
     displayPrice: '₹49',
     period: '/ month',
-    features: ['100 monthly tool credits', 'AI Search included', 'Unlimited prompt & history saves', 'Unlock all premium prompts'],
+    features: ['Unlock all premium prompts', '30 prompt tools credits', 'Unlimited prompt & history saves'],
     icon: <Sparkles className="w-5 h-5 text-amber-500" />,
   },
   {
@@ -45,7 +45,7 @@ const SUBSCRIPTION_PLANS: PlanOption[] = [
     displayPrice: '₹99',
     period: '/ month',
     badge: 'Most Popular',
-    features: ['250 monthly tool credits', 'AI Search included', 'Unlimited prompt & history saves', 'Priority fast-lane', 'Unlock all premium prompts'],
+    features: ['Unlock all premium prompts', '60 prompt tools credits', 'Unlimited prompt & history saves', 'Priority fast-lane'],
     icon: <Zap className="w-5 h-5 text-[#E60023]" />,
   },
   {
@@ -55,18 +55,8 @@ const SUBSCRIPTION_PLANS: PlanOption[] = [
     displayPrice: '₹199',
     period: '/ month',
     badge: 'Best Value',
-    features: ['600 monthly tool credits', 'AI Search included', 'Unlimited prompt & history saves', 'Unlock all premium prompts'],
+    features: ['Unlock all premium prompts', '180 prompt tools credits', 'Unlimited prompt & history saves'],
     icon: <Crown className="w-5 h-5 text-purple-500" />,
-  },
-  {
-    id: 'vip',
-    name: '499 Plan',
-    amountPaise: 49900,
-    displayPrice: '₹499',
-    period: '/ month',
-    badge: 'Ultimate',
-    features: ['1500 monthly tool credits', 'Unlimited AI Search', '10 prompt requests', 'Unlimited saves & history', 'Unlock all premium prompts'],
-    icon: <Crown className="w-5 h-5 text-indigo-500" />,
   },
 ];
 

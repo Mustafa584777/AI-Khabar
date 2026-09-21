@@ -258,7 +258,7 @@ export default function CheckoutPage() {
         {billingView === 'subscription' && (
           <div className="space-y-8 animate-in fade-in duration-300">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-              {/* Tier 1: Starter */}
+              {/* Tier 1: Starter (100) */}
               <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col justify-between space-y-6 hover:shadow-md transition-shadow">
                 <div className="space-y-4">
                   <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-500 flex items-center justify-center">
@@ -272,7 +272,7 @@ export default function CheckoutPage() {
 
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl font-black text-neutral-900 dark:text-white">
-                      ₹49
+                      ₹99
                     </span>
                     <span className="text-xs text-neutral-400">/ month</span>
                   </div>
@@ -284,31 +284,35 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
-                      <span><strong>100</strong> monthly tool credits</span>
+                      <span><strong>100</strong> monthly prompt tool credits</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
-                      <span>AI Search included</span>
+                      <span><strong>100 AI Searches</strong> / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
-                      <span className="font-bold text-emerald-600 dark:text-emerald-400">Unlimited prompt & history saves</span>
+                      <span><strong>10 Monthly Prompt Requests</strong></span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-emerald-500 font-bold">✓</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">Unlimited saves & history</span>
                     </li>
                   </ul>
                 </div>
 
                 <RazorpayCheckoutButton
-                  amount={4900}
+                  amount={9900}
                   planTier="starter"
                   planName="Starter"
-                  description="Monthly Starter Membership - 100 Credits & AI Search"
-                  buttonText="Get Starter for ₹49/mo"
+                  description="Monthly Starter - 100 Credits, 100 AI Searches, Unlimited Saves"
+                  buttonText="Get Starter for ₹99/mo"
                   variant="secondary"
-                  className="w-full text-xs font-bold"
+                  className="w-full text-xs"
                 />
               </div>
 
-              {/* Tier 2: Pro */}
+              {/* Tier 2: Pro (250) */}
               <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border-2 border-[#E60023] shadow-lg flex flex-col justify-between space-y-6 relative hover:shadow-xl transition-shadow">
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-[#E60023] text-white text-[10px] font-black uppercase tracking-wider">
                   Most Popular
@@ -326,7 +330,7 @@ export default function CheckoutPage() {
 
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl font-black text-neutral-900 dark:text-white">
-                      ₹99
+                      ₹199
                     </span>
                     <span className="text-xs text-neutral-400">/ month</span>
                   </div>
@@ -338,36 +342,36 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
-                      <span><strong>250</strong> monthly tool credits</span>
+                      <span><strong>250</strong> monthly prompt tool credits</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
-                      <span>AI Search included</span>
+                      <span><strong>250 AI Searches</strong> / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
-                      <span className="font-bold text-[#E60023]">Unlimited prompt & history saves</span>
+                      <span><strong>20 Monthly Prompt Requests</strong></span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
-                      <span>Priority fast-lane generation</span>
+                      <span className="font-bold text-[#E60023]">Unlimited saves & history</span>
                     </li>
                   </ul>
                 </div>
 
                 <RazorpayCheckoutButton
-                  amount={9900}
+                  amount={19900}
                   planTier="pro"
                   planName="Pro"
-                  description="Monthly Pro Membership - 250 Credits & AI Search"
-                  buttonText="Get Pro for ₹99/mo"
+                  description="Monthly Pro - 250 Credits, 250 AI Searches, Unlimited Saves"
+                  buttonText="Get Pro for ₹199/mo"
                   variant="pill"
-                  size="lg"
-                  className="w-full text-xs font-bold"
+                  size="md"
+                  className="w-full text-xs"
                 />
               </div>
 
-              {/* Tier 3: VIP */}
+              {/* Tier 3: VIP (600) */}
               <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col justify-between space-y-6 hover:shadow-md transition-shadow">
                 <div className="space-y-4">
                   <div className="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-950/50 text-purple-500 flex items-center justify-center">
@@ -376,12 +380,12 @@ export default function CheckoutPage() {
 
                   <div>
                     <h3 className="text-lg font-black text-neutral-900 dark:text-white">VIP</h3>
-                    <p className="text-xs text-neutral-500">Power creators & commercial studios</p>
+                    <p className="text-xs text-neutral-500">Power creators & studios</p>
                   </div>
 
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl font-black text-neutral-900 dark:text-white">
-                      ₹199
+                      ₹399
                     </span>
                     <span className="text-xs text-neutral-400">/ month</span>
                   </div>
@@ -393,85 +397,89 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
-                      <span><strong>600</strong> monthly tool credits</span>
+                      <span><strong>600</strong> monthly prompt tool credits</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
-                      <span>AI Search included</span>
+                      <span><strong>600 AI Searches</strong> / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
-                      <span className="font-bold text-purple-600 dark:text-purple-400">Unlimited prompt & history saves</span>
+                      <span><strong>50 Monthly Prompt Requests</strong></span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-purple-500 font-bold">✓</span>
+                      <span className="font-bold text-purple-600 dark:text-purple-400">Unlimited saves & history</span>
                     </li>
                   </ul>
                 </div>
 
                 <RazorpayCheckoutButton
-                  amount={19900}
+                  amount={39900}
                   planTier="vip"
                   planName="VIP"
-                  description="Monthly VIP Membership - 600 Credits & AI Search"
-                  buttonText="Get VIP for ₹199/mo"
-                  variant="primary"
-                  className="w-full text-xs font-bold"
+                  description="Monthly VIP - 600 Credits, 600 AI Searches, Unlimited Saves"
+                  buttonText="Get VIP for ₹399/mo"
+                  variant="secondary"
+                  className="w-full text-xs"
                 />
               </div>
 
-              {/* Tier 4: 499 Plan */}
-              <div className="p-6 rounded-3xl bg-gradient-to-b from-indigo-50/50 to-white dark:from-indigo-950/20 dark:to-neutral-900 border-2 border-indigo-500/50 shadow-md flex flex-col justify-between space-y-6 hover:shadow-xl transition-shadow relative">
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-indigo-600 text-white text-[10px] font-black uppercase tracking-wider">
+              {/* Tier 4: Ultra Studio (499) */}
+              <div className="p-6 rounded-3xl bg-gradient-to-b from-neutral-900 to-neutral-950 text-white border-2 border-amber-500/80 shadow-xl flex flex-col justify-between space-y-6 relative">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-amber-500 text-black text-[10px] font-black uppercase tracking-wider shadow-md">
                   Ultimate Studio
                 </div>
 
                 <div className="space-y-4">
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                    <Crown className="w-6 h-6" />
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                    <Crown className="w-6 h-6 fill-amber-400" />
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-black text-neutral-900 dark:text-white">499 Plan</h3>
-                    <p className="text-xs text-neutral-500">Maximum power & unlimited capabilities</p>
+                    <h3 className="text-lg font-black text-white">Studio 499</h3>
+                    <p className="text-xs text-neutral-400">Unlimited AI power & maximum quota</p>
                   </div>
 
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-black text-neutral-900 dark:text-white">
+                    <span className="text-3xl font-black text-amber-400">
                       ₹499
                     </span>
                     <span className="text-xs text-neutral-400">/ month</span>
                   </div>
 
-                  <ul className="space-y-2.5 text-xs text-neutral-600 dark:text-neutral-300">
+                  <ul className="space-y-2.5 text-xs text-neutral-300">
                     <li className="flex items-center gap-2">
-                      <span className="text-indigo-500 font-bold">✓</span>
-                      <span className="font-bold">Unlock all premium prompts</span>
+                      <span className="text-amber-400 font-bold">✓</span>
+                      <span className="font-bold text-white">Unlock all premium prompts</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-indigo-500 font-bold">✓</span>
-                      <span><strong>1500</strong> monthly tool credits</span>
+                      <span className="text-amber-400 font-bold">✓</span>
+                      <span><strong>1500 credits</strong> / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-indigo-500 font-bold">✓</span>
-                      <span className="font-bold text-indigo-600 dark:text-indigo-400">Unlimited AI Search</span>
+                      <span className="text-amber-400 font-bold">✓</span>
+                      <span className="font-bold text-amber-300">Unlimited AI Search</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-indigo-500 font-bold">✓</span>
-                      <span><strong>10 Prompt requests</strong></span>
+                      <span className="text-amber-400 font-bold">✓</span>
+                      <span><strong>10 Prompt Requests</strong> / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-indigo-500 font-bold">✓</span>
-                      <span className="font-bold text-indigo-600 dark:text-indigo-400">Unlimited saves & history</span>
+                      <span className="text-amber-400 font-bold">✓</span>
+                      <span className="font-bold text-amber-400">Unlimited saves & history</span>
                     </li>
                   </ul>
                 </div>
 
                 <RazorpayCheckoutButton
                   amount={49900}
-                  planTier="vip"
-                  planName="499 Plan"
-                  description="Monthly 499 Plan - 1500 Credits, Unlimited AI Search & 10 Prompt Requests"
+                  planTier="ultra"
+                  planName="Studio 499"
+                  description="Studio 499 - 1500 Credits, Unlimited AI Search, Unlimited Saves, 10 Prompt Requests"
                   buttonText="Get 499 Plan for ₹499/mo"
-                  variant="primary"
-                  className="w-full text-xs font-bold bg-indigo-600 hover:bg-indigo-700"
+                  variant="dark"
+                  className="w-full text-xs font-black bg-amber-500 hover:bg-amber-400 text-black"
                 />
               </div>
             </div>

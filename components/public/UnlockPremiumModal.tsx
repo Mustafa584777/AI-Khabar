@@ -39,7 +39,7 @@ export const UnlockPremiumModal: React.FC = () => {
     router.push('/pricing');
   };
 
-  const handlePlanSuccess = (planName: 'starter' | 'pro' | 'vip') => {
+  const handlePlanSuccess = (planName: 'starter' | 'pro' | 'vip' | 'ultra') => {
     applyPlan(planName);
     setIsUnlockPremiumModalOpen(false);
   };
@@ -293,24 +293,28 @@ export const UnlockPremiumModal: React.FC = () => {
           /* Tab 2: Monthly Subscriptions */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {/* Starter Tier */}
-            <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700/80 flex flex-col justify-between space-y-3 hover:border-amber-400 transition-colors">
+            <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700/80 flex flex-col justify-between space-y-2.5 hover:border-amber-400 transition-colors">
               <div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-neutral-900 dark:text-white">Starter</span>
-                  <span className="text-xs font-bold text-neutral-900 dark:text-white">₹49/mo</span>
+                  <span className="text-xs font-bold text-neutral-900 dark:text-white">₹99/mo</span>
                 </div>
-                <ul className="mt-2.5 space-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
+                <ul className="mt-2 space-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                     <span>Unlock all premium prompts</span>
                   </li>
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span><strong>100</strong> credits / mo</span>
+                    <span>100 credits / mo</span>
                   </li>
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span>AI Search included</span>
+                    <span><strong>100 AI Searches</strong></span>
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <span><strong>10 Prompt Requests</strong></span>
                   </li>
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
@@ -319,40 +323,44 @@ export const UnlockPremiumModal: React.FC = () => {
                 </ul>
               </div>
               <RazorpayCheckoutButton
-                amount={4900}
+                amount={9900}
                 planName="Starter Plan"
                 planTier="starter"
-                description="Unlock premium prompts + 100 credits + AI Search"
-                buttonText="Pay ₹49/mo"
+                description="Unlock premium prompts + 100 credits + 100 AI Searches + Unlimited saves"
+                buttonText="Pay ₹99/mo"
                 variant="secondary"
                 size="sm"
-                className="w-full text-xs font-bold py-2"
+                className="w-full text-xs font-bold py-1.5"
                 onSuccess={() => handlePlanSuccess('starter')}
               />
             </div>
 
             {/* Pro Tier (Featured) */}
-            <div className="relative p-3.5 rounded-2xl bg-red-50/60 dark:bg-red-950/30 border-2 border-[#E60023] flex flex-col justify-between space-y-3 shadow-md">
+            <div className="relative p-3.5 rounded-2xl bg-red-50/60 dark:bg-red-950/30 border-2 border-[#E60023] flex flex-col justify-between space-y-2.5 shadow-md">
               <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-[#E60023] text-white text-[10px] font-black uppercase tracking-wider">
                 Popular
               </span>
               <div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-[#E60023] dark:text-red-400">Pro</span>
-                  <span className="text-xs font-bold text-neutral-900 dark:text-white">₹99/mo</span>
+                  <span className="text-xs font-bold text-neutral-900 dark:text-white">₹199/mo</span>
                 </div>
-                <ul className="mt-2.5 space-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
+                <ul className="mt-2 space-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                     <span>Unlock all premium prompts</span>
                   </li>
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span><strong>250</strong> credits / mo</span>
+                    <span>250 credits / mo</span>
                   </li>
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span>AI Search included</span>
+                    <span><strong>250 AI Searches</strong></span>
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <span><strong>20 Prompt Requests</strong></span>
                   </li>
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
@@ -361,37 +369,41 @@ export const UnlockPremiumModal: React.FC = () => {
                 </ul>
               </div>
               <RazorpayCheckoutButton
-                amount={9900}
+                amount={19900}
                 planName="Pro Plan"
                 planTier="pro"
-                description="Unlock premium prompts + 250 credits + AI Search"
-                buttonText="Pay ₹99/mo"
+                description="Unlock premium prompts + 250 credits + 250 AI Searches + Unlimited saves"
+                buttonText="Pay ₹199/mo"
                 variant="primary"
                 size="sm"
-                className="w-full text-xs font-bold py-2"
+                className="w-full text-xs font-bold py-1.5"
                 onSuccess={() => handlePlanSuccess('pro')}
               />
             </div>
 
             {/* VIP Tier */}
-            <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700/80 flex flex-col justify-between space-y-3 hover:border-amber-400 transition-colors">
+            <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700/80 flex flex-col justify-between space-y-2.5 hover:border-amber-400 transition-colors">
               <div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-amber-600 dark:text-amber-400">VIP</span>
-                  <span className="text-xs font-bold text-neutral-900 dark:text-white">₹199/mo</span>
+                  <span className="text-xs font-bold text-neutral-900 dark:text-white">₹399/mo</span>
                 </div>
-                <ul className="mt-2.5 space-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
+                <ul className="mt-2 space-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                     <span>Unlock all premium prompts</span>
                   </li>
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span><strong>600</strong> credits / mo</span>
+                    <span>600 credits / mo</span>
                   </li>
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span>AI Search included</span>
+                    <span><strong>600 AI Searches</strong></span>
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <span><strong>50 Prompt Requests</strong></span>
                   </li>
                   <li className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
@@ -400,58 +412,61 @@ export const UnlockPremiumModal: React.FC = () => {
                 </ul>
               </div>
               <RazorpayCheckoutButton
-                amount={19900}
+                amount={39900}
                 planName="VIP Plan"
                 planTier="vip"
-                description="Unlock premium prompts + 600 credits + AI Search"
-                buttonText="Pay ₹199/mo"
-                variant="dark"
+                description="Unlock premium prompts + 600 credits + 600 AI Searches + Unlimited saves"
+                buttonText="Pay ₹399/mo"
+                variant="secondary"
                 size="sm"
-                className="w-full text-xs font-bold py-2"
+                className="w-full text-xs font-bold py-1.5"
                 onSuccess={() => handlePlanSuccess('vip')}
               />
             </div>
 
-            {/* 499 Plan */}
-            <div className="p-3.5 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-300 dark:border-indigo-800 flex flex-col justify-between space-y-3 shadow-sm">
+            {/* Studio 499 Tier */}
+            <div className="relative p-3.5 rounded-2xl bg-neutral-900 text-white border border-amber-500 flex flex-col justify-between space-y-2.5 shadow-md">
+              <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-amber-500 text-black text-[10px] font-black uppercase tracking-wider">
+                Studio
+              </span>
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-black text-indigo-600 dark:text-indigo-400">499 Plan</span>
-                  <span className="text-xs font-bold text-neutral-900 dark:text-white">₹499/mo</span>
+                  <span className="text-xs font-black text-amber-400">Studio 499</span>
+                  <span className="text-xs font-bold text-white">₹499/mo</span>
                 </div>
-                <ul className="mt-2.5 space-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
+                <ul className="mt-2 space-y-1.5 text-[11px] text-neutral-300">
                   <li className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                     <span>Unlock all premium prompts</span>
                   </li>
                   <li className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span><strong>1500</strong> credits</span>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span>1500 credits / mo</span>
                   </li>
                   <li className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span className="font-bold text-indigo-600">Unlimited AI Search</span>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span className="font-bold text-amber-300">Unlimited AI Search</span>
                   </li>
                   <li className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span><strong>10 Prompt requests</strong></span>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span><strong>10 Prompt Requests</strong></span>
                   </li>
                   <li className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span className="font-bold text-indigo-600">Unlimited saves</span>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span className="font-bold text-amber-400">Unlimited saves</span>
                   </li>
                 </ul>
               </div>
               <RazorpayCheckoutButton
                 amount={49900}
-                planName="499 Plan"
-                planTier="vip"
-                description="Unlock premium prompts + 1500 credits + Unlimited AI Search + 10 Prompt requests"
+                planName="Studio 499 Plan"
+                planTier="ultra"
+                description="Unlock premium prompts + 1500 credits + Unlimited AI Search + Unlimited saves"
                 buttonText="Pay ₹499/mo"
-                variant="primary"
+                variant="dark"
                 size="sm"
-                className="w-full text-xs font-bold py-2 bg-indigo-600 hover:bg-indigo-700"
-                onSuccess={() => handlePlanSuccess('vip')}
+                className="w-full text-xs font-black py-1.5 bg-amber-500 hover:bg-amber-400 text-black"
+                onSuccess={() => handlePlanSuccess('ultra')}
               />
             </div>
           </div>

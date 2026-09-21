@@ -143,7 +143,7 @@ interface AppContextType {
   useToolCredit: (amount?: number) => boolean;
   addToolCredits: (amount: number) => void;
   promptRequestsRemaining: number;
-  upgradePlan: (tier: 'starter' | 'pro' | 'vip') => void;
+  upgradePlan: (tier: 'starter' | 'pro' | 'vip' | 'ultra') => void;
 
   // Prompt Unlocking with Credits / Subscription
   unlockedPromptIds: string[];
@@ -156,7 +156,7 @@ interface AppContextType {
   setIsFirstLoginModalOpen: (open: boolean) => void;
   lockedPromptContext: PromptPost | null;
   setLockedPromptContext: (post: PromptPost | null) => void;
-  applyPlan: (planTier: 'starter' | 'pro' | 'vip') => void;
+  applyPlan: (planTier: 'starter' | 'pro' | 'vip' | 'ultra') => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -213,7 +213,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const acc = StorageService.getUserAccount();
       if (acc && acc.isLoggedIn) {
         const saved = localStorage.getItem('auraprompt_plan_tier') as PlanTier;
-        if (['starter', 'pro', 'vip'].includes(saved)) return saved;
+        if (['starter', 'pro', 'vip', 'ultra'].includes(saved)) return saved;
       }
     }
     return 'free';
@@ -416,10 +416,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     [isProUser, unlockedPromptIds, toolCredits, deductToolCredit]
   );
 
-  const upgradePlan = useCallback((tier: 'starter' | 'pro' | 'vip') => {
-    const creditsMap = { starter: 30, pro: 60, vip: 180 };
-    const requestsMap = { starter: 10, pro: 20, vip: 50 };
-    const pointsMap = { starter: 10, pro: 20, vip: 50 };
+  const upgradePlan = useCallback((tier: 'starter' | 'pro' | 'vip' | 'ultra') => {
+    const creditsMap = { starter: 100, pro: 250, vip: 600, ultra: 1500 };
+    const requestsMap = { starter: 10, pro: 20, vip: 50, ultra: 10 };
+    const pointsMap = { starter: 10, pro: 20, vip: 50, ultra: 100 };
 
     setIsProUserState(true);
     setPlanTierState(tier);
@@ -1229,7 +1229,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const applyPlan = useCallback((tier: 'starter' | 'pro' | 'vip') => {
+  const applyPlan = useCallback((tier: 'starter' | 'pro' | 'vip' | 'ultra') => {
     upgradePlan(tier);
     showToast(`Success! You have unlocked the ${tier.toUpperCase()} plan.`);
   }, [upgradePlan, showToast]);
