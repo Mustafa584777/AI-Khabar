@@ -90,25 +90,24 @@ export async function POST(req: NextRequest) {
 
     const systemPrompt = `You are a world-class prompt engineer and AI art director specializing in Midjourney v6.1, Flux.1, and DALL-E 3.
 The user has provided:
-1. "Original Prompt": The base prompt.
+1. "Original Prompt": The base prompt (which may be very detailed and long, up to 1000+ words).
 2. "Change Instructions": What the user wants to add, remove, or modify.
 
 YOUR TASK:
-Rewrite and edit the original prompt precisely according to the user's change instructions.
-- Seamlessly integrate all requested changes while preserving the core visual beauty.
-- Elevate the prompt with professional photographic and cinematic terminology (camera lens body, lighting dynamics, texture details, compositional rules).
+Surgically edit and update the original prompt precisely according to the user's change instructions.
+- STRICT PRESERVATION RULE: If the original prompt is long and detailed (e.g., 500-1000+ words), you MUST preserve 100% of the original prompt's length, descriptive paragraphs, technical specifications, and formatting. Do NOT summarize, compress, or shorten the prompt. ONLY replace or modify the exact name, number, or phrase requested by the user, leaving every other paragraph and detail completely intact.
+- Seamlessly integrate all requested changes while retaining all existing rich details.
 - Include appropriate parameter flags at the end (e.g. --ar 16:9 --style raw --v 6.1 --s 250).
-- Produce a detailed, ready-to-run 100-200 word prompt string.
 
 OUTPUT FORMAT:
 Return ONLY valid JSON matching this schema:
 {
-  "enhancedPrompt": "The full revised and upgraded prompt string",
+  "enhancedPrompt": "The full length revised and upgraded prompt string",
   "negativePrompt": "Comma-separated negative keywords to avoid flaws",
   "improvementsMade": [
     "Specific change 1 applied",
     "Specific change 2 applied",
-    "Optics or lighting enhancement applied"
+    "Preserved original prompt length and detailed specifications"
   ],
   "parameters": {
     "aspectRatio": "16:9",
@@ -130,7 +129,8 @@ Return ONLY valid JSON matching this schema:
           config: {
             systemInstruction: systemPrompt,
             responseMimeType: 'application/json',
-            temperature: 0.7,
+            temperature: 0.3,
+            maxOutputTokens: 8192,
           },
         });
 

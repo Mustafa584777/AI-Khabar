@@ -211,6 +211,7 @@ OUTPUT MUST BE VALID JSON ONLY matching this schema:
           generationConfig: {
             responseMimeType: 'application/json',
             temperature: 0.7,
+            maxOutputTokens: 8192,
           },
         });
 
@@ -305,6 +306,7 @@ Return the final response strictly conforming to the required JSON schema.`;
       const jsonSchemaConfig = {
         systemInstruction: IMAGE_TO_PROMPT_SYSTEM_INSTRUCTION,
         responseMimeType: 'application/json',
+        maxOutputTokens: 8192,
         responseSchema: {
           type: Type.OBJECT,
           properties: {
