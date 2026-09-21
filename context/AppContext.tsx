@@ -333,28 +333,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   });
   const [lockedPromptContext, setLockedPromptContext] = useState<PromptPost | null>(null);
 
-  // First-Time & Daily Free Credits Grant Logic
+  // First-Time Signup Free Credits Grant Logic
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const acc = userAccount || StorageService.getUserAccount();
     if (!acc || !acc.isLoggedIn) return;
 
-    // First time login bonus check
+    // First time login bonus check (5 credits on signup)
     if (!localStorage.getItem('auraprompt_first_login_claimed')) {
       localStorage.setItem('auraprompt_first_login_claimed', 'true');
       setIsFirstLoginModalOpen(true);
-      addToolCredits(2);
-    }
-
-    const userKey = acc.email ? acc.email.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_') : acc.id;
-    const today = new Date().toISOString().split('T')[0];
-    const creditDateKey = `auraprompt_last_credit_date_${userKey}`;
-    const lastDate = localStorage.getItem(creditDateKey);
-
-    if (lastDate !== today) {
-      addToolCredits(2);
-      localStorage.setItem(creditDateKey, today);
-      showToast('+2 Daily Login Bonus Credits Added! 🎁');
+      addToolCredits(5);
     }
   }, [userAccount, addToolCredits, showToast]);
 
@@ -881,9 +870,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // Premium Monthly exclusive feature with unlimited saves
-    if (!isProUser && planTier === 'free') {
-      showToast('AI history save is a Premium feature! Upgrade to Monthly Plan for unlimited saves.');
+    const totalSaves = bookmarkedIds.length + aiHistory.length;
+    if (!isProUser && totalSaves >= 10) {
+      showToast('Free user limit reached: Maximum 10 combined saves (prompts + history) allowed. Upgrade to paid monthly subscription for unlimited saves!');
       setIsUnlockPremiumModalOpen(true);
       return;
     }
@@ -1825,6 +1814,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const currentAcc = userAccount || StorageService.getUserAccount();
     if (!currentAcc || !currentAcc.isLoggedIn) {
       openAuthModal('Sign in or create a free account to save prompts to your private collection.');
+      return;
+    }
+
+    const currentlySaved = bookmarkedIds.includes(id);
+    const totalSaves = bookmarkedIds.length + aiHistory.length;
+    if (!currentlySaved && !isProUser && totalSaves >= 10) {
+      showToast('Free user limit reached: Maximum 10 combined saves (prompts + history) allowed. Upgrade to paid monthly subscription for unlimited saves!');
+      setIsUnlockPremiumModalOpen(true);
       return;
     }
 
