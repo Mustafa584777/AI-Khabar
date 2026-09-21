@@ -319,7 +319,7 @@ export const AIStudioTool = () => {
       sessionStorage.setItem('promptcms_studio_tab', 'generator');
     }
     setActiveStudioTab('generator');
-    setIdeaInput(formatted);
+    setPromptIdea(formatted);
     showToast('Prompt loaded into Prompt Generator!');
   };
 
