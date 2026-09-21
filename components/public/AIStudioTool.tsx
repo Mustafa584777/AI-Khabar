@@ -1,0 +1,1189 @@
+'use client';
+
+import React, { useState, useRef, useEffect } from 'react';
+import { useApp } from '@/context/AppContext';
+import { AIHistoryItem } from '@/types/prompt';
+import {
+  Sparkles,
+  Copy,
+  Check,
+  Upload,
+  ArrowLeft,
+  RefreshCw,
+  Camera,
+  Sliders,
+  Bookmark,
+  History,
+  Zap,
+  Coins,
+  X,
+  Wand2,
+  Edit3,
+} from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { PromptEditorTool } from '@/components/public/PromptEditorTool';
+
+const SAMPLE_IMAGES = [
+  {
+    name: 'Cyberpunk Neon',
+    url: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=800&auto=format&fit=crop&q=80',
+    style: 'Cyberpunk & Sci-Fi',
+  },
+  {
+    name: 'Studio Portrait',
+    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80',
+    style: 'Photorealistic & Portraits',
+  },
+  {
+    name: 'Cinematic Nature',
+    url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80',
+    style: 'Cinematic 8K',
+  },
+  {
+    name: '3D Render',
+    url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
+    style: '3D Art & Unreal Engine',
+  },
+];
+
+interface ExtractedPromptData {
+  title?: string;
+  summary?: string;
+  confidence?: 'high' | 'medium' | 'low' | string;
+  promptText: string;
+  prompt?: string;
+  negativePrompt?: string;
+  negative_prompt?: string;
+  camera?: string;
+  lighting?: string;
+  composition?: string;
+  colorPalette?: string;
+  aspectRatio?: string;
+  aspect_ratio?: string;
+  analysis?: {
+    subject?: string;
+    pose?: string;
+    composition?: string;
+    environment?: string;
+    camera?: string;
+    lighting?: string;
+    color_grading?: string;
+    effects?: string;
+    text_and_layout?: string;
+  };
+  tags?: string[];
+}
+
+export const AIStudioTool = () => {
+  const router = useRouter();
+  const {
+    setCurrentView,
+    setSelectedCategory,
+    setSearchQuery,
+    showToast,
+    userAccount,
+    openAuthModal,
+    saveAiHistoryItem,
+    toolCredits,
+    deductToolCredit,
+    isAuthenticated,
+  } = useApp();
+
+  const [uploadedImage, setUploadedImage] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const img = sessionStorage.getItem('promptcms_studio_image_preload') || sessionStorage.getItem('auraprompt_studio_image_preload');
+      if (img) {
+        sessionStorage.removeItem('promptcms_studio_image_preload');
+        sessionStorage.removeItem('auraprompt_studio_image_preload');
+        return img;
+      }
+    }
+    return null;
+  });
+
+  const [customInstructions, setCustomInstructions] = useState<string>('');
+  const [isExtractingPrompt, setIsExtractingPrompt] = useState<boolean>(false);
+  const [extractedData, setExtractedData] = useState<ExtractedPromptData | null>(null);
+  const [isSavedExtracted, setIsSavedExtracted] = useState<boolean>(false);
+  const [isOutOfCreditsModalOpen, setIsOutOfCreditsModalOpen] = useState<boolean>(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  // Tab State
+  const [activeStudioTab, setActiveStudioTab] = useState<'reverse' | 'generator' | 'editor'>(() => {
+    if (typeof window !== 'undefined') {
+      const tab = sessionStorage.getItem('promptcms_studio_tab');
+      if (tab === 'reverse' || tab === 'editor' || tab === 'generator') {
+        sessionStorage.removeItem('promptcms_studio_tab');
+        return tab;
+      }
+      if (sessionStorage.getItem('promptcms_editor_preload')) {
+        return 'editor';
+      }
+      const preload = sessionStorage.getItem('promptcms_studio_preload') || sessionStorage.getItem('auraprompt_studio_preload');
+      if (preload) return 'generator';
+    }
+    return 'reverse';
+  });
+
+  // AI Prompt Generator States
+  const [promptIdea, setPromptIdea] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const preload = sessionStorage.getItem('promptcms_studio_preload') || sessionStorage.getItem('auraprompt_studio_preload');
+      if (preload) {
+        sessionStorage.removeItem('promptcms_studio_preload');
+        sessionStorage.removeItem('auraprompt_studio_preload');
+        return preload;
+      }
+    }
+    return '';
+  });
+  const [selectedLighting, setSelectedLighting] = useState<string>('Cinematic Golden Hour');
+  const [selectedColor, setSelectedColor] = useState<string>('Cinematic Teal & Orange');
+  const [selectedGender, setSelectedGender] = useState<string>('Any / None');
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState<string>('16:9');
+  const [isGeneratingPrompt, setIsGeneratingPrompt] = useState<boolean>(false);
+  const [generatedPromptData, setGeneratedPromptData] = useState<any | null>(null);
+  const [isSavedGenerated, setIsSavedGenerated] = useState<boolean>(false);
+
+  const handleGeneratePrompt = async () => {
+    if (!userAccount?.isLoggedIn) {
+      openAuthModal('Please sign in or create a free account to use the AI Prompt Generator tool.');
+      return;
+    }
+
+    if (!promptIdea.trim()) {
+      showToast('Please enter a basic idea or subject first');
+      return;
+    }
+
+    const IDEA_TO_PROMPT_COST = 1;
+    if (toolCredits < IDEA_TO_PROMPT_COST) {
+      setIsOutOfCreditsModalOpen(true);
+      showToast(`Prompt generation requires 1 credit (You have ${toolCredits}). Top up credits or upgrade!`);
+      return;
+    }
+
+    setIsGeneratingPrompt(true);
+    setGeneratedPromptData(null);
+    setIsSavedGenerated(false);
+
+    try {
+      const res = await fetch('/api/gemini/tools', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'idea_to_prompt',
+          idea: promptIdea,
+          lighting: selectedLighting,
+          colorGrading: selectedColor,
+          gender: selectedGender,
+          aspectRatio: selectedAspectRatio,
+        }),
+      });
+
+      const json = await res.json();
+      if (json.success && json.data) {
+        deductToolCredit(IDEA_TO_PROMPT_COST);
+        setGeneratedPromptData(json.data);
+        showToast(`Detailed prompt generated! 1 credit used (${Math.max(0, toolCredits - IDEA_TO_PROMPT_COST)} left)`);
+      } else {
+        showToast(json.error || 'Failed to generate prompt from idea');
+      }
+    } catch (err) {
+      console.error('Prompt generation error:', err);
+      showToast('An error occurred during prompt generation');
+    } finally {
+      setIsGeneratingPrompt(false);
+    }
+  };
+
+  const handleSaveGeneratedToHistory = () => {
+    if (!generatedPromptData) return;
+
+    if (!userAccount?.isLoggedIn) {
+      openAuthModal('Please sign in or create a free account to save generated prompts to your history.');
+      return;
+    }
+
+    const historyItem: AIHistoryItem = {
+      id: 'gen_' + Date.now(),
+      type: 'idea_to_prompt',
+      title: generatedPromptData.title || 'Generated Studio Prompt',
+      promptText: generatedPromptData.promptText,
+      negativePrompt: generatedPromptData.negativePrompt,
+      camera: generatedPromptData.camera,
+      lighting: generatedPromptData.lighting,
+      colorPalette: generatedPromptData.colorPalette,
+      aspectRatio: selectedAspectRatio,
+      tags: ['Idea Generated', 'Master Prompt', 'Midjourney v6.1'],
+      createdAt: Date.now(),
+    };
+
+    saveAiHistoryItem(historyItem);
+    setIsSavedGenerated(true);
+    showToast('Saved to your AI Studio History!');
+  };
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const copyToClipboard = (text: string, key: string, label = 'Copied to clipboard!') => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    showToast(label);
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
+
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('Image size should be less than 10MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setUploadedImage(base64);
+      setExtractedData(null);
+      setIsSavedExtracted(false);
+      showToast('Image loaded! Click "Extract AI Prompt" to analyze.');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleExtractPrompt = async () => {
+    if (!userAccount?.isLoggedIn) {
+      openAuthModal('Please sign in or create a free account to use the AI Studio Reverse-Engineering tool.');
+      return;
+    }
+
+    if (!uploadedImage) {
+      showToast('Please upload or select an image first');
+      return;
+    }
+
+    const IMAGE_TO_PROMPT_COST = 3;
+    if (toolCredits < IMAGE_TO_PROMPT_COST) {
+      setIsOutOfCreditsModalOpen(true);
+      showToast(`Image-to-prompt requires 3 credits (You have ${toolCredits}). Top up credits or upgrade!`);
+      return;
+    }
+
+    setIsExtractingPrompt(true);
+    setExtractedData(null);
+    setIsSavedExtracted(false);
+
+    try {
+      const res = await fetch('/api/gemini/tools', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'image_to_prompt',
+          image: uploadedImage,
+          customInstructions,
+        }),
+      });
+
+      const json = await res.json();
+      if (json.success && json.data) {
+        deductToolCredit(IMAGE_TO_PROMPT_COST);
+        setExtractedData(json.data);
+        showToast(`Prompt reverse-engineered! 3 credits used (${Math.max(0, toolCredits - IMAGE_TO_PROMPT_COST)} left)`);
+      } else {
+        showToast(json.error || 'Failed to extract prompt from image');
+      }
+    } catch (err) {
+      console.error('Extraction error:', err);
+      showToast('An error occurred during prompt extraction');
+    } finally {
+      setIsExtractingPrompt(false);
+    }
+  };
+
+  const handleEditPromptInEditor = (text: string) => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('promptcms_editor_preload', text);
+      sessionStorage.setItem('promptcms_studio_tab', 'editor');
+    }
+    setActiveStudioTab('editor');
+    showToast('Prompt loaded into Prompt Editor!');
+  };
+
+  const handleGenerateNewVersion = (text: string) => {
+    const formatted = `generate a new version of this prompt: ${text}`;
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('promptcms_studio_preload', formatted);
+      sessionStorage.setItem('promptcms_studio_tab', 'generator');
+    }
+    setActiveStudioTab('generator');
+    setPromptIdea(formatted);
+    showToast('Prompt loaded into Prompt Generator!');
+  };
+
+  const handleSaveExtractedToHistory = () => {
+    if (!extractedData) return;
+
+    if (!userAccount?.isLoggedIn) {
+      openAuthModal('Please sign in or create a free account to save extracted prompts to your history.');
+      return;
+    }
+
+    const historyItem: AIHistoryItem = {
+      id: 'ext_' + Date.now(),
+      type: 'image_to_prompt',
+      title: extractedData.title || 'Extracted Studio Prompt',
+      promptText: extractedData.promptText,
+      negativePrompt: extractedData.negativePrompt,
+      referenceImageUrl: uploadedImage || undefined,
+      camera: extractedData.camera,
+      lighting: extractedData.lighting,
+      composition: extractedData.composition,
+      colorPalette: extractedData.colorPalette,
+      aspectRatio: extractedData.aspectRatio || '16:9',
+      tags: extractedData.tags,
+      createdAt: Date.now(),
+    };
+
+    saveAiHistoryItem(historyItem);
+    setIsSavedExtracted(true);
+    showToast('Saved to your AI Studio History!');
+  };
+
+  // Strict Login Gate: Unauthenticated users cannot use or see tool workspace
+  if (!userAccount?.isLoggedIn) {
+    return (
+      <main className="min-h-[80vh] flex items-center justify-center px-4 py-16 bg-[#fafafa] dark:bg-neutral-950">
+        <div className="max-w-md w-full p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xl text-center space-y-6">
+          <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-[#E60023] to-amber-500 text-white flex items-center justify-center mx-auto shadow-lg shadow-red-500/20">
+            <Sparkles className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-black text-neutral-900 dark:text-white">
+              Sign In to Access AI Studio
+            </h1>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+              Image-to-Prompt extraction, AI reverse-engineering, and prompt generation require an active account. Sign in or register to get started with your daily free credits.
+            </p>
+          </div>
+          <div className="space-y-3 pt-2">
+            <button
+              onClick={() => openAuthModal('Sign in to access the AI Studio Creation Tool.')}
+              className="w-full py-3.5 px-6 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-sm font-bold shadow-lg shadow-red-500/25 transition-all transform active:scale-95 flex items-center justify-center gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Sign In / Create Free Account</span>
+            </button>
+            <button
+              onClick={() => router.push('/')}
+              className="w-full py-3 px-6 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-bold transition-colors"
+            >
+              Back to Home Feed
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 pb-28">
+      {/* Top Sticky Header */}
+      <div className="sticky top-0 z-30 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border-b border-neutral-200 dark:border-neutral-800 px-4 sm:px-8 py-3.5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <button
+            onClick={() => {
+              setCurrentView('public');
+              if (setSelectedCategory) setSelectedCategory('all');
+              if (setSearchQuery) setSearchQuery('');
+              router.push('/');
+            }}
+            className="flex items-center gap-2 text-xs sm:text-sm font-bold text-neutral-600 dark:text-neutral-300 hover:text-[#E60023] dark:hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Feed</span>
+          </button>
+
+          <div className="flex items-center gap-3">
+            {/* Tool Credits Indicator */}
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 text-xs font-bold shadow-xs">
+              <Coins className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+              <span>{toolCredits} Credits</span>
+              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium hidden sm:inline">
+                • {activeStudioTab === 'reverse' ? '3 cr / extraction' : '1 cr / generation'}
+              </span>
+              <Link
+                href="/pricing"
+                className="text-[11px] font-black text-[#E60023] hover:underline ml-1"
+              >
+                + Top Up
+              </Link>
+            </div>
+
+            <button
+              onClick={() => {
+                setCurrentView('user-dashboard');
+                router.push('/dashboard');
+              }}
+              className="flex items-center gap-1.5 text-xs font-bold text-neutral-600 dark:text-neutral-300 hover:text-[#E60023] px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+            >
+              <History className="w-3.5 h-3.5 text-[#E60023]" />
+              <span>View History</span>
+            </button>
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800 text-[#E60023] text-xs font-black">
+              <Zap className="w-3.5 h-3.5 fill-current" />
+              <span>AI Studio Lab</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 space-y-8">
+        {/* Hero Title */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-neutral-200 dark:border-neutral-800">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-black text-neutral-900 dark:text-white tracking-tight flex items-center gap-2.5">
+              <Sparkles className="w-7 h-7 text-[#E60023]" />
+              <span>{activeStudioTab === 'reverse' ? 'AI Image-to-Prompt Studio' : 'AI Prompt Generator Studio'}</span>
+            </h1>
+            <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+              {activeStudioTab === 'reverse'
+                ? 'Reverse-engineer precise, high-fidelity AI prompts from any photo or visual with optical analysis.'
+                : 'Generate professional-grade detailed image prompts from basic concepts with expert styling presets.'}
+            </p>
+          </div>
+        </div>
+
+        {/* Modern Segmented Tab Control */}
+        <div className="flex border-b border-neutral-200 dark:border-neutral-800 pb-px overflow-x-auto">
+          <div className="flex gap-6 whitespace-nowrap">
+            <button
+              onClick={() => setActiveStudioTab('reverse')}
+              className={`pb-4 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+                activeStudioTab === 'reverse'
+                  ? 'border-[#E60023] text-[#E60023]'
+                  : 'border-transparent text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200'
+              }`}
+            >
+              <Camera className="w-4 h-4" />
+              <span>Reverse-Engineer (Image to Prompt)</span>
+            </button>
+            <button
+              onClick={() => setActiveStudioTab('generator')}
+              className={`pb-4 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+                activeStudioTab === 'generator'
+                  ? 'border-[#E60023] text-[#E60023]'
+                  : 'border-transparent text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200'
+              }`}
+            >
+              <Wand2 className="w-4 h-4" />
+              <span>AI Prompt Generator (Idea to Prompt)</span>
+            </button>
+            <button
+              onClick={() => setActiveStudioTab('editor')}
+              className={`pb-4 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+                activeStudioTab === 'editor'
+                  ? 'border-[#E60023] text-[#E60023]'
+                  : 'border-transparent text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200'
+              }`}
+            >
+              <Edit3 className="w-4 h-4 text-emerald-500" />
+              <span>AI Prompt Editor &amp; Modifier</span>
+            </button>
+          </div>
+        </div>
+
+        {activeStudioTab === 'editor' ? (
+          <div className="py-4">
+            <PromptEditorTool />
+          </div>
+        ) : activeStudioTab === 'reverse' ? (
+          /* IMAGE TO PROMPT STUDIO */
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Left Column: Input Image & Options (5 cols) */}
+            <div className="lg:col-span-5 space-y-6">
+              <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                    <Upload className="w-4 h-4 text-[#E60023]" />
+                    <span>Upload Image to Reverse</span>
+                  </h3>
+                  {uploadedImage && (
+                    <button
+                      onClick={() => {
+                        setUploadedImage(null);
+                        setExtractedData(null);
+                        setIsSavedExtracted(false);
+                      }}
+                      className="text-xs font-semibold text-red-500 hover:underline"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImageFileChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+
+                {uploadedImage ? (
+                  <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 group">
+                    <Image
+                      src={uploadedImage}
+                      alt="Uploaded target"
+                      fill
+                      className="object-contain"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="px-3.5 py-1.5 rounded-full bg-white text-neutral-900 text-xs font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-1.5"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Change Photo</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full aspect-[4/3] rounded-2xl border-2 border-dashed border-neutral-300 dark:border-neutral-700 hover:border-[#E60023] dark:hover:border-[#E60023] bg-neutral-50 dark:bg-neutral-950 flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-colors group"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-red-50 dark:bg-red-950/60 text-[#E60023] flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                      <Upload className="w-6 h-6" />
+                    </div>
+                    <span className="text-xs sm:text-sm font-bold text-neutral-800 dark:text-neutral-200">
+                      Click to upload or drag & drop photo
+                    </span>
+                    <span className="text-[11px] text-neutral-400 mt-1">
+                      PNG, JPG, WebP up to 10MB
+                    </span>
+                  </div>
+                )}
+
+                {/* Sample Presets */}
+                <div className="space-y-2 pt-2">
+                  <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block">
+                    Or Pick a Sample Photo:
+                  </span>
+                  <div className="grid grid-cols-4 gap-2">
+                    {SAMPLE_IMAGES.map((sample) => (
+                      <button
+                        key={sample.name}
+                        onClick={() => {
+                          setUploadedImage(sample.url);
+                          setExtractedData(null);
+                          setIsSavedExtracted(false);
+                        }}
+                        className="group relative rounded-xl overflow-hidden aspect-square border border-neutral-200 dark:border-neutral-700 hover:ring-2 hover:ring-[#E60023] transition-all"
+                      >
+                        <Image
+                          src={sample.url}
+                          alt={sample.name}
+                          fill
+                          className="object-cover group-hover:scale-110 transition-transform duration-300"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div className="absolute inset-x-0 bottom-0 bg-black/70 py-0.5 px-1 text-[9px] font-bold text-white text-center truncate">
+                          {sample.name}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Custom Instructions */}
+              <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                    <Sliders className="w-4 h-4 text-[#E60023]" />
+                    <span>Custom Instructions</span>
+                  </h3>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400">
+                    Optional
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-1.5">
+                    Custom prompt instructions & constraints
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={customInstructions}
+                    onChange={(e) => setCustomInstructions(e.target.value)}
+                    placeholder="remove watermark, 250 words minimum length, remove text or add something"
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:ring-2 focus:ring-[#E60023] focus:outline-none resize-none leading-relaxed transition-all"
+                  />
+
+                  {/* Quick Instruction Presets */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-2">
+                    <span className="text-[10px] font-semibold text-neutral-400">Add rule:</span>
+                    {[
+                      'remove watermark',
+                      '250 words minimum length',
+                      'remove text',
+                      'add cinematic lighting',
+                    ].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => {
+                          setCustomInstructions((prev) => {
+                            const trimmed = prev.trim();
+                            if (!trimmed) return preset;
+                            if (trimmed.toLowerCase().includes(preset.toLowerCase())) return prev;
+                            return `${trimmed}, ${preset}`;
+                          });
+                        }}
+                        className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition-colors"
+                      >
+                        +{preset}
+                      </button>
+                    ))}
+                    {customInstructions && (
+                      <button
+                        type="button"
+                        onClick={() => setCustomInstructions('')}
+                        className="text-[10px] font-bold text-red-500 hover:underline ml-auto"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={!uploadedImage || isExtractingPrompt}
+                  onClick={handleExtractPrompt}
+                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#E60023] to-[#ff3b56] hover:from-red-700 hover:to-red-600 text-white text-xs sm:text-sm font-black shadow-md shadow-red-500/25 flex items-center justify-center gap-2 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isExtractingPrompt ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Reverse-Engineering Photographic DNA...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>Extract AI Prompt from Image (3 Credits)</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Right Column: Output Extracted Prompt & Breakdown (7 cols) */}
+            <div className="lg:col-span-7 space-y-6">
+              {extractedData ? (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-neutral-900 border-2 border-red-100 dark:border-red-950/80 shadow-md space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-[#E60023] animate-ping" />
+                        <h3 className="text-base font-black text-neutral-900 dark:text-white">
+                          {extractedData.title || 'Extracted AI Prompt'}
+                        </h3>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {extractedData.confidence && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                            {extractedData.confidence} Confidence
+                          </span>
+                        )}
+                        <span className="px-2.5 py-0.5 rounded-full bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800 text-[#E60023] text-[11px] font-bold">
+                          Master Prompt
+                        </span>
+                      </div>
+                    </div>
+
+                    {extractedData.summary && (
+                      <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs font-medium text-neutral-700 dark:text-neutral-300 italic flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-[#E60023] shrink-0 not-italic" />
+                        <span>{extractedData.summary}</span>
+                      </div>
+                    )}
+
+                    <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 font-mono text-xs sm:text-sm text-neutral-900 dark:text-neutral-100 leading-relaxed break-words select-all">
+                      {extractedData.promptText}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => handleEditPromptInEditor(extractedData.promptText)}
+                        className="px-3.5 py-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 text-neutral-800 dark:text-neutral-200 text-xs font-bold transition-colors flex items-center gap-1.5 border border-neutral-200 dark:border-neutral-700"
+                        title="Edit prompt in Prompt Editor"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-red-500" />
+                        <span>Edit</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleGenerateNewVersion(extractedData.promptText)}
+                        className="px-3.5 py-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 text-neutral-800 dark:text-neutral-200 text-xs font-bold transition-colors flex items-center gap-1.5 border border-neutral-200 dark:border-neutral-700"
+                        title="Generate new version in Prompt Generator"
+                      >
+                        <Wand2 className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Generate new version</span>
+                      </button>
+
+                      <button
+                        onClick={() => copyToClipboard(extractedData.promptText, 'extracted-prompt', 'Master prompt copied!')}
+                        className="px-4 py-2.5 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm"
+                      >
+                        {copiedKey === 'extracted-prompt' ? (
+                          <>
+                            <Check className="w-4 h-4 text-white" />
+                            <span>Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4" />
+                            <span>Copy Prompt</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={handleSaveExtractedToHistory}
+                        className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
+                          isSavedExtracted
+                            ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400'
+                            : 'bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 hover:border-red-400'
+                        }`}
+                        title="Save to your personal generation history"
+                      >
+                        {isSavedExtracted ? (
+                          <>
+                            <Check className="w-4 h-4 text-emerald-500" />
+                            <span>Saved to History</span>
+                          </>
+                        ) : (
+                          <>
+                            <Bookmark className="w-4 h-4 text-[#E60023]" />
+                            <span>Save to My History</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Detailed Photographic Breakdown */}
+                  <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
+                    <h4 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                      <Camera className="w-4 h-4 text-[#E60023]" />
+                      <span>Detailed Photographic & Visual Breakdown</span>
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-1">
+                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                          1. Subject & Presentation
+                        </span>
+                        <span className="font-semibold text-neutral-800 dark:text-neutral-200 block leading-relaxed">
+                          {extractedData.analysis?.subject || 'Primary visible subject identified and preserved'}
+                        </span>
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-1">
+                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                          2. Pose & Body Language
+                        </span>
+                        <span className="font-semibold text-neutral-800 dark:text-neutral-200 block leading-relaxed">
+                          {extractedData.analysis?.pose || 'Reconstructed physical posture and alignment'}
+                        </span>
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-1">
+                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                          3. Composition & Framing
+                        </span>
+                        <span className="font-semibold text-neutral-800 dark:text-neutral-200 block leading-relaxed">
+                          {extractedData.analysis?.composition || extractedData.composition || 'Center Focused Studio Framing'}
+                        </span>
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-1">
+                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                          4. Camera & Optical Physics
+                        </span>
+                        <span className="font-semibold text-neutral-800 dark:text-neutral-200 block leading-relaxed">
+                          {extractedData.analysis?.camera || extractedData.camera || 'Full-frame sensor with portrait optics'}
+                        </span>
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-1">
+                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                          5. Lighting Dynamics
+                        </span>
+                        <span className="font-semibold text-neutral-800 dark:text-neutral-200 block leading-relaxed">
+                          {extractedData.analysis?.lighting || extractedData.lighting || 'Directional key light with ambient fill'}
+                        </span>
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-1">
+                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                          6. Color Grading & Palette
+                        </span>
+                        <span className="font-semibold text-neutral-800 dark:text-neutral-200 block leading-relaxed">
+                          {extractedData.analysis?.color_grading || extractedData.colorPalette || 'Natural authentic skin tones and contrast'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-10 sm:p-16 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-950/50 text-[#E60023] flex items-center justify-center mx-auto">
+                    <Camera className="w-8 h-8" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-lg font-bold text-neutral-900 dark:text-white">
+                      Ready to Reverse Any Photo
+                    </h3>
+                    <p className="text-xs sm:text-sm text-neutral-500 max-w-md mx-auto">
+                      Upload an image on the left or select a sample photo, then click &quot;Extract AI Prompt&quot;. Our AI will decode its photographic DNA into an exact prompt.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* AI PROMPT GENERATOR STUDIO (IDEA TO PROMPT) */
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Left Column: Idea and Options */}
+            <div className="lg:col-span-5 space-y-6">
+              <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-5">
+                <div className="space-y-2">
+                  <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                    <Wand2 className="w-4 h-4 text-[#E60023]" />
+                    <span>Describe Your Basic Idea</span>
+                  </h3>
+                  <textarea
+                    rows={4}
+                    value={promptIdea}
+                    onChange={(e) => setPromptIdea(e.target.value)}
+                    placeholder='Describe your scene simply, e.g. "a futuristic cyberpunk cat sleeping on a computer terminal under pink neon light", "an old sailor looking out at the foggy sea, close up shot"'
+                    className="w-full px-3.5 py-3 text-xs sm:text-sm rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:ring-2 focus:ring-[#E60023] focus:outline-none resize-none leading-relaxed transition-all"
+                  />
+                  
+                  {/* Idea Quick Suggestions */}
+                  <div className="space-y-1 pt-1">
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                      Quick Start Ideas:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        'cyberpunk cat sleeping',
+                        'astronaut riding a horse',
+                        'studio portrait of a model',
+                        'rainy street in Tokyo',
+                      ].map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          onClick={() => setPromptIdea(suggestion)}
+                          className="text-[10px] font-medium px-2 py-1 rounded-lg bg-neutral-50 hover:bg-neutral-100 dark:bg-neutral-950 dark:hover:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-300 transition-all"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Configurations grid */}
+                <div className="space-y-4 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Aspect Ratio */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                        Aspect Ratio
+                      </label>
+                      <select
+                        value={selectedAspectRatio}
+                        onChange={(e) => setSelectedAspectRatio(e.target.value)}
+                        className="w-full text-xs px-3 py-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023] transition-all"
+                      >
+                        <option value="16:9">16:9 (Cinema)</option>
+                        <option value="9:16">9:16 (Phone)</option>
+                        <option value="1:1">1:1 (Square)</option>
+                        <option value="4:3">4:3 (Classic)</option>
+                        <option value="2:3">2:3 (Portrait)</option>
+                      </select>
+                    </div>
+
+                     {/* Gender Demographic */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                        Subject Gender
+                      </label>
+                      <select
+                        value={selectedGender}
+                        onChange={(e) => setSelectedGender(e.target.value)}
+                        className="w-full text-xs px-3 py-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023] transition-all"
+                      >
+                        <option value="Any / None">Any / None</option>
+                        <option value="Female">Female</option>
+                        <option value="Male">Male</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={!promptIdea.trim() || isGeneratingPrompt}
+                  onClick={handleGeneratePrompt}
+                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#E60023] to-[#ff3b56] hover:from-red-700 hover:to-red-600 text-white text-xs sm:text-sm font-black shadow-md shadow-red-500/25 flex items-center justify-center gap-2 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isGeneratingPrompt ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Synthesizing Detailed Prompt...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="w-4 h-4" />
+                      <span>Generate Detailed Prompt (1 Credit)</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Right Column: Output Generated Prompt */}
+            <div className="lg:col-span-7 space-y-6">
+              {generatedPromptData ? (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-neutral-900 border-2 border-red-100 dark:border-red-950/80 shadow-md space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-[#E60023] animate-ping" />
+                        <h3 className="text-base font-black text-neutral-900 dark:text-white">
+                          {generatedPromptData.title || 'Generated Master Prompt'}
+                        </h3>
+                      </div>
+                      <span className="px-2.5 py-0.5 rounded-full bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800 text-[#E60023] text-[11px] font-bold">
+                        Master Prompt
+                      </span>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 font-mono text-xs sm:text-sm text-neutral-900 dark:text-neutral-100 leading-relaxed break-words select-all">
+                      {generatedPromptData.promptText}
+                    </div>
+
+                    {generatedPromptData.negativePrompt && (
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                          Negative Prompt (Exclude)
+                        </span>
+                        <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs text-neutral-500 leading-relaxed">
+                          {generatedPromptData.negativePrompt}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => handleEditPromptInEditor(generatedPromptData.promptText)}
+                        className="px-3.5 py-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 text-neutral-800 dark:text-neutral-200 text-xs font-bold transition-colors flex items-center gap-1.5 border border-neutral-200 dark:border-neutral-700"
+                        title="Edit prompt in Prompt Editor"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-red-500" />
+                        <span>Edit</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleGenerateNewVersion(generatedPromptData.promptText)}
+                        className="px-3.5 py-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 text-neutral-800 dark:text-neutral-200 text-xs font-bold transition-colors flex items-center gap-1.5 border border-neutral-200 dark:border-neutral-700"
+                        title="Generate new version in Prompt Generator"
+                      >
+                        <Wand2 className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Generate new version</span>
+                      </button>
+
+                      <button
+                        onClick={() => copyToClipboard(generatedPromptData.promptText, 'generated-prompt', 'Generated prompt copied!')}
+                        className="px-4 py-2.5 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm"
+                      >
+                        {copiedKey === 'generated-prompt' ? (
+                          <>
+                            <Check className="w-4 h-4 text-white" />
+                            <span>Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4" />
+                            <span>Copy Prompt</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={handleSaveGeneratedToHistory}
+                        className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
+                          isSavedGenerated
+                            ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400'
+                            : 'bg-neutral-100 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 hover:border-red-400'
+                        }`}
+                        title="Save to your personal generation history"
+                      >
+                        {isSavedGenerated ? (
+                          <>
+                            <Check className="w-4 h-4 text-emerald-500" />
+                            <span>Saved to History</span>
+                          </>
+                        ) : (
+                          <>
+                            <Bookmark className="w-4 h-4 text-[#E60023]" />
+                            <span>Save to My History</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Generated Parameters Breakdown */}
+                  <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
+                    <h4 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                      <Sliders className="w-4 h-4 text-[#E60023]" />
+                      <span>Parameters & Styling Breakdown</span>
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-1">
+                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                          Camera & Optics
+                        </span>
+                        <span className="font-semibold text-neutral-800 dark:text-neutral-200 block leading-relaxed">
+                          {generatedPromptData.camera || 'Sony A7 IV, 85mm f/1.4 GM'}
+                        </span>
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-1">
+                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                          Artistic Lighting
+                        </span>
+                        <span className="font-semibold text-neutral-800 dark:text-neutral-200 block leading-relaxed">
+                          {generatedPromptData.lighting || selectedLighting}
+                        </span>
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-1">
+                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                          Color Palette & Grading
+                        </span>
+                        <span className="font-semibold text-neutral-800 dark:text-neutral-200 block leading-relaxed">
+                          {generatedPromptData.colorPalette || selectedColor}
+                        </span>
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-1">
+                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                          Aspect Ratio
+                        </span>
+                        <span className="font-semibold text-neutral-800 dark:text-neutral-200 block leading-relaxed">
+                          {selectedAspectRatio} (Midjourney format: --ar {selectedAspectRatio})
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-10 sm:p-16 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-950/50 text-[#E60023] flex items-center justify-center mx-auto">
+                    <Wand2 className="w-8 h-8" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-lg font-bold text-neutral-900 dark:text-white">
+                      Synthesize Elegant Prompts
+                    </h3>
+                    <p className="text-xs sm:text-sm text-neutral-500 max-w-md mx-auto">
+                      Type your basic concept or idea on the left, adjust lighting, color grading and aspect ratio preferences, and watch Gemini translate it into a world-class copyable prompt.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Out of Credits Modal */}
+      {isOutOfCreditsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-white dark:bg-neutral-900 rounded-3xl p-6 sm:p-7 shadow-2xl border border-neutral-200 dark:border-neutral-800 space-y-5 text-center relative">
+            <button
+              onClick={() => setIsOutOfCreditsModalOpen(false)}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 hover:text-neutral-700 dark:hover:text-white transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-500 mx-auto flex items-center justify-center shadow-inner">
+              <Coins className="w-7 h-7" />
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-xl font-black text-neutral-900 dark:text-white">
+                Out of Tool Credits
+              </h3>
+              <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                Image reverse-engineering requires <strong className="text-neutral-900 dark:text-white">3 credits</strong>, and AI Prompt generation requires <strong className="text-neutral-900 dark:text-white">1 credit</strong>. Every user receives <strong className="text-neutral-900 dark:text-white">2 free credits daily</strong>, or you can top up anytime.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-left space-y-2 text-xs text-neutral-700 dark:text-neutral-300">
+              <div className="font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                <Coins className="w-3.5 h-3.5 text-amber-500" />
+                <span>Instant Pay-As-You-Go Credits Packs:</span>
+              </div>
+              <ul className="space-y-1 text-[11px] text-neutral-600 dark:text-neutral-400">
+                <li>• <strong>100 Credits (₹49)</strong>: ~100 prompt generations or 33 image extractions</li>
+                <li>• <strong>250 Credits (₹99)</strong>: ~250 prompt generations or 83 image extractions</li>
+                <li>• <strong>499 Credits (₹199)</strong>: ~499 prompt generations or 166 image extractions</li>
+              </ul>
+            </div>
+
+            <div className="flex flex-col gap-2 pt-1">
+              <button
+                onClick={() => {
+                  setIsOutOfCreditsModalOpen(false);
+                  router.push('/pricing');
+                }}
+                className="w-full py-3 rounded-full bg-gradient-to-r from-[#E60023] to-[#ff3b56] hover:from-red-700 hover:to-red-600 text-white text-xs sm:text-sm font-black shadow-md shadow-red-500/20 transition-all"
+              >
+                View Pricing Plans & Get Credits
+              </button>
+              <button
+                onClick={() => setIsOutOfCreditsModalOpen(false)}
+                className="w-full py-2.5 rounded-full text-xs font-semibold text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              >
+                Wait for Daily Free Credits
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </main>
+  );
+};
