@@ -114,6 +114,11 @@ export const AIStudioTool = () => {
   // Tab State
   const [activeStudioTab, setActiveStudioTab] = useState<'reverse' | 'generator' | 'editor'>(() => {
     if (typeof window !== 'undefined') {
+      const tab = sessionStorage.getItem('promptcms_studio_tab');
+      if (tab === 'reverse') {
+        sessionStorage.removeItem('promptcms_studio_tab');
+        return 'reverse';
+      }
       const preload = sessionStorage.getItem('promptcms_studio_preload') || sessionStorage.getItem('auraprompt_studio_preload');
       if (preload) return 'generator';
     }
@@ -297,6 +302,23 @@ export const AIStudioTool = () => {
     } finally {
       setIsExtractingPrompt(false);
     }
+  };
+
+  const handleEditPromptInEditor = (text: string) => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('promptcms_editor_preload', text);
+    }
+    router.push('/prompt-editor');
+    showToast('Prompt loaded into Prompt Editor!');
+  };
+
+  const handleGenerateNewVersion = (text: string) => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('promptcms_studio_preload', `generate a new version of this prompt: ${text}`);
+      sessionStorage.setItem('promptcms_studio_tab', 'generator');
+    }
+    router.push('/create');
+    showToast('Prompt loaded into Prompt Generator!');
   };
 
   const handleSaveExtractedToHistory = () => {
@@ -695,6 +717,26 @@ export const AIStudioTool = () => {
 
                     <div className="flex flex-wrap items-center gap-2.5 pt-1">
                       <button
+                        type="button"
+                        onClick={() => handleEditPromptInEditor(extractedData.promptText)}
+                        className="px-3.5 py-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 text-neutral-800 dark:text-neutral-200 text-xs font-bold transition-colors flex items-center gap-1.5 border border-neutral-200 dark:border-neutral-700"
+                        title="Edit prompt in Prompt Editor"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-red-500" />
+                        <span>Edit</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleGenerateNewVersion(extractedData.promptText)}
+                        className="px-3.5 py-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 text-neutral-800 dark:text-neutral-200 text-xs font-bold transition-colors flex items-center gap-1.5 border border-neutral-200 dark:border-neutral-700"
+                        title="Generate new version in Prompt Generator"
+                      >
+                        <Wand2 className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Generate new version</span>
+                      </button>
+
+                      <button
                         onClick={() => copyToClipboard(extractedData.promptText, 'extracted-prompt', 'Master prompt copied!')}
                         className="px-4 py-2.5 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm"
                       >
@@ -953,6 +995,26 @@ export const AIStudioTool = () => {
                     )}
 
                     <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => handleEditPromptInEditor(generatedPromptData.promptText)}
+                        className="px-3.5 py-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 text-neutral-800 dark:text-neutral-200 text-xs font-bold transition-colors flex items-center gap-1.5 border border-neutral-200 dark:border-neutral-700"
+                        title="Edit prompt in Prompt Editor"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-red-500" />
+                        <span>Edit</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleGenerateNewVersion(generatedPromptData.promptText)}
+                        className="px-3.5 py-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 text-neutral-800 dark:text-neutral-200 text-xs font-bold transition-colors flex items-center gap-1.5 border border-neutral-200 dark:border-neutral-700"
+                        title="Generate new version in Prompt Generator"
+                      >
+                        <Wand2 className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Generate new version</span>
+                      </button>
+
                       <button
                         onClick={() => copyToClipboard(generatedPromptData.promptText, 'generated-prompt', 'Generated prompt copied!')}
                         className="px-4 py-2.5 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm"

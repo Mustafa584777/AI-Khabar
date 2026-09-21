@@ -19,7 +19,16 @@ export const PromptEditorTool = () => {
   const router = useRouter();
   const { showToast, saveAiHistoryItem } = useApp();
 
-  const [inputPrompt, setInputPrompt] = useState<string>('');
+  const [inputPrompt, setInputPrompt] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const preload = sessionStorage.getItem('promptcms_editor_preload');
+      if (preload) {
+        sessionStorage.removeItem('promptcms_editor_preload');
+        return preload;
+      }
+    }
+    return '';
+  });
   const [changeInstructions, setChangeInstructions] = useState<string>('');
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [resultData, setResultData] = useState<{

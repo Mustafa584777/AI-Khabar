@@ -24,6 +24,8 @@ import {
   Lock,
   ArrowRight,
   Coins,
+  Edit3,
+  Wand2,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import Image from 'next/image';
@@ -695,6 +697,23 @@ export const PromptDetailModal = () => {
     setTimeout(() => setCopiedPrompt(false), 2000);
   };
 
+  const handleEditPromptInEditor = (text: string) => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('promptcms_editor_preload', text);
+    }
+    router.push('/prompt-editor');
+    showToast('Prompt loaded into Prompt Editor!');
+  };
+
+  const handleGenerateNewVersion = (text: string) => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('promptcms_studio_preload', `generate a new version of this prompt: ${text}`);
+      sessionStorage.setItem('promptcms_studio_tab', 'generator');
+    }
+    router.push('/create');
+    showToast('Prompt loaded into Prompt Generator!');
+  };
+
   const handleQuickCopyPin = (e: React.MouseEvent, pin: PromptPost) => {
     e.stopPropagation();
     const isPinUnlocked = isPromptUnlocked(pin.id, pin.isPremium);
@@ -1107,7 +1126,27 @@ export const PromptDetailModal = () => {
                           {selectedPost.promptText.length} chars
                         </span>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleEditPromptInEditor(selectedPost.promptText)}
+                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold bg-neutral-900 hover:bg-neutral-800 text-neutral-200 transition-all border border-neutral-700"
+                            title="Edit prompt in Prompt Editor"
+                          >
+                            <Edit3 className="w-3.5 h-3.5 text-red-500" />
+                            <span>Edit</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleGenerateNewVersion(selectedPost.promptText)}
+                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold bg-neutral-900 hover:bg-neutral-800 text-neutral-200 transition-all border border-neutral-700"
+                            title="Generate new version in Prompt Generator"
+                          >
+                            <Wand2 className="w-3.5 h-3.5 text-amber-500" />
+                            <span>Generate new version</span>
+                          </button>
+
                           <button
                             onClick={handleCopyMasterPrompt}
                             className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold shadow-md transition-all ${

@@ -74,14 +74,14 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
     e.preventDefault();
     e.stopPropagation();
     if (typeof window !== 'undefined') {
-      sessionStorage.setItem('auraprompt_studio_preload', post.promptText);
-      sessionStorage.setItem('promptcms_studio_preload', post.promptText);
       if (post.imageUrl) {
         sessionStorage.setItem('promptcms_studio_image_preload', post.imageUrl);
+        sessionStorage.setItem('auraprompt_studio_image_preload', post.imageUrl);
       }
+      sessionStorage.setItem('promptcms_studio_tab', 'reverse');
     }
     router.push('/create');
-    showToast('Loaded image & prompt into Create Studio!');
+    showToast('Loaded prompt image into Image-to-Prompt tool!');
   };
 
   return (
