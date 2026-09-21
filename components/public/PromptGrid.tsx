@@ -61,7 +61,7 @@ export const PromptGrid = () => {
       const expandedTerms = hasAiMatches
         ? [
             aiSearchResults.correctedQuery.toLowerCase(),
-            ...aiSearchResults.expandedKeywords.map((k: string) => k.toLowerCase()),
+            ...aiSearchResults.expandedKeywords.map((k) => k.toLowerCase()),
           ]
         : [];
 
@@ -98,7 +98,7 @@ export const PromptGrid = () => {
       // If AI produced ordered matchedPostIds, sort by relevance ranking
       if (hasAiMatches && aiSearchResults.matchedPostIds.length > 0) {
         const orderMap = new Map<string, number>();
-        aiSearchResults.matchedPostIds.forEach((id: string, index: number) => orderMap.set(id, index));
+        aiSearchResults.matchedPostIds.forEach((id, index) => orderMap.set(id, index));
         list = [...list].sort((a, b) => {
           const rankA = orderMap.has(a.id) ? orderMap.get(a.id)! : 9999;
           const rankB = orderMap.has(b.id) ? orderMap.get(b.id)! : 9999;
@@ -303,7 +303,7 @@ export const PromptGrid = () => {
               {aiSearchResults?.expandedKeywords && aiSearchResults.expandedKeywords.length > 1 && (
                 <div className="flex flex-wrap items-center gap-1.5 pt-1">
                   <span className="text-[10px] font-bold text-neutral-400">Concepts:</span>
-                  {aiSearchResults.expandedKeywords.slice(0, 5).map((kw: string) => (
+                  {aiSearchResults.expandedKeywords.slice(0, 5).map((kw) => (
                     <span
                       key={kw}
                       className="px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-[10px] font-medium text-neutral-600 dark:text-neutral-400"
@@ -361,27 +361,8 @@ export const PromptGrid = () => {
           )}
         </>
       ) : isLoadingPosts ? (
-        /* Shimmer Skeleton Loading Grid for Viewport */
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
-          {Array.from({ length: 10 }).map((_, idx) => (
-            <div
-              key={idx}
-              className="rounded-[20px] sm:rounded-[24px] overflow-hidden bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800/80 shadow-xs relative select-none animate-pulse w-full aspect-[3/4]"
-            >
-              <div className="w-full h-full bg-neutral-200 dark:bg-neutral-800 relative overflow-hidden flex flex-col justify-between p-3.5">
-                <div className="flex items-center justify-between">
-                  <div className="w-12 h-4 rounded-full bg-neutral-300/80 dark:bg-neutral-700/80" />
-                  <div className="w-7 h-7 rounded-full bg-neutral-300/80 dark:bg-neutral-700/80" />
-                </div>
-                <div className="space-y-1.5">
-                  <div className="w-3/4 h-3.5 rounded-md bg-neutral-300/70 dark:bg-neutral-700/70" />
-                  <div className="w-1/2 h-2.5 rounded-md bg-neutral-300/50 dark:bg-neutral-700/50" />
-                </div>
-                {/* Shimmer wave effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 dark:via-white/5 to-transparent animate-shimmer pointer-events-none" />
-              </div>
-            </div>
-          ))}
+        <div className="flex items-center justify-center py-20 text-neutral-400 text-sm font-medium">
+          Loading prompts...
         </div>
       ) : (
         <div className="text-center py-16 px-4 bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 max-w-lg mx-auto shadow-sm">

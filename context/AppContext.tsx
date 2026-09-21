@@ -1,8 +1,8 @@
 'use client';
-/* eslint-disable react-hooks/purity */
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem, AiSearchResult, PlanTier, PromptRequestItem } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
@@ -50,8 +50,8 @@ interface AppContextType {
   authModalMessage: string | null;
   setAuthModalMessage: (msg: string | null) => void;
   openAuthModal: (message?: string) => void;
-  loginUser: (email: string, pass: string, username?: string, avatar?: string) => boolean;
-  signupUser: (name: string, username: string, email: string, pass: string, avatar?: string) => UserAccount;
+  loginUser: (email: string, pass: string, username?: string, avatar?: string) => Promise<boolean>;
+  signupUser: (name: string, username: string, email: string, pass: string, avatar?: string) => Promise<UserAccount>;
   logoutUser: () => void;
   awardPoints: (amount: number, type: 'like' | 'save' | 'generation' | 'share' | 'referral') => void;
 
@@ -87,6 +87,8 @@ interface AppContextType {
   setSearchQuery: (query: string) => void;
   isSearchModalOpen: boolean;
   setIsSearchModalOpen: (open: boolean) => void;
+  isNotificationsModalOpen: boolean;
+  setIsNotificationsModalOpen: (open: boolean) => void;
   popularSearchQueries: string[];
   recordSearchQuery: (query: string) => void;
   aiSearchResults: AiSearchResult | null;
@@ -121,7 +123,7 @@ interface AppContextType {
   deleteTag: (tag: string) => Promise<void>;
   saveSettings: (settings: Partial<SiteSettings>) => Promise<SiteSettings>;
   resetAllData: () => void;
-  showToast: (msg: string) => void;
+  showToast: (msg: string, type?: string) => void;
   toastMessage: string | null;
 
   // Cloud Sync for Cross-Device Persistence
@@ -135,6 +137,7 @@ interface AppContextType {
   setIsProUser: (isPro: boolean) => void;
   planTier: PlanTier;
   setPlanTier: (tier: PlanTier) => void;
+  planExpiresAt: string | null;
   toolCredits: number;
   deductToolCredit: (amount?: number) => boolean;
   useToolCredit: (amount?: number) => boolean;
@@ -149,6 +152,8 @@ interface AppContextType {
 
   isUnlockPremiumModalOpen: boolean;
   setIsUnlockPremiumModalOpen: (open: boolean) => void;
+  isFirstLoginModalOpen: boolean;
+  setIsFirstLoginModalOpen: (open: boolean) => void;
   lockedPromptContext: PromptPost | null;
   setLockedPromptContext: (post: PromptPost | null) => void;
   applyPlan: (planTier: 'starter' | 'pro' | 'vip') => void;
@@ -157,6 +162,8 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
+  const pathname = usePathname();
+
   // Navigation
   const [currentView, setCurrentView] = useState<'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications'>('public');
   const [adminSubView, setAdminSubView] = useState<
@@ -212,6 +219,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return 'free';
   });
 
+  const [planExpiresAt, setPlanExpiresAtState] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('auraprompt_plan_expires_at') || null;
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    if (isProUser && !planExpiresAt) {
+      const defaultExp = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      setPlanExpiresAtState(defaultExp);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auraprompt_plan_expires_at', defaultExp);
+      }
+    }
+  }, [isProUser, planExpiresAt]);
+
   const setPlanTier = useCallback((tier: PlanTier) => {
     setPlanTierState(tier);
     if (typeof window !== 'undefined') {
@@ -249,31 +273,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return 0;
   });
 
-  const [isUnlockPremiumModalOpen, setIsUnlockPremiumModalOpen] = useState<boolean>(false);
-  const [lockedPromptContext, setLockedPromptContext] = useState<PromptPost | null>(null);
+  // Toast
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Daily 2 Free Credits Grant Logic - Strictly only runs for authenticated accounts
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const acc = userAccount || StorageService.getUserAccount();
-    if (!acc || !acc.isLoggedIn) return;
-
-    const userKey = acc.email ? acc.email.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_') : acc.id;
-    const today = new Date().toISOString().split('T')[0];
-    const creditDateKey = `auraprompt_last_credit_date_${userKey}`;
-    const lastDate = localStorage.getItem(creditDateKey);
-
-    if (lastDate !== today) {
-      const currentSaved = parseInt(localStorage.getItem('auraprompt_tool_credits') || '0', 10);
-      const newCredits = Math.max(currentSaved, 2);
-      setToolCreditsState(newCredits);
-      localStorage.setItem('auraprompt_tool_credits', newCredits.toString());
-      localStorage.setItem(creditDateKey, today);
-      void UserSyncService.pushUserData(acc.id, acc.email, {
-        toolCredits: newCredits,
-      });
-    }
-  }, [userAccount]);
+  const showToast = useCallback((msg: string, type?: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((prev) => (prev === msg ? null : prev));
+    }, 3000);
+  }, []);
 
   const deductToolCredit = useCallback((amount: number = 1): boolean => {
     const acc = StorageService.getUserAccount();
@@ -312,6 +320,43 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return next;
     });
   }, []);
+
+  const [isUnlockPremiumModalOpen, setIsUnlockPremiumModalOpen] = useState<boolean>(false);
+  const [isFirstLoginModalOpen, setIsFirstLoginModalOpen] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const acc = StorageService.getUserAccount();
+      if (acc && acc.isLoggedIn && !localStorage.getItem('auraprompt_first_login_claimed')) {
+        return true;
+      }
+    }
+    return false;
+  });
+  const [lockedPromptContext, setLockedPromptContext] = useState<PromptPost | null>(null);
+
+  // First-Time & Daily Free Credits Grant Logic
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const acc = userAccount || StorageService.getUserAccount();
+    if (!acc || !acc.isLoggedIn) return;
+
+    // First time login bonus check
+    if (!localStorage.getItem('auraprompt_first_login_claimed')) {
+      localStorage.setItem('auraprompt_first_login_claimed', 'true');
+      setIsFirstLoginModalOpen(true);
+      addToolCredits(2);
+    }
+
+    const userKey = acc.email ? acc.email.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_') : acc.id;
+    const today = new Date().toISOString().split('T')[0];
+    const creditDateKey = `auraprompt_last_credit_date_${userKey}`;
+    const lastDate = localStorage.getItem(creditDateKey);
+
+    if (lastDate !== today) {
+      addToolCredits(2);
+      localStorage.setItem(creditDateKey, today);
+      showToast('+2 Daily Login Bonus Credits Added! 🎁');
+    }
+  }, [userAccount, addToolCredits, showToast]);
 
   // Unlocked Prompts (Unlocked via 1 credit per prompt or subscription)
   const [unlockedPromptIds, setUnlockedPromptIds] = useState<string[]>(() => {
@@ -373,13 +418,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const upgradePlan = useCallback((tier: 'starter' | 'pro' | 'vip') => {
     const creditsMap = { starter: 30, pro: 60, vip: 180 };
-    const requestsMap = { starter: 1, pro: 3, vip: 10 };
+    const requestsMap = { starter: 10, pro: 20, vip: 50 };
+    const pointsMap = { starter: 10, pro: 20, vip: 50 };
 
     setIsProUserState(true);
     setPlanTierState(tier);
 
     const addedCredits = creditsMap[tier];
     const addedRequests = requestsMap[tier];
+    const addedPoints = pointsMap[tier];
 
     let finalCredits = 0;
     setToolCreditsState((prev) => {
@@ -401,9 +448,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return next;
     });
 
+    let finalPoints = 0;
+    setUserAccount((prev) => {
+      if (!prev) return prev;
+      const nextPoints = (prev.points || 0) + addedPoints;
+      finalPoints = nextPoints;
+      const updated = { ...prev, points: nextPoints };
+      StorageService.saveUserAccount(updated);
+      return updated;
+    });
+
     const now = new Date();
     const planStartedAt = now.toISOString();
     const planExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    setPlanExpiresAtState(planExpiresAt);
 
     if (typeof window !== 'undefined') {
       localStorage.setItem('auraprompt_pro_member', 'true');
@@ -420,6 +478,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         isProUser: true,
         toolCredits: finalCredits,
         promptRequestsRemaining: finalRequests,
+        points: currentAcc.points ? currentAcc.points + addedPoints : addedPoints,
         planStartedAt,
         planExpiresAt,
       });
@@ -445,7 +504,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Prompt Requests State
   const [promptRequests, setPromptRequests] = useState<PromptRequestItem[]>([]);
 
-  const refreshPromptRequests = useCallback(async (userEmail?: string) => {
+  const refreshPromptRequests = async (userEmail?: string) => {
     try {
       const url = userEmail ? `/api/prompt-requests?email=${encodeURIComponent(userEmail)}` : '/api/prompt-requests';
       const res = await fetch(url);
@@ -459,7 +518,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } catch (e) {
       console.warn('Notice loading prompt requests from API:', e);
     }
-  }, [setPromptRequests]);
+  };
 
   const addPromptRequest = async (requestText: string, category?: string, aiTool?: string): Promise<boolean> => {
     if (!userAccount || !userAccount.isLoggedIn) {
@@ -655,7 +714,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const loginUser = (email: string, _pass: string, username?: string, avatar?: string): boolean => {
+  const loginUser = async (email: string, _pass: string, username?: string, avatar?: string): Promise<boolean> => {
     const cleanEmail = email.trim().toLowerCase();
 
     // Aggressively clear any existing session storage to prevent cross-account data leakage
@@ -681,8 +740,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     StorageService.saveUserAccount(account);
     setUserAccount(account);
 
-    // Reconcile and load all cloud data strictly for this specific account
-    void UserSyncService.reconcileOnLogin(account).then((synced) => {
+    // Reconcile and load all cloud data strictly for this specific account from Supabase
+    try {
+      const synced = await UserSyncService.reconcileOnLogin(account);
       setBookmarkedIds(synced.bookmarkedIds || []);
       StorageService.setBookmarkedIds(synced.bookmarkedIds || []);
 
@@ -721,17 +781,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds || []));
         if (synced.planStartedAt) {
           localStorage.setItem('auraprompt_plan_started_at', synced.planStartedAt);
+        } else {
+          localStorage.removeItem('auraprompt_plan_started_at');
         }
         if (synced.planExpiresAt) {
           localStorage.setItem('auraprompt_plan_expires_at', synced.planExpiresAt);
+          setPlanExpiresAtState(synced.planExpiresAt);
+        } else {
+          setPlanExpiresAtState(null);
+          localStorage.removeItem('auraprompt_plan_expires_at');
         }
       }
-    });
+    } catch (e) {
+      console.warn('Login reconciliation sync error:', e);
+    }
 
     return true;
   };
 
-  const signupUser = (name: string, username: string, email: string, _pass: string, avatar?: string): UserAccount => {
+  const signupUser = async (name: string, username: string, email: string, _pass: string, avatar?: string): Promise<UserAccount> => {
     const cleanEmail = email.trim().toLowerCase();
 
     // Aggressively clear any existing session storage to prevent cross-account data leakage
@@ -757,22 +825,27 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     StorageService.saveUserAccount(account);
     setUserAccount(account);
 
-    // Initial registration: clean free tier and 2 starter credits
-    void UserSyncService.reconcileOnLogin(account).then((synced) => {
-      setBookmarkedIds([]);
-      setLikedIds([]);
-      setAiHistory([]);
-      setPlanTierState('free');
-      setIsProUserState(false);
+    try {
+      const synced = await UserSyncService.reconcileOnLogin(account);
+      setBookmarkedIds(synced.bookmarkedIds || []);
+      StorageService.setBookmarkedIds(synced.bookmarkedIds || []);
+      setLikedIds(synced.likedIds || []);
+      StorageService.setLikedIds(synced.likedIds || []);
+      setAiHistory(synced.aiHistory || []);
+      StorageService.setAiHistory(synced.aiHistory || []);
+      setPlanTierState(synced.planTier || 'free');
+      setIsProUserState(synced.isProUser || false);
       setToolCreditsState(synced.toolCredits ?? 2);
-      setUnlockedPromptIds([]);
+      setUnlockedPromptIds(synced.unlockedPromptIds || []);
       if (typeof window !== 'undefined') {
-        localStorage.setItem('auraprompt_plan_tier', 'free');
-        localStorage.setItem('auraprompt_pro_member', 'false');
+        localStorage.setItem('auraprompt_plan_tier', synced.planTier || 'free');
+        localStorage.setItem('auraprompt_pro_member', String(synced.isProUser || false));
         localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits ?? 2));
-        localStorage.setItem('auraprompt_unlocked_prompts', '[]');
+        localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds || []));
       }
-    });
+    } catch (e) {
+      console.warn('Signup reconciliation sync error:', e);
+    }
 
     return account;
   };
@@ -941,9 +1014,91 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Server-side session validator that forces re-fetch of user profile, subscription status, and credit balance from Supabase directly on every authenticated navigation or window focus
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const currentAcc = userAccount || StorageService.getUserAccount();
+    if (!currentAcc || !currentAcc.isLoggedIn) return;
+
+    let isMounted = true;
+    const validateServerSession = async () => {
+      try {
+        const synced = await UserSyncService.validateSession(currentAcc.id, currentAcc.email);
+        if (!synced || !isMounted) return;
+
+        setBookmarkedIds(synced.bookmarkedIds || []);
+        StorageService.setBookmarkedIds(synced.bookmarkedIds || []);
+
+        setLikedIds(synced.likedIds || []);
+        StorageService.setLikedIds(synced.likedIds || []);
+
+        if (synced.tasteProfile) {
+          setTasteProfile(synced.tasteProfile);
+          PersonalizationEngine.saveProfile(synced.tasteProfile);
+        }
+
+        setAiHistory(synced.aiHistory || []);
+        StorageService.setAiHistory(synced.aiHistory || []);
+
+        if (synced.points !== undefined) {
+          setUserAccount((prev) => (prev ? { ...prev, points: synced.points ?? prev.points, name: synced.name || prev.name, avatar: synced.avatar || prev.avatar } : prev));
+        }
+
+        const tier = synced.planTier || 'free';
+        setPlanTierState(tier);
+        localStorage.setItem('auraprompt_plan_tier', tier);
+
+        const isPro = Boolean(synced.isProUser || tier !== 'free');
+        setIsProUserState(isPro);
+        localStorage.setItem('auraprompt_pro_member', String(isPro));
+
+        if (synced.toolCredits !== undefined) {
+          setToolCreditsState(synced.toolCredits);
+          localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits));
+        }
+
+        if (synced.unlockedPromptIds) {
+          setUnlockedPromptIds(synced.unlockedPromptIds);
+          localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds));
+        }
+
+        if (synced.planExpiresAt) {
+          localStorage.setItem('auraprompt_plan_expires_at', synced.planExpiresAt);
+          setPlanExpiresAtState(synced.planExpiresAt);
+        } else {
+          setPlanExpiresAtState(null);
+          localStorage.removeItem('auraprompt_plan_expires_at');
+        }
+      } catch (err) {
+        console.warn('Server-side session validation error:', err);
+      }
+    };
+
+    void validateServerSession();
+
+    const handleFocus = () => {
+      void validateServerSession();
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        void validateServerSession();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [pathname, userAccount]);
+
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSearchModalOpen, setIsSearchModalOpen] = useState<boolean>(false);
+  const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState<boolean>(false);
   const [popularSearchQueries, setPopularSearchQueries] = useState<string[]>([
     'Traditional saree',
     'Cyberpunk neon portrait',
@@ -954,7 +1109,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     'Hyperrealistic 8K model',
     'Indian fashion portrait',
   ]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCategory, setSelectedCategoryState] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('selectedCategory') || 'all';
+    }
+    return 'all';
+  });
+
+  const setSelectedCategory = (cat: string) => {
+    setSelectedCategoryState(cat);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('selectedCategory', cat);
+    }
+  };
   const [selectedTool, setSelectedTool] = useState<string>('all');
   const [selectedSort, setSelectedSort] = useState<
     'trending' | 'most-popular' | 'most-liked' | 'most-copied' | 'newest'
@@ -1062,20 +1229,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Toast
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage((prev) => (prev === msg ? null : prev));
-    }, 3000);
-  };
-
   const applyPlan = useCallback((tier: 'starter' | 'pro' | 'vip') => {
     upgradePlan(tier);
     showToast(`Success! You have unlocked the ${tier.toUpperCase()} plan.`);
-  }, [upgradePlan]);
+  }, [upgradePlan, showToast]);
 
   const isSavingRef = React.useRef(false);
 
@@ -1258,6 +1415,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         }
         if (synced.planExpiresAt) {
           localStorage.setItem('auraprompt_plan_expires_at', synced.planExpiresAt);
+          setPlanExpiresAtState(synced.planExpiresAt);
+        } else {
+          setPlanExpiresAtState(null);
+          localStorage.removeItem('auraprompt_plan_expires_at');
         }
       }
     };
@@ -1919,6 +2080,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setSearchQuery,
         isSearchModalOpen,
         setIsSearchModalOpen,
+        isNotificationsModalOpen,
+        setIsNotificationsModalOpen,
         popularSearchQueries,
         recordSearchQuery,
         aiSearchResults,
@@ -1956,6 +2119,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setIsProUser,
         planTier,
         setPlanTier,
+        planExpiresAt,
         toolCredits,
         deductToolCredit,
         useToolCredit,
@@ -1967,6 +2131,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         unlockPromptWithCredit,
         isUnlockPremiumModalOpen,
         setIsUnlockPremiumModalOpen,
+        isFirstLoginModalOpen,
+        setIsFirstLoginModalOpen,
         lockedPromptContext,
         setLockedPromptContext,
         applyPlan,

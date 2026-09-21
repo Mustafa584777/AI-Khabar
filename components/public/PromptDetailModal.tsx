@@ -24,6 +24,8 @@ import {
   Lock,
   ArrowRight,
   Coins,
+  Edit3,
+  Wand2,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import Image from 'next/image';
@@ -84,12 +86,7 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
       className="group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-neutral-200 dark:bg-neutral-900 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-300 border border-neutral-200/60 dark:border-neutral-800/80 w-full"
       id={`masonry-pin-${pin.id}`}
     >
-      {/* Shimmer Placeholder */}
-      {(!loaded || !inView) && pin.imageUrl && (
-        <div className="absolute inset-0 bg-neutral-200 dark:bg-neutral-800 animate-pulse flex items-center justify-center">
-          <Sparkles className="w-4 h-4 text-neutral-400 dark:text-neutral-500 animate-spin" style={{ animationDuration: '4s' }} />
-        </div>
-      )}
+      {/* Shimmer Placeholder removed */}
 
       {/* Premium Badge */}
       {pin.isPremium && (
@@ -279,25 +276,23 @@ export const PromptDetailModal = () => {
       e.preventDefault();
       e.stopPropagation();
     }
-    setHistoryStack([]);
-    historyStackRef.current = [];
     setSelectedPost(null);
+    setHistoryStack([]);
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
-      if (path !== '/' && path !== '/dashboard' && path !== '/create' && !path.startsWith('/admin') && !path.startsWith('/blog')) {
+      if (path !== '/' && path !== '/dashboard' && path !== '/create' && !path.startsWith('/admin')) {
         window.history.pushState(null, '', '/');
       }
     }
   }, [setSelectedPost]);
 
   const handleGoBack = useCallback(() => {
-    const currentStack = historyStackRef.current;
-    if (currentStack.length > 1) {
+    if (historyStack.length > 1) {
       // Deterministically pop to previous prompt in the stack without crashing into Next.js router
-      const nextStack = currentStack.slice(0, -1);
-      historyStackRef.current = nextStack;
-      setHistoryStack(nextStack);
-      const prevPost = nextStack[nextStack.length - 1];
+      const newStack = [...historyStack];
+      newStack.pop();
+      const prevPost = newStack[newStack.length - 1];
+      setHistoryStack(newStack);
       if (containerRef.current) {
         containerRef.current.scrollTop = 0;
       }
@@ -310,14 +305,14 @@ export const PromptDetailModal = () => {
     } else {
       closeModal();
     }
-  }, [closeModal, setSelectedPost]);
+  }, [historyStack, closeModal, setSelectedPost]);
 
   // Handle browser back / forward navigation and Escape key
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
       if (typeof window === 'undefined') return;
       const path = window.location.pathname;
-      if (path === '/' || path === '' || path === '/dashboard' || path === '/create' || path.startsWith('/admin') || path.startsWith('/blog')) {
+      if (path === '/' || path === '' || path === '/dashboard' || path === '/create' || path.startsWith('/admin')) {
         setSelectedPost(null);
         setHistoryStack([]);
         return;
@@ -353,16 +348,6 @@ export const PromptDetailModal = () => {
           if (containerRef.current) {
             containerRef.current.scrollTop = 0;
           }
-          const existingIdx = historyStackRef.current.findIndex((p) => p.id === matched.id);
-          if (existingIdx !== -1) {
-            const trimmed = historyStackRef.current.slice(0, existingIdx + 1);
-            historyStackRef.current = trimmed;
-            setHistoryStack(trimmed);
-          } else {
-            const nextStack = [...historyStackRef.current, matched];
-            historyStackRef.current = nextStack;
-            setHistoryStack(nextStack);
-          }
           setSelectedPost(matched);
           setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
         } else {
@@ -372,16 +357,6 @@ export const PromptDetailModal = () => {
               if (data.success && data.post) {
                 if (containerRef.current) {
                   containerRef.current.scrollTop = 0;
-                }
-                const existingIdx = historyStackRef.current.findIndex((p) => p.id === data.post.id);
-                if (existingIdx !== -1) {
-                  const trimmed = historyStackRef.current.slice(0, existingIdx + 1);
-                  historyStackRef.current = trimmed;
-                  setHistoryStack(trimmed);
-                } else {
-                  const nextStack = [...historyStackRef.current, data.post];
-                  historyStackRef.current = nextStack;
-                  setHistoryStack(nextStack);
                 }
                 setSelectedPost(data.post);
                 setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
@@ -420,8 +395,8 @@ export const PromptDetailModal = () => {
     const isUnlocked = isPromptUnlocked(selectedPost.id, selectedPost.isPremium);
     if (!isUnlocked) {
       if (toolCredits >= 1) {
-        const success = unlockPromptWithCredit(selectedPost.id);
-        if (!success) {
+        const res = unlockPromptWithCredit(selectedPost.id);
+        if (!res.success) {
           setIsUnlockModalOpen(true);
           return;
         }
@@ -673,8 +648,8 @@ export const PromptDetailModal = () => {
   const handleUnlockWithOneCredit = () => {
     if (!selectedPost) return;
     if (toolCredits >= 1) {
-      const success = unlockPromptWithCredit(selectedPost.id);
-      if (success) {
+      const res = unlockPromptWithCredit(selectedPost.id);
+      if (res.success) {
         try {
           confetti({
             particleCount: 80,
@@ -685,7 +660,7 @@ export const PromptDetailModal = () => {
         } catch {}
         showToast('Prompt unlocked! 1 credit used 🎉');
       } else {
-        showToast('Could not unlock prompt');
+        showToast(res.message);
         setIsUnlockModalOpen(true);
       }
     } else {
@@ -697,8 +672,8 @@ export const PromptDetailModal = () => {
   const handleCopyMasterPrompt = () => {
     if (isPromptGated) {
       if (toolCredits >= 1) {
-        const success = unlockPromptWithCredit(selectedPost.id);
-        if (success) {
+        const res = unlockPromptWithCredit(selectedPost.id);
+        if (res.success) {
           copyPromptToClipboard(selectedPost.promptText, selectedPost.id);
           setCopiedPrompt(true);
           setTimeout(() => setCopiedPrompt(false), 2000);
@@ -722,13 +697,33 @@ export const PromptDetailModal = () => {
     setTimeout(() => setCopiedPrompt(false), 2000);
   };
 
+  const handleEditPromptInEditor = (text: string) => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('promptcms_editor_preload', text);
+      sessionStorage.setItem('promptcms_studio_tab', 'editor');
+    }
+    setSelectedPost(null);
+    router.push('/create');
+    showToast('Prompt loaded into Prompt Editor!');
+  };
+
+  const handleGenerateNewVersion = (text: string) => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('promptcms_studio_preload', `generate a new version of this prompt: ${text}`);
+      sessionStorage.setItem('promptcms_studio_tab', 'generator');
+    }
+    setSelectedPost(null);
+    router.push('/create');
+    showToast('Prompt loaded into Prompt Generator!');
+  };
+
   const handleQuickCopyPin = (e: React.MouseEvent, pin: PromptPost) => {
     e.stopPropagation();
     const isPinUnlocked = isPromptUnlocked(pin.id, pin.isPremium);
     if (!isPinUnlocked) {
       if (toolCredits >= 1) {
-        const success = unlockPromptWithCredit(pin.id);
-        if (success) {
+        const res = unlockPromptWithCredit(pin.id);
+        if (res.success) {
           copyPromptToClipboard(pin.promptText, pin.id);
           setCopiedPinId(pin.id);
           setTimeout(() => setCopiedPinId(null), 2000);
@@ -785,9 +780,6 @@ export const PromptDetailModal = () => {
     if (typeof window !== 'undefined') {
       window.history.pushState({ postId: pin.id, isPromptDetail: true }, '', `/${pinSlug}`);
     }
-    const nextStack = [...historyStackRef.current, pin];
-    historyStackRef.current = nextStack;
-    setHistoryStack(nextStack);
     setSelectedPost(pin);
     setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
   };
@@ -799,6 +791,7 @@ export const PromptDetailModal = () => {
       return;
     }
     if (typeof window !== 'undefined') {
+      sessionStorage.setItem('promptcms_studio_tab', 'reverse');
       sessionStorage.setItem('auraprompt_studio_preload', selectedPost.promptText);
       sessionStorage.setItem('promptcms_studio_preload', selectedPost.promptText);
       if (selectedPost.imageUrl) {
@@ -807,7 +800,7 @@ export const PromptDetailModal = () => {
     }
     setSelectedPost(null);
     router.push('/create');
-    showToast('Loaded image & prompt into Create Studio!');
+    showToast('Loaded into Image-to-Prompt (Decode) Studio!');
   };
 
   return (
@@ -824,14 +817,14 @@ export const PromptDetailModal = () => {
             onClick={handleGoBack}
             className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-bold text-xs sm:text-sm transition-all shadow-sm group min-h-[40px]"
             id="back-to-prompts-btn"
-            title={historyStack.length > 1 ? 'Go back to previous prompt card' : 'Back'}
+            title={historyStack.length > 1 ? 'Go back to previous prompt card' : 'Back to explore feed'}
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform shrink-0" />
             <span className="inline sm:hidden">
-              Back
+              {historyStack.length > 1 ? 'Back' : 'Feed'}
             </span>
             <span className="hidden sm:inline">
-              {historyStack.length > 1 ? 'Previous Prompt' : 'Back'}
+              {historyStack.length > 1 ? 'Previous Prompt' : 'Explore Prompts'}
             </span>
           </button>
 
@@ -1016,16 +1009,17 @@ export const PromptDetailModal = () => {
                       )}
                     </button>
 
-                    {/* Generate Image Button */}
+                    {/* Decode Button */}
                     <button
                       type="button"
-                      onClick={handleGenerateImage}
+                      onClick={handleDeconstructImage}
+                      data-action="decode-prompt"
                       className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#E60023] hover:bg-[#ad081b] text-white shadow-sm transition-all active:scale-95"
-                      title="Generate Image in AI Studio"
-                      aria-label="Generate Image in AI Studio"
+                      title="Decode Image & Prompt in AI Studio"
+                      aria-label="Decode Image & Prompt in AI Studio"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
-                      <span>Generate</span>
+                      <span>Decode</span>
                     </button>
                   </div>
                 </div>
@@ -1137,7 +1131,27 @@ export const PromptDetailModal = () => {
                           {selectedPost.promptText.length} chars
                         </span>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleEditPromptInEditor(selectedPost.promptText)}
+                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold bg-neutral-900 hover:bg-neutral-800 text-neutral-200 transition-all border border-neutral-700"
+                            title="Edit prompt in Prompt Editor"
+                          >
+                            <Edit3 className="w-3.5 h-3.5 text-red-500" />
+                            <span>Edit</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleGenerateNewVersion(selectedPost.promptText)}
+                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold bg-neutral-900 hover:bg-neutral-800 text-neutral-200 transition-all border border-neutral-700"
+                            title="Generate new version in Prompt Generator"
+                          >
+                            <Wand2 className="w-3.5 h-3.5 text-amber-500" />
+                            <span>Generate new version</span>
+                          </button>
+
                           <button
                             onClick={handleCopyMasterPrompt}
                             className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold shadow-md transition-all ${
@@ -1221,8 +1235,8 @@ export const PromptDetailModal = () => {
                       const isPinUnlocked = isPromptUnlocked(p.id, p.isPremium);
                       if (!isPinUnlocked) {
                         if (toolCredits >= 1) {
-                          const success = unlockPromptWithCredit(p.id);
-                          if (!success) {
+                          const res = unlockPromptWithCredit(p.id);
+                          if (!res.success) {
                             setIsUnlockModalOpen(true);
                             return;
                           }
