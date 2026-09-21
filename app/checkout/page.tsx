@@ -333,10 +333,10 @@ export default function CheckoutPage() {
 
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl font-black text-neutral-900 dark:text-white">
-                      {billingCycle === 'monthly' ? '₹99' : '₹950'}
+                      {billingCycle === 'monthly' ? '₹49' : '₹470'}
                     </span>
                     <span className="text-xs text-neutral-400">
-                      {billingCycle === 'monthly' ? '/ month' : '/ year (save ₹238)'}
+                      {billingCycle === 'monthly' ? '/ month' : '/ year (save ₹118)'}
                     </span>
                   </div>
 
@@ -347,29 +347,29 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
-                      <span><strong>100</strong> prompt tool credits / mo</span>
+                      <span><strong>60</strong> prompt tool credits / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
-                      <span><strong>100 AI Searches</strong> / mo</span>
+                      <span><strong>60 AI Searches</strong> / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
-                      <span><strong>10 Prompt Requests</strong></span>
+                      <span><strong>1 Prompt Request</strong></span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
-                      <span className="font-bold text-emerald-600 dark:text-emerald-400">Unlimited saves & history</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">100 saves & history</span>
                     </li>
                   </ul>
                 </div>
 
                 <RazorpayCheckoutButton
-                  amount={billingCycle === 'monthly' ? 9900 : 95000}
+                  amount={billingCycle === 'monthly' ? 4900 : 47000}
                   planTier="starter"
                   planName={billingCycle === 'monthly' ? 'Starter Monthly' : 'Starter Yearly'}
-                  description={billingCycle === 'monthly' ? 'Monthly Starter - 100 Credits, 100 AI Searches' : 'Yearly Starter - 100 Credits/mo, 100 AI Searches/mo (2 Months Free)'}
-                  buttonText={billingCycle === 'monthly' ? 'Get Starter for ₹99/mo' : 'Get Starter Yearly for ₹950'}
+                  description={billingCycle === 'monthly' ? 'Monthly Starter - 60 Credits, 60 AI Searches' : 'Yearly Starter - 60 Credits/mo, 60 AI Searches/mo (2 Months Free)'}
+                  buttonText={billingCycle === 'monthly' ? 'Get Starter for ₹49/mo' : 'Get Starter Yearly for ₹470'}
                   variant="secondary"
                   className="w-full text-xs"
                 />
@@ -393,10 +393,10 @@ export default function CheckoutPage() {
 
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl font-black text-neutral-900 dark:text-white">
-                      {billingCycle === 'monthly' ? '₹199' : '₹1,900'}
+                      {billingCycle === 'monthly' ? '₹99' : '₹950'}
                     </span>
                     <span className="text-xs text-neutral-400">
-                      {billingCycle === 'monthly' ? '/ month' : '/ year (save ₹488)'}
+                      {billingCycle === 'monthly' ? '/ month' : '/ year (save ₹238)'}
                     </span>
                   </div>
 
@@ -407,29 +407,29 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
-                      <span><strong>250</strong> prompt tool credits / mo</span>
+                      <span><strong>120</strong> prompt tool credits / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
-                      <span><strong>250 AI Searches</strong> / mo</span>
+                      <span><strong>120 AI Searches</strong> / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
-                      <span><strong>20 Prompt Requests</strong></span>
+                      <span><strong>2 Prompt Requests</strong></span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
-                      <span className="font-bold text-[#E60023]">Unlimited saves & history</span>
+                      <span className="font-bold text-[#E60023]">200 saves & history</span>
                     </li>
                   </ul>
                 </div>
 
                 <RazorpayCheckoutButton
-                  amount={billingCycle === 'monthly' ? 19900 : 190000}
+                  amount={billingCycle === 'monthly' ? 9900 : 95000}
                   planTier="pro"
                   planName={billingCycle === 'monthly' ? 'Pro Monthly' : 'Pro Yearly'}
-                  description={billingCycle === 'monthly' ? 'Monthly Pro - 250 Credits, 250 AI Searches' : 'Yearly Pro - 250 Credits/mo, 250 AI Searches/mo (2 Months Free)'}
-                  buttonText={billingCycle === 'monthly' ? 'Get Pro for ₹199/mo' : 'Get Pro Yearly for ₹1,900'}
+                  description={billingCycle === 'monthly' ? 'Monthly Pro - 120 Credits, 120 AI Searches' : 'Yearly Pro - 120 Credits/mo, 120 AI Searches/mo (2 Months Free)'}
+                  buttonText={billingCycle === 'monthly' ? 'Get Pro for ₹99/mo' : 'Get Pro Yearly for ₹950'}
                   variant="pill"
                   size="md"
                   className="w-full text-xs"
@@ -450,10 +450,10 @@ export default function CheckoutPage() {
 
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl font-black text-neutral-900 dark:text-white">
-                      {billingCycle === 'monthly' ? '₹399' : '₹3,800'}
+                      {billingCycle === 'monthly' ? '₹199' : '₹1,900'}
                     </span>
                     <span className="text-xs text-neutral-400">
-                      {billingCycle === 'monthly' ? '/ month' : '/ year (save ₹988)'}
+                      {billingCycle === 'monthly' ? '/ month' : '/ year (save ₹488)'}
                     </span>
                   </div>
 
@@ -464,29 +464,29 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
-                      <span><strong>600</strong> prompt tool credits / mo</span>
+                      <span><strong>250</strong> prompt tool credits / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
-                      <span><strong>600 AI Searches</strong> / mo</span>
+                      <span><strong>250 AI Searches</strong> / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
-                      <span><strong>50 Prompt Requests</strong></span>
+                      <span><strong>3 Prompt Requests</strong></span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
-                      <span className="font-bold text-purple-600 dark:text-purple-400">Unlimited saves & history</span>
+                      <span className="font-bold text-purple-600 dark:text-purple-400">400 saves & history</span>
                     </li>
                   </ul>
                 </div>
 
                 <RazorpayCheckoutButton
-                  amount={billingCycle === 'monthly' ? 39900 : 380000}
+                  amount={billingCycle === 'monthly' ? 19900 : 190000}
                   planTier="vip"
                   planName={billingCycle === 'monthly' ? 'VIP Monthly' : 'VIP Yearly'}
-                  description={billingCycle === 'monthly' ? 'Monthly VIP - 600 Credits, 600 AI Searches' : 'Yearly VIP - 600 Credits/mo, 600 AI Searches/mo (2 Months Free)'}
-                  buttonText={billingCycle === 'monthly' ? 'Get VIP for ₹399/mo' : 'Get VIP Yearly for ₹3,800'}
+                  description={billingCycle === 'monthly' ? 'Monthly VIP - 250 Credits, 250 AI Searches' : 'Yearly VIP - 250 Credits/mo, 250 AI Searches/mo (2 Months Free)'}
+                  buttonText={billingCycle === 'monthly' ? 'Get VIP for ₹199/mo' : 'Get VIP Yearly for ₹1,900'}
                   variant="secondary"
                   className="w-full text-xs"
                 />
@@ -524,7 +524,7 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-amber-400 font-bold">✓</span>
-                      <span><strong>1500 credits</strong> / mo</span>
+                      <span><strong>700 credits</strong> / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-amber-400 font-bold">✓</span>
@@ -532,7 +532,7 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-amber-400 font-bold">✓</span>
-                      <span><strong>10 Prompt Requests</strong> / mo</span>
+                      <span><strong>5 Prompt Requests</strong> / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-amber-400 font-bold">✓</span>
@@ -545,7 +545,7 @@ export default function CheckoutPage() {
                   amount={billingCycle === 'monthly' ? 49900 : 479000}
                   planTier="ultra"
                   planName={billingCycle === 'monthly' ? 'Studio 499 Monthly' : 'Studio 499 Yearly'}
-                  description={billingCycle === 'monthly' ? 'Studio 499 - 1500 Credits, Unlimited AI Search' : 'Yearly Studio 499 - 1500 Credits/mo, Unlimited AI Search (2 Months Free)'}
+                  description={billingCycle === 'monthly' ? 'Studio 499 - 700 Credits, Unlimited AI Search' : 'Yearly Studio 499 - 700 Credits/mo, Unlimited AI Search (2 Months Free)'}
                   buttonText={billingCycle === 'monthly' ? 'Get 499 Plan for ₹499/mo' : 'Get Studio Yearly for ₹4,790'}
                   variant="dark"
                   className="w-full text-xs font-black bg-amber-500 hover:bg-amber-400 text-black"
@@ -593,33 +593,33 @@ export default function CheckoutPage() {
                 <tr>
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Monthly Tool Credits</td>
                   <td className="py-3.5 px-4 text-center">2 / day</td>
-                  <td className="py-3.5 px-4 text-center font-bold">100 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-bold">60 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-bold">120 / mo</td>
                   <td className="py-3.5 px-4 text-center font-bold">250 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-bold">600 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-bold text-amber-600 dark:text-amber-400">1,500 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-bold text-amber-600 dark:text-amber-400">700 / mo</td>
                 </tr>
                 <tr>
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">AI Search Quota</td>
                   <td className="py-3.5 px-4 text-center">Basic</td>
-                  <td className="py-3.5 px-4 text-center">100 / mo</td>
+                  <td className="py-3.5 px-4 text-center">60 / mo</td>
+                  <td className="py-3.5 px-4 text-center">120 / mo</td>
                   <td className="py-3.5 px-4 text-center">250 / mo</td>
-                  <td className="py-3.5 px-4 text-center">600 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-bold text-amber-600 dark:text-amber-400">Unlimited</td>
+                  <td className="py-3.5 px-4 text-center font-bold text-amber-600 dark:text-amber-400">700 / mo</td>
                 </tr>
                 <tr>
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Custom Prompt Requests</td>
                   <td className="py-3.5 px-4 text-center text-neutral-400"><X className="w-4 h-4 mx-auto" /></td>
-                  <td className="py-3.5 px-4 text-center">10 / mo</td>
-                  <td className="py-3.5 px-4 text-center">20 / mo</td>
-                  <td className="py-3.5 px-4 text-center">50 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-bold">10 / mo</td>
+                  <td className="py-3.5 px-4 text-center">1 / mo</td>
+                  <td className="py-3.5 px-4 text-center">2 / mo</td>
+                  <td className="py-3.5 px-4 text-center">3 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-bold">5 / mo</td>
                 </tr>
                 <tr>
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Saves & History</td>
                   <td className="py-3.5 px-4 text-center">Limited</td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold">Unlimited</td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold">Unlimited</td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold">Unlimited</td>
+                  <td className="py-3.5 px-4 text-center text-neutral-700 dark:text-neutral-300 font-bold">100 saves</td>
+                  <td className="py-3.5 px-4 text-center text-neutral-700 dark:text-neutral-300 font-bold">200 saves</td>
+                  <td className="py-3.5 px-4 text-center text-neutral-700 dark:text-neutral-300 font-bold">400 saves</td>
                   <td className="py-3.5 px-4 text-center text-emerald-600 font-bold">Unlimited</td>
                 </tr>
                 <tr>
