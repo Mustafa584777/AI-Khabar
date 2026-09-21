@@ -791,6 +791,7 @@ export const PromptDetailModal = () => {
       return;
     }
     if (typeof window !== 'undefined') {
+      sessionStorage.setItem('promptcms_studio_tab', 'reverse');
       sessionStorage.setItem('auraprompt_studio_preload', selectedPost.promptText);
       sessionStorage.setItem('promptcms_studio_preload', selectedPost.promptText);
       if (selectedPost.imageUrl) {
@@ -799,7 +800,7 @@ export const PromptDetailModal = () => {
     }
     setSelectedPost(null);
     router.push('/create');
-    showToast('Loaded image & prompt into Create Studio!');
+    showToast('Loaded into Image-to-Prompt (Decode) Studio!');
   };
 
   return (
@@ -1008,16 +1009,17 @@ export const PromptDetailModal = () => {
                       )}
                     </button>
 
-                    {/* Generate Image Button */}
+                    {/* Decode Button */}
                     <button
                       type="button"
-                      onClick={handleGenerateImage}
+                      onClick={handleDeconstructImage}
+                      data-action="decode-prompt"
                       className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#E60023] hover:bg-[#ad081b] text-white shadow-sm transition-all active:scale-95"
-                      title="Generate Image in AI Studio"
-                      aria-label="Generate Image in AI Studio"
+                      title="Decode Image & Prompt in AI Studio"
+                      aria-label="Decode Image & Prompt in AI Studio"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
-                      <span>Generate</span>
+                      <span>Decode</span>
                     </button>
                   </div>
                 </div>
