@@ -91,7 +91,7 @@ export const PushNotificationsManager: React.FC = () => {
     let matchingPosts = posts;
     if (targetCategory !== 'all') {
       matchingPosts = posts.filter(
-        (p: any) => p.category?.toLowerCase() === targetCategory.toLowerCase()
+        (p) => p.category?.toLowerCase() === targetCategory.toLowerCase()
       );
     }
     if (matchingPosts.length === 0) {
@@ -100,7 +100,7 @@ export const PushNotificationsManager: React.FC = () => {
 
     const picked = matchingPosts
       .slice(0, 4)
-      .map((p: any) => p.imageUrl)
+      .map((p) => p.imageUrl)
       .filter(Boolean);
 
     if (picked.length > 0) {
@@ -112,7 +112,7 @@ export const PushNotificationsManager: React.FC = () => {
 
   // Quick helper: pick from an existing published prompt
   const handleSelectExistingPost = (postId: string) => {
-    const post = posts.find((p: any) => p.id === postId);
+    const post = posts.find((p) => p.id === postId);
     if (!post) return;
     setTitle(`🔥 Trending: ${post.title}`);
     setSubtitle(`You might like this new ${post.category} prompt idea`);
@@ -123,9 +123,9 @@ export const PushNotificationsManager: React.FC = () => {
       setMainImageUrl(post.imageUrl);
       // Pick 3 more images from the same category
       const sameCatImages = posts
-        .filter((p: any) => p.category === post.category && p.id !== post.id)
+        .filter((p) => p.category === post.category && p.id !== post.id)
         .slice(0, 3)
-        .map((p: any) => p.imageUrl);
+        .map((p) => p.imageUrl);
       setCollageImages([post.imageUrl, ...sameCatImages]);
     }
     setActionButton1Label('View Prompt');
@@ -281,7 +281,7 @@ export const PushNotificationsManager: React.FC = () => {
                   className="text-xs px-2.5 py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 border-none font-semibold text-neutral-700 dark:text-neutral-300 max-w-[180px] truncate"
                 >
                   <option value="" disabled>Choose Prompt...</option>
-                  {posts.slice(0, 15).map((p: any) => (
+                  {posts.slice(0, 15).map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.title}
                     </option>
@@ -334,7 +334,7 @@ export const PushNotificationsManager: React.FC = () => {
                   className="w-full px-4 py-2.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 text-xs font-bold text-neutral-900 dark:text-white focus:border-[#E60023] focus:outline-none"
                 >
                   <option value="all">Broadcast to All Users (Global Drop)</option>
-                  {categories.map((c: any) => (
+                  {categories.map((c) => (
                     <option key={c.id || c.name} value={c.name}>
                       {c.name} Subscribers Only
                     </option>

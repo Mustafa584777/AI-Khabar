@@ -67,9 +67,9 @@ export const SendPushNotificationModal: React.FC<SendPushNotificationModalProps>
     try {
       // Gather extra collage images from same category
       const sameCatImages = posts
-        .filter((p: any) => p.category?.toLowerCase() === category.toLowerCase() && p.imageUrl !== imageUrl)
+        .filter((p) => p.category?.toLowerCase() === category.toLowerCase() && p.imageUrl !== imageUrl)
         .slice(0, 3)
-        .map((p: any) => p.imageUrl);
+        .map((p) => p.imageUrl);
 
       const collage = imageUrl ? [imageUrl, ...sameCatImages] : [];
 
@@ -174,7 +174,7 @@ export const SendPushNotificationModal: React.FC<SendPushNotificationModalProps>
                 className="w-full px-3 py-2 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 text-xs font-bold text-neutral-900 dark:text-white"
               >
                 <option value="all">All Subscribed Users</option>
-                {categories.map((c: any) => (
+                {categories.map((c) => (
                   <option key={c.id || c.name} value={c.name}>
                     {c.name}
                   </option>

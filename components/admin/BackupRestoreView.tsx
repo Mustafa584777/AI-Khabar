@@ -191,7 +191,7 @@ export const BackupRestoreView = () => {
       // 3. Prompts Text Folder with individual readable prompt files
       const textFolder = zip.folder('prompts_text');
       if (textFolder) {
-        allPosts.forEach((post: any, i: number) => {
+        allPosts.forEach((post, i) => {
           const safeSlug = (post.slug || `prompt-${i + 1}`).slice(0, 40);
           const filename = `${String(i + 1).padStart(3, '0')}-${safeSlug}.txt`;
           const content = `TITLE: ${post.title}
@@ -433,8 +433,8 @@ Open Admin Panel -> Backup & Restore -> Upload this .zip file or prompts.json.`
     }
   };
 
-  const publishedCount = posts.filter((p: any) => p.status === 'published').length;
-  const draftCount = posts.filter((p: any) => p.status === 'draft').length;
+  const publishedCount = posts.filter((p) => p.status === 'published').length;
+  const draftCount = posts.filter((p) => p.status === 'draft').length;
 
   return (
     <div className="p-4 sm:p-8 space-y-8 max-w-6xl mx-auto">
