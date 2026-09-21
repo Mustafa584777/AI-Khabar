@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useApp } from '@/context/AppContext';
 import { PromptRequestItem } from '@/types/prompt';
 import {
@@ -53,7 +53,7 @@ export const RequestedPromptsManager = () => {
   // Copied state
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
       await refreshPromptRequests();
@@ -63,11 +63,11 @@ export const RequestedPromptsManager = () => {
     } finally {
       setIsRefreshing(false);
     }
-  };
+  }, [refreshPromptRequests, showToast]);
 
   // Auto refresh on mount
   useEffect(() => {
-    refreshPromptRequests().catch(console.error);
+    refreshPromptRequests();
   }, [refreshPromptRequests]);
 
   // Open fulfillment editor

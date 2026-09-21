@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 export const NotificationsView: React.FC = () => {
-  const { categories, showToast } = useApp();
+  const { categories, showToast, setCurrentView } = useApp();
 
   const [notifications, setNotifications] = useState<PushNotificationItem[]>([]);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
@@ -30,24 +30,10 @@ export const NotificationsView: React.FC = () => {
   const [browserPushPermission, setBrowserPushPermission] = useState<NotificationPermission | 'unsupported'>('default');
   const [userInterests, setUserInterests] = useState<string[]>([]);
 
-  // Load initial data & sync from Supabase
-  const loadNotifications = async () => {
-    try {
-      const res = await fetch('/api/notifications/send');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && Array.isArray(data.notifications)) {
-          setNotifications(data.notifications);
-          NotificationService.saveNotifications(data.notifications);
-        } else {
-          setNotifications(NotificationService.getNotifications());
-        }
-      } else {
-        setNotifications(NotificationService.getNotifications());
-      }
-    } catch {
-      setNotifications(NotificationService.getNotifications());
-    }
+  // Load initial data & sync
+  const loadNotifications = () => {
+    const list = NotificationService.getNotifications();
+    setNotifications(list);
     const prefs = NotificationService.getPreferences();
     setUserInterests(prefs.selectedInterests || []);
     setBrowserPushPermission(NotificationService.getBrowserPermissionStatus());
@@ -125,16 +111,17 @@ export const NotificationsView: React.FC = () => {
     showToast('All notifications marked as read.');
   };
 
+  const handleDeleteNotification = async (id: string) => {
+    await NotificationService.deleteNotification(id);
+    loadNotifications();
+    showToast('Notification deleted from database.');
+  };
+
   const handleClearAll = async () => {
-    if (confirm('Clear all notifications from your feed?')) {
-      NotificationService.saveNotifications([]);
+    if (confirm('Delete all notifications from database?')) {
+      await NotificationService.clearAllNotifications();
       setNotifications([]);
-      try {
-        await fetch('/api/notifications/send?clearAll=true', { method: 'DELETE' });
-      } catch (e) {
-        console.warn('Failed to clear notifications on server:', e);
-      }
-      showToast('Notification feed cleared.');
+      showToast('All notifications removed from database.');
     }
   };
 
@@ -197,6 +184,19 @@ export const NotificationsView: React.FC = () => {
                 className="px-3 py-2 rounded-2xl bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors"
               >
                 Mark Read
+              </button>
+            )}
+
+            {/* Clear All from Database */}
+            {notifications.length > 0 && (
+              <button
+                type="button"
+                onClick={handleClearAll}
+                className="px-3 py-2 rounded-2xl bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/40 text-xs font-semibold text-red-600 dark:text-red-400 transition-colors flex items-center gap-1"
+                title="Clear all notifications from database"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Clear All</span>
               </button>
             )}
           </div>
@@ -334,6 +334,7 @@ export const NotificationsView: React.FC = () => {
               key={notif.id}
               notification={notif}
               onRead={handleSingleRead}
+              onDelete={handleDeleteNotification}
             />
           ))
         ) : (
@@ -342,29 +343,37 @@ export const NotificationsView: React.FC = () => {
               <Bell className="w-6 h-6" />
             </div>
             <h3 className="text-base font-bold text-neutral-900 dark:text-white">
-              No notifications matching your filter
+              {notifications.length === 0 ? 'No updates in database yet' : 'No notifications matching your filter'}
             </h3>
             <p className="text-xs text-neutral-500 max-w-sm mx-auto">
-              You&apos;re all caught up! As soon as new prompts are published in your selected categories, they will appear here.
+              {notifications.length === 0
+                ? 'All notification cards are saved and deleted in the database like prompt cards. Newly published prompts and updates will appear here dynamically.'
+                : "You're all caught up! Clear filters to view all database updates."}
             </p>
             <div className="pt-2 flex items-center justify-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedCategoryFilter('all');
-                  setUnreadOnly(false);
-                }}
-                className="px-4 py-2 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-bold"
-              >
-                Show All Notifications
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsInterestModalOpen(true)}
-                className="px-4 py-2 rounded-xl bg-[#E60023] text-white text-xs font-bold"
-              >
-                Add More Categories
-              </button>
+              {notifications.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategoryFilter('all');
+                    setUnreadOnly(false);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-bold"
+                >
+                  Show All Notifications
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCurrentView('public');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="px-4 py-2 rounded-xl bg-[#E60023] text-white text-xs font-bold"
+                >
+                  Explore Prompts
+                </button>
+              )}
             </div>
           </div>
         )}
