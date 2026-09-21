@@ -66,18 +66,10 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
   };
 
   const handleCreateStudioClick = () => {
-    if (!userAccount?.isLoggedIn) {
-      openAuthModal('Sign in or register to access the AI Studio creation tools.');
-      return;
-    }
     router.push('/create');
   };
 
   const handleAccountClick = () => {
-    if (!userAccount?.isLoggedIn) {
-      openAuthModal('Sign in to access your Creator Dashboard and saved prompts.');
-      return;
-    }
     router.push('/dashboard');
   };
 

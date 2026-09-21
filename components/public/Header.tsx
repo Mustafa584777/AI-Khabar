@@ -55,7 +55,9 @@ export const Header = () => {
     setSelectedCategory('all');
     setSearchQuery('');
     if (pathname !== '/') {
-      window.location.href = '/';
+      router.push('/');
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 

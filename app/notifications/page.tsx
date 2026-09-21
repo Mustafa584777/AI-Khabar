@@ -1,10 +1,21 @@
 'use client';
 
 import React from 'react';
+import dynamic from 'next/dynamic';
 import { Header } from '@/components/public/Header';
 import { Footer } from '@/components/public/Footer';
 import { BottomNav } from '@/components/public/BottomNav';
 import { NotificationsView } from '@/components/public/NotificationsView';
+import { ToastNotification } from '@/components/public/ToastNotification';
+
+const PromptDetailModal = dynamic(() => import('@/components/public/PromptDetailModal').then((m) => m.PromptDetailModal), { ssr: false });
+const BookmarksDrawer = dynamic(() => import('@/components/public/BookmarksDrawer').then((m) => m.BookmarksDrawer), { ssr: false });
+const TasteProfileModal = dynamic(() => import('@/components/public/TasteProfileModal').then((m) => m.TasteProfileModal), { ssr: false });
+const SearchExploreModal = dynamic(() => import('@/components/public/SearchExploreModal').then((m) => m.SearchExploreModal), { ssr: false });
+const UserAuthModal = dynamic(() => import('@/components/public/UserAuthModal').then((m) => m.UserAuthModal), { ssr: false });
+const AdminLoginModal = dynamic(() => import('@/components/admin/AdminLoginModal').then((m) => m.AdminLoginModal), { ssr: false });
+const RazorpayCheckoutModal = dynamic(() => import('@/components/public/RazorpayCheckoutModal').then((m) => m.RazorpayCheckoutModal), { ssr: false });
+const UnlockPremiumModal = dynamic(() => import('@/components/public/UnlockPremiumModal').then((m) => m.UnlockPremiumModal), { ssr: false });
 
 export default function NotificationsPage() {
   return (
@@ -15,6 +26,17 @@ export default function NotificationsPage() {
       </main>
       <Footer />
       <BottomNav />
+
+      {/* Global Modals & Overlays */}
+      <SearchExploreModal />
+      <PromptDetailModal />
+      <BookmarksDrawer />
+      <TasteProfileModal />
+      <UserAuthModal />
+      <AdminLoginModal />
+      <ToastNotification />
+      <RazorpayCheckoutModal />
+      <UnlockPremiumModal />
     </div>
   );
 }

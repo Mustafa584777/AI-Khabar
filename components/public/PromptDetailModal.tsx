@@ -84,12 +84,7 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
       className="group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-neutral-200 dark:bg-neutral-900 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-300 border border-neutral-200/60 dark:border-neutral-800/80 w-full"
       id={`masonry-pin-${pin.id}`}
     >
-      {/* Shimmer Placeholder */}
-      {(!loaded || !inView) && pin.imageUrl && (
-        <div className="absolute inset-0 bg-neutral-200 dark:bg-neutral-800 animate-pulse flex items-center justify-center">
-          <Sparkles className="w-4 h-4 text-neutral-400 dark:text-neutral-500 animate-spin" style={{ animationDuration: '4s' }} />
-        </div>
-      )}
+      {/* Shimmer Placeholder removed */}
 
       {/* Premium Badge */}
       {pin.isPremium && (

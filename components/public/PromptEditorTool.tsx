@@ -38,6 +38,15 @@ export const PromptEditorTool = () => {
     'Cozy wooden cabin in snowy mountains with warm glowing windows'
   ];
 
+  const quickChangePresets = [
+    'Change lighting to golden hour sunset with warm rim light',
+    'Add neon cyberpunk lights, dark alley, and rain reflections',
+    'Make it a bright sunny daytime shot with clear blue skies',
+    'Shot on 35mm vintage Kodak Portra film with authentic grain',
+    'Upgrade to photorealistic 8K ultra detail and studio lighting',
+    'Add a supercar and modern architectural background',
+  ];
+
   const handleEditPrompt = async () => {
     if (!inputPrompt.trim()) {
       showToast('Please enter your prompt in the first box.', 'error');
@@ -102,7 +111,9 @@ export const PromptEditorTool = () => {
 
   const sendToCreateStudio = (promptToUse: string) => {
     if (typeof window !== 'undefined') {
+      sessionStorage.setItem('promptcms_studio_preload', promptToUse);
       sessionStorage.setItem('promptcms_studio_image_preload', promptToUse);
+      sessionStorage.setItem('auraprompt_studio_preload', promptToUse);
     }
     router.push('/create');
   };
@@ -183,6 +194,31 @@ export const PromptEditorTool = () => {
               rows={4}
               className="w-full p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#E60023] text-sm transition-all resize-none shadow-inner"
             />
+
+            {/* Quick Change Suggestions */}
+            <div className="space-y-1.5 pt-1">
+              <label className="text-[11px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                Popular Modifications:
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {quickChangePresets.map((preset, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      if (changeInstructions.trim()) {
+                        setChangeInstructions(changeInstructions.trim() + ', ' + preset);
+                      } else {
+                        setChangeInstructions(preset);
+                      }
+                    }}
+                    className="text-[11px] px-2.5 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-emerald-600 hover:text-white transition-all text-left font-medium"
+                  >
+                    + {preset}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           <button
