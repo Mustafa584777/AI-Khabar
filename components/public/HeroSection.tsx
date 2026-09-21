@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import {
   Search,
@@ -39,6 +40,7 @@ export const HeroSection = () => {
 
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const router = useRouter();
   const isMounted = React.useSyncExternalStore(
     () => () => {},
     () => true,
@@ -220,9 +222,7 @@ export const HeroSection = () => {
                               key={post.id}
                               onClick={() => {
                                 setSelectedPost(post);
-                                if (typeof window !== 'undefined') {
-                                  window.history.pushState({ postId: post.id }, '', `/${getPromptSlug(post)}`);
-                                }
+                                router.push(`/${getPromptSlug(post)}`, { scroll: false });
                                 setIsSearchOpen(false);
                               }}
                               className="relative aspect-square rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 cursor-pointer group shadow-xs hover:shadow-md transition-all"

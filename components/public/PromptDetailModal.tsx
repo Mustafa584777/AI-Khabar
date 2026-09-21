@@ -215,14 +215,23 @@ export const PromptDetailModal = () => {
     historyStackRef.current = historyStack;
   }, [historyStack]);
 
-  // Cleanly manage historyStack on selectedPost reset or mount
+  // Cleanly synchronize historyStack whenever selectedPost changes
   useEffect(() => {
     if (!selectedPost) {
       setHistoryStack([]);
-    } else if (historyStack.length === 0) {
-      setHistoryStack([selectedPost]);
+      return;
     }
-  }, [selectedPost, historyStack.length]);
+    setHistoryStack((prev) => {
+      if (prev.length === 0) return [selectedPost];
+      if (prev[prev.length - 1]?.id === selectedPost.id) return prev;
+      const existingIdx = prev.findIndex((p) => p.id === selectedPost.id);
+      if (existingIdx !== -1) {
+        return prev.slice(0, existingIdx + 1);
+      }
+      return [...prev, selectedPost];
+    });
+    setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
+  }, [selectedPost]);
 
   // Dynamic SEO description & title updates for active prompt modal
   useEffect(() => {
@@ -269,97 +278,28 @@ export const PromptDetailModal = () => {
     }
     setSelectedPost(null);
     setHistoryStack([]);
-    if (typeof window !== 'undefined') {
-      const path = window.location.pathname;
-      if (path !== '/' && path !== '/dashboard' && path !== '/create' && !path.startsWith('/admin')) {
-        window.history.pushState(null, '', '/');
-      }
-    }
-  }, [setSelectedPost]);
+    router.push('/', { scroll: false });
+  }, [setSelectedPost, router]);
 
-  const handleGoBack = useCallback((e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    if (typeof window !== 'undefined' && historyStack.length > 1) {
-      window.history.back();
+  const handleGoBack = useCallback(() => {
+    if (historyStack.length > 1) {
+      const newStack = [...historyStack];
+      newStack.pop();
+      const prevPost = newStack[newStack.length - 1];
+      setHistoryStack(newStack);
+      if (containerRef.current) {
+        containerRef.current.scrollTop = 0;
+      }
+      setSelectedPost(prevPost);
+      router.back();
+      setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
     } else {
       closeModal();
     }
-  }, [historyStack.length, closeModal]);
+  }, [historyStack, closeModal, setSelectedPost, router]);
 
-  // Handle browser back / forward navigation and Escape key
+  // Handle Escape key
   useEffect(() => {
-    const handlePopState = (event: PopStateEvent) => {
-      if (typeof window === 'undefined') return;
-      const path = window.location.pathname;
-      if (path === '/' || path === '' || path === '/dashboard' || path === '/create' || path.startsWith('/admin')) {
-        setSelectedPost(null);
-        setHistoryStack([]);
-        return;
-      }
-      if (path.length > 1) {
-        const currentPosts = postsRef.current;
-        const currentStack = historyStackRef.current;
-        const statePostId = event.state?.postId;
-        let matched: PromptPost | undefined;
-
-        if (statePostId) {
-          matched = currentStack.find((p) => p.id === statePostId) || currentPosts.find((p) => p.id === statePostId);
-        }
-
-        const rawSlug = path.replace('/', '').split('/')[0];
-        const targetSlug = decodeURIComponent(rawSlug).toLowerCase().trim();
-
-        if (!matched) {
-          const matchFn = (p: PromptPost) => {
-            if (!p) return false;
-            if (p.id && p.id.toLowerCase() === targetSlug) return true;
-            if (p.slug) {
-              const s = p.slug.toLowerCase();
-              if (s === targetSlug || slugify(s) === targetSlug) return true;
-            }
-            if (p.title) {
-              const t = p.title.toLowerCase();
-              if (t === targetSlug || slugify(t) === targetSlug) return true;
-            }
-            return false;
-          };
-
-          matched = currentStack.find(matchFn) || currentPosts.find(matchFn);
-        }
-
-        if (matched) {
-          if (containerRef.current) {
-            containerRef.current.scrollTop = 0;
-          }
-          setSelectedPost(matched);
-          const existingIdx = currentStack.findIndex((p) => p.id === matched!.id);
-          if (existingIdx !== -1) {
-            setHistoryStack(currentStack.slice(0, existingIdx + 1));
-          } else {
-            setHistoryStack((prev) => [...prev, matched!]);
-          }
-          setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
-        } else {
-          fetch(`/api/posts/${encodeURIComponent(targetSlug)}`)
-            .then((res) => (res.ok ? res.json() : Promise.reject(res)))
-            .then((data) => {
-              if (data.success && data.post) {
-                if (containerRef.current) {
-                  containerRef.current.scrollTop = 0;
-                }
-                setSelectedPost(data.post);
-                setHistoryStack((prev) => [...prev, data.post]);
-                setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
-              }
-            })
-            .catch(() => {});
-        }
-      }
-    };
-
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (showFullImageModal) {
@@ -370,13 +310,11 @@ export const PromptDetailModal = () => {
       }
     };
 
-    window.addEventListener('popstate', handlePopState);
     window.addEventListener('keydown', handleKeyDown);
     return () => {
-      window.removeEventListener('popstate', handlePopState);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [setSelectedPost, showFullImageModal, selectedPost, handleGoBack]);
+  }, [showFullImageModal, selectedPost, handleGoBack]);
 
   const handleLike = () => {
     if (!selectedPost) return;
@@ -770,19 +708,7 @@ export const PromptDetailModal = () => {
       containerRef.current.scrollTop = 0;
     }
     const pinSlug = getPromptSlug(pin);
-    if (typeof window !== 'undefined') {
-      window.history.pushState({ postId: pin.id, isPromptDetail: true }, '', `/${pinSlug}`);
-    }
-    const currentStack = historyStackRef.current;
-    const existingIdx = currentStack.findIndex((p) => p.id === pin.id);
-    let nextStack: PromptPost[];
-    if (existingIdx !== -1) {
-      nextStack = currentStack.slice(0, existingIdx + 1);
-    } else {
-      nextStack = [...currentStack, pin];
-    }
-    historyStackRef.current = nextStack;
-    setHistoryStack(nextStack);
+    router.push(`/${pinSlug}`, { scroll: false });
     setSelectedPost(pin);
     setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
   };
@@ -820,10 +746,15 @@ export const PromptDetailModal = () => {
             onClick={handleGoBack}
             className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-bold text-xs sm:text-sm transition-all shadow-sm group min-h-[40px]"
             id="back-to-prompts-btn"
-            title="Back"
+            title={historyStack.length > 1 ? 'Go back to previous prompt card' : 'Back to explore feed'}
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform shrink-0" />
-            <span>Back</span>
+            <span className="inline sm:hidden">
+              {historyStack.length > 1 ? 'Back' : 'Feed'}
+            </span>
+            <span className="hidden sm:inline">
+              {historyStack.length > 1 ? 'Previous Prompt' : 'Explore Prompts'}
+            </span>
           </button>
 
           <div className="hidden md:flex items-center gap-2 text-xs font-semibold text-neutral-400">

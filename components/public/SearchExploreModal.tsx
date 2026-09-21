@@ -350,9 +350,7 @@ export const SearchExploreModal = () => {
                       key={post.id}
                       onClick={() => {
                         setSelectedPost(post);
-                        if (typeof window !== 'undefined') {
-                          window.history.pushState({ postId: post.id }, '', `/${getPromptSlug(post)}`);
-                        }
+                        router.push(`/${getPromptSlug(post)}`, { scroll: false });
                         setIsSearchModalOpen(false);
                       }}
                       className="group relative rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/60 dark:border-neutral-800 cursor-pointer shadow-xs hover:shadow-xl transition-all"
