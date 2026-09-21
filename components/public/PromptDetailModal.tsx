@@ -215,12 +215,14 @@ export const PromptDetailModal = () => {
     historyStackRef.current = historyStack;
   }, [historyStack]);
 
-  // Cleanly manage historyStack on selectedPost reset
+  // Cleanly manage historyStack on selectedPost reset or mount
   useEffect(() => {
     if (!selectedPost) {
       setHistoryStack([]);
+    } else if (historyStack.length === 0) {
+      setHistoryStack([selectedPost]);
     }
-  }, [selectedPost]);
+  }, [selectedPost, historyStack.length]);
 
   // Dynamic SEO description & title updates for active prompt modal
   useEffect(() => {
@@ -275,26 +277,17 @@ export const PromptDetailModal = () => {
     }
   }, [setSelectedPost]);
 
-  const handleGoBack = useCallback(() => {
-    if (historyStack.length > 1) {
-      // Deterministically pop to previous prompt in the stack without crashing into Next.js router
-      const newStack = [...historyStack];
-      newStack.pop();
-      const prevPost = newStack[newStack.length - 1];
-      setHistoryStack(newStack);
-      if (containerRef.current) {
-        containerRef.current.scrollTop = 0;
-      }
-      setSelectedPost(prevPost);
-      if (typeof window !== 'undefined') {
-        const prevSlug = getPromptSlug(prevPost);
-        window.history.replaceState({ postId: prevPost.id, isPromptDetail: true }, '', `/${prevSlug}`);
-      }
-      setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
+  const handleGoBack = useCallback((e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (typeof window !== 'undefined' && historyStack.length > 1) {
+      window.history.back();
     } else {
       closeModal();
     }
-  }, [historyStack, closeModal, setSelectedPost]);
+  }, [historyStack.length, closeModal]);
 
   // Handle browser back / forward navigation and Escape key
   useEffect(() => {
@@ -313,24 +306,28 @@ export const PromptDetailModal = () => {
         let matched: PromptPost | undefined;
 
         if (statePostId) {
-          matched = currentPosts.find((p) => p.id === statePostId) || currentStack.find((p) => p.id === statePostId);
+          matched = currentStack.find((p) => p.id === statePostId) || currentPosts.find((p) => p.id === statePostId);
         }
 
         const rawSlug = path.replace('/', '').split('/')[0];
         const targetSlug = decodeURIComponent(rawSlug).toLowerCase().trim();
 
         if (!matched) {
-          matched = currentPosts.find((p) => {
-            if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
+          const matchFn = (p: PromptPost) => {
+            if (!p) return false;
             if (p.id && p.id.toLowerCase() === targetSlug) return true;
-            if (p.title && (p.title.toLowerCase() === targetSlug || slugify(p.title) === targetSlug)) return true;
+            if (p.slug) {
+              const s = p.slug.toLowerCase();
+              if (s === targetSlug || slugify(s) === targetSlug) return true;
+            }
+            if (p.title) {
+              const t = p.title.toLowerCase();
+              if (t === targetSlug || slugify(t) === targetSlug) return true;
+            }
             return false;
-          }) || currentStack.find((p) => {
-            if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
-            if (p.id && p.id.toLowerCase() === targetSlug) return true;
-            if (p.title && (p.title.toLowerCase() === targetSlug || slugify(p.title) === targetSlug)) return true;
-            return false;
-          });
+          };
+
+          matched = currentStack.find(matchFn) || currentPosts.find(matchFn);
         }
 
         if (matched) {
@@ -338,6 +335,12 @@ export const PromptDetailModal = () => {
             containerRef.current.scrollTop = 0;
           }
           setSelectedPost(matched);
+          const existingIdx = currentStack.findIndex((p) => p.id === matched!.id);
+          if (existingIdx !== -1) {
+            setHistoryStack(currentStack.slice(0, existingIdx + 1));
+          } else {
+            setHistoryStack((prev) => [...prev, matched!]);
+          }
           setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
         } else {
           fetch(`/api/posts/${encodeURIComponent(targetSlug)}`)
@@ -348,6 +351,7 @@ export const PromptDetailModal = () => {
                   containerRef.current.scrollTop = 0;
                 }
                 setSelectedPost(data.post);
+                setHistoryStack((prev) => [...prev, data.post]);
                 setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
               }
             })
@@ -769,7 +773,16 @@ export const PromptDetailModal = () => {
     if (typeof window !== 'undefined') {
       window.history.pushState({ postId: pin.id, isPromptDetail: true }, '', `/${pinSlug}`);
     }
-    setHistoryStack((prev) => [...prev, pin]);
+    const currentStack = historyStackRef.current;
+    const existingIdx = currentStack.findIndex((p) => p.id === pin.id);
+    let nextStack: PromptPost[];
+    if (existingIdx !== -1) {
+      nextStack = currentStack.slice(0, existingIdx + 1);
+    } else {
+      nextStack = [...currentStack, pin];
+    }
+    historyStackRef.current = nextStack;
+    setHistoryStack(nextStack);
     setSelectedPost(pin);
     setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
   };
