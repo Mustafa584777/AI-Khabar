@@ -1,6 +1,6 @@
 {
-  "name": "Trending Copy Paste Photo Prompts",
-  "description": "Copy-paste prompt directory for Trending Copy Paste Photo Prompts for creating, exploring, and sharing curated AI photo prompts and creative guides.",
+  "name": "AuraPrompt - AI Prompt Marketplace & Studio",
+  "description": "Discover, generate, and unlock elite AI prompts with credits and flexible pricing plans.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
