@@ -35,7 +35,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         {/* Preconnect to Cloudinary CDN & Fonts for optimal performance */}
         <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />

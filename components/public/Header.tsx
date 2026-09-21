@@ -12,6 +12,8 @@ import {
   Search,
   Crown,
   Bell,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { NotificationService } from '@/lib/notifications';
 import Link from 'next/link';
@@ -39,6 +41,24 @@ export const Header = () => {
   } = useApp();
 
   const [unreadNotifs, setUnreadNotifs] = React.useState(0);
+  const [isDarkMode, setIsDarkMode] = React.useState(() => {
+    if (typeof window !== 'undefined') {
+      return document.documentElement.classList.contains('dark');
+    }
+    return true;
+  });
+
+  const toggleTheme = () => {
+    const newDark = !isDarkMode;
+    setIsDarkMode(newDark);
+    if (newDark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  };
 
   React.useEffect(() => {
     const update = () => {
@@ -96,8 +116,18 @@ export const Header = () => {
             </div>
           </button>
 
+          {/* Theme Toggle Icon in Mobile Header next to logo (grey colour) */}
+          <button
+            onClick={toggleTheme}
+            className="sm:hidden p-2 rounded-full text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            id="mobile-theme-toggle-btn"
+          >
+            {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </button>
+
           {/* Desktop Navigation Tabs */}
-          <nav className="flex items-center gap-1.5 sm:gap-2">
+          <nav className="hidden sm:flex items-center gap-1.5 sm:gap-2">
             <button
               onClick={handleHomeClick}
               className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 ${

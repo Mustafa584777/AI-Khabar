@@ -215,22 +215,11 @@ export const PromptDetailModal = () => {
     historyStackRef.current = historyStack;
   }, [historyStack]);
 
-  // Cleanly synchronize historyStack whenever selectedPost changes
+  // Cleanly manage historyStack on selectedPost reset
   useEffect(() => {
     if (!selectedPost) {
       setHistoryStack([]);
-      return;
     }
-    setHistoryStack((prev) => {
-      if (prev.length === 0) return [selectedPost];
-      if (prev[prev.length - 1]?.id === selectedPost.id) return prev;
-      const existingIdx = prev.findIndex((p) => p.id === selectedPost.id);
-      if (existingIdx !== -1) {
-        return prev.slice(0, existingIdx + 1);
-      }
-      return [...prev, selectedPost];
-    });
-    setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
   }, [selectedPost]);
 
   // Dynamic SEO description & title updates for active prompt modal
@@ -780,6 +769,7 @@ export const PromptDetailModal = () => {
     if (typeof window !== 'undefined') {
       window.history.pushState({ postId: pin.id, isPromptDetail: true }, '', `/${pinSlug}`);
     }
+    setHistoryStack((prev) => [...prev, pin]);
     setSelectedPost(pin);
     setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
   };
@@ -817,15 +807,10 @@ export const PromptDetailModal = () => {
             onClick={handleGoBack}
             className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-bold text-xs sm:text-sm transition-all shadow-sm group min-h-[40px]"
             id="back-to-prompts-btn"
-            title={historyStack.length > 1 ? 'Go back to previous prompt card' : 'Back to explore feed'}
+            title="Back"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform shrink-0" />
-            <span className="inline sm:hidden">
-              {historyStack.length > 1 ? 'Back' : 'Feed'}
-            </span>
-            <span className="hidden sm:inline">
-              {historyStack.length > 1 ? 'Previous Prompt' : 'Explore Prompts'}
-            </span>
+            <span>Back</span>
           </button>
 
           <div className="hidden md:flex items-center gap-2 text-xs font-semibold text-neutral-400">
