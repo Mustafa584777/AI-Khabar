@@ -12,6 +12,22 @@ const LoadingOverlayInner = () => {
 
   // Trigger loading on pathname change or initial visit in session
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const navEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+        if (navEntries.length > 0 && navEntries[0].type === 'reload') {
+          sessionStorage.removeItem('visited_route_/create');
+          sessionStorage.removeItem('visited_route_/dashboard');
+          sessionStorage.removeItem('visited_route_/notifications');
+          sessionStorage.removeItem('visited_route_/pricing');
+          sessionStorage.removeItem('visited_route_/prompt-editor');
+          sessionStorage.removeItem('visited_route_/');
+        }
+      } catch {
+        // ignore
+      }
+    }
+
     // Exclude prompt detail modal opens and individual prompt slugs
     const isMainRoute =
       pathname === '/' ||
@@ -77,69 +93,78 @@ const LoadingOverlayInner = () => {
     };
   }, [pathname]);
 
-  // Click listener for explicit navigation buttons ONLY (never prompt cards!)
+  // Click listener for navigation and action buttons (Decode, Edit, Generate new version)
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       const target = (e.target as HTMLElement).closest('a, button');
       if (!target) return;
 
-      // STRICT EXCLUSION: Never trigger for prompt cards, prompt pins, or modal items
-      if (
-        target.closest('[id^="prompt-pin-"]') ||
-        target.closest('[id^="masonry-pin-"]') ||
-        target.closest('article') ||
-        target.closest('[id*="modal"]') ||
-        target.closest('[id*="prompt"]') ||
-        target.closest('[data-prompt-card]')
-      ) {
-        return;
-      }
-
+      const actionAttr = target.getAttribute('data-action') || '';
+      const titleAttr = (target.getAttribute('title') || '').toLowerCase();
+      const text = (target.textContent || '').trim().toLowerCase();
       const href = (target.getAttribute('href') || '').trim();
       const id = (target.getAttribute('id') || '').trim();
-      const text = (target.textContent || '').trim().toLowerCase();
 
-      // Determine target route strictly for main navigation tabs
       let targetPath = '';
-      if (href === '/create' || id === 'header-create-tool-btn' || id === 'bottom-nav-create-tool') {
+      let customLoadingText = 'Loading Studio & Prompts...';
+
+      // Check for action buttons (Decode, Edit, Generate new version)
+      if (
+        actionAttr === 'decode-prompt' ||
+        titleAttr.includes('edit') ||
+        titleAttr.includes('generate new version') ||
+        text === 'generate' ||
+        text === 'edit' ||
+        text === 'generate new version'
+      ) {
         targetPath = '/create';
-      } else if (href === '/dashboard' || id === 'header-account-btn' || id === 'bottom-nav-account') {
-        targetPath = '/dashboard';
-      } else if (href === '/notifications' || id === 'header-notifications-btn' || id === 'bottom-nav-notifications') {
-        targetPath = '/notifications';
-      } else if (href === '/pricing') {
-        targetPath = '/pricing';
-      } else if (href === '/' || id === 'brand-logo-btn' || id === 'bottom-nav-home' || text === 'home') {
-        targetPath = '/';
+        if (actionAttr === 'decode-prompt' || text === 'generate') {
+          customLoadingText = 'Opening Image-to-Prompt & Studio...';
+        } else if (titleAttr.includes('edit') || text === 'edit') {
+          customLoadingText = 'Loading Prompt Editor...';
+        } else {
+          customLoadingText = 'Opening Prompt Generator...';
+        }
+      } else {
+        // STRICT EXCLUSION for other prompt cards/pins unless action matched
+        if (
+          target.closest('[id^="prompt-pin-"]') ||
+          target.closest('[id^="masonry-pin-"]') ||
+          (target.closest('article') && !actionAttr)
+        ) {
+          return;
+        }
+
+        if (href === '/create' || id === 'header-create-tool-btn' || id === 'bottom-nav-create-tool') {
+          targetPath = '/create';
+        } else if (href === '/dashboard' || id === 'header-account-btn' || id === 'bottom-nav-account') {
+          targetPath = '/dashboard';
+        } else if (href === '/notifications' || id === 'header-notifications-btn' || id === 'bottom-nav-notifications') {
+          targetPath = '/notifications';
+        } else if (href === '/pricing') {
+          targetPath = '/pricing';
+        } else if (href === '/' || id === 'brand-logo-btn' || id === 'bottom-nav-home' || text === 'home') {
+          targetPath = '/';
+        }
       }
 
       if (!targetPath) return;
 
-      // If already on this path, do not trigger loading overlay
-      if (pathname === targetPath) return;
+      // If already on this path, do not trigger loading overlay unnecessarily
+      if (pathname === targetPath && !actionAttr) return;
 
       const visitKey = `visited_route_${targetPath}`;
       try {
         if (sessionStorage.getItem(visitKey)) {
-          return;
+          return; // If already fully loaded in this session, don't trigger loading skeleton again
         }
       } catch {
         // ignore
       }
 
-      if (targetPath === '/create') {
-        setLoadingText('Opening AI Studio & Prompt Generator...');
-      } else if (targetPath === '/dashboard') {
-        setLoadingText('Loading Creator Dashboard & Account...');
-      } else if (targetPath === '/notifications') {
-        setLoadingText('Loading Notifications & Drops...');
-      } else if (targetPath === '/pricing') {
-        setLoadingText('Loading Membership Plans...');
-      } else {
-        setLoadingText('Loading Home Feed & Prompts...');
-      }
+      setLoadingText(customLoadingText);
 
-      // Trigger overlay asynchronously without delaying navigation
+      // Trigger overlay asynchronously
       setTimeout(() => {
         setIsLoading(true);
         setShowSlowWarning(false);
