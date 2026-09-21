@@ -162,11 +162,12 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
           <button
             type="button"
             onClick={handleDeconstructImagePrompt}
-            className="w-12 h-12 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl flex items-center justify-center transition-all duration-300 ease-out transform scale-75 group-hover:scale-100 hover:scale-110 active:scale-95"
-            title="Decode"
-            aria-label="Decode"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl transition-all duration-300 ease-out transform scale-75 group-hover:scale-100 hover:scale-110 active:scale-95 text-xs font-bold"
+            title="Generate"
+            aria-label="Generate"
           >
-            <Sparkles className="w-5 h-5 text-amber-600" />
+            <Sparkles className="w-4 h-4 text-amber-600" />
+            <span>Generate</span>
           </button>
         </div>
       </a>

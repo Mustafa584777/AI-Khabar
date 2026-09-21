@@ -115,9 +115,12 @@ export const AIStudioTool = () => {
   const [activeStudioTab, setActiveStudioTab] = useState<'reverse' | 'generator' | 'editor'>(() => {
     if (typeof window !== 'undefined') {
       const tab = sessionStorage.getItem('promptcms_studio_tab');
-      if (tab === 'reverse') {
+      if (tab === 'reverse' || tab === 'editor' || tab === 'generator') {
         sessionStorage.removeItem('promptcms_studio_tab');
-        return 'reverse';
+        return tab;
+      }
+      if (sessionStorage.getItem('promptcms_editor_preload')) {
+        return 'editor';
       }
       const preload = sessionStorage.getItem('promptcms_studio_preload') || sessionStorage.getItem('auraprompt_studio_preload');
       if (preload) return 'generator';
@@ -307,8 +310,9 @@ export const AIStudioTool = () => {
   const handleEditPromptInEditor = (text: string) => {
     if (typeof window !== 'undefined') {
       sessionStorage.setItem('promptcms_editor_preload', text);
+      sessionStorage.setItem('promptcms_studio_tab', 'editor');
     }
-    router.push('/prompt-editor');
+    setActiveStudioTab('editor');
     showToast('Prompt loaded into Prompt Editor!');
   };
 

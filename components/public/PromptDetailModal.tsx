@@ -700,9 +700,10 @@ export const PromptDetailModal = () => {
   const handleEditPromptInEditor = (text: string) => {
     if (typeof window !== 'undefined') {
       sessionStorage.setItem('promptcms_editor_preload', text);
+      sessionStorage.setItem('promptcms_studio_tab', 'editor');
     }
     setSelectedPost(null);
-    router.push('/prompt-editor');
+    router.push('/create');
     showToast('Prompt loaded into Prompt Editor!');
   };
 
