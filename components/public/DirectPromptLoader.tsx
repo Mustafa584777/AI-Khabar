@@ -45,7 +45,7 @@ export function DirectPromptLoader({
     }
 
     const targetSlug = decodeURIComponent(id).toLowerCase().trim();
-    const matched = posts.find((p) => {
+    const matched = posts.find((p: any) => {
       if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
       if (p.id && p.id.toLowerCase() === targetSlug) return true;
       if (p.title && (p.title.toLowerCase() === targetSlug || slugify(p.title) === targetSlug)) return true;

@@ -22,7 +22,7 @@ export const InterestSelectionModal: React.FC<InterestSelectionModalProps> = ({
     const prefs = NotificationService.getPreferences();
     return prefs.selectedInterests && prefs.selectedInterests.length > 0
       ? prefs.selectedInterests
-      : categories.slice(0, 4).map((c) => c.name);
+      : categories.slice(0, 4).map((c: any) => c.name);
   });
 
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
@@ -44,7 +44,7 @@ export const InterestSelectionModal: React.FC<InterestSelectionModalProps> = ({
   };
 
   const handleSelectAll = () => {
-    setSelected(categories.map((c) => c.name));
+    setSelected(categories.map((c: any) => c.name));
   };
 
   const handleClear = () => {
@@ -119,7 +119,7 @@ export const InterestSelectionModal: React.FC<InterestSelectionModalProps> = ({
 
         {/* Category Chips Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          {categories.map((cat) => {
+          {categories.map((cat: any) => {
             const isChecked = selected.includes(cat.name);
             return (
               <button

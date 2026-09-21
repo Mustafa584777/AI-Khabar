@@ -13,7 +13,6 @@ import {
   CheckCircle2,
   Clock,
   Sparkles,
-  Crown,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -23,7 +22,6 @@ export const PostsManager = () => {
     categories,
     deletePost,
     togglePublishStatus,
-    togglePremiumStatus,
     setAdminSubView,
     setEditingPostId,
     setCurrentView,
@@ -36,11 +34,11 @@ export const PostsManager = () => {
   const [search, setSearch] = useState<string>('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  const publishedCount = posts.filter((p) => p.status === 'published').length;
-  const draftCount = posts.filter((p) => p.status === 'draft').length;
+  const publishedCount = posts.filter((p: any) => p.status === 'published').length;
+  const draftCount = posts.filter((p: any) => p.status === 'draft').length;
 
   const filteredPosts = useMemo(() => {
-    return posts.filter((post) => {
+    return posts.filter((post: any) => {
       if (statusFilter !== 'all' && post.status !== statusFilter) return false;
       if (categoryFilter !== 'all' && post.category.toLowerCase() !== categoryFilter.toLowerCase()) return false;
       if (search.trim()) {
@@ -48,7 +46,7 @@ export const PostsManager = () => {
         const match =
           post.title.toLowerCase().includes(q) ||
           post.promptText.toLowerCase().includes(q) ||
-          post.tags.some((t) => t.toLowerCase().includes(q));
+          post.tags.some((t: string) => t.toLowerCase().includes(q));
         if (!match) return false;
       }
       return true;
@@ -57,7 +55,7 @@ export const PostsManager = () => {
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedIds(filteredPosts.map((p) => p.id));
+      setSelectedIds(filteredPosts.map((p: any) => p.id));
     } else {
       setSelectedIds([]);
     }
@@ -71,7 +69,7 @@ export const PostsManager = () => {
 
   const handleBulkPublish = () => {
     selectedIds.forEach((id) => {
-      const p = posts.find((item) => item.id === id);
+      const p = posts.find((item: any) => item.id === id);
       if (p && p.status !== 'published') {
         togglePublishStatus(id);
       }
@@ -82,7 +80,7 @@ export const PostsManager = () => {
 
   const handleBulkDraft = () => {
     selectedIds.forEach((id) => {
-      const p = posts.find((item) => item.id === id);
+      const p = posts.find((item: any) => item.id === id);
       if (p && p.status !== 'draft') {
         togglePublishStatus(id);
       }
@@ -127,7 +125,7 @@ export const PostsManager = () => {
         </button>
       </div>
 
-      {/* Editorial Status Tabs */}
+      {/* WordPress Status Tabs */}
       <div className="flex items-center gap-3 text-xs font-semibold border-b border-neutral-200 dark:border-neutral-800 pb-3">
         <button
           onClick={() => setStatusFilter('all')}
@@ -207,7 +205,7 @@ export const PostsManager = () => {
             className="text-xs font-medium py-2 px-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 focus:outline-none"
           >
             <option value="all">All Categories</option>
-            {categories.map((c) => (
+            {categories.map((c: any) => (
               <option key={c.id} value={c.name}>
                 {c.name}
               </option>
@@ -254,7 +252,7 @@ export const PostsManager = () => {
             </thead>
             <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
               {filteredPosts.length > 0 ? (
-                filteredPosts.map((post) => {
+                filteredPosts.map((post: any) => {
                   const isChecked = selectedIds.includes(post.id);
 
                   return (
@@ -287,33 +285,15 @@ export const PostsManager = () => {
                             </div>
                           )}
                           <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <h4
-                                onClick={() => {
-                                  setEditingPostId(post.id);
-                                  setAdminSubView('edit-post');
-                                }}
-                                className="font-bold text-neutral-900 dark:text-white text-xs hover:text-blue-600 cursor-pointer line-clamp-1"
-                              >
-                                {post.title}
-                              </h4>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  togglePremiumStatus(post.id);
-                                }}
-                                title={post.isPremium ? 'Currently PRO Premium (Click to change to Free)' : 'Currently Free (Click to upgrade to PRO Premium)'}
-                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase shrink-0 transition-all cursor-pointer ${
-                                  post.isPremium
-                                    ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-xs'
-                                    : 'bg-neutral-100 hover:bg-amber-100 dark:bg-neutral-800 dark:hover:bg-amber-950/60 text-neutral-400 hover:text-amber-600'
-                                }`}
-                              >
-                                <Crown className={`w-2.5 h-2.5 ${post.isPremium ? 'fill-white' : ''}`} />
-                                <span>{post.isPremium ? 'PRO' : 'FREE'}</span>
-                              </button>
-                            </div>
+                            <h4
+                              onClick={() => {
+                                setEditingPostId(post.id);
+                                setAdminSubView('edit-post');
+                              }}
+                              className="font-bold text-neutral-900 dark:text-white text-xs hover:text-blue-600 cursor-pointer line-clamp-1"
+                            >
+                              {post.title}
+                            </h4>
                             <p className="text-[11px] text-neutral-400 font-mono truncate">
                               /{post.slug}
                             </p>
