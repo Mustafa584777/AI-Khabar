@@ -73,6 +73,12 @@ export interface PromptPost {
   isFeatured?: boolean;
   isTrending?: boolean;
   isPremium?: boolean;
+  isRequested?: boolean;
+  requestedPromptDescription?: string;
+  requestedByName?: string;
+  requestedByEmail?: string;
+  requestedByAvatar?: string;
+  requestId?: string;
   viewsCount: number;
   copiesCount: number;
   likesCount: number;
@@ -106,6 +112,8 @@ export interface SiteSettings {
   siteTagline: string;
   siteUrl: string;
   logoText: string;
+  logoUrl?: string;
+  faviconUrl?: string;
   heroHeadline: string;
   heroSubheadline: string;
   defaultTool: AITool;
@@ -117,6 +125,7 @@ export interface SiteSettings {
   cloudinaryApiKey?: string;
   cloudinaryApiSecret?: string;
   cloudinaryUploadPreset?: string;
+  geminiCustomInstructions?: string;
 }
 
 export interface AdminUser {

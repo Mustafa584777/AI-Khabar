@@ -130,7 +130,7 @@ export const AIGeneratorModal = () => {
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white text-xs font-bold"
             >
-              {categories.map((c) => (
+              {categories.map((c: any) => (
                 <option key={c.id} value={c.name}>
                   {c.name}
                 </option>

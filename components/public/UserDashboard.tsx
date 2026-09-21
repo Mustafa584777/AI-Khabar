@@ -39,7 +39,6 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { RazorpayCheckoutButton } from './RazorpayCheckoutButton';
 
 export const UserDashboard = () => {
   const router = useRouter();
@@ -442,30 +441,12 @@ export const UserDashboard = () => {
           </div>
 
           <div className="flex items-center gap-2 shrink-0 self-start md:self-auto">
-            {!isPaid ? (
-              <>
-                <RazorpayCheckoutButton
-                  amount={9900}
-                  planName="Pro Creator"
-                  buttonText="Get Pro (₹99)"
-                  variant="pill"
-                  size="sm"
-                />
-                <button
-                  onClick={() => router.push('/pricing')}
-                  className="px-3.5 py-2 rounded-full border border-neutral-300 dark:border-neutral-700 hover:border-neutral-400 text-xs font-bold text-neutral-700 dark:text-neutral-200 transition-colors"
-                >
-                  All Plans
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => router.push('/pricing')}
-                className="px-4 py-2 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 text-xs font-bold hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
-              >
-                View Plans & Upgrade
-              </button>
-            )}
+            <button
+              onClick={() => router.push('/pricing')}
+              className="px-5 py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-md shadow-red-500/20 transition-all cursor-pointer"
+            >
+              View Monthly Plans
+            </button>
           </div>
         </div>
 

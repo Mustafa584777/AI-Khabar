@@ -262,9 +262,9 @@ export const CategoriesManager = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                  {categories.map((cat) => {
+                  {categories.map((cat: any) => {
                     const postCount = posts.filter(
-                      (p) => p.category.toLowerCase() === cat.name.toLowerCase()
+                      (p: any) => p.category.toLowerCase() === cat.name.toLowerCase()
                     ).length;
                     return (
                       <tr key={cat.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40">
@@ -468,12 +468,12 @@ export const CategoriesManager = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                    {tags.map((tag) => {
+                    {tags.map((tag: string) => {
                       const tagLower = tag.toLowerCase();
                       const associatedCount = posts.filter(
-                        (p) => p.tags && p.tags.some((t) => t.toLowerCase() === tagLower)
+                        (p: any) => p.tags && p.tags.some((t: string) => t.toLowerCase() === tagLower)
                       ).length;
-                      const isPopular = editablePopularTags.some((pt) => pt.toLowerCase() === tagLower);
+                      const isPopular = editablePopularTags.some((pt: string) => pt.toLowerCase() === tagLower);
 
                       return (
                         <tr key={tag} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40">
