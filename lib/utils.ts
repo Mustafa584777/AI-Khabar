@@ -1,0 +1,114 @@
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
+export function slugify(text: string): string {
+  if (!text) return '';
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/&/g, '-and-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
+}
+
+export function getPromptSlug(post: { slug?: string; title?: string; id?: string }): string {
+  if (post.title && post.title.trim()) {
+    const slug = slugify(post.title);
+    if (slug) return slug;
+  }
+  if (post.slug && post.slug.trim()) {
+    const slug = slugify(post.slug);
+    if (slug) return slug;
+  }
+  return post.id || 'prompt';
+}
+
+export function getPromptMetaDescription(post: {
+  title?: string;
+  category?: string;
+  aiTool?: string;
+  tags?: string[];
+  seoDescription?: string;
+  seo?: { metaDescription?: string };
+  promptText?: string;
+  parameters?: { aspectRatio?: string; lighting?: string; camera?: string; shotType?: string; style?: string };
+}): string {
+  if (post.seoDescription && post.seoDescription.trim().length > 15) {
+    return post.seoDescription.trim();
+  }
+  if (post.seo?.metaDescription && post.seo.metaDescription.trim().length > 15) {
+    return post.seo.metaDescription.trim();
+  }
+  const toolName = post.aiTool || 'Midjourney, ChatGPT, Gemini and Flux';
+  const category = post.category || 'AI Photography';
+  const title = post.title || 'Creative AI Photo Prompt';
+  const tagsStr = post.tags && post.tags.length > 0 ? ` featuring ${post.tags.slice(0, 3).join(', ')}` : '';
+  const lightingStr = post.parameters?.lighting ? ` with ${post.parameters.lighting}` : '';
+  const cameraStr = post.parameters?.camera ? ` (${post.parameters.camera})` : '';
+  const ratioStr = post.parameters?.aspectRatio ? ` [--ar ${post.parameters.aspectRatio}]` : '';
+  
+  return `Copy and paste this ${title} photo prompt for ${toolName}. Curated ${category.toLowerCase()} aesthetic${lightingStr}${cameraStr}${tagsStr}${ratioStr}. Instant 1-click copy.`;
+}
+
+export function getOptimizedImageUrl(url?: string, width = 550): string {
+  if (!url || typeof url !== 'string') return url || '';
+  if (url.includes('res.cloudinary.com') && url.includes('/image/upload/')) {
+    if (url.includes('/image/upload/f_auto') || url.includes('/image/upload/q_auto') || url.includes('/image/upload/w_')) {
+      return url.replace(/\/image\/upload\/[^/]+\//, `/image/upload/f_auto,q_auto:good,w_${width},c_limit/`);
+    }
+    return url.replace('/image/upload/', `/image/upload/f_auto,q_auto:good,w_${width},c_limit/`);
+  }
+  return url;
+}
+
+export function detectPostAspectRatio(post: {
+  parameters?: { aspectRatio?: string };
+  promptText?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+}): string {
+  // 1. Direct parameter specification (e.g., "16:9", "9:16", "1:1", "3:4", "2:3")
+  if (post.parameters?.aspectRatio) {
+    const raw = post.parameters.aspectRatio.trim().replace(':', ' / ');
+    if (raw.includes('/')) return raw;
+  }
+
+  const text = post.promptText || '';
+
+  // 2. Midjourney / parameter flag like "--ar 16:9", "--ar 1:1", "--ar 9:16", "--ar 3:4", "--ar 2:3", "--ar 4:5"
+  const arFlagMatch = text.match(/--ar\s+([0-9]+)\s*[:/]\s*([0-9]+)/i);
+  if (arFlagMatch) {
+    return `${arFlagMatch[1]} / ${arFlagMatch[2]}`;
+  }
+
+  // 3. Written aspect ratio like "Aspect ratio: 9:16 vertical" or "Aspect ratio: 16:9" or "Aspect ratio - 1:1"
+  const arTextMatch = text.match(/aspect\s*ratio\s*[:=\-]?\s*([0-9]+)\s*[:/]\s*([0-9]+)/i);
+  if (arTextMatch) {
+    return `${arTextMatch[1]} / ${arTextMatch[2]}`;
+  }
+
+  // 4. Standalone standard ratio mentions like "9:16", "16:9", "1:1", "3:4", "4:5", "2:3", "3:2"
+  const patternMatch = text.match(/\b(16:9|9:16|1:1|3:4|4:3|4:5|5:4|2:3|3:2|21:9)\b/i);
+  if (patternMatch) {
+    return patternMatch[1].replace(':', ' / ');
+  }
+
+  // 5. Explicit imageWidth and imageHeight
+  if (post.imageWidth && post.imageHeight && post.imageWidth > 0 && post.imageHeight > 0) {
+    return `${post.imageWidth} / ${post.imageHeight}`;
+  }
+
+  // 6. Default fallback (3:4 standard portrait)
+  return '3 / 4';
+}
+
+export * from './tag-utils';
+
