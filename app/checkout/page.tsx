@@ -19,8 +19,6 @@ import {
   ChevronDown,
   ChevronUp,
   HelpCircle,
-  Check,
-  X,
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 
@@ -92,29 +90,6 @@ const CREDIT_PACKS: CreditPack[] = [
       'Credits never expire • Maximum flexibility',
     ],
     variant: 'primary',
-  },
-];
-
-const FAQS = [
-  {
-    question: 'Do tool credits expire?',
-    answer: 'No! Pay-as-you-go credit packs never expire. You can use them whenever you need to unlock prompts or run image-to-prompt extractions. Monthly subscription credits refresh every billing cycle.',
-  },
-  {
-    question: 'Can I cancel or change my monthly subscription anytime?',
-    answer: 'Yes, you can upgrade, downgrade, or cancel your subscription at any time directly from your account settings. Your active tier benefits remain active until the end of your billing cycle.',
-  },
-  {
-    question: 'What payment methods are supported via Razorpay?',
-    answer: 'We accept all major Indian and international payment methods via secure Razorpay checkout, including UPI (Google Pay, PhonePe, Paytm), Credit/Debit Cards (Visa, MasterCard, RuPay), NetBanking, and Wallets.',
-  },
-  {
-    question: 'What is AI Search and how does it work?',
-    answer: 'AI Search allows you to search across thousands of curated visual prompts using natural conversational queries. Paid monthly plans include generous AI Search quotas ranging from 100 searches up to unlimited in Studio 499.',
-  },
-  {
-    question: 'How do prompt requests work for custom creations?',
-    answer: 'Depending on your plan tier (Starter, Pro, VIP, Studio 499), you receive monthly custom prompt generation requests where our system crafts hyper-optimized prompts for your exact creative vision.',
   },
 ];
 
@@ -566,9 +541,9 @@ export default function CheckoutPage() {
           </div>
         )}
 
-        {/* Features Comparison Table */}
-        <div className="max-w-5xl mx-auto p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
-          <div className="text-center space-y-2 max-w-2xl mx-auto">
+        {/* Compare Plan Features */}
+        <div className="max-w-6xl mx-auto p-6 sm:p-10 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-8">
+          <div className="text-center space-y-2">
             <h2 className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white">
               Compare Plan Features
             </h2>
@@ -578,65 +553,65 @@ export default function CheckoutPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs sm:text-sm">
+            <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
-                <tr className="border-b border-neutral-200 dark:border-neutral-800 text-neutral-400 font-bold">
-                  <th className="py-3 px-4">Feature / Benefit</th>
-                  <th className="py-3 px-4 text-center">Free</th>
-                  <th className="py-3 px-4 text-center">Starter</th>
-                  <th className="py-3 px-4 text-center">Pro</th>
-                  <th className="py-3 px-4 text-center">VIP</th>
-                  <th className="py-3 px-4 text-center text-amber-500">Studio 499</th>
+                <tr className="border-b border-neutral-200 dark:border-neutral-800 text-xs font-bold text-neutral-400">
+                  <th className="py-4 px-4 w-1/4">Feature / Benefit</th>
+                  <th className="py-4 px-3 text-center">Free</th>
+                  <th className="py-4 px-3 text-center">Starter</th>
+                  <th className="py-4 px-3 text-center">Pro</th>
+                  <th className="py-4 px-3 text-center">VIP</th>
+                  <th className="py-4 px-3 text-center text-amber-600 dark:text-amber-400 font-black">Studio 499</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800 text-neutral-700 dark:text-neutral-300">
+              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800 text-xs text-neutral-700 dark:text-neutral-300">
                 <tr>
-                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Monthly Tool Credits</td>
-                  <td className="py-3.5 px-4 text-center">2 / day</td>
-                  <td className="py-3.5 px-4 text-center font-bold">100 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-bold">250 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-bold">600 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-bold text-amber-600 dark:text-amber-400">1,500 / mo</td>
+                  <td className="py-4 px-4 font-bold text-neutral-900 dark:text-white">Monthly Tool Credits</td>
+                  <td className="py-4 px-3 text-center text-neutral-500">2 / day</td>
+                  <td className="py-4 px-3 text-center font-medium">100 / mo</td>
+                  <td className="py-4 px-3 text-center font-medium">250 / mo</td>
+                  <td className="py-4 px-3 text-center font-medium">600 / mo</td>
+                  <td className="py-4 px-3 text-center font-bold text-amber-600 dark:text-amber-400">1,500 / mo</td>
                 </tr>
                 <tr>
-                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">AI Search Quota</td>
-                  <td className="py-3.5 px-4 text-center">Basic</td>
-                  <td className="py-3.5 px-4 text-center">100 / mo</td>
-                  <td className="py-3.5 px-4 text-center">250 / mo</td>
-                  <td className="py-3.5 px-4 text-center">600 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-bold text-amber-600 dark:text-amber-400">Unlimited</td>
+                  <td className="py-4 px-4 font-bold text-neutral-900 dark:text-white">AI Search Quota</td>
+                  <td className="py-4 px-3 text-center text-neutral-500">Basic</td>
+                  <td className="py-4 px-3 text-center font-medium">100 / mo</td>
+                  <td className="py-4 px-3 text-center font-medium">250 / mo</td>
+                  <td className="py-4 px-3 text-center font-medium">600 / mo</td>
+                  <td className="py-4 px-3 text-center font-bold text-amber-600 dark:text-amber-400">Unlimited</td>
                 </tr>
                 <tr>
-                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Custom Prompt Requests</td>
-                  <td className="py-3.5 px-4 text-center text-neutral-400"><X className="w-4 h-4 mx-auto" /></td>
-                  <td className="py-3.5 px-4 text-center">10 / mo</td>
-                  <td className="py-3.5 px-4 text-center">20 / mo</td>
-                  <td className="py-3.5 px-4 text-center">50 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-bold">10 / mo</td>
+                  <td className="py-4 px-4 font-bold text-neutral-900 dark:text-white">Custom Prompt Requests</td>
+                  <td className="py-4 px-3 text-center text-neutral-400">✕</td>
+                  <td className="py-4 px-3 text-center font-medium">10 / mo</td>
+                  <td className="py-4 px-3 text-center font-medium">20 / mo</td>
+                  <td className="py-4 px-3 text-center font-medium">50 / mo</td>
+                  <td className="py-4 px-3 text-center font-medium">10 / mo</td>
                 </tr>
                 <tr>
-                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Saves & History</td>
-                  <td className="py-3.5 px-4 text-center">Limited</td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold">Unlimited</td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold">Unlimited</td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold">Unlimited</td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold">Unlimited</td>
+                  <td className="py-4 px-4 font-bold text-neutral-900 dark:text-white">Saves & History</td>
+                  <td className="py-4 px-3 text-center text-neutral-500">Limited</td>
+                  <td className="py-4 px-3 text-center font-bold text-emerald-600 dark:text-emerald-400">Unlimited</td>
+                  <td className="py-4 px-3 text-center font-bold text-emerald-600 dark:text-emerald-400">Unlimited</td>
+                  <td className="py-4 px-3 text-center font-bold text-emerald-600 dark:text-emerald-400">Unlimited</td>
+                  <td className="py-4 px-3 text-center font-bold text-emerald-600 dark:text-emerald-400">Unlimited</td>
                 </tr>
                 <tr>
-                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Unlock Premium Prompts</td>
-                  <td className="py-3.5 px-4 text-center">1 cr each</td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold"><Check className="w-4 h-4 mx-auto" /></td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold"><Check className="w-4 h-4 mx-auto" /></td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold"><Check className="w-4 h-4 mx-auto" /></td>
-                  <td className="py-3.5 px-4 text-center text-amber-500 font-bold"><Check className="w-4 h-4 mx-auto" /></td>
+                  <td className="py-4 px-4 font-bold text-neutral-900 dark:text-white">Unlock Premium Prompts</td>
+                  <td className="py-4 px-3 text-center text-neutral-500">1 cr each</td>
+                  <td className="py-4 px-3 text-center text-emerald-600 dark:text-emerald-400 font-bold">✓</td>
+                  <td className="py-4 px-3 text-center text-emerald-600 dark:text-emerald-400 font-bold">✓</td>
+                  <td className="py-4 px-3 text-center text-emerald-600 dark:text-emerald-400 font-bold">✓</td>
+                  <td className="py-4 px-3 text-center text-amber-600 dark:text-amber-400 font-black">✓</td>
                 </tr>
                 <tr>
-                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Image-to-Prompt Extraction</td>
-                  <td className="py-3.5 px-4 text-center">3 cr each</td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold"><Check className="w-4 h-4 mx-auto" /></td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold"><Check className="w-4 h-4 mx-auto" /></td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold"><Check className="w-4 h-4 mx-auto" /></td>
-                  <td className="py-3.5 px-4 text-center text-amber-500 font-bold"><Check className="w-4 h-4 mx-auto" /></td>
+                  <td className="py-4 px-4 font-bold text-neutral-900 dark:text-white">Image-to-Prompt Extraction</td>
+                  <td className="py-4 px-3 text-center text-neutral-500">3 cr each</td>
+                  <td className="py-4 px-3 text-center text-emerald-600 dark:text-emerald-400 font-bold">✓</td>
+                  <td className="py-4 px-3 text-center text-emerald-600 dark:text-emerald-400 font-bold">✓</td>
+                  <td className="py-4 px-3 text-center text-emerald-600 dark:text-emerald-400 font-bold">✓</td>
+                  <td className="py-4 px-3 text-center text-amber-600 dark:text-amber-400 font-black">✓</td>
                 </tr>
               </tbody>
             </table>
@@ -646,7 +621,7 @@ export default function CheckoutPage() {
         {/* FAQ Section */}
         <div className="max-w-4xl mx-auto p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
           <div className="flex items-center gap-3 border-b border-neutral-200 dark:border-neutral-800 pb-4">
-            <div className="w-9 h-9 rounded-full bg-red-50 dark:bg-red-950/60 text-[#E60023] flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-red-50 dark:bg-red-950/50 text-[#E60023] flex items-center justify-center shrink-0">
               <HelpCircle className="w-5 h-5" />
             </div>
             <div>
@@ -660,28 +635,47 @@ export default function CheckoutPage() {
           </div>
 
           <div className="space-y-3">
-            {FAQS.map((faq, idx) => {
-              const isOpen = openFaqIndex === idx;
+            {[
+              {
+                q: "Do tool credits expire?",
+                a: "No! Pay-as-you-go credit packs never expire. You can use them whenever you need to unlock prompts or run image-to-prompt extractions. Monthly subscription credits refresh every billing cycle."
+              },
+              {
+                q: "Can I cancel or change my monthly subscription anytime?",
+                a: "Yes, you can upgrade, downgrade, or cancel your subscription at any time instantly from your User Dashboard with no hidden fees."
+              },
+              {
+                q: "What payment methods are supported via Razorpay?",
+                a: "All standard payment methods are fully supported including UPI (Google Pay, PhonePe, Paytm, BHIM), Credit & Debit cards (Visa, MasterCard, RuPay), NetBanking, and Wallets via secure Razorpay checkout."
+              },
+              {
+                q: "What is AI Search and how does it work?",
+                a: "AI Search lets you query our curated prompt database using natural language. Pro and VIP plans include generous monthly search quotas, while Studio 499 gives you unlimited AI search."
+              },
+              {
+                q: "How do prompt requests work for custom creations?",
+                a: "Prompt requests allow you to submit custom prompt generation requests to our engine, receiving expert prompts tailored for Midjourney, Stable Diffusion, and Gemini."
+              }
+            ].map((faq, index) => {
+              const isOpen = openFaqIndex === index;
               return (
                 <div
-                  key={idx}
-                  className="rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200/80 dark:border-neutral-700/80 overflow-hidden transition-all"
+                  key={index}
+                  className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 overflow-hidden transition-colors bg-neutral-50/50 dark:bg-neutral-800/40"
                 >
                   <button
                     type="button"
-                    onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
-                    className="w-full px-5 py-4 text-left flex items-center justify-between gap-4 font-bold text-xs sm:text-sm text-neutral-900 dark:text-white hover:bg-neutral-100/60 dark:hover:bg-neutral-800/80 transition-colors"
+                    onClick={() => setOpenFaqIndex(isOpen ? null : index)}
+                    className="w-full flex items-center justify-between p-4 text-left font-bold text-sm text-neutral-900 dark:text-white hover:bg-neutral-100/50 dark:hover:bg-neutral-800/80 transition-colors"
                   >
-                    <span>{faq.question}</span>
-                    {isOpen ? (
-                      <ChevronUp className="w-4 h-4 text-neutral-500 shrink-0" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 text-neutral-500 shrink-0" />
-                    )}
+                    <span>{faq.q}</span>
+                    <span className="text-neutral-400 shrink-0 ml-2">
+                      {isOpen ? <ChevronUp className="w-4 h-4 text-[#E60023]" /> : <ChevronDown className="w-4 h-4" />}
+                    </span>
                   </button>
                   {isOpen && (
-                    <div className="px-5 pb-4 text-xs sm:text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed border-t border-neutral-200/40 dark:border-neutral-700/40 pt-3">
-                      {faq.answer}
+                    <div className="px-4 pb-4 pt-1 text-xs text-neutral-600 dark:text-neutral-300 leading-relaxed border-t border-neutral-200/50 dark:border-neutral-800/50">
+                      {faq.a}
                     </div>
                   )}
                 </div>
