@@ -208,32 +208,22 @@ export const PromptDetailModal = () => {
     setSelectedPost(null);
     setHistoryStack([]);
     if (typeof window !== 'undefined') {
-      window.history.pushState(null, '', '/');
-      if (window.location.pathname.startsWith('/prompt')) {
+      if (window.history.length > 1 && window.location.pathname.startsWith('/prompt')) {
+        window.history.back();
+      } else {
         router.push('/');
+        window.history.replaceState(null, '', '/');
       }
     }
   }, [setSelectedPost, router]);
 
   const handleGoBack = useCallback(() => {
-    if (historyStack.length > 1) {
-      const newStack = [...historyStack];
-      newStack.pop(); // Remove active prompt
-      const prevPost = newStack[newStack.length - 1];
-      setHistoryStack(newStack);
-      if (containerRef.current) {
-        containerRef.current.scrollTop = 0;
-      }
-      setSelectedPost(prevPost);
-      if (typeof window !== 'undefined') {
-        const prevSlug = getPromptSlug(prevPost);
-        window.history.pushState({ postId: prevPost.id }, '', `/prompt/${prevSlug}`);
-      }
-      setDisplayedCount(5);
+    if (typeof window !== 'undefined' && window.history.length > 1 && window.location.pathname.startsWith('/prompt')) {
+      window.history.back();
     } else {
       closeModal();
     }
-  }, [historyStack, closeModal, setSelectedPost]);
+  }, [closeModal]);
 
   // Handle browser back / forward navigation and Escape key
   useEffect(() => {
@@ -883,7 +873,7 @@ export const PromptDetailModal = () => {
                 {/* Tags */}
                 {selectedPost.tags && selectedPost.tags.length > 0 && (
                   <div className="pt-2 flex flex-wrap items-center gap-1.5">
-                    {selectedPost.tags.map((tag) => (
+                    {selectedPost.tags.map((tag: string) => (
                       <span
                         key={tag}
                         className="px-2.5 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 text-xs font-medium text-neutral-600 dark:text-neutral-300"

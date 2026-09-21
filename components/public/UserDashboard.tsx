@@ -70,15 +70,12 @@ export const UserDashboard = () => {
     syncUserCloudData,
     isSyncingUserData,
     unlockedPromptIds,
-    planExpiresAt,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'saved' | 'history' | 'taste' | 'request'>('saved');
-  const [historyFilter, setHistoryFilter] = useState<'all' | 'image_to_prompt' | 'idea_to_prompt'>('all');
+  const [historyFilter, setHistoryFilter] = useState<'all' | 'image_to_prompt' | 'text_to_prompt' | 'prompt_enhancer' | 'prompt_editor'>('all');
   const [historySearch, setHistorySearch] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  const expiryDisplay = planExpiresAt ? new Date(planExpiresAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : 'Active';
 
   // Strict paid tier resolution for Dashboard display
   const isPaid = Boolean(
@@ -125,7 +122,7 @@ export const UserDashboard = () => {
   };
 
   // Filter requests belonging specifically to this logged in user
-  const userRequests = promptRequests.filter((r) => {
+  const userRequests = promptRequests.filter((r: any) => {
     if (!userAccount) return false;
     const cleanUserEmail = userAccount.email?.trim().toLowerCase();
     const cleanReqEmail = r.userEmail?.trim().toLowerCase();
@@ -135,10 +132,10 @@ export const UserDashboard = () => {
   });
 
   // Filtered saved posts
-  const savedPosts = posts.filter((p) => bookmarkedIds.includes(p.id));
+  const savedPosts = posts.filter((p: any) => bookmarkedIds.includes(p.id));
 
   // Filtered AI history
-  const filteredHistory = aiHistory.filter((item) => {
+  const filteredHistory = aiHistory.filter((item: any) => {
     const matchesType = historyFilter === 'all' || item.type === historyFilter;
     const matchesSearch =
       !historySearch ||
@@ -150,7 +147,7 @@ export const UserDashboard = () => {
 
   // Top category
   const topCategory =
-    Object.entries(tasteProfile.categoryAffinities || {}).sort((a, b) => b[1] - a[1])[0]?.[0] ||
+    Object.entries(tasteProfile.categoryAffinities || {}).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] ||
     'Photorealistic';
 
   const handleCopyPrompt = (e: React.MouseEvent, text: string, id: string) => {
@@ -432,11 +429,6 @@ export const UserDashboard = () => {
                   ? `${toolCredits} prompt tools credits available • All premium prompts unlocked • Unlimited prompt & history saves.`
                   : `${toolCredits} credits available. 1 credit unlocks any premium prompt • 3 credits per image extraction. Top up credits anytime.`}
               </p>
-              {isPaid && (
-                <p className="text-[11px] text-amber-600 dark:text-amber-400 font-bold mt-1">
-                  Plan Subscription Expires on: {expiryDisplay}
-                </p>
-              )}
             </div>
           </div>
 
@@ -546,7 +538,7 @@ export const UserDashboard = () => {
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-                {savedPosts.map((post) => (
+                {savedPosts.map((post: any) => (
                   <div
                     key={post.id}
                     onClick={() => {
@@ -648,6 +640,39 @@ export const UserDashboard = () => {
                   All ({aiHistory.length})
                 </button>
                 <button
+                  onClick={() => setHistoryFilter('text_to_prompt')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    historyFilter === 'text_to_prompt'
+                      ? 'bg-[#E60023] text-white'
+                      : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Text to Prompt ({aiHistory.filter((i: any) => i.type === 'text_to_prompt').length})</span>
+                </button>
+                <button
+                  onClick={() => setHistoryFilter('prompt_enhancer')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    historyFilter === 'prompt_enhancer'
+                      ? 'bg-[#E60023] text-white'
+                      : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Wand2 className="w-3.5 h-3.5" />
+                  <span>Enhancer ({aiHistory.filter((i: any) => i.type === 'prompt_enhancer').length})</span>
+                </button>
+                <button
+                  onClick={() => setHistoryFilter('prompt_editor')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    historyFilter === 'prompt_editor'
+                      ? 'bg-[#E60023] text-white'
+                      : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+                  }`}
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                  <span>Editor ({aiHistory.filter((i: any) => i.type === 'prompt_editor').length})</span>
+                </button>
+                <button
                   onClick={() => setHistoryFilter('image_to_prompt')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                     historyFilter === 'image_to_prompt'
@@ -655,19 +680,8 @@ export const UserDashboard = () => {
                       : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
                   }`}
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Image to Prompt ({aiHistory.filter((i) => i.type === 'image_to_prompt').length})</span>
-                </button>
-                <button
-                  onClick={() => setHistoryFilter('idea_to_prompt')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    historyFilter === 'idea_to_prompt'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-                  }`}
-                >
-                  <Wand2 className="w-3.5 h-3.5" />
-                  <span>Prompt Generator ({aiHistory.filter((i) => i.type === 'idea_to_prompt').length})</span>
+                  <Camera className="w-3.5 h-3.5" />
+                  <span>Image to Prompt ({aiHistory.filter((i: any) => i.type === 'image_to_prompt').length})</span>
                 </button>
               </div>
 
@@ -719,7 +733,7 @@ export const UserDashboard = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredHistory.map((item) => (
+                {filteredHistory.map((item: any) => (
                   <div
                     key={item.id}
                     className="p-4 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-3 flex flex-col justify-between"
@@ -729,22 +743,36 @@ export const UserDashboard = () => {
                       <div className="flex items-center justify-between gap-2 mb-3">
                         <span
                           className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 ${
-                            item.type === 'image_to_prompt'
+                            item.type === 'text_to_prompt'
                               ? 'bg-red-50 dark:bg-red-950/60 text-[#E60023] border border-red-200 dark:border-red-900'
-                              : item.type === 'idea_to_prompt'
+                              : item.type === 'prompt_enhancer'
+                              ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900'
+                              : item.type === 'prompt_editor'
                               ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900'
-                              : 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900'
+                              : item.type === 'image_to_prompt'
+                              ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-900'
+                              : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900'
                           }`}
                         >
-                          {item.type === 'image_to_prompt' ? (
+                          {item.type === 'text_to_prompt' ? (
                             <>
-                              <Sparkles className="w-3 h-3" />
-                              <span>Image to Prompt</span>
+                              <Sparkles className="w-3 h-3 text-[#E60023]" />
+                              <span>Text to Prompt</span>
                             </>
-                          ) : item.type === 'idea_to_prompt' ? (
+                          ) : item.type === 'prompt_enhancer' ? (
                             <>
-                              <Wand2 className="w-3 h-3" />
-                              <span>Prompt Generator</span>
+                              <Wand2 className="w-3 h-3 text-amber-500" />
+                              <span>Prompt Enhancer</span>
+                            </>
+                          ) : item.type === 'prompt_editor' ? (
+                            <>
+                              <SlidersHorizontal className="w-3 h-3 text-blue-500" />
+                              <span>Prompt Editor</span>
+                            </>
+                          ) : item.type === 'image_to_prompt' ? (
+                            <>
+                              <Camera className="w-3 h-3 text-purple-500" />
+                              <span>Image to Prompt</span>
                             </>
                           ) : (
                             <>
@@ -928,7 +956,7 @@ export const UserDashboard = () => {
                       onClick={() => {
                         const current = tasteProfile.favoriteStyles || [];
                         const updated = isSelected
-                          ? current.filter((s) => s !== style)
+                          ? current.filter((s: any) => s !== style)
                           : [...current, style];
                         updateTasteProfile({ favoriteStyles: updated });
                       }}
@@ -952,7 +980,7 @@ export const UserDashboard = () => {
                 Live Category Engagement Scores
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {Object.entries(tasteProfile.categoryAffinities || {}).map(([cat, pts]) => (
+                {Object.entries(tasteProfile.categoryAffinities || {}).map(([cat, pts]: [string, any]) => (
                   <div
                     key={cat}
                     className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex items-center justify-between"
@@ -1187,7 +1215,7 @@ export const UserDashboard = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {userRequests.map((req) => (
+                  {userRequests.map((req: any) => (
                     <div
                       key={req.id}
                       className="p-5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-4 transition-all"
