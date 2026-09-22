@@ -17,7 +17,7 @@ import { useRouter } from 'next/navigation';
 
 export const PromptEditorTool = () => {
   const router = useRouter();
-  const { showToast, saveAiHistoryItem, toolCredits, deductToolCredit, userAccount, openAuthModal } = useApp();
+  const { showToast, saveAiHistoryItem } = useApp();
 
   const [inputPrompt, setInputPrompt] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -57,23 +57,12 @@ export const PromptEditorTool = () => {
   ];
 
   const handleEditPrompt = async () => {
-    if (!userAccount?.isLoggedIn) {
-      openAuthModal('Please sign in or create a free account to use the AI Prompt Editor tool.');
-      return;
-    }
-
     if (!inputPrompt.trim()) {
       showToast('Please enter your prompt in the first box.', 'error');
       return;
     }
     if (!changeInstructions.trim()) {
       showToast('Please specify what you want to change in the second box.', 'error');
-      return;
-    }
-
-    const PROMPT_EDITOR_COST = 1;
-    if (toolCredits < PROMPT_EDITOR_COST) {
-      showToast(`Prompt Editor requires 1 credit (You have ${toolCredits}). Top up credits or upgrade!`, 'error');
       return;
     }
 
@@ -86,14 +75,13 @@ export const PromptEditorTool = () => {
       });
       const data = await res.json();
       if (data.success) {
-        deductToolCredit(PROMPT_EDITOR_COST);
         setResultData({
           enhancedPrompt: data.enhancedPrompt,
           negativePrompt: data.negativePrompt,
           improvementsMade: data.improvementsMade || [],
           parameters: data.parameters || {},
         });
-        showToast(`Prompt successfully edited by AI! 1 credit used (${Math.max(0, toolCredits - PROMPT_EDITOR_COST)} left)`, 'success');
+        showToast('Prompt successfully edited by AI!', 'success');
 
         saveAiHistoryItem?.({
           id: 'prompt_edit_' + Date.now(),

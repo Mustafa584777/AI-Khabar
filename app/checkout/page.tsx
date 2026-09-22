@@ -362,7 +362,7 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
-                      <span><strong>100 AI Searches</strong> / mo</span>
+                      <span><strong>60 AI Searches</strong> / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
@@ -422,7 +422,7 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
-                      <span><strong>200 AI Searches</strong> / mo</span>
+                      <span><strong>120 AI Searches</strong> / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
@@ -479,7 +479,7 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
-                      <span><strong>500 AI Searches</strong> / mo</span>
+                      <span><strong>250 AI Searches</strong> / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>

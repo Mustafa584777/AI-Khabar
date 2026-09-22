@@ -269,10 +269,10 @@ export const AIStudioTool = () => {
       return;
     }
 
-    const IMAGE_TO_PROMPT_COST = 2;
+    const IMAGE_TO_PROMPT_COST = 3;
     if (toolCredits < IMAGE_TO_PROMPT_COST) {
       setIsOutOfCreditsModalOpen(true);
-      showToast(`Image-to-prompt requires 2 credits (You have ${toolCredits}). Top up credits or upgrade!`);
+      showToast(`Image-to-prompt requires 3 credits (You have ${toolCredits}). Top up credits or upgrade!`);
       return;
     }
 
