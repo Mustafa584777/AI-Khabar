@@ -203,14 +203,6 @@ export const UserSyncService = {
       updatedAt: new Date().toISOString(),
     };
 
-    // Keep database in sync with any daily credit refresh
-    if (lastCreditDate === todayStr && remote.lastDailyCreditDate !== todayStr) {
-      void UserSyncService.pushUserData(user.id, user.email, {
-        toolCredits: currentCredits,
-        lastDailyCreditDate: lastCreditDate,
-      });
-    }
-
     return {
       bookmarkedIds: mergedData.bookmarkedIds || [],
       likedIds: mergedData.likedIds || [],
