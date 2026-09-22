@@ -40,13 +40,6 @@ export const PromptEditorTool = () => {
   const [copiedOriginal, setCopiedOriginal] = useState<boolean>(false);
   const [copiedEnhanced, setCopiedEnhanced] = useState<boolean>(false);
 
-  const samplePrompts = [
-    'A cyberpunk street in Tokyo with neon signs and rain puddles',
-    'Portrait of a young woman in vintage clothing with golden hour sunlight',
-    'Futuristic sports car driving through a mountain highway at sunset',
-    'Cozy wooden cabin in snowy mountains with warm glowing windows'
-  ];
-
   const quickChangePresets = [
     'Change lighting to golden hour sunset with warm rim light',
     'Add neon cyberpunk lights, dark alley, and rain reflections',
@@ -178,24 +171,6 @@ export const PromptEditorTool = () => {
             />
           </div>
 
-          {/* Quick Sample Prompts */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-              Quick Sample Prompts:
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {samplePrompts.map((sample, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setInputPrompt(sample)}
-                  className="text-xs px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-[#E60023] hover:text-white transition-all text-left"
-                >
-                  {sample.length > 30 ? sample.slice(0, 30) + '...' : sample}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Box 2: What You Want to Change */}
           <div className="space-y-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
             <div className="flex items-center justify-between">
@@ -251,7 +226,7 @@ export const PromptEditorTool = () => {
               </>
             ) : (
               <>
-                <Sparkles className="w-5 h-5" /> Edit Prompt with AI
+                <Sparkles className="w-5 h-5" /> Edit Prompt (1 Credit)
               </>
             )}
           </button>

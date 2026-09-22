@@ -143,7 +143,7 @@ export const AIStudioTool = () => {
   const [selectedLighting, setSelectedLighting] = useState<string>('Cinematic Golden Hour');
   const [selectedColor, setSelectedColor] = useState<string>('Cinematic Teal & Orange');
   const [selectedGender, setSelectedGender] = useState<string>('Any / None');
-  const [selectedAspectRatio, setSelectedAspectRatio] = useState<string>('16:9');
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState<string>('3:4');
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState<boolean>(false);
   const [generatedPromptData, setGeneratedPromptData] = useState<any | null>(null);
   const [isSavedGenerated, setIsSavedGenerated] = useState<boolean>(false);
@@ -416,7 +416,7 @@ export const AIStudioTool = () => {
               <Coins className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
               <span>{toolCredits} Credits</span>
               <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium hidden sm:inline">
-                • {activeStudioTab === 'reverse' ? '3 cr / extraction' : '1 cr / generation'}
+                • {activeStudioTab === 'reverse' ? '2 cr / extraction' : '1 cr / generation'}
               </span>
               <Link
                 href="/pricing"
@@ -450,11 +450,11 @@ export const AIStudioTool = () => {
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-neutral-900 dark:text-white tracking-tight flex items-center gap-2.5">
               <Sparkles className="w-7 h-7 text-[#E60023]" />
-              <span>{activeStudioTab === 'reverse' ? 'AI Image-to-Prompt Studio' : 'AI Prompt Generator Studio'}</span>
+              <span>{activeStudioTab === 'reverse' ? 'Image to Prompt Studio' : 'Prompt Generator Studio'}</span>
             </h1>
             <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1">
               {activeStudioTab === 'reverse'
-                ? 'Reverse-engineer precise, high-fidelity AI prompts from any photo or visual with optical analysis.'
+                ? 'Extract precise, high-fidelity AI prompts from any photo or visual with optical analysis.'
                 : 'Generate professional-grade detailed image prompts from basic concepts with expert styling presets.'}
             </p>
           </div>
@@ -472,7 +472,7 @@ export const AIStudioTool = () => {
               }`}
             >
               <Camera className="w-4 h-4" />
-              <span>Reverse-Engineer (Image to Prompt)</span>
+              <span>Image to Prompt</span>
             </button>
             <button
               onClick={() => setActiveStudioTab('generator')}
@@ -483,7 +483,7 @@ export const AIStudioTool = () => {
               }`}
             >
               <Wand2 className="w-4 h-4" />
-              <span>AI Prompt Generator (Idea to Prompt)</span>
+              <span>Idea to Prompt</span>
             </button>
             <button
               onClick={() => setActiveStudioTab('editor')}
@@ -512,7 +512,7 @@ export const AIStudioTool = () => {
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
                     <Upload className="w-4 h-4 text-[#E60023]" />
-                    <span>Upload Image to Reverse</span>
+                    <span>Upload Image to Reverse Engineer</span>
                   </h3>
                   {uploadedImage && (
                     <button
@@ -679,7 +679,7 @@ export const AIStudioTool = () => {
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4" />
-                      <span>Extract AI Prompt from Image (3 Credits)</span>
+                      <span>Extract AI Prompt from Image (2 Credits)</span>
                     </>
                   )}
                 </button>
@@ -1148,7 +1148,7 @@ export const AIStudioTool = () => {
                 Out of Tool Credits
               </h3>
               <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                Image reverse-engineering requires <strong className="text-neutral-900 dark:text-white">3 credits</strong>, and AI Prompt generation requires <strong className="text-neutral-900 dark:text-white">1 credit</strong>. Every user receives <strong className="text-neutral-900 dark:text-white">2 free credits daily</strong>, or you can top up anytime.
+                Image-to-prompt extraction requires <strong className="text-neutral-900 dark:text-white">2 credits</strong>, and AI Prompt generation requires <strong className="text-neutral-900 dark:text-white">1 credit</strong>. Every user receives <strong className="text-neutral-900 dark:text-white">5 bonus credits</strong> on signup, or you can top up anytime.
               </p>
             </div>
 
