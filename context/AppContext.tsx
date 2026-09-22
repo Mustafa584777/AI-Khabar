@@ -519,41 +519,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
 
-    // Determine request quota eligibility:
-    // 1. If user has plan requests remaining (e.g. Pro / VIP plan)
-    if (promptRequestsRemaining > 0) {
-      const nextRemaining = Math.max(0, promptRequestsRemaining - 1);
-      setPromptRequestsRemainingState(nextRemaining);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('auraprompt_prompt_requests', String(nextRemaining));
-      }
-      void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
-        promptRequestsRemaining: nextRemaining,
-      });
-    } else {
-      // 2. Points-based: deduct 10 points or grant 1st welcome request
-      const currentPoints = userAccount.points || 0;
-      const requestsMade = userAccount.requestsMade || 0;
-
-      if (currentPoints < 10 && requestsMade > 0) {
-        showToast(`You need 10 points or a Pro plan to request another prompt! Current points: ${currentPoints}/10`);
-        return false;
-      }
-
-      const pointsToDeduct = currentPoints >= 10 ? 10 : 0;
-      const newPoints = Math.max(0, currentPoints - pointsToDeduct);
-      const updatedAccount: UserAccount = {
-        ...userAccount,
-        points: newPoints,
-        requestsMade: requestsMade + 1,
-      };
-      setUserAccount(updatedAccount);
-      StorageService.saveUserAccount(updatedAccount);
-
-      void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
-        points: newPoints,
-      });
+    if (promptRequestsRemaining <= 0) {
+      showToast('You have 0 prompt requests remaining. Upgrade to a plan to request custom prompts!');
+      setIsProCheckoutModalOpen(true);
+      return false;
     }
+
+    const nextRemaining = Math.max(0, promptRequestsRemaining - 1);
+    setPromptRequestsRemainingState(nextRemaining);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auraprompt_prompt_requests', String(nextRemaining));
+    }
+    void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
+      promptRequestsRemaining: nextRemaining,
+    });
 
     const newReq: PromptRequestItem = {
       id: `req_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,

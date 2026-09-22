@@ -1009,69 +1009,19 @@ export const UserDashboard = () => {
                   </p>
                 </div>
 
-                {/* Quota / Points Badge */}
+                {/* Quota Badge */}
                 <div className="px-5 py-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex items-center gap-3">
-                  {promptRequestsRemaining > 0 ? (
-                    <div>
-                      <div className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                        <Crown className="w-3.5 h-3.5" />
-                        <span>Pro Plan Requests</span>
-                      </div>
-                      <div className="text-lg font-black text-neutral-900 dark:text-white">
-                        {promptRequestsRemaining} Available
-                      </div>
+                  <div>
+                    <div className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                      <Crown className="w-3.5 h-3.5" />
+                      <span>Prompt Requests</span>
                     </div>
-                  ) : (
-                    <div>
-                      <div className="text-[11px] font-bold text-neutral-500">Available Activity Points</div>
-                      <div className="text-lg font-black text-[#E60023]">
-                        {userAccount?.points || 0} Points
-                      </div>
+                    <div className="text-lg font-black text-neutral-900 dark:text-white">
+                      {promptRequestsRemaining} Available
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
-
-              {/* Progress & Activities Bar */}
-              {promptRequestsRemaining <= 0 && (
-                <div className="space-y-3 pt-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-neutral-600 dark:text-neutral-400">
-                    <span>
-                      {(userAccount?.points || 0) >= 10 || (userAccount?.requestsMade || 0) === 0
-                        ? '1 Request Ready'
-                        : `Need ${Math.max(0, 10 - (userAccount?.points || 0))} more points to request`}
-                    </span>
-                    <span>{Math.min(100, Math.round(((userAccount?.points || 0) / 10) * 100))}%</span>
-                  </div>
-                  <div className="w-full h-2.5 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-[#E60023] to-amber-500 transition-all duration-500 rounded-full"
-                      style={{
-                        width: (userAccount?.requestsMade || 0) === 0 ? '100%' : `${Math.min(100, ((userAccount?.points || 0) / 10) * 100)}%`,
-                      }}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-                    <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-center">
-                      <div className="text-[10px] text-neutral-500">Like 10 Prompts</div>
-                      <div className="text-xs font-bold text-neutral-900 dark:text-white">+1 Point</div>
-                    </div>
-                    <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-center">
-                      <div className="text-[10px] text-neutral-500">Save 5 Prompts</div>
-                      <div className="text-xs font-bold text-neutral-900 dark:text-white">+1 Point</div>
-                    </div>
-                    <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-center">
-                      <div className="text-[10px] text-neutral-500">Generate Art in Studio</div>
-                      <div className="text-xs font-bold text-neutral-900 dark:text-white">+1 Point</div>
-                    </div>
-                    <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-center">
-                      <div className="text-[10px] text-neutral-500">Refer a Creator</div>
-                      <div className="text-xs font-bold text-neutral-900 dark:text-white">+5 Points</div>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Request Form */}
               <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800 space-y-4">
@@ -1116,11 +1066,9 @@ export const UserDashboard = () => {
                         onChange={(e) => setRequestAiTool(e.target.value)}
                         className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-red-500"
                       >
-                        <option value="Midjourney">Midjourney (v6 / Niji)</option>
-                        <option value="Flux.1">Flux.1 Schnell / Dev</option>
-                        <option value="Stable Diffusion">Stable Diffusion XL</option>
-                        <option value="DALL-E 3">DALL-E 3</option>
-                        <option value="Ideogram">Ideogram (Typography)</option>
+                        <option value="Gemini">Gemini</option>
+                        <option value="ChatGPT">ChatGPT</option>
+                        <option value="Midjourney">Midjourney</option>
                       </select>
                     </div>
                   </div>
@@ -1141,21 +1089,14 @@ export const UserDashboard = () => {
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-1">
                     <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
                       {promptRequestsRemaining > 0
-                        ? `Using 1 of ${promptRequestsRemaining} included plan requests.`
-                        : (userAccount?.requestsMade || 0) === 0
-                        ? '1st prompt request is free on us!'
-                        : 'Requires 10 activity points.'}
+                        ? `Using 1 of ${promptRequestsRemaining} available requests.`
+                        : 'You have 0 request available. Upgrade to a plan to unlock prompt requests.'}
                     </p>
 
                     <button
                       id="btn-submit-prompt-request"
                       type="submit"
-                      disabled={
-                        isSubmittingRequest ||
-                        (promptRequestsRemaining <= 0 &&
-                          (userAccount?.points || 0) < 10 &&
-                          (userAccount?.requestsMade || 0) > 0)
-                      }
+                      disabled={isSubmittingRequest || promptRequestsRemaining <= 0}
                       className="px-6 py-2.5 rounded-2xl bg-[#E60023] hover:bg-[#ad081b] disabled:opacity-50 text-white text-xs font-black shadow-md flex items-center gap-2 transition-all"
                     >
                       {isSubmittingRequest ? (
@@ -1306,16 +1247,17 @@ export const UserDashboard = () => {
                             </div>
                           )}
 
-                          {/* Quick action to test in Studio */}
+                          {/* Quick action to edit & enhance */}
                           <div className="flex items-center justify-end pt-1">
                             <button
                               onClick={() => {
-                                handleCopyFulfilledPrompt(req.fulfilledPrompt!, req.id);
+                                sessionStorage.setItem('promptcms_editor_preload', req.fulfilledPrompt!);
+                                sessionStorage.setItem('promptcms_studio_tab', 'editor');
                                 setCurrentView('studio-tool');
                               }}
                               className="text-xs font-bold text-neutral-700 dark:text-neutral-300 hover:text-[#E60023] flex items-center gap-1 transition-colors"
                             >
-                              <span>Test in AI Studio</span>
+                              <span>Edit & Enhance</span>
                               <ArrowUpRight className="w-3.5 h-3.5" />
                             </button>
                           </div>
