@@ -130,7 +130,7 @@ export const UserSyncService = {
     const remote = await UserSyncService.pullUserData(user.id, user.email);
 
     if (!remote) {
-      // First time login for this specific user: grant 2 daily credits for today on clean free tier
+      // First time login for this specific user: grant 5 credits on signup
       const initialData: UserSyncData = {
         userId: user.id,
         email: user.email,
@@ -143,8 +143,7 @@ export const UserSyncService = {
         tasteProfile: INITIAL_TASTE_PROFILE,
         planTier: 'free',
         isProUser: false,
-        toolCredits: 2, // 2 daily credits start after login
-        lastDailyCreditDate: todayStr,
+        toolCredits: 5, // 5 signup credits one-time
         promptRequestsRemaining: 0,
         unlockedPromptIds: [],
         updatedAt: new Date().toISOString(),
@@ -160,7 +159,7 @@ export const UserSyncService = {
         tasteProfile: INITIAL_TASTE_PROFILE,
         planTier: 'free',
         isProUser: false,
-        toolCredits: 2,
+        toolCredits: 5,
         promptRequestsRemaining: 0,
         unlockedPromptIds: [],
       };
@@ -182,16 +181,7 @@ export const UserSyncService = {
       }
     }
 
-    let currentCredits = Number(remote.toolCredits ?? 0);
-    let lastCreditDate = remote.lastDailyCreditDate;
-
-    // Daily 2 credits refresh logic: if free user logs in on a new day, refresh daily credits to at least 2
-    if (!resolvedIsPro && resolvedTier === 'free') {
-      if (lastCreditDate !== todayStr) {
-        currentCredits = Math.max(currentCredits, 2);
-        lastCreditDate = todayStr;
-      }
-    }
+    let currentCredits = Number(remote.toolCredits ?? 5);
 
     const mergedData: UserSyncData = {
       userId: user.id,
@@ -206,7 +196,6 @@ export const UserSyncService = {
       planTier: resolvedTier,
       isProUser: resolvedIsPro,
       toolCredits: currentCredits,
-      lastDailyCreditDate: lastCreditDate,
       promptRequestsRemaining: Number(remote.promptRequestsRemaining || 0),
       unlockedPromptIds: Array.isArray(remote.unlockedPromptIds) ? remote.unlockedPromptIds : [],
       planStartedAt: remote.planStartedAt,

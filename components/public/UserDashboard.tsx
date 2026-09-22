@@ -363,7 +363,7 @@ export const UserDashboard = () => {
             </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
-                {savedPosts.length}
+                {isProUser ? savedPosts.length : `${Math.min(10, bookmarkedIds.length + aiHistory.length)}/10`}
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">Saved Prompts</div>
             </div>
@@ -482,7 +482,7 @@ export const UserDashboard = () => {
             }`}
           >
             <Bookmark className="w-4 h-4 fill-current" />
-            <span>Saved Prompts ({savedPosts.length})</span>
+            <span>Saved Prompts ({isProUser ? savedPosts.length : `${Math.min(10, bookmarkedIds.length + aiHistory.length)}/10`})</span>
           </button>
 
           <button
