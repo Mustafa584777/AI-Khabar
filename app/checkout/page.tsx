@@ -40,20 +40,19 @@ interface CreditPack {
 
 const CREDIT_PACKS: CreditPack[] = [
   {
-    id: 'pack-100',
+    id: 'pack-120',
     name: 'Starter Pack',
-    credits: 100,
+    credits: 120,
     priceRupees: 49,
     amountPaise: 4900,
-    rateText: '₹0.49 / credit',
-    description: 'Perfect for quick unlocks and testing image extraction',
+    description: 'Great for getting started with image extraction & prompt tools',
     badge: null,
     icon: <Coins className="w-6 h-6 text-amber-500" />,
     features: [
-      '100 instant tool credits',
-      'Unlock 100 premium prompts (1 cr each)',
-      'Up to 33 image-to-prompt runs (3 cr each)',
-      'Credits never expire • No subscription needed',
+      '120 instant tool credits (Never expire)',
+      'Image-to-Prompt: up to 60 runs (2 cr each)',
+      'Prompt Generator: up to 120 gens (1 cr each)',
+      'Prompt Editor: up to 120 edits (1 cr each)',
     ],
     variant: 'secondary',
   },
@@ -63,35 +62,50 @@ const CREDIT_PACKS: CreditPack[] = [
     credits: 250,
     priceRupees: 99,
     amountPaise: 9900,
-    rateText: '₹0.39 / credit • Popular',
     description: 'Our most popular top-up for active visual designers',
     badge: 'Most Popular',
     icon: <Zap className="w-6 h-6 text-[#E60023]" />,
     features: [
-      '250 instant tool credits',
-      'Unlock 250 premium prompts (1 cr each)',
-      'Up to 83 image-to-prompt runs (3 cr each)',
-      'Credits never expire • Pay once, use anytime',
+      '250 instant tool credits (Never expire)',
+      'Image-to-Prompt: up to 125 runs (2 cr each)',
+      'Prompt Generator: up to 250 gens (1 cr each)',
+      'Prompt Editor: up to 250 edits (1 cr each)',
     ],
     variant: 'pill',
   },
   {
-    id: 'pack-499',
+    id: 'pack-550',
     name: 'Mega Pack',
-    credits: 499,
+    credits: 550,
     priceRupees: 199,
     amountPaise: 19900,
-    rateText: '₹0.39 / credit • Best Value',
     description: 'High-volume pack for content studios & power creators',
     badge: 'Best Value',
     icon: <Crown className="w-6 h-6 text-purple-500" />,
     features: [
-      '499 instant tool credits',
-      'Unlock 499 premium prompts (1 cr each)',
-      'Up to 166 image-to-prompt runs (3 cr each)',
-      'Credits never expire • Maximum flexibility',
+      '550 instant tool credits (Never expire)',
+      'Image-to-Prompt: up to 275 runs (2 cr each)',
+      'Prompt Generator: up to 550 gens (1 cr each)',
+      'Prompt Editor: up to 550 edits (1 cr each)',
     ],
     variant: 'primary',
+  },
+  {
+    id: 'pack-1500',
+    name: 'Studio Pack',
+    credits: 1500,
+    priceRupees: 499,
+    amountPaise: 49900,
+    description: 'Ultimate studio pack for high-frequency prompt creation & extraction',
+    badge: 'Studio Choice',
+    icon: <Sparkles className="w-6 h-6 text-amber-500" />,
+    features: [
+      '1,500 instant tool credits (Never expire)',
+      'Image-to-Prompt: up to 750 runs (2 cr each)',
+      'Prompt Generator: up to 1,500 gens (1 cr each)',
+      'Prompt Editor: up to 1,500 edits (1 cr each)',
+    ],
+    variant: 'secondary',
   },
 ];
 
@@ -120,7 +134,7 @@ const FAQS = [
 
 export default function CheckoutPage() {
   const { isProUser, planTier, toolCredits, promptRequestsRemaining } = useApp();
-  const [billingView, setBillingView] = useState<'credits' | 'subscription'>('credits');
+  const [billingView, setBillingView] = useState<'credits' | 'subscription'>('subscription');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
@@ -170,6 +184,20 @@ export default function CheckoutPage() {
             <div className="inline-flex p-1.5 rounded-full bg-neutral-200/80 dark:bg-neutral-800 border border-neutral-300/80 dark:border-neutral-700/80 shadow-inner">
               <button
                 type="button"
+                onClick={() => setBillingView('subscription')}
+                className={`flex items-center gap-2 px-5 py-2 rounded-full text-xs font-bold transition-all ${
+                  billingView === 'subscription'
+                    ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+                }`}
+                id="tab-monthly-subscription"
+              >
+                <Crown className="w-3.5 h-3.5 text-purple-500" />
+                <span>Monthly Subscription</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setBillingView('credits')}
                 className={`flex items-center gap-2 px-5 py-2 rounded-full text-xs font-bold transition-all ${
                   billingView === 'credits'
@@ -184,28 +212,14 @@ export default function CheckoutPage() {
                   New
                 </span>
               </button>
-
-              <button
-                type="button"
-                onClick={() => setBillingView('subscription')}
-                className={`flex items-center gap-2 px-5 py-2 rounded-full text-xs font-bold transition-all ${
-                  billingView === 'subscription'
-                    ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm'
-                    : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-                }`}
-                id="tab-monthly-subscription"
-              >
-                <Crown className="w-3.5 h-3.5 text-purple-500" />
-                <span>Monthly Subscription</span>
-              </button>
             </div>
           </div>
         </div>
 
-        {/* View 1: Credits Packs (49 for 100, 99 for 250, 199 for 499) */}
+        {/* View 1: Credits Packs */}
         {billingView === 'credits' && (
           <div className="space-y-8 animate-in fade-in duration-300">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
               {CREDIT_PACKS.map((pack) => (
                 <div
                   key={pack.id}
@@ -242,9 +256,6 @@ export default function CheckoutPage() {
                           for {pack.credits} credits
                         </span>
                       </div>
-                      <p className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-                        {pack.rateText}
-                      </p>
                     </div>
 
                     <ul className="space-y-2.5 text-xs text-neutral-600 dark:text-neutral-300">
