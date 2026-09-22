@@ -18,7 +18,6 @@ export interface RazorpayCheckoutButtonProps {
   variant?: 'primary' | 'secondary' | 'outline' | 'pill' | 'dark';
   size?: 'sm' | 'md' | 'lg';
   showIcon?: boolean;
-  showPaymentIcons?: boolean;
   notes?: Record<string, string>;
   onSuccess?: (data: any) => void;
   onFailure?: (error: any) => void;
@@ -36,7 +35,6 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
   variant = 'primary',
   size = 'md',
   showIcon = true,
-  showPaymentIcons = true,
   notes,
   onSuccess,
   onFailure,
@@ -157,42 +155,30 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
   const label = buttonText || `Pay with Razorpay ${displayAmount}`;
 
   return (
-    <div className="flex flex-col items-center w-full space-y-2">
-      <button
-        type="button"
-        onClick={handleCheckout}
-        disabled={isLoading}
-        className={`inline-flex items-center justify-center font-bold transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed ${getVariantStyles()} ${getSizeStyles()} ${className}`}
-        id={`razorpay-btn-${amount}`}
-        title={`Checkout via Razorpay ${displayAmount}`}
-      >
-        {isLoading ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span>Processing...</span>
-          </>
-        ) : isSuccess ? (
-          <>
-            <CheckCircle2 className="w-4 h-4 text-emerald-300 animate-bounce" />
-            <span>Payment Verified!</span>
-          </>
-        ) : (
-          <>
-            {showIcon && (variant === 'pill' ? <Sparkles className="w-4 h-4" /> : <CreditCard className="w-4 h-4" />)}
-            <span>{label}</span>
-          </>
-        )}
-      </button>
-
-      {showPaymentIcons && (
-        <div className="flex flex-wrap items-center justify-center gap-1.5 text-[10px] text-neutral-500 dark:text-neutral-400 font-medium select-none">
-          <span className="px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 font-bold text-neutral-700 dark:text-neutral-300">Visa</span>
-          <span className="px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 font-bold text-neutral-700 dark:text-neutral-300">Mastercard</span>
-          <span className="px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 font-bold text-neutral-700 dark:text-neutral-300">GPay</span>
-          <span className="px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 font-bold text-neutral-700 dark:text-neutral-300">PhonePe</span>
-          <span className="px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 font-bold text-neutral-700 dark:text-neutral-300">UPI</span>
-        </div>
+    <button
+      type="button"
+      onClick={handleCheckout}
+      disabled={isLoading}
+      className={`inline-flex items-center justify-center font-bold transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed ${getVariantStyles()} ${getSizeStyles()} ${className}`}
+      id={`razorpay-btn-${amount}`}
+      title={`Checkout via Razorpay ${displayAmount}`}
+    >
+      {isLoading ? (
+        <>
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span>Processing...</span>
+        </>
+      ) : isSuccess ? (
+        <>
+          <CheckCircle2 className="w-4 h-4 text-emerald-300 animate-bounce" />
+          <span>Payment Verified!</span>
+        </>
+      ) : (
+        <>
+          {showIcon && (variant === 'pill' ? <Sparkles className="w-4 h-4" /> : <CreditCard className="w-4 h-4" />)}
+          <span>{label}</span>
+        </>
       )}
-    </div>
+    </button>
   );
 };
