@@ -183,16 +183,6 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
           </>
         )}
       </button>
-
-      {showPaymentIcons && (
-        <div className="flex flex-wrap items-center justify-center gap-1.5 text-[10px] text-neutral-500 dark:text-neutral-400 font-medium select-none">
-          <span className="px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 font-bold text-neutral-700 dark:text-neutral-300">Visa</span>
-          <span className="px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 font-bold text-neutral-700 dark:text-neutral-300">Mastercard</span>
-          <span className="px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 font-bold text-neutral-700 dark:text-neutral-300">GPay</span>
-          <span className="px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 font-bold text-neutral-700 dark:text-neutral-300">PhonePe</span>
-          <span className="px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 font-bold text-neutral-700 dark:text-neutral-300">UPI</span>
-        </div>
-      )}
     </div>
   );
 };
