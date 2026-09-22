@@ -369,7 +369,7 @@ export const AIStudioTool = () => {
               Sign In to Access AI Studio
             </h1>
             <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-              Image-to-Prompt extraction, AI reverse-engineering, and prompt generation require an active account. Sign in or register to get started with your daily free credits.
+              Image-to-Prompt extraction, AI reverse-engineering, and prompt generation require an active account. Sign in or register to get started with 5 bonus signup credits.
             </p>
           </div>
           <div className="space-y-3 pt-2">

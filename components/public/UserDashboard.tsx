@@ -201,7 +201,7 @@ export const UserDashboard = () => {
               Sign In to Your Dashboard
             </h1>
             <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-              Your Creator Dashboard, saved bookmarks, AI generation history, and daily credits require an active account.
+              Your Creator Dashboard, saved bookmarks, AI generation history, and credits require an active account.
             </p>
           </div>
           <div className="space-y-3 pt-2">

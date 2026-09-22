@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
       // Safe Tool Credits (maintain balance, never drop unexpectedly)
       const resolvedToolCredits = data.toolCredits !== undefined
         ? Number(data.toolCredits)
-        : (existingData.toolCredits !== undefined ? Number(existingData.toolCredits) : 2);
+        : (existingData.toolCredits !== undefined ? Number(existingData.toolCredits) : 5);
 
       // Safe Plan Tier resolution (vip > pro > starter > free)
       const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3, ultra: 4 };

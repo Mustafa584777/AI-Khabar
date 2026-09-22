@@ -84,23 +84,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Daily credits refresh check
-    const todayStr = new Date().toISOString().split('T')[0];
-    let currentCredits = Number(cloned.toolCredits ?? 2);
-    if (!cloned.isProUser && tier === 'free') {
-      if (cloned.lastDailyCreditDate !== todayStr) {
-        currentCredits = Math.max(currentCredits, 2);
-        cloned.lastDailyCreditDate = todayStr;
-        cloned.toolCredits = currentCredits;
-        // Save back refreshed daily credits
-        if (emailKey) {
-          await client.from('settings').upsert({ id: emailKey, data: cloned });
-        }
-        if (userKey) {
-          await client.from('settings').upsert({ id: userKey, data: cloned });
-        }
-      }
-    }
+    let currentCredits = Number(cloned.toolCredits ?? 5);
 
     return NextResponse.json({
       success: true,
@@ -118,7 +102,6 @@ export async function POST(req: NextRequest) {
         planTier: tier,
         isProUser: tier !== 'free' || Boolean(cloned.isProUser),
         toolCredits: currentCredits,
-        lastDailyCreditDate: cloned.lastDailyCreditDate,
         promptRequestsRemaining: cloned.promptRequestsRemaining ?? 0,
         unlockedPromptIds: cloned.unlockedPromptIds || [],
         planStartedAt: cloned.planStartedAt,

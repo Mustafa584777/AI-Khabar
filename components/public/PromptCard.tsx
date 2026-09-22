@@ -63,7 +63,8 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   const handleBookmark = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!userAccount?.isLoggedIn) {
+    const currentAcc = userAccount || StorageService.getUserAccount();
+    if (!currentAcc?.isLoggedIn) {
       openAuthModal('Please sign in or create an account to save prompts to your collection.');
       return;
     }

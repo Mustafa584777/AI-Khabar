@@ -253,7 +253,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           const parsed = parseInt(saved, 10);
           if (!isNaN(parsed)) return parsed;
         }
-        return 2;
+        return 5;
       }
     }
     return 0; // Guest session has 0 credits until login
@@ -759,9 +759,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('auraprompt_pro_member', String(synced.isProUser || false));
       }
 
-      setToolCreditsState(synced.toolCredits ?? 2);
+      setToolCreditsState(synced.toolCredits ?? 5);
       if (typeof window !== 'undefined') {
-        localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits ?? 2));
+        localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits ?? 5));
       }
 
       setUnlockedPromptIds(synced.unlockedPromptIds || []);
@@ -1393,8 +1393,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (typeof window !== 'undefined') localStorage.setItem('auraprompt_plan_tier', synced.planTier || 'free');
       setIsProUserState(synced.isProUser || false);
       if (typeof window !== 'undefined') localStorage.setItem('auraprompt_pro_member', String(synced.isProUser || false));
-      setToolCreditsState(synced.toolCredits ?? 2);
-      if (typeof window !== 'undefined') localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits ?? 2));
+      setToolCreditsState(synced.toolCredits ?? 5);
+      if (typeof window !== 'undefined') localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits ?? 5));
       setUnlockedPromptIds(synced.unlockedPromptIds || []);
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds || []));
@@ -1816,8 +1816,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const isCurrentlyBookmarked = bookmarkedIds.includes(id);
-    if (!isCurrentlyBookmarked && !isProUser && (bookmarkedIds.length + aiHistory.length >= 10)) {
+    const currentBookmarks = StorageService.getBookmarkedIds();
+    const isCurrentlyBookmarked = currentBookmarks.includes(id);
+    if (!isCurrentlyBookmarked && !isProUser && (currentBookmarks.length + aiHistory.length >= 10)) {
       showToast('Free user limit reached: 10 combined saves max (bookmarks + history). Upgrade to a paid monthly subscription for unlimited saves!');
       setIsProCheckoutModalOpen(true);
       return;

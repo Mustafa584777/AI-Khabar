@@ -1392,7 +1392,7 @@ export const PromptDetailModal = () => {
                 Unlock Premium Prompts
               </h3>
               <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                This prompt is exclusive to Pro members. Upgrade to any plan to reveal prompt text, copy instantly, and receive daily AI tools credits.
+                This prompt is exclusive to Pro members. Upgrade to any plan to reveal prompt text, copy instantly, and receive AI tools credits.
               </p>
             </div>
 
