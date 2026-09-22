@@ -30,7 +30,7 @@ interface CreditPack {
   credits: number;
   priceRupees: number;
   amountPaise: number;
-  rateText: string;
+  rateText?: string;
   badge?: string | null;
   description: string;
   features: string[];
@@ -358,11 +358,11 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
-                      <span><strong>60</strong> prompt tool credits / mo</span>
+                      <span><strong>100</strong> prompt tool credits / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
-                      <span><strong>60 AI Searches</strong> / mo</span>
+                      <span><strong>100 AI Searches</strong> / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
@@ -379,7 +379,7 @@ export default function CheckoutPage() {
                   amount={billingCycle === 'monthly' ? 4900 : 47000}
                   planTier="starter"
                   planName={billingCycle === 'monthly' ? 'Starter Monthly' : 'Starter Yearly'}
-                  description={billingCycle === 'monthly' ? 'Monthly Starter - 60 Credits, 60 AI Searches' : 'Yearly Starter - 60 Credits/mo, 60 AI Searches/mo (2 Months Free)'}
+                  description={billingCycle === 'monthly' ? 'Monthly Starter - 100 Credits, 100 AI Searches' : 'Yearly Starter - 100 Credits/mo, 100 AI Searches/mo (2 Months Free)'}
                   buttonText={billingCycle === 'monthly' ? 'Get Starter for ₹49/mo' : 'Get Starter Yearly for ₹470'}
                   variant="secondary"
                   className="w-full text-xs"
@@ -418,11 +418,11 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
-                      <span><strong>120</strong> prompt tool credits / mo</span>
+                      <span><strong>250</strong> prompt tool credits / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
-                      <span><strong>120 AI Searches</strong> / mo</span>
+                      <span><strong>200 AI Searches</strong> / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
@@ -439,7 +439,7 @@ export default function CheckoutPage() {
                   amount={billingCycle === 'monthly' ? 9900 : 95000}
                   planTier="pro"
                   planName={billingCycle === 'monthly' ? 'Pro Monthly' : 'Pro Yearly'}
-                  description={billingCycle === 'monthly' ? 'Monthly Pro - 120 Credits, 120 AI Searches' : 'Yearly Pro - 120 Credits/mo, 120 AI Searches/mo (2 Months Free)'}
+                  description={billingCycle === 'monthly' ? 'Monthly Pro - 250 Credits, 200 AI Searches' : 'Yearly Pro - 250 Credits/mo, 200 AI Searches/mo (2 Months Free)'}
                   buttonText={billingCycle === 'monthly' ? 'Get Pro for ₹99/mo' : 'Get Pro Yearly for ₹950'}
                   variant="pill"
                   size="md"
@@ -475,11 +475,11 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
-                      <span><strong>250</strong> prompt tool credits / mo</span>
+                      <span><strong>600</strong> prompt tool credits / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
-                      <span><strong>250 AI Searches</strong> / mo</span>
+                      <span><strong>500 AI Searches</strong> / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
@@ -496,7 +496,7 @@ export default function CheckoutPage() {
                   amount={billingCycle === 'monthly' ? 19900 : 190000}
                   planTier="vip"
                   planName={billingCycle === 'monthly' ? 'VIP Monthly' : 'VIP Yearly'}
-                  description={billingCycle === 'monthly' ? 'Monthly VIP - 250 Credits, 250 AI Searches' : 'Yearly VIP - 250 Credits/mo, 250 AI Searches/mo (2 Months Free)'}
+                  description={billingCycle === 'monthly' ? 'Monthly VIP - 600 Credits, 500 AI Searches' : 'Yearly VIP - 600 Credits/mo, 500 AI Searches/mo (2 Months Free)'}
                   buttonText={billingCycle === 'monthly' ? 'Get VIP for ₹199/mo' : 'Get VIP Yearly for ₹1,900'}
                   variant="secondary"
                   className="w-full text-xs"
@@ -535,7 +535,7 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-amber-400 font-bold">✓</span>
-                      <span><strong>700 credits</strong> / mo</span>
+                      <span><strong>1500 credits</strong> / mo</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-amber-400 font-bold">✓</span>
@@ -556,7 +556,7 @@ export default function CheckoutPage() {
                   amount={billingCycle === 'monthly' ? 49900 : 479000}
                   planTier="ultra"
                   planName={billingCycle === 'monthly' ? 'Studio 499 Monthly' : 'Studio 499 Yearly'}
-                  description={billingCycle === 'monthly' ? 'Studio 499 - 700 Credits, Unlimited AI Search' : 'Yearly Studio 499 - 700 Credits/mo, Unlimited AI Search (2 Months Free)'}
+                  description={billingCycle === 'monthly' ? 'Studio 499 - 1500 Credits, Unlimited AI Search' : 'Yearly Studio 499 - 1500 Credits/mo, Unlimited AI Search (2 Months Free)'}
                   buttonText={billingCycle === 'monthly' ? 'Get 499 Plan for ₹499/mo' : 'Get Studio Yearly for ₹4,790'}
                   variant="dark"
                   className="w-full text-xs font-black bg-amber-500 hover:bg-amber-400 text-black"

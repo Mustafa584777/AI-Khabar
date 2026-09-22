@@ -269,10 +269,10 @@ export const AIStudioTool = () => {
       return;
     }
 
-    const IMAGE_TO_PROMPT_COST = 3;
+    const IMAGE_TO_PROMPT_COST = 2;
     if (toolCredits < IMAGE_TO_PROMPT_COST) {
       setIsOutOfCreditsModalOpen(true);
-      showToast(`Image-to-prompt requires 3 credits (You have ${toolCredits}). Top up credits or upgrade!`);
+      showToast(`Image-to-prompt requires 2 credits (You have ${toolCredits}). Top up credits or upgrade!`);
       return;
     }
 
@@ -295,7 +295,7 @@ export const AIStudioTool = () => {
       if (json.success && json.data) {
         deductToolCredit(IMAGE_TO_PROMPT_COST);
         setExtractedData(json.data);
-        showToast(`Prompt reverse-engineered! 3 credits used (${Math.max(0, toolCredits - IMAGE_TO_PROMPT_COST)} left)`);
+        showToast(`Prompt reverse-engineered! 2 credits used (${Math.max(0, toolCredits - IMAGE_TO_PROMPT_COST)} left)`);
       } else {
         showToast(json.error || 'Failed to extract prompt from image');
       }

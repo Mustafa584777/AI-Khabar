@@ -333,30 +333,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   });
   const [lockedPromptContext, setLockedPromptContext] = useState<PromptPost | null>(null);
 
-  // First-Time & Daily Free Credits Grant Logic
+  // First-Time 5 Credits Signup Bonus Logic (No daily credits)
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const acc = userAccount || StorageService.getUserAccount();
     if (!acc || !acc.isLoggedIn) return;
 
-    // First time login bonus check
     if (!localStorage.getItem('auraprompt_first_login_claimed')) {
       localStorage.setItem('auraprompt_first_login_claimed', 'true');
       setIsFirstLoginModalOpen(true);
-      addToolCredits(2);
+      addToolCredits(5);
     }
-
-    const userKey = acc.email ? acc.email.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_') : acc.id;
-    const today = new Date().toISOString().split('T')[0];
-    const creditDateKey = `auraprompt_last_credit_date_${userKey}`;
-    const lastDate = localStorage.getItem(creditDateKey);
-
-    if (lastDate !== today) {
-      addToolCredits(2);
-      localStorage.setItem(creditDateKey, today);
-      showToast('+2 Daily Login Bonus Credits Added! 🎁');
-    }
-  }, [userAccount, addToolCredits, showToast]);
+  }, [userAccount, addToolCredits]);
 
   // Unlocked Prompts (Unlocked via 1 credit per prompt or subscription)
   const [unlockedPromptIds, setUnlockedPromptIds] = useState<string[]>(() => {
@@ -418,7 +406,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const upgradePlan = useCallback((tier: 'starter' | 'pro' | 'vip' | 'ultra') => {
     const creditsMap = { starter: 100, pro: 250, vip: 600, ultra: 1500 };
-    const requestsMap = { starter: 10, pro: 20, vip: 50, ultra: 10 };
+    const requestsMap = { starter: 1, pro: 2, vip: 3, ultra: 5 };
     const pointsMap = { starter: 10, pro: 20, vip: 50, ultra: 100 };
 
     setIsProUserState(true);
@@ -835,12 +823,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       StorageService.setAiHistory(synced.aiHistory || []);
       setPlanTierState(synced.planTier || 'free');
       setIsProUserState(synced.isProUser || false);
-      setToolCreditsState(synced.toolCredits ?? 2);
+      setToolCreditsState(synced.toolCredits ?? 5);
       setUnlockedPromptIds(synced.unlockedPromptIds || []);
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_plan_tier', synced.planTier || 'free');
         localStorage.setItem('auraprompt_pro_member', String(synced.isProUser || false));
-        localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits ?? 2));
+        localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits ?? 5));
         localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds || []));
       }
     } catch (e) {
@@ -881,10 +869,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // Premium Monthly exclusive feature with unlimited saves
-    if (!isProUser && planTier === 'free') {
-      showToast('AI history save is a Premium feature! Upgrade to Monthly Plan for unlimited saves.');
-      setIsUnlockPremiumModalOpen(true);
+    const isAlreadySaved = aiHistory.some(h => h.id === item.id);
+    if (!isAlreadySaved && !isProUser && (bookmarkedIds.length + aiHistory.length >= 10)) {
+      showToast('Free user limit reached: 10 combined saves max (bookmarks + history). Upgrade to a paid monthly subscription for unlimited saves!');
+      setIsProCheckoutModalOpen(true);
       return;
     }
 
@@ -1825,6 +1813,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const currentAcc = userAccount || StorageService.getUserAccount();
     if (!currentAcc || !currentAcc.isLoggedIn) {
       openAuthModal('Sign in or create a free account to save prompts to your private collection.');
+      return;
+    }
+
+    const isCurrentlyBookmarked = bookmarkedIds.includes(id);
+    if (!isCurrentlyBookmarked && !isProUser && (bookmarkedIds.length + aiHistory.length >= 10)) {
+      showToast('Free user limit reached: 10 combined saves max (bookmarks + history). Upgrade to a paid monthly subscription for unlimited saves!');
+      setIsProCheckoutModalOpen(true);
       return;
     }
 
