@@ -7,6 +7,7 @@ import { useApp } from '@/context/AppContext';
 import Image from 'next/image';
 import { Sparkles, Bookmark, Crown } from 'lucide-react';
 import { getPromptSlug, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription } from '@/lib/utils';
+import { StorageService } from '@/lib/storage';
 
 export const PromptCard = ({ post, priority = false }: { post: PromptPost; priority?: boolean }) => {
   const {
