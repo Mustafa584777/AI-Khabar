@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import {
   Wand2,
@@ -19,17 +19,16 @@ export const PromptEditorTool = () => {
   const router = useRouter();
   const { showToast, saveAiHistoryItem, userAccount, openAuthModal, toolCredits, deductToolCredit } = useApp();
 
-  const [inputPrompt, setInputPrompt] = useState<string>('');
-
-  useEffect(() => {
+  const [inputPrompt, setInputPrompt] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       const preload = sessionStorage.getItem('promptcms_editor_preload');
       if (preload) {
         sessionStorage.removeItem('promptcms_editor_preload');
-        setInputPrompt(preload);
+        return preload;
       }
     }
-  }, []);
+    return '';
+  });
   const [changeInstructions, setChangeInstructions] = useState<string>('');
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [resultData, setResultData] = useState<{
