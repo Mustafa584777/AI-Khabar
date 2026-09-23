@@ -9,14 +9,11 @@ export const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_SUPAB
 export const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_ANON_KEY;
 export const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey;
 
-const isBrowser = typeof window !== 'undefined';
-
 // Standard Supabase client (client & server)
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: isBrowser,
-    autoRefreshToken: isBrowser,
-    detectSessionInUrl: isBrowser,
+    persistSession: false,
+    autoRefreshToken: false,
   },
 });
 
@@ -44,29 +41,24 @@ export function getSupabaseDetails() {
   };
 }
 
-export function supabaseUserToUserAccount(u: any, existing?: UserAccount | null): UserAccount {
-  const meta = u.user_metadata || {};
-  const email = u.email || '';
-  const validExisting = (existing && existing.email && existing.email.toLowerCase() === email.toLowerCase()) ? existing : null;
-  const emailPrefix = email ? email.split('@')[0] : 'Creator';
-  const name = meta.full_name || meta.name || validExisting?.name || emailPrefix;
-  const username = meta.user_name ? ('@' + meta.user_name.replace(/[^a-z0-9]/g, '')) : (validExisting?.username || ('@' + emailPrefix.toLowerCase().replace(/[^a-z0-9]/g, '') || '@creator'));
-  const avatar = meta.avatar_url || meta.picture || meta.avatar || validExisting?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80';
-
+export function supabaseUserToUserAccount(user: any, existing?: UserAccount | null): UserAccount {
   return {
-    id: u.id,
-    name,
-    username,
-    email,
-    joinedDate: validExisting?.joinedDate || (u.created_at ? new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })),
+    id: user.id || existing?.id || 'u_guest',
+    name: user.user_metadata?.name || existing?.name || user.email?.split('@')[0] || 'User',
+    username: user.user_metadata?.username || existing?.username || '@' + (user.email?.split('@')[0] || 'user'),
+    email: user.email || existing?.email || '',
+    joinedDate: existing?.joinedDate || new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
     isLoggedIn: true,
-    avatar,
-    points: meta.points !== undefined ? Number(meta.points) : (validExisting?.points !== undefined ? validExisting.points : 10),
-    requestsMade: meta.requestsMade !== undefined ? Number(meta.requestsMade) : (validExisting?.requestsMade || 0),
-    likesCountForPoints: meta.likesCountForPoints !== undefined ? Number(meta.likesCountForPoints) : (validExisting?.likesCountForPoints || 0),
-    savesCountForPoints: meta.savesCountForPoints !== undefined ? Number(meta.savesCountForPoints) : (validExisting?.savesCountForPoints || 0),
-    generationsCountForPoints: meta.generationsCountForPoints !== undefined ? Number(meta.generationsCountForPoints) : (validExisting?.generationsCountForPoints || 0),
-    sharesCountForPoints: meta.sharesCountForPoints !== undefined ? Number(meta.sharesCountForPoints) : (validExisting?.sharesCountForPoints || 0),
-    referralsCountForPoints: meta.referralsCountForPoints !== undefined ? Number(meta.referralsCountForPoints) : (validExisting?.referralsCountForPoints || 0),
+    avatar: user.user_metadata?.avatar_url || existing?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
+    points: existing?.points ?? 10,
+    requestsMade: existing?.requestsMade ?? 0,
+    likesCountForPoints: existing?.likesCountForPoints ?? 0,
+    savesCountForPoints: existing?.savesCountForPoints ?? 0,
+    generationsCountForPoints: existing?.generationsCountForPoints ?? 0,
+    sharesCountForPoints: existing?.sharesCountForPoints ?? 0,
+    referralsCountForPoints: existing?.referralsCountForPoints ?? 0,
+    toolCredits: existing?.toolCredits ?? 10,
+    planTier: existing?.planTier || 'free',
+    isProUser: existing?.isProUser ?? false,
   };
 }
