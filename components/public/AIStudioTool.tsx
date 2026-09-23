@@ -27,24 +27,24 @@ import { PromptEditorTool } from '@/components/public/PromptEditorTool';
 
 const SAMPLE_IMAGES = [
   {
-    name: 'Sun-Drenched Minimalism',
-    url: 'https://res.cloudinary.com/idbpgaqz/image/upload/v1790080100/prompts/prompt-1790080096492.webp',
-    style: 'Lifestyle & Creative Portraiture',
+    name: 'Cyberpunk Neon',
+    url: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=800&auto=format&fit=crop&q=80',
+    style: 'Cyberpunk & Sci-Fi',
   },
   {
-    name: 'Prismatic Light Portrait',
-    url: 'https://res.cloudinary.com/idbpgaqz/image/upload/v1790004650/prompts/prompt-1790004647479.webp',
-    style: 'Fashion & Editorial Photography',
+    name: 'Studio Portrait',
+    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80',
+    style: 'Photorealistic & Portraits',
   },
   {
-    name: 'Cinematic Monochrome',
-    url: 'https://res.cloudinary.com/idbpgaqz/image/upload/v1789916991/prompts/prompt-1789916984383.webp',
-    style: 'Fashion & Editorial Photography',
+    name: 'Cinematic Nature',
+    url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80',
+    style: 'Cinematic 8K',
   },
   {
-    name: 'Birthday Calendar Portrait',
-    url: 'https://res.cloudinary.com/idbpgaqz/image/upload/v1789893926/prompts/prompt-1789893925047.webp',
-    style: 'Lifestyle & Creative Portraiture',
+    name: '3D Render',
+    url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
+    style: '3D Art & Unreal Engine',
   },
 ];
 

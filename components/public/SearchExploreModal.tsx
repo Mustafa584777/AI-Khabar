@@ -37,12 +37,6 @@ export const SearchExploreModal = () => {
     setSelectedPost,
     copyPromptToClipboard,
     setCurrentView,
-    isAiSearchEnabled,
-    setIsAiSearchEnabled,
-    aiSearchRemaining,
-    isProUser,
-    setIsProCheckoutModalOpen,
-    showToast,
   } = useApp();
 
   const [localInput, setLocalInput] = useState(searchQuery || '');
@@ -254,31 +248,9 @@ export const SearchExploreModal = () => {
                 }
               }}
               placeholder="Search prompts for aesthetics, cameras, or subjects..."
-              className="w-full pl-12 pr-28 sm:pr-32 py-3 bg-[#f0f0f0] dark:bg-neutral-800/90 text-neutral-900 dark:text-white rounded-full text-sm font-semibold placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#E60023] transition-all"
+              className="w-full pl-12 pr-10 py-3 bg-[#f0f0f0] dark:bg-neutral-800/90 text-neutral-900 dark:text-white rounded-full text-sm font-semibold placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#E60023] transition-all"
               id="search-explore-modal-input"
             />
-            {/* AI Search Toggle Button Inside Search Box */}
-            <button
-              type="button"
-              onClick={() => {
-                if (!isAiSearchEnabled && !isProUser && aiSearchRemaining <= 0) {
-                  showToast('upgrade plan for increase AI search limits');
-                  setIsProCheckoutModalOpen(true);
-                  return;
-                }
-                setIsAiSearchEnabled(!isAiSearchEnabled);
-              }}
-              className={`absolute right-10 sm:right-12 px-2.5 py-1 rounded-full text-[10px] font-extrabold flex items-center gap-1 transition-all ${
-                isAiSearchEnabled
-                  ? 'bg-gradient-to-r from-[#E60023] to-rose-600 text-white shadow-sm'
-                  : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300'
-              }`}
-              title={isAiSearchEnabled ? 'AI Search Enabled (Click to disable)' : 'AI Search Disabled (Click to enable)'}
-            >
-              <Sparkles className="w-3 h-3" />
-              <span>AI {isAiSearchEnabled ? 'ON' : 'OFF'}</span>
-            </button>
-
             {localInput && (
               <button
                 type="button"
@@ -367,45 +339,9 @@ export const SearchExploreModal = () => {
                   <p className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
                     No prompts matching &ldquo;{localInput}&rdquo;
                   </p>
-                  {!isAiSearchEnabled ? (
-                    <div className="space-y-2 max-w-sm mx-auto">
-                      <p className="text-xs text-amber-600 dark:text-amber-400 font-bold">
-                        no results for this term try using AI search
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!isProUser && aiSearchRemaining <= 0) {
-                            showToast('upgrade plan for increase AI search limits');
-                            setIsProCheckoutModalOpen(true);
-                          } else {
-                            setIsAiSearchEnabled(true);
-                          }
-                        }}
-                        className="px-4 py-2 rounded-full bg-[#E60023] text-white text-xs font-bold hover:bg-[#ad081b] transition-all shadow-md inline-flex items-center gap-1.5"
-                      >
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>Enable AI Search</span>
-                      </button>
-                    </div>
-                  ) : aiSearchRemaining <= 0 && !isProUser ? (
-                    <div className="space-y-2 max-w-sm mx-auto">
-                      <p className="text-xs text-red-600 dark:text-red-400 font-bold">
-                        upgrade plan for increase AI search limits
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => setIsProCheckoutModalOpen(true)}
-                        className="px-4 py-2 rounded-full bg-amber-500 text-white text-xs font-bold hover:bg-amber-600 transition-all shadow-md inline-flex items-center gap-1.5"
-                      >
-                        <span>Upgrade Plan</span>
-                      </button>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-neutral-500 max-w-sm mx-auto">
-                      Try searching for different terms like <em>35mm portrait</em>, <em>cyberpunk</em>, or select a category below.
-                    </p>
-                  )}
+                  <p className="text-xs text-neutral-500 max-w-sm mx-auto">
+                    Try searching for different terms like <em>35mm portrait</em>, <em>cyberpunk</em>, or select a category below.
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">

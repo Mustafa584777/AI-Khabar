@@ -35,12 +35,6 @@ export const HeroSection = () => {
     setSelectedPost,
     popularSearchQueries,
     recordSearchQuery,
-    isAiSearchEnabled,
-    setIsAiSearchEnabled,
-    aiSearchRemaining,
-    isProUser,
-    setIsProCheckoutModalOpen,
-    showToast,
   } = useApp();
 
   const [isSortOpen, setIsSortOpen] = useState(false);
@@ -138,31 +132,9 @@ export const HeroSection = () => {
               setIsSearchOpen(true);
             }}
             placeholder="Search prompts for aesthetics, cameras, or subjects..."
-            className="w-full pl-12 pr-28 sm:pr-32 py-3.5 bg-[#efefef] dark:bg-neutral-800 border-0 rounded-full text-sm font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]/40 placeholder:text-neutral-500 transition-all shadow-sm"
+            className="w-full pl-12 pr-4 py-3.5 bg-[#efefef] dark:bg-neutral-800 border-0 rounded-full text-sm font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]/40 placeholder:text-neutral-500 transition-all shadow-sm"
             id="hero-search-input"
           />
-          {/* AI Search Toggle Button Inside Hero Search Box */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!isAiSearchEnabled && !isProUser && aiSearchRemaining <= 0) {
-                showToast('upgrade plan for increase AI search limits');
-                setIsProCheckoutModalOpen(true);
-                return;
-              }
-              setIsAiSearchEnabled(!isAiSearchEnabled);
-            }}
-            className={`absolute right-3 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-full text-[10px] font-extrabold flex items-center gap-1 transition-all z-10 ${
-              isAiSearchEnabled
-                ? 'bg-gradient-to-r from-[#E60023] to-rose-600 text-white shadow-sm'
-                : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300'
-            }`}
-            title={isAiSearchEnabled ? 'AI Search Enabled (Click to disable)' : 'AI Search Disabled (Click to enable)'}
-          >
-            <Sparkles className="w-3 h-3" />
-            <span>AI {isAiSearchEnabled ? 'ON' : 'OFF'}</span>
-          </button>
 
           {/* Search Suggestions & Most Viewed Categories Overlay (Matching Screenshot) */}
           {isSearchOpen && (
