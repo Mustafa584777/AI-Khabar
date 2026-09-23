@@ -268,9 +268,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           const parsed = parseInt(saved, 10);
           if (!isNaN(parsed)) return parsed;
         }
+        return 10;
       }
     }
-    return 0;
+    return 10;
   });
 
   // Toast
@@ -1805,7 +1806,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const isNowSaved = StorageService.toggleBookmark(id);
     const updatedBookmarks = StorageService.getBookmarkedIds();
-    setBookmarkedIds(updatedBookmarks);
+    setBookmarkedIds([...updatedBookmarks]);
 
     const post = posts.find((p) => p.id === id);
     let updatedProfile = tasteProfile;
