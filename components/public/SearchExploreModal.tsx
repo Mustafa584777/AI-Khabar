@@ -261,22 +261,23 @@ export const SearchExploreModal = () => {
             <button
               type="button"
               onClick={() => {
-                if (!isAiSearchEnabled && !isProUser && aiSearchRemaining <= 0) {
-                  showToast('upgrade plan for increase AI search limits');
+                if (!isProUser && aiSearchRemaining <= 0) {
+                  showToast('You have used all 10 free AI searches. Upgrade to Pro for unlimited AI searches!');
                   setIsProCheckoutModalOpen(true);
+                  setIsAiSearchEnabled(false);
                   return;
                 }
                 setIsAiSearchEnabled(!isAiSearchEnabled);
               }}
               className={`absolute right-10 sm:right-12 px-2.5 py-1 rounded-full text-[10px] font-extrabold flex items-center gap-1 transition-all ${
-                isAiSearchEnabled
+                isAiSearchEnabled && (isProUser || aiSearchRemaining > 0)
                   ? 'bg-gradient-to-r from-[#E60023] to-rose-600 text-white shadow-sm'
                   : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300'
               }`}
               title={isAiSearchEnabled ? 'AI Search Enabled (Click to disable)' : 'AI Search Disabled (Click to enable)'}
             >
               <Sparkles className="w-3 h-3" />
-              <span>AI {isAiSearchEnabled ? 'ON' : 'OFF'}</span>
+              <span>AI {isAiSearchEnabled && (isProUser || aiSearchRemaining > 0) ? 'ON' : 'OFF'}</span>
             </button>
 
             {localInput && (

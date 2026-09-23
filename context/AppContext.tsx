@@ -265,17 +265,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const [promptRequestsRemaining, setPromptRequestsRemainingState] = useState<number>(() => {
     if (typeof window !== 'undefined') {
-      const acc = StorageService.getUserAccount();
-      if (acc && acc.isLoggedIn) {
+      const isPro = localStorage.getItem('auraprompt_pro_member') === 'true';
+      if (isPro) {
         const saved = localStorage.getItem('auraprompt_prompt_requests');
         if (saved !== null) {
           const parsed = parseInt(saved, 10);
           if (!isNaN(parsed)) return parsed;
         }
-        return 10;
+        return 2;
       }
     }
-    return 10;
+    return 0; // Free user gets 0 prompt requests
   });
 
   // Toast
