@@ -72,6 +72,7 @@ export const UserDashboard = () => {
     isSyncingUserData,
     unlockedPromptIds,
     planExpiresAt,
+    aiSearchRemaining,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'saved' | 'history' | 'taste' | 'request'>('saved');
@@ -348,7 +349,7 @@ export const UserDashboard = () => {
           </div>
 
           {/* Quick Metrics */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 border-t md:border-t-0 md:border-l border-neutral-100 dark:border-neutral-800 pt-4 md:pt-0 md:pl-6">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 border-t md:border-t-0 md:border-l border-neutral-100 dark:border-neutral-800 pt-4 md:pt-0 md:pl-6">
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400">
                 {toolCredits}
@@ -372,6 +373,12 @@ export const UserDashboard = () => {
                 {aiHistory.length}
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">AI Generations</div>
+            </div>
+            <div className="text-center md:text-left">
+              <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
+                {isProUser ? 'Unlimited' : `${aiSearchRemaining}/10`}
+              </div>
+              <div className="text-[11px] text-neutral-500 font-medium">AI Search Quota</div>
             </div>
           </div>
         </div>
@@ -1014,7 +1021,7 @@ export const UserDashboard = () => {
                   <div>
                     <div className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                       <Crown className="w-3.5 h-3.5" />
-                      <span>AI Search Quota</span>
+                      <span>Prompt Requests Available</span>
                     </div>
                     <div className="text-lg font-black text-neutral-900 dark:text-white">
                       {promptRequestsRemaining} / 10 Available
@@ -1252,8 +1259,7 @@ export const UserDashboard = () => {
                             <button
                               onClick={() => {
                                 sessionStorage.setItem('promptcms_editor_preload', req.fulfilledPrompt!);
-                                sessionStorage.setItem('promptcms_studio_tab', 'editor');
-                                setCurrentView('studio-tool');
+                                router.push('/prompt-editor');
                               }}
                               className="text-xs font-bold text-neutral-700 dark:text-neutral-300 hover:text-[#E60023] flex items-center gap-1 transition-colors"
                             >

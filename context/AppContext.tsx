@@ -1127,7 +1127,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (!isNaN(parsed)) return parsed;
       }
     }
-    return 5; // 5 free AI searches
+    return 10; // 10 free AI searches
   });
 
   const setAiSearchRemaining = useCallback((num: number) => {
