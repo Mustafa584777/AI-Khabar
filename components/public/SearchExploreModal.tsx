@@ -16,7 +16,6 @@ import {
   ChevronRight,
   Eye,
   Tag,
-  Crown,
 } from 'lucide-react';
 import { Category, PromptPost } from '@/types/prompt';
 import { getPromptSlug, getOptimizedImageUrl } from '@/lib/utils';
@@ -38,8 +37,12 @@ export const SearchExploreModal = () => {
     setSelectedPost,
     copyPromptToClipboard,
     setCurrentView,
-    toolCredits,
+    isAiSearchEnabled,
+    setIsAiSearchEnabled,
+    aiSearchRemaining,
+    isProUser,
     setIsProCheckoutModalOpen,
+    showToast,
   } = useApp();
 
   const [localInput, setLocalInput] = useState(searchQuery || '');
@@ -47,15 +50,6 @@ export const SearchExploreModal = () => {
   const [modalAiResult, setModalAiResult] = useState<any>(null);
   const [isModalSearching, setIsModalSearching] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // AI Search Toggle State inside search box
-  const [isAiSearchEnabled, setIsAiSearchEnabled] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('auraprompt_ai_search_enabled');
-      if (saved !== null) return saved === 'true';
-    }
-    return true; // default enabled
-  });
 
   const [prevIsOpen, setPrevIsOpen] = useState(isSearchModalOpen);
   if (isSearchModalOpen !== prevIsOpen) {
@@ -65,15 +59,10 @@ export const SearchExploreModal = () => {
     }
   }
 
-  // Debounced AI Search for Modal (respects isAiSearchEnabled and toolCredits)
+  // Debounced AI Search for Modal
   useEffect(() => {
     const q = localInput.trim();
-    if (!isAiSearchEnabled || q.length < 2) {
-      setModalAiResult(null);
-      setIsModalSearching(false);
-      return;
-    }
-    if (toolCredits <= 0) {
+    if (q.length < 2) {
       setModalAiResult(null);
       setIsModalSearching(false);
       return;
@@ -86,7 +75,7 @@ export const SearchExploreModal = () => {
       });
     }, 280);
     return () => clearTimeout(timer);
-  }, [localInput, isAiSearchEnabled, toolCredits, performAiSearch]);
+  }, [localInput, performAiSearch]);
 
   // Handle focus and body scroll lock when modal opens
   useEffect(() => {
@@ -163,7 +152,7 @@ export const SearchExploreModal = () => {
     if (!query || query.length < 2) return [];
 
     const published = posts.filter((p) => p.status === 'published');
-    const hasAiMatches = isAiSearchEnabled && modalAiResult && modalAiResult.query?.toLowerCase() === query;
+    const hasAiMatches = modalAiResult && modalAiResult.query?.toLowerCase() === query;
     const matchedIds = hasAiMatches ? new Set<string>(modalAiResult.matchedPostIds || []) : new Set<string>();
     const expandedTerms = hasAiMatches
       ? [
@@ -210,7 +199,7 @@ export const SearchExploreModal = () => {
     }
 
     return matches;
-  }, [localInput, posts, modalAiResult, isAiSearchEnabled]);
+  }, [localInput, posts, modalAiResult]);
 
   const handleCopyPrompt = (e: React.MouseEvent, post: PromptPost) => {
     e.stopPropagation();
@@ -245,7 +234,7 @@ export const SearchExploreModal = () => {
             <X className="w-5 h-5 hidden sm:block" />
           </button>
 
-          {/* Search Input Box with AI Search Toggle inside */}
+          {/* Search Input Box */}
           <div className="flex-1 relative flex items-center">
             <div className="absolute left-4 pointer-events-none text-neutral-400">
               <Search className="w-5 h-5" />
@@ -265,42 +254,41 @@ export const SearchExploreModal = () => {
                 }
               }}
               placeholder="Search prompts for aesthetics, cameras, or subjects..."
-              className="w-full pl-12 pr-28 py-3 bg-[#f0f0f0] dark:bg-neutral-800/90 text-neutral-900 dark:text-white rounded-full text-sm font-semibold placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#E60023] transition-all"
+              className="w-full pl-12 pr-28 sm:pr-32 py-3 bg-[#f0f0f0] dark:bg-neutral-800/90 text-neutral-900 dark:text-white rounded-full text-sm font-semibold placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#E60023] transition-all"
               id="search-explore-modal-input"
             />
+            {/* AI Search Toggle Button Inside Search Box */}
+            <button
+              type="button"
+              onClick={() => {
+                if (!isAiSearchEnabled && !isProUser && aiSearchRemaining <= 0) {
+                  showToast('upgrade plan for increase AI search limits');
+                  setIsProCheckoutModalOpen(true);
+                  return;
+                }
+                setIsAiSearchEnabled(!isAiSearchEnabled);
+              }}
+              className={`absolute right-10 sm:right-12 px-2.5 py-1 rounded-full text-[10px] font-extrabold flex items-center gap-1 transition-all ${
+                isAiSearchEnabled
+                  ? 'bg-gradient-to-r from-[#E60023] to-rose-600 text-white shadow-sm'
+                  : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300'
+              }`}
+              title={isAiSearchEnabled ? 'AI Search Enabled (Click to disable)' : 'AI Search Disabled (Click to enable)'}
+            >
+              <Sparkles className="w-3 h-3" />
+              <span>AI {isAiSearchEnabled ? 'ON' : 'OFF'}</span>
+            </button>
 
-            {/* AI Search Toggle Button inside search box */}
-            <div className="absolute right-3 flex items-center gap-1.5">
-              {localInput && (
-                <button
-                  type="button"
-                  onClick={() => setLocalInput('')}
-                  className="p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-white transition-colors"
-                  title="Clear search input"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
+            {localInput && (
               <button
                 type="button"
-                onClick={() => {
-                  const next = !isAiSearchEnabled;
-                  setIsAiSearchEnabled(next);
-                  if (typeof window !== 'undefined') {
-                    localStorage.setItem('auraprompt_ai_search_enabled', String(next));
-                  }
-                }}
-                className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all flex items-center gap-1 shadow-xs ${
-                  isAiSearchEnabled
-                    ? 'bg-[#E60023] text-white'
-                    : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
-                }`}
-                title="Toggle AI Search on/off"
+                onClick={() => setLocalInput('')}
+                className="absolute right-3 p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-white transition-colors"
+                title="Clear search input"
               >
-                <Sparkles className="w-3 h-3" />
-                <span>AI {isAiSearchEnabled ? 'ON' : 'OFF'}</span>
+                <X className="w-4 h-4" />
               </button>
-            </div>
+            )}
           </div>
 
           {localInput && (
@@ -325,7 +313,7 @@ export const SearchExploreModal = () => {
                   <h3 className="text-sm font-black text-neutral-900 dark:text-white">
                     Live Search Results ({liveResults.length})
                   </h3>
-                  {isAiSearchEnabled && modalAiResult?.isAiPowered && (
+                  {modalAiResult?.isAiPowered && (
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
                       Gemini AI Powered
                     </span>
@@ -349,8 +337,7 @@ export const SearchExploreModal = () => {
               </div>
 
               {/* AI Semantic query interpretation banner */}
-              {isAiSearchEnabled &&
-                modalAiResult?.correctedQuery &&
+              {modalAiResult?.correctedQuery &&
                 modalAiResult.correctedQuery.toLowerCase() !== localInput.trim().toLowerCase() && (
                   <div className="px-3.5 py-2 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 text-xs border border-amber-200/80 dark:border-amber-900/60 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
@@ -373,56 +360,51 @@ export const SearchExploreModal = () => {
                 )}
 
               {liveResults.length === 0 ? (
-                <div className="py-12 text-center space-y-4 max-w-md mx-auto">
+                <div className="py-12 text-center space-y-3">
                   <div className="w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mx-auto text-neutral-400">
                     <Search className="w-6 h-6" />
                   </div>
-
+                  <p className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
+                    No prompts matching &ldquo;{localInput}&rdquo;
+                  </p>
                   {!isAiSearchEnabled ? (
-                    <div className="space-y-3">
-                      <p className="text-sm font-bold text-neutral-800 dark:text-neutral-200 capitalize">
+                    <div className="space-y-2 max-w-sm mx-auto">
+                      <p className="text-xs text-amber-600 dark:text-amber-400 font-bold">
                         no results for this term try using AI search
                       </p>
                       <button
                         type="button"
                         onClick={() => {
-                          setIsAiSearchEnabled(true);
-                          if (typeof window !== 'undefined') {
-                            localStorage.setItem('auraprompt_ai_search_enabled', 'true');
+                          if (!isProUser && aiSearchRemaining <= 0) {
+                            showToast('upgrade plan for increase AI search limits');
+                            setIsProCheckoutModalOpen(true);
+                          } else {
+                            setIsAiSearchEnabled(true);
                           }
                         }}
-                        className="px-5 py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-md transition-all inline-flex items-center gap-1.5"
+                        className="px-4 py-2 rounded-full bg-[#E60023] text-white text-xs font-bold hover:bg-[#ad081b] transition-all shadow-md inline-flex items-center gap-1.5"
                       >
-                        <Sparkles className="w-4 h-4" />
+                        <Sparkles className="w-3.5 h-3.5" />
                         <span>Enable AI Search</span>
                       </button>
                     </div>
-                  ) : toolCredits <= 0 ? (
-                    <div className="space-y-3">
-                      <p className="text-sm font-bold text-neutral-800 dark:text-neutral-200 capitalize">
+                  ) : aiSearchRemaining <= 0 && !isProUser ? (
+                    <div className="space-y-2 max-w-sm mx-auto">
+                      <p className="text-xs text-red-600 dark:text-red-400 font-bold">
                         upgrade plan for increase AI search limits
                       </p>
                       <button
                         type="button"
-                        onClick={() => {
-                          setIsSearchModalOpen(false);
-                          setIsProCheckoutModalOpen(true);
-                        }}
-                        className="px-5 py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-md transition-all inline-flex items-center gap-1.5"
+                        onClick={() => setIsProCheckoutModalOpen(true)}
+                        className="px-4 py-2 rounded-full bg-amber-500 text-white text-xs font-bold hover:bg-amber-600 transition-all shadow-md inline-flex items-center gap-1.5"
                       >
-                        <Crown className="w-4 h-4" />
                         <span>Upgrade Plan</span>
                       </button>
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      <p className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
-                        No prompts matching &ldquo;{localInput}&rdquo;
-                      </p>
-                      <p className="text-xs text-neutral-500">
-                        Try searching for different terms like <em>35mm portrait</em>, <em>cyberpunk</em>, or select a category below.
-                      </p>
-                    </div>
+                    <p className="text-xs text-neutral-500 max-w-sm mx-auto">
+                      Try searching for different terms like <em>35mm portrait</em>, <em>cyberpunk</em>, or select a category below.
+                    </p>
                   )}
                 </div>
               ) : (

@@ -95,6 +95,10 @@ interface AppContextType {
   isAiSearching: boolean;
   performAiSearch: (query: string) => Promise<AiSearchResult | null>;
   clearAiSearch: () => void;
+  isAiSearchEnabled: boolean;
+  setIsAiSearchEnabled: (enabled: boolean) => void;
+  aiSearchRemaining: number;
+  setAiSearchRemaining: (num: number) => void;
   selectedCategory: string;
   setSelectedCategory: (cat: string) => void;
   selectedTool: string;
@@ -1100,12 +1104,57 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [isAiSearching, setIsAiSearching] = useState<boolean>(false);
   const aiSearchCacheRef = useRef<Map<string, AiSearchResult>>(new Map());
 
+  const [isAiSearchEnabled, setIsAiSearchEnabledState] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('auraprompt_ai_search_enabled');
+      if (saved !== null) return saved === 'true';
+    }
+    return true; // Default ON
+  });
+
+  const setIsAiSearchEnabled = useCallback((enabled: boolean) => {
+    setIsAiSearchEnabledState(enabled);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auraprompt_ai_search_enabled', String(enabled));
+    }
+  }, []);
+
+  const [aiSearchRemaining, setAiSearchRemainingState] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('auraprompt_ai_search_remaining');
+      if (saved !== null) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed)) return parsed;
+      }
+    }
+    return 5; // 5 free AI searches
+  });
+
+  const setAiSearchRemaining = useCallback((num: number) => {
+    setAiSearchRemainingState(num);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auraprompt_ai_search_remaining', num.toString());
+    }
+  }, []);
+
   const performAiSearch = useCallback(async (query: string): Promise<AiSearchResult | null> => {
     const clean = query.trim();
-    if (!clean || clean.length < 2) {
+    if (!clean || clean.length < 2 || !isAiSearchEnabled) {
       setAiSearchResults(null);
       setIsAiSearching(false);
       return null;
+    }
+
+    if (!isProUser && aiSearchRemaining <= 0) {
+      showToast('upgrade plan for increase AI search limits');
+      setIsProCheckoutModalOpen(true);
+      setIsAiSearchEnabled(false);
+      return null;
+    }
+
+    if (!isProUser) {
+      const nextRemaining = Math.max(0, aiSearchRemaining - 1);
+      setAiSearchRemaining(nextRemaining);
     }
 
     const cacheKey = clean.toLowerCase();
@@ -1145,17 +1194,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setIsAiSearching(false);
     }
     return null;
-  }, []);
+  }, [isAiSearchEnabled, isProUser, aiSearchRemaining, setAiSearchRemaining, showToast, setIsProCheckoutModalOpen, setIsAiSearchEnabled]);
 
   const clearAiSearch = useCallback(() => {
     setAiSearchResults(null);
     setIsAiSearching(false);
   }, []);
 
-  // Whenever searchQuery updates, trigger performAiSearch (debounced 300ms)
+  // Whenever searchQuery updates, trigger performAiSearch if enabled (debounced 300ms)
   useEffect(() => {
     const q = searchQuery.trim();
-    if (!q || q.length < 2) {
+    if (!isAiSearchEnabled || !q || q.length < 2) {
       setAiSearchResults(null);
       return;
     }
@@ -1163,7 +1212,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       void performAiSearch(q);
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchQuery, performAiSearch]);
+  }, [searchQuery, isAiSearchEnabled, performAiSearch]);
 
   const fetchSearchQueries = async () => {
     try {
@@ -2064,6 +2113,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         isAiSearching,
         performAiSearch,
         clearAiSearch,
+        isAiSearchEnabled,
+        setIsAiSearchEnabled,
+        aiSearchRemaining,
+        setAiSearchRemaining,
         selectedCategory,
         setSelectedCategory,
         selectedTool,
