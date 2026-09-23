@@ -7,7 +7,6 @@ import { useApp } from '@/context/AppContext';
 import Image from 'next/image';
 import { Sparkles, Bookmark, Crown } from 'lucide-react';
 import { getPromptSlug, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription } from '@/lib/utils';
-import { StorageService } from '@/lib/storage';
 
 export const PromptCard = ({ post, priority = false }: { post: PromptPost; priority?: boolean }) => {
   const {
@@ -64,8 +63,17 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   const handleBookmark = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const currentAcc = userAccount || StorageService.getUserAccount();
-    if (!currentAcc?.isLoggedIn) {
+    let isLoggedIn = userAccount?.isLoggedIn;
+    if (!isLoggedIn && typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('promptcms_user_account');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.isLoggedIn) isLoggedIn = true;
+        }
+      } catch (err) {}
+    }
+    if (!isLoggedIn) {
       openAuthModal('Please sign in or create an account to save prompts to your collection.');
       return;
     }
