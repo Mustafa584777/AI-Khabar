@@ -1014,10 +1014,10 @@ export const UserDashboard = () => {
                   <div>
                     <div className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                       <Crown className="w-3.5 h-3.5" />
-                      <span>Prompt Requests</span>
+                      <span>AI Search Quota</span>
                     </div>
                     <div className="text-lg font-black text-neutral-900 dark:text-white">
-                      {promptRequestsRemaining} Available
+                      {promptRequestsRemaining} / 10 Available
                     </div>
                   </div>
                 </div>
