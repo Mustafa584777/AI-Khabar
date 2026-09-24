@@ -349,7 +349,7 @@ export const UserDashboard = () => {
           </div>
 
           {/* Quick Metrics */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 border-t md:border-t-0 md:border-l border-neutral-100 dark:border-neutral-800 pt-4 md:pt-0 md:pl-6">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 border-t md:border-t-0 md:border-l border-neutral-100 dark:border-neutral-800 pt-4 md:pt-0 md:pl-6">
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400 flex items-center justify-center md:justify-start gap-1">
                 <span>{toolCredits}</span>
@@ -365,6 +365,12 @@ export const UserDashboard = () => {
                 </span>
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">Credits Available</div>
+            </div>
+            <div className="text-center md:text-left">
+              <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
+                {isProUser ? 'All (Pro)' : unlockedPromptIds.length}
+              </div>
+              <div className="text-[11px] text-neutral-500 font-medium">Unlocked Prompts</div>
             </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
@@ -407,70 +413,91 @@ export const UserDashboard = () => {
         )}
 
         {/* Membership Tier Banner */}
-        <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div
-              className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border ${
-                isPaid
-                  ? 'bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500/20'
-                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 border-neutral-200 dark:border-neutral-700'
-              }`}
-            >
-              <Crown className={`w-6 h-6 ${isPaid ? 'fill-amber-500 text-amber-500' : ''}`} />
-            </div>
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm sm:text-base font-black text-neutral-900 dark:text-white">
-                  {isPaid ? `${effectivePlanTier.toUpperCase()} Membership Active` : 'Upgrade to Creator Pro'}
-                </h3>
-                <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-                    isPaid
-                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
-                      : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
-                  }`}
-                >
-                  {isPaid ? `PAID (${effectivePlanTier.toUpperCase()})` : 'FREE TIER'}
-                </span>
+        <div className="relative overflow-hidden p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-neutral-900 via-neutral-900 to-neutral-950 text-white border border-neutral-800 shadow-xl space-y-6">
+          {/* Background Decorative Glow */}
+          <div className="absolute -top-24 -right-24 w-72 h-72 bg-red-600/20 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-neutral-950 flex items-center justify-center shrink-0 shadow-lg shadow-amber-500/20">
+                <Crown className="w-7 h-7 fill-neutral-950" />
               </div>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                {isPaid
-                  ? `${toolCredits} prompt tools credits available • All premium prompts unlocked • Unlimited prompt & history saves.`
-                  : `${toolCredits} credits available. 1 credit unlocks any premium prompt • 3 credits per image extraction. Top up credits anytime.`}
-              </p>
-              {isPaid && (
-                <p className="text-[11px] text-amber-600 dark:text-amber-400 font-bold mt-1">
-                  Plan Subscription Expires on: {expiryDisplay}
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h3 className="text-lg sm:text-xl font-black text-white tracking-tight">
+                    {isPaid ? `${effectivePlanTier.toUpperCase()} Membership Active` : 'Upgrade to Creator Pro'}
+                  </h3>
+                  <span
+                    className={`px-3 py-1 rounded-full text-[10px] font-mono font-extrabold tracking-wide uppercase ${
+                      isPaid
+                        ? 'bg-amber-500 text-neutral-950 shadow-md shadow-amber-500/30'
+                        : 'bg-white/10 text-neutral-300 border border-white/20'
+                    }`}
+                  >
+                    {isPaid ? `PAID (${effectivePlanTier.toUpperCase()})` : 'FREE TIER'}
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-neutral-300 max-w-xl leading-relaxed">
+                  {isPaid
+                    ? `You have full access to all premium features, ${toolCredits} prompt tool credits, and unlimited cloud saves.`
+                    : 'Unlock unlimited AI searches, all premium prompts instantly, priority tool credits, and advanced prompt customization.'}
                 </p>
+                {isPaid && (
+                  <p className="text-xs text-amber-400 font-bold">
+                    Plan Subscription Expires on: {expiryDisplay}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center gap-3 shrink-0 pt-2 lg:pt-0">
+              {!isPaid ? (
+                <>
+                  <RazorpayCheckoutButton
+                    amount={9900}
+                    planName="Pro Creator"
+                    buttonText="Unlock Pro (₹99/mo)"
+                    variant="pill"
+                    size="md"
+                  />
+                  <button
+                    onClick={() => router.push('/pricing')}
+                    className="px-5 py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold text-white transition-all shadow-sm"
+                  >
+                    View All Plans & Packs
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => router.push('/pricing')}
+                  className="px-6 py-3 rounded-full bg-amber-500 hover:bg-amber-400 text-neutral-950 text-xs font-black shadow-lg shadow-amber-500/20 transition-all"
+                >
+                  Manage Membership & Top-Up
+                </button>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 self-start md:self-auto">
-            {!isPaid ? (
-              <>
-                <RazorpayCheckoutButton
-                  amount={9900}
-                  planName="Pro Creator"
-                  buttonText="Get Pro (₹99)"
-                  variant="pill"
-                  size="sm"
-                />
-                <button
-                  onClick={() => router.push('/pricing')}
-                  className="px-3.5 py-2 rounded-full border border-neutral-300 dark:border-neutral-700 hover:border-neutral-400 text-xs font-bold text-neutral-700 dark:text-neutral-200 transition-colors"
-                >
-                  All Plans
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => router.push('/pricing')}
-                className="px-4 py-2 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 text-xs font-bold hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
-              >
-                View Plans & Upgrade
-              </button>
-            )}
+          {/* Premium Features Grid (Always visible for free/paid users to showcase value) */}
+          <div className="relative z-10 pt-4 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { title: 'Unlock All Prompts', desc: 'Instant access to 500+ elite prompts' },
+              { title: 'Priority AI Credits', desc: 'Tool credits for generation & extraction' },
+              { title: 'Unlimited Saves', desc: 'No limits on bookmarks & history' },
+              { title: 'Fast-Lane Execution', desc: 'Zero wait times on AI prompt studio' },
+            ].map((feat, idx) => (
+              <div key={idx} className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white">{feat.title}</h4>
+                  <p className="text-[11px] text-neutral-400 mt-0.5">{feat.desc}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
