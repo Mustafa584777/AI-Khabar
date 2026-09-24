@@ -169,12 +169,67 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
 
   // Navigation
-  const [currentView, setCurrentView] = useState<'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications'>('public');
+  const [currentView, setCurrentViewState] = useState<'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications'>('public');
   const [adminSubView, setAdminSubView] = useState<
     'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications' | 'requested-prompts'
   >('dashboard');
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
-  const [selectedPost, setSelectedPost] = useState<PromptPost | null>(null);
+  const [selectedPost, setSelectedPostState] = useState<PromptPost | null>(null);
+
+  const setCurrentView = useCallback((view: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications') => {
+    setCurrentViewState(view);
+    setSelectedPostState(null);
+    if (typeof window !== 'undefined') {
+      const url = view === 'public' ? '/' : `/${view}`;
+      window.history.pushState({ view, selectedPostId: null }, '', url);
+    }
+  }, []);
+
+  const setSelectedPost = useCallback((post: PromptPost | null) => {
+    setSelectedPostState(post);
+    if (typeof window !== 'undefined') {
+      if (post) {
+        window.history.pushState({ view: currentView, selectedPostId: post.id }, '', `#prompt=${post.id}`);
+      } else {
+        const url = currentView === 'public' ? '/' : `/${currentView}`;
+        window.history.replaceState({ view: currentView, selectedPostId: null }, '', url);
+      }
+    }
+  }, [currentView]);
+
+  const postsRef = useRef<PromptPost[]>(INITIAL_POSTS);
+
+  // Listen to popstate (Browser Back/Forward buttons)
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const state = event.state;
+      if (state && state.view) {
+        setCurrentViewState(state.view);
+      } else {
+        const path = window.location.pathname;
+        if (path.includes('dashboard')) setCurrentViewState('user-dashboard');
+        else if (path.includes('studio')) setCurrentViewState('studio-tool');
+        else if (path.includes('foryou')) setCurrentViewState('for-you');
+        else if (path.includes('notifications')) setCurrentViewState('notifications');
+        else setCurrentViewState('public');
+      }
+
+      const hash = window.location.hash;
+      if (hash.startsWith('#prompt=')) {
+        const promptId = hash.replace('#prompt=', '');
+        const found = postsRef.current.find((p) => p.id === promptId);
+        if (found) setSelectedPostState(found);
+      } else if (state && state.selectedPostId) {
+        const found = postsRef.current.find((p) => p.id === state.selectedPostId);
+        if (found) setSelectedPostState(found);
+      } else {
+        setSelectedPostState(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Auth State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -404,39 +459,46 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (existingUnlocked.includes(promptId)) {
         return { success: true, message: 'Prompt is already unlocked!' };
       }
+
       let currentCredits = toolCredits;
       if (typeof window !== 'undefined') {
         const saved = localStorage.getItem('auraprompt_tool_credits');
         if (saved !== null) {
           const parsed = parseInt(saved, 10);
-          if (!isNaN(parsed)) currentCredits = parsed;
+          if (!isNaN(parsed)) currentCredits = Math.max(toolCredits, parsed);
         }
       }
+
       if (currentCredits < 1) {
         return {
           success: false,
           message: 'Insufficient credits. 1 credit is required to unlock this premium prompt.',
         };
       }
-      const deducted = deductToolCredit(1);
-      if (!deducted) {
-        return { success: false, message: 'Could not deduct credit. Insufficient balance.' };
+
+      const nextCredits = Math.max(0, currentCredits - 1);
+      setToolCreditsState(nextCredits);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auraprompt_tool_credits', nextCredits.toString());
       }
+
       const nextUnlocked = Array.from(new Set([...existingUnlocked, promptId]));
       setUnlockedPromptIds(nextUnlocked);
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(nextUnlocked));
       }
+
       const currentAcc = userAccount || StorageService.getUserAccount();
       if (currentAcc && currentAcc.isLoggedIn) {
         void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, {
           unlockedPromptIds: nextUnlocked,
-          toolCredits: Math.max(0, currentCredits - 1),
+          toolCredits: nextCredits,
         });
       }
-      return { success: true, message: 'Prompt unlocked! 1 credit used.' };
+
+      return { success: true, message: 'Prompt unlocked successfully! 1 credit used.' };
     },
-    [isProUser, unlockedPromptIds, toolCredits, deductToolCredit, userAccount]
+    [isProUser, unlockedPromptIds, toolCredits, userAccount]
   );
 
   const upgradePlan = useCallback((tier: 'starter' | 'pro' | 'vip' | 'ultra') => {
@@ -924,6 +986,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // Data: Fast Cached + Server-Side Driven (SSR-safe initial states)
   const [posts, setPosts] = useState<PromptPost[]>(INITIAL_POSTS);
+  useEffect(() => {
+    postsRef.current = posts;
+  }, [posts]);
   const [isLoadingPosts, setIsLoadingPosts] = useState<boolean>(false);
   const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
   const [tags, setTags] = useState<string[]>([
@@ -1175,6 +1240,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return null;
     }
 
+    const cacheKey = clean.toLowerCase();
+    if (aiSearchCacheRef.current.has(cacheKey)) {
+      const cached = aiSearchCacheRef.current.get(cacheKey)!;
+      setAiSearchResults(cached);
+      return cached;
+    }
+
     if (!isProUser && aiSearchRemaining <= 0) {
       showToast('upgrade plan for increase AI search limits');
       setIsProCheckoutModalOpen(true);
@@ -1185,13 +1257,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!isProUser) {
       const nextRemaining = Math.max(0, aiSearchRemaining - 1);
       setAiSearchRemaining(nextRemaining);
-    }
-
-    const cacheKey = clean.toLowerCase();
-    if (aiSearchCacheRef.current.has(cacheKey)) {
-      const cached = aiSearchCacheRef.current.get(cacheKey)!;
-      setAiSearchResults(cached);
-      return cached;
     }
 
     setIsAiSearching(true);

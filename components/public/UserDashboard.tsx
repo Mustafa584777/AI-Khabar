@@ -357,7 +357,11 @@ export const UserDashboard = () => {
                 <span>{toolCredits}</span>
                 <button
                   type="button"
-                  onClick={() => setIsCreditsInfoOpen(!isCreditsInfoOpen)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    setIsCreditsInfoOpen((prev) => !prev);
+                  }}
                   className="cursor-pointer inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 text-[9px] font-black hover:bg-amber-200 transition-colors"
                   title="Click for credit usage info"
                 >
