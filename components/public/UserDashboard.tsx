@@ -36,6 +36,7 @@ import {
   CheckCircle2,
   MessageSquarePlus,
   ExternalLink,
+  Coins,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -364,27 +365,6 @@ export const UserDashboard = () => {
                 </button>
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">Credits Available</div>
-
-              {/* Tooltip Popover */}
-              {isCreditsInfoOpen && (
-                <div className="absolute left-0 md:left-auto top-full mt-2 w-64 p-3.5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xl z-50 text-left space-y-2 text-xs">
-                  <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-1.5">
-                    <span className="font-bold text-neutral-900 dark:text-white">Credit Usage Guide</span>
-                    <button
-                      onClick={() => setIsCreditsInfoOpen(false)}
-                      className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 text-sm font-bold"
-                    >
-                      ×
-                    </button>
-                  </div>
-                  <ul className="space-y-1 text-neutral-600 dark:text-neutral-300">
-                    <li>• Unlock Premium Prompts: <strong>1 Credit</strong></li>
-                    <li>• Image to Prompt: <strong>2 Credits</strong></li>
-                    <li>• Prompt Generator: <strong>1 Credit</strong></li>
-                    <li>• Prompt Editor: <strong>1 Credit</strong></li>
-                  </ul>
-                </div>
-              )}
             </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
@@ -394,7 +374,7 @@ export const UserDashboard = () => {
             </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
-                {isProUser ? savedPosts.length : `${bookmarkedIds.length + aiHistory.length}/10`}
+                {bookmarkedIds.length + aiHistory.length}
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">Saves</div>
             </div>
@@ -407,7 +387,52 @@ export const UserDashboard = () => {
           </div>
         </div>
 
-        {/* Guest Banner if not logged in */}
+        {/* Semi-transparent floating modal for Credit Consumption Details */}
+        {isCreditsInfoOpen && (
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md border border-neutral-200 dark:border-neutral-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200 text-left">
+              <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Coins className="w-5 h-5 text-amber-500 fill-amber-500" />
+                  <h3 className="font-bold text-base text-neutral-900 dark:text-white">Credit Consumption Details</h3>
+                </div>
+                <button
+                  onClick={() => setIsCreditsInfoOpen(false)}
+                  className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
+                >
+                  ×
+                </button>
+              </div>
+              <p className="text-xs text-neutral-600 dark:text-neutral-300">
+                Tool credits power AI generations, extractions, and prompt unlock utility across the platform:
+              </p>
+              <div className="space-y-2 text-xs font-medium">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
+                  <span className="text-neutral-700 dark:text-neutral-300">Unlock Premium Prompt</span>
+                  <strong className="text-amber-600 dark:text-amber-400">1 Credit</strong>
+                </div>
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
+                  <span className="text-neutral-700 dark:text-neutral-300">AI Prompt Generator</span>
+                  <strong className="text-amber-600 dark:text-amber-400">1 Credit</strong>
+                </div>
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
+                  <span className="text-neutral-700 dark:text-neutral-300">Image-to-Prompt Extraction</span>
+                  <strong className="text-amber-600 dark:text-amber-400">2 Credits</strong>
+                </div>
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
+                  <span className="text-neutral-700 dark:text-neutral-300">Prompt Editor Tool</span>
+                  <strong className="text-amber-600 dark:text-amber-400">1 Credit</strong>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsCreditsInfoOpen(false)}
+                className="w-full py-3 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-bold text-xs hover:opacity-90 transition-opacity"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        )}
         {!userAccount?.isLoggedIn && (
           <div className="p-5 rounded-3xl bg-gradient-to-r from-red-500/10 via-amber-500/10 to-transparent border border-red-200 dark:border-red-950/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
