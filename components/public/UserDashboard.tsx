@@ -1018,7 +1018,7 @@ export const UserDashboard = () => {
                       <span>Prompt Requests Available</span>
                     </div>
                     <div className="text-lg font-black text-neutral-900 dark:text-white">
-                      {promptRequestsRemaining} / 10 Available
+                      {promptRequestsRemaining} Available
                     </div>
                   </div>
                 </div>
