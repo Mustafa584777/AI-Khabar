@@ -384,7 +384,7 @@ export const UserDashboard = () => {
             </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
-                {isProUser ? 'Unlimited' : `${aiSearchRemaining}/10`}
+                {isProUser ? 'Unlimited' : `${aiSearchRemaining}/5`}
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">AI Search Quota</div>
             </div>

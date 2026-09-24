@@ -804,7 +804,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     StorageService.saveUserAccount(account);
     setUserAccount(account);
-    setAiSearchRemaining(10);
+    setAiSearchRemaining(5);
 
     // Reconcile and load all cloud data strictly for this specific account from Supabase
     try {
@@ -1226,7 +1226,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (!isNaN(parsed) && parsed > 0) return parsed;
       }
     }
-    return 10; // 10 free AI searches lifetime for free users
+    return 5; // 5 free AI searches lifetime for free users
   });
 
   const setAiSearchRemaining = useCallback((num: number) => {
@@ -1259,8 +1259,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
 
     if (!isProUser) {
-      const nextRemaining = Math.max(0, aiSearchRemaining - 1);
-      setAiSearchRemaining(nextRemaining);
+      setAiSearchRemainingState((prev) => {
+        const next = Math.max(0, prev - 1);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('auraprompt_ai_search_remaining', next.toString());
+        }
+        return next;
+      });
     }
 
     setIsAiSearching(true);
