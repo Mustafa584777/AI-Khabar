@@ -523,24 +523,16 @@ export const PromptDetailModal = () => {
         .filter(Boolean)
     );
 
-    // 2. Calculate relevance score for each remaining post based on:
-    //    - Category Match: +5 points if post.category matches current post's category
-    //    - Tag Overlap: +2 points for every matching tag in post.tags and current post's tags
+    // 2. Calculate relevance score for each remaining post based purely on Tag Overlap (+3 points per matching tag)
     const scored = otherPublished.map((post) => {
       let score = 0;
 
-      // Category Match: +5 points
-      const postCategory = post.category?.trim().toLowerCase();
-      if (targetCategory && postCategory && postCategory === targetCategory) {
-        score += 5;
-      }
-
-      // Tag Overlap: +2 points for every matching tag
+      // Tag Overlap: +3 points for every matching tag
       if (Array.isArray(post.tags)) {
         post.tags.forEach((tag) => {
           const cleanTag = typeof tag === 'string' ? tag.trim().toLowerCase() : '';
           if (cleanTag && targetTags.has(cleanTag)) {
-            score += 2;
+            score += 3;
           }
         });
       }

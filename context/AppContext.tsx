@@ -371,7 +371,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     (promptId: string, isPremium?: boolean): boolean => {
       if (!isPremium) return true;
       if (isProUser) return true;
-      return unlockedPromptIds.includes(promptId);
+      if (unlockedPromptIds.includes(promptId)) return true;
+      if (typeof window !== 'undefined') {
+        try {
+          const saved = localStorage.getItem('auraprompt_unlocked_prompts');
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed) && parsed.includes(promptId)) return true;
+          }
+        } catch {}
+      }
+      return false;
     },
     [isProUser, unlockedPromptIds]
   );
@@ -381,7 +391,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (isProUser) {
         return { success: true, message: 'Included with Pro Membership!' };
       }
-      if (unlockedPromptIds.includes(promptId)) {
+      let existingUnlocked = [...unlockedPromptIds];
+      if (typeof window !== 'undefined') {
+        try {
+          const saved = localStorage.getItem('auraprompt_unlocked_prompts');
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) existingUnlocked = Array.from(new Set([...existingUnlocked, ...parsed]));
+          }
+        } catch {}
+      }
+      if (existingUnlocked.includes(promptId)) {
         return { success: true, message: 'Prompt is already unlocked!' };
       }
       let currentCredits = toolCredits;
@@ -402,7 +422,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (!deducted) {
         return { success: false, message: 'Could not deduct credit. Insufficient balance.' };
       }
-      const nextUnlocked = [...unlockedPromptIds, promptId];
+      const nextUnlocked = Array.from(new Set([...existingUnlocked, promptId]));
       setUnlockedPromptIds(nextUnlocked);
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(nextUnlocked));
