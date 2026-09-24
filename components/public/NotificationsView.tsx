@@ -24,6 +24,7 @@ export const NotificationsView: React.FC = () => {
   const { categories, showToast } = useApp();
 
   const [notifications, setNotifications] = useState<PushNotificationItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
   const [unreadOnly, setUnreadOnly] = useState<boolean>(false);
   const [isInterestModalOpen, setIsInterestModalOpen] = useState<boolean>(false);
@@ -47,6 +48,8 @@ export const NotificationsView: React.FC = () => {
       }
     } catch {
       setNotifications(NotificationService.getNotifications());
+    } finally {
+      setIsLoading(false);
     }
     const prefs = NotificationService.getPreferences();
     setUserInterests(prefs.selectedInterests || []);
@@ -328,7 +331,12 @@ export const NotificationsView: React.FC = () => {
 
       {/* Notifications Cards Feed */}
       <div className="space-y-4">
-        {filteredNotifications.length > 0 ? (
+        {isLoading ? (
+          <div className="p-16 text-center rounded-3xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 space-y-3">
+            <div className="w-10 h-10 border-4 border-[#E60023] border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <p className="text-xs font-bold text-neutral-500">Loading notifications...</p>
+          </div>
+        ) : filteredNotifications.length > 0 ? (
           filteredNotifications.map((notif) => (
             <NotificationCard
               key={notif.id}
