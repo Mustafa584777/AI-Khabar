@@ -58,12 +58,30 @@ export async function POST(req: NextRequest) {
       }
     };
 
-    // 1. Try creating user with auto-confirmed email via Supabase Admin
+    // 1. Check if user already exists in Supabase and whether they used Google
     if (supabaseAdmin) {
+      try {
+        const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+        const existing = listData?.users?.find((u) => u.email?.toLowerCase() === cleanEmail);
+        if (existing) {
+          const isGoogle = existing.app_metadata?.provider === 'google' || 
+                           existing.identities?.some((id: any) => id.provider === 'google');
+          if (isGoogle) {
+            return NextResponse.json({
+              success: false,
+              isGoogleUser: true,
+              error: 'This email is already registered with Google Sign-In. Please click "Continue with Google" to sign in.',
+            }, { status: 400 });
+          }
+        }
+      } catch (checkErr) {
+        console.warn('Error checking existing user provider:', checkErr);
+      }
+
       const { data: createData, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email: cleanEmail,
         password,
-        email_confirm: true,
+        email_confirm: false, // Require email confirmation
         user_metadata: {
           full_name: cleanName,
           user_name: cleanUsername,
@@ -78,6 +96,8 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({
           success: true,
+          needsConfirmation: true,
+          message: 'Verification email sent! Please check your inbox to confirm your account.',
           user: {
             id: userId,
             email: cleanEmail,
@@ -89,40 +109,8 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // If user already exists in Supabase
+      // If user already exists in Supabase (email provider)
       if (createError && (createError.message.includes('already') || createError.status === 422)) {
-        try {
-          const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
-          const existing = listData?.users?.find((u) => u.email?.toLowerCase() === cleanEmail);
-          if (existing) {
-            userId = existing.id;
-            await supabaseAdmin.auth.admin.updateUserById(userId, {
-              email_confirm: true,
-              password,
-              user_metadata: {
-                full_name: cleanName,
-                user_name: cleanUsername,
-                avatar_url: cleanAvatar,
-              },
-            });
-            await initUserDatabaseRecord(userId);
-
-            return NextResponse.json({
-              success: true,
-              user: {
-                id: userId,
-                email: cleanEmail,
-                name: cleanName,
-                username: cleanUsername,
-                avatar: cleanAvatar,
-              },
-              message: 'Account updated successfully. You can now log in.',
-            });
-          }
-        } catch (e) {
-          console.warn('Auto-confirm existing user notice:', e);
-        }
-
         return NextResponse.json({
           success: false,
           error: 'An account with this email already exists. Please sign in.',
@@ -154,6 +142,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      needsConfirmation: true,
+      message: 'Verification email sent! Please check your inbox to confirm your account.',
       user: {
         id: userId,
         email: cleanEmail,

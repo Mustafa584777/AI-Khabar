@@ -230,6 +230,12 @@ export const UserAuthModal = () => {
         const signupData = await signupRes.json();
 
         if (!signupRes.ok && !signupData.success) {
+          if (signupData.isGoogleUser) {
+            setErrorMessage(signupData.error || 'This email is already registered via Google Sign-In.');
+            showToast('Please use Continue with Google to sign in.');
+            setIsLoading(false);
+            return;
+          }
           if (signupData.alreadyExists) {
             setMode('login');
             setErrorMessage('An account with this email already exists. Please enter your password to sign in.');
@@ -237,6 +243,14 @@ export const UserAuthModal = () => {
             return;
           }
           throw new Error(signupData.error || 'Failed to create account');
+        }
+
+        if (signupData.needsConfirmation) {
+          showToast('Verification email sent! Please check your inbox to confirm your account.');
+          setErrorMessage('Verification email sent! Please check your inbox and verify your email before signing in.');
+          setMode('login');
+          setIsLoading(false);
+          return;
         }
 
         // 2. Sign in to Supabase to establish client session
