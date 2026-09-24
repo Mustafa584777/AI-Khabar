@@ -230,16 +230,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return null;
   });
 
-  useEffect(() => {
-    if (isProUser && !planExpiresAt) {
-      const defaultExp = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-      setPlanExpiresAtState(defaultExp);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('auraprompt_plan_expires_at', defaultExp);
-      }
-    }
-  }, [isProUser, planExpiresAt]);
-
   const setPlanTier = useCallback((tier: PlanTier) => {
     setPlanTierState(tier);
     if (typeof window !== 'undefined') {
@@ -1009,7 +999,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Server-side session validator that forces re-fetch of user profile, subscription status, and credit balance from Supabase directly on every authenticated navigation or window focus
+  // Server-side session validator that runs strictly once on initial app load when logged in
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const currentAcc = userAccount || StorageService.getUserAccount();
@@ -1061,12 +1051,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds));
         }
 
-        if (synced.planExpiresAt) {
+        if (synced.planExpiresAt && !localStorage.getItem('auraprompt_plan_expires_at')) {
           localStorage.setItem('auraprompt_plan_expires_at', synced.planExpiresAt);
           setPlanExpiresAtState(synced.planExpiresAt);
-        } else {
-          setPlanExpiresAtState(null);
-          localStorage.removeItem('auraprompt_plan_expires_at');
+        } else if (!planExpiresAt && synced.planExpiresAt) {
+          setPlanExpiresAtState(synced.planExpiresAt);
+          localStorage.setItem('auraprompt_plan_expires_at', synced.planExpiresAt);
         }
       } catch (err) {
         console.warn('Server-side session validation error:', err);
@@ -1075,24 +1065,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     void validateServerSession();
 
-    const handleFocus = () => {
-      void validateServerSession();
-    };
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        void validateServerSession();
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleVisibility);
-
     return () => {
       isMounted = false;
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [pathname, userAccount]);
+  }, []);
 
   // Immediate sync upon user login
   useEffect(() => {
