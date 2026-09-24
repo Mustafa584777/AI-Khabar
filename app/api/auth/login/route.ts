@@ -27,37 +27,19 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 2. If error is "Email not confirmed", auto-confirm via admin client and retry
+    // 2. If error is "Email not confirmed", require verification
     if (
       signInError &&
       (signInError.message.toLowerCase().includes('not confirmed') ||
         signInError.message.toLowerCase().includes('confirm'))
     ) {
-      if (supabaseAdmin) {
-        try {
-          const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
-          const found = listData?.users?.find((u) => u.email?.toLowerCase() === cleanEmail);
-          if (found) {
-            await supabaseAdmin.auth.admin.updateUserById(found.id, { email_confirm: true });
-
-            // Retry signInWithPassword
-            const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
-              email: cleanEmail,
-              password,
-            });
-
-            if (!retryError && retryData?.session) {
-              return NextResponse.json({
-                success: true,
-                session: retryData.session,
-                user: retryData.user,
-              });
-            }
-          }
-        } catch (adminErr) {
-          console.error('Auto-confirm retry error:', adminErr);
-        }
-      }
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Please verify your email address before signing in. Check your inbox for the verification link.',
+        },
+        { status: 401 }
+      );
     }
 
     return NextResponse.json(

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, supabase } from '@/lib/supabase';
+import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
@@ -78,10 +79,11 @@ export async function POST(req: NextRequest) {
         console.warn('Error checking existing user provider:', checkErr);
       }
 
+      // Create user with email unconfirmed (require custom verification workflow)
       const { data: createData, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email: cleanEmail,
         password,
-        email_confirm: true, // Auto-confirm email so user can login instantly without needing verification email
+        email_confirm: false, // Require email verification via custom token
         user_metadata: {
           full_name: cleanName,
           user_name: cleanUsername,
@@ -94,10 +96,51 @@ export async function POST(req: NextRequest) {
         userId = createData.user.id;
         await initUserDatabaseRecord(userId);
 
+        // Generate unique verification token
+        const verificationToken = crypto.randomUUID();
+        const tokenKey = `verify_token_${verificationToken}`;
+        const client = supabaseAdmin || supabase;
+        
+        await client.from('settings').upsert({
+          id: tokenKey,
+          data: {
+            email: cleanEmail,
+            userId,
+            createdAt: new Date().toISOString(),
+          }
+        });
+
+        const host = req.headers.get('host') || 'localhost:3000';
+        const protocol = req.headers.get('x-forwarded-proto') || 'https';
+        const verificationLink = `${protocol}://${host}/api/auth/verify?token=${verificationToken}`;
+
+        console.log(`[Email Verification] Verification link for ${cleanEmail}: ${verificationLink}`);
+
+        // Send email via Resend API if RESEND_API_KEY is configured
+        if (process.env.RESEND_API_KEY) {
+          try {
+            await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                from: 'Prompts App <onboarding@resend.dev>',
+                to: [cleanEmail],
+                subject: 'Verify your email address',
+                html: `<p>Hello ${cleanName},</p><p>Please click the link below to verify your email address and activate your account:</p><p><a href="${verificationLink}">Verify Email</a></p><p>If you did not request this, please ignore this email.</p>`,
+              }),
+            });
+          } catch (resendErr) {
+            console.error('Failed to send email via Resend:', resendErr);
+          }
+        }
+
         return NextResponse.json({
           success: true,
-          needsConfirmation: false,
-          message: 'Account created successfully! You can now sign in.',
+          needsConfirmation: true,
+          message: 'Verification email sent! Please check your inbox to verify your account.',
           user: {
             id: userId,
             email: cleanEmail,
@@ -140,10 +183,47 @@ export async function POST(req: NextRequest) {
     userId = fallbackData.user?.id || 'u_' + Date.now();
     await initUserDatabaseRecord(userId);
 
+    const verificationToken = crypto.randomUUID();
+    const tokenKey = `verify_token_${verificationToken}`;
+    await supabase.from('settings').upsert({
+      id: tokenKey,
+      data: {
+        email: cleanEmail,
+        userId,
+        createdAt: new Date().toISOString(),
+      }
+    });
+
+    const host = req.headers.get('host') || 'localhost:3000';
+    const protocol = req.headers.get('x-forwarded-proto') || 'https';
+    const verificationLink = `${protocol}://${host}/api/auth/verify?token=${verificationToken}`;
+
+    console.log(`[Email Verification] Fallback verification link for ${cleanEmail}: ${verificationLink}`);
+
+    if (process.env.RESEND_API_KEY) {
+      try {
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'Prompts App <onboarding@resend.dev>',
+            to: [cleanEmail],
+            subject: 'Verify your email address',
+            html: `<p>Hello ${cleanName},</p><p>Please click the link below to verify your email address:</p><p><a href="${verificationLink}">Verify Email</a></p>`,
+          }),
+        });
+      } catch (resendErr) {
+        console.error('Failed to send email via Resend:', resendErr);
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      needsConfirmation: false,
-      message: 'Account created successfully! You can now sign in.',
+      needsConfirmation: true,
+      message: 'Verification email sent! Please check your inbox to verify your account.',
       user: {
         id: userId,
         email: cleanEmail,
