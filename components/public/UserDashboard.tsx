@@ -364,7 +364,7 @@ export const UserDashboard = () => {
             </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
-                {isProUser ? savedPosts.length : `${Math.min(10, bookmarkedIds.length + aiHistory.length)}/10`}
+                {isProUser ? savedPosts.length : Math.min(10, bookmarkedIds.length + aiHistory.length)}
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">Saves</div>
             </div>
