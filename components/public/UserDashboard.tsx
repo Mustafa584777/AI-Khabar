@@ -351,20 +351,24 @@ export const UserDashboard = () => {
           {/* Quick Metrics */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 border-t md:border-t-0 md:border-l border-neutral-100 dark:border-neutral-800 pt-4 md:pt-0 md:pl-6">
             <div className="text-center md:text-left">
-              <div className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400">
-                {toolCredits}
+              <div className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400 flex items-center justify-center md:justify-start gap-1">
+                <span>{toolCredits}</span>
+                <span
+                  className="group relative cursor-help inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 text-[9px] font-black"
+                  title="Credit Usage Info:
+• Unlock Premium Prompts = 1 Credit
+• Image to Prompt = 2 Credits
+• Prompt Generator = 1 Credit
+• Prompt Editor = 1 Credit"
+                >
+                  i
+                </span>
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">Credits Available</div>
             </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
-                {isProUser ? 'All (Pro)' : unlockedPromptIds.length}
-              </div>
-              <div className="text-[11px] text-neutral-500 font-medium">Unlocked Prompts</div>
-            </div>
-            <div className="text-center md:text-left">
-              <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
-                {isProUser ? savedPosts.length : Math.min(10, bookmarkedIds.length + aiHistory.length)}
+                {isProUser ? savedPosts.length : `${bookmarkedIds.length + aiHistory.length}/10`}
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">Saves</div>
             </div>
