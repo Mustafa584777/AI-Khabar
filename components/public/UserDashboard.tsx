@@ -349,7 +349,7 @@ export const UserDashboard = () => {
           </div>
 
           {/* Quick Metrics */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 border-t md:border-t-0 md:border-l border-neutral-100 dark:border-neutral-800 pt-4 md:pt-0 md:pl-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 border-t md:border-t-0 md:border-l border-neutral-100 dark:border-neutral-800 pt-4 md:pt-0 md:pl-6">
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400">
                 {toolCredits}
@@ -367,12 +367,6 @@ export const UserDashboard = () => {
                 {isProUser ? savedPosts.length : `${Math.min(10, bookmarkedIds.length + aiHistory.length)}/10`}
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">Saves</div>
-            </div>
-            <div className="text-center md:text-left">
-              <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
-                {aiHistory.length}
-              </div>
-              <div className="text-[11px] text-neutral-500 font-medium">AI Generations</div>
             </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
