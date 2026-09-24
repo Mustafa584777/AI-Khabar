@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
 
           if (!key) continue;
 
-          const rawCredits = typeof syncData.toolCredits === 'number' ? syncData.toolCredits : 2;
+          const rawCredits = typeof syncData.toolCredits === 'number' ? syncData.toolCredits : 5;
           const isExplicitPro = Boolean(syncData.isProUser);
           const rawTier: PlanTier = syncData.planTier || (isExplicitPro ? 'pro' : 'free');
           
@@ -137,7 +137,7 @@ export async function GET(req: NextRequest) {
                 avatar: meta.avatar_url || meta.picture || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
                 planTier: 'free',
                 isProUser: false,
-                toolCredits: 2,
+                toolCredits: 5,
                 points: 10,
                 unlockedPromptIds: [],
                 promptRequestsRemaining: 0,
@@ -284,7 +284,7 @@ export async function POST(req: NextRequest) {
           const resolvedTier = item.planTier || existingData.planTier || 'free';
           const resolvedCredits = typeof item.toolCredits === 'number'
             ? Math.max(item.toolCredits, existingData.toolCredits || 0)
-            : (existingData.toolCredits || 2);
+            : (existingData.toolCredits || 5);
           const resolvedPoints = typeof item.points === 'number'
             ? Math.max(item.points, existingData.points || 0)
             : (existingData.points || 10);
@@ -358,7 +358,7 @@ export async function POST(req: NextRequest) {
         email: email || existing.email,
         planTier: planTier || existing.planTier || 'free',
         isProUser: planTier ? planTier !== 'free' : existing.isProUser,
-        toolCredits: typeof toolCredits === 'number' ? toolCredits : (existing.toolCredits ?? 2),
+        toolCredits: typeof toolCredits === 'number' ? toolCredits : (existing.toolCredits ?? 5),
         points: typeof points === 'number' ? points : (existing.points ?? 10),
         updatedAt: new Date().toISOString(),
       };
