@@ -294,26 +294,36 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const deductToolCredit = useCallback((amount: number = 1): boolean => {
-    const acc = StorageService.getUserAccount();
+    const acc = userAccount || StorageService.getUserAccount();
     if (!acc || !acc.isLoggedIn) {
       openAuthModal('Please sign in or create a free account to use credits.');
       return false;
     }
     let success = false;
     setToolCreditsState((prev) => {
-      if (prev >= amount) {
-        const next = prev - amount;
+      let currentCredits = prev;
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('auraprompt_tool_credits');
+        if (saved !== null) {
+          const parsed = parseInt(saved, 10);
+          if (!isNaN(parsed)) currentCredits = parsed;
+        }
+      }
+      if (currentCredits >= amount) {
+        const next = currentCredits - amount;
         if (typeof window !== 'undefined') {
           localStorage.setItem('auraprompt_tool_credits', next.toString());
         }
         success = true;
-        void UserSyncService.pushUserData(acc.id, acc.email, { toolCredits: next });
+        if (acc && acc.id) {
+          void UserSyncService.pushUserData(acc.id, acc.email, { toolCredits: next });
+        }
         return next;
       }
       return prev;
     });
     return success;
-  }, [openAuthModal]);
+  }, [userAccount, openAuthModal]);
 
   const useToolCredit = deductToolCredit;
 
@@ -323,13 +333,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_tool_credits', next.toString());
       }
-      const currentAcc = StorageService.getUserAccount();
+      const currentAcc = userAccount || StorageService.getUserAccount();
       if (currentAcc && currentAcc.isLoggedIn) {
         void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, { toolCredits: next });
       }
       return next;
     });
-  }, []);
+  }, [userAccount]);
 
   const [isUnlockPremiumModalOpen, setIsUnlockPremiumModalOpen] = useState<boolean>(false);
   const [isFirstLoginModalOpen, setIsFirstLoginModalOpen] = useState<boolean>(() => {
@@ -384,7 +394,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (unlockedPromptIds.includes(promptId)) {
         return { success: true, message: 'Prompt is already unlocked!' };
       }
-      if (toolCredits < 1) {
+      let currentCredits = toolCredits;
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('auraprompt_tool_credits');
+        if (saved !== null) {
+          const parsed = parseInt(saved, 10);
+          if (!isNaN(parsed)) currentCredits = parsed;
+        }
+      }
+      if (currentCredits < 1) {
         return {
           success: false,
           message: 'Insufficient credits. 1 credit is required to unlock this premium prompt.',
@@ -394,24 +412,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (!deducted) {
         return { success: false, message: 'Could not deduct credit. Insufficient balance.' };
       }
-      setUnlockedPromptIds((prev) => {
-        const next = [...prev, promptId];
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(next));
-        }
-        // Sync to cloud if user is logged in
-        const currentAcc = StorageService.getUserAccount();
-        if (currentAcc && currentAcc.isLoggedIn) {
-          void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, {
-            unlockedPromptIds: next,
-            toolCredits: Math.max(0, toolCredits - 1),
-          });
-        }
-        return next;
-      });
+      const nextUnlocked = [...unlockedPromptIds, promptId];
+      setUnlockedPromptIds(nextUnlocked);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(nextUnlocked));
+      }
+      const currentAcc = userAccount || StorageService.getUserAccount();
+      if (currentAcc && currentAcc.isLoggedIn) {
+        void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, {
+          unlockedPromptIds: nextUnlocked,
+          toolCredits: Math.max(0, currentCredits - 1),
+        });
+      }
       return { success: true, message: 'Prompt unlocked! 1 credit used.' };
     },
-    [isProUser, unlockedPromptIds, toolCredits, deductToolCredit]
+    [isProUser, unlockedPromptIds, toolCredits, deductToolCredit, userAccount]
   );
 
   const upgradePlan = useCallback((tier: 'starter' | 'pro' | 'vip' | 'ultra') => {
