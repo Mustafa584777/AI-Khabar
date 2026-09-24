@@ -101,6 +101,7 @@ export const UserDashboard = () => {
   const [requestAiTool, setRequestAiTool] = useState('Gemini');
   const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
   const [copiedRequestId, setCopiedRequestId] = useState<string | null>(null);
+  const [isCreditsInfoOpen, setIsCreditsInfoOpen] = useState(false);
 
   const handleRequestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -350,21 +351,40 @@ export const UserDashboard = () => {
 
           {/* Quick Metrics */}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 border-t md:border-t-0 md:border-l border-neutral-100 dark:border-neutral-800 pt-4 md:pt-0 md:pl-6">
-            <div className="text-center md:text-left">
+            <div className="text-center md:text-left relative">
               <div className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400 flex items-center justify-center md:justify-start gap-1">
                 <span>{toolCredits}</span>
-                <span
-                  className="group relative cursor-help inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 text-[9px] font-black"
-                  title="Credit Usage Info:
-• Unlock Premium Prompts = 1 Credit
-• Image to Prompt = 2 Credits
-• Prompt Generator = 1 Credit
-• Prompt Editor = 1 Credit"
+                <button
+                  type="button"
+                  onClick={() => setIsCreditsInfoOpen(!isCreditsInfoOpen)}
+                  className="cursor-pointer inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 text-[9px] font-black hover:bg-amber-200 transition-colors"
+                  title="Click for credit usage info"
                 >
                   i
-                </span>
+                </button>
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">Credits Available</div>
+
+              {/* Tooltip Popover */}
+              {isCreditsInfoOpen && (
+                <div className="absolute left-0 md:left-auto top-full mt-2 w-64 p-3.5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xl z-50 text-left space-y-2 text-xs">
+                  <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-1.5">
+                    <span className="font-bold text-neutral-900 dark:text-white">Credit Usage Guide</span>
+                    <button
+                      onClick={() => setIsCreditsInfoOpen(false)}
+                      className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 text-sm font-bold"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <ul className="space-y-1 text-neutral-600 dark:text-neutral-300">
+                    <li>• Unlock Premium Prompts: <strong>1 Credit</strong></li>
+                    <li>• Image to Prompt: <strong>2 Credits</strong></li>
+                    <li>• Prompt Generator: <strong>1 Credit</strong></li>
+                    <li>• Prompt Editor: <strong>1 Credit</strong></li>
+                  </ul>
+                </div>
+              )}
             </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
