@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
       const { data: createData, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email: cleanEmail,
         password,
-        email_confirm: false, // Require email confirmation
+        email_confirm: true, // Auto-confirm email so user can login instantly without needing verification email
         user_metadata: {
           full_name: cleanName,
           user_name: cleanUsername,
@@ -96,8 +96,8 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({
           success: true,
-          needsConfirmation: true,
-          message: 'Verification email sent! Please check your inbox to confirm your account.',
+          needsConfirmation: false,
+          message: 'Account created successfully! You can now sign in.',
           user: {
             id: userId,
             email: cleanEmail,
@@ -142,8 +142,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      needsConfirmation: true,
-      message: 'Verification email sent! Please check your inbox to confirm your account.',
+      needsConfirmation: false,
+      message: 'Account created successfully! You can now sign in.',
       user: {
         id: userId,
         email: cleanEmail,
