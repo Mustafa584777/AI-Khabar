@@ -1094,6 +1094,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [pathname, userAccount]);
 
+  // Immediate sync upon user login
+  useEffect(() => {
+    if (userAccount?.isLoggedIn) {
+      void syncUserCloudData();
+    }
+  }, [userAccount?.isLoggedIn]);
+
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSearchModalOpen, setIsSearchModalOpen] = useState<boolean>(false);
