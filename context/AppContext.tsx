@@ -294,26 +294,27 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const deductToolCredit = useCallback((amount: number = 1): boolean => {
-    const acc = StorageService.getUserAccount();
-    if (!acc || !acc.isLoggedIn) {
-      openAuthModal('Please sign in or create a free account to use credits.');
-      return false;
-    }
     let success = false;
     setToolCreditsState((prev) => {
-      if (prev >= amount) {
-        const next = prev - amount;
+      const stored = typeof window !== 'undefined' ? parseInt(localStorage.getItem('auraprompt_tool_credits') || String(prev), 10) : prev;
+      const effectivePrev = Math.max(prev, stored);
+
+      if (effectivePrev >= amount) {
+        const next = effectivePrev - amount;
         if (typeof window !== 'undefined') {
           localStorage.setItem('auraprompt_tool_credits', next.toString());
         }
         success = true;
-        void UserSyncService.pushUserData(acc.id, acc.email, { toolCredits: next });
+        const acc = StorageService.getUserAccount();
+        if (acc && acc.isLoggedIn) {
+          void UserSyncService.pushUserData(acc.id, acc.email, { toolCredits: next });
+        }
         return next;
       }
       return prev;
     });
     return success;
-  }, [openAuthModal]);
+  }, []);
 
   const useToolCredit = deductToolCredit;
 
@@ -384,27 +385,34 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (unlockedPromptIds.includes(promptId)) {
         return { success: true, message: 'Prompt is already unlocked!' };
       }
-      if (toolCredits < 1) {
+
+      const storedCredits = typeof window !== 'undefined' ? parseInt(localStorage.getItem('auraprompt_tool_credits') || String(toolCredits), 10) : toolCredits;
+      const effectiveCredits = Math.max(toolCredits, storedCredits);
+
+      if (effectiveCredits < 1) {
         return {
           success: false,
           message: 'Insufficient credits. 1 credit is required to unlock this premium prompt.',
         };
       }
+
       const deducted = deductToolCredit(1);
       if (!deducted) {
         return { success: false, message: 'Could not deduct credit. Insufficient balance.' };
       }
+
+      let updatedList: string[] = [];
       setUnlockedPromptIds((prev) => {
+        if (prev.includes(promptId)) return prev;
         const next = [...prev, promptId];
+        updatedList = next;
         if (typeof window !== 'undefined') {
           localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(next));
         }
-        // Sync to cloud if user is logged in
         const currentAcc = StorageService.getUserAccount();
         if (currentAcc && currentAcc.isLoggedIn) {
           void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, {
             unlockedPromptIds: next,
-            toolCredits: Math.max(0, toolCredits - 1),
           });
         }
         return next;

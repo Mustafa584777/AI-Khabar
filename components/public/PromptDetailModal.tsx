@@ -394,10 +394,15 @@ export const PromptDetailModal = () => {
     if (!selectedPost) return;
     const isUnlocked = isPromptUnlocked(selectedPost.id, selectedPost.isPremium);
     if (!isUnlocked) {
-      if (toolCredits >= 1) {
+      const storedCredits = typeof window !== 'undefined' ? parseInt(localStorage.getItem('auraprompt_tool_credits') || String(toolCredits), 10) : toolCredits;
+      const effectiveCredits = Math.max(toolCredits, storedCredits);
+
+      if (effectiveCredits >= 1 || isProUser) {
         const res = unlockPromptWithCredit(selectedPost.id);
         if (!res.success) {
-          setIsUnlockModalOpen(true);
+          if (effectiveCredits <= 0 && !isProUser) {
+            setIsUnlockModalOpen(true);
+          }
           return;
         }
         try {
@@ -647,7 +652,10 @@ export const PromptDetailModal = () => {
 
   const handleUnlockWithOneCredit = () => {
     if (!selectedPost) return;
-    if (toolCredits >= 1) {
+    const storedCredits = typeof window !== 'undefined' ? parseInt(localStorage.getItem('auraprompt_tool_credits') || String(toolCredits), 10) : toolCredits;
+    const effectiveCredits = Math.max(toolCredits, storedCredits);
+
+    if (effectiveCredits >= 1 || isProUser) {
       const res = unlockPromptWithCredit(selectedPost.id);
       if (res.success) {
         try {
@@ -661,17 +669,22 @@ export const PromptDetailModal = () => {
         showToast('Prompt unlocked! 1 credit used 🎉');
       } else {
         showToast(res.message);
-        setIsUnlockModalOpen(true);
+        if (effectiveCredits <= 0 && !isProUser) {
+          setIsUnlockModalOpen(true);
+        }
       }
     } else {
-      showToast(`You need 1 credit to unlock this prompt (Balance: ${toolCredits}). Top up credits or subscribe!`);
+      showToast(`You need 1 credit to unlock this prompt (Balance: ${effectiveCredits}). Top up credits or subscribe!`);
       setIsUnlockModalOpen(true);
     }
   };
 
   const handleCopyMasterPrompt = () => {
     if (isPromptGated) {
-      if (toolCredits >= 1) {
+      const storedCredits = typeof window !== 'undefined' ? parseInt(localStorage.getItem('auraprompt_tool_credits') || String(toolCredits), 10) : toolCredits;
+      const effectiveCredits = Math.max(toolCredits, storedCredits);
+
+      if (effectiveCredits >= 1 || isProUser) {
         const res = unlockPromptWithCredit(selectedPost.id);
         if (res.success) {
           copyPromptToClipboard(selectedPost.promptText, selectedPost.id);
@@ -689,7 +702,11 @@ export const PromptDetailModal = () => {
           return;
         }
       }
-      setIsUnlockModalOpen(true);
+      const storedCreditsAfter = typeof window !== 'undefined' ? parseInt(localStorage.getItem('auraprompt_tool_credits') || String(toolCredits), 10) : toolCredits;
+      const effectiveCreditsAfter = Math.max(toolCredits, storedCreditsAfter);
+      if (effectiveCreditsAfter <= 0 && !isProUser) {
+        setIsUnlockModalOpen(true);
+      }
       return;
     }
     copyPromptToClipboard(selectedPost.promptText, selectedPost.id);
@@ -721,7 +738,10 @@ export const PromptDetailModal = () => {
     e.stopPropagation();
     const isPinUnlocked = isPromptUnlocked(pin.id, pin.isPremium);
     if (!isPinUnlocked) {
-      if (toolCredits >= 1) {
+      const storedCredits = typeof window !== 'undefined' ? parseInt(localStorage.getItem('auraprompt_tool_credits') || String(toolCredits), 10) : toolCredits;
+      const effectiveCredits = Math.max(toolCredits, storedCredits);
+
+      if (effectiveCredits >= 1 || isProUser) {
         const res = unlockPromptWithCredit(pin.id);
         if (res.success) {
           copyPromptToClipboard(pin.promptText, pin.id);
@@ -739,7 +759,11 @@ export const PromptDetailModal = () => {
           return;
         }
       }
-      setIsUnlockModalOpen(true);
+      const storedCreditsAfter = typeof window !== 'undefined' ? parseInt(localStorage.getItem('auraprompt_tool_credits') || String(toolCredits), 10) : toolCredits;
+      const effectiveCreditsAfter = Math.max(toolCredits, storedCreditsAfter);
+      if (effectiveCreditsAfter <= 0 && !isProUser) {
+        setIsUnlockModalOpen(true);
+      }
       return;
     }
     copyPromptToClipboard(pin.promptText, pin.id);

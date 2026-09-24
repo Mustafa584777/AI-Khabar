@@ -47,7 +47,10 @@ export const UnlockPremiumModal: React.FC = () => {
 
   const handleUnlockSinglePromptWithCredit = () => {
     if (!lockedPromptContext) return;
-    if (toolCredits >= 1) {
+    const storedCredits = typeof window !== 'undefined' ? parseInt(localStorage.getItem('auraprompt_tool_credits') || String(toolCredits), 10) : toolCredits;
+    const effectiveCredits = Math.max(toolCredits, storedCredits);
+
+    if (effectiveCredits >= 1) {
       const res = unlockPromptWithCredit(lockedPromptContext.id);
       if (res.success) {
         try {
