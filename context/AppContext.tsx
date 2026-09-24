@@ -266,12 +266,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [promptRequestsRemaining, setPromptRequestsRemainingState] = useState<number>(() => {
     if (typeof window !== 'undefined') {
       const isPro = localStorage.getItem('auraprompt_pro_member') === 'true';
+      const tier = localStorage.getItem('auraprompt_plan_tier') || 'free';
       if (isPro) {
         const saved = localStorage.getItem('auraprompt_prompt_requests');
         if (saved !== null) {
           const parsed = parseInt(saved, 10);
           if (!isNaN(parsed)) return parsed;
         }
+        if (tier === 'starter') return 1;
+        if (tier === 'pro') return 2;
+        if (tier === 'vip') return 3;
+        if (tier === 'ultra') return 5;
         return 2;
       }
     }
@@ -926,6 +931,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [tags, posts]);
   const [settings, setSettings] = useState<SiteSettings>(INITIAL_SETTINGS);
   const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([]);
+  const lastBookmarkToggleTimeRef = useRef<number>(0);
   const [likedIds, setLikedIds] = useState<string[]>([]);
   const [isBookmarksDrawerOpen, setIsBookmarksDrawerOpen] = useState<boolean>(false);
 
@@ -998,8 +1004,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const synced = await UserSyncService.validateSession(currentAcc.id, currentAcc.email);
         if (!synced || !isMounted) return;
 
-        setBookmarkedIds(synced.bookmarkedIds || []);
-        StorageService.setBookmarkedIds(synced.bookmarkedIds || []);
+        if (Date.now() - lastBookmarkToggleTimeRef.current > 5000) {
+          setBookmarkedIds(synced.bookmarkedIds || []);
+          StorageService.setBookmarkedIds(synced.bookmarkedIds || []);
+        }
 
         setLikedIds(synced.likedIds || []);
         StorageService.setLikedIds(synced.likedIds || []);
@@ -1856,6 +1864,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const isNowSaved = StorageService.toggleBookmark(id);
     const updatedBookmarks = StorageService.getBookmarkedIds();
     setBookmarkedIds([...updatedBookmarks]);
+    lastBookmarkToggleTimeRef.current = Date.now();
 
     const post = posts.find((p) => p.id === id);
     let updatedProfile = tasteProfile;

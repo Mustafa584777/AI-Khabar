@@ -98,7 +98,7 @@ export const UserDashboard = () => {
   // Request a prompt form state
   const [requestText, setRequestText] = useState('');
   const [requestCategory, setRequestCategory] = useState('Photorealistic');
-  const [requestAiTool, setRequestAiTool] = useState('Midjourney');
+  const [requestAiTool, setRequestAiTool] = useState('Gemini');
   const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
   const [copiedRequestId, setCopiedRequestId] = useState<string | null>(null);
 

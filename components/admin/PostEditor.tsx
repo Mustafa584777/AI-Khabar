@@ -275,6 +275,12 @@ export const PostEditor = () => {
           return;
         }
 
+        // Only convert to WebP if image file size is > 500 KB
+        if (file.size <= 500 * 1024) {
+          resolve(dataUrl);
+          return;
+        }
+
         const img = document.createElement('img');
         img.onload = () => {
           const maxDimension = 1600;
