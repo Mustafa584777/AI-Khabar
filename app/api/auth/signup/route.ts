@@ -119,19 +119,22 @@ export async function POST(req: NextRequest) {
         // Send email via Resend API if RESEND_API_KEY is configured
         if (process.env.RESEND_API_KEY) {
           try {
-            await fetch('https://api.resend.com/emails', {
+            const senderEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+            const resendRes = await fetch('https://api.resend.com/emails', {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                from: 'Prompts App <onboarding@resend.dev>',
+                from: `Prompts App <${senderEmail}>`,
                 to: [cleanEmail],
                 subject: 'Verify your email address',
                 html: `<p>Hello ${cleanName},</p><p>Please click the link below to verify your email address and activate your account:</p><p><a href="${verificationLink}">Verify Email</a></p><p>If you did not request this, please ignore this email.</p>`,
               }),
             });
+            const resendData = await resendRes.json();
+            console.log('[Resend Response]:', resendRes.status, resendData);
           } catch (resendErr) {
             console.error('Failed to send email via Resend:', resendErr);
           }
@@ -202,19 +205,22 @@ export async function POST(req: NextRequest) {
 
     if (process.env.RESEND_API_KEY) {
       try {
-        await fetch('https://api.resend.com/emails', {
+        const senderEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+        const resendRes = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: 'Prompts App <onboarding@resend.dev>',
+            from: `Prompts App <${senderEmail}>`,
             to: [cleanEmail],
             subject: 'Verify your email address',
             html: `<p>Hello ${cleanName},</p><p>Please click the link below to verify your email address:</p><p><a href="${verificationLink}">Verify Email</a></p>`,
           }),
         });
+        const resendData = await resendRes.json();
+        console.log('[Resend Response (Fallback)]:', resendRes.status, resendData);
       } catch (resendErr) {
         console.error('Failed to send email via Resend:', resendErr);
       }
