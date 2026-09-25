@@ -389,7 +389,7 @@ export const PromptGrid = () => {
                   type="button"
                   onClick={() => {
                     if (!isProUser && aiSearchRemaining <= 0) {
-                      showToast('upgrade plan for increase AI search limits');
+                      showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
                       setIsProCheckoutModalOpen(true);
                     } else {
                       setIsAiSearchEnabled(true);
@@ -414,7 +414,7 @@ export const PromptGrid = () => {
                 <Sparkles className="w-7 h-7" />
               </div>
               <p className="text-sm font-bold text-red-600 dark:text-red-400">
-                upgrade plan for increase AI search limits
+                You have used all of your AI search quota, please upgrade plan to unlock more limit
               </p>
               <div className="flex items-center justify-center gap-3 pt-2">
                 <button

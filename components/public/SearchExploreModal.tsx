@@ -69,7 +69,7 @@ export const SearchExploreModal = () => {
     }
     setIsModalSearching(true);
     const timer = setTimeout(() => {
-      performAiSearch(q).then((res) => {
+      performAiSearch(q, false).then((res) => {
         setModalAiResult(res);
         setIsModalSearching(false);
       });
@@ -106,6 +106,9 @@ export const SearchExploreModal = () => {
       recordSearchQuery(trimmed);
       setSearchQuery(trimmed);
       setSelectedCategory('all');
+      if (isAiSearchEnabled) {
+        void performAiSearch(trimmed, true);
+      }
     }
     setCurrentView('public');
     setIsSearchModalOpen(false);
@@ -377,7 +380,7 @@ export const SearchExploreModal = () => {
                         type="button"
                         onClick={() => {
                           if (!isProUser && aiSearchRemaining <= 0) {
-                            showToast('upgrade plan for increase AI search limits');
+                            showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
                             setIsProCheckoutModalOpen(true);
                           } else {
                             setIsAiSearchEnabled(true);
@@ -392,7 +395,7 @@ export const SearchExploreModal = () => {
                   ) : aiSearchRemaining <= 0 && !isProUser ? (
                     <div className="space-y-2 max-w-sm mx-auto">
                       <p className="text-xs text-red-600 dark:text-red-400 font-bold">
-                        upgrade plan for increase AI search limits
+                        You have used all of your AI search quota, please upgrade plan to unlock more limit
                       </p>
                       <button
                         type="button"

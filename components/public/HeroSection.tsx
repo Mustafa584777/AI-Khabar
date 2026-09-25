@@ -147,7 +147,7 @@ export const HeroSection = () => {
             onClick={(e) => {
               e.stopPropagation();
               if (!isAiSearchEnabled && !isProUser && aiSearchRemaining <= 0) {
-                showToast('upgrade plan for increase AI search limits');
+                showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
                 setIsProCheckoutModalOpen(true);
                 return;
               }

@@ -372,13 +372,13 @@ export const UserDashboard = () => {
             </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
-                {isProUser ? 'All (Pro)' : `${unlockedPromptIds.length}/10`}
+                {isProUser ? 'All (Pro)' : unlockedPromptIds.length}
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">Unlocked Prompts</div>
             </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
-                {bookmarkedIds.length + aiHistory.length}
+                {isProUser ? 'Unlimited' : `${bookmarkedIds.length + aiHistory.length}/10`}
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">Saves</div>
             </div>

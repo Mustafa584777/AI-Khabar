@@ -93,7 +93,7 @@ interface AppContextType {
   recordSearchQuery: (query: string) => void;
   aiSearchResults: AiSearchResult | null;
   isAiSearching: boolean;
-  performAiSearch: (query: string) => Promise<AiSearchResult | null>;
+  performAiSearch: (query: string, deductQuota?: boolean) => Promise<AiSearchResult | null>;
   clearAiSearch: () => void;
   isAiSearchEnabled: boolean;
   setIsAiSearchEnabled: (enabled: boolean) => void;
@@ -1236,7 +1236,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const performAiSearch = useCallback(async (query: string): Promise<AiSearchResult | null> => {
+  const aiSearchDeductedRef = useRef<Set<string>>(new Set());
+
+  const performAiSearch = useCallback(async (query: string, deductQuota: boolean = true): Promise<AiSearchResult | null> => {
     const clean = query.trim();
     if (!clean || clean.length < 2 || !isAiSearchEnabled) {
       setAiSearchResults(null);
@@ -1252,20 +1254,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
 
     if (!isProUser && aiSearchRemaining <= 0) {
-      showToast('upgrade plan for increase AI search limits');
+      showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
       setIsProCheckoutModalOpen(true);
       setIsAiSearchEnabled(false);
       return null;
-    }
-
-    if (!isProUser) {
-      setAiSearchRemainingState((prev) => {
-        const next = Math.max(0, prev - 1);
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('auraprompt_ai_search_remaining', next.toString());
-        }
-        return next;
-      });
     }
 
     setIsAiSearching(true);
@@ -1288,6 +1280,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           };
           aiSearchCacheRef.current.set(cacheKey, result);
           setAiSearchResults(result);
+
+          // Deduct quota only once per unique query when successfully completed and deductQuota is true
+          if (!isProUser && deductQuota && !aiSearchDeductedRef.current.has(cacheKey)) {
+            aiSearchDeductedRef.current.add(cacheKey);
+            setAiSearchRemainingState((prev) => {
+              const next = Math.max(0, prev - 1);
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('auraprompt_ai_search_remaining', next.toString());
+              }
+              return next;
+            });
+          }
+
           setIsAiSearching(false);
           return result;
         }
