@@ -382,6 +382,43 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: 'User updated successfully', updated: updatedPayload });
     }
 
+    // 3. DELETE USER FROM SUPABASE (AUTH + SETTINGS)
+    if (action === 'delete_user') {
+      const { userId, email } = body;
+      if (!userId && !email) {
+        return NextResponse.json({ success: false, error: 'User ID or Email is required for deletion' }, { status: 400 });
+      }
+
+      // 1. Delete from Supabase Auth if userId is valid
+      if (userId && !userId.startsWith('rzp_') && !userId.startsWith('u_')) {
+        try {
+          if (supabaseAdmin) {
+            await supabaseAdmin.auth.admin.deleteUser(userId);
+          }
+        } catch (authErr) {
+          console.warn('Auth deleteUser notice:', authErr);
+        }
+      }
+
+      // 2. Delete sync rows from settings table
+      const keysToDelete = [];
+      if (userId) keysToDelete.push(`user_sync_${userId}`);
+      if (email) {
+        const cleanEmailStr = getCleanEmail(email);
+        keysToDelete.push(`user_sync_email_${cleanEmailStr.replace(/[^a-z0-9_]/g, '_')}`);
+      }
+
+      for (const k of keysToDelete) {
+        await client.from('settings').delete().eq('id', k);
+      }
+
+      if (email) {
+        await client.from('settings').delete().ilike('id', `%${email.toLowerCase()}%`);
+      }
+
+      return NextResponse.json({ success: true, message: 'User deleted successfully from Supabase and database.' });
+    }
+
     return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
   } catch (error: any) {
     console.error('Users API error:', error);

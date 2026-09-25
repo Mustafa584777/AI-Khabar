@@ -24,6 +24,7 @@ import {
   FileCheck,
   Database,
   SlidersHorizontal,
+  Trash2,
 } from 'lucide-react';
 
 export const UsersManager = () => {
@@ -45,6 +46,36 @@ export const UsersManager = () => {
   const [previewBackupData, setPreviewBackupData] = useState<UsersBackupPayload | null>(null);
   const [restoreError, setRestoreError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Delete User handler
+  const handleDeleteUser = async (userId: string, email: string) => {
+    if (!confirm(`Are you sure you want to delete user "${email}"? This will permanently remove them from Supabase auth and database along with all their data.`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'delete_user',
+          userId,
+          email,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast(`User ${email} deleted successfully from Supabase!`);
+        await handleSyncUsers(false);
+      } else {
+        throw new Error(data.error || 'Failed to delete user');
+      }
+    } catch (err: any) {
+      console.error('Delete user error:', err);
+      showToast(err?.message || 'Could not delete user.');
+    }
+  };
 
   // Fetch Users function (runs automatically on mount and on manual refresh)
   const handleSyncUsers = useCallback(async (isAuto: boolean = false) => {
@@ -482,6 +513,7 @@ export const UsersManager = () => {
                     <th className="py-3.5 px-4">Tool Credits</th>
                     <th className="py-3.5 px-4">Unlocked</th>
                     <th className="py-3.5 px-4">Joined</th>
+                    <th className="py-3.5 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800 text-xs">
@@ -598,6 +630,18 @@ export const UsersManager = () => {
                           <Calendar className="w-3 h-3 text-neutral-400" />
                           <span>{u.joinedDate || 'Recent'}</span>
                         </div>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-3.5 px-4 text-right">
+                        <button
+                          onClick={() => handleDeleteUser(u.id, u.email)}
+                          className="px-2.5 py-1 rounded-lg bg-red-50 dark:bg-red-950/60 hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-400 text-[11px] font-bold transition-colors inline-flex items-center gap-1"
+                          title="Permanently delete user from Supabase and database"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Delete</span>
+                        </button>
                       </td>
                     </tr>
                   ))}
