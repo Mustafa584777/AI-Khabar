@@ -44,25 +44,63 @@ export async function POST(req: NextRequest) {
 
     const client = supabaseAdmin || supabase;
 
-    // Helper: fetch existing row checking emailKey first, then userKey
+    // Helper: fetch existing row checking emailKey and userKey and merging intelligently
     const fetchExistingData = async () => {
+      const candidates: any[] = [];
       if (emailKey) {
         const { data: row } = await client
           .from('settings')
           .select('data')
           .eq('id', emailKey)
           .single();
-        if (row?.data) return row.data;
+        if (row?.data) candidates.push(row.data);
       }
-      if (userKey) {
+      if (userKey && userKey !== emailKey) {
         const { data: row } = await client
           .from('settings')
           .select('data')
           .eq('id', userKey)
           .single();
-        if (row?.data) return row.data;
+        if (row?.data) candidates.push(row.data);
       }
-      return null;
+      if (cleanEmail) {
+        const { data: rows } = await client
+          .from('settings')
+          .select('data')
+          .ilike('id', `%${cleanEmail.replace(/[^a-z0-9]/g, '_')}%`);
+        if (Array.isArray(rows)) {
+          for (const r of rows) {
+            if (r?.data && !candidates.includes(r.data)) {
+              candidates.push(r.data);
+            }
+          }
+        }
+      }
+
+      if (candidates.length === 0) return null;
+      if (candidates.length === 1) return candidates[0];
+
+      // Merge candidates taking highest credits and best plan tier
+      const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3, ultra: 4 };
+      let best = candidates[0];
+      for (let i = 1; i < candidates.length; i++) {
+        const curr = candidates[i];
+        const bestTier = best.planTier || (best.isProUser ? 'pro' : 'free');
+        const currTier = curr.planTier || (curr.isProUser ? 'pro' : 'free');
+        if ((TIER_RANK[currTier] || 0) > (TIER_RANK[bestTier] || 0)) {
+          best = { ...best, ...curr, planTier: currTier, isProUser: curr.isProUser };
+        }
+        if ((curr.toolCredits || 0) > (best.toolCredits || 0)) {
+          best.toolCredits = curr.toolCredits;
+        }
+        if ((curr.points || 0) > (best.points || 0)) {
+          best.points = curr.points;
+        }
+        best.bookmarkedIds = Array.from(new Set([...(best.bookmarkedIds || []), ...(curr.bookmarkedIds || [])]));
+        best.unlockedPromptIds = Array.from(new Set([...(best.unlockedPromptIds || []), ...(curr.unlockedPromptIds || [])]));
+        best.likedIds = Array.from(new Set([...(best.likedIds || []), ...(curr.likedIds || [])]));
+      }
+      return best;
     };
 
     // 1. PULL: Retrieve synced data for user
@@ -127,9 +165,18 @@ export async function POST(req: NextRequest) {
       );
 
       // Safe Tool Credits (maintain balance, never drop unexpectedly)
-      const resolvedToolCredits = data.toolCredits !== undefined
-        ? Number(data.toolCredits)
-        : (existingData.toolCredits !== undefined ? Number(existingData.toolCredits) : 5);
+      let incomingCredits = data.toolCredits !== undefined ? Number(data.toolCredits) : undefined;
+      let existingCredits = existingData.toolCredits !== undefined ? Number(existingData.toolCredits) : 5;
+      let resolvedToolCredits = existingCredits;
+      if (incomingCredits !== undefined) {
+        if (existingCredits > 5 && incomingCredits === 5) {
+          resolvedToolCredits = existingCredits;
+        } else if (incomingCredits < existingCredits && (existingCredits - incomingCredits) > 5) {
+          resolvedToolCredits = Math.max(incomingCredits, existingCredits);
+        } else {
+          resolvedToolCredits = incomingCredits;
+        }
+      }
 
       // Safe Plan Tier resolution (vip > pro > starter > free)
       const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3, ultra: 4 };
