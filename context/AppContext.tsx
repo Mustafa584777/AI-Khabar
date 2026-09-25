@@ -513,10 +513,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const creditsMap = { starter: 100, pro: 250, vip: 600, ultra: 1500 };
     const requestsMap = { starter: 1, pro: 2, vip: 3, ultra: 5 };
     const pointsMap = { starter: 10, pro: 20, vip: 50, ultra: 100 };
+    const aiSearchMap = { starter: 100, pro: 200, vip: 500, ultra: 9999 };
 
     setIsProUserState(true);
     setPlanTierState(tier);
-    setAiSearchRemaining(999);
+    const allocatedAiSearch = aiSearchMap[tier] || 100;
+    setAiSearchRemaining(allocatedAiSearch);
 
     const addedCredits = creditsMap[tier];
     const addedRequests = requestsMap[tier];
@@ -573,6 +575,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         isProUser: true,
         toolCredits: finalCredits,
         promptRequestsRemaining: finalRequests,
+        aiSearchRemaining: allocatedAiSearch,
         points: currentAcc.points ? currentAcc.points + addedPoints : addedPoints,
         planStartedAt,
         planExpiresAt,
