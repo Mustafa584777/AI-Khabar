@@ -73,6 +73,7 @@ export const UserDashboard = () => {
     isSyncingUserData,
     unlockedPromptIds,
     planExpiresAt,
+    planStartedAt,
     aiSearchRemaining,
   } = useApp();
 
@@ -493,9 +494,10 @@ export const UserDashboard = () => {
                     : 'Unlock unlimited AI searches, all premium prompts instantly, priority tool credits, and advanced prompt customization.'}
                 </p>
                 {isPaid && (
-                  <p className="text-xs text-amber-400 font-bold">
-                    Plan Subscription Expires on: {expiryDisplay}
-                  </p>
+                  <div className="space-y-1 text-xs text-amber-400 font-bold">
+                    <p>Plan Started On: {planStartedAt ? new Date(planStartedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : 'Recently'}</p>
+                    <p>Plan Subscription Expires On: {expiryDisplay}</p>
+                  </div>
                 )}
               </div>
             </div>

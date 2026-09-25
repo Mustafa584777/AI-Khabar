@@ -142,6 +142,7 @@ interface AppContextType {
   planTier: PlanTier;
   setPlanTier: (tier: PlanTier) => void;
   planExpiresAt: string | null;
+  planStartedAt: string | null;
   toolCredits: number;
   deductToolCredit: (amount?: number) => boolean;
   useToolCredit: (amount?: number) => boolean;
@@ -281,6 +282,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [planExpiresAt, setPlanExpiresAtState] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('auraprompt_plan_expires_at') || null;
+    }
+    return null;
+  });
+
+  const [planStartedAt, setPlanStartedAtState] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('auraprompt_plan_started_at') || null;
     }
     return null;
   });
@@ -547,6 +555,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const now = new Date();
     const planStartedAt = now.toISOString();
     const planExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    setPlanStartedAtState(planStartedAt);
     setPlanExpiresAtState(planExpiresAt);
 
     if (typeof window !== 'undefined') {
@@ -847,7 +856,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds || []));
         if (synced.planStartedAt) {
           localStorage.setItem('auraprompt_plan_started_at', synced.planStartedAt);
+          setPlanStartedAtState(synced.planStartedAt);
         } else {
+          setPlanStartedAtState(null);
           localStorage.removeItem('auraprompt_plan_started_at');
         }
         if (synced.planExpiresAt) {
@@ -930,6 +941,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setUserAccount(null);
     setIsProUserState(false);
     setPlanTierState('free');
+    setPlanStartedAtState(null);
+    setPlanExpiresAtState(null);
     setToolCreditsState(0);
     setPromptRequestsRemainingState(0);
     setUnlockedPromptIds([]);
@@ -2259,6 +2272,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         planTier,
         setPlanTier,
         planExpiresAt,
+        planStartedAt,
         toolCredits,
         deductToolCredit,
         useToolCredit,
