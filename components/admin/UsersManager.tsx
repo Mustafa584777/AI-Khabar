@@ -102,7 +102,7 @@ export const UsersManager = () => {
     showToast(`Copied ${email} to clipboard!`);
   };
 
-  // Export All Users Data as JSON Backup
+  // Export All Users Data as JSON Backup (Dashboard data only)
   const handleExportUsers = () => {
     if (users.length === 0) {
       showToast('No user records loaded. Click "Sync Users from Supabase" first before exporting.');
@@ -111,12 +111,26 @@ export const UsersManager = () => {
 
     setIsExporting(true);
     try {
-      const payload: UsersBackupPayload = {
+      const dashboardUsers = users.map((u) => ({
+        id: u.id,
+        email: u.email,
+        name: u.name,
+        planTier: u.planTier,
+        isProUser: u.isProUser,
+        toolCredits: u.toolCredits,
+        points: u.points,
+        unlockedPromptIds: u.unlockedPromptIds,
+        aiSearchRemaining: u.rawSyncData?.aiSearchRemaining ?? 5,
+        bookmarkedIds: u.rawSyncData?.bookmarkedIds ?? [],
+        joinedDate: u.joinedDate,
+      }));
+
+      const payload = {
         version: '1.0',
         exportedAt: new Date().toISOString(),
-        system: 'Trending Photo Prompts SaaS User Registry',
-        totalUsers: users.length,
-        users,
+        system: 'Trending Photo Prompts SaaS User Dashboard Registry',
+        totalUsers: dashboardUsers.length,
+        users: dashboardUsers,
       };
 
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -124,13 +138,13 @@ export const UsersManager = () => {
       const link = document.createElement('a');
       const dateStr = new Date().toISOString().slice(0, 10);
       link.href = url;
-      link.download = `saas-all-users-backup-${dateStr}.json`;
+      link.download = `saas-user-dashboard-backup-${dateStr}.json`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      showToast(`Exported ${users.length} user accounts backup successfully!`);
+      showToast(`Exported dashboard data for ${dashboardUsers.length} users successfully!`);
     } catch (err: any) {
       console.error('Export error:', err);
       showToast('Failed to export users backup.');

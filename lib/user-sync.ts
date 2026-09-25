@@ -14,12 +14,14 @@ export interface UserSyncData {
   planTier?: PlanTier;
   isProUser?: boolean;
   toolCredits?: number;
+  aiSearchRemaining?: number;
   lastDailyCreditDate?: string;
   promptRequestsRemaining?: number;
   unlockedPromptIds?: string[];
   planStartedAt?: string;
   planExpiresAt?: string;
   promptRequests?: PromptRequestItem[];
+  joinedDate?: string;
   updatedAt?: string;
 }
 
@@ -121,6 +123,7 @@ export const UserSyncService = {
     planTier: PlanTier;
     isProUser: boolean;
     toolCredits: number;
+    aiSearchRemaining: number;
     promptRequestsRemaining: number;
     unlockedPromptIds: string[];
     planStartedAt?: string;
@@ -130,7 +133,7 @@ export const UserSyncService = {
     const remote = await UserSyncService.pullUserData(user.id, user.email);
 
     if (!remote) {
-      // First time login for this specific user: grant 5 credits on signup
+      // First time login for this specific user: grant 5 credits & 5 AI searches on signup
       const initialData: UserSyncData = {
         userId: user.id,
         email: user.email,
@@ -144,8 +147,10 @@ export const UserSyncService = {
         planTier: 'free',
         isProUser: false,
         toolCredits: 5, // 5 signup credits one-time
+        aiSearchRemaining: 5, // 5 AI search quota one-time
         promptRequestsRemaining: 0,
         unlockedPromptIds: [],
+        joinedDate: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
@@ -160,6 +165,7 @@ export const UserSyncService = {
         planTier: 'free',
         isProUser: false,
         toolCredits: 5,
+        aiSearchRemaining: 5,
         promptRequestsRemaining: 0,
         unlockedPromptIds: [],
       };
@@ -182,6 +188,7 @@ export const UserSyncService = {
     }
 
     let currentCredits = Number(remote.toolCredits ?? 5);
+    let currentAiSearchRemaining = remote.aiSearchRemaining !== undefined ? Number(remote.aiSearchRemaining) : 5;
 
     const mergedData: UserSyncData = {
       userId: user.id,
@@ -196,10 +203,12 @@ export const UserSyncService = {
       planTier: resolvedTier,
       isProUser: resolvedIsPro,
       toolCredits: currentCredits,
+      aiSearchRemaining: currentAiSearchRemaining,
       promptRequestsRemaining: Number(remote.promptRequestsRemaining || 0),
       unlockedPromptIds: Array.isArray(remote.unlockedPromptIds) ? remote.unlockedPromptIds : [],
       planStartedAt: remote.planStartedAt,
       planExpiresAt: remote.planExpiresAt,
+      joinedDate: remote.joinedDate || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
@@ -212,6 +221,7 @@ export const UserSyncService = {
       planTier: resolvedTier,
       isProUser: resolvedIsPro,
       toolCredits: currentCredits,
+      aiSearchRemaining: currentAiSearchRemaining,
       promptRequestsRemaining: mergedData.promptRequestsRemaining || 0,
       unlockedPromptIds: mergedData.unlockedPromptIds || [],
       planStartedAt: remote.planStartedAt,

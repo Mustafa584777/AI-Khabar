@@ -292,20 +292,27 @@ export async function POST(req: NextRequest) {
             new Set([...(existingData.unlockedPromptIds || []), ...(item.unlockedPromptIds || [])])
           );
 
+          const resolvedAiSearchRemaining = typeof item.aiSearchRemaining === 'number'
+            ? item.aiSearchRemaining
+            : (existingData.aiSearchRemaining ?? 5);
+          const resolvedBookmarks = Array.isArray(item.bookmarkedIds)
+            ? Array.from(new Set([...(existingData.bookmarkedIds || []), ...item.bookmarkedIds]))
+            : (existingData.bookmarkedIds || []);
+
           const payload = {
             ...existingData,
-            ...(item.rawSyncData || {}),
             userId,
             email,
             name: item.name || existingData.name || (email ? email.split('@')[0] : 'Creator'),
-            username: item.username || existingData.username || (email ? `@${email.split('@')[0]}` : '@creator'),
-            avatar: item.avatar || existingData.avatar,
+            username: existingData.username || (email ? `@${email.split('@')[0]}` : '@creator'),
+            avatar: existingData.avatar,
             planTier: resolvedTier,
             isProUser: resolvedTier !== 'free' || Boolean(item.isProUser || existingData.isProUser),
             toolCredits: resolvedCredits,
+            aiSearchRemaining: resolvedAiSearchRemaining,
             points: resolvedPoints,
             unlockedPromptIds: resolvedUnlocks,
-            promptRequestsRemaining: item.promptRequestsRemaining ?? existingData.promptRequestsRemaining ?? 0,
+            bookmarkedIds: resolvedBookmarks,
             joinedDate: item.joinedDate || existingData.joinedDate || new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             restoredAt: new Date().toISOString(),
