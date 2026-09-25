@@ -480,10 +480,8 @@ export const UsersManager = () => {
                     <th className="py-3.5 px-4">Email / Gmail</th>
                     <th className="py-3.5 px-4">Plan Tier</th>
                     <th className="py-3.5 px-4">Tool Credits</th>
-                    <th className="py-3.5 px-4">Points</th>
                     <th className="py-3.5 px-4">Unlocked</th>
                     <th className="py-3.5 px-4">Joined</th>
-                    <th className="py-3.5 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800 text-xs">
@@ -586,14 +584,6 @@ export const UsersManager = () => {
                         </div>
                       </td>
 
-                      {/* Points */}
-                      <td className="py-3.5 px-4">
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 font-bold text-amber-700 dark:text-amber-300 text-xs">
-                          <Coins className="w-3.5 h-3.5 text-amber-500" />
-                          <span>{u.points ?? 10} pts</span>
-                        </div>
-                      </td>
-
                       {/* Unlocked Prompts */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-1 text-neutral-600 dark:text-neutral-400 font-semibold">
@@ -608,16 +598,6 @@ export const UsersManager = () => {
                           <Calendar className="w-3 h-3 text-neutral-400" />
                           <span>{u.joinedDate || 'Recent'}</span>
                         </div>
-                      </td>
-
-                      {/* Actions */}
-                      <td className="py-3.5 px-4 text-right">
-                        <button
-                          onClick={() => copyEmail(u.email)}
-                          className="px-2.5 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-[11px] font-semibold transition-colors"
-                        >
-                          Copy
-                        </button>
                       </td>
                     </tr>
                   ))}
