@@ -19,6 +19,7 @@ export interface UserSyncData {
   lastDailyCreditDate?: string;
   promptRequestsRemaining?: number;
   unlockedPromptIds?: string[];
+  signupBonusClaimed?: boolean;
   planStartedAt?: string;
   planExpiresAt?: string;
   promptRequests?: PromptRequestItem[];
@@ -155,12 +156,20 @@ export const UserSyncService = {
         aiSearchRemaining: (user as any).aiSearchRemaining ?? (fallbackCfg.unlimitedSearches ? 999999 : fallbackCfg.aiSearchQuota),
         promptRequestsRemaining: (user as any).promptRequestsRemaining ?? (fallbackTier !== 'free' ? fallbackCfg.promptRequests : 0),
         unlockedPromptIds: [],
+        signupBonusClaimed: true,
         joinedDate: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
       if (fallbackTier === 'free') {
         void UserSyncService.pushUserData(user.id, user.email, initialData);
+      }
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auraprompt_first_login_claimed', 'true');
+        if (user.email) {
+          localStorage.setItem(`auraprompt_signup_bonus_claimed_${user.email.toLowerCase().trim()}`, 'true');
+        }
       }
 
       return {
@@ -232,6 +241,13 @@ export const UserSyncService = {
       joinedDate: remote.joinedDate || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auraprompt_first_login_claimed', 'true');
+      if (user.email) {
+        localStorage.setItem(`auraprompt_signup_bonus_claimed_${user.email.toLowerCase().trim()}`, 'true');
+      }
+    }
 
     return {
       bookmarkedIds: mergedData.bookmarkedIds || [],

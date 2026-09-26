@@ -29,6 +29,7 @@ export const UserAuthModal = () => {
     loginUser,
     signupUser,
     showToast,
+    setIsFirstLoginModalOpen,
   } = useApp();
 
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('signup');
@@ -266,12 +267,24 @@ export const UserAuthModal = () => {
         // 3. Initialize account in App state (which triggers cloud sync)
         const newUserId = signupData.user?.id || signData?.user?.id;
         await signupUser(userName, userHandle, cleanEmail, password, defaultAvatar, newUserId);
-        showToast(`Welcome ${userName}! Account created & cloud sync active.`);
+        showToast(`Welcome ${userName}! 5 Free Credits added to your account 🎉`);
         setIsLoading(false);
         setIsUserAuthModalOpen(false);
         setEmail('');
         setPassword('');
         setFullName('');
+
+        // Mark signup bonus as claimed so it NEVER shows again in any future session or device
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('auraprompt_first_login_claimed', 'true');
+          localStorage.setItem(`auraprompt_signup_bonus_claimed_${cleanEmail}`, 'true');
+        }
+
+        // Show 5 Credits Welcome Gift popup right after first-time signup!
+        setTimeout(() => {
+          setIsFirstLoginModalOpen(true);
+        }, 250);
+
         checkAndRedirectStudio();
       } else {
         // Mode: LOGIN

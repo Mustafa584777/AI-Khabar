@@ -415,29 +415,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [userAccount]);
 
   const [isUnlockPremiumModalOpen, setIsUnlockPremiumModalOpen] = useState<boolean>(false);
-  const [isFirstLoginModalOpen, setIsFirstLoginModalOpen] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      const acc = StorageService.getUserAccount();
-      if (acc && acc.isLoggedIn && !localStorage.getItem('auraprompt_first_login_claimed')) {
-        return true;
-      }
-    }
-    return false;
-  });
+  // First-Time 5 Credits Signup Bonus Modal: Only displayed once strictly after new account registration!
+  const [isFirstLoginModalOpen, setIsFirstLoginModalOpen] = useState<boolean>(false);
   const [lockedPromptContext, setLockedPromptContext] = useState<PromptPost | null>(null);
-
-  // First-Time 5 Credits Signup Bonus Logic (No daily credits)
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const acc = userAccount || StorageService.getUserAccount();
-    if (!acc || !acc.isLoggedIn) return;
-
-    if (!localStorage.getItem('auraprompt_first_login_claimed')) {
-      localStorage.setItem('auraprompt_first_login_claimed', 'true');
-      setIsFirstLoginModalOpen(true);
-      addToolCredits(5);
-    }
-  }, [userAccount, addToolCredits]);
 
   // Unlocked Prompts (Unlocked via 1 credit per prompt or subscription)
   const [unlockedPromptIds, setUnlockedPromptIds] = useState<string[]>(() => {
@@ -890,6 +870,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setUnlockedPromptIds(synced.unlockedPromptIds || []);
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds || []));
+        localStorage.setItem('auraprompt_first_login_claimed', 'true');
+        localStorage.setItem(`auraprompt_signup_bonus_claimed_${cleanEmail}`, 'true');
         if (synced.planStartedAt) {
           localStorage.setItem('auraprompt_plan_started_at', synced.planStartedAt);
           setPlanStartedAtState(synced.planStartedAt);
@@ -966,6 +948,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('auraprompt_prompt_requests', String(resolvedRequests));
         localStorage.setItem('auraprompt_ai_search_remaining', String(resolvedSearches));
         localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds || []));
+        localStorage.setItem('auraprompt_first_login_claimed', 'true');
+        localStorage.setItem(`auraprompt_signup_bonus_claimed_${cleanEmail}`, 'true');
       }
     } catch (e) {
       console.warn('Signup reconciliation sync error:', e);
