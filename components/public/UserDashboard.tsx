@@ -41,6 +41,7 @@ import {
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { RazorpayCheckoutButton } from './RazorpayCheckoutButton';
+import { PLAN_CONFIGS } from '@/lib/plans';
 
 export const UserDashboard = () => {
   const router = useRouter();
@@ -86,9 +87,10 @@ export const UserDashboard = () => {
 
   // Strict paid tier resolution for Dashboard display
   const isPaid = Boolean(
-    isProUser && (planTier === 'starter' || planTier === 'pro' || planTier === 'vip')
+    isProUser && (planTier === 'starter' || planTier === 'pro' || planTier === 'vip' || planTier === 'ultra')
   );
   const effectivePlanTier = isPaid ? planTier : 'free';
+  const currentPlanConfig = PLAN_CONFIGS[effectivePlanTier] || PLAN_CONFIGS.free;
 
   // Automatically prompt auth modal if unauthenticated
   React.useEffect(() => {
@@ -373,21 +375,27 @@ export const UserDashboard = () => {
             </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
-                {isProUser ? 'All (Pro)' : unlockedPromptIds.length}
+                {isPaid ? `All (${currentPlanConfig.name})` : unlockedPromptIds.length}
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">Unlocked Prompts</div>
             </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
-                {isProUser ? 'Unlimited' : `${bookmarkedIds.length + aiHistory.length}/10`}
+                {currentPlanConfig.unlimitedSaves ? `${bookmarkedIds.length + aiHistory.length} (Unlimited)` : `${bookmarkedIds.length + aiHistory.length}/${currentPlanConfig.savesLimit}`}
               </div>
-              <div className="text-[11px] text-neutral-500 font-medium">Saves</div>
+              <div className="text-[11px] text-neutral-500 font-medium">Saves & History</div>
             </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
-                {isProUser ? 'Unlimited' : `${aiSearchRemaining}/5`}
+                {currentPlanConfig.unlimitedSearches ? 'Unlimited' : `${aiSearchRemaining}/${currentPlanConfig.aiSearchQuota}`}
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">AI Search Quota</div>
+            </div>
+            <div className="text-center md:text-left">
+              <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
+                {isPaid ? `${promptRequestsRemaining}/${currentPlanConfig.promptRequests}` : '0'}
+              </div>
+              <div className="text-[11px] text-neutral-500 font-medium">Prompt Requests</div>
             </div>
           </div>
         </div>
@@ -476,7 +484,7 @@ export const UserDashboard = () => {
               <div className="space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2.5">
                   <h3 className="text-lg sm:text-xl font-black text-white tracking-tight">
-                    {isPaid ? `${effectivePlanTier.toUpperCase()} Membership Active` : 'Upgrade to Creator Pro'}
+                    {isPaid ? `${currentPlanConfig.name.toUpperCase()} Membership Active` : 'Upgrade to Creator Plan'}
                   </h3>
                   <span
                     className={`px-3 py-1 rounded-full text-[10px] font-mono font-extrabold tracking-wide uppercase ${
@@ -485,13 +493,13 @@ export const UserDashboard = () => {
                         : 'bg-white/10 text-neutral-300 border border-white/20'
                     }`}
                   >
-                    {isPaid ? `PAID (${effectivePlanTier.toUpperCase()})` : 'FREE TIER'}
+                    {isPaid ? `PAID (${currentPlanConfig.name.toUpperCase()})` : 'FREE TIER'}
                   </span>
                 </div>
                 <p className="text-xs sm:text-sm text-neutral-300 max-w-xl leading-relaxed">
                   {isPaid
-                    ? `You have full access to all premium features, ${toolCredits} prompt tool credits, and unlimited cloud saves.`
-                    : 'Unlock unlimited AI searches, all premium prompts instantly, priority tool credits, and advanced prompt customization.'}
+                    ? `You have full access to all premium prompts, ${toolCredits} prompt tool credits, ${currentPlanConfig.unlimitedSaves ? 'unlimited' : currentPlanConfig.savesLimit} saves & history, and ${currentPlanConfig.unlimitedSearches ? 'unlimited' : currentPlanConfig.aiSearchQuota} AI searches.`
+                    : 'Unlock all premium prompts instantly, priority tool credits, increased saves & history quota, and custom prompt requests.'}
                 </p>
                 {isPaid && (
                   <div className="space-y-1 text-xs text-amber-400 font-bold">
@@ -507,9 +515,10 @@ export const UserDashboard = () => {
               {!isPaid ? (
                 <>
                   <RazorpayCheckoutButton
-                    amount={9900}
-                    planName="Pro Creator"
-                    buttonText="Unlock Pro (₹99/mo)"
+                    amount={100}
+                    planTier="starter"
+                    planName="Starter"
+                    buttonText="Get Starter for ₹1"
                     variant="pill"
                     size="md"
                   />
@@ -531,13 +540,19 @@ export const UserDashboard = () => {
             </div>
           </div>
 
-          {/* Premium Features Grid (Always visible for free/paid users to showcase value) */}
+          {/* Premium Features Grid (Accurately reflects currentPlanConfig) */}
           <div className="relative z-10 pt-4 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {[
               { title: 'Unlock All Prompts', desc: 'Instant access to 500+ elite prompts' },
-              { title: 'Priority AI Credits', desc: 'Tool credits for generation & extraction' },
-              { title: 'Unlimited Saves', desc: 'No limits on bookmarks & history' },
-              { title: 'Fast-Lane Execution', desc: 'Zero wait times on AI prompt studio' },
+              { title: `${currentPlanConfig.credits} Tool Credits`, desc: 'For prompt studio, extraction & edits' },
+              {
+                title: currentPlanConfig.unlimitedSaves ? 'Unlimited Saves' : `${currentPlanConfig.savesLimit} Saves Quota`,
+                desc: currentPlanConfig.unlimitedSaves ? 'No limits on bookmarks & history' : `Save up to ${currentPlanConfig.savesLimit} prompts & history`,
+              },
+              {
+                title: currentPlanConfig.unlimitedSearches ? 'Unlimited AI Search' : `${currentPlanConfig.aiSearchQuota} AI Searches / mo`,
+                desc: currentPlanConfig.unlimitedSearches ? 'Uncapped conversational AI discovery' : `${currentPlanConfig.aiSearchQuota} semantic searches per month`,
+              },
             ].map((feat, idx) => (
               <div key={idx} className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-start gap-3">
                 <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
@@ -565,7 +580,7 @@ export const UserDashboard = () => {
             }`}
           >
             <Bookmark className="w-4 h-4 fill-current" />
-            <span>Saves ({isProUser ? savedPosts.length : (bookmarkedIds.length + aiHistory.length)})</span>
+            <span>Saved Prompts ({bookmarkedIds.length})</span>
           </button>
 
           <button

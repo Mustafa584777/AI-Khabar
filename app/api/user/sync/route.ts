@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, supabase } from '@/lib/supabase';
 import { getClientIp, checkRateLimit, createRateLimitResponse, sanitizePayload } from '@/lib/security';
+import { PLAN_CONFIGS } from '@/lib/plans';
+import { PlanTier } from '@/types/prompt';
 
 export const dynamic = 'force-dynamic';
 
@@ -93,12 +95,30 @@ export async function POST(req: NextRequest) {
         if ((curr.toolCredits || 0) > (best.toolCredits || 0)) {
           best.toolCredits = curr.toolCredits;
         }
+        if ((curr.promptRequestsRemaining || 0) > (best.promptRequestsRemaining || 0)) {
+          best.promptRequestsRemaining = curr.promptRequestsRemaining;
+        }
+        if ((curr.aiSearchRemaining || 0) > (best.aiSearchRemaining || 0)) {
+          best.aiSearchRemaining = curr.aiSearchRemaining;
+        }
         if ((curr.points || 0) > (best.points || 0)) {
           best.points = curr.points;
         }
         best.bookmarkedIds = Array.from(new Set([...(best.bookmarkedIds || []), ...(curr.bookmarkedIds || [])]));
         best.unlockedPromptIds = Array.from(new Set([...(best.unlockedPromptIds || []), ...(curr.unlockedPromptIds || [])]));
         best.likedIds = Array.from(new Set([...(best.likedIds || []), ...(curr.likedIds || [])]));
+      }
+
+      const finalBestTier = (best.planTier && best.planTier in PLAN_CONFIGS)
+        ? (best.planTier as PlanTier)
+        : (best.isProUser ? 'pro' : 'free');
+      const finalPlanCfg = PLAN_CONFIGS[finalBestTier] || PLAN_CONFIGS.free;
+      if (finalBestTier !== 'free') {
+        best.toolCredits = Math.max(Number(best.toolCredits || 0), finalPlanCfg.credits);
+        best.promptRequestsRemaining = Math.max(Number(best.promptRequestsRemaining || 0), finalPlanCfg.promptRequests);
+        if (!finalPlanCfg.unlimitedSearches) {
+          best.aiSearchRemaining = Math.max(Number(best.aiSearchRemaining || 0), finalPlanCfg.aiSearchQuota);
+        }
       }
       return best;
     };
@@ -116,7 +136,9 @@ export async function POST(req: NextRequest) {
 
       if (syncData) {
         const cloned = { ...syncData };
-        let tier = cloned.planTier || (cloned.isProUser ? 'pro' : 'free');
+        let tier = (cloned.planTier && cloned.planTier in PLAN_CONFIGS)
+          ? cloned.planTier
+          : (cloned.isProUser ? 'pro' : 'free');
 
         // Check if plan has expired
         if (tier !== 'free' && cloned.planExpiresAt) {
@@ -129,6 +151,15 @@ export async function POST(req: NextRequest) {
 
         cloned.planTier = tier;
         cloned.isProUser = tier !== 'free' || Boolean(cloned.isProUser);
+
+        const planCfg = PLAN_CONFIGS[tier as PlanTier] || PLAN_CONFIGS.free;
+        if (tier !== 'free') {
+          cloned.toolCredits = Math.max(Number(cloned.toolCredits ?? planCfg.credits), planCfg.credits);
+          cloned.promptRequestsRemaining = Math.max(Number(cloned.promptRequestsRemaining ?? planCfg.promptRequests), planCfg.promptRequests);
+          if (!planCfg.unlimitedSearches) {
+            cloned.aiSearchRemaining = Math.max(Number(cloned.aiSearchRemaining ?? planCfg.aiSearchQuota), planCfg.aiSearchQuota);
+          }
+        }
 
         return NextResponse.json({
           success: true,
@@ -256,6 +287,25 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      const planCfg = PLAN_CONFIGS[resolvedPlanTier as PlanTier] || PLAN_CONFIGS.free;
+      if (resolvedPlanTier !== 'free') {
+        resolvedToolCredits = Math.max(resolvedToolCredits, planCfg.credits);
+      }
+
+      const rawRequests = data.promptRequestsRemaining !== undefined
+        ? Number(data.promptRequestsRemaining)
+        : (existingData.promptRequestsRemaining ?? planCfg.promptRequests);
+      const finalRequests = resolvedPlanTier !== 'free'
+        ? Math.max(rawRequests, planCfg.promptRequests)
+        : rawRequests;
+
+      const rawSearches = data.aiSearchRemaining !== undefined
+        ? Number(data.aiSearchRemaining)
+        : (existingData.aiSearchRemaining ?? planCfg.aiSearchQuota);
+      const finalSearches = (resolvedPlanTier !== 'free' && !planCfg.unlimitedSearches)
+        ? Math.max(rawSearches, planCfg.aiSearchQuota)
+        : rawSearches;
+
       const mergedPayload = {
         ...existingData,
         ...data,
@@ -267,6 +317,8 @@ export async function POST(req: NextRequest) {
         planTier: resolvedPlanTier,
         isProUser: resolvedIsPro,
         toolCredits: resolvedToolCredits,
+        promptRequestsRemaining: finalRequests,
+        aiSearchRemaining: finalSearches,
         aiHistory: mergedAiHistory,
         tasteProfile: mergedTasteProfile !== undefined ? mergedTasteProfile : existingData.tasteProfile,
         planStartedAt: data.planStartedAt || existingData.planStartedAt,

@@ -602,52 +602,68 @@ export default function CheckoutPage() {
               </thead>
               <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800 text-neutral-700 dark:text-neutral-300">
                 <tr>
+                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Price</td>
+                  <td className="py-3.5 px-4 text-center font-bold text-emerald-600">₹0 Free</td>
+                  <td className="py-3.5 px-4 text-center font-black text-neutral-900 dark:text-white">₹1 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-black text-[#E60023]">₹1 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-black text-purple-600 dark:text-purple-400">₹1 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-black text-amber-500">₹1 / mo</td>
+                </tr>
+                <tr>
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Monthly Tool Credits</td>
-                  <td className="py-3.5 px-4 text-center">2 / day</td>
-                  <td className="py-3.5 px-4 text-center font-bold">60 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-bold">120 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-bold">250 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-bold text-amber-600 dark:text-amber-400">700 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-medium">5 on signup</td>
+                  <td className="py-3.5 px-4 text-center font-bold text-neutral-900 dark:text-white">100 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-bold text-neutral-900 dark:text-white">250 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-bold text-neutral-900 dark:text-white">600 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-bold text-amber-600 dark:text-amber-400">1,500 / mo</td>
                 </tr>
                 <tr>
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">AI Search Quota</td>
-                  <td className="py-3.5 px-4 text-center">Basic</td>
-                  <td className="py-3.5 px-4 text-center">60 / mo</td>
-                  <td className="py-3.5 px-4 text-center">120 / mo</td>
-                  <td className="py-3.5 px-4 text-center">250 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-bold text-amber-600 dark:text-amber-400">700 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-medium">5 lifetime</td>
+                  <td className="py-3.5 px-4 text-center font-bold">100 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-bold">200 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-bold">500 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-bold text-amber-600 dark:text-amber-400">Unlimited</td>
                 </tr>
                 <tr>
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Custom Prompt Requests</td>
                   <td className="py-3.5 px-4 text-center text-neutral-400"><X className="w-4 h-4 mx-auto" /></td>
-                  <td className="py-3.5 px-4 text-center">1 / mo</td>
-                  <td className="py-3.5 px-4 text-center">2 / mo</td>
-                  <td className="py-3.5 px-4 text-center">3 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-bold">5 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-bold">1 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-bold">2 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-bold">3 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-bold text-amber-500">5 / mo</td>
                 </tr>
                 <tr>
-                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Saves & History</td>
-                  <td className="py-3.5 px-4 text-center">Limited</td>
-                  <td className="py-3.5 px-4 text-center text-neutral-700 dark:text-neutral-300 font-bold">100 saves</td>
-                  <td className="py-3.5 px-4 text-center text-neutral-700 dark:text-neutral-300 font-bold">200 saves</td>
-                  <td className="py-3.5 px-4 text-center text-neutral-700 dark:text-neutral-300 font-bold">400 saves</td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold">Unlimited</td>
+                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Saves & History Limit</td>
+                  <td className="py-3.5 px-4 text-center font-medium">10 saves</td>
+                  <td className="py-3.5 px-4 text-center font-bold">100 saves</td>
+                  <td className="py-3.5 px-4 text-center font-bold">200 saves</td>
+                  <td className="py-3.5 px-4 text-center font-bold">400 saves</td>
+                  <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400">Unlimited</td>
                 </tr>
                 <tr>
-                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Unlock Premium Prompts</td>
-                  <td className="py-3.5 px-4 text-center">1 cr each</td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold"><Check className="w-4 h-4 mx-auto" /></td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold"><Check className="w-4 h-4 mx-auto" /></td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold"><Check className="w-4 h-4 mx-auto" /></td>
-                  <td className="py-3.5 px-4 text-center text-amber-500 font-bold"><Check className="w-4 h-4 mx-auto" /></td>
+                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Unlock All Premium Prompts</td>
+                  <td className="py-3.5 px-4 text-center font-medium">1 cr per prompt</td>
+                  <td className="py-3.5 px-4 text-center text-emerald-600 dark:text-emerald-400 font-bold"><Check className="w-4 h-4 mx-auto inline mr-1" /> All Unlocked</td>
+                  <td className="py-3.5 px-4 text-center text-emerald-600 dark:text-emerald-400 font-bold"><Check className="w-4 h-4 mx-auto inline mr-1" /> All Unlocked</td>
+                  <td className="py-3.5 px-4 text-center text-emerald-600 dark:text-emerald-400 font-bold"><Check className="w-4 h-4 mx-auto inline mr-1" /> All Unlocked</td>
+                  <td className="py-3.5 px-4 text-center text-amber-500 font-bold"><Check className="w-4 h-4 mx-auto inline mr-1" /> All Unlocked</td>
                 </tr>
                 <tr>
-                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Image-to-Prompt Extraction</td>
-                  <td className="py-3.5 px-4 text-center">3 cr each</td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold"><Check className="w-4 h-4 mx-auto" /></td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold"><Check className="w-4 h-4 mx-auto" /></td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 font-bold"><Check className="w-4 h-4 mx-auto" /></td>
-                  <td className="py-3.5 px-4 text-center text-amber-500 font-bold"><Check className="w-4 h-4 mx-auto" /></td>
+                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Image-to-Prompt (2 cr each)</td>
+                  <td className="py-3.5 px-4 text-center">Up to 2 runs</td>
+                  <td className="py-3.5 px-4 text-center font-medium">Up to 50 runs</td>
+                  <td className="py-3.5 px-4 text-center font-medium">Up to 125 runs</td>
+                  <td className="py-3.5 px-4 text-center font-medium">Up to 300 runs</td>
+                  <td className="py-3.5 px-4 text-center font-bold text-amber-500">Up to 750 runs</td>
+                </tr>
+                <tr>
+                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">AI Prompt Generator & Editor (1 cr each)</td>
+                  <td className="py-3.5 px-4 text-center">Up to 5 runs</td>
+                  <td className="py-3.5 px-4 text-center font-medium">Up to 100 runs</td>
+                  <td className="py-3.5 px-4 text-center font-medium">Up to 250 runs</td>
+                  <td className="py-3.5 px-4 text-center font-medium">Up to 600 runs</td>
+                  <td className="py-3.5 px-4 text-center font-bold text-amber-500">Up to 1,500 runs</td>
                 </tr>
               </tbody>
             </table>
@@ -718,7 +734,7 @@ export default function CheckoutPage() {
               </div>
             </div>
             <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-3 py-1 rounded-full w-fit">
-              +2 Daily Free Credits for all accounts
+              +5 Free Signup Tool Credits for all accounts
             </span>
           </div>
 
@@ -735,25 +751,119 @@ export default function CheckoutPage() {
                   </h3>
                 </div>
                 <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                  Reveals the complete unblurred prompt text, camera recipes, and enables 1-click clipboard copy permanently for that prompt.
+                  1 credit for free accounts. <strong>Included 100% Free</strong> on all active Starter, Pro, VIP, and Studio plans with zero credit deductions.
                 </p>
               </div>
             </div>
 
             <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700/80 flex items-start gap-3.5">
               <div className="w-11 h-11 rounded-xl bg-red-100 dark:bg-red-950/80 text-[#E60023] flex items-center justify-center shrink-0 font-black text-sm shadow-xs">
-                3 Cr
+                2 Cr
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-1.5">
                   <ImageIcon className="w-3.5 h-3.5 text-[#E60023]" />
                   <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
-                    Image to Prompt Result
+                    Image-to-Prompt Extraction
                   </h3>
                 </div>
                 <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                  Upload any photo in Create Studio to deconstruct its prompt formula, artistic style, lens settings, and negative tags.
+                  2 credits per run. Gives up to <strong>50 runs on Starter</strong>, <strong>125 on Pro</strong>, <strong>300 on VIP</strong>, and <strong>750 on Studio 499</strong> each month.
                 </p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700/80 flex items-start gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-purple-100 dark:bg-purple-950/80 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 font-black text-sm shadow-xs">
+                1 Cr
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+                  <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
+                    AI Prompt Generator
+                  </h3>
+                </div>
+                <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                  1 credit per prompt generation. Delivers up to <strong>100 gens on Starter</strong>, <strong>250 on Pro</strong>, <strong>600 on VIP</strong>, and <strong>1,500 on Studio 499</strong> per month.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700/80 flex items-start gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 font-black text-sm shadow-xs">
+                1 Cr
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5 text-emerald-500" />
+                  <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
+                    Prompt Editor Tool
+                  </h3>
+                </div>
+                <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                  1 credit per remix/edit. Delivers up to <strong>100 edits on Starter</strong>, <strong>250 on Pro</strong>, <strong>600 on VIP</strong>, and <strong>1,500 on Studio 499</strong> per month.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Plan Monthly Deliverables Summary Grid */}
+          <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800">
+            <h3 className="text-xs font-black uppercase tracking-wider text-neutral-400 mb-3">
+              Monthly Plan Deliverables & Feature Power
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+              <div className="p-3.5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 space-y-1.5">
+                <div className="font-bold text-neutral-900 dark:text-white flex items-center justify-between">
+                  <span>Starter (₹1)</span>
+                  <span className="text-amber-500 font-black">100 Cr</span>
+                </div>
+                <div className="text-[11px] text-neutral-500 space-y-0.5">
+                  <p>• 100 Tool Credits / mo</p>
+                  <p>• 100 AI Searches / mo</p>
+                  <p>• 1 Prompt Request / mo</p>
+                  <p>• 100 Saves & History</p>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-white dark:bg-neutral-900 border-2 border-[#E60023] space-y-1.5 shadow-xs">
+                <div className="font-bold text-[#E60023] flex items-center justify-between">
+                  <span>Pro (₹1)</span>
+                  <span className="font-black">250 Cr</span>
+                </div>
+                <div className="text-[11px] text-neutral-500 space-y-0.5">
+                  <p>• 250 Tool Credits / mo</p>
+                  <p>• 200 AI Searches / mo</p>
+                  <p>• 2 Prompt Requests / mo</p>
+                  <p>• 200 Saves & History</p>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-white dark:bg-neutral-900 border border-purple-500/40 space-y-1.5">
+                <div className="font-bold text-purple-600 dark:text-purple-400 flex items-center justify-between">
+                  <span>VIP (₹1)</span>
+                  <span className="font-black">600 Cr</span>
+                </div>
+                <div className="text-[11px] text-neutral-500 space-y-0.5">
+                  <p>• 600 Tool Credits / mo</p>
+                  <p>• 500 AI Searches / mo</p>
+                  <p>• 3 Prompt Requests / mo</p>
+                  <p>• 400 Saves & History</p>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-gradient-to-b from-neutral-900 to-neutral-950 text-white border border-amber-500/60 space-y-1.5">
+                <div className="font-bold text-amber-400 flex items-center justify-between">
+                  <span>Studio 499 (₹1)</span>
+                  <span className="font-black">1,500 Cr</span>
+                </div>
+                <div className="text-[11px] text-neutral-300 space-y-0.5">
+                  <p>• 1,500 Tool Credits / mo</p>
+                  <p>• Unlimited AI Searches</p>
+                  <p>• 5 Prompt Requests / mo</p>
+                  <p>• Unlimited Saves & History</p>
+                </div>
               </div>
             </div>
           </div>

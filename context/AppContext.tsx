@@ -14,6 +14,7 @@ import {
   PersonalizationEngine,
   INITIAL_TASTE_PROFILE,
 } from '@/lib/personalization';
+import { PLAN_CONFIGS, getPlanConfig } from '@/lib/plans';
 
 interface AppContextType {
   // Navigation & Views
@@ -510,45 +511,42 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const upgradePlan = useCallback((tier: 'starter' | 'pro' | 'vip' | 'ultra') => {
-    const creditsMap = { starter: 100, pro: 250, vip: 600, ultra: 1500 };
-    const requestsMap = { starter: 1, pro: 2, vip: 3, ultra: 5 };
-    const pointsMap = { starter: 10, pro: 20, vip: 50, ultra: 100 };
-    const aiSearchMap = { starter: 100, pro: 200, vip: 500, ultra: 9999 };
+    const planConfig = PLAN_CONFIGS[tier] || PLAN_CONFIGS.pro;
 
     setIsProUserState(true);
     setPlanTierState(tier);
-    const allocatedAiSearch = aiSearchMap[tier] || 100;
-    setAiSearchRemaining(allocatedAiSearch);
+    const allocatedAiSearch = planConfig.aiSearchQuota;
+    setAiSearchRemainingState(allocatedAiSearch);
 
-    const addedCredits = creditsMap[tier];
-    const addedRequests = requestsMap[tier];
-    const addedPoints = pointsMap[tier];
+    const addedCredits = planConfig.credits;
+    const addedRequests = planConfig.promptRequests;
+    const addedPoints = tier === 'starter' ? 10 : tier === 'pro' ? 20 : tier === 'vip' ? 50 : 100;
 
-    let finalCredits = 0;
-    setToolCreditsState((prev) => {
-      const next = prev + addedCredits;
-      finalCredits = next;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('auraprompt_tool_credits', next.toString());
+    let currentCredits = toolCredits;
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('auraprompt_tool_credits');
+      if (saved !== null) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed)) currentCredits = Math.max(toolCredits, parsed);
       }
-      return next;
-    });
+    }
+    const finalCredits = Math.max(currentCredits + addedCredits, planConfig.credits);
+    setToolCreditsState(finalCredits);
 
-    let finalRequests = 0;
-    setPromptRequestsRemainingState((prev) => {
-      const next = prev + addedRequests;
-      finalRequests = next;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('auraprompt_prompt_requests', next.toString());
+    let currentRequests = promptRequestsRemaining;
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('auraprompt_prompt_requests');
+      if (saved !== null) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed)) currentRequests = Math.max(promptRequestsRemaining, parsed);
       }
-      return next;
-    });
+    }
+    const finalRequests = Math.max(currentRequests + addedRequests, planConfig.promptRequests);
+    setPromptRequestsRemainingState(finalRequests);
 
-    let finalPoints = 0;
+    let nextPoints = (userAccount?.points || 0) + addedPoints;
     setUserAccount((prev) => {
       if (!prev) return prev;
-      const nextPoints = (prev.points || 0) + addedPoints;
-      finalPoints = nextPoints;
       const updated = { ...prev, points: nextPoints };
       StorageService.saveUserAccount(updated);
       return updated;
@@ -563,6 +561,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('auraprompt_pro_member', 'true');
       localStorage.setItem('auraprompt_plan_tier', tier);
+      localStorage.setItem('auraprompt_tool_credits', finalCredits.toString());
+      localStorage.setItem('auraprompt_prompt_requests', finalRequests.toString());
+      localStorage.setItem('auraprompt_ai_search_remaining', allocatedAiSearch.toString());
       localStorage.setItem('auraprompt_plan_started_at', planStartedAt);
       localStorage.setItem('auraprompt_plan_expires_at', planExpiresAt);
     }
@@ -576,12 +577,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         toolCredits: finalCredits,
         promptRequestsRemaining: finalRequests,
         aiSearchRemaining: allocatedAiSearch,
-        points: currentAcc.points ? currentAcc.points + addedPoints : addedPoints,
+        points: nextPoints,
         planStartedAt,
         planExpiresAt,
       });
     }
-  }, [userAccount]);
+  }, [toolCredits, promptRequestsRemaining, userAccount]);
 
   // AI Studio History State
   const [aiHistory, setAiHistory] = useState<AIHistoryItem[]>([]);
@@ -839,9 +840,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setUserAccount((prev) => (prev ? { ...prev, points: synced.points } : prev));
       }
 
-      setPlanTierState(synced.planTier || 'free');
+      const resolvedTier = synced.planTier || 'free';
+      setPlanTierState(resolvedTier);
       if (typeof window !== 'undefined') {
-        localStorage.setItem('auraprompt_plan_tier', synced.planTier || 'free');
+        localStorage.setItem('auraprompt_plan_tier', resolvedTier);
       }
 
       setIsProUserState(synced.isProUser || false);
@@ -852,6 +854,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setToolCreditsState(synced.toolCredits ?? 5);
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits ?? 5));
+      }
+
+      const resolvedRequests = synced.promptRequestsRemaining !== undefined
+        ? synced.promptRequestsRemaining
+        : (PLAN_CONFIGS[resolvedTier]?.promptRequests || 0);
+      setPromptRequestsRemainingState(resolvedRequests);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auraprompt_prompt_requests', String(resolvedRequests));
+      }
+
+      const resolvedSearches = synced.aiSearchRemaining !== undefined
+        ? synced.aiSearchRemaining
+        : (PLAN_CONFIGS[resolvedTier]?.aiSearchQuota || 5);
+      setAiSearchRemainingState(resolvedSearches);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auraprompt_ai_search_remaining', String(resolvedSearches));
       }
 
       setUnlockedPromptIds(synced.unlockedPromptIds || []);
@@ -913,14 +931,28 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       StorageService.setLikedIds(synced.likedIds || []);
       setAiHistory(synced.aiHistory || []);
       StorageService.setAiHistory(synced.aiHistory || []);
-      setPlanTierState(synced.planTier || 'free');
+      const resolvedTier = synced.planTier || 'free';
+      setPlanTierState(resolvedTier);
       setIsProUserState(synced.isProUser || false);
       setToolCreditsState(synced.toolCredits ?? 5);
+
+      const resolvedRequests = synced.promptRequestsRemaining !== undefined
+        ? synced.promptRequestsRemaining
+        : (PLAN_CONFIGS[resolvedTier]?.promptRequests || 0);
+      setPromptRequestsRemainingState(resolvedRequests);
+
+      const resolvedSearches = synced.aiSearchRemaining !== undefined
+        ? synced.aiSearchRemaining
+        : (PLAN_CONFIGS[resolvedTier]?.aiSearchQuota || 5);
+      setAiSearchRemainingState(resolvedSearches);
+
       setUnlockedPromptIds(synced.unlockedPromptIds || []);
       if (typeof window !== 'undefined') {
-        localStorage.setItem('auraprompt_plan_tier', synced.planTier || 'free');
+        localStorage.setItem('auraprompt_plan_tier', resolvedTier);
         localStorage.setItem('auraprompt_pro_member', String(synced.isProUser || false));
         localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits ?? 5));
+        localStorage.setItem('auraprompt_prompt_requests', String(resolvedRequests));
+        localStorage.setItem('auraprompt_ai_search_remaining', String(resolvedSearches));
         localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds || []));
       }
     } catch (e) {
@@ -964,8 +996,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const isAlreadySaved = aiHistory.some(h => h.id === item.id);
-    if (!isAlreadySaved && !isProUser && (bookmarkedIds.length + aiHistory.length >= 10)) {
-      showToast('Free user limit reached: 10 combined saves max (bookmarks + history). Upgrade to a paid monthly subscription for unlimited saves!');
+    const planCfg = PLAN_CONFIGS[planTier] || PLAN_CONFIGS.free;
+    const maxSaves = planCfg.savesLimit;
+    if (!isAlreadySaved && !planCfg.unlimitedSaves && (bookmarkedIds.length + aiHistory.length >= maxSaves)) {
+      showToast(`${planCfg.name} plan limit reached: ${maxSaves} combined saves max (bookmarks + history). Upgrade your plan to increase your limit!`);
       setIsProCheckoutModalOpen(true);
       return;
     }
@@ -1095,6 +1129,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setUnlockedPromptIds(synced.unlockedPromptIds);
         if (typeof window !== 'undefined') localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds));
       }
+      if (synced.promptRequestsRemaining !== undefined) {
+        setPromptRequestsRemainingState(synced.promptRequestsRemaining);
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_prompt_requests', String(synced.promptRequestsRemaining));
+      }
+      if (synced.aiSearchRemaining !== undefined) {
+        setAiSearchRemainingState(synced.aiSearchRemaining);
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_ai_search_remaining', String(synced.aiSearchRemaining));
+      }
     } catch (e) {
       console.warn('Sync cloud data notice:', e);
     } finally {
@@ -1152,6 +1194,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (synced.unlockedPromptIds) {
           setUnlockedPromptIds(synced.unlockedPromptIds);
           localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds));
+        }
+
+        if (synced.promptRequestsRemaining !== undefined) {
+          setPromptRequestsRemainingState(synced.promptRequestsRemaining);
+          localStorage.setItem('auraprompt_prompt_requests', String(synced.promptRequestsRemaining));
+        }
+
+        if (synced.aiSearchRemaining !== undefined) {
+          setAiSearchRemainingState(synced.aiSearchRemaining);
+          localStorage.setItem('auraprompt_ai_search_remaining', String(synced.aiSearchRemaining));
         }
 
         if (synced.planExpiresAt && !localStorage.getItem('auraprompt_plan_expires_at')) {
@@ -1234,13 +1286,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const [aiSearchRemaining, setAiSearchRemainingState] = useState<number>(() => {
     if (typeof window !== 'undefined') {
-      const isPro = localStorage.getItem('auraprompt_pro_member') === 'true';
-      if (isPro) return 999;
       const saved = localStorage.getItem('auraprompt_ai_search_remaining');
       if (saved !== null) {
         const parsed = parseInt(saved, 10);
-        if (!isNaN(parsed) && parsed > 0) return parsed;
+        if (!isNaN(parsed) && parsed >= 0) return parsed;
       }
+      const tier = (localStorage.getItem('auraprompt_plan_tier') as PlanTier) || 'free';
+      return PLAN_CONFIGS[tier]?.aiSearchQuota ?? 5;
     }
     return 5; // 5 free AI searches lifetime for free users
   });
@@ -1269,8 +1321,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return cached;
     }
 
-    if (!isProUser && aiSearchRemaining <= 0) {
-      showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
+    const planCfg = PLAN_CONFIGS[planTier] || PLAN_CONFIGS.free;
+
+    if (!planCfg.unlimitedSearches && aiSearchRemaining <= 0) {
+      showToast(`You have used all of your AI search quota (${planCfg.aiSearchQuota} searches). Please upgrade your plan to unlock more searches!`);
       setIsProCheckoutModalOpen(true);
       setIsAiSearchEnabled(false);
       return null;
@@ -1298,12 +1352,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           setAiSearchResults(result);
 
           // Deduct quota only once per unique query when successfully completed and deductQuota is true
-          if (!isProUser && deductQuota && !aiSearchDeductedRef.current.has(cacheKey)) {
+          if (!planCfg.unlimitedSearches && deductQuota && !aiSearchDeductedRef.current.has(cacheKey)) {
             aiSearchDeductedRef.current.add(cacheKey);
             setAiSearchRemainingState((prev) => {
               const next = Math.max(0, prev - 1);
               if (typeof window !== 'undefined') {
                 localStorage.setItem('auraprompt_ai_search_remaining', next.toString());
+              }
+              const acc = userAccount || StorageService.getUserAccount();
+              if (acc && acc.isLoggedIn) {
+                void UserSyncService.pushUserData(acc.id, acc.email, { aiSearchRemaining: next });
               }
               return next;
             });
@@ -1319,7 +1377,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setIsAiSearching(false);
     }
     return null;
-  }, [isAiSearchEnabled, isProUser, aiSearchRemaining, setAiSearchRemaining, showToast, setIsProCheckoutModalOpen, setIsAiSearchEnabled]);
+  }, [isAiSearchEnabled, planTier, aiSearchRemaining, setAiSearchRemaining, showToast, setIsProCheckoutModalOpen, setIsAiSearchEnabled, userAccount]);
 
   const clearAiSearch = useCallback(() => {
     setAiSearchResults(null);
@@ -1549,6 +1607,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (typeof window !== 'undefined') localStorage.setItem('auraprompt_pro_member', String(synced.isProUser || false));
       setToolCreditsState(synced.toolCredits ?? 5);
       if (typeof window !== 'undefined') localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits ?? 5));
+      if (synced.promptRequestsRemaining !== undefined) {
+        setPromptRequestsRemainingState(synced.promptRequestsRemaining);
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_prompt_requests', String(synced.promptRequestsRemaining));
+      }
+      if (synced.aiSearchRemaining !== undefined) {
+        setAiSearchRemainingState(synced.aiSearchRemaining);
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_ai_search_remaining', String(synced.aiSearchRemaining));
+      }
       setUnlockedPromptIds(synced.unlockedPromptIds || []);
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds || []));
@@ -1972,8 +2038,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const currentBookmarks = StorageService.getBookmarkedIds();
     const isCurrentlyBookmarked = currentBookmarks.includes(id);
-    if (!isCurrentlyBookmarked && !isProUser && (currentBookmarks.length + aiHistory.length >= 10)) {
-      showToast('Free user limit reached: 10 combined saves max (bookmarks + history). Upgrade to a paid monthly subscription for unlimited saves!');
+    const planCfg = PLAN_CONFIGS[planTier] || PLAN_CONFIGS.free;
+    const maxSaves = planCfg.savesLimit;
+    if (!isCurrentlyBookmarked && !planCfg.unlimitedSaves && (currentBookmarks.length + aiHistory.length >= maxSaves)) {
+      showToast(`${planCfg.name} plan limit reached: ${maxSaves} combined saves max (bookmarks + history). Upgrade your plan to increase your limit!`);
       setIsProCheckoutModalOpen(true);
       return;
     }

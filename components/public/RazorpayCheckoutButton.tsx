@@ -43,13 +43,19 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const { showToast, setIsProUser, upgradePlan, addToolCredits, userAccount } = useApp();
+  const { showToast, setIsProUser, upgradePlan, addToolCredits, userAccount, openAuthModal } = useApp();
 
   const handleCheckout = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (isLoading) return;
+
+    if (!userAccount || !userAccount.isLoggedIn) {
+      openAuthModal('Please sign in or create an account first so your subscription plan and credits are safely saved to your account.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -60,11 +66,15 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
         description: `${planName} - ${description}`,
         receipt: `rcpt_${Date.now()}`,
         prefill: {
-          name: userAccount?.name || userAccount?.username || 'Creative Member',
-          email: userAccount?.email || 'member@trendprompts.com',
+          name: userAccount.name || userAccount.username || userAccount.email.split('@')[0],
+          email: userAccount.email,
         },
         notes: {
           plan: planName,
+          planTier: planTier || 'pro',
+          userEmail: userAccount.email,
+          userId: userAccount.id,
+          ...(creditsToAdd ? { creditsToAdd: String(creditsToAdd) } : {}),
           ...notes,
         },
         themeColor: '#E60023',
@@ -78,7 +88,7 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
           } else {
             setIsProUser(true);
             upgradePlan(planTier);
-            showToast(`Payment Verified! Order ${verifyData.order_id.slice(-6)} successful 🎉`);
+            showToast(`Payment Verified! Upgraded to ${planTier.toUpperCase()} Plan 🎉`);
           }
 
           try {

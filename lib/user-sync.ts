@@ -1,5 +1,6 @@
 import { UserAccount, AIHistoryItem, PlanTier, PromptRequestItem } from '@/types/prompt';
 import { INITIAL_TASTE_PROFILE, UserTasteProfile } from './personalization';
+import { PLAN_CONFIGS } from './plans';
 
 export interface UserSyncData {
   userId?: string;
@@ -187,8 +188,11 @@ export const UserSyncService = {
       }
     }
 
-    let currentCredits = Number(remote.toolCredits ?? 5);
-    let currentAiSearchRemaining = remote.aiSearchRemaining !== undefined ? Number(remote.aiSearchRemaining) : 5;
+    const planCfg = PLAN_CONFIGS[resolvedTier] || PLAN_CONFIGS.free;
+
+    let currentCredits = Math.max(Number(remote.toolCredits ?? planCfg.credits), planCfg.credits);
+    let currentRequests = Math.max(Number(remote.promptRequestsRemaining ?? planCfg.promptRequests), planCfg.promptRequests);
+    let currentAiSearchRemaining = Math.max(Number(remote.aiSearchRemaining ?? planCfg.aiSearchQuota), planCfg.aiSearchQuota);
 
     const mergedData: UserSyncData = {
       userId: user.id,
@@ -204,7 +208,7 @@ export const UserSyncService = {
       isProUser: resolvedIsPro,
       toolCredits: currentCredits,
       aiSearchRemaining: currentAiSearchRemaining,
-      promptRequestsRemaining: Number(remote.promptRequestsRemaining || 0),
+      promptRequestsRemaining: currentRequests,
       unlockedPromptIds: Array.isArray(remote.unlockedPromptIds) ? remote.unlockedPromptIds : [],
       planStartedAt: remote.planStartedAt,
       planExpiresAt: remote.planExpiresAt,
@@ -222,7 +226,7 @@ export const UserSyncService = {
       isProUser: resolvedIsPro,
       toolCredits: currentCredits,
       aiSearchRemaining: currentAiSearchRemaining,
-      promptRequestsRemaining: mergedData.promptRequestsRemaining || 0,
+      promptRequestsRemaining: currentRequests,
       unlockedPromptIds: mergedData.unlockedPromptIds || [],
       planStartedAt: remote.planStartedAt,
       planExpiresAt: remote.planExpiresAt,

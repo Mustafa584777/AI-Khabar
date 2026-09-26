@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, supabase } from '@/lib/supabase';
 import { getClientIp, checkRateLimit, createRateLimitResponse, sanitizePayload } from '@/lib/security';
+import { PLAN_CONFIGS } from '@/lib/plans';
+import { PlanTier } from '@/types/prompt';
 
 export const dynamic = 'force-dynamic';
 
@@ -84,7 +86,11 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    let currentCredits = Number(cloned.toolCredits ?? 5);
+    const planCfg = PLAN_CONFIGS[tier as PlanTier] || PLAN_CONFIGS.free;
+
+    let currentCredits = Math.max(Number(cloned.toolCredits ?? planCfg.credits), planCfg.credits);
+    let currentRequests = Math.max(Number(cloned.promptRequestsRemaining ?? planCfg.promptRequests), planCfg.promptRequests);
+    let currentAiSearchRemaining = Math.max(Number(cloned.aiSearchRemaining ?? planCfg.aiSearchQuota), planCfg.aiSearchQuota);
 
     return NextResponse.json({
       success: true,
@@ -102,7 +108,8 @@ export async function POST(req: NextRequest) {
         planTier: tier,
         isProUser: tier !== 'free' || Boolean(cloned.isProUser),
         toolCredits: currentCredits,
-        promptRequestsRemaining: cloned.promptRequestsRemaining ?? 0,
+        aiSearchRemaining: currentAiSearchRemaining,
+        promptRequestsRemaining: currentRequests,
         unlockedPromptIds: cloned.unlockedPromptIds || [],
         planStartedAt: cloned.planStartedAt,
         planExpiresAt: cloned.planExpiresAt,
