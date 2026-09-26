@@ -240,7 +240,7 @@ export const RazorpayCheckoutModal: React.FC = () => {
             });
           } else {
             setIsProUser(true);
-            upgradePlan(selectedPlanId);
+            upgradePlan(selectedPlanId, data.userSyncData);
             showToast(`Payment verified! Upgraded to ${(selectedPlanId || 'pro').toUpperCase()} Plan 🎉`);
             setPaymentResult({
               success: true,

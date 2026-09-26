@@ -3,6 +3,7 @@ import { supabaseAdmin, supabase } from '@/lib/supabase';
 import { getClientIp, checkRateLimit, createRateLimitResponse, sanitizePayload } from '@/lib/security';
 import { PLAN_CONFIGS } from '@/lib/plans';
 import { PlanTier } from '@/types/prompt';
+import { ServerStorage } from '@/lib/server-storage';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,23 +47,61 @@ export async function POST(req: NextRequest) {
 
     const client = supabaseAdmin || supabase;
 
-    // Fetch authoritative user record from Supabase
+    // Fetch authoritative user record checking ServerStorage, active subscription, and Supabase
     let rowData: any = null;
-    if (emailKey) {
-      const { data: row } = await client
-        .from('settings')
-        .select('data')
-        .eq('id', emailKey)
-        .single();
-      if (row?.data) rowData = row.data;
+
+    // 1. Check ServerStorage profile & active subscription
+    try {
+      if (cleanEmail || userId) {
+        rowData = await ServerStorage.getUserProfile(cleanEmail, userId);
+      }
+      if (cleanEmail) {
+        const activeSub = await ServerStorage.getUserSubscription(cleanEmail);
+        if (activeSub && activeSub.status === 'active') {
+          rowData = {
+            ...(rowData || {}),
+            email: cleanEmail,
+            planTier: activeSub.planTier,
+            isProUser: true,
+            toolCredits: Math.max(Number(rowData?.toolCredits || 0), activeSub.credits),
+            aiSearchRemaining: Math.max(Number(rowData?.aiSearchRemaining || 0), activeSub.aiSearchQuota),
+            promptRequestsRemaining: Math.max(Number(rowData?.promptRequestsRemaining || 0), activeSub.promptRequests),
+            planStartedAt: activeSub.planStartedAt,
+            planExpiresAt: activeSub.planExpiresAt,
+          };
+        }
+      }
+    } catch (e) {
+      console.warn('ServerStorage session validation notice:', e);
     }
-    if (!rowData && userKey) {
-      const { data: row } = await client
-        .from('settings')
-        .select('data')
-        .eq('id', userKey)
-        .single();
-      if (row?.data) rowData = row.data;
+
+    // 2. Check Supabase by emailKey or userKey if not already found
+    if (!rowData) {
+      if (emailKey) {
+        const { data: row } = await client
+          .from('settings')
+          .select('data')
+          .eq('id', emailKey)
+          .maybeSingle();
+        if (row?.data) rowData = row.data;
+      }
+      if (!rowData && userKey) {
+        const { data: row } = await client
+          .from('settings')
+          .select('data')
+          .eq('id', userKey)
+          .maybeSingle();
+        if (row?.data) rowData = row.data;
+      }
+      if (!rowData && cleanEmail) {
+        const { data: rows } = await client
+          .from('settings')
+          .select('data')
+          .filter('data->>email', 'eq', cleanEmail);
+        if (Array.isArray(rows) && rows.length > 0) {
+          rowData = rows[0]?.data;
+        }
+      }
     }
 
     if (!rowData) {

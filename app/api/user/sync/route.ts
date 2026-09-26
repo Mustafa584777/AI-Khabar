@@ -3,6 +3,7 @@ import { supabaseAdmin, supabase } from '@/lib/supabase';
 import { getClientIp, checkRateLimit, createRateLimitResponse, sanitizePayload } from '@/lib/security';
 import { PLAN_CONFIGS } from '@/lib/plans';
 import { PlanTier } from '@/types/prompt';
+import { ServerStorage } from '@/lib/server-storage';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,35 +47,70 @@ export async function POST(req: NextRequest) {
 
     const client = supabaseAdmin || supabase;
 
-    // Helper: fetch existing row checking emailKey and userKey and merging intelligently
+    // Helper: fetch existing row checking emailKey, userKey, subscriptions, and server backups
     const fetchExistingData = async () => {
       const candidates: any[] = [];
+
+      // 1. Check ServerStorage profile backup
+      if (cleanEmail || userId) {
+        try {
+          const storedProfile = await ServerStorage.getUserProfile(cleanEmail, userId);
+          if (storedProfile) candidates.push(storedProfile);
+        } catch (e) {
+          console.warn('ServerStorage profile check warning:', e);
+        }
+      }
+
+      // 2. Check active subscription
+      if (cleanEmail) {
+        try {
+          const activeSub = await ServerStorage.getUserSubscription(cleanEmail);
+          if (activeSub && activeSub.status === 'active') {
+            candidates.push({
+              email: cleanEmail,
+              planTier: activeSub.planTier,
+              isProUser: true,
+              toolCredits: activeSub.credits,
+              aiSearchRemaining: activeSub.aiSearchQuota,
+              promptRequestsRemaining: activeSub.promptRequests,
+              planStartedAt: activeSub.planStartedAt,
+              planExpiresAt: activeSub.planExpiresAt,
+            });
+          }
+        } catch (e) {
+          console.warn('ServerStorage subscription check warning:', e);
+        }
+      }
+
+      // 3. Check Supabase by emailKey
       if (emailKey) {
         const { data: row } = await client
           .from('settings')
           .select('data')
           .eq('id', emailKey)
-          .single();
+          .maybeSingle();
         if (row?.data) candidates.push(row.data);
       }
+
+      // 4. Check Supabase by userKey
       if (userKey && userKey !== emailKey) {
         const { data: row } = await client
           .from('settings')
           .select('data')
           .eq('id', userKey)
-          .single();
+          .maybeSingle();
         if (row?.data) candidates.push(row.data);
       }
+
+      // 5. Check Supabase by jsonb filter
       if (cleanEmail) {
         const { data: rows } = await client
           .from('settings')
           .select('data')
-          .ilike('id', `%${cleanEmail.replace(/[^a-z0-9]/g, '_')}%`);
+          .filter('data->>email', 'eq', cleanEmail);
         if (Array.isArray(rows)) {
           for (const r of rows) {
-            if (r?.data && !candidates.includes(r.data)) {
-              candidates.push(r.data);
-            }
+            if (r?.data) candidates.push(r.data);
           }
         }
       }
@@ -84,13 +120,22 @@ export async function POST(req: NextRequest) {
 
       // Merge candidates taking highest credits and best plan tier
       const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3, ultra: 4 };
-      let best = candidates[0];
+      let best = { ...candidates[0] };
       for (let i = 1; i < candidates.length; i++) {
         const curr = candidates[i];
         const bestTier = best.planTier || (best.isProUser ? 'pro' : 'free');
         const currTier = curr.planTier || (curr.isProUser ? 'pro' : 'free');
-        if ((TIER_RANK[currTier] || 0) > (TIER_RANK[bestTier] || 0)) {
-          best = { ...best, ...curr, planTier: currTier, isProUser: curr.isProUser };
+
+        const isBestExpired = best.planExpiresAt && new Date(best.planExpiresAt).getTime() < Date.now();
+        const isCurrExpired = curr.planExpiresAt && new Date(curr.planExpiresAt).getTime() < Date.now();
+
+        const effBestTier = isBestExpired ? 'free' : bestTier;
+        const effCurrTier = isCurrExpired ? 'free' : currTier;
+
+        if ((TIER_RANK[effCurrTier] || 0) > (TIER_RANK[effBestTier] || 0)) {
+          best = { ...best, ...curr, planTier: effCurrTier, isProUser: effCurrTier !== 'free' || Boolean(curr.isProUser) };
+          best.planStartedAt = curr.planStartedAt || best.planStartedAt;
+          best.planExpiresAt = curr.planExpiresAt || best.planExpiresAt;
         }
         if ((curr.toolCredits || 0) > (best.toolCredits || 0)) {
           best.toolCredits = curr.toolCredits;
@@ -214,14 +259,37 @@ export async function POST(req: NextRequest) {
       const currentTier = existingData.planTier || (existingData.isProUser ? 'pro' : 'free');
       const incomingTier = data.planTier;
       let resolvedPlanTier = currentTier;
-      if (incomingTier && TIER_RANK[incomingTier] !== undefined) {
+
+      // Check active permanent subscription
+      let activeSub: any = null;
+      if (cleanEmail) {
+        try {
+          activeSub = await ServerStorage.getUserSubscription(cleanEmail);
+        } catch {}
+      }
+      const hasActiveSub = activeSub && activeSub.status === 'active';
+
+      // Check if current tier is paid and unexpired
+      const isCurrentPaidAndActive = currentTier !== 'free' && (!existingData.planExpiresAt || new Date(existingData.planExpiresAt).getTime() > Date.now());
+
+      if (hasActiveSub) {
+        resolvedPlanTier = activeSub.planTier;
+      } else if (isCurrentPaidAndActive) {
+        // If user already holds a paid plan, do NOT let it get downgraded to free by a push
+        if (incomingTier && (TIER_RANK[incomingTier] || 0) > (TIER_RANK[currentTier] || 0)) {
+          resolvedPlanTier = incomingTier;
+        } else {
+          resolvedPlanTier = currentTier;
+        }
+      } else if (incomingTier && TIER_RANK[incomingTier] !== undefined) {
         resolvedPlanTier = incomingTier;
       }
-      let resolvedIsPro = resolvedPlanTier !== 'free' || Boolean(data.isProUser ?? existingData.isProUser);
+
+      let resolvedIsPro = resolvedPlanTier !== 'free' || Boolean(data.isProUser ?? existingData.isProUser ?? hasActiveSub);
 
       // Check plan expiration if provided
-      const resolvedPlanExpiresAt = data.planExpiresAt || existingData.planExpiresAt;
-      if (resolvedPlanTier !== 'free' && resolvedPlanExpiresAt) {
+      const resolvedPlanExpiresAt = activeSub?.planExpiresAt || data.planExpiresAt || existingData.planExpiresAt;
+      if (resolvedPlanTier !== 'free' && resolvedPlanExpiresAt && !hasActiveSub) {
         const exp = new Date(resolvedPlanExpiresAt).getTime();
         if (!isNaN(exp) && exp < Date.now()) {
           resolvedPlanTier = 'free';
@@ -326,22 +394,29 @@ export async function POST(req: NextRequest) {
         updatedAt: new Date().toISOString(),
       };
 
-      // 1. Primary Save: Always save to emailKey if email is provided
+      // 1. Primary Save: Local server-storage persistent backup
+      try {
+        await ServerStorage.saveUserProfile(cleanEmail, userId, mergedPayload);
+      } catch (e) {
+        console.error('ServerStorage saveUserProfile error:', e);
+      }
+
+      // 2. Save to Supabase emailKey if email is provided
       if (emailKey) {
         const { error: emailUpsertError } = await client
           .from('settings')
-          .upsert({ id: emailKey, data: mergedPayload });
+          .upsert({ id: emailKey, data: mergedPayload }, { onConflict: 'id' });
 
         if (emailUpsertError) {
           console.error('User sync email upsert error:', emailUpsertError);
         }
       }
 
-      // 2. Secondary Mirror: Save to userKey if provided
+      // 3. Secondary Mirror: Save to userKey if provided
       if (userKey && userKey !== emailKey) {
         const { error: userUpsertError } = await client
           .from('settings')
-          .upsert({ id: userKey, data: mergedPayload });
+          .upsert({ id: userKey, data: mergedPayload }, { onConflict: 'id' });
 
         if (userUpsertError) {
           console.error('User sync user upsert error:', userUpsertError);

@@ -12,6 +12,9 @@ const CATEGORIES_FILE = path.join(DATA_DIR, 'categories.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const TAGS_FILE = path.join(DATA_DIR, 'tags.json');
 const SEARCH_QUERIES_FILE = path.join(DATA_DIR, 'search_queries.json');
+const SUBSCRIPTIONS_FILE = path.join(DATA_DIR, 'subscriptions.json');
+const USER_PROFILES_FILE = path.join(DATA_DIR, 'users.json');
+const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
 
 const DEFAULT_TAGS = [
   'Portrait', '35mm', 'Cinematic', 'Street Photography', 'Fashion',
@@ -852,5 +855,253 @@ export const ServerStorage = {
     memoryTags = filtered;
     writeJsonFile(TAGS_FILE, filtered);
     return filtered;
+  },
+
+  // Subscriptions & Memberships
+  getUserSubscription: async (email: string): Promise<any | null> => {
+    const cleanEmail = email ? email.trim().toLowerCase() : '';
+    if (!cleanEmail) return null;
+    const cleanKey = cleanEmail.replace(/[^a-z0-9_]/g, '_');
+    const subId = `sub_${cleanKey}`;
+
+    // 1. Try Supabase
+    if (isSupabaseConfigured()) {
+      try {
+        const { data, error } = await db().from('settings').select('data').eq('id', subId).maybeSingle();
+        if (!error && data?.data) {
+          const sub = data.data;
+          if (sub.planExpiresAt && new Date(sub.planExpiresAt).getTime() < Date.now()) {
+            sub.status = 'expired';
+          }
+          return sub;
+        }
+      } catch (err) {
+        console.warn('Supabase getUserSubscription fallback:', err);
+      }
+    }
+
+    // 2. Local file fallback
+    const allSubs = readJsonFile<Record<string, any>>(SUBSCRIPTIONS_FILE, {});
+    const localSub = allSubs[cleanEmail] || allSubs[cleanKey] || null;
+    if (localSub) {
+      if (localSub.planExpiresAt && new Date(localSub.planExpiresAt).getTime() < Date.now()) {
+        localSub.status = 'expired';
+      }
+      return localSub;
+    }
+
+    return null;
+  },
+
+  saveUserSubscription: async (sub: any): Promise<any> => {
+    const cleanEmail = sub.email ? sub.email.trim().toLowerCase() : '';
+    if (!cleanEmail) return sub;
+    const cleanKey = cleanEmail.replace(/[^a-z0-9_]/g, '_');
+    const subId = `sub_${cleanKey}`;
+
+    const enriched = {
+      ...sub,
+      email: cleanEmail,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // 1. Save to local file
+    try {
+      const allSubs = readJsonFile<Record<string, any>>(SUBSCRIPTIONS_FILE, {});
+      allSubs[cleanEmail] = enriched;
+      writeJsonFile(SUBSCRIPTIONS_FILE, allSubs);
+    } catch (e) {
+      console.error('Error writing subscriptions.json:', e);
+    }
+
+    // 2. Save to Supabase
+    if (isSupabaseConfigured()) {
+      try {
+        await db().from('settings').upsert({
+          id: subId,
+          data: enriched,
+        }, { onConflict: 'id' });
+      } catch (err) {
+        console.error('Supabase saveUserSubscription exception:', err);
+      }
+    }
+
+    return enriched;
+  },
+
+  saveOrder: async (order: any): Promise<void> => {
+    if (!order) return;
+    const orderId = order.orderId || order.order_id || `order_${Date.now()}`;
+    const cleanId = `order_${String(orderId).replace(/[^a-z0-9_]/g, '_')}`;
+
+    // 1. Local file
+    try {
+      const allOrders = readJsonFile<Record<string, any>>(ORDERS_FILE, {});
+      allOrders[cleanId] = { ...order, updatedAt: new Date().toISOString() };
+      writeJsonFile(ORDERS_FILE, allOrders);
+    } catch (e) {
+      console.error('Error writing orders.json:', e);
+    }
+
+    // 2. Supabase
+    if (isSupabaseConfigured()) {
+      try {
+        await db().from('settings').upsert({
+          id: cleanId,
+          data: order,
+        }, { onConflict: 'id' });
+      } catch (err) {
+        console.error('Supabase saveOrder exception:', err);
+      }
+    }
+  },
+
+  getUserProfile: async (email: string, userId?: string): Promise<any | null> => {
+    const cleanEmail = email ? email.trim().toLowerCase() : '';
+    if (!cleanEmail && !userId) return null;
+    const cleanKey = cleanEmail ? cleanEmail.replace(/[^a-z0-9_]/g, '_') : '';
+    const emailKey = cleanKey ? `user_sync_email_${cleanKey}` : '';
+    const userKey = userId ? `user_sync_${userId.trim()}` : '';
+
+    const candidates: any[] = [];
+
+    // 1. Supabase check
+    if (isSupabaseConfigured()) {
+      try {
+        if (cleanEmail) {
+          const { data: rows } = await db()
+            .from('settings')
+            .select('data')
+            .filter('data->>email', 'eq', cleanEmail);
+          if (Array.isArray(rows)) {
+            for (const r of rows) {
+              if (r?.data) candidates.push(r.data);
+            }
+          }
+        }
+
+        if (emailKey && candidates.length === 0) {
+          const { data: row } = await db().from('settings').select('data').eq('id', emailKey).maybeSingle();
+          if (row?.data) candidates.push(row.data);
+        }
+
+        if (userKey) {
+          const { data: row } = await db().from('settings').select('data').eq('id', userKey).maybeSingle();
+          if (row?.data) candidates.push(row.data);
+        }
+      } catch (err) {
+        console.warn('Supabase getUserProfile notice:', err);
+      }
+    }
+
+    // 2. Local file check
+    try {
+      const allUsers = readJsonFile<Record<string, any>>(USER_PROFILES_FILE, {});
+      if (cleanEmail && allUsers[cleanEmail]) {
+        candidates.push(allUsers[cleanEmail]);
+      }
+      if (userId && allUsers[userId]) {
+        candidates.push(allUsers[userId]);
+      }
+    } catch (e) {
+      console.error('Error reading users.json:', e);
+    }
+
+    // 3. Subscription check
+    const sub = await ServerStorage.getUserSubscription(cleanEmail);
+    if (sub && sub.status === 'active') {
+      candidates.push({
+        email: cleanEmail,
+        planTier: sub.planTier,
+        isProUser: true,
+        toolCredits: sub.credits,
+        aiSearchRemaining: sub.aiSearchQuota,
+        promptRequestsRemaining: sub.promptRequests,
+        planStartedAt: sub.planStartedAt,
+        planExpiresAt: sub.planExpiresAt,
+      });
+    }
+
+    if (candidates.length === 0) return null;
+
+    // Merge candidates: highest plan tier, highest credits, union of arrays
+    const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3, ultra: 4 };
+    let best = { ...candidates[0] };
+    for (let i = 1; i < candidates.length; i++) {
+      const curr = candidates[i];
+      const bestTier = best.planTier || (best.isProUser ? 'pro' : 'free');
+      const currTier = curr.planTier || (curr.isProUser ? 'pro' : 'free');
+
+      // Check expiration of best and curr
+      const isBestExpired = best.planExpiresAt && new Date(best.planExpiresAt).getTime() < Date.now();
+      const isCurrExpired = curr.planExpiresAt && new Date(curr.planExpiresAt).getTime() < Date.now();
+
+      const effectiveBestTier = isBestExpired ? 'free' : bestTier;
+      const effectiveCurrTier = isCurrExpired ? 'free' : currTier;
+
+      if ((TIER_RANK[effectiveCurrTier] || 0) > (TIER_RANK[effectiveBestTier] || 0)) {
+        best.planTier = effectiveCurrTier;
+        best.isProUser = effectiveCurrTier !== 'free' || Boolean(curr.isProUser);
+        best.planStartedAt = curr.planStartedAt || best.planStartedAt;
+        best.planExpiresAt = curr.planExpiresAt || best.planExpiresAt;
+      }
+      if ((curr.toolCredits || 0) > (best.toolCredits || 0)) {
+        best.toolCredits = curr.toolCredits;
+      }
+      if ((curr.promptRequestsRemaining || 0) > (best.promptRequestsRemaining || 0)) {
+        best.promptRequestsRemaining = curr.promptRequestsRemaining;
+      }
+      if ((curr.aiSearchRemaining || 0) > (best.aiSearchRemaining || 0)) {
+        best.aiSearchRemaining = curr.aiSearchRemaining;
+      }
+      if ((curr.points || 0) > (best.points || 0)) {
+        best.points = curr.points;
+      }
+      best.bookmarkedIds = Array.from(new Set([...(best.bookmarkedIds || []), ...(curr.bookmarkedIds || [])]));
+      best.unlockedPromptIds = Array.from(new Set([...(best.unlockedPromptIds || []), ...(curr.unlockedPromptIds || [])]));
+      best.likedIds = Array.from(new Set([...(best.likedIds || []), ...(curr.likedIds || [])]));
+    }
+
+    return best;
+  },
+
+  saveUserProfile: async (email: string, userId: string | undefined, data: any): Promise<any> => {
+    const cleanEmail = email ? email.trim().toLowerCase() : '';
+    const cleanKey = cleanEmail ? cleanEmail.replace(/[^a-z0-9_]/g, '_') : '';
+    const emailKey = cleanKey ? `user_sync_email_${cleanKey}` : '';
+    const userKey = userId ? `user_sync_${userId.trim()}` : '';
+
+    const payload = {
+      ...data,
+      email: cleanEmail || data.email,
+      userId: userId || data.userId,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // 1. Local file
+    try {
+      const allUsers = readJsonFile<Record<string, any>>(USER_PROFILES_FILE, {});
+      if (cleanEmail) allUsers[cleanEmail] = payload;
+      if (userId) allUsers[userId] = payload;
+      writeJsonFile(USER_PROFILES_FILE, allUsers);
+    } catch (e) {
+      console.error('Error writing users.json:', e);
+    }
+
+    // 2. Supabase
+    if (isSupabaseConfigured()) {
+      try {
+        if (emailKey) {
+          await db().from('settings').upsert({ id: emailKey, data: payload }, { onConflict: 'id' });
+        }
+        if (userKey && userKey !== emailKey) {
+          await db().from('settings').upsert({ id: userKey, data: payload }, { onConflict: 'id' });
+        }
+      } catch (err) {
+        console.error('Supabase saveUserProfile exception:', err);
+      }
+    }
+
+    return payload;
   },
 };

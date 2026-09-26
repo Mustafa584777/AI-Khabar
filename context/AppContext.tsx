@@ -149,7 +149,7 @@ interface AppContextType {
   useToolCredit: (amount?: number) => boolean;
   addToolCredits: (amount: number) => void;
   promptRequestsRemaining: number;
-  upgradePlan: (tier: 'starter' | 'pro' | 'vip' | 'ultra') => void;
+  upgradePlan: (tier: 'starter' | 'pro' | 'vip' | 'ultra', serverData?: any) => void;
 
   // Prompt Unlocking with Credits / Subscription
   unlockedPromptIds: string[];
@@ -529,12 +529,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     [isProUser, unlockedPromptIds, toolCredits, userAccount]
   );
 
-  const upgradePlan = useCallback((tier: 'starter' | 'pro' | 'vip' | 'ultra') => {
+  const upgradePlan = useCallback((tier: 'starter' | 'pro' | 'vip' | 'ultra', serverData?: any) => {
     const planConfig = PLAN_CONFIGS[tier] || PLAN_CONFIGS.pro;
 
     setIsProUserState(true);
     setPlanTierState(tier);
-    const allocatedAiSearch = planConfig.aiSearchQuota;
+    const allocatedAiSearch = serverData?.aiSearchRemaining ?? (planConfig.unlimitedSearches ? 999999 : planConfig.aiSearchQuota);
     setAiSearchRemainingState(allocatedAiSearch);
 
     const addedCredits = planConfig.credits;
@@ -549,7 +549,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (!isNaN(parsed)) currentCredits = Math.max(toolCredits, parsed);
       }
     }
-    const finalCredits = Math.max(currentCredits + addedCredits, planConfig.credits);
+    const finalCredits = serverData?.toolCredits ?? Math.max(currentCredits + addedCredits, planConfig.credits);
     setToolCreditsState(finalCredits);
 
     let currentRequests = promptRequestsRemaining;
@@ -560,7 +560,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (!isNaN(parsed)) currentRequests = Math.max(promptRequestsRemaining, parsed);
       }
     }
-    const finalRequests = Math.max(currentRequests + addedRequests, planConfig.promptRequests);
+    const finalRequests = serverData?.promptRequestsRemaining ?? Math.max(currentRequests + addedRequests, planConfig.promptRequests);
     setPromptRequestsRemainingState(finalRequests);
 
     let nextPoints = (userAccount?.points || 0) + addedPoints;
@@ -572,8 +572,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
 
     const now = new Date();
-    const planStartedAt = now.toISOString();
-    const planExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const planStartedAt = serverData?.planStartedAt || now.toISOString();
+    const planExpiresAt = serverData?.planExpiresAt || new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
     setPlanStartedAtState(planStartedAt);
     setPlanExpiresAtState(planExpiresAt);
 
@@ -836,7 +836,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     StorageService.saveUserAccount(account);
     setUserAccount(account);
-    setAiSearchRemaining(5);
 
     // Reconcile and load all cloud data strictly for this specific account from Supabase
     try {

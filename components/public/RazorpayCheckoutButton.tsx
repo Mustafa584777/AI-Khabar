@@ -87,7 +87,7 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
             showToast(`Payment Verified! Added ${creditsToAdd} Credits to your account 🎉`);
           } else {
             setIsProUser(true);
-            upgradePlan(planTier);
+            upgradePlan(planTier, verifyData?.userSyncData);
             showToast(`Payment Verified! Upgraded to ${planTier.toUpperCase()} Plan 🎉`);
           }
 

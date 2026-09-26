@@ -190,9 +190,15 @@ export const UserSyncService = {
 
     const planCfg = PLAN_CONFIGS[resolvedTier] || PLAN_CONFIGS.free;
 
-    let currentCredits = Math.max(Number(remote.toolCredits ?? planCfg.credits), planCfg.credits);
-    let currentRequests = Math.max(Number(remote.promptRequestsRemaining ?? planCfg.promptRequests), planCfg.promptRequests);
-    let currentAiSearchRemaining = Math.max(Number(remote.aiSearchRemaining ?? planCfg.aiSearchQuota), planCfg.aiSearchQuota);
+    let currentCredits = resolvedTier !== 'free'
+      ? Math.max(Number(remote.toolCredits || 0), planCfg.credits)
+      : Math.max(Number(remote.toolCredits ?? planCfg.credits), planCfg.credits);
+    let currentRequests = resolvedTier !== 'free'
+      ? Math.max(Number(remote.promptRequestsRemaining || 0), planCfg.promptRequests)
+      : Math.max(Number(remote.promptRequestsRemaining ?? planCfg.promptRequests), planCfg.promptRequests);
+    let currentAiSearchRemaining = planCfg.unlimitedSearches
+      ? 999999
+      : Math.max(Number(remote.aiSearchRemaining ?? planCfg.aiSearchQuota), planCfg.aiSearchQuota);
 
     const mergedData: UserSyncData = {
       userId: user.id,
