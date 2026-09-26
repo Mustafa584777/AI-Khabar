@@ -2,7 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem, AiSearchResult, PlanTier, PromptRequestItem } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
@@ -169,9 +169,30 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
+  const router = useRouter();
 
   // Navigation
-  const [currentView, setCurrentViewState] = useState<'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications'>('public');
+  const [currentView, setCurrentViewState] = useState<'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications'>(() => {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      if (path.includes('dashboard')) return 'user-dashboard';
+      if (path.includes('create') || path.includes('studio')) return 'studio-tool';
+      if (path.includes('notifications')) return 'notifications';
+      if (path.includes('admin')) return 'admin';
+    }
+    return 'public';
+  });
+
+  useEffect(() => {
+    if (pathname) {
+      if (pathname.includes('dashboard')) setCurrentViewState('user-dashboard');
+      else if (pathname.includes('create') || pathname.includes('studio')) setCurrentViewState('studio-tool');
+      else if (pathname.includes('notifications')) setCurrentViewState('notifications');
+      else if (pathname.includes('admin')) setCurrentViewState('admin');
+      else setCurrentViewState('public');
+    }
+  }, [pathname]);
+
   const [adminSubView, setAdminSubView] = useState<
     'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications' | 'requested-prompts'
   >('dashboard');
@@ -179,51 +200,49 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [selectedPost, setSelectedPostState] = useState<PromptPost | null>(null);
 
   const setCurrentView = useCallback((view: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications') => {
-    setCurrentViewState(view);
     setSelectedPostState(null);
-    if (typeof window !== 'undefined') {
-      const url = view === 'public' ? '/' : `/${view}`;
-      window.history.pushState({ view, selectedPostId: null }, '', url);
+    if (view === 'public' || view === 'for-you') {
+      router.push('/');
+    } else if (view === 'user-dashboard') {
+      router.push('/dashboard');
+    } else if (view === 'studio-tool') {
+      router.push('/create');
+    } else if (view === 'notifications') {
+      router.push('/notifications');
+    } else if (view === 'admin') {
+      router.push('/admin');
     }
-  }, []);
+  }, [router]);
 
   const setSelectedPost = useCallback((post: PromptPost | null) => {
     setSelectedPostState(post);
     if (typeof window !== 'undefined') {
       if (post) {
-        window.history.pushState({ view: currentView, selectedPostId: post.id }, '', `#prompt=${post.id}`);
+        window.history.pushState({ selectedPostId: post.id }, '', `#prompt=${post.id}`);
       } else {
-        const url = currentView === 'public' ? '/' : `/${currentView}`;
-        window.history.replaceState({ view: currentView, selectedPostId: null }, '', url);
+        const cleanUrl = window.location.pathname + window.location.search;
+        window.history.replaceState({ selectedPostId: null }, '', cleanUrl);
       }
     }
-  }, [currentView]);
+  }, []);
 
   const postsRef = useRef<PromptPost[]>(INITIAL_POSTS);
 
   // Listen to popstate (Browser Back/Forward buttons)
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
-      const state = event.state;
-      if (state && state.view) {
-        setCurrentViewState(state.view);
-      } else {
-        const path = window.location.pathname;
-        if (path.includes('dashboard')) setCurrentViewState('user-dashboard');
-        else if (path.includes('studio')) setCurrentViewState('studio-tool');
-        else if (path.includes('foryou')) setCurrentViewState('for-you');
-        else if (path.includes('notifications')) setCurrentViewState('notifications');
-        else setCurrentViewState('public');
-      }
-
       const hash = window.location.hash;
+      const state = event.state;
+
       if (hash.startsWith('#prompt=')) {
         const promptId = hash.replace('#prompt=', '');
         const found = postsRef.current.find((p) => p.id === promptId);
         if (found) setSelectedPostState(found);
+        else setSelectedPostState(null);
       } else if (state && state.selectedPostId) {
         const found = postsRef.current.find((p) => p.id === state.selectedPostId);
         if (found) setSelectedPostState(found);
+        else setSelectedPostState(null);
       } else {
         setSelectedPostState(null);
       }
