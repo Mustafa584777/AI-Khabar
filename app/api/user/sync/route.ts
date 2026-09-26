@@ -62,25 +62,19 @@ export async function POST(req: NextRequest) {
       }
 
       // 2. Check active subscription
+      let activeSub: any = null;
       if (cleanEmail) {
         try {
-          const activeSub = await ServerStorage.getUserSubscription(cleanEmail);
-          if (activeSub && activeSub.status === 'active') {
-            candidates.push({
-              email: cleanEmail,
-              planTier: activeSub.planTier,
-              isProUser: true,
-              toolCredits: activeSub.credits,
-              aiSearchRemaining: activeSub.aiSearchQuota,
-              promptRequestsRemaining: activeSub.promptRequests,
-              planStartedAt: activeSub.planStartedAt,
-              planExpiresAt: activeSub.planExpiresAt,
-            });
-          }
+          activeSub = await ServerStorage.getUserSubscription(cleanEmail);
         } catch (e) {
           console.warn('ServerStorage subscription check warning:', e);
         }
       }
+      const hasActiveSub = Boolean(
+        activeSub &&
+        activeSub.status === 'active' &&
+        (!activeSub.planExpiresAt || new Date(activeSub.planExpiresAt).getTime() > Date.now())
+      );
 
       // 3. Check Supabase by emailKey
       if (emailKey) {
@@ -102,69 +96,115 @@ export async function POST(req: NextRequest) {
         if (row?.data) candidates.push(row.data);
       }
 
-      // 5. Check Supabase by jsonb filter
+      // 5. Check Supabase by jsonb filter (filtering only user_sync_ records)
       if (cleanEmail) {
         const { data: rows } = await client
           .from('settings')
-          .select('data')
+          .select('id, data')
           .filter('data->>email', 'eq', cleanEmail);
         if (Array.isArray(rows)) {
           for (const r of rows) {
-            if (r?.data) candidates.push(r.data);
+            if (r?.data && typeof r.data === 'object' && r.id?.startsWith('user_sync_')) {
+              candidates.push(r.data);
+            }
           }
         }
       }
 
-      if (candidates.length === 0) return null;
-      if (candidates.length === 1) return candidates[0];
+      if (candidates.length === 0) {
+        if (hasActiveSub) {
+          return {
+            email: cleanEmail,
+            userId,
+            planTier: activeSub.planTier,
+            isProUser: true,
+            toolCredits: activeSub.credits,
+            aiSearchRemaining: activeSub.aiSearchQuota,
+            promptRequestsRemaining: activeSub.promptRequests,
+            planStartedAt: activeSub.planStartedAt,
+            planExpiresAt: activeSub.planExpiresAt,
+            bookmarkedIds: [],
+            likedIds: [],
+            unlockedPromptIds: [],
+            aiHistory: [],
+            updatedAt: new Date().toISOString(),
+          };
+        }
+        return null;
+      }
 
-      // Merge candidates taking highest credits and best plan tier
+      // Sort by updatedAt descending to prioritize latest saved state
+      candidates.sort((a, b) => {
+        const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+        const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+        return timeB - timeA;
+      });
+
       const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3, ultra: 4 };
-      let best = { ...candidates[0] };
-      for (let i = 1; i < candidates.length; i++) {
-        const curr = candidates[i];
-        const bestTier = best.planTier || (best.isProUser ? 'pro' : 'free');
-        const currTier = curr.planTier || (curr.isProUser ? 'pro' : 'free');
 
-        const isBestExpired = best.planExpiresAt && new Date(best.planExpiresAt).getTime() < Date.now();
+      // Determine highest active unexpired plan tier
+      let highestTier: PlanTier = hasActiveSub ? (activeSub.planTier as PlanTier) : 'free';
+      let highestStartedAt = hasActiveSub ? activeSub.planStartedAt : undefined;
+      let highestExpiresAt = hasActiveSub ? activeSub.planExpiresAt : undefined;
+
+      for (const curr of candidates) {
+        const currTier = (curr.planTier && curr.planTier in PLAN_CONFIGS)
+          ? (curr.planTier as PlanTier)
+          : (curr.isProUser ? 'pro' : 'free');
         const isCurrExpired = curr.planExpiresAt && new Date(curr.planExpiresAt).getTime() < Date.now();
+        const effCurrTier: PlanTier = isCurrExpired ? 'free' : currTier;
 
-        const effBestTier = isBestExpired ? 'free' : bestTier;
-        const effCurrTier = isCurrExpired ? 'free' : currTier;
+        if ((TIER_RANK[effCurrTier] || 0) > (TIER_RANK[highestTier] || 0)) {
+          highestTier = effCurrTier;
+          highestStartedAt = curr.planStartedAt || highestStartedAt;
+          highestExpiresAt = curr.planExpiresAt || highestExpiresAt;
+        }
+      }
 
-        if ((TIER_RANK[effCurrTier] || 0) > (TIER_RANK[effBestTier] || 0)) {
-          best = { ...best, ...curr, planTier: effCurrTier, isProUser: effCurrTier !== 'free' || Boolean(curr.isProUser) };
-          best.planStartedAt = curr.planStartedAt || best.planStartedAt;
-          best.planExpiresAt = curr.planExpiresAt || best.planExpiresAt;
-        }
-        if ((curr.toolCredits || 0) > (best.toolCredits || 0)) {
-          best.toolCredits = curr.toolCredits;
-        }
-        if ((curr.promptRequestsRemaining || 0) > (best.promptRequestsRemaining || 0)) {
-          best.promptRequestsRemaining = curr.promptRequestsRemaining;
-        }
-        if ((curr.aiSearchRemaining || 0) > (best.aiSearchRemaining || 0)) {
-          best.aiSearchRemaining = curr.aiSearchRemaining;
-        }
-        if ((curr.points || 0) > (best.points || 0)) {
-          best.points = curr.points;
-        }
+      // Pick matching candidate with highestTier to retrieve exact consumed balance
+      const matchingCandidate = candidates.find(c => {
+        const t = (c.planTier && c.planTier in PLAN_CONFIGS) ? c.planTier : (c.isProUser ? 'pro' : 'free');
+        return t === highestTier;
+      }) || candidates[0];
+
+      let best = { ...matchingCandidate };
+
+      // Merge bookmarks, unlocked prompts, liked IDs uniquely across all candidates
+      for (const curr of candidates) {
         best.bookmarkedIds = Array.from(new Set([...(best.bookmarkedIds || []), ...(curr.bookmarkedIds || [])]));
         best.unlockedPromptIds = Array.from(new Set([...(best.unlockedPromptIds || []), ...(curr.unlockedPromptIds || [])]));
         best.likedIds = Array.from(new Set([...(best.likedIds || []), ...(curr.likedIds || [])]));
       }
 
-      const finalBestTier = (best.planTier && best.planTier in PLAN_CONFIGS)
-        ? (best.planTier as PlanTier)
-        : (best.isProUser ? 'pro' : 'free');
-      const finalPlanCfg = PLAN_CONFIGS[finalBestTier] || PLAN_CONFIGS.free;
-      if (finalBestTier !== 'free') {
-        best.toolCredits = Math.max(Number(best.toolCredits || 0), finalPlanCfg.credits);
-        best.promptRequestsRemaining = Math.max(Number(best.promptRequestsRemaining || 0), finalPlanCfg.promptRequests);
-        if (!finalPlanCfg.unlimitedSearches) {
-          best.aiSearchRemaining = Math.max(Number(best.aiSearchRemaining || 0), finalPlanCfg.aiSearchQuota);
-        }
+      best.planTier = highestTier;
+      best.isProUser = highestTier !== 'free' || Boolean(best.isProUser || hasActiveSub);
+      best.planStartedAt = highestStartedAt || best.planStartedAt;
+      best.planExpiresAt = highestExpiresAt || best.planExpiresAt;
+
+      const planCfg = PLAN_CONFIGS[highestTier] || PLAN_CONFIGS.free;
+
+      // Preserve exact consumed balance! Never automatically top up or overwrite consumption
+      if (best.toolCredits === undefined || best.toolCredits === null) {
+        best.toolCredits = planCfg.credits;
+      } else {
+        best.toolCredits = Number(best.toolCredits);
       }
+
+      if (best.promptRequestsRemaining === undefined || best.promptRequestsRemaining === null) {
+        best.promptRequestsRemaining = highestTier !== 'free' ? planCfg.promptRequests : 0;
+      } else {
+        best.promptRequestsRemaining = Number(best.promptRequestsRemaining);
+      }
+
+      if (planCfg.unlimitedSearches) {
+        best.aiSearchRemaining = 999999;
+      } else if (best.aiSearchRemaining === undefined || best.aiSearchRemaining === null) {
+        best.aiSearchRemaining = planCfg.aiSearchQuota;
+      } else {
+        // Prevent overflow like 999/10
+        best.aiSearchRemaining = Math.min(Number(best.aiSearchRemaining), planCfg.aiSearchQuota);
+      }
+
       return best;
     };
 
@@ -197,13 +237,12 @@ export async function POST(req: NextRequest) {
         cloned.planTier = tier;
         cloned.isProUser = tier !== 'free' || Boolean(cloned.isProUser);
 
+        // DO NOT overwrite consumed balance with plan initial quota on pull!
         const planCfg = PLAN_CONFIGS[tier as PlanTier] || PLAN_CONFIGS.free;
-        if (tier !== 'free') {
-          cloned.toolCredits = Math.max(Number(cloned.toolCredits ?? planCfg.credits), planCfg.credits);
-          cloned.promptRequestsRemaining = Math.max(Number(cloned.promptRequestsRemaining ?? planCfg.promptRequests), planCfg.promptRequests);
-          if (!planCfg.unlimitedSearches) {
-            cloned.aiSearchRemaining = Math.max(Number(cloned.aiSearchRemaining ?? planCfg.aiSearchQuota), planCfg.aiSearchQuota);
-          }
+        if (planCfg.unlimitedSearches) {
+          cloned.aiSearchRemaining = 999999;
+        } else if (cloned.aiSearchRemaining !== undefined && cloned.aiSearchRemaining !== null) {
+          cloned.aiSearchRemaining = Math.min(Number(cloned.aiSearchRemaining), planCfg.aiSearchQuota);
         }
 
         return NextResponse.json({
@@ -239,20 +278,6 @@ export async function POST(req: NextRequest) {
       const mergedUnlockedPromptIds = Array.from(
         new Set([...(existingData.unlockedPromptIds || []), ...(data.unlockedPromptIds || [])])
       );
-
-      // Safe Tool Credits (maintain balance, never drop unexpectedly)
-      let incomingCredits = data.toolCredits !== undefined ? Number(data.toolCredits) : undefined;
-      let existingCredits = existingData.toolCredits !== undefined ? Number(existingData.toolCredits) : 5;
-      let resolvedToolCredits = existingCredits;
-      if (incomingCredits !== undefined) {
-        if (existingCredits > 5 && incomingCredits === 5) {
-          resolvedToolCredits = existingCredits;
-        } else if (incomingCredits < existingCredits && (existingCredits - incomingCredits) > 5) {
-          resolvedToolCredits = Math.max(incomingCredits, existingCredits);
-        } else {
-          resolvedToolCredits = incomingCredits;
-        }
-      }
 
       // Safe Plan Tier resolution (vip > pro > starter > free)
       const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3, ultra: 4 };
@@ -356,23 +381,38 @@ export async function POST(req: NextRequest) {
       }
 
       const planCfg = PLAN_CONFIGS[resolvedPlanTier as PlanTier] || PLAN_CONFIGS.free;
-      if (resolvedPlanTier !== 'free') {
-        resolvedToolCredits = Math.max(resolvedToolCredits, planCfg.credits);
+
+      // Tool credits: strictly preserve consumed or updated balance
+      let resolvedToolCredits: number;
+      if (data.toolCredits !== undefined) {
+        resolvedToolCredits = Number(data.toolCredits);
+      } else if (existingData.toolCredits !== undefined && existingData.toolCredits !== null) {
+        resolvedToolCredits = Number(existingData.toolCredits);
+      } else {
+        resolvedToolCredits = planCfg.credits;
       }
 
-      const rawRequests = data.promptRequestsRemaining !== undefined
-        ? Number(data.promptRequestsRemaining)
-        : (existingData.promptRequestsRemaining ?? planCfg.promptRequests);
-      const finalRequests = resolvedPlanTier !== 'free'
-        ? Math.max(rawRequests, planCfg.promptRequests)
-        : rawRequests;
+      // Prompt requests: strictly preserve consumed count (do NOT force Math.max)
+      let finalRequests: number;
+      if (data.promptRequestsRemaining !== undefined) {
+        finalRequests = Number(data.promptRequestsRemaining);
+      } else if (existingData.promptRequestsRemaining !== undefined && existingData.promptRequestsRemaining !== null) {
+        finalRequests = Number(existingData.promptRequestsRemaining);
+      } else {
+        finalRequests = resolvedPlanTier !== 'free' ? planCfg.promptRequests : 0;
+      }
 
-      const rawSearches = data.aiSearchRemaining !== undefined
-        ? Number(data.aiSearchRemaining)
-        : (existingData.aiSearchRemaining ?? planCfg.aiSearchQuota);
-      const finalSearches = (resolvedPlanTier !== 'free' && !planCfg.unlimitedSearches)
-        ? Math.max(rawSearches, planCfg.aiSearchQuota)
-        : rawSearches;
+      // AI searches: strictly preserve consumed searches
+      let finalSearches: number;
+      if (planCfg.unlimitedSearches) {
+        finalSearches = 999999;
+      } else if (data.aiSearchRemaining !== undefined) {
+        finalSearches = Math.min(Number(data.aiSearchRemaining), planCfg.aiSearchQuota);
+      } else if (existingData.aiSearchRemaining !== undefined && existingData.aiSearchRemaining !== null) {
+        finalSearches = Math.min(Number(existingData.aiSearchRemaining), planCfg.aiSearchQuota);
+      } else {
+        finalSearches = planCfg.aiSearchQuota;
+      }
 
       const mergedPayload = {
         ...existingData,

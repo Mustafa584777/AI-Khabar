@@ -264,7 +264,8 @@ export const UserAuthModal = () => {
         }
 
         // 3. Initialize account in App state (which triggers cloud sync)
-        await signupUser(userName, userHandle, cleanEmail, password, defaultAvatar);
+        const newUserId = signupData.user?.id || signData?.user?.id;
+        await signupUser(userName, userHandle, cleanEmail, password, defaultAvatar, newUserId);
         showToast(`Welcome ${userName}! Account created & cloud sync active.`);
         setIsLoading(false);
         setIsUserAuthModalOpen(false);
@@ -295,7 +296,7 @@ export const UserAuthModal = () => {
         const userName = loginData.user?.user_metadata?.full_name || cleanEmail.split('@')[0];
         const userAvatar = loginData.user?.user_metadata?.avatar_url || defaultAvatar;
 
-        await loginUser(cleanEmail, password, userName, userAvatar);
+        await loginUser(cleanEmail, password, userName, userAvatar, loginData.user?.id);
         showToast(`Welcome back, ${userName}! Logged in successfully.`);
         setIsLoading(false);
         setIsUserAuthModalOpen(false);

@@ -63,9 +63,9 @@ export async function POST(req: NextRequest) {
             email: cleanEmail,
             planTier: activeSub.planTier,
             isProUser: true,
-            toolCredits: Math.max(Number(rowData?.toolCredits || 0), activeSub.credits),
-            aiSearchRemaining: Math.max(Number(rowData?.aiSearchRemaining || 0), activeSub.aiSearchQuota),
-            promptRequestsRemaining: Math.max(Number(rowData?.promptRequestsRemaining || 0), activeSub.promptRequests),
+            toolCredits: rowData?.toolCredits !== undefined && rowData?.toolCredits !== null ? Number(rowData.toolCredits) : activeSub.credits,
+            aiSearchRemaining: rowData?.aiSearchRemaining !== undefined && rowData?.aiSearchRemaining !== null ? Number(rowData.aiSearchRemaining) : activeSub.aiSearchQuota,
+            promptRequestsRemaining: rowData?.promptRequestsRemaining !== undefined && rowData?.promptRequestsRemaining !== null ? Number(rowData.promptRequestsRemaining) : activeSub.promptRequests,
             planStartedAt: activeSub.planStartedAt,
             planExpiresAt: activeSub.planExpiresAt,
           };
@@ -96,10 +96,13 @@ export async function POST(req: NextRequest) {
       if (!rowData && cleanEmail) {
         const { data: rows } = await client
           .from('settings')
-          .select('data')
+          .select('id, data')
           .filter('data->>email', 'eq', cleanEmail);
         if (Array.isArray(rows) && rows.length > 0) {
-          rowData = rows[0]?.data;
+          const userRows = rows.filter((r) => r?.data && r.id?.startsWith('user_sync_'));
+          if (userRows.length > 0) {
+            rowData = userRows[0].data;
+          }
         }
       }
     }
@@ -127,9 +130,20 @@ export async function POST(req: NextRequest) {
 
     const planCfg = PLAN_CONFIGS[tier as PlanTier] || PLAN_CONFIGS.free;
 
-    let currentCredits = Math.max(Number(cloned.toolCredits ?? planCfg.credits), planCfg.credits);
-    let currentRequests = Math.max(Number(cloned.promptRequestsRemaining ?? planCfg.promptRequests), planCfg.promptRequests);
-    let currentAiSearchRemaining = Math.max(Number(cloned.aiSearchRemaining ?? planCfg.aiSearchQuota), planCfg.aiSearchQuota);
+    // Strictly preserve consumed balances! Do NOT reset with Math.max
+    let currentCredits = cloned.toolCredits !== undefined && cloned.toolCredits !== null
+      ? Number(cloned.toolCredits)
+      : planCfg.credits;
+
+    let currentRequests = cloned.promptRequestsRemaining !== undefined && cloned.promptRequestsRemaining !== null
+      ? Number(cloned.promptRequestsRemaining)
+      : (tier !== 'free' ? planCfg.promptRequests : 0);
+
+    let currentAiSearchRemaining = planCfg.unlimitedSearches
+      ? 999999
+      : (cloned.aiSearchRemaining !== undefined && cloned.aiSearchRemaining !== null
+          ? Math.min(Number(cloned.aiSearchRemaining), planCfg.aiSearchQuota)
+          : planCfg.aiSearchQuota);
 
     return NextResponse.json({
       success: true,

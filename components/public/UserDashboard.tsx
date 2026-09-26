@@ -387,13 +387,13 @@ export const UserDashboard = () => {
             </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
-                {currentPlanConfig.unlimitedSearches ? 'Unlimited' : `${aiSearchRemaining}/${currentPlanConfig.aiSearchQuota}`}
+                {currentPlanConfig.unlimitedSearches ? 'Unlimited' : `${Math.min(Math.max(0, aiSearchRemaining), currentPlanConfig.aiSearchQuota)}/${currentPlanConfig.aiSearchQuota}`}
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">AI Search Quota</div>
             </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
-                {isPaid ? `${promptRequestsRemaining}/${currentPlanConfig.promptRequests}` : '0'}
+                {isPaid ? `${Math.min(Math.max(0, promptRequestsRemaining), currentPlanConfig.promptRequests)}/${currentPlanConfig.promptRequests}` : '0'}
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">Prompt Requests</div>
             </div>

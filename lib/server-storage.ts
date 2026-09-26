@@ -1,8 +1,9 @@
-import { Category, PromptPost, SiteSettings, SearchQueryItem } from '@/types/prompt';
+import { Category, PromptPost, SiteSettings, SearchQueryItem, PlanTier } from '@/types/prompt';
 import { INITIAL_CATEGORIES, INITIAL_SETTINGS, INITIAL_POSTS } from './initial-data';
 import { supabase, supabaseAdmin, isSupabaseConfigured } from './supabase';
 import { cleanTagsArray, canonicalizeTag } from './tag-utils';
 import { uploadImageToCloudinary } from './cloudinary-server';
+import { PLAN_CONFIGS } from './plans';
 import fs from 'fs';
 import path from 'path';
 
@@ -971,11 +972,13 @@ export const ServerStorage = {
         if (cleanEmail) {
           const { data: rows } = await db()
             .from('settings')
-            .select('data')
+            .select('id, data')
             .filter('data->>email', 'eq', cleanEmail);
           if (Array.isArray(rows)) {
             for (const r of rows) {
-              if (r?.data) candidates.push(r.data);
+              if (r?.data && typeof r.data === 'object' && r.id?.startsWith('user_sync_')) {
+                candidates.push(r.data);
+              }
             }
           }
         }
@@ -1009,57 +1012,103 @@ export const ServerStorage = {
 
     // 3. Subscription check
     const sub = await ServerStorage.getUserSubscription(cleanEmail);
-    if (sub && sub.status === 'active') {
-      candidates.push({
-        email: cleanEmail,
-        planTier: sub.planTier,
-        isProUser: true,
-        toolCredits: sub.credits,
-        aiSearchRemaining: sub.aiSearchQuota,
-        promptRequestsRemaining: sub.promptRequests,
-        planStartedAt: sub.planStartedAt,
-        planExpiresAt: sub.planExpiresAt,
-      });
+    const hasActiveSub = Boolean(
+      sub &&
+      sub.status === 'active' &&
+      (!sub.planExpiresAt || new Date(sub.planExpiresAt).getTime() > Date.now())
+    );
+
+    if (candidates.length === 0) {
+      if (hasActiveSub) {
+        return {
+          email: cleanEmail,
+          userId,
+          planTier: sub.planTier,
+          isProUser: true,
+          toolCredits: sub.credits,
+          aiSearchRemaining: sub.aiSearchQuota,
+          promptRequestsRemaining: sub.promptRequests,
+          planStartedAt: sub.planStartedAt,
+          planExpiresAt: sub.planExpiresAt,
+          bookmarkedIds: [],
+          likedIds: [],
+          unlockedPromptIds: [],
+          aiHistory: [],
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return null;
     }
 
-    if (candidates.length === 0) return null;
+    // Merge candidates:
+    // Sort by latest updatedAt to preserve latest consumed credit/search/request balance
+    candidates.sort((a, b) => {
+      const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+      const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+      return timeB - timeA;
+    });
 
-    // Merge candidates: highest plan tier, highest credits, union of arrays
     const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3, ultra: 4 };
-    let best = { ...candidates[0] };
-    for (let i = 1; i < candidates.length; i++) {
-      const curr = candidates[i];
-      const bestTier = best.planTier || (best.isProUser ? 'pro' : 'free');
+
+    // Resolve highest active plan tier across all candidates and subscription
+    let highestTier = hasActiveSub ? sub.planTier : 'free';
+    let highestStartedAt = hasActiveSub ? sub.planStartedAt : undefined;
+    let highestExpiresAt = hasActiveSub ? sub.planExpiresAt : undefined;
+
+    for (const curr of candidates) {
       const currTier = curr.planTier || (curr.isProUser ? 'pro' : 'free');
-
-      // Check expiration of best and curr
-      const isBestExpired = best.planExpiresAt && new Date(best.planExpiresAt).getTime() < Date.now();
       const isCurrExpired = curr.planExpiresAt && new Date(curr.planExpiresAt).getTime() < Date.now();
+      const effCurrTier = isCurrExpired ? 'free' : currTier;
 
-      const effectiveBestTier = isBestExpired ? 'free' : bestTier;
-      const effectiveCurrTier = isCurrExpired ? 'free' : currTier;
+      if ((TIER_RANK[effCurrTier] || 0) > (TIER_RANK[highestTier] || 0)) {
+        highestTier = effCurrTier;
+        highestStartedAt = curr.planStartedAt || highestStartedAt;
+        highestExpiresAt = curr.planExpiresAt || highestExpiresAt;
+      }
+    }
 
-      if ((TIER_RANK[effectiveCurrTier] || 0) > (TIER_RANK[effectiveBestTier] || 0)) {
-        best.planTier = effectiveCurrTier;
-        best.isProUser = effectiveCurrTier !== 'free' || Boolean(curr.isProUser);
-        best.planStartedAt = curr.planStartedAt || best.planStartedAt;
-        best.planExpiresAt = curr.planExpiresAt || best.planExpiresAt;
-      }
-      if ((curr.toolCredits || 0) > (best.toolCredits || 0)) {
-        best.toolCredits = curr.toolCredits;
-      }
-      if ((curr.promptRequestsRemaining || 0) > (best.promptRequestsRemaining || 0)) {
-        best.promptRequestsRemaining = curr.promptRequestsRemaining;
-      }
-      if ((curr.aiSearchRemaining || 0) > (best.aiSearchRemaining || 0)) {
-        best.aiSearchRemaining = curr.aiSearchRemaining;
-      }
-      if ((curr.points || 0) > (best.points || 0)) {
-        best.points = curr.points;
-      }
+    // Find candidate matching highestTier with latest timestamp to obtain consumed balance
+    const matchingCandidate = candidates.find(c => {
+      const t = c.planTier || (c.isProUser ? 'pro' : 'free');
+      return t === highestTier;
+    }) || candidates[0];
+
+    let best = { ...matchingCandidate };
+
+    // Merge bookmarks, unlocks, likes across all candidates
+    for (const curr of candidates) {
       best.bookmarkedIds = Array.from(new Set([...(best.bookmarkedIds || []), ...(curr.bookmarkedIds || [])]));
       best.unlockedPromptIds = Array.from(new Set([...(best.unlockedPromptIds || []), ...(curr.unlockedPromptIds || [])]));
       best.likedIds = Array.from(new Set([...(best.likedIds || []), ...(curr.likedIds || [])]));
+    }
+
+    best.planTier = highestTier;
+    best.isProUser = highestTier !== 'free' || Boolean(best.isProUser || hasActiveSub);
+    best.planStartedAt = highestStartedAt || best.planStartedAt;
+    best.planExpiresAt = highestExpiresAt || best.planExpiresAt;
+
+    // Strictly preserve consumption! Never restore consumed balance automatically
+    const planCfg = PLAN_CONFIGS[highestTier as keyof typeof PLAN_CONFIGS] || PLAN_CONFIGS.free;
+
+    if (best.toolCredits === undefined || best.toolCredits === null) {
+      best.toolCredits = planCfg.credits;
+    } else {
+      best.toolCredits = Number(best.toolCredits);
+    }
+
+    if (best.promptRequestsRemaining === undefined || best.promptRequestsRemaining === null) {
+      best.promptRequestsRemaining = highestTier !== 'free' ? planCfg.promptRequests : 0;
+    } else {
+      best.promptRequestsRemaining = Number(best.promptRequestsRemaining);
+    }
+
+    if (planCfg.unlimitedSearches) {
+      best.aiSearchRemaining = 999999;
+    } else if (best.aiSearchRemaining === undefined || best.aiSearchRemaining === null) {
+      best.aiSearchRemaining = planCfg.aiSearchQuota;
+    } else {
+      // Prevent overflow like 999/10 when not on an unlimited search plan
+      best.aiSearchRemaining = Math.min(Number(best.aiSearchRemaining), planCfg.aiSearchQuota);
     }
 
     return best;

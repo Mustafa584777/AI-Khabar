@@ -51,8 +51,8 @@ interface AppContextType {
   authModalMessage: string | null;
   setAuthModalMessage: (msg: string | null) => void;
   openAuthModal: (message?: string) => void;
-  loginUser: (email: string, pass: string, username?: string, avatar?: string) => Promise<boolean>;
-  signupUser: (name: string, username: string, email: string, pass: string, avatar?: string) => Promise<UserAccount>;
+  loginUser: (email: string, pass: string, username?: string, avatar?: string, userId?: string) => Promise<boolean>;
+  signupUser: (name: string, username: string, email: string, pass: string, avatar?: string, userId?: string) => Promise<UserAccount>;
   logoutUser: () => void;
   awardPoints: (amount: number, type: 'like' | 'save' | 'generation' | 'share' | 'referral') => void;
 
@@ -811,14 +811,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const loginUser = async (email: string, _pass: string, username?: string, avatar?: string): Promise<boolean> => {
+  const loginUser = async (email: string, _pass: string, username?: string, avatar?: string, userId?: string): Promise<boolean> => {
     const cleanEmail = email.trim().toLowerCase();
 
-    // Aggressively clear any existing session storage to prevent cross-account data leakage
-    StorageService.clearAllUserData();
-
     const account: UserAccount = {
-      id: 'u_' + cleanEmail.replace(/[^a-z0-9_]/g, '_'),
+      id: userId || ('u_' + cleanEmail.replace(/[^a-z0-9_]/g, '_')),
       name: username || cleanEmail.split('@')[0],
       username: username ? ('@' + username.replace(/[^a-z0-9]/g, '')) : ('@' + cleanEmail.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '')),
       email: cleanEmail,
@@ -915,14 +912,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return true;
   };
 
-  const signupUser = async (name: string, username: string, email: string, _pass: string, avatar?: string): Promise<UserAccount> => {
+  const signupUser = async (name: string, username: string, email: string, _pass: string, avatar?: string, userId?: string): Promise<UserAccount> => {
     const cleanEmail = email.trim().toLowerCase();
 
-    // Aggressively clear any existing session storage to prevent cross-account data leakage
-    StorageService.clearAllUserData();
-
     const account: UserAccount = {
-      id: 'u_' + cleanEmail.replace(/[^a-z0-9_]/g, '_'),
+      id: userId || ('u_' + cleanEmail.replace(/[^a-z0-9_]/g, '_')),
       name: name || cleanEmail.split('@')[0],
       username: username ? ('@' + username.replace(/[^a-z0-9]/g, '')) : ('@' + cleanEmail.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '')),
       email: cleanEmail,
@@ -1138,10 +1132,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (typeof window !== 'undefined') localStorage.setItem('auraprompt_pro_member', String(synced.isProUser));
       }
       if (synced.toolCredits !== undefined) {
-        const localSaved = typeof window !== 'undefined' ? parseInt(localStorage.getItem('auraprompt_tool_credits') || '0', 10) : toolCredits;
-        const resolved = Math.max(toolCredits, localSaved, synced.toolCredits);
-        setToolCreditsState(resolved);
-        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_tool_credits', String(resolved));
+        setToolCreditsState(synced.toolCredits);
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits));
       }
       if (synced.unlockedPromptIds) {
         setUnlockedPromptIds(synced.unlockedPromptIds);
@@ -1203,10 +1195,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('auraprompt_pro_member', String(isPro));
 
         if (synced.toolCredits !== undefined) {
-          const localSaved = typeof window !== 'undefined' ? parseInt(localStorage.getItem('auraprompt_tool_credits') || '0', 10) : toolCredits;
-          const resolved = Math.max(toolCredits, localSaved, synced.toolCredits);
-          setToolCreditsState(resolved);
-          localStorage.setItem('auraprompt_tool_credits', String(resolved));
+          setToolCreditsState(synced.toolCredits);
+          localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits));
         }
 
         if (synced.unlockedPromptIds) {
@@ -1304,13 +1294,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const [aiSearchRemaining, setAiSearchRemainingState] = useState<number>(() => {
     if (typeof window !== 'undefined') {
+      const tier = (localStorage.getItem('auraprompt_plan_tier') as PlanTier) || 'free';
+      const planCfg = PLAN_CONFIGS[tier] || PLAN_CONFIGS.free;
       const saved = localStorage.getItem('auraprompt_ai_search_remaining');
       if (saved !== null) {
         const parsed = parseInt(saved, 10);
-        if (!isNaN(parsed) && parsed >= 0) return parsed;
+        if (!isNaN(parsed) && parsed >= 0) {
+          return planCfg.unlimitedSearches ? 999999 : Math.min(parsed, planCfg.aiSearchQuota);
+        }
       }
-      const tier = (localStorage.getItem('auraprompt_plan_tier') as PlanTier) || 'free';
-      return PLAN_CONFIGS[tier]?.aiSearchQuota ?? 5;
+      return planCfg.unlimitedSearches ? 999999 : planCfg.aiSearchQuota;
     }
     return 5; // 5 free AI searches lifetime for free users
   });

@@ -134,7 +134,11 @@ export const UserSyncService = {
     const remote = await UserSyncService.pullUserData(user.id, user.email);
 
     if (!remote) {
-      // First time login for this specific user: grant 5 credits & 5 AI searches on signup
+      // First time login for this specific user or network fallback
+      const fallbackTier = (user as any).planTier || 'free';
+      const fallbackPro = Boolean((user as any).isProUser || fallbackTier !== 'free');
+      const fallbackCfg = PLAN_CONFIGS[fallbackTier as PlanTier] || PLAN_CONFIGS.free;
+
       const initialData: UserSyncData = {
         userId: user.id,
         email: user.email,
@@ -145,17 +149,19 @@ export const UserSyncService = {
         likedIds: [],
         aiHistory: [],
         tasteProfile: INITIAL_TASTE_PROFILE,
-        planTier: 'free',
-        isProUser: false,
-        toolCredits: 5, // 5 signup credits one-time
-        aiSearchRemaining: 5, // 5 AI search quota one-time
-        promptRequestsRemaining: 0,
+        planTier: fallbackTier,
+        isProUser: fallbackPro,
+        toolCredits: (user as any).toolCredits ?? fallbackCfg.credits,
+        aiSearchRemaining: (user as any).aiSearchRemaining ?? (fallbackCfg.unlimitedSearches ? 999999 : fallbackCfg.aiSearchQuota),
+        promptRequestsRemaining: (user as any).promptRequestsRemaining ?? (fallbackTier !== 'free' ? fallbackCfg.promptRequests : 0),
         unlockedPromptIds: [],
         joinedDate: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
-      void UserSyncService.pushUserData(user.id, user.email, initialData);
+      if (fallbackTier === 'free') {
+        void UserSyncService.pushUserData(user.id, user.email, initialData);
+      }
 
       return {
         bookmarkedIds: [],
@@ -163,11 +169,11 @@ export const UserSyncService = {
         points: user.points || 10,
         aiHistory: [],
         tasteProfile: INITIAL_TASTE_PROFILE,
-        planTier: 'free',
-        isProUser: false,
-        toolCredits: 5,
-        aiSearchRemaining: 5,
-        promptRequestsRemaining: 0,
+        planTier: fallbackTier,
+        isProUser: fallbackPro,
+        toolCredits: initialData.toolCredits ?? 5,
+        aiSearchRemaining: initialData.aiSearchRemaining ?? 5,
+        promptRequestsRemaining: initialData.promptRequestsRemaining ?? 0,
         unlockedPromptIds: [],
       };
     }
@@ -190,15 +196,20 @@ export const UserSyncService = {
 
     const planCfg = PLAN_CONFIGS[resolvedTier] || PLAN_CONFIGS.free;
 
-    let currentCredits = resolvedTier !== 'free'
-      ? Math.max(Number(remote.toolCredits || 0), planCfg.credits)
-      : Math.max(Number(remote.toolCredits ?? planCfg.credits), planCfg.credits);
-    let currentRequests = resolvedTier !== 'free'
-      ? Math.max(Number(remote.promptRequestsRemaining || 0), planCfg.promptRequests)
-      : Math.max(Number(remote.promptRequestsRemaining ?? planCfg.promptRequests), planCfg.promptRequests);
+    // Strictly preserve consumption! Never force Math.max on login reconciliation
+    let currentCredits = remote.toolCredits !== undefined && remote.toolCredits !== null
+      ? Number(remote.toolCredits)
+      : planCfg.credits;
+
+    let currentRequests = remote.promptRequestsRemaining !== undefined && remote.promptRequestsRemaining !== null
+      ? Number(remote.promptRequestsRemaining)
+      : (resolvedTier !== 'free' ? planCfg.promptRequests : 0);
+
     let currentAiSearchRemaining = planCfg.unlimitedSearches
       ? 999999
-      : Math.max(Number(remote.aiSearchRemaining ?? planCfg.aiSearchQuota), planCfg.aiSearchQuota);
+      : (remote.aiSearchRemaining !== undefined && remote.aiSearchRemaining !== null
+          ? Math.min(Number(remote.aiSearchRemaining), planCfg.aiSearchQuota)
+          : planCfg.aiSearchQuota);
 
     const mergedData: UserSyncData = {
       userId: user.id,
