@@ -5,7 +5,6 @@ import { CreditCard, Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { startRazorpayCheckout } from '@/lib/razorpay';
 import { useApp } from '@/context/AppContext';
-import { formatPlanDateWithTime } from '@/lib/plans';
 
 export interface RazorpayCheckoutButtonProps {
   amount?: number; // in paise (e.g. 100 = ₹1.00, 19900 = ₹199.00)
@@ -87,12 +86,10 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
             addToolCredits(creditsToAdd);
             showToast(`Payment Verified! Added ${creditsToAdd} Credits to your account 🎉`);
           } else {
-            const isQueued = Boolean(verifyData?.isQueued || verifyData?.userSyncData?.queuedPlan);
-            upgradePlan(planTier, verifyData?.userSyncData);
+            const isQueued = Boolean(verifyData?.isQueued);
+            upgradePlan(planTier, verifyData?.userSyncData, isQueued);
             if (isQueued) {
-              const q = verifyData?.userSyncData?.queuedPlan;
-              const dateMsg = q?.planStartedAt ? formatPlanDateWithTime(q.planStartedAt) : 'after current plan expires';
-              showToast(`Plan Scheduled! Starts on ${dateMsg} after current plan expires 🎉`);
+              showToast(verifyData?.message || `Your new ${planTier.toUpperCase()} plan is queued and will activate once your current plan ends!`);
             } else {
               setIsProUser(true);
               showToast(`Payment Verified! Upgraded to ${planTier.toUpperCase()} Plan 🎉`);

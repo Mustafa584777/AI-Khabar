@@ -41,7 +41,7 @@ import {
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { RazorpayCheckoutButton } from './RazorpayCheckoutButton';
-import { PLAN_CONFIGS, formatPlanDateWithTime, formatPlanDateOnly } from '@/lib/plans';
+import { PLAN_CONFIGS, formatPlanDateWithTime, formatExpiryDateWithHour } from '@/lib/plans';
 
 export const UserDashboard = () => {
   const router = useRouter();
@@ -84,7 +84,7 @@ export const UserDashboard = () => {
   const [historySearch, setHistorySearch] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const expiryDisplay = planExpiresAt ? formatPlanDateWithTime(planExpiresAt) : 'Active';
+  const expiryDisplay = planExpiresAt ? formatExpiryDateWithHour(planExpiresAt) : 'Active';
 
   // Strict paid tier resolution for Dashboard display
   const isPaid = Boolean(
@@ -504,41 +504,27 @@ export const UserDashboard = () => {
                     : 'Unlock all premium prompts instantly, priority tool credits, increased saves & history quota, and custom prompt requests.'}
                 </p>
                 {isPaid && (
-                  <div className="space-y-1.5 text-xs text-amber-300 font-semibold">
-                    <p className="flex items-center gap-1.5">
-                      <span className="text-neutral-400">Plan Started On:</span>
-                      <span className="font-bold text-white">{formatPlanDateOnly(planStartedAt)}</span>
-                    </p>
-                    <p className="flex items-center gap-1.5">
-                      <span className="text-neutral-400">Plan Subscription Expires On:</span>
-                      <span className="font-bold text-amber-400">{expiryDisplay}</span>
-                    </p>
+                  <div className="space-y-1 text-xs text-amber-400 font-bold">
+                    <p>Plan Started On: {planStartedAt ? formatPlanDateWithTime(planStartedAt) : 'Recently'}</p>
+                    <p>Plan Subscription Expires On: {expiryDisplay}</p>
                   </div>
                 )}
-
-                {/* Queued / Upcoming Plan Section */}
                 {queuedPlan && (
-                  <div className="mt-3 p-3.5 rounded-2xl bg-purple-950/70 border border-purple-500/40 text-neutral-200 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-0.5 rounded-full bg-purple-500 text-white text-[10px] font-black uppercase tracking-wider">
-                          Upcoming Plan
-                        </span>
-                        <span className="text-xs font-black text-purple-200">
-                          {queuedPlan.planTier.toUpperCase()} PLAN
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-bold text-purple-300 bg-purple-900/60 px-2 py-0.5 rounded-full border border-purple-400/30">
-                        Starts After Expiry
+                  <div className="mt-3 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs space-y-1.5 animate-in fade-in duration-300">
+                    <div className="flex items-center gap-2 font-black text-amber-400">
+                      <Clock className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span>Upcoming Scheduled Plan: {queuedPlan.planName?.toUpperCase() || queuedPlan.planTier.toUpperCase()}</span>
+                      <span className="px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-bold">
+                        Scheduled
                       </span>
                     </div>
-                    <p className="text-xs text-neutral-300">
-                      Starts automatically on <strong className="text-white font-bold">{formatPlanDateWithTime(queuedPlan.planStartedAt)}</strong> (right after current plan expires at 11:59 PM).
+                    <p className="text-neutral-300 leading-relaxed">
+                      Your current plan is active. This plan will start automatically on{' '}
+                      <span className="font-bold text-white">{formatExpiryDateWithHour(queuedPlan.scheduledStartAt)}</span> after your current plan expires.
                     </p>
-                    <div className="text-[11px] text-neutral-300 flex flex-wrap gap-x-4 gap-y-1 pt-1.5 border-t border-purple-500/20">
-                      <span>• <strong className="text-amber-400">{queuedPlan.credits}</strong> Tool Credits</span>
-                      <span>• <strong className="text-purple-300">{queuedPlan.promptRequestsRemaining}</strong> Custom Requests</span>
-                      <span>• <strong className="text-emerald-400">{queuedPlan.aiSearchRemaining > 99999 ? 'Unlimited' : queuedPlan.aiSearchRemaining}</strong> Searches</span>
+                    <div className="text-[11px] text-amber-400/90 font-medium flex items-center gap-3">
+                      <span>• {queuedPlan.credits} tool credits will be granted</span>
+                      <span>• Full {queuedPlan.planName || queuedPlan.planTier} features</span>
                     </div>
                   </div>
                 )}

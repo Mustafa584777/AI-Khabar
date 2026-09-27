@@ -21,8 +21,10 @@ import {
   HelpCircle,
   Check,
   X,
+  Clock,
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
+import { formatExpiryDateWithHour } from '@/lib/plans';
 
 interface CreditPack {
   id: string;
@@ -133,7 +135,7 @@ const FAQS = [
 ];
 
 export default function CheckoutPage() {
-  const { isProUser, planTier, toolCredits, promptRequestsRemaining } = useApp();
+  const { isProUser, planTier, toolCredits, promptRequestsRemaining, planExpiresAt, queuedPlan } = useApp();
   const [billingView, setBillingView] = useState<'credits' | 'subscription'>('subscription');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
@@ -159,25 +161,40 @@ export default function CheckoutPage() {
           </p>
 
           {/* Current User Status */}
-          <div className="inline-flex flex-wrap items-center justify-center gap-3 px-5 py-2 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs font-bold shadow-xs">
+          <div className="inline-flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 px-5 py-2.5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs font-bold shadow-xs">
             <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-black">
               <Coins className="w-4 h-4" />
               Your Balance: {toolCredits} Credits
             </span>
             {isProUser && (
               <>
-                <span className="text-neutral-300 dark:text-neutral-700">•</span>
+                <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700">•</span>
                 <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  {(planTier || 'Pro').toUpperCase()} Member
+                  {(planTier || 'Pro').toUpperCase()} Plan {planExpiresAt ? `(Expires ${formatExpiryDateWithHour(planExpiresAt)})` : ''}
                 </span>
-                <span className="text-neutral-300 dark:text-neutral-700">•</span>
+                <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700">•</span>
                 <span className="text-neutral-500">
                   {promptRequestsRemaining} Prompt Requests Left
                 </span>
               </>
             )}
+            {queuedPlan && (
+              <>
+                <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700">•</span>
+                <span className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400">
+                  <Clock className="w-3.5 h-3.5" />
+                  Upcoming: {queuedPlan.planName?.toUpperCase() || queuedPlan.planTier.toUpperCase()} Scheduled
+                </span>
+              </>
+            )}
           </div>
+
+          {isProUser && (
+            <p className="text-[11px] text-amber-700 dark:text-amber-400/90 font-medium">
+              💡 <strong>Active Plan Protection:</strong> Any new plan you choose will start automatically on your expiry date at 11:59 PM without merging or resetting your current plan credits.
+            </p>
+          )}
 
           {/* Segmented Tab Switcher */}
           <div className="pt-3 flex justify-center">

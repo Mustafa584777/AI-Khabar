@@ -76,6 +76,8 @@ export async function GET(req: NextRequest) {
               planTier,
               isProUser,
               planExpiresAt,
+              planStartedAt: syncData.planStartedAt,
+              queuedPlan: syncData.queuedPlan || null,
               toolCredits,
               points,
               unlockedPromptIds,

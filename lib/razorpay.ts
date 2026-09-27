@@ -45,6 +45,8 @@ export interface CheckoutOptions {
     order_id: string;
     payment_id: string;
     message: string;
+    isQueued?: boolean;
+    queuedPlan?: any;
     userSyncData?: any;
   }) => void;
   onFailure?: (error: { message: string; details?: any }) => void;

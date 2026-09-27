@@ -14,7 +14,7 @@ import {
   PersonalizationEngine,
   INITIAL_TASTE_PROFILE,
 } from '@/lib/personalization';
-import { PLAN_CONFIGS, getPlanConfig, computePlanExpiry, formatPlanDateWithTime } from '@/lib/plans';
+import { PLAN_CONFIGS, getPlanConfig, calculatePlanDates, formatExpiryDateWithHour } from '@/lib/plans';
 
 interface AppContextType {
   // Navigation & Views
@@ -150,7 +150,7 @@ interface AppContextType {
   useToolCredit: (amount?: number) => boolean;
   addToolCredits: (amount: number) => void;
   promptRequestsRemaining: number;
-  upgradePlan: (tier: 'starter' | 'pro' | 'vip' | 'ultra', serverData?: any) => void;
+  upgradePlan: (tier: 'starter' | 'pro' | 'vip' | 'ultra', serverData?: any, isQueued?: boolean) => void;
 
   // Prompt Unlocking with Credits / Subscription
   unlockedPromptIds: string[];
@@ -324,14 +324,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return null;
   });
 
-  const [queuedPlan, setQueuedPlanState] = useState<QueuedPlan | null>(() => {
+  const [queuedPlan, setQueuedPlan] = useState<QueuedPlan | null>(() => {
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem('auraprompt_queued_plan');
         if (saved) return JSON.parse(saved);
-        const acc = StorageService.getUserAccount();
-        if (acc?.queuedPlan) return acc.queuedPlan;
       } catch {}
+      const acc = StorageService.getUserAccount();
+      if (acc?.queuedPlan) return acc.queuedPlan;
     }
     return null;
   });
@@ -496,7 +496,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const saved = localStorage.getItem('auraprompt_tool_credits');
         if (saved !== null) {
           const parsed = parseInt(saved, 10);
-          if (!isNaN(parsed)) currentCredits = parsed;
+          if (!isNaN(parsed)) currentCredits = Math.max(toolCredits, parsed);
         }
       }
 
@@ -532,81 +532,54 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     [isProUser, unlockedPromptIds, toolCredits, userAccount]
   );
 
-  const upgradePlan = useCallback((tier: 'starter' | 'pro' | 'vip' | 'ultra', serverData?: any) => {
-    const planConfig = PLAN_CONFIGS[tier] || PLAN_CONFIGS.pro;
-    const addedPoints = tier === 'starter' ? 10 : tier === 'pro' ? 20 : tier === 'vip' ? 50 : 100;
-    const nextPoints = (userAccount?.points || 0) + addedPoints;
-
-    // Check if the plan should be queued (user already has an active, unexpired plan)
-    const isServerQueued = Boolean(serverData?.isQueued || serverData?.queuedPlan);
-    const isCurrentActive = ['starter', 'pro', 'vip', 'ultra'].includes(planTier) &&
-      planExpiresAt && new Date(planExpiresAt).getTime() > Date.now();
-
-    if (isServerQueued || (isCurrentActive && (!serverData || serverData.isQueued))) {
-      // QUEUED PLAN: Do NOT overwrite active plan or merge credits!
-      const queuedStart = serverData?.queuedPlan?.planStartedAt || planExpiresAt || new Date().toISOString();
-      const queuedExp = serverData?.queuedPlan?.planExpiresAt || computePlanExpiry(queuedStart, 30);
-
-      const q: QueuedPlan = serverData?.queuedPlan || {
-        id: `queued_${Date.now()}`,
-        planTier: tier,
-        planName: planConfig.name,
-        credits: planConfig.credits,
-        toolCredits: planConfig.credits,
-        promptRequestsRemaining: planConfig.promptRequests,
-        aiSearchRemaining: planConfig.unlimitedSearches ? 999999 : planConfig.aiSearchQuota,
-        planStartedAt: queuedStart,
-        planExpiresAt: queuedExp,
-        purchasedAt: new Date().toISOString(),
-        status: 'queued',
-      };
-
-      setQueuedPlanState(q);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('auraprompt_queued_plan', JSON.stringify(q));
+  const upgradePlan = useCallback((tier: 'starter' | 'pro' | 'vip' | 'ultra', serverData?: any, isQueued?: boolean) => {
+    // 1. If this upgrade is queued because the user already has an active plan:
+    if (isQueued || serverData?.isQueued || serverData?.queuedPlan) {
+      const qp = serverData?.queuedPlan;
+      if (qp) {
+        setQueuedPlan(qp);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('auraprompt_queued_plan', JSON.stringify(qp));
+        }
       }
-
-      setUserAccount((prev) => {
-        if (!prev) return prev;
-        const updated: UserAccount = {
-          ...prev,
-          queuedPlan: q,
-          points: (prev.points || 0) + addedPoints,
-        };
-        StorageService.saveUserAccount(updated);
-        return updated;
-      });
-
-      const currentAcc = userAccount || StorageService.getUserAccount();
-      if (currentAcc && (currentAcc.email || currentAcc.id)) {
-        void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, {
-          queuedPlan: q,
-          points: nextPoints,
-        });
-      }
-
-      showToast(`Upcoming ${planConfig.name} Plan scheduled! Starts on ${formatPlanDateWithTime(q.planStartedAt)} after current plan ends 🎉`);
+      showToast(
+        serverData?.message ||
+        `Your ${getPlanConfig(tier).name} plan is queued and will start automatically after your current plan expires at 11:59 PM!`
+      );
       return;
     }
 
-    // BRAND NEW ACTIVE PLAN:
+    // 2. Active plan activation
+    const planConfig = PLAN_CONFIGS[tier] || PLAN_CONFIGS.pro;
+
     setIsProUserState(true);
     setPlanTierState(tier);
     const allocatedAiSearch = serverData?.aiSearchRemaining ?? (planConfig.unlimitedSearches ? 999999 : planConfig.aiSearchQuota);
     setAiSearchRemainingState(allocatedAiSearch);
 
-    const finalCredits = serverData?.toolCredits ?? planConfig.credits;
+    const addedCredits = planConfig.credits;
+    const addedRequests = planConfig.promptRequests;
+    const addedPoints = tier === 'starter' ? 10 : tier === 'pro' ? 20 : tier === 'vip' ? 50 : 100;
+
+    // Fresh plan initialization: grant plan quotas
+    const finalCredits = serverData?.toolCredits ?? addedCredits;
     setToolCreditsState(finalCredits);
 
-    const finalRequests = serverData?.promptRequestsRemaining ?? planConfig.promptRequests;
+    const finalRequests = serverData?.promptRequestsRemaining ?? addedRequests;
     setPromptRequestsRemainingState(finalRequests);
 
-    const now = new Date();
-    const newStartedAt = serverData?.planStartedAt || now.toISOString();
-    const newExpiresAt = serverData?.planExpiresAt || computePlanExpiry(newStartedAt, 30);
-    setPlanStartedAtState(newStartedAt);
-    setPlanExpiresAtState(newExpiresAt);
-    setQueuedPlanState(null);
+    let nextPoints = (userAccount?.points || 0) + addedPoints;
+
+    // Calculate dates guaranteeing 11:59:59 PM expiration
+    const calculated = calculatePlanDates(serverData?.planStartedAt || new Date(), 30);
+    const planStartedAt = serverData?.planStartedAt || calculated.planStartedAt;
+    const planExpiresAt = serverData?.planExpiresAt || calculated.planExpiresAt;
+    setPlanStartedAtState(planStartedAt);
+    setPlanExpiresAtState(planExpiresAt);
+    setQueuedPlan(null);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('auraprompt_queued_plan');
+    }
 
     setUserAccount((prev) => {
       const fallbackEmail = serverData?.email || '';
@@ -635,8 +608,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         isPremium: true,
         membershipPlan: tier === 'ultra' ? 'vip' : tier,
         toolCredits: finalCredits,
-        planStartedAt: newStartedAt,
-        planExpiresAt: newExpiresAt,
+        planStartedAt,
+        planExpiresAt,
         queuedPlan: null,
       };
       StorageService.saveUserAccount(updated);
@@ -649,9 +622,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem('auraprompt_tool_credits', finalCredits.toString());
       localStorage.setItem('auraprompt_prompt_requests', finalRequests.toString());
       localStorage.setItem('auraprompt_ai_search_remaining', allocatedAiSearch.toString());
-      localStorage.setItem('auraprompt_plan_started_at', newStartedAt);
-      localStorage.setItem('auraprompt_plan_expires_at', newExpiresAt);
-      localStorage.removeItem('auraprompt_queued_plan');
+      localStorage.setItem('auraprompt_plan_started_at', planStartedAt);
+      localStorage.setItem('auraprompt_plan_expires_at', planExpiresAt);
     }
 
     // Persist SaaS Plan upgrade immediately to Supabase cloud
@@ -664,12 +636,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         promptRequestsRemaining: finalRequests,
         aiSearchRemaining: allocatedAiSearch,
         points: nextPoints,
-        planStartedAt: newStartedAt,
-        planExpiresAt: newExpiresAt,
+        planStartedAt,
+        planExpiresAt,
         queuedPlan: null,
       });
     }
-  }, [toolCredits, promptRequestsRemaining, userAccount, planTier, planExpiresAt, showToast]);
+
+    showToast(`Welcome to ${planConfig.name}! Valid until ${formatExpiryDateWithHour(planExpiresAt)}.`);
+  }, [userAccount, showToast]);
 
   // AI Studio History State
   const [aiHistory, setAiHistory] = useState<AIHistoryItem[]>([]);
@@ -970,12 +944,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           localStorage.setItem('auraprompt_plan_expires_at', finalExpires);
           setPlanExpiresAtState(finalExpires);
         }
-        const finalQueued = synced.queuedPlan || null;
-        setQueuedPlanState(finalQueued);
-        if (finalQueued) {
-          localStorage.setItem('auraprompt_queued_plan', JSON.stringify(finalQueued));
-        } else {
-          localStorage.removeItem('auraprompt_queued_plan');
+        if (synced.queuedPlan !== undefined) {
+          setQueuedPlan(synced.queuedPlan);
+          if (synced.queuedPlan) {
+            localStorage.setItem('auraprompt_queued_plan', JSON.stringify(synced.queuedPlan));
+          } else {
+            localStorage.removeItem('auraprompt_queued_plan');
+          }
         }
       }
     } catch (e) {
@@ -1065,7 +1040,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setPlanTierState('free');
     setPlanStartedAtState(null);
     setPlanExpiresAtState(null);
-    setQueuedPlanState(null);
     setToolCreditsState(0);
     setPromptRequestsRemainingState(0);
     setUnlockedPromptIds([]);
@@ -1293,21 +1267,54 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           finalTier = localTier;
         }
 
-        const isPro = finalTier !== 'free' || Boolean(synced.isProUser || currentAcc.isProUser);
+        let isPro = finalTier !== 'free' || Boolean(synced.isProUser || currentAcc.isProUser);
         setPlanTierState(finalTier);
         setIsProUserState(isPro);
         localStorage.setItem('auraprompt_plan_tier', finalTier);
         localStorage.setItem('auraprompt_pro_member', String(isPro));
 
-        // Tool credits: Synchronize without overriding consumed balance
-        let resolvedCredits = localCredits;
-        if (synced.toolCredits !== undefined && synced.toolCredits !== null) {
-          resolvedCredits = Number(synced.toolCredits);
+        const finalExpires = synced.planExpiresAt || localExpires;
+        if (finalExpires) {
+          localStorage.setItem('auraprompt_plan_expires_at', finalExpires);
+          setPlanExpiresAtState(finalExpires);
         }
+
+        const finalStarted = synced.planStartedAt || localStorage.getItem('auraprompt_plan_started_at') || currentAcc.planStartedAt;
+        if (finalStarted) {
+          localStorage.setItem('auraprompt_plan_started_at', finalStarted);
+          setPlanStartedAtState(finalStarted);
+        }
+
+        // Queued Plan handling
+        if (synced.queuedPlan !== undefined) {
+          setQueuedPlan(synced.queuedPlan);
+          if (synced.queuedPlan) {
+            localStorage.setItem('auraprompt_queued_plan', JSON.stringify(synced.queuedPlan));
+          } else {
+            localStorage.removeItem('auraprompt_queued_plan');
+          }
+        }
+
+        // If plan expired, check for queued plan auto-promotion
+        const isExpiredNow = finalExpires && new Date(finalExpires).getTime() <= Date.now();
+        const queuedToPromote = synced.queuedPlan || queuedPlan;
+        if (isExpiredNow && queuedToPromote) {
+          finalTier = queuedToPromote.planTier;
+          isPro = true;
+          setPlanTierState(finalTier);
+          setIsProUserState(true);
+          localStorage.setItem('auraprompt_plan_tier', finalTier);
+          localStorage.setItem('auraprompt_pro_member', 'true');
+          setQueuedPlan(null);
+          localStorage.removeItem('auraprompt_queued_plan');
+        }
+
+        // Tool credits: respect consumed balance
+        const resolvedCredits = synced.toolCredits !== undefined ? Number(synced.toolCredits) : Number(localStorage.getItem('auraprompt_tool_credits') || 0);
         setToolCreditsState(resolvedCredits);
         localStorage.setItem('auraprompt_tool_credits', String(resolvedCredits));
 
-        if (synced.promptRequestsRemaining !== undefined && synced.promptRequestsRemaining !== null) {
+        if (synced.promptRequestsRemaining !== undefined) {
           const resolvedReqs = Number(synced.promptRequestsRemaining);
           setPromptRequestsRemainingState(resolvedReqs);
           localStorage.setItem('auraprompt_prompt_requests', String(resolvedReqs));
@@ -1316,44 +1323,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (synced.aiSearchRemaining !== undefined) {
           setAiSearchRemainingState(synced.aiSearchRemaining);
           localStorage.setItem('auraprompt_ai_search_remaining', String(synced.aiSearchRemaining));
-        }
-
-        let finalExpires = synced.planExpiresAt || localExpires;
-        let finalStarted = synced.planStartedAt || localStorage.getItem('auraprompt_plan_started_at') || currentAcc.planStartedAt;
-
-        // Check if queuedPlan should be activated right now
-        let resolvedQueuedPlan = synced.queuedPlan || queuedPlan;
-        if (resolvedQueuedPlan && finalExpires && new Date(finalExpires).getTime() <= Date.now()) {
-          finalTier = resolvedQueuedPlan.planTier;
-          resolvedCredits = resolvedQueuedPlan.toolCredits;
-          setToolCreditsState(resolvedCredits);
-          localStorage.setItem('auraprompt_tool_credits', String(resolvedCredits));
-          setPlanTierState(finalTier);
-          localStorage.setItem('auraprompt_plan_tier', finalTier);
-          finalStarted = resolvedQueuedPlan.planStartedAt || new Date().toISOString();
-          finalExpires = resolvedQueuedPlan.planExpiresAt || computePlanExpiry(finalStarted, 30);
-          setPlanStartedAtState(finalStarted);
-          setPlanExpiresAtState(finalExpires);
-          localStorage.setItem('auraprompt_plan_started_at', finalStarted);
-          localStorage.setItem('auraprompt_plan_expires_at', finalExpires);
-          resolvedQueuedPlan = null;
-        }
-
-        if (finalExpires) {
-          localStorage.setItem('auraprompt_plan_expires_at', finalExpires);
-          setPlanExpiresAtState(finalExpires);
-        }
-
-        if (finalStarted) {
-          localStorage.setItem('auraprompt_plan_started_at', finalStarted);
-          setPlanStartedAtState(finalStarted);
-        }
-
-        setQueuedPlanState(resolvedQueuedPlan);
-        if (resolvedQueuedPlan) {
-          localStorage.setItem('auraprompt_queued_plan', JSON.stringify(resolvedQueuedPlan));
-        } else {
-          localStorage.removeItem('auraprompt_queued_plan');
         }
 
         setUserAccount((prev) => {
@@ -1368,7 +1337,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             toolCredits: resolvedCredits,
             planExpiresAt: finalExpires || prev.planExpiresAt,
             planStartedAt: finalStarted || prev.planStartedAt,
-            queuedPlan: resolvedQueuedPlan,
+            queuedPlan: synced.queuedPlan || prev.queuedPlan || null,
           };
           StorageService.saveUserAccount(updated);
           return updated;
@@ -1819,7 +1788,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         finalTier = localTier;
       }
 
-      const isPro = finalTier !== 'free' || Boolean(synced.isProUser || acc?.isProUser);
+      let isPro = finalTier !== 'free' || Boolean(synced.isProUser || acc?.isProUser);
       setPlanTierState(finalTier);
       setIsProUserState(isPro);
       if (typeof window !== 'undefined') {
@@ -1827,17 +1796,52 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('auraprompt_pro_member', String(isPro));
       }
 
-      // Tool credits: Synchronize without overriding consumed balance
-      let resolvedCredits = localCredits;
-      if (synced.toolCredits !== undefined && synced.toolCredits !== null) {
-        resolvedCredits = Number(synced.toolCredits);
+      const finalExpires = synced.planExpiresAt || localExpires;
+      if (finalExpires) {
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_plan_expires_at', finalExpires);
+        setPlanExpiresAtState(finalExpires);
       }
+
+      const finalStarted = synced.planStartedAt || localStorage.getItem('auraprompt_plan_started_at') || acc?.planStartedAt;
+      if (finalStarted && typeof window !== 'undefined') {
+        localStorage.setItem('auraprompt_plan_started_at', finalStarted);
+        setPlanStartedAtState(finalStarted);
+      }
+
+      // Queued Plan handling
+      if (synced.queuedPlan !== undefined) {
+        setQueuedPlan(synced.queuedPlan);
+        if (synced.queuedPlan && typeof window !== 'undefined') {
+          localStorage.setItem('auraprompt_queued_plan', JSON.stringify(synced.queuedPlan));
+        } else if (typeof window !== 'undefined') {
+          localStorage.removeItem('auraprompt_queued_plan');
+        }
+      }
+
+      // Check if plan expired but a queued plan exists for auto-promotion
+      const isExpiredNow = finalExpires && new Date(finalExpires).getTime() <= Date.now();
+      const queuedToPromote = synced.queuedPlan || queuedPlan;
+      if (isExpiredNow && queuedToPromote) {
+        finalTier = queuedToPromote.planTier;
+        isPro = true;
+        setPlanTierState(finalTier);
+        setIsProUserState(true);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('auraprompt_plan_tier', finalTier);
+          localStorage.setItem('auraprompt_pro_member', 'true');
+          localStorage.removeItem('auraprompt_queued_plan');
+        }
+        setQueuedPlan(null);
+      }
+
+      // Tool credits: respect consumed balance
+      const resolvedCredits = synced.toolCredits !== undefined ? Number(synced.toolCredits) : Number(localStorage.getItem('auraprompt_tool_credits') || 0);
       setToolCreditsState(resolvedCredits);
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_tool_credits', String(resolvedCredits));
       }
 
-      if (synced.promptRequestsRemaining !== undefined && synced.promptRequestsRemaining !== null) {
+      if (synced.promptRequestsRemaining !== undefined) {
         const resolvedReqs = Number(synced.promptRequestsRemaining);
         setPromptRequestsRemainingState(resolvedReqs);
         if (typeof window !== 'undefined') localStorage.setItem('auraprompt_prompt_requests', String(resolvedReqs));
@@ -1846,48 +1850,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (synced.aiSearchRemaining !== undefined) {
         setAiSearchRemainingState(synced.aiSearchRemaining);
         if (typeof window !== 'undefined') localStorage.setItem('auraprompt_ai_search_remaining', String(synced.aiSearchRemaining));
-      }
-
-      let finalExpires = synced.planExpiresAt || localExpires;
-      let finalStarted = synced.planStartedAt || localStorage.getItem('auraprompt_plan_started_at') || acc?.planStartedAt;
-
-      // Check if queuedPlan should be activated right now
-      let resolvedQueuedPlan = synced.queuedPlan || queuedPlan;
-      if (resolvedQueuedPlan && finalExpires && new Date(finalExpires).getTime() <= Date.now()) {
-        finalTier = resolvedQueuedPlan.planTier;
-        resolvedCredits = resolvedQueuedPlan.toolCredits;
-        setToolCreditsState(resolvedCredits);
-        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_tool_credits', String(resolvedCredits));
-        setPlanTierState(finalTier);
-        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_plan_tier', finalTier);
-        finalStarted = resolvedQueuedPlan.planStartedAt || new Date().toISOString();
-        finalExpires = resolvedQueuedPlan.planExpiresAt || computePlanExpiry(finalStarted, 30);
-        setPlanStartedAtState(finalStarted);
-        setPlanExpiresAtState(finalExpires);
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('auraprompt_plan_started_at', finalStarted);
-          localStorage.setItem('auraprompt_plan_expires_at', finalExpires);
-        }
-        resolvedQueuedPlan = null;
-      }
-
-      if (finalExpires) {
-        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_plan_expires_at', finalExpires);
-        setPlanExpiresAtState(finalExpires);
-      }
-
-      if (finalStarted) {
-        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_plan_started_at', finalStarted);
-        setPlanStartedAtState(finalStarted);
-      }
-
-      setQueuedPlanState(resolvedQueuedPlan);
-      if (typeof window !== 'undefined') {
-        if (resolvedQueuedPlan) {
-          localStorage.setItem('auraprompt_queued_plan', JSON.stringify(resolvedQueuedPlan));
-        } else {
-          localStorage.removeItem('auraprompt_queued_plan');
-        }
       }
 
       setUserAccount((prev) => {
@@ -1899,7 +1861,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           toolCredits: resolvedCredits,
           planExpiresAt: finalExpires || prev.planExpiresAt,
           planStartedAt: finalStarted || prev.planStartedAt,
-          queuedPlan: resolvedQueuedPlan,
+          queuedPlan: synced.queuedPlan || prev.queuedPlan || null,
         };
         StorageService.saveUserAccount(updated);
         return updated;

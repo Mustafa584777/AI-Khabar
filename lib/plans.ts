@@ -132,76 +132,78 @@ export function getPlanConfig(tier?: PlanTier | string | null): PlanConfig {
 }
 
 /**
- * Calculate the expiry date 30 days from a start date,
- * strictly anchored to 11:59:59 PM (23:59:59.999 IST / 18:29:59.999 UTC)
- * of the expiration day.
+ * Calculates start and end timestamps for a subscription plan.
+ * The expiration timestamp is guaranteed to be set to 11:59:59.999 PM of the target day.
  */
-export function computePlanExpiry(startDate: Date | string, durationDays: number = 30): string {
-  try {
-    const d = new Date(startDate);
-    if (isNaN(d.getTime())) {
-      const now = new Date();
-      return computePlanExpiry(now, durationDays);
-    }
-    const formatter = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Asia/Kolkata',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
-    const parts = formatter.formatToParts(d);
-    const year = parseInt(parts.find((p) => p.type === 'year')?.value || `${d.getUTCFullYear()}`, 10);
-    const month = parseInt(parts.find((p) => p.type === 'month')?.value || `${d.getUTCMonth() + 1}`, 10);
-    const day = parseInt(parts.find((p) => p.type === 'day')?.value || `${d.getUTCDate()}`, 10);
+export function calculatePlanDates(
+  startDateInput?: Date | string | number | null,
+  durationDays: number = 30
+): { planStartedAt: string; planExpiresAt: string } {
+  const start = startDateInput ? new Date(startDateInput) : new Date();
+  const safeStart = isNaN(start.getTime()) ? new Date() : start;
 
-    // 23:59:59.999 IST is 18:29:59.999 UTC
-    const expUtc = new Date(Date.UTC(year, month - 1, day + durationDays, 18, 29, 59, 999));
-    return expUtc.toISOString();
-  } catch {
-    const d = new Date(startDate);
-    d.setDate(d.getDate() + durationDays);
-    d.setHours(23, 59, 59, 999);
-    return d.toISOString();
-  }
+  // Add 30 days
+  const expires = new Date(safeStart.getTime() + durationDays * 24 * 60 * 60 * 1000);
+  // Guarantee expiration at 11:59:59.999 PM
+  expires.setHours(23, 59, 59, 999);
+
+  return {
+    planStartedAt: safeStart.toISOString(),
+    planExpiresAt: expires.toISOString(),
+  };
 }
 
 /**
- * Format plan expiry date with 11:59 PM time for human-readable display.
- * e.g. "October 26, 2026 at 11:59 PM"
+ * Calculates dates for a plan scheduled to start immediately after an existing plan ends.
  */
-export function formatPlanDateWithTime(isoDate?: string | null): string {
-  if (!isoDate) return 'Active';
-  try {
-    const d = new Date(isoDate);
-    if (isNaN(d.getTime())) return 'Active';
-    const datePart = d.toLocaleDateString('en-US', {
-      timeZone: 'Asia/Kolkata',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-    return `${datePart} at 11:59 PM`;
-  } catch {
-    return 'Active';
-  }
+export function calculateQueuedPlanDates(
+  activePlanExpiresAt: string | Date,
+  durationDays: number = 30
+): { scheduledStartAt: string; scheduledExpiresAt: string } {
+  const start = new Date(activePlanExpiresAt);
+  const safeStart = isNaN(start.getTime()) ? new Date() : start;
+
+  const expires = new Date(safeStart.getTime() + durationDays * 24 * 60 * 60 * 1000);
+  expires.setHours(23, 59, 59, 999);
+
+  return {
+    scheduledStartAt: safeStart.toISOString(),
+    scheduledExpiresAt: expires.toISOString(),
+  };
 }
 
 /**
- * Format plan start date.
- * e.g. "September 26, 2026"
+ * Formats a date with full day, month, year, and 12-hour time (e.g. 26 Sep 2026 at 04:30 PM).
  */
-export function formatPlanDateOnly(isoDate?: string | null): string {
-  if (!isoDate) return 'Today';
-  try {
-    const d = new Date(isoDate);
-    if (isNaN(d.getTime())) return 'Today';
-    return d.toLocaleDateString('en-US', {
-      timeZone: 'Asia/Kolkata',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  } catch {
-    return 'Today';
-  }
+export function formatPlanDateWithTime(dateStr?: string | null): string {
+  if (!dateStr) return 'Active';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return 'Active';
+  const datePart = d.toLocaleDateString('en-US', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+  const timePart = d.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+  return `${datePart} at ${timePart}`;
 }
+
+/**
+ * Formats a plan expiration date with explicit 11:59 PM hour display.
+ */
+export function formatExpiryDateWithHour(dateStr?: string | null): string {
+  if (!dateStr) return 'Active';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return 'Active';
+  const datePart = d.toLocaleDateString('en-US', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+  return `${datePart} (Expires at 11:59 PM)`;
+}
+

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, supabase } from '@/lib/supabase';
 import { getClientIp, checkRateLimit, createRateLimitResponse, sanitizePayload } from '@/lib/security';
-import { PLAN_CONFIGS, computePlanExpiry } from '@/lib/plans';
+import { PLAN_CONFIGS } from '@/lib/plans';
 import { PlanTier } from '@/types/prompt';
 import { ServerStorage } from '@/lib/server-storage';
 
@@ -67,6 +67,27 @@ export async function POST(req: NextRequest) {
         } catch {}
       }
     }
+    // Check if activeSub has expired but holds a queuedPlan
+    if (activeSub && activeSub.planExpiresAt && new Date(activeSub.planExpiresAt).getTime() <= Date.now()) {
+      if (activeSub.queuedPlan) {
+        const qp = activeSub.queuedPlan;
+        const qpCfg = PLAN_CONFIGS[qp.planTier as PlanTier] || PLAN_CONFIGS.pro;
+        activeSub = {
+          ...activeSub,
+          planTier: qp.planTier,
+          status: 'active',
+          isProUser: true,
+          planStartedAt: qp.scheduledStartAt || new Date().toISOString(),
+          planExpiresAt: qp.scheduledExpiresAt,
+          credits: qp.credits || qpCfg.credits,
+          promptRequests: qp.promptRequests || qpCfg.promptRequests,
+          aiSearchQuota: qp.aiSearchQuota || qpCfg.aiSearchQuota,
+          queuedPlan: null,
+        };
+        void ServerStorage.saveUserSubscription(activeSub);
+      }
+    }
+
     const hasActiveSub = Boolean(
       activeSub &&
       activeSub.status === 'active' &&
@@ -167,8 +188,8 @@ export async function POST(req: NextRequest) {
 
         if ((TIER_RANK[effCurrTier] || 0) > (TIER_RANK[highestTier] || 0)) {
           highestTier = effCurrTier;
-          if (!hasActiveSub || !highestStartedAt) highestStartedAt = curr.planStartedAt || highestStartedAt;
-          if (!hasActiveSub || !highestExpiresAt) highestExpiresAt = curr.planExpiresAt || highestExpiresAt;
+          highestStartedAt = curr.planStartedAt || highestStartedAt;
+          highestExpiresAt = curr.planExpiresAt || highestExpiresAt;
         }
       }
 
@@ -191,10 +212,25 @@ export async function POST(req: NextRequest) {
       best.isProUser = highestTier !== 'free' || Boolean(best.isProUser || hasActiveSub);
       best.planStartedAt = highestStartedAt || best.planStartedAt;
       best.planExpiresAt = highestExpiresAt || best.planExpiresAt;
+      best.queuedPlan = activeSub?.queuedPlan || best.queuedPlan || null;
 
-      const planCfg = PLAN_CONFIGS[highestTier] || PLAN_CONFIGS.free;
+      // Check if plan has expired: if a queued plan exists, automatically activate it!
+      if (best.planExpiresAt && new Date(best.planExpiresAt).getTime() <= Date.now() && best.queuedPlan) {
+        const qp = best.queuedPlan;
+        const qpCfg = PLAN_CONFIGS[qp.planTier as PlanTier] || PLAN_CONFIGS.pro;
+        best.planTier = qp.planTier;
+        best.isProUser = true;
+        best.planStartedAt = qp.scheduledStartAt || new Date().toISOString();
+        best.planExpiresAt = qp.scheduledExpiresAt;
+        best.toolCredits = qp.credits || qpCfg.credits;
+        best.promptRequestsRemaining = qp.promptRequests || qpCfg.promptRequests;
+        best.aiSearchRemaining = qpCfg.unlimitedSearches ? 999999 : (qp.aiSearchQuota || qpCfg.aiSearchQuota);
+        best.queuedPlan = null;
+      }
 
-      // Preserve exact consumed balance! Strictly do NOT restore consumed balance
+      const planCfg = PLAN_CONFIGS[best.planTier as PlanTier] || PLAN_CONFIGS.free;
+
+      // Preserve exact consumed balance! Never automatically top up or overwrite consumption
       if (best.toolCredits === undefined || best.toolCredits === null) {
         best.toolCredits = planCfg.credits;
       } else {
@@ -202,7 +238,7 @@ export async function POST(req: NextRequest) {
       }
 
       if (best.promptRequestsRemaining === undefined || best.promptRequestsRemaining === null) {
-        best.promptRequestsRemaining = highestTier !== 'free' ? planCfg.promptRequests : 0;
+        best.promptRequestsRemaining = best.planTier !== 'free' ? planCfg.promptRequests : 0;
       } else {
         best.promptRequestsRemaining = Number(best.promptRequestsRemaining);
       }
@@ -243,43 +279,12 @@ export async function POST(req: NextRequest) {
           ? cloned.planTier
           : (cloned.isProUser ? 'pro' : 'free');
 
-        // Check if queuedPlan should be activated
-        const queuedPlan = cloned.queuedPlan || activeSub?.queuedPlan || null;
-        if (queuedPlan && cloned.planExpiresAt && new Date(cloned.planExpiresAt).getTime() <= Date.now()) {
-          tier = queuedPlan.planTier;
-          cloned.isProUser = true;
-          cloned.planStartedAt = queuedPlan.planStartedAt || new Date().toISOString();
-          cloned.planExpiresAt = queuedPlan.planExpiresAt || computePlanExpiry(cloned.planStartedAt, 30);
-          cloned.toolCredits = queuedPlan.toolCredits;
-          cloned.promptRequestsRemaining = queuedPlan.promptRequestsRemaining;
-          cloned.aiSearchRemaining = queuedPlan.aiSearchRemaining;
-          cloned.queuedPlan = null;
-
-          if (cleanEmail) {
-            void ServerStorage.saveUserSubscription({
-              email: cleanEmail,
-              userId,
-              planTier: queuedPlan.planTier,
-              isProUser: true,
-              status: 'active',
-              planStartedAt: cloned.planStartedAt,
-              planExpiresAt: cloned.planExpiresAt,
-              credits: queuedPlan.credits,
-              aiSearchQuota: queuedPlan.aiSearchRemaining,
-              promptRequests: queuedPlan.promptRequestsRemaining,
-              queuedPlan: null,
-            });
-            void ServerStorage.saveUserProfile(cleanEmail, userId, cloned);
-          }
-        } else {
-          cloned.queuedPlan = queuedPlan;
-          // Check if plan has expired (never expire if user holds active subscription)
-          if (tier !== 'free' && cloned.planExpiresAt && !hasActiveSub) {
-            const exp = new Date(cloned.planExpiresAt).getTime();
-            if (!isNaN(exp) && exp < Date.now()) {
-              tier = 'free';
-              cloned.isProUser = false;
-            }
+        // Check if plan has expired (never expire if user holds active subscription)
+        if (tier !== 'free' && cloned.planExpiresAt && !hasActiveSub) {
+          const exp = new Date(cloned.planExpiresAt).getTime();
+          if (!isNaN(exp) && exp < Date.now()) {
+            tier = 'free';
+            cloned.isProUser = false;
           }
         }
 
@@ -469,9 +474,9 @@ export async function POST(req: NextRequest) {
         aiSearchRemaining: finalSearches,
         aiHistory: mergedAiHistory,
         tasteProfile: mergedTasteProfile !== undefined ? mergedTasteProfile : existingData.tasteProfile,
+        planStartedAt: data.planStartedAt || existingData.planStartedAt,
+        planExpiresAt: resolvedPlanExpiresAt,
         queuedPlan: data.queuedPlan !== undefined ? data.queuedPlan : (existingData.queuedPlan || activeSub?.queuedPlan || null),
-        planStartedAt: activeSub?.planStartedAt || existingData.planStartedAt || data.planStartedAt,
-        planExpiresAt: activeSub?.planExpiresAt || resolvedPlanExpiresAt,
         updatedAt: new Date().toISOString(),
       };
 
