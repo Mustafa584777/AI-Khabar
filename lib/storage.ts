@@ -205,6 +205,29 @@ export const StorageService = {
     return isLiked;
   },
 
+  // Unlocked Premium Prompts
+  getUnlockedPromptIds: (): string[] => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('auraprompt_unlocked_prompts');
+        return saved ? JSON.parse(saved) : [];
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return [];
+  },
+
+  setUnlockedPromptIds: (ids: string[]): void => {
+    if (typeof window !== 'undefined' && Array.isArray(ids)) {
+      try {
+        localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(ids));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  },
+
   // Admin Auth Helpers
   authenticateAdmin: (email: string, pass: string): boolean => {
     const validEmail = 'admin@trendinggeminiprompts.com';

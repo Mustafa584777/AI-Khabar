@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
-import { PromptPost, AIHistoryItem } from '@/types/prompt';
+import { PromptPost, AIHistoryItem, PlanTier } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
 import { getPromptSlug, getOptimizedImageUrl } from '@/lib/utils';
 import {
@@ -87,9 +87,10 @@ export const UserDashboard = () => {
 
   // Strict paid tier resolution for Dashboard display
   const isPaid = Boolean(
-    isProUser && (planTier === 'starter' || planTier === 'pro' || planTier === 'vip' || planTier === 'ultra')
+    (isProUser || (planTier && ['starter', 'pro', 'vip', 'ultra'].includes(planTier))) &&
+    (!planExpiresAt || new Date(planExpiresAt).getTime() > Date.now())
   );
-  const effectivePlanTier = isPaid ? planTier : 'free';
+  const effectivePlanTier: PlanTier = isPaid ? (['starter', 'pro', 'vip', 'ultra'].includes(planTier) ? planTier : 'pro') : 'free';
   const currentPlanConfig = PLAN_CONFIGS[effectivePlanTier] || PLAN_CONFIGS.free;
 
   // Automatically prompt auth modal if unauthenticated

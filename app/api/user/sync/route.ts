@@ -47,6 +47,32 @@ export async function POST(req: NextRequest) {
 
     const client = supabaseAdmin || supabase;
 
+    // Helper: Check active permanent subscription across ServerStorage and Supabase
+    let activeSub: any = null;
+    if (cleanEmail) {
+      try {
+        activeSub = await ServerStorage.getUserSubscription(cleanEmail);
+      } catch (e) {
+        console.warn('ServerStorage subscription check warning:', e);
+      }
+
+      if (!activeSub) {
+        try {
+          const cleanKey = cleanEmail.replace(/[^a-z0-9_]/g, '_');
+          const subId = `sub_${cleanKey}`;
+          const { data: subRow } = await client.from('settings').select('data').eq('id', subId).maybeSingle();
+          if (subRow?.data) {
+            activeSub = subRow.data;
+          }
+        } catch {}
+      }
+    }
+    const hasActiveSub = Boolean(
+      activeSub &&
+      activeSub.status === 'active' &&
+      (!activeSub.planExpiresAt || new Date(activeSub.planExpiresAt).getTime() > Date.now())
+    );
+
     // Helper: fetch existing row checking emailKey, userKey, subscriptions, and server backups
     const fetchExistingData = async () => {
       const candidates: any[] = [];
@@ -60,21 +86,6 @@ export async function POST(req: NextRequest) {
           console.warn('ServerStorage profile check warning:', e);
         }
       }
-
-      // 2. Check active subscription
-      let activeSub: any = null;
-      if (cleanEmail) {
-        try {
-          activeSub = await ServerStorage.getUserSubscription(cleanEmail);
-        } catch (e) {
-          console.warn('ServerStorage subscription check warning:', e);
-        }
-      }
-      const hasActiveSub = Boolean(
-        activeSub &&
-        activeSub.status === 'active' &&
-        (!activeSub.planExpiresAt || new Date(activeSub.planExpiresAt).getTime() > Date.now())
-      );
 
       // 3. Check Supabase by emailKey
       if (emailKey) {
@@ -189,11 +200,17 @@ export async function POST(req: NextRequest) {
       } else {
         best.toolCredits = Number(best.toolCredits);
       }
+      if (hasActiveSub && best.toolCredits < Number(activeSub.credits || 0)) {
+        best.toolCredits = Math.max(best.toolCredits, Number(activeSub.credits));
+      }
 
       if (best.promptRequestsRemaining === undefined || best.promptRequestsRemaining === null) {
         best.promptRequestsRemaining = highestTier !== 'free' ? planCfg.promptRequests : 0;
       } else {
         best.promptRequestsRemaining = Number(best.promptRequestsRemaining);
+      }
+      if (hasActiveSub && best.promptRequestsRemaining < Number(activeSub.promptRequests || 0)) {
+        best.promptRequestsRemaining = Math.max(best.promptRequestsRemaining, Number(activeSub.promptRequests));
       }
 
       if (planCfg.unlimitedSearches) {
@@ -212,11 +229,18 @@ export async function POST(req: NextRequest) {
     if (action === 'pull' || !action) {
       let syncData = await fetchExistingData();
 
-      // If found under userKey but not yet mirrored to emailKey, backfill immediately
-      if (syncData && emailKey) {
-        try {
-          await client.from('settings').upsert({ id: emailKey, data: syncData });
-        } catch {}
+      // Mirror to both emailKey and userKey to prevent desync
+      if (syncData) {
+        if (emailKey) {
+          try {
+            await client.from('settings').upsert({ id: emailKey, data: syncData }, { onConflict: 'id' });
+          } catch {}
+        }
+        if (userKey && userKey !== emailKey) {
+          try {
+            await client.from('settings').upsert({ id: userKey, data: syncData }, { onConflict: 'id' });
+          } catch {}
+        }
       }
 
       if (syncData) {
@@ -225,8 +249,8 @@ export async function POST(req: NextRequest) {
           ? cloned.planTier
           : (cloned.isProUser ? 'pro' : 'free');
 
-        // Check if plan has expired
-        if (tier !== 'free' && cloned.planExpiresAt) {
+        // Check if plan has expired (never expire if user holds active subscription)
+        if (tier !== 'free' && cloned.planExpiresAt && !hasActiveSub) {
           const exp = new Date(cloned.planExpiresAt).getTime();
           if (!isNaN(exp) && exp < Date.now()) {
             tier = 'free';
@@ -285,22 +309,13 @@ export async function POST(req: NextRequest) {
       const incomingTier = data.planTier;
       let resolvedPlanTier = currentTier;
 
-      // Check active permanent subscription
-      let activeSub: any = null;
-      if (cleanEmail) {
-        try {
-          activeSub = await ServerStorage.getUserSubscription(cleanEmail);
-        } catch {}
-      }
-      const hasActiveSub = activeSub && activeSub.status === 'active';
-
       // Check if current tier is paid and unexpired
       const isCurrentPaidAndActive = currentTier !== 'free' && (!existingData.planExpiresAt || new Date(existingData.planExpiresAt).getTime() > Date.now());
 
-      if (hasActiveSub) {
+      if (hasActiveSub && activeSub) {
         resolvedPlanTier = activeSub.planTier;
       } else if (isCurrentPaidAndActive) {
-        // If user already holds a paid plan, do NOT let it get downgraded to free by a push
+        // If user already holds an active paid plan, do NOT let it get downgraded to free by a push
         if (incomingTier && (TIER_RANK[incomingTier] || 0) > (TIER_RANK[currentTier] || 0)) {
           resolvedPlanTier = incomingTier;
         } else {
@@ -414,14 +429,25 @@ export async function POST(req: NextRequest) {
         finalSearches = planCfg.aiSearchQuota;
       }
 
+      // If user holds active permanent subscription, ensure balance meets plan guarantees
+      if (hasActiveSub && activeSub) {
+        resolvedToolCredits = Math.max(resolvedToolCredits, Number(activeSub.credits || 0));
+        finalRequests = Math.max(finalRequests, Number(activeSub.promptRequests || 0));
+        if (planCfg.unlimitedSearches) {
+          finalSearches = 999999;
+        } else {
+          finalSearches = Math.max(finalSearches, Number(activeSub.aiSearchQuota || 0));
+        }
+      }
+
       const mergedPayload = {
         ...existingData,
         ...data,
         email: cleanEmail || existingData.email,
         userId: userId || existingData.userId,
-        bookmarkedIds: data.bookmarkedIds !== undefined ? data.bookmarkedIds : mergedBookmarks,
-        likedIds: data.likedIds !== undefined ? data.likedIds : mergedLikes,
-        unlockedPromptIds: data.unlockedPromptIds !== undefined ? data.unlockedPromptIds : mergedUnlockedPromptIds,
+        bookmarkedIds: mergedBookmarks,
+        likedIds: mergedLikes,
+        unlockedPromptIds: mergedUnlockedPromptIds,
         planTier: resolvedPlanTier,
         isProUser: resolvedIsPro,
         toolCredits: resolvedToolCredits,

@@ -274,8 +274,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [isProUser, setIsProUserState] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const acc = StorageService.getUserAccount();
-      if (acc && acc.isLoggedIn) {
-        return localStorage.getItem('auraprompt_pro_member') === 'true';
+      const savedPro = localStorage.getItem('auraprompt_pro_member');
+      const savedTier = localStorage.getItem('auraprompt_plan_tier') as PlanTier;
+      const isPaidTier = savedTier && ['starter', 'pro', 'vip', 'ultra'].includes(savedTier);
+      const isAccPaid = acc && ((acc.planTier && acc.planTier !== 'free') || acc.isProUser || acc.isPremium);
+      if (savedPro === 'true' || isPaidTier || isAccPaid) {
+        return true;
       }
     }
     return false;
@@ -290,25 +294,31 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const [planTier, setPlanTierState] = useState<PlanTier>(() => {
     if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('auraprompt_plan_tier') as PlanTier;
+      if (['starter', 'pro', 'vip', 'ultra'].includes(saved)) return saved;
       const acc = StorageService.getUserAccount();
-      if (acc && acc.isLoggedIn) {
-        const saved = localStorage.getItem('auraprompt_plan_tier') as PlanTier;
-        if (['starter', 'pro', 'vip', 'ultra'].includes(saved)) return saved;
-      }
+      if (acc?.planTier && ['starter', 'pro', 'vip', 'ultra'].includes(acc.planTier)) return acc.planTier;
+      if (acc?.membershipPlan && ['starter', 'pro', 'vip'].includes(acc.membershipPlan)) return acc.membershipPlan;
     }
     return 'free';
   });
 
   const [planExpiresAt, setPlanExpiresAtState] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('auraprompt_plan_expires_at') || null;
+      const saved = localStorage.getItem('auraprompt_plan_expires_at');
+      if (saved) return saved;
+      const acc = StorageService.getUserAccount();
+      if (acc?.planExpiresAt) return acc.planExpiresAt;
     }
     return null;
   });
 
   const [planStartedAt, setPlanStartedAtState] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('auraprompt_plan_started_at') || null;
+      const saved = localStorage.getItem('auraprompt_plan_started_at');
+      if (saved) return saved;
+      const acc = StorageService.getUserAccount();
+      if (acc?.planStartedAt) return acc.planStartedAt;
     }
     return null;
   });
@@ -544,18 +554,45 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setPromptRequestsRemainingState(finalRequests);
 
     let nextPoints = (userAccount?.points || 0) + addedPoints;
-    setUserAccount((prev) => {
-      if (!prev) return prev;
-      const updated = { ...prev, points: nextPoints };
-      StorageService.saveUserAccount(updated);
-      return updated;
-    });
-
     const now = new Date();
     const planStartedAt = serverData?.planStartedAt || now.toISOString();
     const planExpiresAt = serverData?.planExpiresAt || new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
     setPlanStartedAtState(planStartedAt);
     setPlanExpiresAtState(planExpiresAt);
+
+    setUserAccount((prev) => {
+      const fallbackEmail = serverData?.email || '';
+      const fallbackName = serverData?.name || fallbackEmail.split('@')[0] || 'Member';
+      const base: UserAccount = prev || StorageService.getUserAccount() || {
+        id: serverData?.userId || `user_${Date.now()}`,
+        name: fallbackName,
+        username: '@' + fallbackName.toLowerCase().replace(/[^a-z0-9]/g, ''),
+        email: fallbackEmail,
+        joinedDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        isLoggedIn: true,
+        points: 0,
+        requestsMade: 0,
+        likesCountForPoints: 0,
+        savesCountForPoints: 0,
+        generationsCountForPoints: 0,
+        sharesCountForPoints: 0,
+        referralsCountForPoints: 0,
+      };
+      const updated: UserAccount = {
+        ...base,
+        isLoggedIn: true,
+        points: (base.points || 0) + addedPoints,
+        planTier: tier,
+        isProUser: true,
+        isPremium: true,
+        membershipPlan: tier === 'ultra' ? 'vip' : tier,
+        toolCredits: finalCredits,
+        planStartedAt,
+        planExpiresAt,
+      };
+      StorageService.saveUserAccount(updated);
+      return updated;
+    });
 
     if (typeof window !== 'undefined') {
       localStorage.setItem('auraprompt_pro_member', 'true');
@@ -569,7 +606,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     // Persist SaaS Plan upgrade immediately to Supabase cloud
     const currentAcc = userAccount || StorageService.getUserAccount();
-    if (currentAcc && currentAcc.isLoggedIn) {
+    if (currentAcc && (currentAcc.email || currentAcc.id)) {
       void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, {
         planTier: tier,
         isProUser: true,
@@ -872,19 +909,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds || []));
         localStorage.setItem('auraprompt_first_login_claimed', 'true');
         localStorage.setItem(`auraprompt_signup_bonus_claimed_${cleanEmail}`, 'true');
-        if (synced.planStartedAt) {
-          localStorage.setItem('auraprompt_plan_started_at', synced.planStartedAt);
-          setPlanStartedAtState(synced.planStartedAt);
-        } else {
-          setPlanStartedAtState(null);
-          localStorage.removeItem('auraprompt_plan_started_at');
+        const finalStarted = synced.planStartedAt || localStorage.getItem('auraprompt_plan_started_at');
+        if (finalStarted) {
+          localStorage.setItem('auraprompt_plan_started_at', finalStarted);
+          setPlanStartedAtState(finalStarted);
         }
-        if (synced.planExpiresAt) {
-          localStorage.setItem('auraprompt_plan_expires_at', synced.planExpiresAt);
-          setPlanExpiresAtState(synced.planExpiresAt);
-        } else {
-          setPlanExpiresAtState(null);
-          localStorage.removeItem('auraprompt_plan_expires_at');
+        const finalExpires = synced.planExpiresAt || localStorage.getItem('auraprompt_plan_expires_at');
+        if (finalExpires) {
+          localStorage.setItem('auraprompt_plan_expires_at', finalExpires);
+          setPlanExpiresAtState(finalExpires);
         }
       }
     } catch (e) {
@@ -1150,47 +1183,74 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const synced = await UserSyncService.validateSession(currentAcc.id, currentAcc.email);
         if (!synced || !isMounted) return;
 
-        if (Date.now() - lastBookmarkToggleTimeRef.current > 5000) {
-          setBookmarkedIds(synced.bookmarkedIds || []);
-          StorageService.setBookmarkedIds(synced.bookmarkedIds || []);
-        }
+        // Bookmarks: Merge uniquely with local bookmarks so nothing is ever lost
+        const localBookmarks = StorageService.getBookmarkedIds();
+        const mergedBookmarks = Array.from(new Set([...localBookmarks, ...(synced.bookmarkedIds || [])]));
+        setBookmarkedIds(mergedBookmarks);
+        StorageService.setBookmarkedIds(mergedBookmarks);
 
-        setLikedIds(synced.likedIds || []);
-        StorageService.setLikedIds(synced.likedIds || []);
+        // Likes: Merge uniquely
+        const localLikes = StorageService.getLikedIds();
+        const mergedLikes = Array.from(new Set([...localLikes, ...(synced.likedIds || [])]));
+        setLikedIds(mergedLikes);
+        StorageService.setLikedIds(mergedLikes);
 
         if (synced.tasteProfile) {
           setTasteProfile(synced.tasteProfile);
           PersonalizationEngine.saveProfile(synced.tasteProfile);
         }
 
-        setAiHistory(synced.aiHistory || []);
-        StorageService.setAiHistory(synced.aiHistory || []);
+        // AI History: Merge uniquely by ID
+        const localHistory = StorageService.getAiHistory(currentAcc.id);
+        const historyMap = new Map<string, AIHistoryItem>();
+        localHistory.forEach((it) => { if (it?.id) historyMap.set(it.id, it); });
+        (synced.aiHistory || []).forEach((it) => { if (it?.id) historyMap.set(it.id, it); });
+        const mergedHistory = Array.from(historyMap.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 100);
+        setAiHistory(mergedHistory);
+        StorageService.setAiHistory(mergedHistory);
 
-        if (synced.points !== undefined) {
-          setUserAccount((prev) => (prev ? { ...prev, points: synced.points ?? prev.points, name: synced.name || prev.name, avatar: synced.avatar || prev.avatar } : prev));
+        // Unlocked Prompts: Merge uniquely
+        const localUnlocked = StorageService.getUnlockedPromptIds();
+        const mergedUnlocked = Array.from(new Set([...localUnlocked, ...(synced.unlockedPromptIds || [])]));
+        setUnlockedPromptIds(mergedUnlocked);
+        StorageService.setUnlockedPromptIds(mergedUnlocked);
+
+        // Strict Plan Tier Resolution:
+        // A paid plan must NEVER be converted to free tier unless it has explicitly expired!
+        const localTier = (localStorage.getItem('auraprompt_plan_tier') as PlanTier) || currentAcc.planTier || 'free';
+        const localExpires = localStorage.getItem('auraprompt_plan_expires_at') || currentAcc.planExpiresAt;
+        const isLocalActive = ['starter', 'pro', 'vip', 'ultra'].includes(localTier) && (!localExpires || new Date(localExpires).getTime() > Date.now());
+
+        const syncedTier = (synced.planTier && ['starter', 'pro', 'vip', 'ultra'].includes(synced.planTier)) ? synced.planTier : 'free';
+        const isSyncedActive = syncedTier !== 'free' && (!synced.planExpiresAt || new Date(synced.planExpiresAt).getTime() > Date.now());
+
+        const TIER_RANK: Record<PlanTier, number> = { free: 0, starter: 1, pro: 2, vip: 3, ultra: 4 };
+        let finalTier: PlanTier = 'free';
+        if (isSyncedActive && isLocalActive) {
+          finalTier = (TIER_RANK[syncedTier] >= TIER_RANK[localTier]) ? syncedTier : localTier;
+        } else if (isSyncedActive) {
+          finalTier = syncedTier;
+        } else if (isLocalActive) {
+          finalTier = localTier;
         }
 
-        const tier = synced.planTier || 'free';
-        setPlanTierState(tier);
-        localStorage.setItem('auraprompt_plan_tier', tier);
-
-        const isPro = Boolean(synced.isProUser || tier !== 'free');
+        const isPro = finalTier !== 'free' || Boolean(synced.isProUser || currentAcc.isProUser);
+        setPlanTierState(finalTier);
         setIsProUserState(isPro);
+        localStorage.setItem('auraprompt_plan_tier', finalTier);
         localStorage.setItem('auraprompt_pro_member', String(isPro));
 
-        if (synced.toolCredits !== undefined) {
-          setToolCreditsState(synced.toolCredits);
-          localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits));
-        }
-
-        if (synced.unlockedPromptIds) {
-          setUnlockedPromptIds(synced.unlockedPromptIds);
-          localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds));
-        }
+        // Tool credits: Never downgrade credits below what user already has
+        const localCredits = Number(localStorage.getItem('auraprompt_tool_credits') || 0);
+        const resolvedCredits = Math.max(localCredits, Number(synced.toolCredits ?? 0));
+        setToolCreditsState(resolvedCredits);
+        localStorage.setItem('auraprompt_tool_credits', String(resolvedCredits));
 
         if (synced.promptRequestsRemaining !== undefined) {
-          setPromptRequestsRemainingState(synced.promptRequestsRemaining);
-          localStorage.setItem('auraprompt_prompt_requests', String(synced.promptRequestsRemaining));
+          const localReqs = Number(localStorage.getItem('auraprompt_prompt_requests') || 0);
+          const resolvedReqs = Math.max(localReqs, Number(synced.promptRequestsRemaining));
+          setPromptRequestsRemainingState(resolvedReqs);
+          localStorage.setItem('auraprompt_prompt_requests', String(resolvedReqs));
         }
 
         if (synced.aiSearchRemaining !== undefined) {
@@ -1198,13 +1258,34 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           localStorage.setItem('auraprompt_ai_search_remaining', String(synced.aiSearchRemaining));
         }
 
-        if (synced.planExpiresAt && !localStorage.getItem('auraprompt_plan_expires_at')) {
-          localStorage.setItem('auraprompt_plan_expires_at', synced.planExpiresAt);
-          setPlanExpiresAtState(synced.planExpiresAt);
-        } else if (!planExpiresAt && synced.planExpiresAt) {
-          setPlanExpiresAtState(synced.planExpiresAt);
-          localStorage.setItem('auraprompt_plan_expires_at', synced.planExpiresAt);
+        const finalExpires = synced.planExpiresAt || localExpires;
+        if (finalExpires) {
+          localStorage.setItem('auraprompt_plan_expires_at', finalExpires);
+          setPlanExpiresAtState(finalExpires);
         }
+
+        const finalStarted = synced.planStartedAt || localStorage.getItem('auraprompt_plan_started_at') || currentAcc.planStartedAt;
+        if (finalStarted) {
+          localStorage.setItem('auraprompt_plan_started_at', finalStarted);
+          setPlanStartedAtState(finalStarted);
+        }
+
+        setUserAccount((prev) => {
+          if (!prev) return prev;
+          const updated: UserAccount = {
+            ...prev,
+            points: synced.points ?? prev.points,
+            name: synced.name || prev.name,
+            avatar: synced.avatar || prev.avatar,
+            planTier: finalTier,
+            isProUser: isPro,
+            toolCredits: resolvedCredits,
+            planExpiresAt: finalExpires || prev.planExpiresAt,
+            planStartedAt: finalStarted || prev.planStartedAt,
+          };
+          StorageService.saveUserAccount(updated);
+          return updated;
+        });
       } catch (err) {
         console.warn('Server-side session validation error:', err);
       }
@@ -1533,14 +1614,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setLikedIds(StorageService.getLikedIds());
         setTasteProfile(PersonalizationEngine.getProfile());
       } else {
-        // Guest user: strictly blank/unauthenticated state
+        // Visitor / Guest without explicit logged-in session: restore any guest bookmarks, likes, and local active plan
         setUserAccount(null);
-        setAiHistory([]);
-        setBookmarkedIds([]);
-        setLikedIds([]);
-        setIsProUserState(false);
-        setPlanTierState('free');
-        setToolCreditsState(0);
+        const guestBookmarks = StorageService.getBookmarkedIds();
+        if (guestBookmarks && guestBookmarks.length > 0) setBookmarkedIds(guestBookmarks);
+        const guestLikes = StorageService.getLikedIds();
+        if (guestLikes && guestLikes.length > 0) setLikedIds(guestLikes);
+
+        const localTier = (localStorage.getItem('auraprompt_plan_tier') as PlanTier) || 'free';
+        const localExpires = localStorage.getItem('auraprompt_plan_expires_at');
+        const isLocalActive = ['starter', 'pro', 'vip', 'ultra'].includes(localTier) && (!localExpires || new Date(localExpires).getTime() > Date.now());
+        if (isLocalActive) {
+          setPlanTierState(localTier);
+          setIsProUserState(true);
+        }
       }
 
       const refImg = StorageService.getPersistentRefImage();
@@ -1579,10 +1666,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     void refreshPromptRequests(currentAcc?.email);
 
     const applySynced = (synced: any) => {
-      setBookmarkedIds(synced.bookmarkedIds || []);
-      StorageService.setBookmarkedIds(synced.bookmarkedIds || []);
-      setLikedIds(synced.likedIds || []);
-      StorageService.setLikedIds(synced.likedIds || []);
+      if (!synced) return;
+
+      // Bookmarks: strictly merge with existing to avoid data loss
+      const localBookmarks = StorageService.getBookmarkedIds();
+      const mergedBookmarks = Array.from(new Set([...localBookmarks, ...(synced.bookmarkedIds || [])]));
+      setBookmarkedIds(mergedBookmarks);
+      StorageService.setBookmarkedIds(mergedBookmarks);
+
+      // Likes: strictly merge
+      const localLikes = StorageService.getLikedIds();
+      const mergedLikes = Array.from(new Set([...localLikes, ...(synced.likedIds || [])]));
+      setLikedIds(mergedLikes);
+      StorageService.setLikedIds(mergedLikes);
+
       if (synced.promptRequests && Array.isArray(synced.promptRequests)) {
         setPromptRequests(synced.promptRequests);
         StorageService.setPromptRequests(synced.promptRequests);
@@ -1591,39 +1688,102 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setTasteProfile(synced.tasteProfile);
         PersonalizationEngine.saveProfile(synced.tasteProfile);
       }
-      setAiHistory(synced.aiHistory || []);
-      StorageService.setAiHistory(synced.aiHistory || []);
+
+      // AI History: merge uniquely by ID
+      const localHist = StorageService.getAiHistory();
+      const historyMap = new Map<string, AIHistoryItem>();
+      (localHist || []).forEach((it: any) => { if (it?.id) historyMap.set(it.id, it); });
+      (synced.aiHistory || []).forEach((it: any) => { if (it?.id) historyMap.set(it.id, it); });
+      const mergedHist = Array.from(historyMap.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 100);
+      setAiHistory(mergedHist);
+      StorageService.setAiHistory(mergedHist);
+
       if (synced.points !== undefined) {
         setUserAccount((prev) => (prev ? { ...prev, points: synced.points } : prev));
       }
-      setPlanTierState(synced.planTier || 'free');
-      if (typeof window !== 'undefined') localStorage.setItem('auraprompt_plan_tier', synced.planTier || 'free');
-      setIsProUserState(synced.isProUser || false);
-      if (typeof window !== 'undefined') localStorage.setItem('auraprompt_pro_member', String(synced.isProUser || false));
-      setToolCreditsState(synced.toolCredits ?? 5);
-      if (typeof window !== 'undefined') localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits ?? 5));
-      if (synced.promptRequestsRemaining !== undefined) {
-        setPromptRequestsRemainingState(synced.promptRequestsRemaining);
-        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_prompt_requests', String(synced.promptRequestsRemaining));
+
+      // Unlocked Prompts: merge uniquely
+      const localUnlocked = StorageService.getUnlockedPromptIds();
+      const mergedUnlocked = Array.from(new Set([...localUnlocked, ...(synced.unlockedPromptIds || [])]));
+      setUnlockedPromptIds(mergedUnlocked);
+      StorageService.setUnlockedPromptIds(mergedUnlocked);
+
+      // Strict Plan Tier Resolution:
+      // A paid plan must NEVER be converted to free tier unless it has explicitly expired!
+      const validTiers: PlanTier[] = ['starter', 'pro', 'vip', 'ultra', 'free'];
+      const acc = StorageService.getUserAccount();
+      const rawLocal = typeof window !== 'undefined' ? localStorage.getItem('auraprompt_plan_tier') : null;
+      const localTier: PlanTier = (rawLocal && validTiers.includes(rawLocal as PlanTier))
+        ? (rawLocal as PlanTier)
+        : (acc?.planTier && validTiers.includes(acc.planTier) ? acc.planTier : 'free');
+      const localExpires = localStorage.getItem('auraprompt_plan_expires_at') || acc?.planExpiresAt;
+      const isLocalActive = ['starter', 'pro', 'vip', 'ultra'].includes(localTier) && (!localExpires || new Date(localExpires).getTime() > Date.now());
+
+      const syncedTier: PlanTier = (synced.planTier && validTiers.includes(synced.planTier)) ? (synced.planTier as PlanTier) : 'free';
+      const isSyncedActive = syncedTier !== 'free' && (!synced.planExpiresAt || new Date(synced.planExpiresAt).getTime() > Date.now());
+
+      const TIER_RANK: Record<PlanTier, number> = { free: 0, starter: 1, pro: 2, vip: 3, ultra: 4 };
+      let finalTier: PlanTier = 'free';
+      if (isSyncedActive && isLocalActive) {
+        finalTier = (TIER_RANK[syncedTier] >= TIER_RANK[localTier]) ? syncedTier : localTier;
+      } else if (isSyncedActive) {
+        finalTier = syncedTier;
+      } else if (isLocalActive) {
+        finalTier = localTier;
       }
+
+      const isPro = finalTier !== 'free' || Boolean(synced.isProUser || acc?.isProUser);
+      setPlanTierState(finalTier);
+      setIsProUserState(isPro);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auraprompt_plan_tier', finalTier);
+        localStorage.setItem('auraprompt_pro_member', String(isPro));
+      }
+
+      // Tool credits: Never downgrade credits below what user already has
+      const localCredits = Number(localStorage.getItem('auraprompt_tool_credits') || 0);
+      const resolvedCredits = Math.max(localCredits, Number(synced.toolCredits ?? 0));
+      setToolCreditsState(resolvedCredits);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auraprompt_tool_credits', String(resolvedCredits));
+      }
+
+      if (synced.promptRequestsRemaining !== undefined) {
+        const localReqs = Number(localStorage.getItem('auraprompt_prompt_requests') || 0);
+        const resolvedReqs = Math.max(localReqs, Number(synced.promptRequestsRemaining));
+        setPromptRequestsRemainingState(resolvedReqs);
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_prompt_requests', String(resolvedReqs));
+      }
+
       if (synced.aiSearchRemaining !== undefined) {
         setAiSearchRemainingState(synced.aiSearchRemaining);
         if (typeof window !== 'undefined') localStorage.setItem('auraprompt_ai_search_remaining', String(synced.aiSearchRemaining));
       }
-      setUnlockedPromptIds(synced.unlockedPromptIds || []);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds || []));
-        if (synced.planStartedAt) {
-          localStorage.setItem('auraprompt_plan_started_at', synced.planStartedAt);
-        }
-        if (synced.planExpiresAt) {
-          localStorage.setItem('auraprompt_plan_expires_at', synced.planExpiresAt);
-          setPlanExpiresAtState(synced.planExpiresAt);
-        } else {
-          setPlanExpiresAtState(null);
-          localStorage.removeItem('auraprompt_plan_expires_at');
-        }
+
+      const finalExpires = synced.planExpiresAt || localExpires;
+      if (finalExpires) {
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_plan_expires_at', finalExpires);
+        setPlanExpiresAtState(finalExpires);
       }
+
+      const finalStarted = synced.planStartedAt || localStorage.getItem('auraprompt_plan_started_at') || acc?.planStartedAt;
+      if (finalStarted && typeof window !== 'undefined') {
+        localStorage.setItem('auraprompt_plan_started_at', finalStarted);
+      }
+
+      setUserAccount((prev) => {
+        if (!prev) return prev;
+        const updated: UserAccount = {
+          ...prev,
+          planTier: finalTier,
+          isProUser: isPro,
+          toolCredits: resolvedCredits,
+          planExpiresAt: finalExpires || prev.planExpiresAt,
+          planStartedAt: finalStarted || prev.planStartedAt,
+        };
+        StorageService.saveUserAccount(updated);
+        return updated;
+      });
     };
 
     // Check Supabase Auth Session (Google OAuth login return or existing session)
@@ -1642,15 +1802,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const acc = StorageService.getUserAccount();
         if (acc && acc.isLoggedIn) {
           UserSyncService.reconcileOnLogin(acc).then(applySynced);
-        } else {
-          // Strictly clear guest data
-          setUserAccount(null);
-          setAiHistory([]);
-          setBookmarkedIds([]);
-          setLikedIds([]);
-          setIsProUserState(false);
-          setPlanTierState('free');
-          setToolCreditsState(0);
         }
       }
     });
@@ -1665,17 +1816,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const synced = await UserSyncService.reconcileOnLogin(account);
         applySynced(synced);
       } else if (_event === 'SIGNED_OUT') {
-        setUserAccount(null);
-        setIsProUserState(false);
-        setPlanTierState('free');
-        setToolCreditsState(0);
-        setPromptRequestsRemainingState(0);
-        setUnlockedPromptIds([]);
-        setBookmarkedIds([]);
-        setLikedIds([]);
-        setAiHistory([]);
-        setTasteProfile(INITIAL_TASTE_PROFILE);
-        StorageService.clearAllUserData();
+        // Do NOT call StorageService.clearAllUserData() here!
+        // Background token refresh or transient connection drops must NEVER wipe user's local storage and purchases!
+        // Explicit logout is handled cleanly by `logoutUser()`.
       }
     });
 

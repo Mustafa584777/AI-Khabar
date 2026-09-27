@@ -1095,11 +1095,17 @@ export const ServerStorage = {
     } else {
       best.toolCredits = Number(best.toolCredits);
     }
+    if (hasActiveSub && best.toolCredits < Number(sub.credits || 0)) {
+      best.toolCredits = Math.max(best.toolCredits, Number(sub.credits));
+    }
 
     if (best.promptRequestsRemaining === undefined || best.promptRequestsRemaining === null) {
       best.promptRequestsRemaining = highestTier !== 'free' ? planCfg.promptRequests : 0;
     } else {
       best.promptRequestsRemaining = Number(best.promptRequestsRemaining);
+    }
+    if (hasActiveSub && best.promptRequestsRemaining < Number(sub.promptRequests || 0)) {
+      best.promptRequestsRemaining = Math.max(best.promptRequestsRemaining, Number(sub.promptRequests));
     }
 
     if (planCfg.unlimitedSearches) {

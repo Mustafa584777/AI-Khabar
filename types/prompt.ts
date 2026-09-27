@@ -144,6 +144,8 @@ export interface UserAccount {
   sharesCountForPoints: number;
   referralsCountForPoints: number;
   isPremium?: boolean;
+  isProUser?: boolean;
+  authProvider?: string;
   membershipPlan?: 'free' | 'starter' | 'pro' | 'vip';
   planTier?: PlanTier;
   planExpiresAt?: string;

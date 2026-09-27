@@ -51,28 +51,39 @@ export async function POST(req: NextRequest) {
     let rowData: any = null;
 
     // 1. Check ServerStorage profile & active subscription
+    let activeSub: any = null;
+    if (cleanEmail) {
+      try {
+        activeSub = await ServerStorage.getUserSubscription(cleanEmail);
+      } catch (e) {
+        console.warn('ServerStorage subscription check notice:', e);
+      }
+
+      // Also check directly in Supabase if not found in ServerStorage
+      if (!activeSub) {
+        try {
+          const cleanKey = cleanEmail.replace(/[^a-z0-9_]/g, '_');
+          const subId = `sub_${cleanKey}`;
+          const { data: subRow } = await client.from('settings').select('data').eq('id', subId).maybeSingle();
+          if (subRow?.data) {
+            activeSub = subRow.data;
+          }
+        } catch {}
+      }
+    }
+
+    const hasActiveSub = Boolean(
+      activeSub &&
+      activeSub.status === 'active' &&
+      (!activeSub.planExpiresAt || new Date(activeSub.planExpiresAt).getTime() > Date.now())
+    );
+
     try {
       if (cleanEmail || userId) {
         rowData = await ServerStorage.getUserProfile(cleanEmail, userId);
       }
-      if (cleanEmail) {
-        const activeSub = await ServerStorage.getUserSubscription(cleanEmail);
-        if (activeSub && activeSub.status === 'active') {
-          rowData = {
-            ...(rowData || {}),
-            email: cleanEmail,
-            planTier: activeSub.planTier,
-            isProUser: true,
-            toolCredits: rowData?.toolCredits !== undefined && rowData?.toolCredits !== null ? Number(rowData.toolCredits) : activeSub.credits,
-            aiSearchRemaining: rowData?.aiSearchRemaining !== undefined && rowData?.aiSearchRemaining !== null ? Number(rowData.aiSearchRemaining) : activeSub.aiSearchQuota,
-            promptRequestsRemaining: rowData?.promptRequestsRemaining !== undefined && rowData?.promptRequestsRemaining !== null ? Number(rowData.promptRequestsRemaining) : activeSub.promptRequests,
-            planStartedAt: activeSub.planStartedAt,
-            planExpiresAt: activeSub.planExpiresAt,
-          };
-        }
-      }
     } catch (e) {
-      console.warn('ServerStorage session validation notice:', e);
+      console.warn('ServerStorage profile check notice:', e);
     }
 
     // 2. Check Supabase by emailKey or userKey if not already found
@@ -107,6 +118,26 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // If an active subscription exists, unconditionally enforce the active paid plan
+    if (hasActiveSub) {
+      const subTier: PlanTier = activeSub.planTier as PlanTier;
+      const subCfg = PLAN_CONFIGS[subTier] || PLAN_CONFIGS.pro;
+      rowData = {
+        ...(rowData || {}),
+        email: cleanEmail || rowData?.email,
+        userId: userId || rowData?.userId,
+        planTier: subTier,
+        isProUser: true,
+        toolCredits: Math.max(Number(rowData?.toolCredits ?? 0), subCfg.credits, Number(activeSub.credits ?? 0)),
+        promptRequestsRemaining: Math.max(Number(rowData?.promptRequestsRemaining ?? 0), subCfg.promptRequests, Number(activeSub.promptRequests ?? 0)),
+        aiSearchRemaining: subCfg.unlimitedSearches
+          ? 999999
+          : Math.max(Number(rowData?.aiSearchRemaining ?? 0), subCfg.aiSearchQuota, Number(activeSub.aiSearchQuota ?? 0)),
+        planStartedAt: activeSub.planStartedAt || rowData?.planStartedAt || new Date().toISOString(),
+        planExpiresAt: activeSub.planExpiresAt || rowData?.planExpiresAt,
+      };
+    }
+
     if (!rowData) {
       return NextResponse.json({
         success: true,
@@ -118,8 +149,8 @@ export async function POST(req: NextRequest) {
     const cloned = { ...rowData };
     let tier = cloned.planTier || (cloned.isProUser ? 'pro' : 'free');
 
-    // Authoritative check if plan has expired
-    if (tier !== 'free' && cloned.planExpiresAt) {
+    // Authoritative check if plan has expired (never expire if user has active subscription)
+    if (tier !== 'free' && cloned.planExpiresAt && !hasActiveSub) {
       const exp = new Date(cloned.planExpiresAt).getTime();
       if (!isNaN(exp) && exp < Date.now()) {
         tier = 'free';
