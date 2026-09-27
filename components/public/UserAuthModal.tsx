@@ -63,6 +63,18 @@ export const UserAuthModal = () => {
           const name = u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split('@')[0] || 'Creator';
           const avatar = u.user_metadata?.avatar_url || u.user_metadata?.picture || defaultAvatar;
           await loginUser(u.email || '', '', name, avatar);
+          setIsFirstLoginModalOpen(false);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('auraprompt_signup_modal_already_shown', 'true');
+            localStorage.setItem('auraprompt_first_login_claimed', 'true');
+            localStorage.setItem('auraprompt_signup_bonus_claimed', 'true');
+            if (u.email) {
+              const cleanE = u.email.trim().toLowerCase();
+              localStorage.setItem(`auraprompt_signup_modal_already_shown_${cleanE}`, 'true');
+              localStorage.setItem(`auraprompt_signup_modal_shown_${cleanE}`, 'true');
+              localStorage.setItem(`auraprompt_signup_bonus_claimed_${cleanE}`, 'true');
+            }
+          }
           showToast(`Welcome back, ${name}! Signed in via Google.`);
           setIsLoading(false);
           setIsUserAuthModalOpen(false);
@@ -274,10 +286,12 @@ export const UserAuthModal = () => {
         setPassword('');
         setFullName('');
 
-        // Mark signup bonus as claimed so it NEVER shows again in any future session or device
+        // Mark signup bonus as claimed and modal shown so it NEVER shows again in any future session or device
         if (typeof window !== 'undefined') {
           localStorage.setItem('auraprompt_first_login_claimed', 'true');
+          localStorage.setItem('auraprompt_signup_bonus_claimed', 'true');
           localStorage.setItem(`auraprompt_signup_bonus_claimed_${cleanEmail}`, 'true');
+          localStorage.setItem(`auraprompt_signup_modal_shown_${cleanEmail}`, 'true');
         }
 
         // Show 5 Credits Welcome Gift popup right after first-time signup!
@@ -308,6 +322,17 @@ export const UserAuthModal = () => {
 
         const userName = loginData.user?.user_metadata?.full_name || cleanEmail.split('@')[0];
         const userAvatar = loginData.user?.user_metadata?.avatar_url || defaultAvatar;
+
+        // Ensure popup is strictly closed on login and marked claimed
+        setIsFirstLoginModalOpen(false);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('auraprompt_signup_modal_already_shown', 'true');
+          localStorage.setItem('auraprompt_first_login_claimed', 'true');
+          localStorage.setItem('auraprompt_signup_bonus_claimed', 'true');
+          localStorage.setItem(`auraprompt_signup_modal_already_shown_${cleanEmail}`, 'true');
+          localStorage.setItem(`auraprompt_signup_bonus_claimed_${cleanEmail}`, 'true');
+          localStorage.setItem(`auraprompt_signup_modal_shown_${cleanEmail}`, 'true');
+        }
 
         await loginUser(cleanEmail, password, userName, userAvatar, loginData.user?.id);
         showToast(`Welcome back, ${userName}! Logged in successfully.`);

@@ -148,6 +148,10 @@ export interface UserAccount {
   authProvider?: string;
   membershipPlan?: 'free' | 'starter' | 'pro' | 'vip';
   planTier?: PlanTier;
+  billingCycle?: 'monthly' | 'yearly';
+  savesLimit?: number;
+  signupBonusClaimed?: boolean;
+  signupCreditsAwarded?: boolean;
   planExpiresAt?: string;
   planStartedAt?: string;
   toolCredits?: number;

@@ -1178,7 +1178,7 @@ export const AIStudioTool = () => {
                 onClick={() => setIsOutOfCreditsModalOpen(false)}
                 className="w-full py-2.5 rounded-full text-xs font-semibold text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
               >
-                Wait for Daily Free Credits
+                Maybe Later
               </button>
             </div>
           </div>

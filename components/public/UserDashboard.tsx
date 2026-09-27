@@ -41,7 +41,7 @@ import {
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { RazorpayCheckoutButton } from './RazorpayCheckoutButton';
-import { PLAN_CONFIGS, formatPlanDateWithTime, formatExpiryDateWithHour } from '@/lib/plans';
+import { PLAN_CONFIGS, formatPlanDateWithTime, formatExpiryDateWithHour, getPlanFeaturesForCycle } from '@/lib/plans';
 
 export const UserDashboard = () => {
   const router = useRouter();
@@ -92,7 +92,12 @@ export const UserDashboard = () => {
     (!planExpiresAt || new Date(planExpiresAt).getTime() > Date.now())
   );
   const effectivePlanTier: PlanTier = isPaid ? (['starter', 'pro', 'vip', 'ultra'].includes(planTier) ? planTier : 'pro') : 'free';
-  const currentPlanConfig = PLAN_CONFIGS[effectivePlanTier] || PLAN_CONFIGS.free;
+  const isYearlyPlan = Boolean(
+    userAccount?.billingCycle === 'yearly' ||
+    (typeof window !== 'undefined' && localStorage.getItem('auraprompt_billing_cycle') === 'yearly') ||
+    (planExpiresAt && planStartedAt && (new Date(planExpiresAt).getTime() - new Date(planStartedAt).getTime()) > 60 * 24 * 60 * 60 * 1000)
+  );
+  const currentPlanConfig = getPlanFeaturesForCycle(effectivePlanTier, isYearlyPlan ? 'yearly' : 'monthly');
 
   // Automatically prompt auth modal if unauthenticated
   React.useEffect(() => {

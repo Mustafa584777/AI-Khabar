@@ -174,6 +174,7 @@ export async function startRazorpayCheckout(options: CheckoutOptions): Promise<v
               email: prefill?.email || notes?.userEmail,
               userId: notes?.userId,
               planTier: notes?.planTier || notes?.tier_or_pack,
+              billingCycle: notes?.billingCycle || 'monthly',
               checkoutType: notes?.type,
               creditsToAdd: notes?.creditsToAdd ? Number(notes?.creditsToAdd) : undefined,
               planName: notes?.plan || notes?.item,

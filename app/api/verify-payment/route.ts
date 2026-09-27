@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { ServerStorage } from '@/lib/server-storage';
-import { PLAN_CONFIGS, calculatePlanDates, calculateQueuedPlanDates, formatExpiryDateWithHour } from '@/lib/plans';
+import {
+  PLAN_CONFIGS,
+  calculatePlanDates,
+  calculateQueuedPlanDates,
+  formatExpiryDateWithHour,
+  getPlanFeaturesForCycle,
+  BillingCycle,
+} from '@/lib/plans';
 import { PlanTier, QueuedPlan } from '@/types/prompt';
 
 export const dynamic = 'force-dynamic';
@@ -24,10 +31,13 @@ export async function POST(req: NextRequest) {
       email,
       userId,
       planTier,
+      billingCycle: incomingBillingCycle,
       checkoutType,
       creditsToAdd,
       planName,
     } = body;
+
+    const billingCycle: BillingCycle = incomingBillingCycle === 'yearly' ? 'yearly' : 'monthly';
 
     const orderId = razorpay_order_id || order_id;
     const paymentId = razorpay_payment_id || payment_id;
@@ -136,7 +146,7 @@ export async function POST(req: NextRequest) {
         const resolvedTier: PlanTier = validTiers.includes(planTier as PlanTier)
           ? (planTier as PlanTier)
           : 'pro';
-        const planCfg = PLAN_CONFIGS[resolvedTier] || PLAN_CONFIGS.pro;
+        const planFeatures = getPlanFeaturesForCycle(resolvedTier, billingCycle);
 
         // Check if user currently has an active, unexpired paid plan
         const currentTier = (existingSub?.planTier || existingProfile.planTier) as PlanTier;
@@ -153,22 +163,22 @@ export async function POST(req: NextRequest) {
           // STRICT RULE: DO NOT MERGE OR OVERWRITE ACTIVE PLAN CREDITS OR FEATURES!
           // The new plan is queued to start immediately after the active plan expires at 11:59 PM.
           const queueBase = existingSub?.queuedPlan?.scheduledExpiresAt || existingProfile.queuedPlan?.scheduledExpiresAt || currentExpiresAt;
-          const { scheduledStartAt, scheduledExpiresAt } = calculateQueuedPlanDates(queueBase, 30);
+          const { scheduledStartAt, scheduledExpiresAt } = calculateQueuedPlanDates(queueBase, planFeatures.durationDays);
 
           const queuedPlan: QueuedPlan = {
             planTier: resolvedTier,
-            planName: planCfg.name,
-            credits: planCfg.credits,
-            promptRequests: planCfg.promptRequests,
-            aiSearchQuota: planCfg.aiSearchQuota,
-            unlimitedSearches: planCfg.unlimitedSearches,
-            unlimitedSaves: planCfg.unlimitedSaves,
+            planName: `${planFeatures.name}${billingCycle === 'yearly' ? ' (Yearly)' : ''}`,
+            credits: planFeatures.credits,
+            promptRequests: planFeatures.promptRequests,
+            aiSearchQuota: planFeatures.aiSearchQuota,
+            unlimitedSearches: planFeatures.unlimitedSearches,
+            unlimitedSaves: planFeatures.unlimitedSaves,
             scheduledStartAt,
             scheduledExpiresAt,
             orderId,
             paymentId,
             purchasedAt: new Date().toISOString(),
-            durationDays: 30,
+            durationDays: planFeatures.durationDays,
           };
 
           // Save permanent subscription with queuedPlan without touching active plan
@@ -199,9 +209,9 @@ export async function POST(req: NextRequest) {
             email: cleanEmail,
             userId,
             planTier: resolvedTier,
-            planName: planCfg.name,
+            planName: `${planFeatures.name}${billingCycle === 'yearly' ? ' (Yearly)' : ''}`,
             checkoutType: 'subscription_queued',
-            creditsAdded: planCfg.credits,
+            creditsAdded: planFeatures.credits,
             scheduledStartAt,
             scheduledExpiresAt,
             verifiedAt: new Date().toISOString(),
@@ -211,7 +221,7 @@ export async function POST(req: NextRequest) {
             success: true,
             isQueued: true,
             queuedPlan,
-            message: `Your current ${currentTier.toUpperCase()} plan is active until ${formatExpiryDateWithHour(currentExpiresAt)}. Your new ${planCfg.name} plan is queued and will start automatically after that date at 11:59 PM.`,
+            message: `Your current ${currentTier.toUpperCase()} plan is active until ${formatExpiryDateWithHour(currentExpiresAt)}. Your new ${planFeatures.name}${billingCycle === 'yearly' ? ' (Yearly)' : ''} plan is queued and will start automatically after that date at 11:59 PM.`,
             order_id: orderId,
             payment_id: paymentId,
             verified_at: new Date().toISOString(),
@@ -220,7 +230,7 @@ export async function POST(req: NextRequest) {
         }
 
         // USER IS FREE OR HAS AN EXPIRED PLAN -> ACTIVATE IMMEDIATELY!
-        const { planStartedAt, planExpiresAt } = calculatePlanDates(new Date(), 30);
+        const { planStartedAt, planExpiresAt } = calculatePlanDates(new Date(), planFeatures.durationDays);
 
         // 1. Save Permanent Subscription Record
         await ServerStorage.saveUserSubscription({
@@ -231,23 +241,26 @@ export async function POST(req: NextRequest) {
           status: 'active',
           planStartedAt,
           planExpiresAt,
-          credits: planCfg.credits,
-          aiSearchQuota: planCfg.aiSearchQuota,
-          promptRequests: planCfg.promptRequests,
+          credits: planFeatures.credits,
+          aiSearchQuota: planFeatures.aiSearchQuota,
+          promptRequests: planFeatures.promptRequests,
+          billingCycle,
+          durationDays: planFeatures.durationDays,
+          savesLimit: planFeatures.savesLimit,
           orderId,
           paymentId,
           queuedPlan: null,
         });
 
         // 2. Set plan credits and features on fresh activation
-        const resolvedCredits = planCfg.credits;
-        const resolvedRequests = planCfg.promptRequests;
-        const resolvedAiSearches = planCfg.unlimitedSearches
+        const resolvedCredits = planFeatures.credits;
+        const resolvedRequests = planFeatures.promptRequests;
+        const resolvedAiSearches = planFeatures.unlimitedSearches
           ? 999999
-          : planCfg.aiSearchQuota;
+          : planFeatures.aiSearchQuota;
 
         const addedPoints = resolvedTier === 'starter' ? 10 : resolvedTier === 'pro' ? 20 : resolvedTier === 'vip' ? 50 : 100;
-        const resolvedPoints = (existingProfile.points || 10) + addedPoints;
+        const resolvedPoints = (existingProfile.points || 10) + (billingCycle === 'yearly' ? addedPoints * 5 : addedPoints);
 
         updatedSyncData = {
           ...existingProfile,
@@ -255,9 +268,11 @@ export async function POST(req: NextRequest) {
           userId: userId || existingProfile.userId,
           planTier: resolvedTier,
           isProUser: true,
+          billingCycle,
           toolCredits: resolvedCredits,
           promptRequestsRemaining: resolvedRequests,
           aiSearchRemaining: resolvedAiSearches,
+          savesLimit: planFeatures.savesLimit,
           points: resolvedPoints,
           planStartedAt,
           planExpiresAt,
@@ -277,16 +292,16 @@ export async function POST(req: NextRequest) {
           email: cleanEmail,
           userId,
           planTier: resolvedTier,
-          planName,
+          planName: `${planFeatures.name}${billingCycle === 'yearly' ? ' (Yearly)' : ''}`,
           checkoutType: 'subscription',
-          creditsAdded: planCfg.credits,
+          creditsAdded: planFeatures.credits,
           verifiedAt: new Date().toISOString(),
         });
 
         return NextResponse.json({
           success: true,
           isQueued: false,
-          message: `Payment verified and ${planCfg.name} plan activated successfully! Valid until ${formatExpiryDateWithHour(planExpiresAt)}.`,
+          message: `Payment verified and ${planFeatures.name}${billingCycle === 'yearly' ? ' (Yearly)' : ''} plan activated successfully! Valid until ${formatExpiryDateWithHour(planExpiresAt)}.`,
           order_id: orderId,
           payment_id: paymentId,
           verified_at: new Date().toISOString(),

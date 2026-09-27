@@ -1,25 +1,67 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { Sparkles, Gift, CheckCircle2, Zap, X } from 'lucide-react';
+import { UserSyncService } from '@/lib/user-sync';
 
 export const FirstLoginBonusModal: React.FC = () => {
   const { isFirstLoginModalOpen, setIsFirstLoginModalOpen, toolCredits, userAccount } = useApp();
 
-  if (!isFirstLoginModalOpen) return null;
+  const cleanEmail = userAccount?.email?.trim().toLowerCase();
+
+  // STRICT ONETIME LIMITER:
+  // This popup must ONLY appear exactly once upon initial account creation.
+  // It must NEVER appear again on re-login, next day, or any future session.
+  const isAlreadyShown = Boolean(
+    typeof window !== 'undefined' && (
+      localStorage.getItem('auraprompt_signup_modal_already_shown') === 'true' ||
+      (cleanEmail && localStorage.getItem(`auraprompt_signup_modal_already_shown_${cleanEmail}`) === 'true') ||
+      (cleanEmail && localStorage.getItem(`auraprompt_signup_modal_shown_${cleanEmail}`) === 'true') ||
+      (userAccount as any)?.signupModalShown
+    )
+  );
+
+  // Immediately lock down as shown the instant it mounts or opens
+  useEffect(() => {
+    if (isFirstLoginModalOpen && typeof window !== 'undefined') {
+      localStorage.setItem('auraprompt_signup_modal_already_shown', 'true');
+      localStorage.setItem('auraprompt_signup_modal_shown', 'true');
+      localStorage.setItem('auraprompt_signup_bonus_claimed', 'true');
+      localStorage.setItem('auraprompt_first_login_claimed', 'true');
+      if (cleanEmail) {
+        localStorage.setItem(`auraprompt_signup_modal_already_shown_${cleanEmail}`, 'true');
+        localStorage.setItem(`auraprompt_signup_modal_shown_${cleanEmail}`, 'true');
+        localStorage.setItem(`auraprompt_signup_bonus_claimed_${cleanEmail}`, 'true');
+      }
+      if (userAccount?.id) {
+        void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
+          signupBonusClaimed: true,
+          signupModalShown: true,
+        });
+      }
+    }
+  }, [isFirstLoginModalOpen, cleanEmail, userAccount]);
+
+  if (!isFirstLoginModalOpen || isAlreadyShown) return null;
 
   const handleClose = () => {
     if (typeof window !== 'undefined') {
+      localStorage.setItem('auraprompt_signup_modal_already_shown', 'true');
+      localStorage.setItem('auraprompt_signup_modal_shown', 'true');
+      localStorage.setItem('auraprompt_signup_bonus_claimed', 'true');
       localStorage.setItem('auraprompt_first_login_claimed', 'true');
-      if (userAccount?.email) {
-        localStorage.setItem(`auraprompt_signup_bonus_claimed_${userAccount.email.toLowerCase().trim()}`, 'true');
+      if (cleanEmail) {
+        localStorage.setItem(`auraprompt_signup_modal_already_shown_${cleanEmail}`, 'true');
+        localStorage.setItem(`auraprompt_signup_modal_shown_${cleanEmail}`, 'true');
+        localStorage.setItem(`auraprompt_signup_bonus_claimed_${cleanEmail}`, 'true');
       }
     }
     setIsFirstLoginModalOpen(false);
   };
 
-  const displayCredits = Math.max(toolCredits, 5);
+  // Exactly 5 credits for new account welcome gift
+  const displayCredits = 5;
 
   return (
     <div className="fixed inset-0 z-[70] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -43,7 +85,7 @@ export const FirstLoginBonusModal: React.FC = () => {
 
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 text-xs font-bold mb-3 border border-emerald-200 dark:border-emerald-900">
           <Sparkles className="w-3.5 h-3.5" />
-          <span>New Member Welcome Gift</span>
+          <span>5 Free Signup Credits Gift</span>
         </div>
 
         <h3 className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white mb-2">
@@ -51,7 +93,7 @@ export const FirstLoginBonusModal: React.FC = () => {
         </h3>
 
         <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6 leading-relaxed">
-          Welcome to Trending Prompts Studio! Aapke is account me <strong className="text-neutral-900 dark:text-white font-bold">5 Free Credits</strong> successfully add kar diye gaye hain to help you unlock premium prompts and generate AI prompts instantly.
+          Welcome to Trending Prompts Studio! Aapke is account me <strong className="text-neutral-900 dark:text-white font-bold">5 Free Credits</strong> successfully add kar diye gaye hain. Yeh credits sirf ek hi baar new account registration per milte hain.
         </p>
 
         <div className="bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-700/60 rounded-2xl p-4 mb-6 flex items-center justify-between">
@@ -60,8 +102,8 @@ export const FirstLoginBonusModal: React.FC = () => {
               <Zap className="w-5 h-5 fill-amber-500" />
             </div>
             <div className="text-left">
-              <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Your Starting Balance</p>
-              <p className="text-base font-black text-neutral-900 dark:text-white">{displayCredits} Credits Available</p>
+              <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Starting Balance</p>
+              <p className="text-base font-black text-neutral-900 dark:text-white">{displayCredits} Free Credits Available</p>
             </div>
           </div>
           <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-lg">

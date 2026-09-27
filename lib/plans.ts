@@ -6,7 +6,8 @@ export interface PlanConfig {
   badge?: string | null;
   priceRupees: number;
   amountPaise: number;
-  credits: number; // Monthly tool credits added
+  credits: number; // Monthly recurring tool credits added (0 for free)
+  initialSignupCredits?: number; // One-time signup credits (5 for free)
   aiSearchQuota: number; // Searches per month
   promptRequests: number; // Custom prompt requests per month
   savesLimit: number; // Combined bookmarks + history limit
@@ -16,6 +17,8 @@ export interface PlanConfig {
   features: string[];
 }
 
+export type BillingCycle = 'monthly' | 'yearly';
+
 export const PLAN_CONFIGS: Record<PlanTier, PlanConfig> = {
   free: {
     id: 'free',
@@ -23,7 +26,8 @@ export const PLAN_CONFIGS: Record<PlanTier, PlanConfig> = {
     badge: null,
     priceRupees: 0,
     amountPaise: 0,
-    credits: 5,
+    credits: 0, // No recurring free credits! Only 5 one-time credits given on initial signup
+    initialSignupCredits: 5,
     aiSearchQuota: 5,
     promptRequests: 0,
     savesLimit: 10,
@@ -31,7 +35,7 @@ export const PLAN_CONFIGS: Record<PlanTier, PlanConfig> = {
     unlimitedSearches: false,
     unlockAllPrompts: false,
     features: [
-      '5 free signup tool credits',
+      '5 one-time free signup tool credits',
       '5 AI conversational searches',
       '10 combined saves & history',
       '1 cr each to unlock premium prompts',
@@ -129,6 +133,39 @@ export function getPlanConfig(tier?: PlanTier | string | null): PlanConfig {
     return PLAN_CONFIGS[tier as PlanTier];
   }
   return PLAN_CONFIGS.free;
+}
+
+/**
+ * Returns features, quotas, credits, and duration for a given plan and billing cycle.
+ * For Yearly subscriptions, all 12 months of credits, searches, prompt requests, and saves
+ * are combined and granted immediately upfront in one go.
+ */
+export function getPlanFeaturesForCycle(
+  tier?: PlanTier | string | null,
+  cycle: BillingCycle = 'monthly'
+): PlanConfig & { durationDays: number; billingCycle: BillingCycle } {
+  const base = getPlanConfig(tier);
+  const isYearly = cycle === 'yearly' && base.id !== 'free';
+  const multiplier = isYearly ? 12 : 1;
+  const durationDays = isYearly ? 365 : 30;
+
+  if (base.id === 'free') {
+    return {
+      ...base,
+      durationDays: 36500, // lifetime
+      billingCycle: 'monthly',
+    };
+  }
+
+  return {
+    ...base,
+    credits: base.credits * multiplier,
+    aiSearchQuota: base.unlimitedSearches ? 999999 : base.aiSearchQuota * multiplier,
+    promptRequests: base.promptRequests * multiplier,
+    savesLimit: base.unlimitedSaves ? 999999 : base.savesLimit * multiplier,
+    durationDays,
+    billingCycle: cycle,
+  };
 }
 
 /**

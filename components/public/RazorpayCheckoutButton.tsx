@@ -11,6 +11,7 @@ export interface RazorpayCheckoutButtonProps {
   currency?: string;
   planName?: string;
   planTier?: 'starter' | 'pro' | 'vip' | 'ultra';
+  billingCycle?: 'monthly' | 'yearly';
   creditsToAdd?: number; // Added directly to toolCredits balance upon payment
   description?: string;
   buttonText?: string;
@@ -29,6 +30,7 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
   currency = 'INR',
   planName = 'Pro Creator Pass',
   planTier = 'pro',
+  billingCycle = 'monthly',
   creditsToAdd,
   description = 'Unlimited AI Studio Generations & VIP Prompts',
   buttonText,
@@ -72,6 +74,7 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
         notes: {
           plan: planName,
           planTier: planTier || 'pro',
+          billingCycle: billingCycle || 'monthly',
           userEmail: userAccount.email,
           userId: userAccount.id,
           ...(creditsToAdd ? { creditsToAdd: String(creditsToAdd) } : {}),
@@ -87,12 +90,13 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
             showToast(`Payment Verified! Added ${creditsToAdd} Credits to your account 🎉`);
           } else {
             const isQueued = Boolean(verifyData?.isQueued);
-            upgradePlan(planTier, verifyData?.userSyncData, isQueued);
+            upgradePlan(planTier, verifyData?.userSyncData, isQueued, billingCycle);
             if (isQueued) {
               showToast(verifyData?.message || `Your new ${planTier.toUpperCase()} plan is queued and will activate once your current plan ends!`);
             } else {
               setIsProUser(true);
-              showToast(`Payment Verified! Upgraded to ${planTier.toUpperCase()} Plan 🎉`);
+              const cycleText = billingCycle === 'yearly' ? 'Yearly' : 'Monthly';
+              showToast(`Payment Verified! Upgraded to ${planTier.toUpperCase()} (${cycleText}) Plan 🎉`);
             }
           }
 

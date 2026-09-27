@@ -14,7 +14,14 @@ import {
   PersonalizationEngine,
   INITIAL_TASTE_PROFILE,
 } from '@/lib/personalization';
-import { PLAN_CONFIGS, getPlanConfig, calculatePlanDates, formatExpiryDateWithHour } from '@/lib/plans';
+import {
+  PLAN_CONFIGS,
+  getPlanConfig,
+  calculatePlanDates,
+  formatExpiryDateWithHour,
+  getPlanFeaturesForCycle,
+  BillingCycle,
+} from '@/lib/plans';
 
 interface AppContextType {
   // Navigation & Views
@@ -150,7 +157,7 @@ interface AppContextType {
   useToolCredit: (amount?: number) => boolean;
   addToolCredits: (amount: number) => void;
   promptRequestsRemaining: number;
-  upgradePlan: (tier: 'starter' | 'pro' | 'vip' | 'ultra', serverData?: any, isQueued?: boolean) => void;
+  upgradePlan: (tier: 'starter' | 'pro' | 'vip' | 'ultra', serverData?: any, isQueued?: boolean, cycle?: 'monthly' | 'yearly') => void;
 
   // Prompt Unlocking with Credits / Subscription
   unlockedPromptIds: string[];
@@ -353,7 +360,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           const parsed = parseInt(saved, 10);
           if (!isNaN(parsed)) return parsed;
         }
-        return 5;
+        return 0; // Existing account has 0 credits unless granted/synced
       }
     }
     return 0; // Guest session has 0 credits until login
@@ -532,7 +539,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     [isProUser, unlockedPromptIds, toolCredits, userAccount]
   );
 
-  const upgradePlan = useCallback((tier: 'starter' | 'pro' | 'vip' | 'ultra', serverData?: any, isQueued?: boolean) => {
+  const upgradePlan = useCallback((tier: 'starter' | 'pro' | 'vip' | 'ultra', serverData?: any, isQueued?: boolean, cycle?: 'monthly' | 'yearly') => {
+    const resolvedCycle: BillingCycle = cycle || serverData?.billingCycle || (
+      serverData?.planExpiresAt && serverData?.planStartedAt &&
+      (new Date(serverData.planExpiresAt).getTime() - new Date(serverData.planStartedAt).getTime()) > 60 * 24 * 60 * 60 * 1000
+        ? 'yearly'
+        : 'monthly'
+    );
+    const planFeatures = getPlanFeaturesForCycle(tier, resolvedCycle);
+
     // 1. If this upgrade is queued because the user already has an active plan:
     if (isQueued || serverData?.isQueued || serverData?.queuedPlan) {
       const qp = serverData?.queuedPlan;
@@ -544,22 +559,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       }
       showToast(
         serverData?.message ||
-        `Your ${getPlanConfig(tier).name} plan is queued and will start automatically after your current plan expires at 11:59 PM!`
+        `Your ${planFeatures.name}${resolvedCycle === 'yearly' ? ' (Yearly)' : ''} plan is queued and will start automatically after your current plan expires at 11:59 PM!`
       );
       return;
     }
 
     // 2. Active plan activation
-    const planConfig = PLAN_CONFIGS[tier] || PLAN_CONFIGS.pro;
-
     setIsProUserState(true);
     setPlanTierState(tier);
-    const allocatedAiSearch = serverData?.aiSearchRemaining ?? (planConfig.unlimitedSearches ? 999999 : planConfig.aiSearchQuota);
+    const allocatedAiSearch = serverData?.aiSearchRemaining ?? (planFeatures.unlimitedSearches ? 999999 : planFeatures.aiSearchQuota);
     setAiSearchRemainingState(allocatedAiSearch);
 
-    const addedCredits = planConfig.credits;
-    const addedRequests = planConfig.promptRequests;
+    const addedCredits = planFeatures.credits;
+    const addedRequests = planFeatures.promptRequests;
     const addedPoints = tier === 'starter' ? 10 : tier === 'pro' ? 20 : tier === 'vip' ? 50 : 100;
+    const finalPointsBonus = resolvedCycle === 'yearly' ? addedPoints * 5 : addedPoints;
 
     // Fresh plan initialization: grant plan quotas
     const finalCredits = serverData?.toolCredits ?? addedCredits;
@@ -568,10 +582,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const finalRequests = serverData?.promptRequestsRemaining ?? addedRequests;
     setPromptRequestsRemainingState(finalRequests);
 
-    let nextPoints = (userAccount?.points || 0) + addedPoints;
+    const finalSavesLimit = serverData?.savesLimit ?? planFeatures.savesLimit;
+
+    let nextPoints = (userAccount?.points || 0) + finalPointsBonus;
 
     // Calculate dates guaranteeing 11:59:59 PM expiration
-    const calculated = calculatePlanDates(serverData?.planStartedAt || new Date(), 30);
+    const calculated = calculatePlanDates(serverData?.planStartedAt || new Date(), planFeatures.durationDays);
     const planStartedAt = serverData?.planStartedAt || calculated.planStartedAt;
     const planExpiresAt = serverData?.planExpiresAt || calculated.planExpiresAt;
     setPlanStartedAtState(planStartedAt);
@@ -602,11 +618,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const updated: UserAccount = {
         ...base,
         isLoggedIn: true,
-        points: (base.points || 0) + addedPoints,
+        points: (base.points || 0) + finalPointsBonus,
         planTier: tier,
         isProUser: true,
         isPremium: true,
         membershipPlan: tier === 'ultra' ? 'vip' : tier,
+        billingCycle: resolvedCycle,
+        savesLimit: finalSavesLimit,
         toolCredits: finalCredits,
         planStartedAt,
         planExpiresAt,
@@ -619,6 +637,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('auraprompt_pro_member', 'true');
       localStorage.setItem('auraprompt_plan_tier', tier);
+      localStorage.setItem('auraprompt_billing_cycle', resolvedCycle);
+      localStorage.setItem('auraprompt_saves_limit', String(finalSavesLimit));
       localStorage.setItem('auraprompt_tool_credits', finalCredits.toString());
       localStorage.setItem('auraprompt_prompt_requests', finalRequests.toString());
       localStorage.setItem('auraprompt_ai_search_remaining', allocatedAiSearch.toString());
@@ -632,6 +652,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, {
         planTier: tier,
         isProUser: true,
+        billingCycle: resolvedCycle,
+        savesLimit: finalSavesLimit,
         toolCredits: finalCredits,
         promptRequestsRemaining: finalRequests,
         aiSearchRemaining: allocatedAiSearch,
@@ -642,7 +664,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       });
     }
 
-    showToast(`Welcome to ${planConfig.name}! Valid until ${formatExpiryDateWithHour(planExpiresAt)}.`);
+    const cycleBadge = resolvedCycle === 'yearly' ? ' (Yearly)' : '';
+    showToast(`Welcome to ${planFeatures.name}${cycleBadge}! Valid until ${formatExpiryDateWithHour(planExpiresAt)}.`);
   }, [userAccount, showToast]);
 
   // AI Studio History State
@@ -908,14 +931,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('auraprompt_pro_member', String(synced.isProUser || false));
       }
 
-      setToolCreditsState(synced.toolCredits ?? 5);
+      const isYearly = Boolean(
+        (synced as any).billingCycle === 'yearly' ||
+        (synced.planExpiresAt && synced.planStartedAt && (new Date(synced.planExpiresAt).getTime() - new Date(synced.planStartedAt).getTime()) > 60 * 24 * 60 * 60 * 1000)
+      );
+      const cycleCfg = getPlanFeaturesForCycle(resolvedTier, isYearly ? 'yearly' : 'monthly');
+
+      const resolvedCredits = synced.toolCredits !== undefined && synced.toolCredits !== null
+        ? Number(synced.toolCredits)
+        : (resolvedTier === 'free' ? 0 : cycleCfg.credits || 0);
+      setToolCreditsState(resolvedCredits);
       if (typeof window !== 'undefined') {
-        localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits ?? 5));
+        localStorage.setItem('auraprompt_tool_credits', String(resolvedCredits));
       }
 
       const resolvedRequests = synced.promptRequestsRemaining !== undefined
         ? synced.promptRequestsRemaining
-        : (PLAN_CONFIGS[resolvedTier]?.promptRequests || 0);
+        : (resolvedTier === 'free' ? 0 : cycleCfg.promptRequests || 0);
       setPromptRequestsRemainingState(resolvedRequests);
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_prompt_requests', String(resolvedRequests));
@@ -923,7 +955,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
       const resolvedSearches = synced.aiSearchRemaining !== undefined
         ? synced.aiSearchRemaining
-        : (PLAN_CONFIGS[resolvedTier]?.aiSearchQuota || 5);
+        : (resolvedTier === 'free' ? 5 : cycleCfg.aiSearchQuota || 5);
       setAiSearchRemainingState(resolvedSearches);
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_ai_search_remaining', String(resolvedSearches));
@@ -933,7 +965,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds || []));
         localStorage.setItem('auraprompt_first_login_claimed', 'true');
+        localStorage.setItem('auraprompt_signup_bonus_claimed', 'true');
         localStorage.setItem(`auraprompt_signup_bonus_claimed_${cleanEmail}`, 'true');
+        localStorage.setItem(`auraprompt_signup_modal_shown_${cleanEmail}`, 'true');
         const finalStarted = synced.planStartedAt || localStorage.getItem('auraprompt_plan_started_at');
         if (finalStarted) {
           localStorage.setItem('auraprompt_plan_started_at', finalStarted);
@@ -994,7 +1028,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const resolvedTier = synced.planTier || 'free';
       setPlanTierState(resolvedTier);
       setIsProUserState(synced.isProUser || false);
-      setToolCreditsState(synced.toolCredits ?? 5);
+      const resolvedCredits = synced.toolCredits !== undefined ? Number(synced.toolCredits) : 5;
+      setToolCreditsState(resolvedCredits);
 
       const resolvedRequests = synced.promptRequestsRemaining !== undefined
         ? synced.promptRequestsRemaining
@@ -1010,13 +1045,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_plan_tier', resolvedTier);
         localStorage.setItem('auraprompt_pro_member', String(synced.isProUser || false));
-        localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits ?? 5));
+        localStorage.setItem('auraprompt_tool_credits', String(resolvedCredits));
         localStorage.setItem('auraprompt_prompt_requests', String(resolvedRequests));
         localStorage.setItem('auraprompt_ai_search_remaining', String(resolvedSearches));
         localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(synced.unlockedPromptIds || []));
         localStorage.setItem('auraprompt_first_login_claimed', 'true');
+        localStorage.setItem('auraprompt_signup_bonus_claimed', 'true');
         localStorage.setItem(`auraprompt_signup_bonus_claimed_${cleanEmail}`, 'true');
+        localStorage.setItem(`auraprompt_signup_modal_shown_${cleanEmail}`, 'true');
       }
+
+      // Record in cloud that signup credits were awarded so they are never granted again
+      void UserSyncService.pushUserData(account.id, account.email, {
+        toolCredits: resolvedCredits,
+        signupCreditsAwarded: true,
+        signupBonusClaimed: true,
+      });
     } catch (e) {
       console.warn('Signup reconciliation sync error:', e);
     }
@@ -1058,10 +1102,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const isAlreadySaved = aiHistory.some(h => h.id === item.id);
-    const planCfg = PLAN_CONFIGS[planTier] || PLAN_CONFIGS.free;
-    const maxSaves = planCfg.savesLimit;
-    if (!isAlreadySaved && !planCfg.unlimitedSaves && (bookmarkedIds.length + aiHistory.length >= maxSaves)) {
-      showToast(`${planCfg.name} plan limit reached: ${maxSaves} combined saves max (bookmarks + history). Upgrade your plan to increase your limit!`);
+    const isYearly = Boolean(
+      userAccount?.billingCycle === 'yearly' ||
+      (typeof window !== 'undefined' && localStorage.getItem('auraprompt_billing_cycle') === 'yearly') ||
+      (planExpiresAt && planStartedAt && (new Date(planExpiresAt).getTime() - new Date(planStartedAt).getTime()) > 60 * 24 * 60 * 60 * 1000)
+    );
+    const planCfg = getPlanFeaturesForCycle(planTier, isYearly ? 'yearly' : 'monthly');
+    const maxSaves = userAccount?.savesLimit || planCfg.savesLimit;
+    const isUnlimited = planCfg.unlimitedSaves || maxSaves >= 999999;
+    if (!isAlreadySaved && !isUnlimited && (bookmarkedIds.length + aiHistory.length >= maxSaves)) {
+      showToast(`${planCfg.name}${isYearly ? ' (Yearly)' : ''} plan limit reached: ${maxSaves} combined saves max (bookmarks + history). Upgrade your plan to increase your limit!`);
       setIsProCheckoutModalOpen(true);
       return;
     }
@@ -2258,10 +2308,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const currentBookmarks = StorageService.getBookmarkedIds();
     const isCurrentlyBookmarked = currentBookmarks.includes(id);
-    const planCfg = PLAN_CONFIGS[planTier] || PLAN_CONFIGS.free;
-    const maxSaves = planCfg.savesLimit;
-    if (!isCurrentlyBookmarked && !planCfg.unlimitedSaves && (currentBookmarks.length + aiHistory.length >= maxSaves)) {
-      showToast(`${planCfg.name} plan limit reached: ${maxSaves} combined saves max (bookmarks + history). Upgrade your plan to increase your limit!`);
+    const isYearly = Boolean(
+      currentAcc?.billingCycle === 'yearly' ||
+      (typeof window !== 'undefined' && localStorage.getItem('auraprompt_billing_cycle') === 'yearly') ||
+      (planExpiresAt && planStartedAt && (new Date(planExpiresAt).getTime() - new Date(planStartedAt).getTime()) > 60 * 24 * 60 * 60 * 1000)
+    );
+    const planCfg = getPlanFeaturesForCycle(planTier, isYearly ? 'yearly' : 'monthly');
+    const maxSaves = currentAcc?.savesLimit || planCfg.savesLimit;
+    const isUnlimited = planCfg.unlimitedSaves || maxSaves >= 999999;
+    if (!isCurrentlyBookmarked && !isUnlimited && (currentBookmarks.length + aiHistory.length >= maxSaves)) {
+      showToast(`${planCfg.name}${isYearly ? ' (Yearly)' : ''} plan limit reached: ${maxSaves} combined saves max (bookmarks + history). Upgrade your plan to increase your limit!`);
       setIsProCheckoutModalOpen(true);
       return;
     }

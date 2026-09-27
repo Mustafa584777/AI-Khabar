@@ -1,6 +1,6 @@
 import { UserAccount, AIHistoryItem, PlanTier, PromptRequestItem, QueuedPlan } from '@/types/prompt';
 import { INITIAL_TASTE_PROFILE, UserTasteProfile } from './personalization';
-import { PLAN_CONFIGS, calculatePlanDates } from './plans';
+import { PLAN_CONFIGS, calculatePlanDates, getPlanFeaturesForCycle } from './plans';
 
 export interface UserSyncData {
   userId?: string;
@@ -20,6 +20,10 @@ export interface UserSyncData {
   promptRequestsRemaining?: number;
   unlockedPromptIds?: string[];
   signupBonusClaimed?: boolean;
+  signupModalShown?: boolean;
+  billingCycle?: 'monthly' | 'yearly';
+  signupCreditsAwarded?: boolean;
+  savesLimit?: number;
   planStartedAt?: string;
   planExpiresAt?: string;
   queuedPlan?: QueuedPlan | null;
@@ -170,7 +174,7 @@ export const UserSyncService = {
     // 1. Gather all existing local client state
     let localTier: PlanTier = 'free';
     let localIsPro = false;
-    let localCredits = 5;
+    let localCredits = 0;
     let localRequests = 0;
     let localSearches = 5;
     let localBookmarks: string[] = [];
@@ -325,14 +329,19 @@ export const UserSyncService = {
     }
     let resolvedIsPro: boolean = resolvedTier !== 'free' || Boolean(remote.isProUser || localIsPro);
 
-    const planCfg = PLAN_CONFIGS[resolvedTier] || PLAN_CONFIGS.free;
+    const isYearly = Boolean(
+      (remote as any).billingCycle === 'yearly' ||
+      (remote.planExpiresAt && remote.planStartedAt && (new Date(remote.planExpiresAt).getTime() - new Date(remote.planStartedAt).getTime()) > 60 * 24 * 60 * 60 * 1000) ||
+      (localPlanExpiresAt && localPlanStartedAt && (new Date(localPlanExpiresAt).getTime() - new Date(localPlanStartedAt).getTime()) > 60 * 24 * 60 * 60 * 1000)
+    );
+    const planCfg = getPlanFeaturesForCycle(resolvedTier, isYearly ? 'yearly' : 'monthly');
 
-    // Preserved Credits: strictly keep user's highest valid balance
+    // Preserved Credits: strictly keep user's exact balance (never reset free users back to 5)
     let resolvedCredits = remote.toolCredits !== undefined && remote.toolCredits !== null
       ? Number(remote.toolCredits)
-      : Math.max(localCredits, planCfg.credits);
-    if (localCredits > resolvedCredits && resolvedTier !== 'free') {
-      resolvedCredits = localCredits;
+      : (localCredits > 0 ? localCredits : 0);
+    if (resolvedTier !== 'free' && planCfg.credits > resolvedCredits && remote.toolCredits === undefined) {
+      resolvedCredits = planCfg.credits;
     }
 
     let resolvedRequests = remote.promptRequestsRemaining !== undefined && remote.promptRequestsRemaining !== null

@@ -230,9 +230,11 @@ export async function POST(req: NextRequest) {
 
       const planCfg = PLAN_CONFIGS[best.planTier as PlanTier] || PLAN_CONFIGS.free;
 
-      // Preserve exact consumed balance! Never automatically top up or overwrite consumption
+      // Strictly preserve consumed balance! Free users get 5 credits ONLY ONCE on initial account creation.
+      // Under no circumstances should free users receive recurring or login bonus credits.
       if (best.toolCredits === undefined || best.toolCredits === null) {
-        best.toolCredits = planCfg.credits;
+        const isExisting = Boolean(best.signupCreditsAwarded || best.signupBonusClaimed || best.updatedAt || candidates.length > 0);
+        best.toolCredits = best.planTier === 'free' ? (isExisting ? 0 : 5) : planCfg.credits;
       } else {
         best.toolCredits = Number(best.toolCredits);
       }
@@ -434,7 +436,8 @@ export async function POST(req: NextRequest) {
       } else if (existingData.toolCredits !== undefined && existingData.toolCredits !== null) {
         resolvedToolCredits = Number(existingData.toolCredits);
       } else {
-        resolvedToolCredits = planCfg.credits;
+        const isExisting = Boolean(existingData.signupCreditsAwarded || existingData.signupBonusClaimed || existingData.updatedAt);
+        resolvedToolCredits = resolvedPlanTier === 'free' ? (isExisting ? 0 : 5) : planCfg.credits;
       }
 
       // Prompt requests: strictly preserve consumed count (do NOT force Math.max)

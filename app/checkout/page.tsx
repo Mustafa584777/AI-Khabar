@@ -356,7 +356,9 @@ export default function CheckoutPage() {
 
                   <div>
                     <h3 className="text-lg font-black text-neutral-900 dark:text-white">Starter</h3>
-                    <p className="text-xs text-neutral-500">Essential membership</p>
+                    <p className="text-xs text-neutral-500">
+                      {billingCycle === 'yearly' ? 'Combined annual membership' : 'Essential membership'}
+                    </p>
                   </div>
 
                   <div className="flex items-baseline gap-1">
@@ -375,19 +377,27 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
-                      <span><strong>100</strong> prompt tool credits / mo</span>
+                      <span>
+                        <strong>{billingCycle === 'yearly' ? '1,200' : '100'}</strong> prompt tool credits {billingCycle === 'yearly' ? 'upfront' : '/ mo'}
+                      </span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
-                      <span><strong>100 AI Searches</strong> / mo</span>
+                      <span>
+                        <strong>{billingCycle === 'yearly' ? '1,200 AI Searches' : '100 AI Searches'}</strong> {billingCycle === 'yearly' ? '/ year' : '/ mo'}
+                      </span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
-                      <span><strong>1 Prompt Request</strong></span>
+                      <span>
+                        <strong>{billingCycle === 'yearly' ? '12 Prompt Requests' : '1 Prompt Request'}</strong>
+                      </span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
-                      <span className="font-bold text-emerald-600 dark:text-emerald-400">100 saves & history</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                        {billingCycle === 'yearly' ? '1,200 saves & history' : '100 saves & history'}
+                      </span>
                     </li>
                   </ul>
                 </div>
@@ -395,9 +405,14 @@ export default function CheckoutPage() {
                 <RazorpayCheckoutButton
                   amount={100}
                   planTier="starter"
+                  billingCycle={billingCycle}
                   planName={billingCycle === 'monthly' ? 'Starter Monthly' : 'Starter Yearly'}
-                  description={billingCycle === 'monthly' ? 'Monthly Starter - 100 Credits, 100 AI Searches' : 'Yearly Starter - 100 Credits/mo, 100 AI Searches/mo'}
-                  buttonText="Get Starter for ₹1"
+                  description={
+                    billingCycle === 'monthly'
+                      ? 'Monthly Starter - 100 Credits, 100 AI Searches'
+                      : 'Yearly Starter - 1200 Credits, 1200 AI Searches, 12 Requests, 1200 Saves upfront'
+                  }
+                  buttonText={billingCycle === 'monthly' ? 'Get Starter for ₹1' : 'Get Starter Yearly for ₹1'}
                   variant="secondary"
                   className="w-full text-xs"
                 />
@@ -406,7 +421,7 @@ export default function CheckoutPage() {
               {/* Tier 2: Pro */}
               <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border-2 border-[#E60023] shadow-lg flex flex-col justify-between space-y-6 relative hover:shadow-xl transition-shadow">
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-[#E60023] text-white text-[10px] font-black uppercase tracking-wider">
-                  Most Popular
+                  {billingCycle === 'yearly' ? 'Best Annual Value' : 'Most Popular'}
                 </div>
 
                 <div className="space-y-4">
@@ -416,7 +431,9 @@ export default function CheckoutPage() {
 
                   <div>
                     <h3 className="text-lg font-black text-neutral-900 dark:text-white">Pro</h3>
-                    <p className="text-xs text-neutral-500">For active creators & prompt engineers</p>
+                    <p className="text-xs text-neutral-500">
+                      {billingCycle === 'yearly' ? '3,000 Combined Credits for full year' : 'For active creators & prompt engineers'}
+                    </p>
                   </div>
 
                   <div className="flex items-baseline gap-1">
@@ -435,19 +452,27 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
-                      <span><strong>250</strong> prompt tool credits / mo</span>
+                      <span>
+                        <strong>{billingCycle === 'yearly' ? '3,000' : '250'}</strong> prompt tool credits {billingCycle === 'yearly' ? 'upfront' : '/ mo'}
+                      </span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
-                      <span><strong>200 AI Searches</strong> / mo</span>
+                      <span>
+                        <strong>{billingCycle === 'yearly' ? '2,400 AI Searches' : '200 AI Searches'}</strong> {billingCycle === 'yearly' ? '/ year' : '/ mo'}
+                      </span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
-                      <span><strong>2 Prompt Requests</strong></span>
+                      <span>
+                        <strong>{billingCycle === 'yearly' ? '24 Prompt Requests' : '2 Prompt Requests'}</strong>
+                      </span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
-                      <span className="font-bold text-[#E60023]">200 saves & history</span>
+                      <span className="font-bold text-[#E60023]">
+                        {billingCycle === 'yearly' ? '2,400 saves & history' : '200 saves & history'}
+                      </span>
                     </li>
                   </ul>
                 </div>
@@ -455,9 +480,14 @@ export default function CheckoutPage() {
                 <RazorpayCheckoutButton
                   amount={100}
                   planTier="pro"
+                  billingCycle={billingCycle}
                   planName={billingCycle === 'monthly' ? 'Pro Monthly' : 'Pro Yearly'}
-                  description={billingCycle === 'monthly' ? 'Monthly Pro - 250 Credits, 200 AI Searches' : 'Yearly Pro - 250 Credits/mo, 200 AI Searches/mo'}
-                  buttonText="Get Pro for ₹1"
+                  description={
+                    billingCycle === 'monthly'
+                      ? 'Monthly Pro - 250 Credits, 200 AI Searches'
+                      : 'Yearly Pro - 3000 Credits, 2400 AI Searches, 24 Requests, 2400 Saves upfront'
+                  }
+                  buttonText={billingCycle === 'monthly' ? 'Get Pro for ₹1' : 'Get Pro Yearly for ₹1'}
                   variant="pill"
                   size="md"
                   className="w-full text-xs"
@@ -473,7 +503,9 @@ export default function CheckoutPage() {
 
                   <div>
                     <h3 className="text-lg font-black text-neutral-900 dark:text-white">VIP</h3>
-                    <p className="text-xs text-neutral-500">Power creators & studios</p>
+                    <p className="text-xs text-neutral-500">
+                      {billingCycle === 'yearly' ? '7,200 Combined Credits for studios' : 'Power creators & studios'}
+                    </p>
                   </div>
 
                   <div className="flex items-baseline gap-1">
@@ -492,19 +524,27 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
-                      <span><strong>600</strong> prompt tool credits / mo</span>
+                      <span>
+                        <strong>{billingCycle === 'yearly' ? '7,200' : '600'}</strong> prompt tool credits {billingCycle === 'yearly' ? 'upfront' : '/ mo'}
+                      </span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
-                      <span><strong>500 AI Searches</strong> / mo</span>
+                      <span>
+                        <strong>{billingCycle === 'yearly' ? '6,000 AI Searches' : '500 AI Searches'}</strong> {billingCycle === 'yearly' ? '/ year' : '/ mo'}
+                      </span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
-                      <span><strong>3 Prompt Requests</strong></span>
+                      <span>
+                        <strong>{billingCycle === 'yearly' ? '36 Prompt Requests' : '3 Prompt Requests'}</strong>
+                      </span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
-                      <span className="font-bold text-purple-600 dark:text-purple-400">400 saves & history</span>
+                      <span className="font-bold text-purple-600 dark:text-purple-400">
+                        {billingCycle === 'yearly' ? '4,800 saves & history' : '400 saves & history'}
+                      </span>
                     </li>
                   </ul>
                 </div>
@@ -512,9 +552,14 @@ export default function CheckoutPage() {
                 <RazorpayCheckoutButton
                   amount={100}
                   planTier="vip"
+                  billingCycle={billingCycle}
                   planName={billingCycle === 'monthly' ? 'VIP Monthly' : 'VIP Yearly'}
-                  description={billingCycle === 'monthly' ? 'Monthly VIP - 600 Credits, 500 AI Searches' : 'Yearly VIP - 600 Credits/mo, 500 AI Searches/mo'}
-                  buttonText="Get VIP for ₹1"
+                  description={
+                    billingCycle === 'monthly'
+                      ? 'Monthly VIP - 600 Credits, 500 AI Searches'
+                      : 'Yearly VIP - 7200 Credits, 6000 AI Searches, 36 Requests, 4800 Saves upfront'
+                  }
+                  buttonText={billingCycle === 'monthly' ? 'Get VIP for ₹1' : 'Get VIP Yearly for ₹1'}
                   variant="secondary"
                   className="w-full text-xs"
                 />
@@ -533,7 +578,9 @@ export default function CheckoutPage() {
 
                   <div>
                     <h3 className="text-lg font-black text-white">Studio 499</h3>
-                    <p className="text-xs text-neutral-400">Unlimited AI power & maximum quota</p>
+                    <p className="text-xs text-neutral-400">
+                      {billingCycle === 'yearly' ? '18,000 Credits & Unlimited AI Power' : 'Unlimited AI power & maximum quota'}
+                    </p>
                   </div>
 
                   <div className="flex items-baseline gap-1">
@@ -552,7 +599,9 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-amber-400 font-bold">✓</span>
-                      <span><strong>1500 credits</strong> / mo</span>
+                      <span>
+                        <strong>{billingCycle === 'yearly' ? '18,000 credits' : '1500 credits'}</strong> {billingCycle === 'yearly' ? 'upfront' : '/ mo'}
+                      </span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-amber-400 font-bold">✓</span>
@@ -560,7 +609,9 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-amber-400 font-bold">✓</span>
-                      <span><strong>5 Prompt Requests</strong> / mo</span>
+                      <span>
+                        <strong>{billingCycle === 'yearly' ? '60 Prompt Requests' : '5 Prompt Requests'}</strong> {billingCycle === 'yearly' ? '/ year' : '/ mo'}
+                      </span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-amber-400 font-bold">✓</span>
@@ -572,9 +623,14 @@ export default function CheckoutPage() {
                 <RazorpayCheckoutButton
                   amount={100}
                   planTier="ultra"
+                  billingCycle={billingCycle}
                   planName={billingCycle === 'monthly' ? 'Studio 499 Monthly' : 'Studio 499 Yearly'}
-                  description={billingCycle === 'monthly' ? 'Studio 499 - 1500 Credits, Unlimited AI Search' : 'Yearly Studio 499 - 1500 Credits/mo, Unlimited AI Search'}
-                  buttonText="Get Studio for ₹1"
+                  description={
+                    billingCycle === 'monthly'
+                      ? 'Studio 499 - 1500 Credits, Unlimited AI Search'
+                      : 'Yearly Studio 499 - 18000 Credits, Unlimited AI Searches, 60 Requests, Unlimited Saves upfront'
+                  }
+                  buttonText={billingCycle === 'monthly' ? 'Get Studio for ₹1' : 'Get Studio Yearly for ₹1'}
                   variant="dark"
                   className="w-full text-xs font-black bg-amber-500 hover:bg-amber-400 text-black"
                 />
@@ -621,41 +677,85 @@ export default function CheckoutPage() {
                 <tr>
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Price</td>
                   <td className="py-3.5 px-4 text-center font-bold text-emerald-600">₹0 Free</td>
-                  <td className="py-3.5 px-4 text-center font-black text-neutral-900 dark:text-white">₹1 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-black text-[#E60023]">₹1 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-black text-purple-600 dark:text-purple-400">₹1 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-black text-amber-500">₹1 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-black text-neutral-900 dark:text-white">
+                    {billingCycle === 'monthly' ? '₹1 / mo' : '₹1 / year'}
+                  </td>
+                  <td className="py-3.5 px-4 text-center font-black text-[#E60023]">
+                    {billingCycle === 'monthly' ? '₹1 / mo' : '₹1 / year'}
+                  </td>
+                  <td className="py-3.5 px-4 text-center font-black text-purple-600 dark:text-purple-400">
+                    {billingCycle === 'monthly' ? '₹1 / mo' : '₹1 / year'}
+                  </td>
+                  <td className="py-3.5 px-4 text-center font-black text-amber-500">
+                    {billingCycle === 'monthly' ? '₹1 / mo' : '₹1 / year'}
+                  </td>
                 </tr>
                 <tr>
-                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Monthly Tool Credits</td>
+                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">
+                    {billingCycle === 'monthly' ? 'Monthly Tool Credits' : 'Total Combined Credits'}
+                  </td>
                   <td className="py-3.5 px-4 text-center font-medium">5 on signup</td>
-                  <td className="py-3.5 px-4 text-center font-bold text-neutral-900 dark:text-white">100 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-bold text-neutral-900 dark:text-white">250 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-bold text-neutral-900 dark:text-white">600 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-bold text-amber-600 dark:text-amber-400">1,500 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-bold text-neutral-900 dark:text-white">
+                    {billingCycle === 'monthly' ? '100 / mo' : '1,200 upfront'}
+                  </td>
+                  <td className="py-3.5 px-4 text-center font-bold text-neutral-900 dark:text-white">
+                    {billingCycle === 'monthly' ? '250 / mo' : '3,000 upfront'}
+                  </td>
+                  <td className="py-3.5 px-4 text-center font-bold text-neutral-900 dark:text-white">
+                    {billingCycle === 'monthly' ? '600 / mo' : '7,200 upfront'}
+                  </td>
+                  <td className="py-3.5 px-4 text-center font-bold text-amber-600 dark:text-amber-400">
+                    {billingCycle === 'monthly' ? '1,500 / mo' : '18,000 upfront'}
+                  </td>
                 </tr>
                 <tr>
-                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">AI Search Quota</td>
+                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">
+                    {billingCycle === 'monthly' ? 'AI Search Quota' : 'Total AI Searches'}
+                  </td>
                   <td className="py-3.5 px-4 text-center font-medium">5 lifetime</td>
-                  <td className="py-3.5 px-4 text-center font-bold">100 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-bold">200 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-bold">500 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-bold">
+                    {billingCycle === 'monthly' ? '100 / mo' : '1,200 / yr'}
+                  </td>
+                  <td className="py-3.5 px-4 text-center font-bold">
+                    {billingCycle === 'monthly' ? '200 / mo' : '2,400 / yr'}
+                  </td>
+                  <td className="py-3.5 px-4 text-center font-bold">
+                    {billingCycle === 'monthly' ? '500 / mo' : '6,000 / yr'}
+                  </td>
                   <td className="py-3.5 px-4 text-center font-bold text-amber-600 dark:text-amber-400">Unlimited</td>
                 </tr>
                 <tr>
-                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Custom Prompt Requests</td>
+                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">
+                    {billingCycle === 'monthly' ? 'Custom Prompt Requests' : 'Total Prompt Requests'}
+                  </td>
                   <td className="py-3.5 px-4 text-center text-neutral-400"><X className="w-4 h-4 mx-auto" /></td>
-                  <td className="py-3.5 px-4 text-center font-bold">1 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-bold">2 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-bold">3 / mo</td>
-                  <td className="py-3.5 px-4 text-center font-bold text-amber-500">5 / mo</td>
+                  <td className="py-3.5 px-4 text-center font-bold">
+                    {billingCycle === 'monthly' ? '1 / mo' : '12 / yr'}
+                  </td>
+                  <td className="py-3.5 px-4 text-center font-bold">
+                    {billingCycle === 'monthly' ? '2 / mo' : '24 / yr'}
+                  </td>
+                  <td className="py-3.5 px-4 text-center font-bold">
+                    {billingCycle === 'monthly' ? '3 / mo' : '36 / yr'}
+                  </td>
+                  <td className="py-3.5 px-4 text-center font-bold text-amber-500">
+                    {billingCycle === 'monthly' ? '5 / mo' : '60 / yr'}
+                  </td>
                 </tr>
                 <tr>
-                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Saves & History Limit</td>
+                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">
+                    {billingCycle === 'monthly' ? 'Saves & History Limit' : 'Total Combined Saves'}
+                  </td>
                   <td className="py-3.5 px-4 text-center font-medium">10 saves</td>
-                  <td className="py-3.5 px-4 text-center font-bold">100 saves</td>
-                  <td className="py-3.5 px-4 text-center font-bold">200 saves</td>
-                  <td className="py-3.5 px-4 text-center font-bold">400 saves</td>
+                  <td className="py-3.5 px-4 text-center font-bold">
+                    {billingCycle === 'monthly' ? '100 saves' : '1,200 saves'}
+                  </td>
+                  <td className="py-3.5 px-4 text-center font-bold">
+                    {billingCycle === 'monthly' ? '200 saves' : '2,400 saves'}
+                  </td>
+                  <td className="py-3.5 px-4 text-center font-bold">
+                    {billingCycle === 'monthly' ? '400 saves' : '4,800 saves'}
+                  </td>
                   <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400">Unlimited</td>
                 </tr>
                 <tr>
@@ -669,18 +769,34 @@ export default function CheckoutPage() {
                 <tr>
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Image-to-Prompt (2 cr each)</td>
                   <td className="py-3.5 px-4 text-center">Up to 2 runs</td>
-                  <td className="py-3.5 px-4 text-center font-medium">Up to 50 runs</td>
-                  <td className="py-3.5 px-4 text-center font-medium">Up to 125 runs</td>
-                  <td className="py-3.5 px-4 text-center font-medium">Up to 300 runs</td>
-                  <td className="py-3.5 px-4 text-center font-bold text-amber-500">Up to 750 runs</td>
+                  <td className="py-3.5 px-4 text-center font-medium">
+                    {billingCycle === 'monthly' ? 'Up to 50 runs' : 'Up to 600 runs'}
+                  </td>
+                  <td className="py-3.5 px-4 text-center font-medium">
+                    {billingCycle === 'monthly' ? 'Up to 125 runs' : 'Up to 1,500 runs'}
+                  </td>
+                  <td className="py-3.5 px-4 text-center font-medium">
+                    {billingCycle === 'monthly' ? 'Up to 300 runs' : 'Up to 3,600 runs'}
+                  </td>
+                  <td className="py-3.5 px-4 text-center font-bold text-amber-500">
+                    {billingCycle === 'monthly' ? 'Up to 750 runs' : 'Up to 9,000 runs'}
+                  </td>
                 </tr>
                 <tr>
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">AI Prompt Generator & Editor (1 cr each)</td>
                   <td className="py-3.5 px-4 text-center">Up to 5 runs</td>
-                  <td className="py-3.5 px-4 text-center font-medium">Up to 100 runs</td>
-                  <td className="py-3.5 px-4 text-center font-medium">Up to 250 runs</td>
-                  <td className="py-3.5 px-4 text-center font-medium">Up to 600 runs</td>
-                  <td className="py-3.5 px-4 text-center font-bold text-amber-500">Up to 1,500 runs</td>
+                  <td className="py-3.5 px-4 text-center font-medium">
+                    {billingCycle === 'monthly' ? 'Up to 100 runs' : 'Up to 1,200 runs'}
+                  </td>
+                  <td className="py-3.5 px-4 text-center font-medium">
+                    {billingCycle === 'monthly' ? 'Up to 250 runs' : 'Up to 3,000 runs'}
+                  </td>
+                  <td className="py-3.5 px-4 text-center font-medium">
+                    {billingCycle === 'monthly' ? 'Up to 600 runs' : 'Up to 7,200 runs'}
+                  </td>
+                  <td className="py-3.5 px-4 text-center font-bold text-amber-500">
+                    {billingCycle === 'monthly' ? 'Up to 1,500 runs' : 'Up to 18,000 runs'}
+                  </td>
                 </tr>
               </tbody>
             </table>
