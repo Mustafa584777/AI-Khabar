@@ -1,6 +1,6 @@
-import { UserAccount, AIHistoryItem, PlanTier, PromptRequestItem } from '@/types/prompt';
+import { UserAccount, AIHistoryItem, PlanTier, PromptRequestItem, QueuedPlan } from '@/types/prompt';
 import { INITIAL_TASTE_PROFILE, UserTasteProfile } from './personalization';
-import { PLAN_CONFIGS } from './plans';
+import { PLAN_CONFIGS, computePlanExpiry } from './plans';
 
 export interface UserSyncData {
   userId?: string;
@@ -22,6 +22,8 @@ export interface UserSyncData {
   signupBonusClaimed?: boolean;
   planStartedAt?: string;
   planExpiresAt?: string;
+  queuedPlan?: QueuedPlan | null;
+  isQueued?: boolean;
   promptRequests?: PromptRequestItem[];
   joinedDate?: string;
   updatedAt?: string;
@@ -359,8 +361,30 @@ export const UserSyncService = {
       .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
       .slice(0, 100);
 
-    const resolvedPlanStartedAt = remote.planStartedAt || localPlanStartedAt || (resolvedTier !== 'free' ? new Date().toISOString() : undefined);
-    const resolvedPlanExpiresAt = remote.planExpiresAt || localPlanExpiresAt || (resolvedTier !== 'free' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : undefined);
+    let resolvedPlanStartedAt = remote.planStartedAt || localPlanStartedAt || (resolvedTier !== 'free' ? new Date().toISOString() : undefined);
+    let resolvedPlanExpiresAt = remote.planExpiresAt || localPlanExpiresAt || (resolvedTier !== 'free' && resolvedPlanStartedAt ? computePlanExpiry(resolvedPlanStartedAt, 30) : undefined);
+
+    // Resolve queuedPlan
+    const localQueuedPlanRaw = typeof window !== 'undefined' ? localStorage.getItem('auraprompt_queued_plan') : null;
+    let localQueuedPlan: QueuedPlan | null = null;
+    if (localQueuedPlanRaw) {
+      try {
+        localQueuedPlan = JSON.parse(localQueuedPlanRaw);
+      } catch {}
+    }
+    let resolvedQueuedPlan: QueuedPlan | null = remote.queuedPlan || localQueuedPlan || null;
+
+    // Check if queuedPlan should be activated right now
+    if (resolvedQueuedPlan && resolvedPlanExpiresAt && new Date(resolvedPlanExpiresAt).getTime() <= Date.now()) {
+      resolvedTier = resolvedQueuedPlan.planTier;
+      resolvedIsPro = true;
+      resolvedPlanStartedAt = resolvedQueuedPlan.planStartedAt || new Date().toISOString();
+      resolvedPlanExpiresAt = resolvedQueuedPlan.planExpiresAt || computePlanExpiry(resolvedPlanStartedAt, 30);
+      resolvedCredits = resolvedQueuedPlan.toolCredits;
+      resolvedRequests = resolvedQueuedPlan.promptRequestsRemaining;
+      resolvedAiSearches = resolvedQueuedPlan.aiSearchRemaining;
+      resolvedQueuedPlan = null;
+    }
 
     // Save consolidated state safely to localStorage
     if (typeof window !== 'undefined') {
@@ -379,6 +403,11 @@ export const UserSyncService = {
       }
       if (resolvedPlanStartedAt) localStorage.setItem('auraprompt_plan_started_at', resolvedPlanStartedAt);
       if (resolvedPlanExpiresAt) localStorage.setItem('auraprompt_plan_expires_at', resolvedPlanExpiresAt);
+      if (resolvedQueuedPlan) {
+        localStorage.setItem('auraprompt_queued_plan', JSON.stringify(resolvedQueuedPlan));
+      } else {
+        localStorage.removeItem('auraprompt_queued_plan');
+      }
     }
 
     // If local held newer/higher data (e.g. bookmarks or active plan), push back to remote to sync database
@@ -401,6 +430,7 @@ export const UserSyncService = {
         aiHistory: mergedHistory,
         planStartedAt: resolvedPlanStartedAt,
         planExpiresAt: resolvedPlanExpiresAt,
+        queuedPlan: resolvedQueuedPlan,
       });
     }
 
@@ -418,6 +448,7 @@ export const UserSyncService = {
       unlockedPromptIds: mergedUnlocked,
       planStartedAt: resolvedPlanStartedAt,
       planExpiresAt: resolvedPlanExpiresAt,
+      queuedPlan: resolvedQueuedPlan,
     };
   },
 

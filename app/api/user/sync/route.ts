@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, supabase } from '@/lib/supabase';
 import { getClientIp, checkRateLimit, createRateLimitResponse, sanitizePayload } from '@/lib/security';
-import { PLAN_CONFIGS } from '@/lib/plans';
+import { PLAN_CONFIGS, computePlanExpiry } from '@/lib/plans';
 import { PlanTier } from '@/types/prompt';
 import { ServerStorage } from '@/lib/server-storage';
 
@@ -167,8 +167,8 @@ export async function POST(req: NextRequest) {
 
         if ((TIER_RANK[effCurrTier] || 0) > (TIER_RANK[highestTier] || 0)) {
           highestTier = effCurrTier;
-          highestStartedAt = curr.planStartedAt || highestStartedAt;
-          highestExpiresAt = curr.planExpiresAt || highestExpiresAt;
+          if (!hasActiveSub || !highestStartedAt) highestStartedAt = curr.planStartedAt || highestStartedAt;
+          if (!hasActiveSub || !highestExpiresAt) highestExpiresAt = curr.planExpiresAt || highestExpiresAt;
         }
       }
 
@@ -194,23 +194,17 @@ export async function POST(req: NextRequest) {
 
       const planCfg = PLAN_CONFIGS[highestTier] || PLAN_CONFIGS.free;
 
-      // Preserve exact consumed balance! Never automatically top up or overwrite consumption
+      // Preserve exact consumed balance! Strictly do NOT restore consumed balance
       if (best.toolCredits === undefined || best.toolCredits === null) {
         best.toolCredits = planCfg.credits;
       } else {
         best.toolCredits = Number(best.toolCredits);
-      }
-      if (hasActiveSub && best.toolCredits < Number(activeSub.credits || 0)) {
-        best.toolCredits = Math.max(best.toolCredits, Number(activeSub.credits));
       }
 
       if (best.promptRequestsRemaining === undefined || best.promptRequestsRemaining === null) {
         best.promptRequestsRemaining = highestTier !== 'free' ? planCfg.promptRequests : 0;
       } else {
         best.promptRequestsRemaining = Number(best.promptRequestsRemaining);
-      }
-      if (hasActiveSub && best.promptRequestsRemaining < Number(activeSub.promptRequests || 0)) {
-        best.promptRequestsRemaining = Math.max(best.promptRequestsRemaining, Number(activeSub.promptRequests));
       }
 
       if (planCfg.unlimitedSearches) {
@@ -249,12 +243,43 @@ export async function POST(req: NextRequest) {
           ? cloned.planTier
           : (cloned.isProUser ? 'pro' : 'free');
 
-        // Check if plan has expired (never expire if user holds active subscription)
-        if (tier !== 'free' && cloned.planExpiresAt && !hasActiveSub) {
-          const exp = new Date(cloned.planExpiresAt).getTime();
-          if (!isNaN(exp) && exp < Date.now()) {
-            tier = 'free';
-            cloned.isProUser = false;
+        // Check if queuedPlan should be activated
+        const queuedPlan = cloned.queuedPlan || activeSub?.queuedPlan || null;
+        if (queuedPlan && cloned.planExpiresAt && new Date(cloned.planExpiresAt).getTime() <= Date.now()) {
+          tier = queuedPlan.planTier;
+          cloned.isProUser = true;
+          cloned.planStartedAt = queuedPlan.planStartedAt || new Date().toISOString();
+          cloned.planExpiresAt = queuedPlan.planExpiresAt || computePlanExpiry(cloned.planStartedAt, 30);
+          cloned.toolCredits = queuedPlan.toolCredits;
+          cloned.promptRequestsRemaining = queuedPlan.promptRequestsRemaining;
+          cloned.aiSearchRemaining = queuedPlan.aiSearchRemaining;
+          cloned.queuedPlan = null;
+
+          if (cleanEmail) {
+            void ServerStorage.saveUserSubscription({
+              email: cleanEmail,
+              userId,
+              planTier: queuedPlan.planTier,
+              isProUser: true,
+              status: 'active',
+              planStartedAt: cloned.planStartedAt,
+              planExpiresAt: cloned.planExpiresAt,
+              credits: queuedPlan.credits,
+              aiSearchQuota: queuedPlan.aiSearchRemaining,
+              promptRequests: queuedPlan.promptRequestsRemaining,
+              queuedPlan: null,
+            });
+            void ServerStorage.saveUserProfile(cleanEmail, userId, cloned);
+          }
+        } else {
+          cloned.queuedPlan = queuedPlan;
+          // Check if plan has expired (never expire if user holds active subscription)
+          if (tier !== 'free' && cloned.planExpiresAt && !hasActiveSub) {
+            const exp = new Date(cloned.planExpiresAt).getTime();
+            if (!isNaN(exp) && exp < Date.now()) {
+              tier = 'free';
+              cloned.isProUser = false;
+            }
           }
         }
 
@@ -429,17 +454,6 @@ export async function POST(req: NextRequest) {
         finalSearches = planCfg.aiSearchQuota;
       }
 
-      // If user holds active permanent subscription, ensure balance meets plan guarantees
-      if (hasActiveSub && activeSub) {
-        resolvedToolCredits = Math.max(resolvedToolCredits, Number(activeSub.credits || 0));
-        finalRequests = Math.max(finalRequests, Number(activeSub.promptRequests || 0));
-        if (planCfg.unlimitedSearches) {
-          finalSearches = 999999;
-        } else {
-          finalSearches = Math.max(finalSearches, Number(activeSub.aiSearchQuota || 0));
-        }
-      }
-
       const mergedPayload = {
         ...existingData,
         ...data,
@@ -455,8 +469,9 @@ export async function POST(req: NextRequest) {
         aiSearchRemaining: finalSearches,
         aiHistory: mergedAiHistory,
         tasteProfile: mergedTasteProfile !== undefined ? mergedTasteProfile : existingData.tasteProfile,
-        planStartedAt: data.planStartedAt || existingData.planStartedAt,
-        planExpiresAt: resolvedPlanExpiresAt,
+        queuedPlan: data.queuedPlan !== undefined ? data.queuedPlan : (existingData.queuedPlan || activeSub?.queuedPlan || null),
+        planStartedAt: activeSub?.planStartedAt || existingData.planStartedAt || data.planStartedAt,
+        planExpiresAt: activeSub?.planExpiresAt || resolvedPlanExpiresAt,
         updatedAt: new Date().toISOString(),
       };
 

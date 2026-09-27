@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { ServerStorage } from '@/lib/server-storage';
-import { PLAN_CONFIGS } from '@/lib/plans';
-import { PlanTier } from '@/types/prompt';
+import { PLAN_CONFIGS, computePlanExpiry, formatPlanDateWithTime } from '@/lib/plans';
+import { PlanTier, QueuedPlan } from '@/types/prompt';
 
 export const dynamic = 'force-dynamic';
 
@@ -85,14 +85,11 @@ export async function POST(req: NextRequest) {
     let updatedSyncData: any = null;
 
     if (cleanEmail) {
-      const now = new Date();
-      const planStartedAt = now.toISOString();
-      const planExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
-
       const isCreditPack = checkoutType === 'credits' || (creditsToAdd && Number(creditsToAdd) > 0);
 
-      // Fetch existing profile
+      // Fetch existing profile & existing subscription
       const existingProfile = (await ServerStorage.getUserProfile(cleanEmail, userId)) || {};
+      const existingSub = await ServerStorage.getUserSubscription(cleanEmail);
 
       if (isCreditPack) {
         const addedCredits = Number(creditsToAdd) || 120;
@@ -110,6 +107,27 @@ export async function POST(req: NextRequest) {
         };
 
         await ServerStorage.saveUserProfile(cleanEmail, userId, updatedSyncData);
+
+        await ServerStorage.saveOrder({
+          orderId,
+          paymentId,
+          email: cleanEmail,
+          userId,
+          planTier: 'credits',
+          planName: planName || `${addedCredits} Credits Pack`,
+          checkoutType: 'credits',
+          creditsAdded: addedCredits,
+          verifiedAt: new Date().toISOString(),
+        });
+
+        return NextResponse.json({
+          success: true,
+          message: `Payment verified! Added ${addedCredits} credits to your account.`,
+          order_id: orderId,
+          payment_id: paymentId,
+          verified_at: new Date().toISOString(),
+          userSyncData: updatedSyncData,
+        });
       } else {
         // Membership Plan Subscription (starter, pro, vip, ultra)
         const validTiers: PlanTier[] = ['starter', 'pro', 'vip', 'ultra'];
@@ -117,6 +135,95 @@ export async function POST(req: NextRequest) {
           ? (planTier as PlanTier)
           : 'pro';
         const planCfg = PLAN_CONFIGS[resolvedTier] || PLAN_CONFIGS.pro;
+
+        // Check if user ALREADY has an active, unexpired plan!
+        const currentTier = existingProfile.planTier || (existingProfile.isProUser ? 'pro' : null) || existingSub?.planTier;
+        const currentExpiresAt = existingProfile.planExpiresAt || existingSub?.planExpiresAt;
+        const isCurrentActive = Boolean(
+          currentTier &&
+          currentTier !== 'free' &&
+          currentExpiresAt &&
+          new Date(currentExpiresAt).getTime() > Date.now()
+        );
+
+        if (isCurrentActive) {
+          // USER ALREADY HAS AN ACTIVE PLAN:
+          // Do NOT merge credits or features into existing plan!
+          // New plan starts right after existing plan ends at 11:59 PM.
+          const queuedStartedAt = currentExpiresAt!;
+          const queuedExpiresAt = computePlanExpiry(queuedStartedAt, 30);
+
+          const queuedPlan: QueuedPlan = {
+            id: `queued_${Date.now()}`,
+            orderId,
+            paymentId,
+            planTier: resolvedTier,
+            planName: planCfg.name,
+            credits: planCfg.credits,
+            toolCredits: planCfg.credits,
+            promptRequestsRemaining: planCfg.promptRequests,
+            aiSearchRemaining: planCfg.unlimitedSearches ? 999999 : planCfg.aiSearchQuota,
+            planStartedAt: queuedStartedAt,
+            planExpiresAt: queuedExpiresAt,
+            purchasedAt: new Date().toISOString(),
+            status: 'queued',
+          };
+
+          // Save queued plan in subscription
+          if (existingSub) {
+            await ServerStorage.saveUserSubscription({
+              ...existingSub,
+              email: cleanEmail,
+              userId: userId || existingSub.userId,
+              queuedPlan,
+            });
+          }
+
+          // Existing plan remains active with its current credits and features!
+          const addedPoints = resolvedTier === 'starter' ? 10 : resolvedTier === 'pro' ? 20 : resolvedTier === 'vip' ? 50 : 100;
+          const resolvedPoints = (existingProfile.points || 10) + addedPoints;
+
+          updatedSyncData = {
+            ...existingProfile,
+            email: cleanEmail,
+            userId: userId || existingProfile.userId,
+            queuedPlan,
+            points: resolvedPoints,
+            lastPaymentId: paymentId,
+            lastOrderId: orderId,
+            updatedAt: new Date().toISOString(),
+          };
+
+          await ServerStorage.saveUserProfile(cleanEmail, userId, updatedSyncData);
+
+          await ServerStorage.saveOrder({
+            orderId,
+            paymentId,
+            email: cleanEmail,
+            userId,
+            planTier: resolvedTier,
+            planName: planCfg.name,
+            checkoutType: 'subscription_queued',
+            creditsAdded: planCfg.credits,
+            verifiedAt: new Date().toISOString(),
+          });
+
+          return NextResponse.json({
+            success: true,
+            isQueued: true,
+            message: `Your ${planCfg.name} Plan is queued and will automatically start on ${formatPlanDateWithTime(queuedStartedAt)} after your current plan expires!`,
+            order_id: orderId,
+            payment_id: paymentId,
+            verified_at: new Date().toISOString(),
+            userSyncData: updatedSyncData,
+          });
+        }
+
+        // NO ACTIVE PLAN (Brand new or previously expired):
+        // Activate immediately!
+        const now = new Date();
+        const planStartedAt = now.toISOString();
+        const planExpiresAt = computePlanExpiry(now, 30); // Anchored to 11:59:59 PM IST!
 
         // 1. Save Permanent Subscription Record
         await ServerStorage.saveUserSubscription({
@@ -128,21 +235,20 @@ export async function POST(req: NextRequest) {
           planStartedAt,
           planExpiresAt,
           credits: planCfg.credits,
-          aiSearchQuota: planCfg.aiSearchQuota,
+          aiSearchQuota: planCfg.unlimitedSearches ? 999999 : planCfg.aiSearchQuota,
           promptRequests: planCfg.promptRequests,
           orderId,
           paymentId,
+          queuedPlan: null,
         });
 
-        // 2. Compute updated credits and quotas
+        // 2. Compute updated credits and quotas for newly activated plan
         const currentCredits = Number(existingProfile.toolCredits || 0);
-        const resolvedCredits = Math.max(currentCredits + planCfg.credits, planCfg.credits);
-        const currentRequests = Number(existingProfile.promptRequestsRemaining || 0);
-        const resolvedRequests = Math.max(currentRequests + planCfg.promptRequests, planCfg.promptRequests);
-        const currentAiSearches = Number(existingProfile.aiSearchRemaining || 0);
+        const resolvedCredits = Math.max(currentCredits, planCfg.credits);
+        const resolvedRequests = Math.max(Number(existingProfile.promptRequestsRemaining || 0), planCfg.promptRequests);
         const resolvedAiSearches = planCfg.unlimitedSearches
           ? 999999
-          : Math.max(currentAiSearches, planCfg.aiSearchQuota);
+          : Math.max(Number(existingProfile.aiSearchRemaining || 0), planCfg.aiSearchQuota);
 
         const addedPoints = resolvedTier === 'starter' ? 10 : resolvedTier === 'pro' ? 20 : resolvedTier === 'vip' ? 50 : 100;
         const resolvedPoints = (existingProfile.points || 10) + addedPoints;
@@ -159,6 +265,7 @@ export async function POST(req: NextRequest) {
           points: resolvedPoints,
           planStartedAt,
           planExpiresAt,
+          queuedPlan: null,
           lastPaymentId: paymentId,
           lastOrderId: orderId,
           updatedAt: new Date().toISOString(),
@@ -166,20 +273,20 @@ export async function POST(req: NextRequest) {
 
         // 3. Save Primary User Profile Record
         await ServerStorage.saveUserProfile(cleanEmail, userId, updatedSyncData);
-      }
 
-      // 4. Record order details for audit
-      await ServerStorage.saveOrder({
-        orderId,
-        paymentId,
-        email: cleanEmail,
-        userId,
-        planTier: isCreditPack ? 'credits' : (planTier || 'pro'),
-        planName,
-        checkoutType: isCreditPack ? 'credits' : 'subscription',
-        creditsAdded: creditsToAdd || (updatedSyncData?.toolCredits ?? 0),
-        verifiedAt: new Date().toISOString(),
-      });
+        // 4. Record order details for audit
+        await ServerStorage.saveOrder({
+          orderId,
+          paymentId,
+          email: cleanEmail,
+          userId,
+          planTier,
+          planName: planCfg.name,
+          checkoutType: 'subscription',
+          creditsAdded: planCfg.credits,
+          verifiedAt: new Date().toISOString(),
+        });
+      }
     }
 
     return NextResponse.json({

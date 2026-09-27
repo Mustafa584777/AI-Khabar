@@ -16,6 +16,7 @@ import {
 import confetti from 'canvas-confetti';
 import { useApp } from '@/context/AppContext';
 import { startRazorpayCheckout } from '@/lib/razorpay';
+import { formatPlanDateWithTime } from '@/lib/plans';
 
 interface PlanOption {
   id: 'starter' | 'pro' | 'vip' | 'ultra';
@@ -138,6 +139,9 @@ export const RazorpayCheckoutModal: React.FC = () => {
     addToolCredits,
     toolCredits,
     userAccount,
+    planTier,
+    planExpiresAt,
+    queuedPlan,
     showToast,
     openAuthModal,
   } = useApp();
@@ -240,14 +244,27 @@ export const RazorpayCheckoutModal: React.FC = () => {
             });
           } else {
             setIsProUser(true);
-            upgradePlan(selectedPlanId, data.userSyncData);
-            showToast(`Payment verified! Upgraded to ${(selectedPlanId || 'pro').toUpperCase()} Plan 🎉`);
-            setPaymentResult({
-              success: true,
-              orderId: data.order_id,
-              paymentId: data.payment_id,
-              message: `Successfully upgraded to ${(selectedPlanId || 'pro').toUpperCase()} plan.`,
-            });
+            const isQueued = Boolean(data?.isQueued || data?.userSyncData?.queuedPlan);
+            upgradePlan(selectedPlanId, data?.userSyncData);
+            if (isQueued) {
+              const q = data?.userSyncData?.queuedPlan;
+              const dateMsg = q?.planStartedAt ? formatPlanDateWithTime(q.planStartedAt) : 'after current plan expires';
+              showToast(`Plan Scheduled! Starts on ${dateMsg} 🎉`);
+              setPaymentResult({
+                success: true,
+                orderId: data.order_id,
+                paymentId: data.payment_id,
+                message: `Your ${(selectedPlanId || 'pro').toUpperCase()} plan is queued and will automatically start on ${dateMsg} right after your current plan expires!`,
+              });
+            } else {
+              showToast(`Payment verified! Upgraded to ${(selectedPlanId || 'pro').toUpperCase()} Plan 🎉`);
+              setPaymentResult({
+                success: true,
+                orderId: data.order_id,
+                paymentId: data.payment_id,
+                message: `Successfully upgraded to ${(selectedPlanId || 'pro').toUpperCase()} plan.`,
+              });
+            }
           }
 
           try {
@@ -508,6 +525,19 @@ export const RazorpayCheckoutModal: React.FC = () => {
               </div>
               <span className="text-[10px] font-bold text-neutral-400">UPI / Cards</span>
             </div>
+
+            {/* Active Subscription Queue Notice */}
+            {checkoutType === 'subscription' && ['starter', 'pro', 'vip', 'ultra'].includes(planTier) && planExpiresAt && new Date(planExpiresAt).getTime() > Date.now() && (
+              <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-700 dark:text-purple-300 text-xs flex items-start gap-2">
+                <Sparkles className="w-4 h-4 text-purple-500 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <span className="font-bold">Active Plan Queuing Notice:</span>
+                  <p className="text-[11px] text-neutral-600 dark:text-neutral-300">
+                    You already have an active {planTier.toUpperCase()} plan until <strong>{formatPlanDateWithTime(planExpiresAt)}</strong>. Your new plan will not overwrite your existing features; it will automatically start right after your current plan expires at 11:59 PM!
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Pay Button */}
             <button

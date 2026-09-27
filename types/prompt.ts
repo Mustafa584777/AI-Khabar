@@ -155,6 +155,23 @@ export interface UserAccount {
   credits?: number;
   lastCreditRefresh?: string;
   promptRequestsAllowed?: number;
+  queuedPlan?: QueuedPlan | null;
+}
+
+export interface QueuedPlan {
+  id: string;
+  orderId?: string;
+  paymentId?: string;
+  planTier: PlanTier;
+  planName?: string;
+  credits: number;
+  toolCredits: number;
+  promptRequestsRemaining: number;
+  aiSearchRemaining: number;
+  planStartedAt: string; // The exact date/time it starts (after current plan expires at 11:59 PM)
+  planExpiresAt: string; // 30 days later at 11:59 PM
+  purchasedAt: string;
+  status: 'queued' | 'active';
 }
 
 export interface RegisteredUserRecord {
@@ -166,6 +183,8 @@ export interface RegisteredUserRecord {
   planTier: PlanTier;
   isProUser: boolean;
   planExpiresAt?: string;
+  planStartedAt?: string;
+  queuedPlan?: QueuedPlan | null;
   toolCredits: number;
   points: number;
   unlockedPromptIds: string[];

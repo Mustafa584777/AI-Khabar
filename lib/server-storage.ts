@@ -3,7 +3,7 @@ import { INITIAL_CATEGORIES, INITIAL_SETTINGS, INITIAL_POSTS } from './initial-d
 import { supabase, supabaseAdmin, isSupabaseConfigured } from './supabase';
 import { cleanTagsArray, canonicalizeTag } from './tag-utils';
 import { uploadImageToCloudinary } from './cloudinary-server';
-import { PLAN_CONFIGS } from './plans';
+import { PLAN_CONFIGS, computePlanExpiry } from './plans';
 import fs from 'fs';
 import path from 'path';
 
@@ -871,8 +871,24 @@ export const ServerStorage = {
         const { data, error } = await db().from('settings').select('data').eq('id', subId).maybeSingle();
         if (!error && data?.data) {
           const sub = data.data;
-          if (sub.planExpiresAt && new Date(sub.planExpiresAt).getTime() < Date.now()) {
-            sub.status = 'expired';
+          if (sub.planExpiresAt && new Date(sub.planExpiresAt).getTime() <= Date.now()) {
+            if (sub.queuedPlan) {
+              const q = sub.queuedPlan;
+              sub.planTier = q.planTier;
+              sub.credits = q.credits;
+              sub.toolCredits = q.toolCredits || q.credits;
+              sub.aiSearchQuota = q.aiSearchRemaining;
+              sub.promptRequests = q.promptRequestsRemaining;
+              sub.planStartedAt = q.planStartedAt || new Date().toISOString();
+              sub.planExpiresAt = q.planExpiresAt || computePlanExpiry(sub.planStartedAt, 30);
+              sub.status = 'active';
+              sub.isProUser = true;
+              sub.queuedPlan = null;
+              sub.activatedFromQueueAt = new Date().toISOString();
+              void ServerStorage.saveUserSubscription(sub);
+            } else {
+              sub.status = 'expired';
+            }
           }
           return sub;
         }
@@ -885,8 +901,24 @@ export const ServerStorage = {
     const allSubs = readJsonFile<Record<string, any>>(SUBSCRIPTIONS_FILE, {});
     const localSub = allSubs[cleanEmail] || allSubs[cleanKey] || null;
     if (localSub) {
-      if (localSub.planExpiresAt && new Date(localSub.planExpiresAt).getTime() < Date.now()) {
-        localSub.status = 'expired';
+      if (localSub.planExpiresAt && new Date(localSub.planExpiresAt).getTime() <= Date.now()) {
+        if (localSub.queuedPlan) {
+          const q = localSub.queuedPlan;
+          localSub.planTier = q.planTier;
+          localSub.credits = q.credits;
+          localSub.toolCredits = q.toolCredits || q.credits;
+          localSub.aiSearchQuota = q.aiSearchRemaining;
+          localSub.promptRequests = q.promptRequestsRemaining;
+          localSub.planStartedAt = q.planStartedAt || new Date().toISOString();
+          localSub.planExpiresAt = q.planExpiresAt || computePlanExpiry(localSub.planStartedAt, 30);
+          localSub.status = 'active';
+          localSub.isProUser = true;
+          localSub.queuedPlan = null;
+          localSub.activatedFromQueueAt = new Date().toISOString();
+          void ServerStorage.saveUserSubscription(localSub);
+        } else {
+          localSub.status = 'expired';
+        }
       }
       return localSub;
     }
@@ -1030,6 +1062,7 @@ export const ServerStorage = {
           promptRequestsRemaining: sub.promptRequests,
           planStartedAt: sub.planStartedAt,
           planExpiresAt: sub.planExpiresAt,
+          queuedPlan: sub.queuedPlan || null,
           bookmarkedIds: [],
           likedIds: [],
           unlockedPromptIds: [],
@@ -1087,6 +1120,40 @@ export const ServerStorage = {
     best.planStartedAt = highestStartedAt || best.planStartedAt;
     best.planExpiresAt = highestExpiresAt || best.planExpiresAt;
 
+    // Check queued plan activation if current plan has expired
+    const queuedPlan = best.queuedPlan || sub?.queuedPlan || null;
+    if (queuedPlan) {
+      const activeExpiry = best.planExpiresAt ? new Date(best.planExpiresAt).getTime() : 0;
+      if (activeExpiry && activeExpiry <= Date.now()) {
+        best.planTier = queuedPlan.planTier;
+        best.isProUser = true;
+        best.planStartedAt = queuedPlan.planStartedAt || new Date().toISOString();
+        best.planExpiresAt = queuedPlan.planExpiresAt || computePlanExpiry(best.planStartedAt, 30);
+        best.toolCredits = queuedPlan.toolCredits;
+        best.promptRequestsRemaining = queuedPlan.promptRequestsRemaining;
+        best.aiSearchRemaining = queuedPlan.aiSearchRemaining;
+        best.queuedPlan = null;
+
+        if (cleanEmail) {
+          void ServerStorage.saveUserSubscription({
+            email: cleanEmail,
+            userId,
+            planTier: queuedPlan.planTier,
+            isProUser: true,
+            status: 'active',
+            planStartedAt: best.planStartedAt,
+            planExpiresAt: best.planExpiresAt,
+            credits: queuedPlan.credits,
+            aiSearchQuota: queuedPlan.aiSearchRemaining,
+            promptRequests: queuedPlan.promptRequestsRemaining,
+            queuedPlan: null,
+          });
+        }
+      } else {
+        best.queuedPlan = queuedPlan;
+      }
+    }
+
     // Strictly preserve consumption! Never restore consumed balance automatically
     const planCfg = PLAN_CONFIGS[highestTier as keyof typeof PLAN_CONFIGS] || PLAN_CONFIGS.free;
 
@@ -1095,17 +1162,11 @@ export const ServerStorage = {
     } else {
       best.toolCredits = Number(best.toolCredits);
     }
-    if (hasActiveSub && best.toolCredits < Number(sub.credits || 0)) {
-      best.toolCredits = Math.max(best.toolCredits, Number(sub.credits));
-    }
 
     if (best.promptRequestsRemaining === undefined || best.promptRequestsRemaining === null) {
       best.promptRequestsRemaining = highestTier !== 'free' ? planCfg.promptRequests : 0;
     } else {
       best.promptRequestsRemaining = Number(best.promptRequestsRemaining);
-    }
-    if (hasActiveSub && best.promptRequestsRemaining < Number(sub.promptRequests || 0)) {
-      best.promptRequestsRemaining = Math.max(best.promptRequestsRemaining, Number(sub.promptRequests));
     }
 
     if (planCfg.unlimitedSearches) {

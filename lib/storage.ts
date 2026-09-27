@@ -314,6 +314,7 @@ export const StorageService = {
         'promptcms_studio_image_preload',
         'auraprompt_plan_started_at',
         'auraprompt_plan_expires_at',
+        'auraprompt_queued_plan',
       ];
       userKeys.forEach((k) => {
         try {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, supabase } from '@/lib/supabase';
 import { getClientIp, checkRateLimit, createRateLimitResponse, sanitizePayload } from '@/lib/security';
-import { PLAN_CONFIGS } from '@/lib/plans';
+import { PLAN_CONFIGS, computePlanExpiry } from '@/lib/plans';
 import { PlanTier } from '@/types/prompt';
 import { ServerStorage } from '@/lib/server-storage';
 
@@ -122,19 +122,32 @@ export async function POST(req: NextRequest) {
     if (hasActiveSub) {
       const subTier: PlanTier = activeSub.planTier as PlanTier;
       const subCfg = PLAN_CONFIGS[subTier] || PLAN_CONFIGS.pro;
+
+      // Strictly preserve consumed credits and requests! Only fall back if never initialized
+      const resolvedCredits = rowData?.toolCredits !== undefined && rowData?.toolCredits !== null
+        ? Number(rowData.toolCredits)
+        : (activeSub.credits || subCfg.credits);
+      const resolvedRequests = rowData?.promptRequestsRemaining !== undefined && rowData?.promptRequestsRemaining !== null
+        ? Number(rowData.promptRequestsRemaining)
+        : (activeSub.promptRequests ?? subCfg.promptRequests);
+      const resolvedAiSearches = subCfg.unlimitedSearches
+        ? 999999
+        : (rowData?.aiSearchRemaining !== undefined && rowData?.aiSearchRemaining !== null
+            ? Math.min(Number(rowData.aiSearchRemaining), subCfg.aiSearchQuota)
+            : (activeSub.aiSearchQuota ?? subCfg.aiSearchQuota));
+
       rowData = {
         ...(rowData || {}),
         email: cleanEmail || rowData?.email,
         userId: userId || rowData?.userId,
         planTier: subTier,
         isProUser: true,
-        toolCredits: Math.max(Number(rowData?.toolCredits ?? 0), subCfg.credits, Number(activeSub.credits ?? 0)),
-        promptRequestsRemaining: Math.max(Number(rowData?.promptRequestsRemaining ?? 0), subCfg.promptRequests, Number(activeSub.promptRequests ?? 0)),
-        aiSearchRemaining: subCfg.unlimitedSearches
-          ? 999999
-          : Math.max(Number(rowData?.aiSearchRemaining ?? 0), subCfg.aiSearchQuota, Number(activeSub.aiSearchQuota ?? 0)),
-        planStartedAt: activeSub.planStartedAt || rowData?.planStartedAt || new Date().toISOString(),
+        toolCredits: resolvedCredits,
+        promptRequestsRemaining: resolvedRequests,
+        aiSearchRemaining: resolvedAiSearches,
+        planStartedAt: activeSub.planStartedAt || rowData?.planStartedAt,
         planExpiresAt: activeSub.planExpiresAt || rowData?.planExpiresAt,
+        queuedPlan: rowData?.queuedPlan || activeSub.queuedPlan || null,
       };
     }
 
@@ -149,32 +162,58 @@ export async function POST(req: NextRequest) {
     const cloned = { ...rowData };
     let tier = cloned.planTier || (cloned.isProUser ? 'pro' : 'free');
 
-    // Authoritative check if plan has expired (never expire if user has active subscription)
-    if (tier !== 'free' && cloned.planExpiresAt && !hasActiveSub) {
-      const exp = new Date(cloned.planExpiresAt).getTime();
-      if (!isNaN(exp) && exp < Date.now()) {
-        tier = 'free';
-        cloned.isProUser = false;
-        cloned.planTier = 'free';
-      }
-    }
-
-    const planCfg = PLAN_CONFIGS[tier as PlanTier] || PLAN_CONFIGS.free;
-
-    // Strictly preserve consumed balances! Do NOT reset with Math.max
+    // Check if queuedPlan should be activated
+    const queuedPlan = cloned.queuedPlan || activeSub?.queuedPlan || null;
     let currentCredits = cloned.toolCredits !== undefined && cloned.toolCredits !== null
       ? Number(cloned.toolCredits)
-      : planCfg.credits;
-
+      : (tier !== 'free' ? (PLAN_CONFIGS[tier as PlanTier]?.credits || 0) : 5);
     let currentRequests = cloned.promptRequestsRemaining !== undefined && cloned.promptRequestsRemaining !== null
       ? Number(cloned.promptRequestsRemaining)
-      : (tier !== 'free' ? planCfg.promptRequests : 0);
-
-    let currentAiSearchRemaining = planCfg.unlimitedSearches
+      : (tier !== 'free' ? (PLAN_CONFIGS[tier as PlanTier]?.promptRequests || 0) : 0);
+    let currentAiSearchRemaining = PLAN_CONFIGS[tier as PlanTier]?.unlimitedSearches
       ? 999999
       : (cloned.aiSearchRemaining !== undefined && cloned.aiSearchRemaining !== null
-          ? Math.min(Number(cloned.aiSearchRemaining), planCfg.aiSearchQuota)
-          : planCfg.aiSearchQuota);
+          ? Math.min(Number(cloned.aiSearchRemaining), PLAN_CONFIGS[tier as PlanTier]?.aiSearchQuota || 5)
+          : (PLAN_CONFIGS[tier as PlanTier]?.aiSearchQuota || 5));
+
+    if (queuedPlan && cloned.planExpiresAt && new Date(cloned.planExpiresAt).getTime() <= Date.now()) {
+      tier = queuedPlan.planTier;
+      cloned.isProUser = true;
+      cloned.planStartedAt = queuedPlan.planStartedAt || new Date().toISOString();
+      cloned.planExpiresAt = queuedPlan.planExpiresAt || computePlanExpiry(cloned.planStartedAt, 30);
+      currentCredits = queuedPlan.toolCredits;
+      currentRequests = queuedPlan.promptRequestsRemaining;
+      currentAiSearchRemaining = queuedPlan.aiSearchRemaining;
+      cloned.queuedPlan = null;
+
+      if (cleanEmail) {
+        void ServerStorage.saveUserSubscription({
+          email: cleanEmail,
+          userId,
+          planTier: queuedPlan.planTier,
+          isProUser: true,
+          status: 'active',
+          planStartedAt: cloned.planStartedAt,
+          planExpiresAt: cloned.planExpiresAt,
+          credits: queuedPlan.credits,
+          aiSearchQuota: queuedPlan.aiSearchRemaining,
+          promptRequests: queuedPlan.promptRequestsRemaining,
+          queuedPlan: null,
+        });
+        void ServerStorage.saveUserProfile(cleanEmail, userId, cloned);
+      }
+    } else {
+      cloned.queuedPlan = queuedPlan;
+      // Authoritative check if plan has expired (never expire if user has active subscription)
+      if (tier !== 'free' && cloned.planExpiresAt && !hasActiveSub) {
+        const exp = new Date(cloned.planExpiresAt).getTime();
+        if (!isNaN(exp) && exp < Date.now()) {
+          tier = 'free';
+          cloned.isProUser = false;
+          cloned.planTier = 'free';
+        }
+      }
+    }
 
     return NextResponse.json({
       success: true,
@@ -197,6 +236,7 @@ export async function POST(req: NextRequest) {
         unlockedPromptIds: cloned.unlockedPromptIds || [],
         planStartedAt: cloned.planStartedAt,
         planExpiresAt: cloned.planExpiresAt,
+        queuedPlan: cloned.queuedPlan || null,
       },
     });
   } catch (err: any) {

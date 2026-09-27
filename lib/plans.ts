@@ -130,3 +130,78 @@ export function getPlanConfig(tier?: PlanTier | string | null): PlanConfig {
   }
   return PLAN_CONFIGS.free;
 }
+
+/**
+ * Calculate the expiry date 30 days from a start date,
+ * strictly anchored to 11:59:59 PM (23:59:59.999 IST / 18:29:59.999 UTC)
+ * of the expiration day.
+ */
+export function computePlanExpiry(startDate: Date | string, durationDays: number = 30): string {
+  try {
+    const d = new Date(startDate);
+    if (isNaN(d.getTime())) {
+      const now = new Date();
+      return computePlanExpiry(now, durationDays);
+    }
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    const parts = formatter.formatToParts(d);
+    const year = parseInt(parts.find((p) => p.type === 'year')?.value || `${d.getUTCFullYear()}`, 10);
+    const month = parseInt(parts.find((p) => p.type === 'month')?.value || `${d.getUTCMonth() + 1}`, 10);
+    const day = parseInt(parts.find((p) => p.type === 'day')?.value || `${d.getUTCDate()}`, 10);
+
+    // 23:59:59.999 IST is 18:29:59.999 UTC
+    const expUtc = new Date(Date.UTC(year, month - 1, day + durationDays, 18, 29, 59, 999));
+    return expUtc.toISOString();
+  } catch {
+    const d = new Date(startDate);
+    d.setDate(d.getDate() + durationDays);
+    d.setHours(23, 59, 59, 999);
+    return d.toISOString();
+  }
+}
+
+/**
+ * Format plan expiry date with 11:59 PM time for human-readable display.
+ * e.g. "October 26, 2026 at 11:59 PM"
+ */
+export function formatPlanDateWithTime(isoDate?: string | null): string {
+  if (!isoDate) return 'Active';
+  try {
+    const d = new Date(isoDate);
+    if (isNaN(d.getTime())) return 'Active';
+    const datePart = d.toLocaleDateString('en-US', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+    return `${datePart} at 11:59 PM`;
+  } catch {
+    return 'Active';
+  }
+}
+
+/**
+ * Format plan start date.
+ * e.g. "September 26, 2026"
+ */
+export function formatPlanDateOnly(isoDate?: string | null): string {
+  if (!isoDate) return 'Today';
+  try {
+    const d = new Date(isoDate);
+    if (isNaN(d.getTime())) return 'Today';
+    return d.toLocaleDateString('en-US', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  } catch {
+    return 'Today';
+  }
+}
