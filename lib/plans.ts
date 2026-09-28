@@ -135,63 +135,6 @@ export function getPlanConfig(tier?: PlanTier | string | null): PlanConfig {
   return PLAN_CONFIGS.free;
 }
 
-export interface ComputedPlanQuota {
-  tier: PlanTier;
-  billingCycle: 'monthly' | 'yearly';
-  name: string;
-  credits: number;
-  aiSearchQuota: number;
-  promptRequests: number;
-  savesLimit: number;
-  durationDays: number;
-  unlimitedSearches: boolean;
-  unlimitedSaves: boolean;
-  unlockAllPrompts: boolean;
-  features: string[];
-}
-
-/**
- * Calculates complete quota allocations for monthly vs yearly subscriptions.
- * Yearly plans grant full 12-month combined quotas upfront (e.g. Pro: 3,000 credits, 2,400 searches, 24 requests, 2,400 saves).
- */
-export function getPlanQuota(tier: PlanTier, billingCycle: 'monthly' | 'yearly' = 'monthly'): ComputedPlanQuota {
-  const cfg = PLAN_CONFIGS[tier] || PLAN_CONFIGS.free;
-  const isYearly = billingCycle === 'yearly' && tier !== 'free';
-  const mult = isYearly ? 12 : 1;
-
-  const credits = cfg.credits * mult;
-  const aiSearchQuota = cfg.unlimitedSearches ? 999999 : cfg.aiSearchQuota * mult;
-  const promptRequests = cfg.promptRequests * mult;
-  const savesLimit = cfg.unlimitedSaves ? 999999 : cfg.savesLimit * mult;
-  const durationDays = isYearly ? 365 : 30;
-
-  const features = isYearly
-    ? [
-        'Unlock all premium prompts',
-        `${credits.toLocaleString()} prompt tool credits upfront (12 mo combined)`,
-        cfg.unlimitedSearches ? 'Unlimited AI Search for full year' : `${aiSearchQuota.toLocaleString()} AI Searches for full year`,
-        `${promptRequests} Prompt Requests for full year`,
-        cfg.unlimitedSaves ? 'Unlimited saves & history' : `${savesLimit.toLocaleString()} saves & history limit`,
-        'Full 365 days access (Expires 11:59 PM)',
-      ]
-    : cfg.features;
-
-  return {
-    tier: cfg.id,
-    billingCycle: isYearly ? 'yearly' : 'monthly',
-    name: `${cfg.name}${isYearly ? ' Yearly' : ''}`,
-    credits,
-    aiSearchQuota,
-    promptRequests,
-    savesLimit,
-    durationDays,
-    unlimitedSearches: cfg.unlimitedSearches,
-    unlimitedSaves: cfg.unlimitedSaves,
-    unlockAllPrompts: cfg.unlockAllPrompts,
-    features,
-  };
-}
-
 /**
  * Returns features, quotas, credits, and duration for a given plan and billing cycle.
  * For Yearly subscriptions, all 12 months of credits, searches, prompt requests, and saves

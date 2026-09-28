@@ -59,6 +59,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             gtag('js', new Date());
 
             gtag('config', 'G-32DL2FJ0FQ');
+            gtag('config', 'G-Y6H3B2LY6D');
+            gtag('config', 'G-28QHB2KNZC');
           `}
         </Script>
         {/* Razorpay Standard Web Checkout Script */}

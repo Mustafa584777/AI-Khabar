@@ -169,8 +169,6 @@ export interface QueuedPlan {
   credits: number;
   promptRequests: number;
   aiSearchQuota: number;
-  savesLimit?: number;
-  billingCycle?: 'monthly' | 'yearly';
   unlimitedSearches?: boolean;
   unlimitedSaves?: boolean;
   scheduledStartAt: string;
