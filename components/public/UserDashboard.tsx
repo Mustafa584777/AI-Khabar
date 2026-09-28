@@ -541,10 +541,10 @@ export const UserDashboard = () => {
               {!isPaid ? (
                 <>
                   <RazorpayCheckoutButton
-                    amount={100}
+                    amount={4900}
                     planTier="starter"
                     planName="Starter"
-                    buttonText="Get Starter for ₹1"
+                    buttonText="Get Starter for ₹49"
                     variant="pill"
                     size="md"
                   />
