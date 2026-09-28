@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
           isProUser: false,
           toolCredits: 5,
           savesLimit: 10,
-          aiSearchRemaining: 10,
+          aiSearchRemaining: 5,
           promptRequestsRemaining: 0,
           unlockedPromptIds: [],
           signupCreditsAwarded: true,

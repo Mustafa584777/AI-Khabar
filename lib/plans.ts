@@ -28,7 +28,7 @@ export const PLAN_CONFIGS: Record<PlanTier, PlanConfig> = {
     amountPaise: 0,
     credits: 0, // No recurring free credits! Only 5 one-time credits given on initial signup
     initialSignupCredits: 5,
-    aiSearchQuota: 10,
+    aiSearchQuota: 5,
     promptRequests: 0,
     savesLimit: 10,
     unlimitedSaves: false,
@@ -36,7 +36,7 @@ export const PLAN_CONFIGS: Record<PlanTier, PlanConfig> = {
     unlockAllPrompts: false,
     features: [
       '5 one-time free signup tool credits',
-      '10 AI conversational searches',
+      '5 AI conversational searches',
       '10 combined saves & history',
       '1 cr each to unlock premium prompts',
       'Image-to-Prompt extraction: 2 cr each',
