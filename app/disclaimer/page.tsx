@@ -46,7 +46,7 @@ export default function DisclaimerPage() {
                 1. General Information Purpose
               </h2>
               <p>
-                All prompts, sample artwork, and guides provided on <strong>geminipromptgenerator.online</strong> are curated for educational, inspirational, and creative experimental purposes only. While we test and curate prompts to provide optimal visual results across Midjourney, ChatGPT/DALL-E, Flux, and Gemini, results can vary significantly depending on model versions, updates, and platform seeds.
+                All prompts, sample artwork, and guides provided on <strong>zeenaprompt.com</strong> are curated for educational, inspirational, and creative experimental purposes only. While we test and curate prompts to provide optimal visual results across Midjourney, ChatGPT/DALL-E, Flux, and Gemini, results can vary significantly depending on model versions, updates, and platform seeds.
               </p>
             </section>
 

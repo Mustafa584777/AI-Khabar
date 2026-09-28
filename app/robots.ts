@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/admin', '/cms-login', '/api/'],
     },
-    sitemap: 'https://geminipromptgenerator.online/sitemap.xml',
+    sitemap: 'https://zeenaprompt.com/sitemap.xml',
   };
 }

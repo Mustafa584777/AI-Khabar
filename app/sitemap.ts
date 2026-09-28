@@ -5,7 +5,7 @@ import { getPromptSlug } from '@/lib/utils';
 export const revalidate = 86400;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://geminipromptgenerator.online';
+  const baseUrl = 'https://zeenaprompt.com';
 
   let posts: any[] = [];
   try {
@@ -42,7 +42,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  // 2. Dynamic Prompts (Strictly https://geminipromptgenerator.online/[slug] - NO 'prompt' word, NO images)
+  // 2. Dynamic Prompts (Strictly https://zeenaprompt.com/[slug] - NO 'prompt' word, NO images)
   const promptUrls: MetadataRoute.Sitemap = posts.map((post) => {
     const slug = getPromptSlug(post);
     return {

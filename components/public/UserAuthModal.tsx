@@ -99,7 +99,7 @@ export const UserAuthModal = () => {
     try {
       const origin = typeof window !== 'undefined'
         ? window.location.origin
-        : 'https://geminipromptgenerator.online';
+        : 'https://zeenaprompt.com';
       const redirectUrl = `${origin}/auth/callback`;
 
       // Detect mobile device
@@ -191,7 +191,7 @@ export const UserAuthModal = () => {
     }
     setIsLoading(true);
     try {
-      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://geminipromptgenerator.online';
+      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://zeenaprompt.com';
       const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
         redirectTo: `${origin}/auth/callback?type=recovery`,
       });

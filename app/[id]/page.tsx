@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const slug = getPromptSlug(post);
   const cleanTitle = `${post.title} - AI Photo Prompt & Settings`;
   const cleanDesc = getPromptMetaDescription(post);
-  const pageUrl = `https://geminipromptgenerator.online/${slug}`;
+  const pageUrl = `https://zeenaprompt.com/${slug}`;
 
   return {
     title: cleanTitle,
@@ -97,7 +97,7 @@ export default async function SinglePromptDetailPage({ params }: PageProps) {
   const post = await resolvePost(id);
 
   const slug = post ? getPromptSlug(post) : id;
-  const pageUrl = `https://geminipromptgenerator.online/${slug}`;
+  const pageUrl = `https://zeenaprompt.com/${slug}`;
 
   // Structured Data Schema for Google (JSON-LD) - Strict NO AUTHOR
   const jsonLd = post
@@ -121,7 +121,7 @@ export default async function SinglePromptDetailPage({ params }: PageProps) {
           name: 'Trending Copy Paste Photo Prompts',
           logo: {
             '@type': 'ImageObject',
-            url: 'https://geminipromptgenerator.online/logo.png',
+            url: 'https://zeenaprompt.com/logo.png',
           },
         },
       }
