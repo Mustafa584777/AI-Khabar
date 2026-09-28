@@ -169,6 +169,8 @@ export const UserSyncService = {
     unlockedPromptIds: string[];
     planStartedAt?: string;
     planExpiresAt?: string;
+    billingCycle?: 'monthly' | 'yearly';
+    savesLimit?: number;
     queuedPlan?: QueuedPlan | null;
   }> => {
     // 1. Gather all existing local client state
@@ -177,6 +179,8 @@ export const UserSyncService = {
     let localCredits = 0;
     let localRequests = 0;
     let localSearches = 5;
+    let localBillingCycle: 'monthly' | 'yearly' = 'monthly';
+    let localSavesLimit: number | undefined = undefined;
     let localBookmarks: string[] = [];
     let localLikes: string[] = [];
     let localUnlocked: string[] = [];
@@ -187,6 +191,8 @@ export const UserSyncService = {
 
     if (typeof window !== 'undefined') {
       try {
+        const savedCycle = localStorage.getItem('auraprompt_billing_cycle') as 'monthly' | 'yearly';
+        if (savedCycle === 'yearly' || savedCycle === 'monthly') localBillingCycle = savedCycle;
         const savedTier = localStorage.getItem('auraprompt_plan_tier') as PlanTier;
         if (['starter', 'pro', 'vip', 'ultra', 'free'].includes(savedTier)) {
           localTier = savedTier;
@@ -417,6 +423,8 @@ export const UserSyncService = {
         resolvedAiSearches = qpCfg.unlimitedSearches ? 999999 : (qp.aiSearchQuota || qpCfg.aiSearchQuota);
         resolvedPlanStartedAt = qp.scheduledStartAt || new Date().toISOString();
         resolvedPlanExpiresAt = qp.scheduledExpiresAt;
+        if (qp.billingCycle) localBillingCycle = qp.billingCycle;
+        if (qp.savesLimit) localSavesLimit = qp.savesLimit;
         activeQueuedPlan = null;
         if (typeof window !== 'undefined') localStorage.removeItem('auraprompt_queued_plan');
       } else {
@@ -425,10 +433,15 @@ export const UserSyncService = {
       }
     }
 
+    const resolvedBillingCycle = remote.billingCycle || localBillingCycle;
+    const resolvedSavesLimit = remote.savesLimit || localSavesLimit;
+
     // Save consolidated state safely to localStorage
     if (typeof window !== 'undefined') {
       localStorage.setItem('auraprompt_plan_tier', resolvedTier);
       localStorage.setItem('auraprompt_pro_member', String(resolvedIsPro));
+      localStorage.setItem('auraprompt_billing_cycle', resolvedBillingCycle);
+      if (resolvedSavesLimit) localStorage.setItem('auraprompt_saves_limit', String(resolvedSavesLimit));
       localStorage.setItem('auraprompt_tool_credits', String(resolvedCredits));
       localStorage.setItem('auraprompt_prompt_requests', String(resolvedRequests));
       localStorage.setItem('auraprompt_ai_search_remaining', String(resolvedAiSearches));
@@ -461,6 +474,8 @@ export const UserSyncService = {
       void UserSyncService.pushUserData(user.id, user.email, {
         planTier: resolvedTier,
         isProUser: resolvedIsPro,
+        billingCycle: resolvedBillingCycle,
+        savesLimit: resolvedSavesLimit,
         toolCredits: resolvedCredits,
         promptRequestsRemaining: resolvedRequests,
         aiSearchRemaining: resolvedAiSearches,
@@ -482,6 +497,8 @@ export const UserSyncService = {
       tasteProfile: remote.tasteProfile || localTaste,
       planTier: resolvedTier,
       isProUser: resolvedIsPro,
+      billingCycle: resolvedBillingCycle,
+      savesLimit: resolvedSavesLimit,
       toolCredits: resolvedCredits,
       aiSearchRemaining: resolvedAiSearches,
       promptRequestsRemaining: resolvedRequests,

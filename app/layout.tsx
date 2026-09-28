@@ -49,7 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Google tag (gtag.js) */}
         <Script
           async
-          src="https://www.googletagmanager.com/gtag/js?id=G-Y6H3B2LY6D"
+          src="https://www.googletagmanager.com/gtag/js?id=G-32DL2FJ0FQ"
           strategy="afterInteractive"
         />
         <Script id="google-analytics" strategy="afterInteractive">
@@ -58,8 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
 
-            gtag('config', 'G-Y6H3B2LY6D');
-            gtag('config', 'G-28QHB2KNZC');
+            gtag('config', 'G-32DL2FJ0FQ');
           `}
         </Script>
         {/* Razorpay Standard Web Checkout Script */}
