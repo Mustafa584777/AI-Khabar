@@ -336,28 +336,29 @@ export const UserSyncService = {
     );
     const planCfg = getPlanFeaturesForCycle(resolvedTier, isYearly ? 'yearly' : 'monthly');
 
-    // Preserved Credits & Quotas: Ensure paid users never lose their allocated plan features or balance
-    let resolvedCredits = Math.max(
-      localCredits,
-      remote.toolCredits !== undefined && remote.toolCredits !== null ? Number(remote.toolCredits) : 0,
-      resolvedTier !== 'free' ? planCfg.credits : 0
-    );
+    // Rule 2 & 8: Strictly preserve consumed balance and quotas. Never restore consumed quotas automatically!
+    let resolvedCredits = remote.toolCredits !== undefined && remote.toolCredits !== null
+      ? Number(remote.toolCredits)
+      : (localCredits > 0 ? localCredits : 0);
 
-    let resolvedRequests = Math.max(
-      localRequests,
-      remote.promptRequestsRemaining !== undefined && remote.promptRequestsRemaining !== null ? Number(remote.promptRequestsRemaining) : 0,
-      resolvedTier !== 'free' ? planCfg.promptRequests : 0
-    );
+    let resolvedRequests: number;
+    if (remote.promptRequestsRemaining !== undefined && remote.promptRequestsRemaining !== null) {
+      resolvedRequests = Number(remote.promptRequestsRemaining);
+    } else if (localRequests !== undefined && localRequests !== null) {
+      resolvedRequests = localRequests;
+    } else {
+      resolvedRequests = resolvedTier !== 'free' ? planCfg.promptRequests : 0;
+    }
 
     let resolvedAiSearches: number;
     if (planCfg.unlimitedSearches) {
       resolvedAiSearches = 999999;
+    } else if (remote.aiSearchRemaining !== undefined && remote.aiSearchRemaining !== null) {
+      resolvedAiSearches = Number(remote.aiSearchRemaining);
+    } else if (localSearches !== undefined && localSearches !== null) {
+      resolvedAiSearches = localSearches;
     } else {
-      resolvedAiSearches = Math.max(
-        localSearches,
-        remote.aiSearchRemaining !== undefined && remote.aiSearchRemaining !== null ? Number(remote.aiSearchRemaining) : 0,
-        planCfg.aiSearchQuota
-      );
+      resolvedAiSearches = resolvedTier !== 'free' ? planCfg.aiSearchQuota : PLAN_CONFIGS.free.aiSearchQuota;
     }
 
     // Non-destructive Union for Bookmarks, Liked IDs, and Unlocked Prompts (Never drop any saved item)
@@ -412,7 +413,8 @@ export const UserSyncService = {
         const qpCfg = PLAN_CONFIGS[qp.planTier] || PLAN_CONFIGS.pro;
         resolvedTier = qp.planTier;
         resolvedIsPro = true;
-        resolvedCredits = qp.credits || qpCfg.credits;
+        // Rule 2: Unused credits never expire; add queued plan credits to remaining balance
+        resolvedCredits = (Number(resolvedCredits) || 0) + (qp.credits || qpCfg.credits);
         resolvedRequests = qp.promptRequests || qpCfg.promptRequests;
         resolvedAiSearches = qpCfg.unlimitedSearches ? 999999 : (qp.aiSearchQuota || qpCfg.aiSearchQuota);
         resolvedPlanStartedAt = qp.scheduledStartAt || new Date().toISOString();
@@ -420,8 +422,12 @@ export const UserSyncService = {
         activeQueuedPlan = null;
         if (typeof window !== 'undefined') localStorage.removeItem('auraprompt_queued_plan');
       } else {
+        // Rule 4 & 7: Demote to free tier without loss of any data. Remaining credits, history, and unlocked prompts stay intact.
         resolvedTier = 'free';
         resolvedIsPro = false;
+        resolvedRequests = 0; // Rule 7: prompt request 0 ho jayegi
+        resolvedAiSearches = 5; // Rule 7: ai searches 5/5 per set ho jayegi
+        // resolvedCredits is NOT reset - credits never expire and stay intact!
       }
     }
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, supabase } from '@/lib/supabase';
 import { getClientIp, checkRateLimit, createRateLimitResponse, sanitizePayload } from '@/lib/security';
-import { PLAN_CONFIGS } from '@/lib/plans';
+import { PLAN_CONFIGS, getPlanFeaturesForCycle } from '@/lib/plans';
 import { PlanTier } from '@/types/prompt';
 import { ServerStorage } from '@/lib/server-storage';
 
@@ -201,13 +201,35 @@ export async function POST(req: NextRequest) {
     if (tier !== 'free' && cloned.planExpiresAt && !hasActiveSub) {
       const exp = new Date(cloned.planExpiresAt).getTime();
       if (!isNaN(exp) && exp < Date.now()) {
-        tier = 'free';
-        cloned.isProUser = false;
-        cloned.planTier = 'free';
+        if (cloned.queuedPlan) {
+          const qp = cloned.queuedPlan;
+          const qpCfg = getPlanFeaturesForCycle(qp.planTier as PlanTier, qp.billingCycle || 'monthly');
+          tier = qp.planTier;
+          cloned.isProUser = true;
+          cloned.planTier = qp.planTier;
+          cloned.toolCredits = (Number(cloned.toolCredits) || 0) + (qp.credits || qpCfg.credits);
+          cloned.promptRequestsRemaining = qp.promptRequests || qpCfg.promptRequests;
+          cloned.aiSearchRemaining = qpCfg.unlimitedSearches ? 999999 : (qp.aiSearchQuota || qpCfg.aiSearchQuota);
+          cloned.savesLimit = qpCfg.savesLimit;
+          cloned.planStartedAt = qp.scheduledStartAt || new Date().toISOString();
+          cloned.planExpiresAt = qp.scheduledExpiresAt;
+          cloned.queuedPlan = null;
+        } else {
+          tier = 'free';
+          cloned.isProUser = false;
+          cloned.planTier = 'free';
+          cloned.promptRequestsRemaining = 0;
+          cloned.aiSearchRemaining = 5;
+          cloned.savesLimit = 10;
+        }
       }
     }
 
-    const planCfg = PLAN_CONFIGS[tier as PlanTier] || PLAN_CONFIGS.free;
+    const isYearly = Boolean(
+      cloned.billingCycle === 'yearly' ||
+      (cloned.planExpiresAt && cloned.planStartedAt && (new Date(cloned.planExpiresAt).getTime() - new Date(cloned.planStartedAt).getTime()) > 60 * 24 * 60 * 60 * 1000)
+    );
+    const planCfg = getPlanFeaturesForCycle(tier as PlanTier, isYearly ? 'yearly' : 'monthly');
 
     // Strictly preserve consumed balances! Do NOT reset with Math.max
     let currentCredits = cloned.toolCredits !== undefined && cloned.toolCredits !== null
@@ -221,7 +243,7 @@ export async function POST(req: NextRequest) {
     let currentAiSearchRemaining = planCfg.unlimitedSearches
       ? 999999
       : (cloned.aiSearchRemaining !== undefined && cloned.aiSearchRemaining !== null
-          ? Math.min(Number(cloned.aiSearchRemaining), planCfg.aiSearchQuota)
+          ? Number(cloned.aiSearchRemaining)
           : planCfg.aiSearchQuota);
 
     return NextResponse.json({

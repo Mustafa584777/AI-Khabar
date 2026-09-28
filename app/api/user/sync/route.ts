@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, supabase } from '@/lib/supabase';
 import { getClientIp, checkRateLimit, createRateLimitResponse, sanitizePayload } from '@/lib/security';
-import { PLAN_CONFIGS } from '@/lib/plans';
+import { PLAN_CONFIGS, getPlanFeaturesForCycle } from '@/lib/plans';
 import { PlanTier } from '@/types/prompt';
 import { ServerStorage } from '@/lib/server-storage';
 
@@ -215,20 +215,35 @@ export async function POST(req: NextRequest) {
       best.queuedPlan = activeSub?.queuedPlan || best.queuedPlan || null;
 
       // Check if plan has expired: if a queued plan exists, automatically activate it!
-      if (best.planExpiresAt && new Date(best.planExpiresAt).getTime() <= Date.now() && best.queuedPlan) {
+      const isPlanExpired = Boolean(best.planExpiresAt && new Date(best.planExpiresAt).getTime() <= Date.now());
+      if (isPlanExpired && best.queuedPlan) {
         const qp = best.queuedPlan;
-        const qpCfg = PLAN_CONFIGS[qp.planTier as PlanTier] || PLAN_CONFIGS.pro;
+        const qpCfg = getPlanFeaturesForCycle(qp.planTier as PlanTier, qp.billingCycle || 'monthly');
         best.planTier = qp.planTier;
         best.isProUser = true;
         best.planStartedAt = qp.scheduledStartAt || new Date().toISOString();
         best.planExpiresAt = qp.scheduledExpiresAt;
-        best.toolCredits = qp.credits || qpCfg.credits;
+        // Rule 2: Credits never expire or overwrite; add queued plan credits
+        best.toolCredits = (Number(best.toolCredits) || 0) + (qp.credits || qpCfg.credits);
         best.promptRequestsRemaining = qp.promptRequests || qpCfg.promptRequests;
         best.aiSearchRemaining = qpCfg.unlimitedSearches ? 999999 : (qp.aiSearchQuota || qpCfg.aiSearchQuota);
+        best.savesLimit = qpCfg.savesLimit;
         best.queuedPlan = null;
+      } else if (isPlanExpired && best.planTier !== 'free') {
+        // Demote to free account without loss of any data (Rule 4 & 7)
+        best.planTier = 'free';
+        best.isProUser = false;
+        best.promptRequestsRemaining = 0; // Rule 7: prompt request 0 ho jayegi
+        best.aiSearchRemaining = 5; // Rule 7: ai searches 5/5 per set ho jayegi
+        best.savesLimit = 10; // Rule 7: saves limit free tier ke 10 saves tak reset ho jayegi
+        // best.toolCredits stays intact!
       }
 
-      const planCfg = PLAN_CONFIGS[best.planTier as PlanTier] || PLAN_CONFIGS.free;
+      const isYearly = Boolean(
+        best.billingCycle === 'yearly' ||
+        (best.planExpiresAt && best.planStartedAt && (new Date(best.planExpiresAt).getTime() - new Date(best.planStartedAt).getTime()) > 60 * 24 * 60 * 60 * 1000)
+      );
+      const planCfg = getPlanFeaturesForCycle(best.planTier as PlanTier, isYearly ? 'yearly' : 'monthly');
 
       // Strictly preserve consumed balance! Free users get 5 credits ONLY ONCE on initial account creation.
       // Under no circumstances should free users receive recurring or login bonus credits.
@@ -250,8 +265,7 @@ export async function POST(req: NextRequest) {
       } else if (best.aiSearchRemaining === undefined || best.aiSearchRemaining === null) {
         best.aiSearchRemaining = planCfg.aiSearchQuota;
       } else {
-        // Prevent overflow like 999/10
-        best.aiSearchRemaining = Math.min(Number(best.aiSearchRemaining), planCfg.aiSearchQuota);
+        best.aiSearchRemaining = Number(best.aiSearchRemaining);
       }
 
       return best;
@@ -285,8 +299,25 @@ export async function POST(req: NextRequest) {
         if (tier !== 'free' && cloned.planExpiresAt && !hasActiveSub) {
           const exp = new Date(cloned.planExpiresAt).getTime();
           if (!isNaN(exp) && exp < Date.now()) {
-            tier = 'free';
-            cloned.isProUser = false;
+            if (cloned.queuedPlan) {
+              const qp = cloned.queuedPlan;
+              const qpCfg = getPlanFeaturesForCycle(qp.planTier as PlanTier, qp.billingCycle || 'monthly');
+              tier = qp.planTier;
+              cloned.isProUser = true;
+              cloned.toolCredits = (Number(cloned.toolCredits) || 0) + (qp.credits || qpCfg.credits);
+              cloned.promptRequestsRemaining = qp.promptRequests || qpCfg.promptRequests;
+              cloned.aiSearchRemaining = qpCfg.unlimitedSearches ? 999999 : (qp.aiSearchQuota || qpCfg.aiSearchQuota);
+              cloned.savesLimit = qpCfg.savesLimit;
+              cloned.planStartedAt = qp.scheduledStartAt || new Date().toISOString();
+              cloned.planExpiresAt = qp.scheduledExpiresAt;
+              cloned.queuedPlan = null;
+            } else {
+              tier = 'free';
+              cloned.isProUser = false;
+              cloned.promptRequestsRemaining = 0;
+              cloned.aiSearchRemaining = 5;
+              cloned.savesLimit = 10;
+            }
           }
         }
 
@@ -294,11 +325,15 @@ export async function POST(req: NextRequest) {
         cloned.isProUser = tier !== 'free' || Boolean(cloned.isProUser);
 
         // DO NOT overwrite consumed balance with plan initial quota on pull!
-        const planCfg = PLAN_CONFIGS[tier as PlanTier] || PLAN_CONFIGS.free;
+        const isYearly = Boolean(
+          cloned.billingCycle === 'yearly' ||
+          (cloned.planExpiresAt && cloned.planStartedAt && (new Date(cloned.planExpiresAt).getTime() - new Date(cloned.planStartedAt).getTime()) > 60 * 24 * 60 * 60 * 1000)
+        );
+        const planCfg = getPlanFeaturesForCycle(tier as PlanTier, isYearly ? 'yearly' : 'monthly');
         if (planCfg.unlimitedSearches) {
           cloned.aiSearchRemaining = 999999;
         } else if (cloned.aiSearchRemaining !== undefined && cloned.aiSearchRemaining !== null) {
-          cloned.aiSearchRemaining = Math.min(Number(cloned.aiSearchRemaining), planCfg.aiSearchQuota);
+          cloned.aiSearchRemaining = Number(cloned.aiSearchRemaining);
         }
 
         return NextResponse.json({

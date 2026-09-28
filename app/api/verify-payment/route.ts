@@ -253,7 +253,8 @@ export async function POST(req: NextRequest) {
         });
 
         // 2. Set plan credits and features on fresh activation
-        const resolvedCredits = planFeatures.credits;
+        // Rule 2: Credits never expire or get overwritten; add plan credits to existing balance
+        const resolvedCredits = (Number(existingProfile.toolCredits) || 0) + planFeatures.credits;
         const resolvedRequests = planFeatures.promptRequests;
         const resolvedAiSearches = planFeatures.unlimitedSearches
           ? 999999

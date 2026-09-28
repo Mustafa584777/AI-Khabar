@@ -575,8 +575,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const addedPoints = tier === 'starter' ? 10 : tier === 'pro' ? 20 : tier === 'vip' ? 50 : 100;
     const finalPointsBonus = resolvedCycle === 'yearly' ? addedPoints * 5 : addedPoints;
 
-    // Fresh plan initialization: grant plan quotas
-    const finalCredits = serverData?.toolCredits ?? addedCredits;
+    // Fresh plan initialization: grant plan quotas (Rule 2: unused credits never expire or overwrite)
+    const currentCredits = toolCredits || userAccount?.toolCredits || 0;
+    const finalCredits = serverData?.toolCredits ?? (currentCredits + addedCredits);
     setToolCreditsState(finalCredits);
 
     const finalRequests = serverData?.promptRequestsRemaining ?? addedRequests;
@@ -1345,35 +1346,61 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           }
         }
 
-        // If plan expired, check for queued plan auto-promotion
-        const isExpiredNow = finalExpires && new Date(finalExpires).getTime() <= Date.now();
+        // If plan expired, check for queued plan auto-promotion or demote to free tier safely
+        const isExpiredNow = Boolean(finalExpires && new Date(finalExpires).getTime() <= Date.now());
         const queuedToPromote = synced.queuedPlan || queuedPlan;
-        if (isExpiredNow && queuedToPromote) {
-          finalTier = queuedToPromote.planTier;
-          isPro = true;
-          setPlanTierState(finalTier);
-          setIsProUserState(true);
-          localStorage.setItem('auraprompt_plan_tier', finalTier);
-          localStorage.setItem('auraprompt_pro_member', 'true');
-          setQueuedPlan(null);
-          localStorage.removeItem('auraprompt_queued_plan');
+        
+        let resolvedCredits = synced.toolCredits !== undefined ? Number(synced.toolCredits) : Number(localStorage.getItem('auraprompt_tool_credits') || 0);
+        let resolvedReqs = synced.promptRequestsRemaining !== undefined ? Number(synced.promptRequestsRemaining) : 0;
+        let resolvedAiSearchCount = synced.aiSearchRemaining !== undefined ? Number(synced.aiSearchRemaining) : 10;
+        let resolvedSavesLimitCount = 10;
+
+        if (isExpiredNow) {
+          if (queuedToPromote) {
+            // Automatically promote queued plan
+            finalTier = queuedToPromote.planTier;
+            isPro = true;
+            setPlanTierState(finalTier);
+            setIsProUserState(true);
+            localStorage.setItem('auraprompt_plan_tier', finalTier);
+            localStorage.setItem('auraprompt_pro_member', 'true');
+            setQueuedPlan(null);
+            localStorage.removeItem('auraprompt_queued_plan');
+
+            const qpCfg = getPlanFeaturesForCycle(queuedToPromote.planTier, queuedToPromote.billingCycle || 'monthly');
+            resolvedCredits = (Number(resolvedCredits) || 0) + (queuedToPromote.credits || qpCfg.credits);
+            resolvedReqs = queuedToPromote.promptRequests || qpCfg.promptRequests;
+            resolvedAiSearchCount = qpCfg.unlimitedSearches ? 999999 : (queuedToPromote.aiSearchQuota || qpCfg.aiSearchQuota);
+            resolvedSavesLimitCount = qpCfg.savesLimit;
+          } else {
+            // Demote to free tier without loss of any data (Rule 4 & 7)
+            finalTier = 'free';
+            isPro = false;
+            setPlanTierState('free');
+            setIsProUserState(false);
+            localStorage.setItem('auraprompt_plan_tier', 'free');
+            localStorage.setItem('auraprompt_pro_member', 'false');
+            resolvedReqs = 0; // Rule 7: prompt request 0 ho jayegi
+            resolvedAiSearchCount = 5; // Rule 7: ai searches 5/5 per set ho jayegi
+            resolvedSavesLimitCount = 10; // Rule 7: saves limit free tier ke 10 saves tak reset ho jayegi
+            // resolvedCredits stays intact!
+          }
+        } else if (finalTier !== 'free') {
+          const planCfg = getPlanFeaturesForCycle(finalTier, (synced.billingCycle as any) || 'monthly');
+          resolvedSavesLimitCount = synced.savesLimit || planCfg.savesLimit;
         }
 
-        // Tool credits: respect consumed balance
-        const resolvedCredits = synced.toolCredits !== undefined ? Number(synced.toolCredits) : Number(localStorage.getItem('auraprompt_tool_credits') || 0);
+        // Tool credits: respect exact consumed balance (Rule 2: unused credits never expire or overwrite)
         setToolCreditsState(resolvedCredits);
         localStorage.setItem('auraprompt_tool_credits', String(resolvedCredits));
 
-        if (synced.promptRequestsRemaining !== undefined) {
-          const resolvedReqs = Number(synced.promptRequestsRemaining);
-          setPromptRequestsRemainingState(resolvedReqs);
-          localStorage.setItem('auraprompt_prompt_requests', String(resolvedReqs));
-        }
+        setPromptRequestsRemainingState(resolvedReqs);
+        localStorage.setItem('auraprompt_prompt_requests', String(resolvedReqs));
 
-        if (synced.aiSearchRemaining !== undefined) {
-          setAiSearchRemainingState(synced.aiSearchRemaining);
-          localStorage.setItem('auraprompt_ai_search_remaining', String(synced.aiSearchRemaining));
-        }
+        setAiSearchRemainingState(resolvedAiSearchCount);
+        localStorage.setItem('auraprompt_ai_search_remaining', String(resolvedAiSearchCount));
+
+        localStorage.setItem('auraprompt_saves_limit', String(resolvedSavesLimitCount));
 
         setUserAccount((prev) => {
           if (!prev) return prev;
@@ -1410,6 +1437,94 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       void syncUserCloudData();
     }
   }, [userAccount?.isLoggedIn]);
+
+  // Active Plan Expiration Monitor (Rule 4, 5, 7): Checks every 30 seconds
+  useEffect(() => {
+    const checkExpiration = () => {
+      if (planTier !== 'free' && planExpiresAt) {
+        const expTime = new Date(planExpiresAt).getTime();
+        if (!isNaN(expTime) && expTime <= Date.now()) {
+          // If queued plan exists, promote it!
+          if (queuedPlan) {
+            const qp = queuedPlan;
+            const qpCfg = getPlanFeaturesForCycle(qp.planTier, qp.billingCycle || 'monthly');
+            const newStart = qp.scheduledStartAt || new Date().toISOString();
+            const newExpires = qp.scheduledExpiresAt || calculatePlanDates(newStart, qpCfg.durationDays).planExpiresAt;
+            const newCredits = (toolCredits || 0) + (qp.credits || qpCfg.credits);
+            const newRequests = qp.promptRequests || qpCfg.promptRequests;
+            const newAiSearches = qpCfg.unlimitedSearches ? 999999 : (qp.aiSearchQuota || qpCfg.aiSearchQuota);
+
+            setPlanTierState(qp.planTier);
+            setIsProUserState(true);
+            setPlanStartedAtState(newStart);
+            setPlanExpiresAtState(newExpires);
+            setToolCreditsState(newCredits);
+            setPromptRequestsRemainingState(newRequests);
+            setAiSearchRemainingState(newAiSearches);
+            setQueuedPlan(null);
+
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('auraprompt_plan_tier', qp.planTier);
+              localStorage.setItem('auraprompt_pro_member', 'true');
+              localStorage.setItem('auraprompt_plan_started_at', newStart);
+              localStorage.setItem('auraprompt_plan_expires_at', newExpires);
+              localStorage.setItem('auraprompt_tool_credits', String(newCredits));
+              localStorage.setItem('auraprompt_prompt_requests', String(newRequests));
+              localStorage.setItem('auraprompt_ai_search_remaining', String(newAiSearches));
+              localStorage.setItem('auraprompt_saves_limit', String(qpCfg.savesLimit));
+              localStorage.removeItem('auraprompt_queued_plan');
+            }
+
+            const currentAcc = userAccount || StorageService.getUserAccount();
+            if (currentAcc && (currentAcc.email || currentAcc.id)) {
+              void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, {
+                planTier: qp.planTier,
+                isProUser: true,
+                planStartedAt: newStart,
+                planExpiresAt: newExpires,
+                toolCredits: newCredits,
+                promptRequestsRemaining: newRequests,
+                aiSearchRemaining: newAiSearches,
+                savesLimit: qpCfg.savesLimit,
+                queuedPlan: null,
+              });
+            }
+            showToast(`Your queued ${qpCfg.name} plan is now active!`);
+          } else {
+            // Demote to free tier without loss of data (Rule 4, 7)
+            setPlanTierState('free');
+            setIsProUserState(false);
+            setPromptRequestsRemainingState(0);
+            setAiSearchRemainingState(5);
+
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('auraprompt_plan_tier', 'free');
+              localStorage.setItem('auraprompt_pro_member', 'false');
+              localStorage.setItem('auraprompt_prompt_requests', '0');
+              localStorage.setItem('auraprompt_ai_search_remaining', '5');
+              localStorage.setItem('auraprompt_saves_limit', '10');
+            }
+
+            const currentAcc = userAccount || StorageService.getUserAccount();
+            if (currentAcc && (currentAcc.email || currentAcc.id)) {
+              void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, {
+                planTier: 'free',
+                isProUser: false,
+                promptRequestsRemaining: 0,
+                aiSearchRemaining: 5,
+                savesLimit: 10,
+              });
+            }
+            showToast('Your subscription plan has expired. You are now on the Free tier. Your saved data, history, unlocked prompts, and remaining credits are completely safe!');
+          }
+        }
+      }
+    };
+
+    checkExpiration();
+    const interval = setInterval(checkExpiration, 30000);
+    return () => clearInterval(interval);
+  }, [planTier, planExpiresAt, queuedPlan, toolCredits, userAccount, showToast]);
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState<string>('');
