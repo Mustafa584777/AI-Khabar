@@ -336,28 +336,28 @@ export const UserSyncService = {
     );
     const planCfg = getPlanFeaturesForCycle(resolvedTier, isYearly ? 'yearly' : 'monthly');
 
-    // Preserved Credits: strictly keep user's exact balance (never reset free users back to 5)
-    let resolvedCredits = remote.toolCredits !== undefined && remote.toolCredits !== null
-      ? Number(remote.toolCredits)
-      : (localCredits > 0 ? localCredits : 0);
-    if (resolvedTier !== 'free' && planCfg.credits > resolvedCredits && remote.toolCredits === undefined) {
-      resolvedCredits = planCfg.credits;
-    }
+    // Preserved Credits & Quotas: Ensure paid users never lose their allocated plan features or balance
+    let resolvedCredits = Math.max(
+      localCredits,
+      remote.toolCredits !== undefined && remote.toolCredits !== null ? Number(remote.toolCredits) : 0,
+      resolvedTier !== 'free' ? planCfg.credits : 0
+    );
 
-    let resolvedRequests = remote.promptRequestsRemaining !== undefined && remote.promptRequestsRemaining !== null
-      ? Number(remote.promptRequestsRemaining)
-      : Math.max(localRequests, resolvedTier !== 'free' ? planCfg.promptRequests : 0);
-    if (localRequests > resolvedRequests && resolvedTier !== 'free') {
-      resolvedRequests = localRequests;
-    }
+    let resolvedRequests = Math.max(
+      localRequests,
+      remote.promptRequestsRemaining !== undefined && remote.promptRequestsRemaining !== null ? Number(remote.promptRequestsRemaining) : 0,
+      resolvedTier !== 'free' ? planCfg.promptRequests : 0
+    );
 
     let resolvedAiSearches: number;
     if (planCfg.unlimitedSearches) {
       resolvedAiSearches = 999999;
-    } else if (remote.aiSearchRemaining !== undefined && remote.aiSearchRemaining !== null) {
-      resolvedAiSearches = Math.min(Number(remote.aiSearchRemaining), planCfg.aiSearchQuota);
     } else {
-      resolvedAiSearches = Math.max(localSearches, planCfg.aiSearchQuota);
+      resolvedAiSearches = Math.max(
+        localSearches,
+        remote.aiSearchRemaining !== undefined && remote.aiSearchRemaining !== null ? Number(remote.aiSearchRemaining) : 0,
+        planCfg.aiSearchQuota
+      );
     }
 
     // Non-destructive Union for Bookmarks, Liked IDs, and Unlocked Prompts (Never drop any saved item)
