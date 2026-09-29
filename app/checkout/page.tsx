@@ -733,17 +733,13 @@ export default function CheckoutPage() {
                     {billingCycle === 'monthly' ? 'Custom Prompt Requests' : 'Total Prompt Requests'}
                   </td>
                   <td className="py-3.5 px-4 text-center text-neutral-400"><X className="w-4 h-4 mx-auto" /></td>
+                  <td className="py-3.5 px-4 text-center text-neutral-400"><X className="w-4 h-4 mx-auto" /></td>
+                  <td className="py-3.5 px-4 text-center text-neutral-400"><X className="w-4 h-4 mx-auto" /></td>
                   <td className="py-3.5 px-4 text-center font-bold">
                     {billingCycle === 'monthly' ? '1 / mo' : '12 / yr'}
                   </td>
-                  <td className="py-3.5 px-4 text-center font-bold">
-                    {billingCycle === 'monthly' ? '2 / mo' : '24 / yr'}
-                  </td>
-                  <td className="py-3.5 px-4 text-center font-bold">
-                    {billingCycle === 'monthly' ? '3 / mo' : '36 / yr'}
-                  </td>
                   <td className="py-3.5 px-4 text-center font-bold text-amber-500">
-                    {billingCycle === 'monthly' ? '5 / mo' : '60 / yr'}
+                    {billingCycle === 'monthly' ? '3 / mo' : '36 / yr'}
                   </td>
                 </tr>
                 <tr>
