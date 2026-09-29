@@ -24,14 +24,14 @@ export default function TermsPage() {
           <section className="space-y-2">
             <h2 className="text-base font-bold text-neutral-900 dark:text-white">1. Acceptance of Terms</h2>
             <p>
-              By accessing and using Gemini Prompt Generator, you agree to comply with and be bound by these Terms and Conditions. If you do not agree with any part of these terms, please discontinue use of our website and services immediately.
+              By accessing and using Zeena Prompt (zeenaprompt.com), you agree to comply with and be bound by these Terms and Conditions. If you do not agree with any part of these terms, please discontinue use of our website and services immediately.
             </p>
           </section>
 
           <section className="space-y-2">
             <h2 className="text-base font-bold text-neutral-900 dark:text-white">2. Use of Prompts & Services</h2>
             <p>
-              All prompts, templates, and digital assets provided on Gemini Prompt Generator are for personal and commercial AI generation projects. You may copy, modify, and use prompts freely in supported third-party AI platforms such as Midjourney, ChatGPT, and Gemini.
+              All prompts, templates, and digital assets provided on Zeena Prompt are for personal and commercial AI generation projects. You may copy, modify, and use prompts freely in supported third-party AI platforms such as Midjourney, ChatGPT, and Gemini.
             </p>
           </section>
 
