@@ -25,7 +25,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PromptEditorTool } from '@/components/public/PromptEditorTool';
 
-const SAMPLE_IMAGES = [
+const SAMPLE_IMAGES_FALLBACK = [
   {
     name: 'Sun-Drenched Minimalism',
     url: 'https://res.cloudinary.com/idbpgaqz/image/upload/v1790080100/prompts/prompt-1790080096492.webp',
@@ -89,7 +89,21 @@ export const AIStudioTool = () => {
     toolCredits,
     deductToolCredit,
     isAuthenticated,
+    posts,
   } = useApp();
+
+  const sampleImages = React.useMemo(() => {
+    const validPosts = (posts || []).filter((p) => p.imageUrl && p.imageUrl.trim().length > 0);
+    const latest4 = validPosts.slice(0, 4);
+    if (latest4.length === 0) {
+      return SAMPLE_IMAGES_FALLBACK;
+    }
+    return latest4.map((p) => ({
+      name: p.title || 'Trending Prompt',
+      url: p.imageUrl,
+      style: p.category || 'AI Photography',
+    }));
+  }, [posts]);
 
   const [uploadedImage, setUploadedImage] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
@@ -578,7 +592,7 @@ export const AIStudioTool = () => {
                     Or Pick a Sample Photo:
                   </span>
                   <div className="grid grid-cols-4 gap-2">
-                    {SAMPLE_IMAGES.map((sample) => (
+                    {sampleImages.map((sample) => (
                       <button
                         key={sample.name}
                         onClick={() => {
