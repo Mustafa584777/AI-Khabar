@@ -698,7 +698,7 @@ export default function CheckoutPage() {
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">
                     {billingCycle === 'monthly' ? 'Monthly Tool Credits' : 'Total Combined Credits'}
                   </td>
-                  <td className="py-3.5 px-4 text-center font-medium">5 on signup</td>
+                  <td className="py-3.5 px-4 text-center font-medium">5 Lifetime</td>
                   <td className="py-3.5 px-4 text-center font-bold text-neutral-900 dark:text-white">
                     {billingCycle === 'monthly' ? '100 / mo' : '1,200 upfront'}
                   </td>
@@ -764,14 +764,14 @@ export default function CheckoutPage() {
                 </tr>
                 <tr>
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Unlock All Premium Prompts</td>
-                  <td className="py-3.5 px-4 text-center font-medium">1 cr per prompt</td>
+                  <td className="py-3.5 px-4 text-center font-medium">1 CR/Prompt</td>
                   <td className="py-3.5 px-4 text-center text-emerald-600 dark:text-emerald-400 font-bold"><Check className="w-4 h-4 mx-auto inline mr-1" /> All Unlocked</td>
                   <td className="py-3.5 px-4 text-center text-emerald-600 dark:text-emerald-400 font-bold"><Check className="w-4 h-4 mx-auto inline mr-1" /> All Unlocked</td>
                   <td className="py-3.5 px-4 text-center text-emerald-600 dark:text-emerald-400 font-bold"><Check className="w-4 h-4 mx-auto inline mr-1" /> All Unlocked</td>
                   <td className="py-3.5 px-4 text-center text-amber-500 font-bold"><Check className="w-4 h-4 mx-auto inline mr-1" /> All Unlocked</td>
                 </tr>
                 <tr>
-                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Image-to-Prompt (2 cr each)</td>
+                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Image-to-Prompt</td>
                   <td className="py-3.5 px-4 text-center">Up to 2 runs</td>
                   <td className="py-3.5 px-4 text-center font-medium">
                     {billingCycle === 'monthly' ? 'Up to 50 runs' : 'Up to 600 runs'}
@@ -787,7 +787,7 @@ export default function CheckoutPage() {
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">AI Prompt Generator & Editor (1 cr each)</td>
+                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">AI Prompt Generator & Editor</td>
                   <td className="py-3.5 px-4 text-center">Up to 5 runs</td>
                   <td className="py-3.5 px-4 text-center font-medium">
                     {billingCycle === 'monthly' ? 'Up to 100 runs' : 'Up to 1,200 runs'}
