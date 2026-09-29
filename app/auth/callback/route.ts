@@ -164,6 +164,10 @@ export async function GET(request: Request) {
               const username = '@' + (meta.user_name || name.toLowerCase().replace(/[^a-z0-9]/g, '') || 'creator');
               const avatar = meta.avatar_url || meta.picture || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80';
 
+              const existingCreditsRaw = localStorage.getItem('auraprompt_tool_credits');
+              const parsedCredits = existingCreditsRaw !== null ? parseInt(existingCreditsRaw, 10) : 5;
+              const startingCredits = !isNaN(parsedCredits) ? parsedCredits : 5;
+
               const account = {
                 id: u.id,
                 name: name,
@@ -173,6 +177,7 @@ export async function GET(request: Request) {
                 isLoggedIn: true,
                 avatar: avatar,
                 points: 10,
+                toolCredits: startingCredits,
                 requestsMade: 0,
                 likesCountForPoints: 0,
                 savesCountForPoints: 0,
@@ -181,6 +186,9 @@ export async function GET(request: Request) {
                 referralsCountForPoints: 0
               };
               localStorage.setItem('promptcms_user_account', JSON.stringify(account));
+              if (existingCreditsRaw === null) {
+                localStorage.setItem('auraprompt_tool_credits', String(startingCredits));
+              }
             } catch(e) {}
           }
 

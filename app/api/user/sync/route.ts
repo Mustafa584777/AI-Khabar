@@ -246,12 +246,20 @@ export async function POST(req: NextRequest) {
       const planCfg = getPlanFeaturesForCycle(best.planTier as PlanTier, isYearly ? 'yearly' : 'monthly');
 
       // Strictly preserve consumed balance! Free users get 5 credits ONLY ONCE on initial account creation.
-      // Under no circumstances should free users receive recurring or login bonus credits.
       if (best.toolCredits === undefined || best.toolCredits === null) {
-        const isExisting = Boolean(best.signupCreditsAwarded || best.signupBonusClaimed || best.updatedAt || candidates.length > 0);
-        best.toolCredits = best.planTier === 'free' ? (isExisting ? 0 : 5) : planCfg.credits;
+        best.toolCredits = best.planTier === 'free' ? 5 : planCfg.credits;
       } else {
         best.toolCredits = Number(best.toolCredits);
+      }
+
+      // If user is on free tier, has 0 unlocked prompts, 0 ai history, and has 0 credits (e.g. from previous bug), heal them to 5:
+      if (
+        best.toolCredits === 0 &&
+        (!best.unlockedPromptIds || best.unlockedPromptIds.length === 0) &&
+        (!best.aiHistory || best.aiHistory.length === 0) &&
+        best.planTier === 'free'
+      ) {
+        best.toolCredits = 5;
       }
 
       if (best.promptRequestsRemaining === undefined || best.promptRequestsRemaining === null) {
@@ -471,8 +479,7 @@ export async function POST(req: NextRequest) {
       } else if (existingData.toolCredits !== undefined && existingData.toolCredits !== null) {
         resolvedToolCredits = Number(existingData.toolCredits);
       } else {
-        const isExisting = Boolean(existingData.signupCreditsAwarded || existingData.signupBonusClaimed || existingData.updatedAt);
-        resolvedToolCredits = resolvedPlanTier === 'free' ? (isExisting ? 0 : 5) : planCfg.credits;
+        resolvedToolCredits = resolvedPlanTier === 'free' ? 5 : planCfg.credits;
       }
 
       // Prompt requests: strictly preserve consumed count (do NOT force Math.max)

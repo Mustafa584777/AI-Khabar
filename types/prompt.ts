@@ -65,6 +65,8 @@ export interface PromptPost {
   imageWidth?: number;
   imageHeight?: number;
   additionalImages?: string[];
+  additionalImageAlts?: string[];
+  additionalImageFileNames?: string[];
   parameters?: PromptParameters;
   variables?: PromptVariable[];
   articleContent: string; // Rich markdown or HTML guide

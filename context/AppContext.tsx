@@ -360,7 +360,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           const parsed = parseInt(saved, 10);
           if (!isNaN(parsed)) return parsed;
         }
-        return 0; // Existing account has 0 credits unless granted/synced
+        return acc.toolCredits !== undefined ? acc.toolCredits : 5;
       }
     }
     return 0; // Guest session has 0 credits until login
@@ -880,6 +880,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const loginUser = async (email: string, _pass: string, username?: string, avatar?: string, userId?: string): Promise<boolean> => {
     const cleanEmail = email.trim().toLowerCase();
 
+    let localCr: number | null = null;
+    if (typeof window !== 'undefined') {
+      const savedCr = localStorage.getItem('auraprompt_tool_credits');
+      if (savedCr !== null) {
+        const parsed = parseInt(savedCr, 10);
+        if (!isNaN(parsed)) localCr = parsed;
+      }
+    }
+
     const account: UserAccount = {
       id: userId || ('u_' + cleanEmail.replace(/[^a-z0-9_]/g, '_')),
       name: username || cleanEmail.split('@')[0],
@@ -889,6 +898,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       isLoggedIn: true,
       avatar: avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
       points: 10,
+      toolCredits: localCr !== null ? localCr : 5,
       requestsMade: 0,
       likesCountForPoints: 0,
       savesCountForPoints: 0,
@@ -938,9 +948,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       );
       const cycleCfg = getPlanFeaturesForCycle(resolvedTier, isYearly ? 'yearly' : 'monthly');
 
-      const resolvedCredits = synced.toolCredits !== undefined && synced.toolCredits !== null
-        ? Number(synced.toolCredits)
-        : (resolvedTier === 'free' ? 0 : cycleCfg.credits || 0);
+      let resolvedCredits: number;
+      if (synced.toolCredits !== undefined && synced.toolCredits !== null) {
+        resolvedCredits = Number(synced.toolCredits);
+      } else if (localCr !== null) {
+        resolvedCredits = localCr;
+      } else {
+        resolvedCredits = resolvedTier === 'free' ? 5 : (cycleCfg.credits || 5);
+      }
+
+      // Automatically grant 5 credits to any new account on free tier that hasn't consumed credits
+      if (
+        resolvedCredits === 0 &&
+        (!synced.unlockedPromptIds || synced.unlockedPromptIds.length === 0) &&
+        (!synced.aiHistory || synced.aiHistory.length === 0) &&
+        resolvedTier === 'free'
+      ) {
+        resolvedCredits = 5;
+      }
+
       setToolCreditsState(resolvedCredits);
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_tool_credits', String(resolvedCredits));
@@ -1007,6 +1033,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       isLoggedIn: true,
       avatar: avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
       points: 10,
+      toolCredits: 5,
       requestsMade: 0,
       likesCountForPoints: 0,
       savesCountForPoints: 0,
@@ -1029,7 +1056,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const resolvedTier = synced.planTier || 'free';
       setPlanTierState(resolvedTier);
       setIsProUserState(synced.isProUser || false);
-      const resolvedCredits = synced.toolCredits !== undefined ? Number(synced.toolCredits) : 5;
+      const resolvedCredits = (synced.toolCredits !== undefined && Number(synced.toolCredits) > 0) ? Number(synced.toolCredits) : 5;
       setToolCreditsState(resolvedCredits);
 
       const resolvedRequests = synced.promptRequestsRemaining !== undefined
@@ -1233,8 +1260,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (typeof window !== 'undefined') localStorage.setItem('auraprompt_pro_member', String(synced.isProUser));
       }
       if (synced.toolCredits !== undefined) {
-        setToolCreditsState(synced.toolCredits);
-        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_tool_credits', String(synced.toolCredits));
+        let cr = Number(synced.toolCredits);
+        if (cr === 0 && (!synced.unlockedPromptIds || synced.unlockedPromptIds.length === 0) && (!synced.aiHistory || synced.aiHistory.length === 0) && (!synced.planTier || synced.planTier === 'free')) {
+          cr = 5;
+        }
+        setToolCreditsState(cr);
+        if (typeof window !== 'undefined') localStorage.setItem('auraprompt_tool_credits', String(cr));
       }
       if (synced.unlockedPromptIds) {
         setUnlockedPromptIds(synced.unlockedPromptIds);
@@ -1350,7 +1381,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const isExpiredNow = Boolean(finalExpires && new Date(finalExpires).getTime() <= Date.now());
         const queuedToPromote = synced.queuedPlan || queuedPlan;
         
-        let resolvedCredits = synced.toolCredits !== undefined ? Number(synced.toolCredits) : Number(localStorage.getItem('auraprompt_tool_credits') || 0);
+        let resolvedCredits = synced.toolCredits !== undefined ? Number(synced.toolCredits) : Number(localStorage.getItem('auraprompt_tool_credits') || 5);
+        if (resolvedCredits === 0 && (!synced.unlockedPromptIds || synced.unlockedPromptIds.length === 0) && (!synced.aiHistory || synced.aiHistory.length === 0) && finalTier === 'free') {
+          resolvedCredits = 5;
+        }
         let resolvedReqs = synced.promptRequestsRemaining !== undefined ? Number(synced.promptRequestsRemaining) : 0;
         let resolvedAiSearchCount = synced.aiSearchRemaining !== undefined ? Number(synced.aiSearchRemaining) : 10;
         let resolvedSavesLimitCount = 10;
@@ -2000,7 +2034,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // Tool credits: respect consumed balance
-      const resolvedCredits = synced.toolCredits !== undefined ? Number(synced.toolCredits) : Number(localStorage.getItem('auraprompt_tool_credits') || 0);
+      let resolvedCredits = synced.toolCredits !== undefined ? Number(synced.toolCredits) : Number(localStorage.getItem('auraprompt_tool_credits') || 5);
+      if (resolvedCredits === 0 && (!synced.unlockedPromptIds || synced.unlockedPromptIds.length === 0) && (!synced.aiHistory || synced.aiHistory.length === 0) && finalTier === 'free') {
+        resolvedCredits = 5;
+      }
       setToolCreditsState(resolvedCredits);
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_tool_credits', String(resolvedCredits));

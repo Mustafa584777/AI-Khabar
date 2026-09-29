@@ -67,6 +67,9 @@ export async function POST(req: NextRequest) {
           data: {
             full_name: displayName,
             points: 10,
+            toolCredits: 5,
+            signupCreditsAwarded: true,
+            signupBonusClaimed: true,
             bookmarks: [],
             likes: [],
           },

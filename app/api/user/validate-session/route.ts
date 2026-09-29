@@ -234,7 +234,17 @@ export async function POST(req: NextRequest) {
     // Strictly preserve consumed balances! Do NOT reset with Math.max
     let currentCredits = cloned.toolCredits !== undefined && cloned.toolCredits !== null
       ? Number(cloned.toolCredits)
-      : planCfg.credits;
+      : (tier === 'free' ? 5 : planCfg.credits);
+
+    // If new user on free tier has 0 credits and hasn't unlocked any prompts or created history, heal to 5:
+    if (
+      currentCredits === 0 &&
+      (!cloned.unlockedPromptIds || cloned.unlockedPromptIds.length === 0) &&
+      (!cloned.aiHistory || cloned.aiHistory.length === 0) &&
+      tier === 'free'
+    ) {
+      currentCredits = 5;
+    }
 
     let currentRequests = cloned.promptRequestsRemaining !== undefined && cloned.promptRequestsRemaining !== null
       ? Number(cloned.promptRequestsRemaining)

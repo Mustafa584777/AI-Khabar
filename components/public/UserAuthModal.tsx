@@ -62,12 +62,14 @@ export const UserAuthModal = () => {
         if (u) {
           const name = u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split('@')[0] || 'Creator';
           const avatar = u.user_metadata?.avatar_url || u.user_metadata?.picture || defaultAvatar;
-          await loginUser(u.email || '', '', name, avatar);
-          setIsFirstLoginModalOpen(false);
+
           if (typeof window !== 'undefined') {
             localStorage.setItem('auraprompt_signup_modal_already_shown', 'true');
             localStorage.setItem('auraprompt_first_login_claimed', 'true');
             localStorage.setItem('auraprompt_signup_bonus_claimed', 'true');
+            if (!localStorage.getItem('auraprompt_tool_credits')) {
+              localStorage.setItem('auraprompt_tool_credits', '5');
+            }
             if (u.email) {
               const cleanE = u.email.trim().toLowerCase();
               localStorage.setItem(`auraprompt_signup_modal_already_shown_${cleanE}`, 'true');
@@ -75,7 +77,10 @@ export const UserAuthModal = () => {
               localStorage.setItem(`auraprompt_signup_bonus_claimed_${cleanE}`, 'true');
             }
           }
-          showToast(`Welcome back, ${name}! Signed in via Google.`);
+
+          await loginUser(u.email || '', '', name, avatar, u.id);
+          setIsFirstLoginModalOpen(false);
+          showToast(`Welcome ${name}! Signed in via Google.`);
           setIsLoading(false);
           setIsUserAuthModalOpen(false);
           checkAndRedirectStudio();
@@ -89,7 +94,7 @@ export const UserAuthModal = () => {
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [loginUser, showToast, setIsUserAuthModalOpen, checkAndRedirectStudio]);
+  }, [loginUser, showToast, setIsUserAuthModalOpen, setIsFirstLoginModalOpen, checkAndRedirectStudio]);
 
   if (!isUserAuthModalOpen) return null;
 
@@ -290,14 +295,18 @@ export const UserAuthModal = () => {
         if (typeof window !== 'undefined') {
           localStorage.setItem('auraprompt_first_login_claimed', 'true');
           localStorage.setItem('auraprompt_signup_bonus_claimed', 'true');
+          localStorage.setItem('auraprompt_signup_modal_already_shown', 'true');
+          localStorage.setItem('auraprompt_signup_modal_shown', 'true');
           localStorage.setItem(`auraprompt_signup_bonus_claimed_${cleanEmail}`, 'true');
           localStorage.setItem(`auraprompt_signup_modal_shown_${cleanEmail}`, 'true');
+          localStorage.setItem(`auraprompt_signup_modal_already_shown_${cleanEmail}`, 'true');
+          if (!localStorage.getItem('auraprompt_tool_credits')) {
+            localStorage.setItem('auraprompt_tool_credits', '5');
+          }
         }
 
-        // Show 5 Credits Welcome Gift popup right after first-time signup!
-        setTimeout(() => {
-          setIsFirstLoginModalOpen(true);
-        }, 250);
+        // Popup is completely removed. User automatically receives 5 credits directly on account creation!
+        setIsFirstLoginModalOpen(false);
 
         checkAndRedirectStudio();
       } else {

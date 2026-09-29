@@ -202,6 +202,8 @@ export const UserSyncService = {
           if (!isNaN(parsed)) localCredits = parsed;
         } else if (typeof (user as any).toolCredits === 'number') {
           localCredits = (user as any).toolCredits;
+        } else {
+          localCredits = 5;
         }
 
         const savedReqs = localStorage.getItem('auraprompt_prompt_requests');
@@ -255,30 +257,45 @@ export const UserSyncService = {
       }
     }
 
+    // Evaluate local plan and expiration
+    const isLocalPaid = localTier !== 'free';
+    const isLocalExpired = Boolean(localPlanExpiresAt && new Date(localPlanExpiresAt).getTime() < Date.now());
+    const effectiveLocalTier: PlanTier = (isLocalPaid && !isLocalExpired) ? localTier : 'free';
+    const effectiveLocalPro = effectiveLocalTier !== 'free' || localIsPro;
+
     // 2. Attempt to pull authoritative remote record
     const remote = await UserSyncService.pullUserData(user.id, user.email);
 
     if (!remote) {
-      // Network failure, rate limit, or remote not created yet:
-      // STRICT SAFETY: PRESERVE ALL LOCAL STATE! DO NOT OVERWRITE WITH EMPTY DEFAULTS!
-      const isLocalPaid = localTier !== 'free';
-      const isLocalExpired = localPlanExpiresAt && new Date(localPlanExpiresAt).getTime() < Date.now();
-      const effectiveLocalTier: PlanTier = (isLocalPaid && !isLocalExpired) ? localTier : (isLocalPaid && isLocalExpired ? 'free' : localTier);
-      const effectiveLocalPro = effectiveLocalTier !== 'free' || localIsPro;
+      // Network failure, rate limit, or remote not created yet (new account):
+      const initialCredits = (localCredits !== undefined && localCredits !== null && localCredits > 0) ? localCredits : 5;
+      localCredits = initialCredits;
 
-      // If user had an active paid plan locally, re-push to server in background so server heals
-      if (effectiveLocalTier !== 'free') {
-        void UserSyncService.pushUserData(user.id, user.email, {
-          planTier: effectiveLocalTier,
-          isProUser: true,
-          toolCredits: localCredits,
-          promptRequestsRemaining: localRequests,
-          aiSearchRemaining: localSearches,
-          planStartedAt: localPlanStartedAt,
-          planExpiresAt: localPlanExpiresAt,
-          bookmarkedIds: localBookmarks,
-          unlockedPromptIds: localUnlocked,
-        });
+      // Immediately push to server database so new account is persisted with 5 credits!
+      void UserSyncService.pushUserData(user.id, user.email, {
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+        avatar: user.avatar,
+        points: user.points || 10,
+        planTier: effectiveLocalTier,
+        isProUser: effectiveLocalPro,
+        toolCredits: initialCredits,
+        savesLimit: 10,
+        aiSearchRemaining: localSearches,
+        promptRequestsRemaining: localRequests,
+        planStartedAt: localPlanStartedAt,
+        planExpiresAt: localPlanExpiresAt,
+        bookmarkedIds: localBookmarks,
+        likedIds: localLikes,
+        unlockedPromptIds: localUnlocked,
+        signupCreditsAwarded: true,
+        signupBonusClaimed: true,
+        signupModalShown: true,
+      });
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auraprompt_tool_credits', String(initialCredits));
       }
 
       return {
@@ -289,7 +306,7 @@ export const UserSyncService = {
         tasteProfile: localTaste,
         planTier: effectiveLocalTier,
         isProUser: effectiveLocalPro,
-        toolCredits: localCredits,
+        toolCredits: initialCredits,
         aiSearchRemaining: localSearches,
         promptRequestsRemaining: localRequests,
         unlockedPromptIds: localUnlocked,
@@ -316,11 +333,6 @@ export const UserSyncService = {
       remoteTier = 'free';
     }
 
-    // Evaluate local plan and expiration
-    const isLocalPaid = localTier !== 'free';
-    const isLocalExpired = localPlanExpiresAt && new Date(localPlanExpiresAt).getTime() < Date.now();
-    const effectiveLocalTier: PlanTier = (isLocalPaid && !isLocalExpired) ? localTier : 'free';
-
     // Resolved tier: Highest unexpired tier between remote and local
     const TIER_WEIGHT_LOCAL: Record<PlanTier, number> = { free: 0, starter: 1, pro: 2, vip: 3, ultra: 4 };
     let resolvedTier: PlanTier = remoteTier;
@@ -336,10 +348,27 @@ export const UserSyncService = {
     );
     const planCfg = getPlanFeaturesForCycle(resolvedTier, isYearly ? 'yearly' : 'monthly');
 
-    // Rule 2 & 8: Strictly preserve consumed balance and quotas. Never restore consumed quotas automatically!
-    let resolvedCredits = remote.toolCredits !== undefined && remote.toolCredits !== null
-      ? Number(remote.toolCredits)
-      : (localCredits > 0 ? localCredits : 0);
+    // Rule 2 & 8: Strictly preserve consumed balance and quotas.
+    // For free new users who haven't consumed credits, default to 5 credits!
+    let resolvedCredits: number;
+    if (remote.toolCredits !== undefined && remote.toolCredits !== null) {
+      resolvedCredits = Number(remote.toolCredits);
+    } else if (localCredits > 0) {
+      resolvedCredits = localCredits;
+    } else {
+      resolvedCredits = resolvedTier !== 'free' ? planCfg.credits : 5;
+    }
+
+    // Auto-heal new free users whose accounts had 0 credits due to earlier signup bug:
+    if (
+      resolvedCredits === 0 &&
+      (!remote.unlockedPromptIds || remote.unlockedPromptIds.length === 0) &&
+      (!remote.aiHistory || remote.aiHistory.length === 0) &&
+      (!localUnlocked || localUnlocked.length === 0) &&
+      resolvedTier === 'free'
+    ) {
+      resolvedCredits = 5;
+    }
 
     let resolvedRequests: number;
     if (remote.promptRequestsRemaining !== undefined && remote.promptRequestsRemaining !== null) {

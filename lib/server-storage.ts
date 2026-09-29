@@ -1136,7 +1136,7 @@ export const ServerStorage = {
     const planCfg = PLAN_CONFIGS[best.planTier as keyof typeof PLAN_CONFIGS] || PLAN_CONFIGS.free;
 
     if (best.toolCredits === undefined || best.toolCredits === null) {
-      best.toolCredits = planCfg.credits;
+      best.toolCredits = best.planTier === 'free' ? 5 : planCfg.credits;
     } else {
       best.toolCredits = Number(best.toolCredits);
     }

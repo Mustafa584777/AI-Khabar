@@ -68,5 +68,6 @@ export function supabaseUserToUserAccount(u: any, existing?: UserAccount | null)
     generationsCountForPoints: meta.generationsCountForPoints !== undefined ? Number(meta.generationsCountForPoints) : (validExisting?.generationsCountForPoints || 0),
     sharesCountForPoints: meta.sharesCountForPoints !== undefined ? Number(meta.sharesCountForPoints) : (validExisting?.sharesCountForPoints || 0),
     referralsCountForPoints: meta.referralsCountForPoints !== undefined ? Number(meta.referralsCountForPoints) : (validExisting?.referralsCountForPoints || 0),
+    toolCredits: meta.toolCredits !== undefined ? Number(meta.toolCredits) : (validExisting?.toolCredits !== undefined ? validExisting.toolCredits : 5),
   };
 }
