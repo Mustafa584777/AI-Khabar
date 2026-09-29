@@ -114,11 +114,15 @@ const CREDIT_PACKS: CreditPack[] = [
 const FAQS = [
   {
     question: 'Do tool credits expire?',
-    answer: 'No! Pay-as-you-go credit packs never expire. You can use them whenever you need to unlock prompts or run image-to-prompt extractions. Monthly subscription credits refresh every billing cycle.',
+    answer: 'No! Pay-as-you-go credit packs never expire. You can use them whenever you need to unlock prompts or run image-to-prompt extractions. Monthly/yearly subscription credits refresh every billing cycle.',
   },
   {
-    question: 'Can I cancel or change my monthly subscription anytime?',
-    answer: 'Yes, you can upgrade, downgrade, or cancel your subscription at any time directly from your account settings. Your active tier benefits remain active until the end of your billing cycle.',
+    question: 'Can I cancel, upgrade or downgrade my plan?',
+    answer: 'Plans cannot be cancelled once active, but you can upgrade or downgrade at any time. When you purchase a new plan while your current plan is still active, the new plan is safely queued and automatically starts immediately after your existing plan expires.',
+  },
+  {
+    question: 'What happens to my saved data after my plan expires?',
+    answer: 'Your saved prompts, history, and unlocked items are 100% safe and never deleted when a plan expires. Your account simply demotes to the free tier, and your existing saves remain fully intact (though new saves will follow the free tier limit until you renew or upgrade again).',
   },
   {
     question: 'What payment methods are supported via Razorpay?',
@@ -126,11 +130,11 @@ const FAQS = [
   },
   {
     question: 'What is AI Search and how does it work?',
-    answer: 'AI Search allows you to search across thousands of curated visual prompts using natural conversational queries. Paid monthly plans include generous AI Search quotas ranging from 100 searches up to unlimited in Studio 499.',
+    answer: 'AI Search allows you to search across thousands of curated visual prompts using natural conversational queries. Paid plans include generous AI Search quotas ranging from 100 searches up to unlimited in Studio 499.',
   },
   {
     question: 'How do prompt requests work for custom creations?',
-    answer: 'Depending on your plan tier (Starter, Pro, VIP, Studio 499), you receive monthly custom prompt generation requests where our system crafts hyper-optimized prompts for your exact creative vision.',
+    answer: 'Depending on your plan tier (Starter, Pro, VIP, Studio 499), you receive custom prompt generation requests where our system crafts hyper-optimized prompts for your exact creative vision.',
   },
 ];
 
@@ -937,66 +941,6 @@ export default function CheckoutPage() {
                 <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
                   1 credit per remix/edit. Delivers up to <strong>100 edits on Starter</strong>, <strong>250 on Pro</strong>, <strong>600 on VIP</strong>, and <strong>1,500 on Studio 499</strong> per month.
                 </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Plan Monthly Deliverables Summary Grid */}
-          <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800">
-            <h3 className="text-xs font-black uppercase tracking-wider text-neutral-400 mb-3">
-              Monthly Plan Deliverables & Feature Power
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-               <div className="p-3.5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 space-y-1.5">
-                <div className="font-bold text-neutral-900 dark:text-white flex items-center justify-between">
-                  <span>Starter (₹49)</span>
-                  <span className="text-amber-500 font-black">100 Cr</span>
-                </div>
-                <div className="text-[11px] text-neutral-500 space-y-0.5">
-                  <p>• 100 Tool Credits / mo</p>
-                  <p>• 100 AI Searches / mo</p>
-                  <p>• 1 Prompt Request / mo</p>
-                  <p>• 100 Saves & History</p>
-                </div>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-white dark:bg-neutral-900 border-2 border-[#E60023] space-y-1.5 shadow-xs">
-                <div className="font-bold text-[#E60023] flex items-center justify-between">
-                  <span>Pro (₹99)</span>
-                  <span className="font-black">250 Cr</span>
-                </div>
-                <div className="text-[11px] text-neutral-500 space-y-0.5">
-                  <p>• 250 Tool Credits / mo</p>
-                  <p>• 200 AI Searches / mo</p>
-                  <p>• 2 Prompt Requests / mo</p>
-                  <p>• 200 Saves & History</p>
-                </div>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-white dark:bg-neutral-900 border border-purple-500/40 space-y-1.5">
-                <div className="font-bold text-purple-600 dark:text-purple-400 flex items-center justify-between">
-                  <span>VIP (₹199)</span>
-                  <span className="font-black">600 Cr</span>
-                </div>
-                <div className="text-[11px] text-neutral-500 space-y-0.5">
-                  <p>• 600 Tool Credits / mo</p>
-                  <p>• 500 AI Searches / mo</p>
-                  <p>• 3 Prompt Requests / mo</p>
-                  <p>• 400 Saves & History</p>
-                </div>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-gradient-to-b from-neutral-900 to-neutral-950 text-white border border-amber-500/60 space-y-1.5">
-                <div className="font-bold text-amber-400 flex items-center justify-between">
-                  <span>Studio 499 (₹499)</span>
-                  <span className="font-black">1,500 Cr</span>
-                </div>
-                <div className="text-[11px] text-neutral-300 space-y-0.5">
-                  <p>• 1,500 Tool Credits / mo</p>
-                  <p>• Unlimited AI Searches</p>
-                  <p>• 5 Prompt Requests / mo</p>
-                  <p>• Unlimited Saves & History</p>
-                </div>
               </div>
             </div>
           </div>
