@@ -29,34 +29,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   const isUnlocked = isPromptUnlocked(post.id, post.isPremium);
   const promptSlug = getPromptSlug(post);
   const detectedRatio = detectPostAspectRatio(post);
-  
-  // Collect all slides: Main featured image + additional extra images
-  const allImages = React.useMemo(() => {
-    const list = [post.imageUrl, ...(post.additionalImages || [])].filter(
-      (url): url is string => Boolean(url && typeof url === 'string' && url.trim())
-    );
-    return Array.from(new Set(list));
-  }, [post.imageUrl, post.additionalImages]);
-  const isSlider = allImages.length > 1;
-
-  const [currentSlide, setCurrentSlide] = useState(0);
-
-  // Reset slide index when post changes
-  useEffect(() => {
-    setCurrentSlide(0);
-  }, [post.id]);
-
-  // Auto-slide every 2 seconds until the last image is reached (not infinite)
-  useEffect(() => {
-    if (!isSlider || !inView) return;
-    if (currentSlide >= allImages.length - 1) return;
-
-    const timer = setTimeout(() => {
-      setCurrentSlide((prev) => (prev < allImages.length - 1 ? prev + 1 : prev));
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, [isSlider, inView, currentSlide, allImages.length]);
+  const optimizedImgUrl = getOptimizedImageUrl(post.imageUrl, 600);
 
   // Viewport IntersectionObserver: strictly loads images only when entering or near viewport
   useEffect(() => {
@@ -154,79 +127,22 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
 
         {/* Full-Height Shimmer Skeleton Placeholder removed */}
 
-        {inView && allImages.length > 0 ? (
-          <div className="relative w-full h-full overflow-hidden">
-            {/* Horizontal Carousel Track */}
-            <div
-              className="flex w-full h-full transition-transform duration-500 ease-out"
-              style={{
-                transform: `translateX(-${currentSlide * 100}%)`,
-              }}
-            >
-              {allImages.map((imgUrl, idx) => {
-                const optUrl = getOptimizedImageUrl(imgUrl, 600);
-                const altText =
-                  idx === 0
-                    ? post.imageAlt || post.title
-                    : post.additionalImageAlts?.[idx - 1] || `${post.imageAlt || post.title} - Slide ${idx + 1}`;
-
-                return (
-                  <div
-                    key={imgUrl || idx}
-                    className="relative w-full h-full shrink-0 grow-0 basis-full overflow-hidden select-none"
-                  >
-                    <Image
-                      src={optUrl}
-                      alt={altText}
-                      fill
-                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                      draggable={false}
-                      priority={priority && idx === 0}
-                      onLoad={() => idx === 0 && setImageLoaded(true)}
-                      className={`object-cover group-hover:scale-105 transition-all duration-500 ease-out select-none pointer-events-none relative z-1 ${
-                        idx === 0
-                          ? imageLoaded ? 'opacity-100' : 'opacity-0'
-                          : 'opacity-100'
-                      }`}
-                      referrerPolicy="no-referrer"
-                      loading={priority && idx === 0 ? 'eager' : 'lazy'}
-                      decoding="async"
-                    />
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Slider Navigation Dots (Requirement 3) */}
-            {isSlider && (
-              <div
-                className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/10 shadow-lg pointer-events-auto"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-              >
-                {allImages.map((_, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setCurrentSlide(idx);
-                    }}
-                    className={`transition-all duration-300 rounded-full cursor-pointer focus:outline-none ${
-                      currentSlide === idx
-                        ? 'w-4 h-1.5 bg-white shadow-sm'
-                        : 'w-1.5 h-1.5 bg-white/45 hover:bg-white/80'
-                    }`}
-                    title={`Slide ${idx + 1} of ${allImages.length}`}
-                    aria-label={`Slide ${idx + 1} of ${allImages.length}`}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+        {inView && optimizedImgUrl ? (
+          <Image
+            src={optimizedImgUrl}
+            alt={post.imageAlt || post.title}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+            draggable={false}
+            priority={priority}
+            onLoad={() => setImageLoaded(true)}
+            className={`object-cover group-hover:scale-105 transition-all duration-500 ease-out select-none pointer-events-none relative z-1 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+            referrerPolicy="no-referrer"
+            loading={priority ? 'eager' : 'lazy'}
+            decoding="async"
+          />
         ) : !post.imageUrl ? (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-tr from-neutral-800 to-neutral-900 text-neutral-400">
             <Sparkles className="w-8 h-8 opacity-40" />
