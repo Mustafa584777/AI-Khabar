@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { PromptPost } from '@/types/prompt';
 import { useApp } from '@/context/AppContext';
 import Image from 'next/image';
-import { Sparkles, Bookmark, Crown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Sparkles, Bookmark, Crown, ChevronLeft, ChevronRight, Layers } from 'lucide-react';
 import { getPromptSlug, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription } from '@/lib/utils';
 
 export const PromptCard = ({ post, priority = false }: { post: PromptPost; priority?: boolean }) => {
@@ -25,52 +25,31 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   const [inView, setInView] = useState(() => priority || typeof window === 'undefined' || !('IntersectionObserver' in window));
   const cardRef = useRef<HTMLElement>(null);
 
+  // All images for this card (Main image + additionalImages)
+  const allImages = React.useMemo(() => {
+    const list: string[] = [];
+    if (post.imageUrl && typeof post.imageUrl === 'string') {
+      list.push(post.imageUrl.trim());
+    }
+    if (Array.isArray(post.additionalImages)) {
+      post.additionalImages.forEach((img) => {
+        if (img && typeof img === 'string' && img.trim() && !list.includes(img.trim())) {
+          list.push(img.trim());
+        }
+      });
+    }
+    return list;
+  }, [post.imageUrl, post.additionalImages]);
+
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const isMultiple = allImages.length > 1;
+
   const isBookmarked = bookmarkedIds.includes(post.id);
   const isUnlocked = isPromptUnlocked(post.id, post.isPremium);
   const promptSlug = getPromptSlug(post);
   const detectedRatio = detectPostAspectRatio(post);
-  const optimizedImgUrl = getOptimizedImageUrl(post.imageUrl, 600);
-
-  const allImages = React.useMemo(() => {
-    return [post.imageUrl, ...(post.additionalImages || [])].filter(Boolean);
-  }, [post.imageUrl, post.additionalImages]);
-
-  const hasSlider = allImages.length > 1;
-  const [currentSlide, setCurrentSlide] = useState(0);
-
-  // Auto-slide every 2 seconds until the last image is reached (NOT infinite loop)
-  useEffect(() => {
-    if (!hasSlider || !inView) return;
-
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => {
-        if (prev < allImages.length - 1) {
-          return prev + 1;
-        }
-        clearInterval(timer);
-        return prev;
-      });
-    }, 2000);
-
-    return () => clearInterval(timer);
-  }, [hasSlider, inView, allImages.length]);
-
-  // Touch swipe support for mobile
-  const touchStartX = useRef<number | null>(null);
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null) return;
-    const touchEndX = e.changedTouches[0].clientX;
-    const diff = touchStartX.current - touchEndX;
-    if (diff > 35 && currentSlide < allImages.length - 1) {
-      setCurrentSlide((prev) => Math.min(allImages.length - 1, prev + 1));
-    } else if (diff < -35 && currentSlide > 0) {
-      setCurrentSlide((prev) => Math.max(0, prev - 1));
-    }
-    touchStartX.current = null;
-  };
+  const currentImg = isMultiple ? (allImages[activeImageIndex] || post.imageUrl) : post.imageUrl;
+  const optimizedImgUrl = getOptimizedImageUrl(currentImg, 600);
 
   // Viewport IntersectionObserver: strictly loads images only when entering or near viewport
   useEffect(() => {
@@ -95,6 +74,13 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   const handleCardClick = (e: React.MouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.button === 1) return;
     e.preventDefault();
+    if (typeof window !== 'undefined' && isMultiple) {
+      try {
+        sessionStorage.setItem('auraprompt_active_slider_images', JSON.stringify(allImages));
+        sessionStorage.setItem(`auraprompt_slider_${post.id}`, JSON.stringify(allImages));
+        sessionStorage.setItem(`auraprompt_slider_index_${post.id}`, String(activeImageIndex));
+      } catch {}
+    }
     setSelectedPost(post);
     if (typeof window !== 'undefined') {
       window.history.pushState({ postId: post.id }, '', `/${promptSlug}`);
@@ -125,10 +111,9 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
     e.preventDefault();
     e.stopPropagation();
     if (typeof window !== 'undefined') {
-      const activeImg = allImages[currentSlide] || post.imageUrl;
-      if (activeImg) {
-        sessionStorage.setItem('promptcms_studio_image_preload', activeImg);
-        sessionStorage.setItem('auraprompt_studio_image_preload', activeImg);
+      if (post.imageUrl) {
+        sessionStorage.setItem('promptcms_studio_image_preload', post.imageUrl);
+        sessionStorage.setItem('auraprompt_studio_image_preload', post.imageUrl);
       }
       sessionStorage.setItem('promptcms_studio_tab', 'reverse');
     }
@@ -150,8 +135,6 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
       <a
         href={`/${promptSlug}`}
         onClick={handleCardClick}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
         style={{ aspectRatio: detectedRatio }}
         aria-label={`${post.title} - ${post.category} AI Photo Prompt`}
         className="block relative w-full overflow-hidden bg-neutral-100 dark:bg-neutral-800 focus:outline-none"
@@ -169,107 +152,29 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
           </div>
         )}
 
-        {/* Carousel Slider Images Container */}
-        {inView && allImages.length > 0 ? (
-          <div
-            className="flex w-full h-full transition-transform duration-500 ease-out"
-            style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-          >
-            {allImages.map((imgUrl, idx) => (
-              <div
-                key={idx}
-                className="w-full h-full shrink-0 relative overflow-hidden bg-neutral-950"
-              >
-                <Image
-                  src={getOptimizedImageUrl(imgUrl, 600)}
-                  alt={
-                    idx === 0
-                      ? post.imageAlt || post.title
-                      : (post.additionalImageAlts?.[idx - 1] || `${post.imageAlt || post.title} - Slide ${idx + 1}`)
-                  }
-                  fill
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                  draggable={false}
-                  priority={priority && idx === 0}
-                  onLoad={() => {
-                    if (idx === 0) setImageLoaded(true);
-                  }}
-                  className="object-cover w-full h-full group-hover:scale-105 transition-all duration-500 ease-out select-none pointer-events-none relative z-1"
-                  referrerPolicy="no-referrer"
-                  loading={priority && idx === 0 ? 'eager' : 'lazy'}
-                  decoding="async"
-                />
-              </div>
-            ))}
-          </div>
+        {/* Full-Height Shimmer Skeleton Placeholder removed */}
+
+        {inView && optimizedImgUrl ? (
+          <Image
+            src={optimizedImgUrl}
+            alt={post.imageAlt || post.title}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+            draggable={false}
+            priority={priority}
+            onLoad={() => setImageLoaded(true)}
+            className={`object-cover group-hover:scale-105 transition-all duration-500 ease-out select-none pointer-events-none relative z-1 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+            referrerPolicy="no-referrer"
+            loading={priority ? 'eager' : 'lazy'}
+            decoding="async"
+          />
         ) : !post.imageUrl ? (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-tr from-neutral-800 to-neutral-900 text-neutral-400">
             <Sparkles className="w-8 h-8 opacity-40" />
           </div>
         ) : null}
-
-        {/* Pinterest Style Hover Arrow Buttons */}
-        {hasSlider && inView && (
-          <>
-            {currentSlide > 0 && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setCurrentSlide((prev) => Math.max(0, prev - 1));
-                }}
-                aria-label="Previous Slide"
-                className="absolute left-2 top-1/2 -translate-y-1/2 z-25 w-7 h-7 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-md active:scale-95 pointer-events-auto backdrop-blur-xs"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-            )}
-            {currentSlide < allImages.length - 1 && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setCurrentSlide((prev) => Math.min(allImages.length - 1, prev + 1));
-                }}
-                aria-label="Next Slide"
-                className="absolute right-2 top-1/2 -translate-y-1/2 z-25 w-7 h-7 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-md active:scale-95 pointer-events-auto backdrop-blur-xs"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            )}
-          </>
-        )}
-
-        {/* Pinterest Style Slider Dots */}
-        {hasSlider && inView && (
-          <div
-            className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/55 backdrop-blur-xs pointer-events-auto shadow-sm"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-          >
-            {allImages.map((_, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setCurrentSlide(idx);
-                }}
-                aria-label={`Slide ${idx + 1}`}
-                className={`transition-all duration-300 rounded-full ${
-                  idx === currentSlide
-                    ? 'w-2.5 h-1.5 bg-white shadow-xs scale-110'
-                    : 'w-1.5 h-1.5 bg-white/50 hover:bg-white/90'
-                }`}
-              />
-            ))}
-          </div>
-        )}
 
         {/* Dark Semi-Transparent Overlay with White Popup Action Buttons */}
         <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto flex items-center justify-center gap-3.5 z-10">
@@ -303,6 +208,61 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
             <span>Decode</span>
           </button>
         </div>
+
+        {/* Multi-Image Pinterest Slider Controls on Card */}
+        {isMultiple && (
+          <>
+            {/* Multiple Photos Badge Indicator (e.g. 1/4) */}
+            <div className="absolute top-2.5 right-2.5 z-20 px-2 py-0.5 rounded-full bg-black/75 backdrop-blur-md text-white text-[10px] font-bold shadow-md border border-white/10 flex items-center gap-1 pointer-events-none">
+              <Layers className="w-3 h-3 text-white/80" />
+              <span>{activeImageIndex + 1}/{allImages.length}</span>
+            </div>
+
+            {/* Left Chevron Arrow on card hover */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setActiveImageIndex((prev) => (prev > 0 ? prev - 1 : allImages.length - 1));
+              }}
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/95 dark:bg-black/90 hover:bg-white text-neutral-900 dark:text-white shadow-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 active:scale-95 cursor-pointer border border-neutral-200/50"
+              title="Previous photo"
+              aria-label="Previous photo"
+            >
+              <ChevronLeft className="w-4 h-4 -translate-x-0.5" />
+            </button>
+
+            {/* Right Chevron Arrow on card hover */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setActiveImageIndex((prev) => (prev < allImages.length - 1 ? prev + 1 : 0));
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/95 dark:bg-black/90 hover:bg-white text-neutral-900 dark:text-white shadow-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 active:scale-95 cursor-pointer border border-neutral-200/50"
+              title="Next photo"
+              aria-label="Next photo"
+            >
+              <ChevronRight className="w-4 h-4 translate-x-0.5" />
+            </button>
+
+            {/* Pinterest Dot Indicators at bottom */}
+            <div className="absolute bottom-2.5 inset-x-0 flex items-center justify-center gap-1.5 z-20 pointer-events-none">
+              {allImages.map((_, idx) => (
+                <span
+                  key={idx}
+                  className={`transition-all duration-300 rounded-full ${
+                    idx === activeImageIndex
+                      ? 'w-4 h-1.5 bg-white shadow-md'
+                      : 'w-1.5 h-1.5 bg-white/60'
+                  }`}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </a>
     </article>
   );

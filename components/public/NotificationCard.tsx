@@ -31,6 +31,12 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
     }
     NotificationService.recordNotificationClick(notification.id);
     if (onRead) onRead(notification.id);
+    if (images.length > 1 && typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem('auraprompt_active_slider_images', JSON.stringify(images));
+        sessionStorage.setItem('auraprompt_active_slider_index', '0');
+      } catch {}
+    }
     if (notification.url) {
       router.push(notification.url);
     }
@@ -40,6 +46,12 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
     e.stopPropagation();
     NotificationService.recordNotificationClick(notification.id);
     if (onRead) onRead(notification.id);
+    if (images.length > 1 && typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem('auraprompt_active_slider_images', JSON.stringify(images));
+        sessionStorage.setItem('auraprompt_active_slider_index', '0');
+      } catch {}
+    }
     router.push(url);
   };
 
@@ -145,7 +157,20 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
               {images.map((img, idx) => (
                 <div
                   key={idx}
-                  className="relative w-full h-full bg-neutral-100 dark:bg-neutral-800 rounded-xl sm:rounded-2xl overflow-hidden group/img shadow-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    NotificationService.recordNotificationClick(notification.id);
+                    if (onRead) onRead(notification.id);
+                    if (images.length > 1 && typeof window !== 'undefined') {
+                      try {
+                        sessionStorage.setItem('auraprompt_active_slider_images', JSON.stringify(images));
+                        sessionStorage.setItem('auraprompt_active_slider_index', String(idx));
+                      } catch {}
+                    }
+                    if (notification.url) router.push(notification.url);
+                  }}
+                  className="relative w-full h-full bg-neutral-100 dark:bg-neutral-800 rounded-xl sm:rounded-2xl overflow-hidden group/img shadow-xs cursor-pointer hover:ring-2 hover:ring-[#E60023] transition-all"
+                  title={`View image ${idx + 1}`}
                 >
                   <Image
                     src={img}
