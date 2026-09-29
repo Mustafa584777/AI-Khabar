@@ -33,7 +33,9 @@ export interface PromptParameters {
   renderEngine?: string; // e.g. "Unreal Engine 5, Octane Render"
   temperature?: string; // For text models
   isPremium?: boolean | string;
-  [key: string]: string | boolean | undefined;
+  additionalImageAlts?: string[];
+  additionalImageFileNames?: string[];
+  [key: string]: string | boolean | string[] | undefined;
 }
 
 export interface Author {

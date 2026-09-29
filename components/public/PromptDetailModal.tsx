@@ -17,8 +17,8 @@ import {
   ArrowLeft,
   Heart,
   Layers,
-  ChevronLeft,
   ChevronRight,
+  ChevronLeft,
   Maximize2,
   Download,
   Crown,
@@ -59,29 +59,33 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
   onToggleBookmark,
 }) => {
   const [inView, setInView] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const detectedRatio = detectPostAspectRatio(pin);
 
   const pinImages = useMemo(() => {
-    return [pin.imageUrl, ...(pin.additionalImages || [])].filter(Boolean);
+    const list = [pin.imageUrl, ...(pin.additionalImages || [])].filter(
+      (url): url is string => Boolean(url && typeof url === 'string' && url.trim())
+    );
+    return Array.from(new Set(list));
   }, [pin.imageUrl, pin.additionalImages]);
-  const hasPinSlider = pinImages.length > 1;
-  const [pinSlide, setPinSlide] = useState(0);
+  const isPinSlider = pinImages.length > 1;
+  const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Auto-slide every 2 seconds until the last image is reached (NOT infinite loop)
   useEffect(() => {
-    if (!hasPinSlider || !inView) return;
-    const timer = setInterval(() => {
-      setPinSlide((prev) => {
-        if (prev < pinImages.length - 1) {
-          return prev + 1;
-        }
-        clearInterval(timer);
-        return prev;
-      });
+    setCurrentSlide(0);
+  }, [pin.id]);
+
+  useEffect(() => {
+    if (!isPinSlider || !inView) return;
+    if (currentSlide >= pinImages.length - 1) return;
+
+    const timer = setTimeout(() => {
+      setCurrentSlide((prev) => (prev < pinImages.length - 1 ? prev + 1 : prev));
     }, 2000);
-    return () => clearInterval(timer);
-  }, [hasPinSlider, inView, pinImages.length]);
+
+    return () => clearTimeout(timer);
+  }, [isPinSlider, inView, currentSlide, pinImages.length]);
 
   useEffect(() => {
     const el = cardRef.current;
@@ -107,6 +111,8 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
       className="group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-neutral-200 dark:bg-neutral-900 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-300 border border-neutral-200/60 dark:border-neutral-800/80 w-full"
       id={`masonry-pin-${pin.id}`}
     >
+      {/* Shimmer Placeholder removed */}
+
       {/* Premium Badge */}
       {pin.isPremium && (
         <div className={`absolute top-2 left-2 z-10 flex items-center justify-center w-6 h-6 rounded-full backdrop-blur-md shadow-md pointer-events-none ${
@@ -120,57 +126,54 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
 
       {/* Photo Pin Image Slider (rendered ONLY when inView is true) */}
       {inView && pinImages.length > 0 && (
-        <div
-          className="flex w-full h-full transition-transform duration-500 ease-out"
-          style={{ transform: `translateX(-${pinSlide * 100}%)` }}
-        >
-          {pinImages.map((imgUrl, idx) => (
-            <div key={idx} className="w-full h-full shrink-0 relative overflow-hidden bg-neutral-950">
-              <Image
-                src={getOptimizedImageUrl(imgUrl, 500)}
-                alt={
-                  idx === 0
-                    ? pin.imageAlt || pin.title
-                    : (pin.additionalImageAlts?.[idx - 1] || `${pin.imageAlt || pin.title} - Slide ${idx + 1}`)
-                }
-                fill
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                className="object-cover w-full h-full group-hover:scale-105 transition-all duration-500"
-                referrerPolicy="no-referrer"
-                loading="lazy"
-                decoding="async"
-              />
-            </div>
-          ))}
-        </div>
-      )}
+        <div className="relative w-full h-full overflow-hidden">
+          <div
+            className="flex w-full h-full transition-transform duration-500 ease-out"
+            style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+          >
+            {pinImages.map((imgUrl, idx) => (
+              <div key={imgUrl || idx} className="relative w-full h-full shrink-0 grow-0 basis-full overflow-hidden select-none">
+                <Image
+                  src={getOptimizedImageUrl(imgUrl, 500)}
+                  alt={idx === 0 ? (pin.imageAlt || pin.title) : `${pin.imageAlt || pin.title} - Slide ${idx + 1}`}
+                  fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                  onLoad={() => idx === 0 && setLoaded(true)}
+                  className={`object-cover group-hover:scale-105 transition-all duration-500 ${
+                    idx === 0 ? (loaded ? 'opacity-100' : 'opacity-0') : 'opacity-100'
+                  }`}
+                  referrerPolicy="no-referrer"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+            ))}
+          </div>
 
-      {/* Slider dots for RecommendedPinCard */}
-      {hasPinSlider && inView && (
-        <div
-          className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/55 backdrop-blur-xs pointer-events-auto"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-        >
-          {pinImages.map((_, idx) => (
-            <button
-              key={idx}
-              type="button"
+          {isPinSlider && (
+            <div
+              className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/50 backdrop-blur-md border border-white/10 shadow-md pointer-events-auto"
               onClick={(e) => {
-                e.preventDefault();
                 e.stopPropagation();
-                setPinSlide(idx);
               }}
-              aria-label={`Slide ${idx + 1}`}
-              className={`transition-all duration-300 rounded-full ${
-                idx === pinSlide
-                  ? 'w-2 h-1.5 bg-white shadow-xs scale-110'
-                  : 'w-1 h-1 bg-white/50 hover:bg-white/90'
-              }`}
-            />
-          ))}
+            >
+              {pinImages.map((_, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentSlide(idx);
+                  }}
+                  className={`transition-all duration-300 rounded-full cursor-pointer focus:outline-none ${
+                    currentSlide === idx ? 'w-3.5 h-1 bg-white' : 'w-1 h-1 bg-white/40 hover:bg-white/80'
+                  }`}
+                  title={`Slide ${idx + 1}`}
+                  aria-label={`Slide ${idx + 1}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -261,73 +264,6 @@ export const PromptDetailModal = () => {
   const [isUnlockModalOpen, setIsUnlockModalOpen] = useState<boolean>(false);
   const [historyStack, setHistoryStack] = useState<PromptPost[]>(() => (selectedPost ? [selectedPost] : []));
 
-  // Multi-Image Pinterest Slider State
-  const allImages = useMemo(() => {
-    if (!selectedPost) return [];
-    return [selectedPost.imageUrl, ...(selectedPost.additionalImages || [])].filter(Boolean);
-  }, [selectedPost]);
-  const hasSlider = allImages.length > 1;
-  const [modalSlideIndex, setModalSlideIndex] = useState(0);
-  const [isModalSliderHovered, setIsModalSliderHovered] = useState(false);
-  const detectedRatio = useMemo(() => {
-    return selectedPost ? detectPostAspectRatio(selectedPost) : '3 / 4';
-  }, [selectedPost]);
-
-  // Reset slide index when active prompt changes
-  useEffect(() => {
-    setModalSlideIndex(0);
-    setIsModalSliderHovered(false);
-  }, [selectedPost?.id]);
-
-  // Auto-slide every 2 seconds until the last image is reached (NOT infinite loop)
-  useEffect(() => {
-    if (!hasSlider || isModalSliderHovered) return;
-
-    const timer = setInterval(() => {
-      setModalSlideIndex((prev) => {
-        if (prev < allImages.length - 1) {
-          return prev + 1;
-        }
-        clearInterval(timer);
-        return prev;
-      });
-    }, 2000);
-
-    return () => clearInterval(timer);
-  }, [hasSlider, isModalSliderHovered, allImages.length]);
-
-  // Touch swipe support for mobile
-  const modalTouchStartX = useRef<number | null>(null);
-  const handleModalTouchStart = (e: React.TouchEvent) => {
-    modalTouchStartX.current = e.touches[0].clientX;
-  };
-  const handleModalTouchEnd = (e: React.TouchEvent) => {
-    if (modalTouchStartX.current === null) return;
-    const touchEndX = e.changedTouches[0].clientX;
-    const diff = modalTouchStartX.current - touchEndX;
-    if (diff > 40 && modalSlideIndex < allImages.length - 1) {
-      setModalSlideIndex((prev) => Math.min(allImages.length - 1, prev + 1));
-    } else if (diff < -40 && modalSlideIndex > 0) {
-      setModalSlideIndex((prev) => Math.max(0, prev - 1));
-    }
-    modalTouchStartX.current = null;
-  };
-
-  // Keyboard navigation Left / Right arrow
-  useEffect(() => {
-    if (!selectedPost || !hasSlider) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (e.key === 'ArrowRight') {
-        setModalSlideIndex((prev) => Math.min(allImages.length - 1, prev + 1));
-      } else if (e.key === 'ArrowLeft') {
-        setModalSlideIndex((prev) => Math.max(0, prev - 1));
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedPost, hasSlider, allImages.length]);
-
   const router = useRouter();
   const postsRef = useRef(posts);
   const historyStackRef = useRef(historyStack);
@@ -392,6 +328,34 @@ export const PromptDetailModal = () => {
   const isLiked = selectedPost ? likedIds?.includes(selectedPost.id) : false;
   const currentPost = posts.find((p) => p.id === selectedPost?.id) || selectedPost;
   const currentLikesCount = currentPost?.likesCount ?? selectedPost?.likesCount ?? 0;
+
+  // Collect all slides for the modal: Main featured image + additional extra images
+  const allImages = useMemo(() => {
+    if (!selectedPost) return [];
+    const list = [selectedPost.imageUrl, ...(selectedPost.additionalImages || [])].filter(
+      (url): url is string => Boolean(url && typeof url === 'string' && url.trim())
+    );
+    return Array.from(new Set(list));
+  }, [selectedPost]);
+
+  const [modalSlide, setModalSlide] = useState(0);
+
+  // Reset slide index when active post changes
+  useEffect(() => {
+    setModalSlide(0);
+  }, [selectedPost?.id]);
+
+  // Auto-slide every 2 seconds until the last image is reached (not infinite)
+  useEffect(() => {
+    if (allImages.length <= 1) return;
+    if (modalSlide >= allImages.length - 1) return;
+
+    const timer = setTimeout(() => {
+      setModalSlide((prev) => (prev < allImages.length - 1 ? prev + 1 : prev));
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [allImages.length, modalSlide]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
@@ -542,9 +506,8 @@ export const PromptDetailModal = () => {
     if (typeof window !== 'undefined') {
       sessionStorage.setItem('auraprompt_studio_preload', selectedPost.promptText);
       sessionStorage.setItem('promptcms_studio_preload', selectedPost.promptText);
-      const activeImg = allImages[modalSlideIndex] || selectedPost.imageUrl;
-      if (activeImg) {
-        sessionStorage.setItem('promptcms_studio_image_preload', activeImg);
+      if (selectedPost.imageUrl) {
+        sessionStorage.setItem('promptcms_studio_image_preload', selectedPost.imageUrl);
       }
     }
     setSelectedPost(null);
@@ -552,9 +515,9 @@ export const PromptDetailModal = () => {
     showToast('Loaded prompt into Create Studio!');
   };
 
-  const handleDownloadImage = async (e?: React.MouseEvent, customUrl?: string) => {
+  const handleDownloadImage = async (e?: React.MouseEvent, overrideUrl?: string) => {
     if (e) e.stopPropagation();
-    const targetUrl = customUrl || allImages[modalSlideIndex] || selectedPost?.imageUrl;
+    const targetUrl = overrideUrl || allImages[modalSlide] || selectedPost?.imageUrl;
     if (!targetUrl) return;
 
     setIsDownloadingImage(true);
@@ -566,8 +529,11 @@ export const PromptDetailModal = () => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      const cleanSlug = selectedPost?.slug || selectedPost?.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40) || 'ai-prompt-photo';
-      link.download = modalSlideIndex > 0 ? `${cleanSlug}-slide-${modalSlideIndex + 1}.jpg` : `${cleanSlug}.jpg`;
+      const cleanSlug = selectedPost ? (selectedPost.slug || selectedPost.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40)) : 'ai-prompt-photo';
+      const fileName = modalSlide === 0
+        ? `${selectedPost?.imageFileName || cleanSlug}.jpg`
+        : `${selectedPost?.additionalImageFileNames?.[modalSlide - 1] || `${cleanSlug}-slide-${modalSlide + 1}`}.jpg`;
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -575,11 +541,10 @@ export const PromptDetailModal = () => {
       showToast('Image downloaded successfully!');
     } catch {
       // Fallback
-      const cleanSlug = selectedPost?.slug || selectedPost?.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40) || 'ai-prompt-photo';
       const link = document.createElement('a');
       link.href = targetUrl;
       link.target = '_blank';
-      link.download = modalSlideIndex > 0 ? `${cleanSlug}-slide-${modalSlideIndex + 1}.jpg` : `${cleanSlug}.jpg`;
+      link.download = `${selectedPost?.slug || 'ai-prompt-photo'}-${modalSlide + 1}.jpg`;
       link.rel = 'noreferrer';
       document.body.appendChild(link);
       link.click();
@@ -1016,181 +981,131 @@ export const PromptDetailModal = () => {
               onContextMenu={(e) => e.preventDefault()}
               className="lg:col-span-7 bg-neutral-100 dark:bg-neutral-900 flex flex-col justify-start items-center p-0 relative group select-none overflow-hidden"
             >
-              {selectedPost.imageUrl ? (
-                hasSlider ? (
+              {allImages.length > 0 ? (
+                <div
+                  onContextMenu={(e) => e.preventDefault()}
+                  className="relative w-full overflow-hidden flex items-center justify-center select-none"
+                >
+                  {/* Slider Images Track */}
                   <div
-                    onContextMenu={(e) => e.preventDefault()}
-                    onMouseEnter={() => setIsModalSliderHovered(true)}
-                    onMouseLeave={() => setIsModalSliderHovered(false)}
-                    onTouchStart={handleModalTouchStart}
-                    onTouchEnd={handleModalTouchEnd}
-                    style={{ aspectRatio: detectedRatio }}
-                    className="relative w-full overflow-hidden flex items-center justify-center select-none bg-neutral-950"
+                    className="flex w-full transition-transform duration-500 ease-out"
+                    style={{
+                      transform: `translateX(-${modalSlide * 100}%)`,
+                    }}
                   >
-                    {/* Sliding Track */}
-                    <div
-                      className="flex w-full h-full transition-transform duration-500 ease-out"
-                      style={{ transform: `translateX(-${modalSlideIndex * 100}%)` }}
-                    >
-                      {allImages.map((imgUrl, idx) => (
-                        <div key={idx} className="w-full h-full shrink-0 relative overflow-hidden bg-neutral-950">
-                          <Image
-                            src={getOptimizedImageUrl(imgUrl, 1200)}
-                            alt={
-                              idx === 0
-                                ? selectedPost.imageAlt || selectedPost.title
-                                : (selectedPost.additionalImageAlts?.[idx - 1] || `${selectedPost.imageAlt || selectedPost.title} - Slide ${idx + 1}`)
-                            }
-                            fill
-                            sizes="(max-width: 1024px) 100vw, 60vw"
-                            draggable={false}
-                            className="w-full h-full object-cover select-none pointer-events-none"
-                            referrerPolicy="no-referrer"
-                            priority={idx === 0}
-                            decoding="async"
-                          />
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Slide Counter Badge Top-Left */}
-                    <div className="absolute top-3.5 left-3.5 z-20 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[11px] font-bold text-white shadow-md flex items-center gap-1.5 pointer-events-none">
-                      <Layers className="w-3.5 h-3.5 text-white/80" />
-                      <span>{modalSlideIndex + 1} / {allImages.length}</span>
-                    </div>
-
-                    {/* Left & Right Chevron Navigation Buttons */}
-                    {modalSlideIndex > 0 && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setModalSlideIndex((prev) => Math.max(0, prev - 1));
-                        }}
-                        aria-label="Previous Slide"
-                        className="absolute left-3.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center opacity-90 hover:opacity-100 hover:scale-105 active:scale-95 transition-all shadow-xl pointer-events-auto backdrop-blur-xs"
+                    {allImages.map((imgUrl, idx) => (
+                      <div
+                        key={imgUrl || idx}
+                        className="w-full shrink-0 grow-0 basis-full flex items-center justify-center relative select-none"
                       >
-                        <ChevronLeft className="w-5 h-5" />
-                      </button>
-                    )}
-                    {modalSlideIndex < allImages.length - 1 && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setModalSlideIndex((prev) => Math.min(allImages.length - 1, prev + 1));
-                        }}
-                        aria-label="Next Slide"
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center opacity-90 hover:opacity-100 hover:scale-105 active:scale-95 transition-all shadow-xl pointer-events-auto backdrop-blur-xs"
-                      >
-                        <ChevronRight className="w-5 h-5" />
-                      </button>
-                    )}
+                        <Image
+                          src={getOptimizedImageUrl(imgUrl, 1200)}
+                          alt={
+                            idx === 0
+                              ? selectedPost.imageAlt || selectedPost.title
+                              : selectedPost.additionalImageAlts?.[idx - 1] || `${selectedPost.imageAlt || selectedPost.title} - Slide ${idx + 1}`
+                          }
+                          width={selectedPost.imageWidth || 1200}
+                          height={selectedPost.imageHeight || 1600}
+                          sizes="(max-width: 1024px) 100vw, 60vw"
+                          draggable={false}
+                          className="w-full h-auto max-h-[82vh] object-contain block select-none pointer-events-none"
+                          referrerPolicy="no-referrer"
+                          priority={idx === 0}
+                          decoding="async"
+                        />
+                      </div>
+                    ))}
+                  </div>
 
-                    {/* Pinterest Style Slider Dots Over Image */}
+                  {/* Slider Navigation Dots OVER the image (Requirement 4) */}
+                  {allImages.length > 1 && (
                     <div
-                      className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md shadow-lg pointer-events-auto"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
+                      className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/15 shadow-xl pointer-events-auto"
+                      onClick={(e) => e.stopPropagation()}
                     >
                       {allImages.map((_, idx) => (
                         <button
                           key={idx}
                           type="button"
                           onClick={(e) => {
-                            e.preventDefault();
                             e.stopPropagation();
-                            setModalSlideIndex(idx);
+                            setModalSlide(idx);
                           }}
-                          aria-label={`Slide ${idx + 1}`}
-                          className={`transition-all duration-300 rounded-full ${
-                            idx === modalSlideIndex
-                              ? 'w-4 h-2 bg-white shadow-sm scale-110'
-                              : 'w-2 h-2 bg-white/50 hover:bg-white/90'
+                          className={`transition-all duration-300 rounded-full cursor-pointer focus:outline-none ${
+                            modalSlide === idx
+                              ? 'w-5 h-2 bg-white shadow-sm'
+                              : 'w-2 h-2 bg-white/45 hover:bg-white/80'
                           }`}
+                          title={`Slide ${idx + 1} of ${allImages.length}`}
+                          aria-label={`Go to slide ${idx + 1}`}
                         />
                       ))}
                     </div>
+                  )}
 
-                    {/* Action Icons Overlay: Download + Enlarge */}
-                    <div className="absolute bottom-4 right-4 flex items-center gap-2 z-20 pointer-events-auto">
-                      <button
-                        type="button"
-                        onClick={(e) => handleDownloadImage(e, allImages[modalSlideIndex])}
-                        disabled={isDownloadingImage}
-                        className="p-2.5 rounded-full bg-black/70 hover:bg-black text-white backdrop-blur-md transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center justify-center"
-                        title={`Download Slide ${modalSlideIndex + 1}`}
-                        aria-label="Download Image"
-                      >
-                        {isDownloadingImage ? (
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Download className="w-4 h-4" />
-                        )}
-                      </button>
+                  {/* Navigation Arrows OVER the image */}
+                  {allImages.length > 1 && (
+                    <>
+                      {modalSlide > 0 && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setModalSlide((prev) => Math.max(0, prev - 1));
+                          }}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md border border-white/10 shadow-xl flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer opacity-80 hover:opacity-100"
+                          title="Previous image"
+                          aria-label="Previous image"
+                        >
+                          <ChevronLeft className="w-5 h-5" />
+                        </button>
+                      )}
+                      {modalSlide < allImages.length - 1 && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setModalSlide((prev) => Math.min(allImages.length - 1, prev + 1));
+                          }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md border border-white/10 shadow-xl flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer opacity-80 hover:opacity-100"
+                          title="Next image"
+                          aria-label="Next image"
+                        >
+                          <ChevronRight className="w-5 h-5" />
+                        </button>
+                      )}
+                    </>
+                  )}
 
-                      <button
-                        type="button"
-                        onClick={() => setShowFullImageModal(true)}
-                        className="p-2.5 rounded-full bg-black/70 hover:bg-black text-white backdrop-blur-md transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center justify-center"
-                        title="View Full Resolution Image"
-                        aria-label="Enlarge Image"
-                      >
-                        <Maximize2 className="w-4 h-4" />
-                      </button>
-                    </div>
+                  {/* Action Icons Overlay: Download + Enlarge */}
+                  <div className="absolute bottom-4 right-4 flex items-center gap-2 z-20">
+                    <button
+                      type="button"
+                      onClick={(e) => handleDownloadImage(e, allImages[modalSlide])}
+                      disabled={isDownloadingImage}
+                      className="p-2.5 rounded-full bg-black/70 hover:bg-black text-white backdrop-blur-md transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer"
+                      title="Download Image"
+                      aria-label="Download Image"
+                    >
+                      {isDownloadingImage ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Download className="w-4 h-4" />
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowFullImageModal(true)}
+                      className="p-2.5 rounded-full bg-black/70 hover:bg-black text-white backdrop-blur-md transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer"
+                      title="View Full Resolution Image"
+                      aria-label="Enlarge Image"
+                    >
+                      <Maximize2 className="w-4 h-4" />
+                    </button>
                   </div>
-                ) : (
-                  <div
-                    onContextMenu={(e) => e.preventDefault()}
-                    style={{ aspectRatio: detectedRatio }}
-                    className="relative w-full overflow-hidden flex items-center justify-center select-none bg-neutral-950"
-                  >
-                    <Image
-                      src={getOptimizedImageUrl(selectedPost.imageUrl, 1200)}
-                      alt={selectedPost.imageAlt || selectedPost.title}
-                      fill
-                      sizes="(max-width: 1024px) 100vw, 60vw"
-                      draggable={false}
-                      className="w-full h-full object-cover select-none pointer-events-none"
-                      referrerPolicy="no-referrer"
-                      priority
-                      decoding="async"
-                    />
-
-                    {/* Action Icons Overlay: Download + Enlarge */}
-                    <div className="absolute bottom-4 right-4 flex items-center gap-2 z-10 pointer-events-auto">
-                      <button
-                        type="button"
-                        onClick={(e) => handleDownloadImage(e)}
-                        disabled={isDownloadingImage}
-                        className="p-2.5 rounded-full bg-black/70 hover:bg-black text-white backdrop-blur-md transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center justify-center"
-                        title="Download Image"
-                        aria-label="Download Image"
-                      >
-                        {isDownloadingImage ? (
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Download className="w-4 h-4" />
-                        )}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setShowFullImageModal(true)}
-                        className="p-2.5 rounded-full bg-black/70 hover:bg-black text-white backdrop-blur-md transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center justify-center"
-                        title="View Full Resolution Image"
-                        aria-label="Enlarge Image"
-                      >
-                        <Maximize2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                )
+                </div>
               ) : (
                 <div className="w-full aspect-[4/3] flex items-center justify-center bg-neutral-900 text-neutral-400">
                   <Sparkles className="w-12 h-12 opacity-30" />
@@ -1557,22 +1472,22 @@ export const PromptDetailModal = () => {
       </main>
 
       {/* Full-Screen Image Lightbox Modal */}
-      {showFullImageModal && selectedPost.imageUrl && (
+      {showFullImageModal && (allImages[modalSlide] || selectedPost?.imageUrl) && (
         <div
           onClick={() => setShowFullImageModal(false)}
           onContextMenu={(e) => e.preventDefault()}
           className="fixed inset-0 z-60 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out animate-fade-in select-none"
         >
           {/* Lightbox Controls: Download + Close */}
-          <div className="absolute top-5 right-5 flex items-center gap-2 z-20">
+          <div className="absolute top-5 right-5 flex items-center gap-2 z-10">
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                handleDownloadImage(e, allImages[modalSlideIndex]);
+                handleDownloadImage(e, allImages[modalSlide]);
               }}
-              className="p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all hover:scale-105 active:scale-95 shadow-md"
-              title={hasSlider ? `Download Slide ${modalSlideIndex + 1}` : "Download Image"}
+              className="p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all hover:scale-105 active:scale-95 shadow-md cursor-pointer"
+              title="Download Image"
               aria-label="Download Image"
             >
               <Download className="w-5 h-5" />
@@ -1581,7 +1496,7 @@ export const PromptDetailModal = () => {
             <button
               type="button"
               onClick={() => setShowFullImageModal(false)}
-              className="p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all hover:scale-105 active:scale-95 shadow-md"
+              className="p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all hover:scale-105 active:scale-95 shadow-md cursor-pointer"
               title="Close Lightbox"
               aria-label="Close Lightbox"
             >
@@ -1589,39 +1504,41 @@ export const PromptDetailModal = () => {
             </button>
           </div>
 
-          {/* Lightbox Nav Arrows & Dots */}
-          {hasSlider && (
+          {/* Lightbox Navigation Arrows */}
+          {allImages.length > 1 && (
             <>
-              {modalSlideIndex > 0 && (
+              {modalSlide > 0 && (
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setModalSlideIndex((prev) => Math.max(0, prev - 1));
+                    setModalSlide((prev) => Math.max(0, prev - 1));
                   }}
-                  className="absolute left-5 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/10 hover:bg-white/25 text-white flex items-center justify-center transition-all shadow-xl hover:scale-105 pointer-events-auto"
-                  title="Previous Slide"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 text-white backdrop-blur-md flex items-center justify-center transition-all cursor-pointer"
+                  title="Previous image"
+                  aria-label="Previous image"
                 >
                   <ChevronLeft className="w-6 h-6" />
                 </button>
               )}
-              {modalSlideIndex < allImages.length - 1 && (
+              {modalSlide < allImages.length - 1 && (
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setModalSlideIndex((prev) => Math.min(allImages.length - 1, prev + 1));
+                    setModalSlide((prev) => Math.min(allImages.length - 1, prev + 1));
                   }}
-                  className="absolute right-5 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/10 hover:bg-white/25 text-white flex items-center justify-center transition-all shadow-xl hover:scale-105 pointer-events-auto"
-                  title="Next Slide"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 text-white backdrop-blur-md flex items-center justify-center transition-all cursor-pointer"
+                  title="Next image"
+                  aria-label="Next image"
                 >
                   <ChevronRight className="w-6 h-6" />
                 </button>
               )}
 
-              {/* Lightbox Dots */}
+              {/* Lightbox Slider Dots */}
               <div
-                className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-4 py-2 rounded-full bg-black/60 backdrop-blur-md shadow-2xl pointer-events-auto"
+                className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
               >
                 {allImages.map((_, idx) => (
@@ -1630,13 +1547,13 @@ export const PromptDetailModal = () => {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setModalSlideIndex(idx);
+                      setModalSlide(idx);
                     }}
-                    className={`transition-all rounded-full ${
-                      idx === modalSlideIndex
-                        ? 'w-4 h-2 bg-white scale-110 shadow-sm'
-                        : 'w-2 h-2 bg-white/40 hover:bg-white/80'
+                    className={`transition-all duration-300 rounded-full cursor-pointer focus:outline-none ${
+                      modalSlide === idx ? 'w-5 h-2 bg-white' : 'w-2 h-2 bg-white/40 hover:bg-white/80'
                     }`}
+                    title={`Slide ${idx + 1}`}
+                    aria-label={`Slide ${idx + 1}`}
                   />
                 ))}
               </div>
@@ -1645,15 +1562,14 @@ export const PromptDetailModal = () => {
 
           <div
             onContextMenu={(e) => e.preventDefault()}
-            onClick={(e) => e.stopPropagation()}
             className="relative max-w-5xl max-h-[90vh] w-full h-full flex items-center justify-center select-none"
           >
             <Image
-              src={allImages[modalSlideIndex] || selectedPost.imageUrl}
+              src={allImages[modalSlide] || selectedPost.imageUrl}
               alt={
-                modalSlideIndex === 0
+                modalSlide === 0
                   ? selectedPost.imageAlt || selectedPost.title
-                  : (selectedPost.additionalImageAlts?.[modalSlideIndex - 1] || `${selectedPost.imageAlt || selectedPost.title} - Slide ${modalSlideIndex + 1}`)
+                  : selectedPost.additionalImageAlts?.[modalSlide - 1] || `${selectedPost.imageAlt || selectedPost.title} - Slide ${modalSlide + 1}`
               }
               width={1600}
               height={1600}

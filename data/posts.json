@@ -8,23 +8,30 @@
     "promptText": "Use the uploaded three-panel reference image as the MASTER VISUAL REFERENCE for the complete composition.\n\nUse the uploaded user's photo as the ONLY identity and clothing reference.\n\nIMPORTANT — IDENTITY:\nPreserve the user's exact recognizable facial identity, facial proportions, eyes, eyebrows, nose, lips, jawline, skin tone, hairstyle, facial hair if present and natural physical characteristics.\n\nIMPORTANT — CLOTHING:\nPreserve the user's EXACT ORIGINAL CLOTHES.\n\nDo NOT copy the black shirt, sunglasses or watch from the reference image.\n\nThe user must wear exactly the clothes visible in their uploaded photo, with the same colors, patterns, fabric, fit, buttons, sleeves, folds, footwear and accessories.\n\nCOMPOSITION:\nCreate a vertical three-panel photographic collage.\n\nDivide the final image into THREE horizontal photographs stacked vertically with clean horizontal separation between each panel.\n\nAll three panels should feature the SAME USER.\n\nMaintain consistent identity, hairstyle, skin tone and clothing across all three panels.\n\nPANEL 1:\nRecreate the first reference pose.\n\nMedium portrait of the user standing outdoors, looking toward the right side of the frame.\n\nOne hand is raised naturally near the upper chest/collar area.\n\nThe other arm remains relaxed.\n\nUse the same approximate framing, subject scale and camera height.\n\nPANEL 2:\nRecreate the second reference pose.\n\nMedium portrait of the user standing outdoors and looking slightly toward the side.\n\nThe user wears the exact original clothes from the uploaded user photo.\n\nBoth hands are naturally positioned together around the lower chest/waist area.\n\nIf the user's original accessories are visible, preserve them exactly.\n\nPANEL 3:\nRecreate the third reference pose.\n\nMedium portrait of the same user looking toward the right side.\n\nOne hand is naturally raised toward the neck/collar area.\n\nMaintain the same relaxed masculine editorial posture.\n\nENVIRONMENT:\nAll three panels should use a similar outdoor setting with a softly blurred natural landscape in the background.\n\nGreen vegetation, distant trees and muted outdoor structures should remain softly out of focus.\n\nKeep the background realistic and understated so the subject remains the focal point.\n\nLIGHTING:\nBright natural outdoor daylight.\n\nSoft directional sunlight falling naturally across the user's face and clothing.\n\nMaintain the slightly bright, airy exposure of the reference images.\n\nUse subtle natural highlights on the face and hair.\n\nAvoid studio lighting.\n\nCOLOUR PALETTE:\nSoft sky blue,\nmuted green vegetation,\nwarm natural skin tones,\nslightly neutral clothing tones.\n\nUse the same bright, clean outdoor colour treatment throughout all three panels.\n\nCOLOUR GRADING:\nNatural smartphone-camera colour grading.\n\nSlightly lifted exposure with soft contrast.\n\nModerately warm skin tones.\n\nNatural greens and pale blue sky.\n\nNo heavy cinematic LUT.\n\nNo excessive saturation.\n\nPHOTOGRAPHIC STYLE:\nMake all three panels look like genuine outdoor photographs captured with a modern smartphone.\n\nNatural skin texture.\n\nRealistic hair strands.\n\nAuthentic fabric texture.\n\nSubtle optical imperfections.\n\nNatural depth of field.\n\nRealistic background blur.\n\nNo artificial beauty retouching.\n\nIMPORTANT:\nThe three images must look like separate real photographs taken during the same outdoor session, while maintaining the exact same user identity and original clothing.\n\nNEGATIVE PROMPT:\ndifferent person, inconsistent face, face morphing, changed clothes, copied black shirt, copied sunglasses, copied watch, different hairstyle, artificial skin, beauty filter, CGI, illustration, anime, excessive HDR, excessive saturation, fake bokeh, unrealistic background, distorted hands, extra fingers, extra limbs, warped face, unrealistic shadows, plastic skin.",
     "imageUrl": "https://res.cloudinary.com/idbpgaqz/image/upload/v1790645009/prompts/prompt-1790644998384.jpg",
     "imageAlt": "Cinematic Mountain Portrait Photography",
-    "imageFileName": "cinematic-mountain-portrait-photography.webp",
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [
       "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1024&q=80",
-      "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1024&q=80"
+      "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1024&q=80"
     ],
     "additionalImageAlts": [
       "Cinematic Mountain Portrait Photography - Slide 2",
       "Cinematic Mountain Portrait Photography - Slide 3"
     ],
     "additionalImageFileNames": [
-      "cinematic-mountain-portrait-photography-slide-2.webp",
-      "cinematic-mountain-portrait-photography-slide-3.webp"
+      "cinematic-mountain-portrait-photography-2.webp",
+      "cinematic-mountain-portrait-photography-3.webp"
     ],
     "parameters": {
-      "isPremium": false
+      "isPremium": false,
+      "additionalImageAlts": [
+        "Cinematic Mountain Portrait Photography - Slide 2",
+        "Cinematic Mountain Portrait Photography - Slide 3"
+      ],
+      "additionalImageFileNames": [
+        "cinematic-mountain-portrait-photography-2.webp",
+        "cinematic-mountain-portrait-photography-3.webp"
+      ]
     },
     "variables": [],
     "articleContent": "### Mastering the Mountain Portrait Aesthetic\n\nThis prompt is engineered to capture the 'lifestyle editorial' look often seen on professional social media feeds. The key to this aesthetic is the contrast between the sharp, detailed subject and the soft, blurred background (bokeh).\n\n**Lighting Breakdown:**\nThe prompt specifies 'golden hour' and 'rim lighting.' This is critical; by placing the light source behind or slightly to the side of the subject, you create a beautiful glow along the hair and shoulder edges, which separates the subject from the busy forest background.\n\n**Composition Tips:**\n- **Depth of Field:** By using an 85mm lens setting at f/1.8, the AI creates a tight crop that flattens the background, making the subject pop.\n- **Subject Positioning:** This prompt works best when the subject is slightly off-center to follow the rule of thirds, suggesting a candid, unplanned moment.\n\n**Pro Tip:**\nIf you want a more moody aesthetic, adjust the lighting setting in the prompt to 'overcast mountain mist' instead of 'golden hour' to change the entire color temperature from warm to cool.",
@@ -41,7 +48,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 95042,
+    "viewsCount": 95043,
     "copiesCount": 39918,
     "likesCount": 28513,
     "bookmarksCount": 0,
@@ -58,7 +65,7 @@
       "metaDescription": "Create professional, high-end lifestyle mountain portraits with this detailed AI prompt. Perfect for Midjourney, Flux, and Stable Diffusion."
     },
     "createdAt": "2026-09-29T01:26:59.509+00:00",
-    "updatedAt": "2026-09-29T01:27:01.608+00:00",
+    "updatedAt": "2026-09-29T05:22:00.069+00:00",
     "publishedAt": "2026-09-29T01:26:59.509+00:00"
   },
   {
@@ -73,6 +80,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -123,6 +132,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -141,8 +152,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 33146,
-    "copiesCount": 13921,
+    "viewsCount": 33147,
+    "copiesCount": 13923,
     "likesCount": 9944,
     "bookmarksCount": 0,
     "seoTitle": "Low-Angle Urban Lifestyle Portrait Prompt for AI Art",
@@ -158,7 +169,7 @@
       "metaDescription": "Master the art of lifestyle photography with this low-angle portrait prompt designed for high-end AI image generators."
     },
     "createdAt": "2026-09-29T01:22:39.021+00:00",
-    "updatedAt": "2026-09-29T01:22:41.207+00:00",
+    "updatedAt": "2026-09-29T05:50:59.352+00:00",
     "publishedAt": "2026-09-29T01:22:39.021+00:00"
   },
   {
@@ -173,6 +184,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -223,6 +236,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -272,6 +287,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -322,6 +339,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -372,6 +391,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -422,6 +443,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -472,6 +495,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -522,6 +547,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -572,6 +599,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -622,6 +651,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -672,6 +703,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -722,6 +755,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -772,6 +807,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -822,6 +859,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -873,6 +912,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -923,6 +964,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -973,6 +1016,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -1023,6 +1068,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -1041,7 +1088,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 63455,
+    "viewsCount": 63456,
     "copiesCount": 26644,
     "likesCount": 19032,
     "bookmarksCount": 0,
@@ -1058,7 +1105,7 @@
       "metaDescription": "Learn how to generate stunning cinematic portraits with rainbow prism lighting effects using our professional AI photography prompt guide."
     },
     "createdAt": "2026-09-21T15:33:16.485+00:00",
-    "updatedAt": "2026-09-28T13:50:39.725+00:00",
+    "updatedAt": "2026-09-29T05:31:33.335+00:00",
     "publishedAt": "2026-09-21T15:33:16.485+00:00"
   },
   {
@@ -1073,6 +1120,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -1124,6 +1173,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -1175,6 +1226,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -1225,6 +1278,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -1275,6 +1330,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -1325,6 +1382,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -1375,6 +1434,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -1425,6 +1486,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -1475,6 +1538,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -1525,6 +1590,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -1576,6 +1643,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -1626,6 +1695,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -1671,6 +1742,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -1715,6 +1788,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -1758,6 +1833,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -1802,6 +1879,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -1847,6 +1926,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -1891,6 +1972,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -1935,6 +2018,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -1979,6 +2064,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -2023,6 +2110,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -2067,6 +2156,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -2111,6 +2202,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -2155,6 +2248,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -2199,6 +2294,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -2243,6 +2340,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -2287,6 +2386,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -2331,6 +2432,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -2349,7 +2452,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 7,
+    "viewsCount": 8,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -2360,7 +2463,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-15T10:18:56.899+00:00",
-    "updatedAt": "2026-09-24T12:01:37.867+00:00",
+    "updatedAt": "2026-09-29T05:23:31.014+00:00",
     "publishedAt": "2026-09-15T10:18:56.899+00:00"
   },
   {
@@ -2375,6 +2478,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -2419,6 +2524,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -2463,6 +2570,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -2507,6 +2616,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -2551,6 +2662,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -2595,6 +2708,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -2639,6 +2754,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -2684,6 +2801,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -2728,6 +2847,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -2772,6 +2893,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -2816,6 +2939,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -2860,6 +2985,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -2904,6 +3031,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -2948,6 +3077,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -2992,6 +3123,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -3036,6 +3169,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -3080,6 +3215,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -3123,6 +3260,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -3167,6 +3306,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -3211,6 +3352,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -3255,6 +3398,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -3298,6 +3443,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -3341,6 +3488,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -3384,6 +3533,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -3402,7 +3553,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 3,
+    "viewsCount": 4,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -3413,7 +3564,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-05T09:47:01.463+00:00",
-    "updatedAt": "2026-09-28T13:36:06.478+00:00",
+    "updatedAt": "2026-09-29T05:31:36.267+00:00",
     "publishedAt": "2026-09-05T09:47:01.463+00:00"
   },
   {
@@ -3428,6 +3579,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -3472,6 +3625,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -3516,6 +3671,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -3559,6 +3716,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -3603,6 +3762,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -3647,6 +3808,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -3691,6 +3854,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -3735,6 +3900,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -3778,6 +3945,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -3821,6 +3990,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -3865,6 +4036,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -3909,6 +4082,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -3953,6 +4128,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -3997,6 +4174,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -4042,6 +4221,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -4086,6 +4267,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -4130,6 +4313,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -4175,6 +4360,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -4219,6 +4406,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -4263,6 +4452,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -4307,6 +4498,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -4352,6 +4545,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -4396,6 +4591,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -4440,6 +4637,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -4484,6 +4683,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -4528,6 +4729,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -4572,6 +4775,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -4616,6 +4821,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -4660,6 +4867,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -4704,6 +4913,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -4748,6 +4959,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -4792,6 +5005,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -4836,6 +5051,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -4880,6 +5097,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -4924,6 +5143,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -4968,6 +5189,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -5012,6 +5235,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -5056,6 +5281,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -5100,6 +5327,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -5144,6 +5373,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -5188,6 +5419,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -5232,6 +5465,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -5276,6 +5511,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -5321,6 +5558,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -5365,6 +5604,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -5410,6 +5651,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -5454,6 +5697,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -5499,6 +5744,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -5543,6 +5790,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -5587,6 +5836,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -5631,6 +5882,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -5675,6 +5928,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -5718,6 +5973,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -5762,6 +6019,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -5806,6 +6065,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -5849,6 +6110,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -5893,6 +6156,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -5937,6 +6202,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -5981,6 +6248,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -6024,6 +6293,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -6043,9 +6314,9 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 3,
-    "copiesCount": 0,
-    "likesCount": 0,
+    "viewsCount": 4,
+    "copiesCount": 1,
+    "likesCount": 1,
     "bookmarksCount": 0,
     "author": {
       "name": "tool.reelz",
@@ -6054,7 +6325,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T07:07:03.092+00:00",
-    "updatedAt": "2026-09-28T13:36:11.776+00:00",
+    "updatedAt": "2026-09-29T05:50:57.118+00:00",
     "publishedAt": "2026-09-04T07:07:03.092+00:00"
   },
   {
@@ -6069,6 +6340,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -6113,6 +6386,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -6157,6 +6432,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -6201,6 +6478,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -6245,6 +6524,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -6289,6 +6570,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -6334,6 +6617,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -6378,6 +6663,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -6423,6 +6710,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -6467,6 +6756,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -6512,6 +6803,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -6557,6 +6850,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -6603,6 +6898,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -6648,6 +6945,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -6692,6 +6991,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -6736,6 +7037,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -6780,6 +7083,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -6824,6 +7129,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -6866,6 +7173,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -6909,6 +7218,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -6952,6 +7263,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -6996,6 +7309,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -7041,6 +7356,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -7084,6 +7401,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -7127,6 +7446,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false,
       "isRequested": false,
@@ -7174,6 +7495,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true,
       "isRequested": true,
@@ -7222,6 +7545,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -7265,6 +7590,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -7309,6 +7636,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -7354,6 +7683,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -7399,6 +7730,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -7443,6 +7776,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -7488,6 +7823,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -7531,6 +7868,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -7575,6 +7914,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -7624,6 +7965,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -7642,7 +7985,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 4,
+    "viewsCount": 5,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -7653,7 +7996,7 @@
     },
     "seo": {},
     "createdAt": "2026-08-23T09:16:24.225+00:00",
-    "updatedAt": "2026-09-24T03:24:42.175+00:00",
+    "updatedAt": "2026-09-29T05:23:39.015+00:00",
     "publishedAt": "2026-08-23T09:16:24.225+00:00"
   },
   {
@@ -7668,6 +8011,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -7712,6 +8057,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -7756,6 +8103,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false,
       "isRequested": false,
@@ -7804,6 +8153,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -7847,6 +8198,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -7891,6 +8244,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -7936,6 +8291,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -7979,6 +8336,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -8023,6 +8382,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -8067,6 +8428,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -8111,6 +8474,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true,
       "isRequested": false,
@@ -8160,6 +8525,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false,
       "isRequested": false,
@@ -8209,6 +8576,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -8254,6 +8623,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -8298,6 +8669,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false,
       "isRequested": false,
@@ -8348,6 +8721,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -8394,6 +8769,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -8439,6 +8816,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -8483,6 +8862,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false,
       "isRequested": false,
@@ -8532,6 +8913,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -8577,6 +8960,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -8621,6 +9006,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false,
       "isRequested": false,
@@ -8671,6 +9058,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false,
       "isRequested": false,
@@ -8721,6 +9110,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -8766,6 +9157,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -8811,6 +9204,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -8856,6 +9251,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -8900,6 +9297,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false,
       "isRequested": false,
@@ -8949,6 +9348,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -8992,6 +9393,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false,
       "isRequested": false,
@@ -9040,6 +9443,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -9084,6 +9489,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -9129,6 +9536,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -9173,6 +9582,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -9218,6 +9629,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -9261,6 +9674,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": true
     },
@@ -9306,6 +9721,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -9351,6 +9768,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -9395,6 +9814,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false
     },
@@ -9444,6 +9865,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false,
       "isRequested": false,
@@ -9494,6 +9917,8 @@
     "imageWidth": 1024,
     "imageHeight": 1536,
     "additionalImages": [],
+    "additionalImageAlts": [],
+    "additionalImageFileNames": [],
     "parameters": {
       "isPremium": false,
       "isRequested": false,

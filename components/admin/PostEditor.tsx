@@ -26,10 +26,11 @@ import {
   Check,
   Crown,
   Bell,
-  Layers,
   Trash2,
-  ChevronLeft,
-  ChevronRight,
+  ChevronUp,
+  ChevronDown,
+  Layers,
+  Images,
 } from 'lucide-react';
 import Image from 'next/image';
 import { cleanTagsArray, canonicalizeTag, slugify } from '@/lib/utils';
@@ -105,32 +106,6 @@ export const PostEditor = () => {
   const [uploadedFileInfo, setUploadedFileInfo] = useState<{ name: string; size: string } | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
-  // Extra Slider Images (Pinterest Carousel) State
-  const [extraImages, setExtraImages] = useState<
-    { id: string; url: string; alt: string; fileName: string }[]
-  >(() => {
-    if (existingPost?.additionalImages && existingPost.additionalImages.length > 0) {
-      const baseAlt = existingPost.imageAlt || existingPost.title || '';
-      const baseFileName = existingPost.imageFileName || generateImageFileNameFromTitle(existingPost.title);
-      return existingPost.additionalImages.map((url, idx) => {
-        const slideNum = idx + 2;
-        const autoAlt = existingPost.additionalImageAlts?.[idx] || (baseAlt ? `${baseAlt} - Slide ${slideNum}` : `Slide ${slideNum}`);
-        const autoFileName = existingPost.additionalImageFileNames?.[idx] || (baseFileName ? (baseFileName.includes('.') ? baseFileName.replace(/\.([a-z0-9]+)$/i, `-slide-${slideNum}.$1`) : `${baseFileName}-slide-${slideNum}.webp`) : `slide-${slideNum}.webp`);
-        return {
-          id: `extra-${idx}-${Date.now()}`,
-          url,
-          alt: autoAlt,
-          fileName: autoFileName,
-        };
-      });
-    }
-    return [];
-  });
-  const [extraUrlInput, setExtraUrlInput] = useState('');
-  const [isUploadingExtra, setIsUploadingExtra] = useState(false);
-  const [isDraggingExtra, setIsDraggingExtra] = useState(false);
-  const extraFileInputRef = React.useRef<HTMLInputElement | null>(null);
-
   const [status, setStatus] = useState<'published' | 'draft'>(
     () => (existingPost?.status === 'draft' ? 'draft' : 'published')
   );
@@ -138,40 +113,55 @@ export const PostEditor = () => {
     () => Boolean(existingPost?.isPremium || existingPost?.parameters?.isPremium)
   );
 
+  // Extra Slider Images State (Pinterest Carousel)
+  const [extraImages, setExtraImages] = useState<Array<{
+    id: string;
+    url: string;
+    alt: string;
+    fileName: string;
+    fileInfo?: { name: string; size: string };
+  }>>(() => {
+    if (existingPost?.additionalImages && existingPost.additionalImages.length > 0) {
+      const existingAlts: string[] = existingPost.additionalImageAlts || (existingPost.parameters as any)?.additionalImageAlts || [];
+      const existingFileNames: string[] = existingPost.additionalImageFileNames || (existingPost.parameters as any)?.additionalImageFileNames || [];
+      const mainBase = (existingPost.imageFileName || generateImageFileNameFromTitle(existingPost.title || 'photo-prompt')).replace(/\.[^/.]+$/, '');
+      const mainAlt = existingPost.imageAlt || existingPost.title || 'AI Photo Prompt';
+
+      return existingPost.additionalImages.map((url, idx) => ({
+        id: `extra-${idx}-${Date.now()}`,
+        url,
+        alt: existingAlts[idx] || `${mainAlt} - Slide ${idx + 2}`,
+        fileName: existingFileNames[idx] || `${mainBase}-${idx + 2}.webp`,
+      }));
+    }
+    return [];
+  });
+  const [extraImageSourceTab, setExtraImageSourceTab] = useState<'upload' | 'url'>('upload');
+  const [extraImageUrlInput, setExtraImageUrlInput] = useState('');
+  const [isUploadingExtraImages, setIsUploadingExtraImages] = useState(false);
+  const extraFileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [isExtraDragging, setIsExtraDragging] = useState(false);
+
   useEffect(() => {
     if (existingPost) {
-      setTitle(existingPost.title || '');
-      setSlug(existingPost.slug || '');
-      setCategory(existingPost.category || 'Photorealistic & Portraits');
-      setPromptText(existingPost.promptText || '');
-      setImageUrl(existingPost.imageUrl || '');
-      setImageAlt(existingPost.imageAlt || existingPost.title || '');
-      setImageFileName(existingPost.imageFileName || generateImageFileNameFromTitle(existingPost.title));
-      setStatus(existingPost.status === 'draft' ? 'draft' : 'published');
       setIsPremium(Boolean(existingPost.isPremium || existingPost.parameters?.isPremium));
-      setArticleContent(existingPost.articleContent || '');
-      setTags(existingPost.tags && existingPost.tags.length > 0 ? existingPost.tags : ['AI Prompt']);
       if (existingPost.additionalImages && existingPost.additionalImages.length > 0) {
-        const baseAlt = existingPost.imageAlt || existingPost.title || '';
-        const baseFileName = existingPost.imageFileName || generateImageFileNameFromTitle(existingPost.title);
+        const existingAlts: string[] = existingPost.additionalImageAlts || (existingPost.parameters as any)?.additionalImageAlts || [];
+        const existingFileNames: string[] = existingPost.additionalImageFileNames || (existingPost.parameters as any)?.additionalImageFileNames || [];
+        const mainBase = (existingPost.imageFileName || generateImageFileNameFromTitle(existingPost.title || 'photo-prompt')).replace(/\.[^/.]+$/, '');
+        const mainAlt = existingPost.imageAlt || existingPost.title || 'AI Photo Prompt';
+
         setExtraImages(
-          existingPost.additionalImages.map((url, idx) => {
-            const slideNum = idx + 2;
-            const autoAlt = existingPost.additionalImageAlts?.[idx] || (baseAlt ? `${baseAlt} - Slide ${slideNum}` : `Slide ${slideNum}`);
-            const autoFileName = existingPost.additionalImageFileNames?.[idx] || (baseFileName ? (baseFileName.includes('.') ? baseFileName.replace(/\.([a-z0-9]+)$/i, `-slide-${slideNum}.$1`) : `${baseFileName}-slide-${slideNum}.webp`) : `slide-${slideNum}.webp`);
-            return {
-              id: `extra-${idx}-${Date.now()}`,
-              url,
-              alt: autoAlt,
-              fileName: autoFileName,
-            };
-          })
+          existingPost.additionalImages.map((url, idx) => ({
+            id: `extra-${idx}-${Date.now()}`,
+            url,
+            alt: existingAlts[idx] || `${mainAlt} - Slide ${idx + 2}`,
+            fileName: existingFileNames[idx] || `${mainBase}-${idx + 2}.webp`,
+          }))
         );
-      } else {
-        setExtraImages([]);
       }
     }
-  }, [editingPostId]);
+  }, [existingPost]);
   const [articleContent, setArticleContent] = useState(
     () =>
       existingPost?.articleContent ||
@@ -444,8 +434,6 @@ export const PostEditor = () => {
         const autoFileName = generateImageFileNameFromTitle(title || file.name, file.name);
         setImageFileName(autoFileName);
 
-        syncExtraImages(autoAlt, autoFileName);
-
         // Auto-assign category & tags if title or prompt is present
         if (title.trim() || promptText.trim()) {
           handleAutoTaxonomy();
@@ -456,145 +444,6 @@ export const PostEditor = () => {
     } finally {
       setIsUploadingImage(false);
     }
-  };
-
-  const syncExtraImages = (baseAltText: string, baseFileNameText: string) => {
-    setExtraImages((prev) =>
-      prev.map((img, idx) => {
-        const slideNum = idx + 2;
-        const autoAlt = `${baseAltText || 'Photo Prompt'} - Slide ${slideNum}`;
-        const autoFileName = baseFileNameText.includes('.')
-          ? baseFileNameText.replace(/\.([a-z0-9]+)$/i, `-slide-${slideNum}.$1`)
-          : `${baseFileNameText}-slide-${slideNum}.webp`;
-        return {
-          ...img,
-          alt: autoAlt,
-          fileName: autoFileName,
-        };
-      })
-    );
-  };
-
-  const handleExtraFilesUpload = async (fileList: FileList | File[]) => {
-    const validFiles = Array.from(fileList).filter((f) => f.type.startsWith('image/'));
-    if (validFiles.length === 0) {
-      showToast('Please select valid image files.');
-      return;
-    }
-
-    setIsUploadingExtra(true);
-    try {
-      const newItems: { id: string; url: string; alt: string; fileName: string }[] = [];
-      const baseCount = extraImages.length;
-      const baseAlt = (imageAlt || title).trim() || 'Photo Prompt';
-      const baseFile = (imageFileName || generateImageFileNameFromTitle(title));
-
-      for (let i = 0; i < validFiles.length; i++) {
-        const file = validFiles[i];
-        const slideNum = baseCount + i + 2;
-        const optimized = await optimizeImageFile(file);
-        if (!optimized) continue;
-
-        let finalUrl = optimized;
-        try {
-          const cleanBase = slug || slugify(title) || `prompt-${Date.now()}`;
-          const uploadRes = await fetch('/api/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              image: optimized,
-              folder: 'prompts',
-              publicId: `${cleanBase}-slide-${slideNum}`,
-            }),
-          });
-          const uploadData = await uploadRes.json();
-          if (uploadData && uploadData.url) {
-            finalUrl = uploadData.url;
-          }
-        } catch (e) {
-          console.warn('Fallback to local optimized data', e);
-        }
-
-        const derivedAlt = `${baseAlt} - Slide ${slideNum}`;
-        const derivedFileName = baseFile.includes('.')
-          ? baseFile.replace(/\.([a-z0-9]+)$/i, `-slide-${slideNum}.$1`)
-          : `${baseFile}-slide-${slideNum}.webp`;
-
-        newItems.push({
-          id: `extra-${Date.now()}-${i}`,
-          url: finalUrl,
-          alt: derivedAlt,
-          fileName: derivedFileName,
-        });
-      }
-
-      if (newItems.length > 0) {
-        setExtraImages((prev) => [...prev, ...newItems]);
-        showToast(`Added ${newItems.length} slider image(s) with synced Alt & File names!`);
-      }
-    } catch {
-      showToast('Failed to upload extra images');
-    } finally {
-      setIsUploadingExtra(false);
-    }
-  };
-
-  const handleAddExtraUrl = () => {
-    if (!extraUrlInput.trim()) return;
-    const slideNum = extraImages.length + 2;
-    const baseAlt = (imageAlt || title).trim() || 'Photo Prompt';
-    const baseFile = (imageFileName || generateImageFileNameFromTitle(title));
-    const derivedAlt = `${baseAlt} - Slide ${slideNum}`;
-    const derivedFileName = baseFile.includes('.')
-      ? baseFile.replace(/\.([a-z0-9]+)$/i, `-slide-${slideNum}.$1`)
-      : `${baseFile}-slide-${slideNum}.webp`;
-
-    setExtraImages((prev) => [
-      ...prev,
-      {
-        id: `extra-${Date.now()}`,
-        url: extraUrlInput.trim(),
-        alt: derivedAlt,
-        fileName: derivedFileName,
-      },
-    ]);
-    setExtraUrlInput('');
-    showToast(`Slide #${slideNum} added with synced Alt & File name!`);
-  };
-
-  const handleRemoveExtraImage = (id: string) => {
-    setExtraImages((prev) => {
-      const filtered = prev.filter((img) => img.id !== id);
-      const baseAlt = (imageAlt || title).trim() || 'Photo Prompt';
-      const baseFile = (imageFileName || generateImageFileNameFromTitle(title));
-      return filtered.map((img, idx) => ({
-        ...img,
-        alt: `${baseAlt} - Slide ${idx + 2}`,
-        fileName: baseFile.includes('.')
-          ? baseFile.replace(/\.([a-z0-9]+)$/i, `-slide-${idx + 2}.$1`)
-          : `${baseFile}-slide-${idx + 2}.webp`,
-      }));
-    });
-  };
-
-  const handleMoveExtraImage = (index: number, direction: 'left' | 'right') => {
-    const targetIndex = direction === 'left' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= extraImages.length) return;
-    setExtraImages((prev) => {
-      const updated = [...prev];
-      const temp = updated[index];
-      updated[index] = updated[targetIndex];
-      updated[targetIndex] = temp;
-      const baseAlt = (imageAlt || title).trim() || 'Photo Prompt';
-      const baseFile = (imageFileName || generateImageFileNameFromTitle(title));
-      return updated.map((img, idx) => ({
-        ...img,
-        alt: `${baseAlt} - Slide ${idx + 2}`,
-        fileName: baseFile.includes('.')
-          ? baseFile.replace(/\.([a-z0-9]+)$/i, `-slide-${idx + 2}.$1`)
-          : `${baseFile}-slide-${idx + 2}.webp`,
-      }));
-    });
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -615,22 +464,146 @@ export const PostEditor = () => {
     setIsDragging(false);
   };
 
-  const handleExtraDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDraggingExtra(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleExtraFilesUpload(e.dataTransfer.files);
+  const computeExtraImageMeta = (index: number, customTitle?: string, customAlt?: string, customFileName?: string) => {
+    const activeTitle = (customTitle ?? title).trim();
+    const activeAlt = (customAlt ?? imageAlt).trim() || activeTitle || 'AI Photo Prompt';
+    const activeMainFile = (customFileName ?? imageFileName).trim() || generateImageFileNameFromTitle(activeTitle || 'photo-prompt');
+    const baseName = activeMainFile.replace(/\.[^/.]+$/, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') || 'photo-prompt';
+    const ext = activeMainFile.includes('.') ? activeMainFile.substring(activeMainFile.lastIndexOf('.')) : '.webp';
+
+    return {
+      alt: `${activeAlt} - Slide ${index + 2}`,
+      fileName: `${baseName}-${index + 2}${ext}`,
+    };
+  };
+
+  const handleExtraFilesUpload = async (files: FileList | File[]) => {
+    const fileArray = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    if (fileArray.length === 0) {
+      showToast('Please select valid image files (PNG, JPG, WebP, AVIF, GIF).');
+      return;
     }
+
+    setIsUploadingExtraImages(true);
+    const newItems: Array<{
+      id: string;
+      url: string;
+      alt: string;
+      fileName: string;
+      fileInfo?: { name: string; size: string };
+    }> = [];
+
+    for (let i = 0; i < fileArray.length; i++) {
+      const file = fileArray[i];
+      if (file.size > 15 * 1024 * 1024) {
+        showToast(`Skipped ${file.name}: file exceeds 15MB limit.`);
+        continue;
+      }
+
+      try {
+        const optimized = await optimizeImageFile(file);
+        if (!optimized) continue;
+
+        const currentCount = extraImages.length + newItems.length;
+        const meta = computeExtraImageMeta(currentCount);
+
+        let finalUrl = optimized;
+        try {
+          const cleanPublicId = meta.fileName.replace(/\.[^/.]+$/, '');
+          const uploadRes = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              image: optimized,
+              folder: 'prompts',
+              publicId: cleanPublicId,
+            }),
+          });
+          const uploadData = await uploadRes.json();
+          if (uploadData && uploadData.url) {
+            finalUrl = uploadData.url;
+          }
+        } catch {}
+
+        const formattedSize =
+          file.size / 1024 < 1024
+            ? `${Math.round(file.size / 1024)} KB`
+            : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+
+        newItems.push({
+          id: `extra-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 6)}`,
+          url: finalUrl,
+          alt: meta.alt,
+          fileName: meta.fileName,
+          fileInfo: {
+            name: file.name,
+            size: formattedSize,
+          },
+        });
+      } catch (err) {
+        console.error('Failed to process extra image file:', err);
+      }
+    }
+
+    if (newItems.length > 0) {
+      setExtraImages((prev) => [...prev, ...newItems]);
+      showToast(`Added ${newItems.length} extra slider image(s) with matching alt & file names!`);
+    }
+    setIsUploadingExtraImages(false);
   };
 
-  const handleExtraDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDraggingExtra(true);
+  const handleAddExtraImageUrl = () => {
+    const trimmed = extraImageUrlInput.trim();
+    if (!trimmed) {
+      showToast('Please enter an image URL');
+      return;
+    }
+    const currentCount = extraImages.length;
+    const meta = computeExtraImageMeta(currentCount);
+
+    setExtraImages((prev) => [
+      ...prev,
+      {
+        id: `extra-url-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        url: trimmed,
+        alt: meta.alt,
+        fileName: meta.fileName,
+      },
+    ]);
+    setExtraImageUrlInput('');
+    showToast('Extra slider image added with synchronized alt & file name!');
   };
 
-  const handleExtraDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDraggingExtra(false);
+  const moveExtraImage = (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= extraImages.length) return;
+    setExtraImages((prev) => {
+      const copy = [...prev];
+      const temp = copy[index];
+      copy[index] = copy[targetIndex];
+      copy[targetIndex] = temp;
+      return copy;
+    });
+  };
+
+  const removeExtraImage = (index: number) => {
+    setExtraImages((prev) => prev.filter((_, i) => i !== index));
+    showToast('Extra slider image removed');
+  };
+
+  const handleSyncExtraImagesWithMain = () => {
+    if (extraImages.length === 0) return;
+    setExtraImages((prev) =>
+      prev.map((item, idx) => {
+        const meta = computeExtraImageMeta(idx);
+        return {
+          ...item,
+          alt: meta.alt,
+          fileName: meta.fileName,
+        };
+      })
+    );
+    showToast('Alt texts and file names of all extra images synced with main image!');
   };
 
   const handleSyncImageMetaFromTitle = () => {
@@ -642,8 +615,20 @@ export const PostEditor = () => {
     const cleanFileName = generateImageFileNameFromTitle(title, imageFileName);
     setImageAlt(cleanAlt);
     setImageFileName(cleanFileName);
-    syncExtraImages(cleanAlt, cleanFileName);
-    showToast('Main & Slider Images Alt Text and File Names refreshed from Title!');
+
+    if (extraImages.length > 0) {
+      setExtraImages((prev) =>
+        prev.map((item, idx) => {
+          const meta = computeExtraImageMeta(idx, title, cleanAlt, cleanFileName);
+          return {
+            ...item,
+            alt: meta.alt,
+            fileName: meta.fileName,
+          };
+        })
+      );
+    }
+    showToast('Image Alt Text and File Name refreshed from Title for main and extra images!');
   };
 
   // Auto-generate slug from title if not custom
@@ -668,17 +653,12 @@ export const PostEditor = () => {
     }
 
     // Auto-update alt text and file name from title if matching or empty
-    let nextAlt = imageAlt;
     if (!imageAlt || imageAlt === title) {
-      nextAlt = newTitle;
       setImageAlt(newTitle);
     }
-    let nextFileName = imageFileName;
     if (!imageFileName || imageFileName.startsWith(slug) || imageFileName === 'photo-prompt.webp') {
-      nextFileName = generateImageFileNameFromTitle(newTitle, imageFileName);
-      setImageFileName(nextFileName);
+      setImageFileName(generateImageFileNameFromTitle(newTitle, imageFileName));
     }
-    syncExtraImages(nextAlt, nextFileName);
   };
 
   // AI Copilot generation via Gemini server API with multi-model fallback & vision
@@ -826,6 +806,10 @@ export const PostEditor = () => {
       }
     }
 
+    const cleanExtraUrls = extraImages.map((img) => img.url.trim()).filter(Boolean);
+    const cleanExtraAlts = extraImages.map((img) => img.alt.trim());
+    const cleanExtraFileNames = extraImages.map((img) => img.fileName.trim());
+
     const postPayload: PromptPost = {
       id: existingPost ? existingPost.id : `prompt-${Date.now()}`,
       title,
@@ -836,9 +820,9 @@ export const PostEditor = () => {
       imageUrl: imageUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80',
       imageAlt: finalAlt,
       imageFileName: finalFileName,
-      additionalImages: extraImages.map((img) => img.url.trim()).filter(Boolean),
-      additionalImageAlts: extraImages.map((img) => img.alt.trim()).filter(Boolean),
-      additionalImageFileNames: extraImages.map((img) => img.fileName.trim()).filter(Boolean),
+      additionalImages: cleanExtraUrls,
+      additionalImageAlts: cleanExtraAlts,
+      additionalImageFileNames: cleanExtraFileNames,
       variables: [],
       articleContent,
       tags: cleanTagsArray(tags.length > 0 ? tags : [chosenCat || 'AI Prompt']),
@@ -847,6 +831,8 @@ export const PostEditor = () => {
       parameters: {
         ...(existingPost?.parameters || {}),
         isPremium: Boolean(isPremium),
+        additionalImageAlts: cleanExtraAlts,
+        additionalImageFileNames: cleanExtraFileNames,
       },
       viewsCount: existingPost?.viewsCount || 0,
       copiesCount: existingPost?.copiesCount || 0,
@@ -1149,11 +1135,7 @@ export const PostEditor = () => {
                 <input
                   type="text"
                   value={imageAlt}
-                  onChange={(e) => {
-                    const newAlt = e.target.value;
-                    setImageAlt(newAlt);
-                    syncExtraImages(newAlt, imageFileName);
-                  }}
+                  onChange={(e) => setImageAlt(e.target.value)}
                   placeholder={title || 'e.g. Cinematic 8K Golden Hour Portrait...'}
                   className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white"
                 />
@@ -1175,11 +1157,7 @@ export const PostEditor = () => {
                 <input
                   type="text"
                   value={imageFileName}
-                  onChange={(e) => {
-                    const newFile = e.target.value;
-                    setImageFileName(newFile);
-                    syncExtraImages(imageAlt, newFile);
-                  }}
+                  onChange={(e) => setImageFileName(e.target.value)}
                   placeholder={generateImageFileNameFromTitle(title || 'photo-prompt')}
                   className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-mono text-[11px]"
                 />
@@ -1190,231 +1168,294 @@ export const PostEditor = () => {
             </div>
           </div>
 
-          {/* Extra Slider Images Section (Pinterest Carousel) */}
+          {/* SECTION: Pinterest Extra Slider Images */}
           <div className="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-100 dark:border-neutral-800">
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-red-50 dark:bg-red-950/60 text-[#E60023] flex items-center justify-center">
-                    <Layers className="w-4 h-4" />
-                  </div>
-                  <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
-                    Extra Slider Images (Pinterest Carousel)
-                  </h3>
-                  {extraImages.length > 0 && (
-                    <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-[#E60023] text-white">
-                      {extraImages.length} Extra ({extraImages.length + 1} Total Slides)
-                    </span>
-                  )}
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                  <Layers className="w-4 h-4" />
                 </div>
-                <p className="text-[11px] text-neutral-500">
-                  Add multiple images to display this prompt as a 2-second auto-sliding carousel card with indicator dots.
-                </p>
+                <div>
+                  <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                    <span>Extra Slider Images</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300">
+                      Pinterest Slider
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                    Add extra angles or variations that auto-slide on prompt cards every 2s until the last image
+                  </p>
+                </div>
               </div>
 
               {extraImages.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    syncExtraImages(imageAlt, imageFileName);
-                    showToast('Synced all slider Alt texts & File names with Main Image!');
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-bold transition-colors shrink-0"
-                  title="Re-sync all slider images' alt text & filename from main image"
-                >
-                  <RotateCcw className="w-3.5 h-3.5 text-[#E60023]" />
-                  <span>Re-sync with Main Image</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSyncExtraImagesWithMain}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:underline px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/50 border border-purple-200/50 dark:border-purple-800/50"
+                    title="Synchronize alt texts and file names of all extra images to match the main image"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Sync Alt & File Names</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setExtraImages([])}
+                    className="text-[11px] font-semibold text-red-500 hover:text-red-600 hover:underline"
+                  >
+                    Clear All
+                  </button>
+                </div>
               )}
             </div>
 
-            {/* Upload & Add Controls */}
-            <div className="space-y-3">
-              <input
-                ref={extraFileInputRef}
-                type="file"
-                multiple
-                accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
-                className="hidden"
-                onChange={(e) => {
-                  if (e.target.files && e.target.files.length > 0) {
-                    handleExtraFilesUpload(e.target.files);
-                    e.target.value = '';
-                  }
-                }}
-              />
-
-              <div
-                onDragOver={handleExtraDragOver}
-                onDragLeave={handleExtraDragLeave}
-                onDrop={handleExtraDrop}
-                className={`flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 rounded-2xl transition-all ${
-                  isDraggingExtra
-                    ? 'ring-2 ring-[#E60023] bg-red-50/50 dark:bg-red-950/30'
-                    : ''
+            {/* Upload Method Switcher Tabs for Extra Images */}
+            <div className="flex items-center p-1 bg-neutral-100 dark:bg-neutral-950 rounded-2xl border border-neutral-200 dark:border-neutral-800 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setExtraImageSourceTab('upload')}
+                className={`flex-1 py-1.5 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+                  extraImageSourceTab === 'upload'
+                    ? 'bg-white dark:bg-neutral-800 text-purple-600 dark:text-purple-400 shadow-sm'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
                 }`}
               >
-                <button
-                  type="button"
-                  onClick={() => extraFileInputRef.current?.click()}
-                  disabled={isUploadingExtra}
-                  className={`flex-1 py-3.5 px-4 rounded-2xl border-2 border-dashed ${
-                    isDraggingExtra
-                      ? 'border-[#E60023] bg-red-50/40 dark:bg-red-950/30 text-[#E60023]'
-                      : 'border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-950 hover:border-[#E60023] dark:hover:border-[#E60023] text-neutral-800 dark:text-neutral-200 hover:text-[#E60023]'
-                  } text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-xs group`}
-                >
-                  {isUploadingExtra ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin text-[#E60023]" />
-                      <span>Optimizing & Syncing Slider Images...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-4 h-4 text-[#E60023] group-hover:scale-110 transition-transform" />
-                      <span>+ Upload Extra Slider Images (Select Multiple or Drag & Drop)</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {/* Direct URL input for slider image */}
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="url"
-                  value={extraUrlInput}
-                  onChange={(e) => setExtraUrlInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddExtraUrl();
-                    }
-                  }}
-                  placeholder="Or paste an image link (https://...) and click Add"
-                  className="flex-1 px-3 py-2 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddExtraUrl}
-                  disabled={!extraUrlInput.trim()}
-                  className="px-4 py-2 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 disabled:opacity-40 text-xs font-bold transition-all shrink-0 hover:opacity-90"
-                >
-                  Add Slide
-                </button>
-              </div>
+                <Upload className="w-3.5 h-3.5" />
+                <span>Upload Extra Images</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setExtraImageSourceTab('url')}
+                className={`flex-1 py-1.5 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+                  extraImageSourceTab === 'url'
+                    ? 'bg-white dark:bg-neutral-800 text-purple-600 dark:text-purple-400 shadow-sm'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+                }`}
+              >
+                <LinkIcon className="w-3.5 h-3.5" />
+                <span>Add via Image URL</span>
+              </button>
             </div>
 
-            {/* List of Extra Slider Images */}
+            {/* TAB 1: Upload Multiple Extra Images */}
+            {extraImageSourceTab === 'upload' && (
+              <div className="space-y-3">
+                <input
+                  type="file"
+                  ref={extraFileInputRef}
+                  multiple
+                  accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      handleExtraFilesUpload(e.target.files);
+                    }
+                  }}
+                  className="hidden"
+                  id="admin-extra-images-file-input"
+                />
+
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsExtraDragging(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    setIsExtraDragging(false);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsExtraDragging(false);
+                    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                      handleExtraFilesUpload(e.dataTransfer.files);
+                    }
+                  }}
+                  onClick={() => !isUploadingExtraImages && extraFileInputRef.current?.click()}
+                  className={`relative p-5 border-2 border-dashed rounded-2xl cursor-pointer transition-all flex flex-col items-center justify-center text-center group ${
+                    isExtraDragging
+                      ? 'border-purple-500 bg-purple-50/50 dark:bg-purple-950/40 scale-[0.99]'
+                      : 'border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-950/50 hover:border-purple-400 hover:bg-neutral-50 dark:hover:bg-neutral-950'
+                  } ${isUploadingExtraImages ? 'opacity-70 cursor-wait' : ''}`}
+                >
+                  {isUploadingExtraImages ? (
+                    <div className="flex flex-col items-center justify-center py-2">
+                      <div className="w-9 h-9 rounded-full border-2 border-purple-500 border-t-transparent animate-spin mb-2" />
+                      <p className="text-xs font-bold text-neutral-900 dark:text-white">
+                        Uploading & Processing Slider Images...
+                      </p>
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                        Synchronizing Alt Text & Clean File Names
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                        <FileUp className="w-5 h-5" />
+                      </div>
+                      <p className="text-xs font-bold text-neutral-900 dark:text-white mb-0.5">
+                        Click to select multiple photos or drag & drop here
+                      </p>
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                        PNG, JPG, WebP, AVIF (Auto-names & sets Alt text to match main image)
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: Direct Image URL */}
+            {extraImageSourceTab === 'url' && (
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+                  Extra Image Direct URL
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="url"
+                    value={extraImageUrlInput}
+                    onChange={(e) => setExtraImageUrlInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddExtraImageUrl();
+                      }
+                    }}
+                    placeholder="https://images.unsplash.com/..."
+                    className="flex-1 px-3 py-2 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddExtraImageUrl}
+                    className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* List of Added Extra Slider Images */}
             {extraImages.length > 0 ? (
               <div className="space-y-3 pt-2 border-t border-neutral-100 dark:border-neutral-800">
                 <div className="flex items-center justify-between text-[11px] font-bold text-neutral-500">
-                  <span>Slider Gallery ({extraImages.length} additional images)</span>
-                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                    <span>Alt text & filenames auto-synced from Main Image</span>
+                  <span>Slider Gallery Images ({extraImages.length})</span>
+                  <span className="text-purple-600 dark:text-purple-400">
+                    Total {1 + extraImages.length} Slides (1 Main + {extraImages.length} Extra)
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {extraImages.map((img, idx) => (
+                <div className="space-y-3">
+                  {extraImages.map((item, idx) => (
                     <div
-                      key={img.id}
-                      className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex items-start gap-3 relative group/item shadow-xs hover:border-[#E60023]/50 transition-colors"
+                      key={item.id || idx}
+                      className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950/80 border border-neutral-200 dark:border-neutral-800 flex flex-col sm:flex-row items-start sm:items-center gap-3.5 group"
                     >
-                      {/* Thumbnail */}
-                      <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-neutral-950 shrink-0 border border-neutral-200 dark:border-neutral-800">
+                      {/* Thumbnail Preview with Slide Badge */}
+                      <div className="relative w-24 h-24 rounded-xl overflow-hidden bg-neutral-900 shrink-0 border border-neutral-200 dark:border-neutral-800 shadow-inner">
                         <Image
-                          src={img.url}
-                          alt={img.alt}
+                          src={item.url}
+                          alt={item.alt || `Slide ${idx + 2}`}
                           fill
                           className="object-cover"
                           referrerPolicy="no-referrer"
                         />
-                        <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-black/80 text-[9px] font-black text-white">
-                          #{idx + 2}
+                        <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md bg-black/75 backdrop-blur-xs text-[10px] font-bold text-white tracking-wide">
+                          Slide {idx + 2}
                         </div>
                       </div>
 
-                      {/* Info & Metadata */}
-                      <div className="flex-1 min-w-0 space-y-1.5">
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="text-xs font-black text-neutral-800 dark:text-neutral-200 truncate">
-                            Slide #{idx + 2}
-                          </span>
-                          <div className="flex items-center gap-1">
-                            {idx > 0 && (
-                              <button
-                                type="button"
-                                onClick={() => handleMoveExtraImage(idx, 'left')}
-                                className="p-1 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
-                                title="Move Left / Earlier"
-                              >
-                                <ChevronLeft className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                            {idx < extraImages.length - 1 && (
-                              <button
-                                type="button"
-                                onClick={() => handleMoveExtraImage(idx, 'right')}
-                                className="p-1 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
-                                title="Move Right / Later"
-                              >
-                                <ChevronRight className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveExtraImage(img.id)}
-                              className="p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/60 text-neutral-400 hover:text-red-600 transition-colors"
-                              title="Delete this slide"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                      {/* Meta Inputs: Alt Text & File Name matching Main Image */}
+                      <div className="flex-1 w-full space-y-2">
+                        {/* Alt Text Input */}
+                        <div>
+                          <div className="flex items-center justify-between mb-0.5">
+                            <label className="text-[10px] font-bold text-neutral-600 dark:text-neutral-400">
+                              Alt Text (Auto-matched to Main Image)
+                            </label>
+                            <span className="text-[9px] font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/60 px-1 rounded">
+                              Slide Alt
+                            </span>
                           </div>
-                        </div>
-
-                        {/* Editable Alt Text */}
-                        <div className="flex items-center gap-1">
-                          <span className="text-[10px] font-bold text-neutral-500 shrink-0">Alt:</span>
                           <input
                             type="text"
-                            value={img.alt}
+                            value={item.alt}
                             onChange={(e) => {
-                              const val = e.target.value;
+                              const newAlt = e.target.value;
                               setExtraImages((prev) =>
-                                prev.map((item) => (item.id === img.id ? { ...item, alt: val } : item))
+                                prev.map((img, i) => (i === idx ? { ...img, alt: newAlt } : img))
                               );
                             }}
-                            className="flex-1 px-2 py-0.5 text-[10px] rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-800 dark:text-neutral-200 truncate"
-                            title="Slide Alt Text"
+                            className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white"
                           />
                         </div>
 
-                        {/* Editable File Name */}
-                        <div className="flex items-center gap-1">
-                          <span className="text-[10px] font-bold text-neutral-500 shrink-0">File:</span>
+                        {/* File Name Input */}
+                        <div>
+                          <div className="flex items-center justify-between mb-0.5">
+                            <label className="text-[10px] font-bold text-neutral-600 dark:text-neutral-400">
+                              File Name (Slug format matching Main Image)
+                            </label>
+                            <span className="text-[9px] font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-1 rounded font-mono">
+                              Canonical
+                            </span>
+                          </div>
                           <input
                             type="text"
-                            value={img.fileName}
+                            value={item.fileName}
                             onChange={(e) => {
-                              const val = e.target.value;
+                              const newFileName = e.target.value;
                               setExtraImages((prev) =>
-                                prev.map((item) => (item.id === img.id ? { ...item, fileName: val } : item))
+                                prev.map((img, i) => (i === idx ? { ...img, fileName: newFileName } : img))
                               );
                             }}
-                            className="flex-1 px-2 py-0.5 text-[10px] font-mono rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 truncate"
-                            title="Slide Image File Name"
+                            className="w-full px-2.5 py-1.5 text-[11px] font-mono rounded-lg bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white"
                           />
                         </div>
+                      </div>
+
+                      {/* Action buttons: Reorder Up / Down & Remove */}
+                      <div className="flex sm:flex-col items-center gap-1 shrink-0 self-end sm:self-center">
+                        <button
+                          type="button"
+                          onClick={() => moveExtraImage(idx, -1)}
+                          disabled={idx === 0}
+                          className="p-1.5 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-all shadow-xs cursor-pointer"
+                          title="Move Slide Up"
+                          aria-label="Move Slide Up"
+                        >
+                          <ChevronUp className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveExtraImage(idx, 1)}
+                          disabled={idx === extraImages.length - 1}
+                          className="p-1.5 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-all shadow-xs cursor-pointer"
+                          title="Move Slide Down"
+                          aria-label="Move Slide Down"
+                        >
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeExtraImage(idx)}
+                          className="p-1.5 rounded-lg bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/60 transition-all shadow-xs cursor-pointer"
+                          title="Remove Extra Slide"
+                          aria-label="Remove Extra Slide"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
             ) : (
-              <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950/50 border border-dashed border-neutral-200 dark:border-neutral-800 text-center">
-                <p className="text-xs text-neutral-500">
-                  No extra slider images added yet. Main image will display as a standard single image card.
+              <div className="p-4 rounded-2xl bg-neutral-50/60 dark:bg-neutral-950/40 border border-dashed border-neutral-200 dark:border-neutral-800 text-center">
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  No extra images added yet. Upload 1 or more extra images to transform this post into an interactive Pinterest-style slider pin!
                 </p>
               </div>
             )}

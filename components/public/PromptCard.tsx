@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { PromptPost } from '@/types/prompt';
 import { useApp } from '@/context/AppContext';
 import Image from 'next/image';
-import { Sparkles, Bookmark, Crown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Sparkles, Bookmark, Crown } from 'lucide-react';
 import { getPromptSlug, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription } from '@/lib/utils';
 
 export const PromptCard = ({ post, priority = false }: { post: PromptPost; priority?: boolean }) => {
@@ -29,48 +29,34 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   const isUnlocked = isPromptUnlocked(post.id, post.isPremium);
   const promptSlug = getPromptSlug(post);
   const detectedRatio = detectPostAspectRatio(post);
-  const optimizedImgUrl = getOptimizedImageUrl(post.imageUrl, 600);
-
+  
+  // Collect all slides: Main featured image + additional extra images
   const allImages = React.useMemo(() => {
-    return [post.imageUrl, ...(post.additionalImages || [])].filter(Boolean);
+    const list = [post.imageUrl, ...(post.additionalImages || [])].filter(
+      (url): url is string => Boolean(url && typeof url === 'string' && url.trim())
+    );
+    return Array.from(new Set(list));
   }, [post.imageUrl, post.additionalImages]);
+  const isSlider = allImages.length > 1;
 
-  const hasSlider = allImages.length > 1;
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Auto-slide every 2 seconds until the last image is reached (NOT infinite loop)
+  // Reset slide index when post changes
   useEffect(() => {
-    if (!hasSlider || !inView) return;
+    setCurrentSlide(0);
+  }, [post.id]);
 
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => {
-        if (prev < allImages.length - 1) {
-          return prev + 1;
-        }
-        clearInterval(timer);
-        return prev;
-      });
+  // Auto-slide every 2 seconds until the last image is reached (not infinite)
+  useEffect(() => {
+    if (!isSlider || !inView) return;
+    if (currentSlide >= allImages.length - 1) return;
+
+    const timer = setTimeout(() => {
+      setCurrentSlide((prev) => (prev < allImages.length - 1 ? prev + 1 : prev));
     }, 2000);
 
-    return () => clearInterval(timer);
-  }, [hasSlider, inView, allImages.length]);
-
-  // Touch swipe support for mobile
-  const touchStartX = useRef<number | null>(null);
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null) return;
-    const touchEndX = e.changedTouches[0].clientX;
-    const diff = touchStartX.current - touchEndX;
-    if (diff > 35 && currentSlide < allImages.length - 1) {
-      setCurrentSlide((prev) => Math.min(allImages.length - 1, prev + 1));
-    } else if (diff < -35 && currentSlide > 0) {
-      setCurrentSlide((prev) => Math.max(0, prev - 1));
-    }
-    touchStartX.current = null;
-  };
+    return () => clearTimeout(timer);
+  }, [isSlider, inView, currentSlide, allImages.length]);
 
   // Viewport IntersectionObserver: strictly loads images only when entering or near viewport
   useEffect(() => {
@@ -125,10 +111,9 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
     e.preventDefault();
     e.stopPropagation();
     if (typeof window !== 'undefined') {
-      const activeImg = allImages[currentSlide] || post.imageUrl;
-      if (activeImg) {
-        sessionStorage.setItem('promptcms_studio_image_preload', activeImg);
-        sessionStorage.setItem('auraprompt_studio_image_preload', activeImg);
+      if (post.imageUrl) {
+        sessionStorage.setItem('promptcms_studio_image_preload', post.imageUrl);
+        sessionStorage.setItem('auraprompt_studio_image_preload', post.imageUrl);
       }
       sessionStorage.setItem('promptcms_studio_tab', 'reverse');
     }
@@ -150,8 +135,6 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
       <a
         href={`/${promptSlug}`}
         onClick={handleCardClick}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
         style={{ aspectRatio: detectedRatio }}
         aria-label={`${post.title} - ${post.category} AI Photo Prompt`}
         className="block relative w-full overflow-hidden bg-neutral-100 dark:bg-neutral-800 focus:outline-none"
@@ -169,107 +152,86 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
           </div>
         )}
 
-        {/* Carousel Slider Images Container */}
+        {/* Full-Height Shimmer Skeleton Placeholder removed */}
+
         {inView && allImages.length > 0 ? (
-          <div
-            className="flex w-full h-full transition-transform duration-500 ease-out"
-            style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-          >
-            {allImages.map((imgUrl, idx) => (
+          <div className="relative w-full h-full overflow-hidden">
+            {/* Horizontal Carousel Track */}
+            <div
+              className="flex w-full h-full transition-transform duration-500 ease-out"
+              style={{
+                transform: `translateX(-${currentSlide * 100}%)`,
+              }}
+            >
+              {allImages.map((imgUrl, idx) => {
+                const optUrl = getOptimizedImageUrl(imgUrl, 600);
+                const altText =
+                  idx === 0
+                    ? post.imageAlt || post.title
+                    : post.additionalImageAlts?.[idx - 1] || `${post.imageAlt || post.title} - Slide ${idx + 1}`;
+
+                return (
+                  <div
+                    key={imgUrl || idx}
+                    className="relative w-full h-full shrink-0 grow-0 basis-full overflow-hidden select-none"
+                  >
+                    <Image
+                      src={optUrl}
+                      alt={altText}
+                      fill
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                      draggable={false}
+                      priority={priority && idx === 0}
+                      onLoad={() => idx === 0 && setImageLoaded(true)}
+                      className={`object-cover group-hover:scale-105 transition-all duration-500 ease-out select-none pointer-events-none relative z-1 ${
+                        idx === 0
+                          ? imageLoaded ? 'opacity-100' : 'opacity-0'
+                          : 'opacity-100'
+                      }`}
+                      referrerPolicy="no-referrer"
+                      loading={priority && idx === 0 ? 'eager' : 'lazy'}
+                      decoding="async"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Slider Navigation Dots (Requirement 3) */}
+            {isSlider && (
               <div
-                key={idx}
-                className="w-full h-full shrink-0 relative overflow-hidden bg-neutral-950"
+                className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/10 shadow-lg pointer-events-auto"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
               >
-                <Image
-                  src={getOptimizedImageUrl(imgUrl, 600)}
-                  alt={
-                    idx === 0
-                      ? post.imageAlt || post.title
-                      : (post.additionalImageAlts?.[idx - 1] || `${post.imageAlt || post.title} - Slide ${idx + 1}`)
-                  }
-                  fill
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                  draggable={false}
-                  priority={priority && idx === 0}
-                  onLoad={() => {
-                    if (idx === 0) setImageLoaded(true);
-                  }}
-                  className="object-cover w-full h-full group-hover:scale-105 transition-all duration-500 ease-out select-none pointer-events-none relative z-1"
-                  referrerPolicy="no-referrer"
-                  loading={priority && idx === 0 ? 'eager' : 'lazy'}
-                  decoding="async"
-                />
+                {allImages.map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setCurrentSlide(idx);
+                    }}
+                    className={`transition-all duration-300 rounded-full cursor-pointer focus:outline-none ${
+                      currentSlide === idx
+                        ? 'w-4 h-1.5 bg-white shadow-sm'
+                        : 'w-1.5 h-1.5 bg-white/45 hover:bg-white/80'
+                    }`}
+                    title={`Slide ${idx + 1} of ${allImages.length}`}
+                    aria-label={`Slide ${idx + 1} of ${allImages.length}`}
+                  />
+                ))}
               </div>
-            ))}
+            )}
           </div>
         ) : !post.imageUrl ? (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-tr from-neutral-800 to-neutral-900 text-neutral-400">
             <Sparkles className="w-8 h-8 opacity-40" />
           </div>
         ) : null}
-
-        {/* Pinterest Style Hover Arrow Buttons */}
-        {hasSlider && inView && (
-          <>
-            {currentSlide > 0 && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setCurrentSlide((prev) => Math.max(0, prev - 1));
-                }}
-                aria-label="Previous Slide"
-                className="absolute left-2 top-1/2 -translate-y-1/2 z-25 w-7 h-7 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-md active:scale-95 pointer-events-auto backdrop-blur-xs"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-            )}
-            {currentSlide < allImages.length - 1 && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setCurrentSlide((prev) => Math.min(allImages.length - 1, prev + 1));
-                }}
-                aria-label="Next Slide"
-                className="absolute right-2 top-1/2 -translate-y-1/2 z-25 w-7 h-7 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-md active:scale-95 pointer-events-auto backdrop-blur-xs"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            )}
-          </>
-        )}
-
-        {/* Pinterest Style Slider Dots */}
-        {hasSlider && inView && (
-          <div
-            className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/55 backdrop-blur-xs pointer-events-auto shadow-sm"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-          >
-            {allImages.map((_, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setCurrentSlide(idx);
-                }}
-                aria-label={`Slide ${idx + 1}`}
-                className={`transition-all duration-300 rounded-full ${
-                  idx === currentSlide
-                    ? 'w-2.5 h-1.5 bg-white shadow-xs scale-110'
-                    : 'w-1.5 h-1.5 bg-white/50 hover:bg-white/90'
-                }`}
-              />
-            ))}
-          </div>
-        )}
 
         {/* Dark Semi-Transparent Overlay with White Popup Action Buttons */}
         <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto flex items-center justify-center gap-3.5 z-10">

@@ -98,12 +98,11 @@ function mapSupabasePost(row: any): PromptPost {
     negativePrompt: row.negative_prompt || undefined,
     imageUrl: row.image_url,
     imageAlt: row.image_alt || undefined,
-    imageFileName: row.image_file_name || row.imageFileName || undefined,
     imageWidth: row.image_width || 1024,
     imageHeight: row.image_height || 1536,
-    additionalImages: Array.isArray(row.additional_images) ? row.additional_images : (Array.isArray(row.additionalImages) ? row.additionalImages : []),
-    additionalImageAlts: Array.isArray(row.additional_image_alts) ? row.additional_image_alts : (Array.isArray(row.additionalImageAlts) ? row.additionalImageAlts : []),
-    additionalImageFileNames: Array.isArray(row.additional_image_file_names) ? row.additional_image_file_names : (Array.isArray(row.additionalImageFileNames) ? row.additionalImageFileNames : []),
+    additionalImages: Array.isArray(row.additional_images) ? row.additional_images : [],
+    additionalImageAlts: Array.isArray(parsedParams?.additionalImageAlts) ? parsedParams.additionalImageAlts : [],
+    additionalImageFileNames: Array.isArray(parsedParams?.additionalImageFileNames) ? parsedParams.additionalImageFileNames : [],
     parameters: parsedParams,
     variables: Array.isArray(row.variables) ? row.variables : [],
     articleContent: row.article_content || '',
@@ -142,6 +141,8 @@ function mapPostToSupabase(post: PromptPost) {
   const parameters = {
     ...(post.parameters || {}),
     isPremium,
+    additionalImageAlts: post.additionalImageAlts || post.parameters?.additionalImageAlts || [],
+    additionalImageFileNames: post.additionalImageFileNames || post.parameters?.additionalImageFileNames || [],
   };
 
   return {
@@ -154,12 +155,9 @@ function mapPostToSupabase(post: PromptPost) {
     negative_prompt: post.negativePrompt || null,
     image_url: post.imageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe',
     image_alt: post.imageAlt || null,
-    image_file_name: post.imageFileName || null,
     image_width: post.imageWidth || 1024,
     image_height: post.imageHeight || 1536,
     additional_images: post.additionalImages || [],
-    additional_image_alts: post.additionalImageAlts || [],
-    additional_image_file_names: post.additionalImageFileNames || [],
     parameters,
     variables: post.variables || [],
     article_content: post.articleContent || '',

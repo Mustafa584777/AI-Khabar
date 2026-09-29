@@ -170,6 +170,16 @@ export default async function SinglePromptDetailPage({ params }: PageProps) {
               referrerPolicy="no-referrer"
             />
           )}
+          {post.additionalImages && post.additionalImages.map((extraUrl, idx) => (
+            <Image
+              key={extraUrl || idx}
+              src={extraUrl}
+              alt={post.additionalImageAlts?.[idx] || `${post.imageAlt || post.title} - Slide ${idx + 2}`}
+              width={post.imageWidth || 600}
+              height={post.imageHeight || 800}
+              referrerPolicy="no-referrer"
+            />
+          ))}
         </article>
       )}
       <DirectPromptLoader id={id} initialPost={post} />
