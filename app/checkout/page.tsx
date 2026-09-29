@@ -392,9 +392,9 @@ export default function CheckoutPage() {
                       </span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-emerald-500 font-bold">✓</span>
-                      <span>
-                        <strong>{billingCycle === 'yearly' ? '12 Prompt Requests' : '1 Prompt Request'}</strong>
+                      <span className="text-neutral-400 font-bold">✕</span>
+                      <span className="text-neutral-400">
+                        0 Custom Prompt Requests
                       </span>
                     </li>
                     <li className="flex items-center gap-2">
@@ -414,7 +414,7 @@ export default function CheckoutPage() {
                   description={
                     billingCycle === 'monthly'
                       ? 'Monthly Starter - 100 Credits, 100 AI Searches'
-                      : 'Yearly Starter - 1200 Credits, 1200 AI Searches, 12 Requests, 1200 Saves upfront'
+                      : 'Yearly Starter - 1200 Credits, 1200 AI Searches, 1200 Saves upfront'
                   }
                   buttonText={billingCycle === 'monthly' ? 'Get Starter for ₹49' : 'Get Starter Yearly for ₹490'}
                   variant="secondary"
@@ -467,9 +467,9 @@ export default function CheckoutPage() {
                       </span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-[#E60023] font-bold">✓</span>
-                      <span>
-                        <strong>{billingCycle === 'yearly' ? '24 Prompt Requests' : '2 Prompt Requests'}</strong>
+                      <span className="text-neutral-400 font-bold">✕</span>
+                      <span className="text-neutral-400">
+                        0 Custom Prompt Requests
                       </span>
                     </li>
                     <li className="flex items-center gap-2">
@@ -489,7 +489,7 @@ export default function CheckoutPage() {
                   description={
                     billingCycle === 'monthly'
                       ? 'Monthly Pro - 250 Credits, 200 AI Searches'
-                      : 'Yearly Pro - 3000 Credits, 2400 AI Searches, 24 Requests, 2400 Saves upfront'
+                      : 'Yearly Pro - 3000 Credits, 2400 AI Searches, 2400 Saves upfront'
                   }
                   buttonText={billingCycle === 'monthly' ? 'Get Pro for ₹99' : 'Get Pro Yearly for ₹990'}
                   variant="pill"
@@ -541,7 +541,7 @@ export default function CheckoutPage() {
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
                       <span>
-                        <strong>{billingCycle === 'yearly' ? '36 Prompt Requests' : '3 Prompt Requests'}</strong>
+                        <strong>{billingCycle === 'yearly' ? '12 Prompt Requests' : '1 Prompt Request'}</strong>
                       </span>
                     </li>
                     <li className="flex items-center gap-2">
@@ -561,7 +561,7 @@ export default function CheckoutPage() {
                   description={
                     billingCycle === 'monthly'
                       ? 'Monthly VIP - 600 Credits, 500 AI Searches'
-                      : 'Yearly VIP - 7200 Credits, 6000 AI Searches, 36 Requests, 4800 Saves upfront'
+                      : 'Yearly VIP - 7200 Credits, 6000 AI Searches, 12 Requests, 4800 Saves upfront'
                   }
                   buttonText={billingCycle === 'monthly' ? 'Get VIP for ₹199' : 'Get VIP Yearly for ₹1,990'}
                   variant="secondary"
@@ -614,7 +614,7 @@ export default function CheckoutPage() {
                     <li className="flex items-center gap-2">
                       <span className="text-amber-400 font-bold">✓</span>
                       <span>
-                        <strong>{billingCycle === 'yearly' ? '60 Prompt Requests' : '5 Prompt Requests'}</strong> {billingCycle === 'yearly' ? '/ year' : '/ mo'}
+                        <strong>{billingCycle === 'yearly' ? '36 Prompt Requests' : '3 Prompt Requests'}</strong> {billingCycle === 'yearly' ? '/ year' : '/ mo'}
                       </span>
                     </li>
                     <li className="flex items-center gap-2">
@@ -632,7 +632,7 @@ export default function CheckoutPage() {
                   description={
                     billingCycle === 'monthly'
                       ? 'Studio 499 - 1500 Credits, Unlimited AI Search'
-                      : 'Yearly Studio 499 - 18000 Credits, Unlimited AI Searches, 60 Requests, Unlimited Saves upfront'
+                      : 'Yearly Studio 499 - 18000 Credits, Unlimited AI Searches, 36 Requests, Unlimited Saves upfront'
                   }
                   buttonText={billingCycle === 'monthly' ? 'Get Studio for ₹499' : 'Get Studio Yearly for ₹4,990'}
                   variant="dark"

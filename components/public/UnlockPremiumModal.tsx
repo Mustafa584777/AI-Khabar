@@ -331,7 +331,7 @@ export const UnlockPremiumModal: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black text-neutral-900 dark:text-white">Starter</span>
                     <span className="text-xs font-bold text-neutral-900 dark:text-white">
-                      {modalBillingCycle === 'monthly' ? '₹99/mo' : '₹950/yr'}
+                      {modalBillingCycle === 'monthly' ? '₹49/mo' : '₹490/yr'}
                     </span>
                   </div>
                   <ul className="mt-2 space-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
@@ -347,22 +347,22 @@ export const UnlockPremiumModal: React.FC = () => {
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                       <span><strong>100 AI Searches</strong></span>
                     </li>
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                      <span><strong>10 Prompt Requests</strong></span>
+                    <li className="flex items-center gap-1.5 text-neutral-400">
+                      <span className="w-3.5 text-center font-bold">✕</span>
+                      <span>0 Prompt Requests</span>
                     </li>
                     <li className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                      <span className="font-bold text-emerald-600 dark:text-emerald-400">Unlimited saves</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">100 saves</span>
                     </li>
                   </ul>
                 </div>
                 <RazorpayCheckoutButton
-                  amount={modalBillingCycle === 'monthly' ? 9900 : 95000}
+                  amount={modalBillingCycle === 'monthly' ? 4900 : 49000}
                   planName={modalBillingCycle === 'monthly' ? 'Starter Monthly' : 'Starter Yearly'}
                   planTier="starter"
-                  description={modalBillingCycle === 'monthly' ? 'Unlock premium + 100 credits + 100 AI Searches' : 'Yearly Starter - 100 credits/mo + 100 AI Searches/mo'}
-                  buttonText={modalBillingCycle === 'monthly' ? 'Pay ₹99/mo' : 'Pay ₹950/yr'}
+                  description={modalBillingCycle === 'monthly' ? 'Unlock premium + 100 credits + 100 AI Searches' : 'Yearly Starter - 1200 credits + 1200 AI Searches upfront'}
+                  buttonText={modalBillingCycle === 'monthly' ? 'Pay ₹49/mo' : 'Pay ₹490/yr'}
                   variant="secondary"
                   size="sm"
                   className="w-full text-xs font-bold py-1.5"
@@ -379,7 +379,7 @@ export const UnlockPremiumModal: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black text-[#E60023] dark:text-red-400">Pro</span>
                     <span className="text-xs font-bold text-neutral-900 dark:text-white">
-                      {modalBillingCycle === 'monthly' ? '₹199/mo' : '₹1,900/yr'}
+                      {modalBillingCycle === 'monthly' ? '₹99/mo' : '₹990/yr'}
                     </span>
                   </div>
                   <ul className="mt-2 space-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
@@ -393,24 +393,24 @@ export const UnlockPremiumModal: React.FC = () => {
                     </li>
                     <li className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                      <span><strong>250 AI Searches</strong></span>
+                      <span><strong>200 AI Searches</strong></span>
+                    </li>
+                    <li className="flex items-center gap-1.5 text-neutral-400">
+                      <span className="w-3.5 text-center font-bold">✕</span>
+                      <span>0 Prompt Requests</span>
                     </li>
                     <li className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                      <span><strong>20 Prompt Requests</strong></span>
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                      <span className="font-bold text-[#E60023]">Unlimited saves</span>
+                      <span className="font-bold text-[#E60023]">200 saves</span>
                     </li>
                   </ul>
                 </div>
                 <RazorpayCheckoutButton
-                  amount={modalBillingCycle === 'monthly' ? 19900 : 190000}
+                  amount={modalBillingCycle === 'monthly' ? 9900 : 99000}
                   planName={modalBillingCycle === 'monthly' ? 'Pro Monthly' : 'Pro Yearly'}
                   planTier="pro"
-                  description={modalBillingCycle === 'monthly' ? 'Unlock premium + 250 credits + 250 AI Searches' : 'Yearly Pro - 250 credits/mo + 250 AI Searches/mo'}
-                  buttonText={modalBillingCycle === 'monthly' ? 'Pay ₹199/mo' : 'Pay ₹1,900/yr'}
+                  description={modalBillingCycle === 'monthly' ? 'Unlock premium + 250 credits + 200 AI Searches' : 'Yearly Pro - 3000 credits + 2400 AI Searches upfront'}
+                  buttonText={modalBillingCycle === 'monthly' ? 'Pay ₹99/mo' : 'Pay ₹990/yr'}
                   variant="primary"
                   size="sm"
                   className="w-full text-xs font-bold py-1.5"
@@ -424,7 +424,7 @@ export const UnlockPremiumModal: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black text-amber-600 dark:text-amber-400">VIP</span>
                     <span className="text-xs font-bold text-neutral-900 dark:text-white">
-                      {modalBillingCycle === 'monthly' ? '₹399/mo' : '₹3,800/yr'}
+                      {modalBillingCycle === 'monthly' ? '₹199/mo' : '₹1,990/yr'}
                     </span>
                   </div>
                   <ul className="mt-2 space-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
@@ -438,24 +438,24 @@ export const UnlockPremiumModal: React.FC = () => {
                     </li>
                     <li className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                      <span><strong>600 AI Searches</strong></span>
+                      <span><strong>500 AI Searches</strong></span>
                     </li>
                     <li className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                      <span><strong>50 Prompt Requests</strong></span>
+                      <span><strong>{modalBillingCycle === 'yearly' ? '12 Prompt Requests' : '1 Prompt Request'}</strong></span>
                     </li>
                     <li className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                      <span className="font-bold text-purple-600 dark:text-purple-400">Unlimited saves</span>
+                      <span className="font-bold text-purple-600 dark:text-purple-400">400 saves</span>
                     </li>
                   </ul>
                 </div>
                 <RazorpayCheckoutButton
-                  amount={modalBillingCycle === 'monthly' ? 39900 : 380000}
+                  amount={modalBillingCycle === 'monthly' ? 19900 : 199000}
                   planName={modalBillingCycle === 'monthly' ? 'VIP Monthly' : 'VIP Yearly'}
                   planTier="vip"
-                  description={modalBillingCycle === 'monthly' ? 'Unlock premium + 600 credits + 600 AI Searches' : 'Yearly VIP - 600 credits/mo + 600 AI Searches/mo'}
-                  buttonText={modalBillingCycle === 'monthly' ? 'Pay ₹399/mo' : 'Pay ₹3,800/yr'}
+                  description={modalBillingCycle === 'monthly' ? 'Unlock premium + 600 credits + 500 AI Searches' : 'Yearly VIP - 7200 credits + 6000 AI Searches upfront'}
+                  buttonText={modalBillingCycle === 'monthly' ? 'Pay ₹199/mo' : 'Pay ₹1,990/yr'}
                   variant="secondary"
                   size="sm"
                   className="w-full text-xs font-bold py-1.5"
@@ -472,7 +472,7 @@ export const UnlockPremiumModal: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black text-amber-400">Studio 499</span>
                     <span className="text-xs font-bold text-white">
-                      {modalBillingCycle === 'monthly' ? '₹499/mo' : '₹4,790/yr'}
+                      {modalBillingCycle === 'monthly' ? '₹499/mo' : '₹4,990/yr'}
                     </span>
                   </div>
                   <ul className="mt-2 space-y-1.5 text-[11px] text-neutral-300">
@@ -490,7 +490,7 @@ export const UnlockPremiumModal: React.FC = () => {
                     </li>
                     <li className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                      <span><strong>10 Prompt Requests</strong></span>
+                      <span><strong>{modalBillingCycle === 'yearly' ? '36 Prompt Requests' : '3 Prompt Requests'}</strong></span>
                     </li>
                     <li className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
@@ -499,11 +499,11 @@ export const UnlockPremiumModal: React.FC = () => {
                   </ul>
                 </div>
                 <RazorpayCheckoutButton
-                  amount={modalBillingCycle === 'monthly' ? 49900 : 479000}
+                  amount={modalBillingCycle === 'monthly' ? 49900 : 499000}
                   planName={modalBillingCycle === 'monthly' ? 'Studio 499 Monthly' : 'Studio 499 Yearly'}
                   planTier="ultra"
-                  description={modalBillingCycle === 'monthly' ? 'Unlock premium + 1500 credits + Unlimited AI Search' : 'Yearly Studio - 1500 credits/mo + Unlimited AI Search'}
-                  buttonText={modalBillingCycle === 'monthly' ? 'Pay ₹499/mo' : 'Pay ₹4,790/yr'}
+                  description={modalBillingCycle === 'monthly' ? 'Unlock premium + 1500 credits + Unlimited AI Search' : 'Yearly Studio - 18000 credits + Unlimited AI Search'}
+                  buttonText={modalBillingCycle === 'monthly' ? 'Pay ₹499/mo' : 'Pay ₹4,990/yr'}
                   variant="dark"
                   size="sm"
                   className="w-full text-xs font-black py-1.5 bg-amber-500 hover:bg-amber-400 text-black"
@@ -519,19 +519,19 @@ export const UnlockPremiumModal: React.FC = () => {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
                 <div className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800/60 space-y-1">
-                  <div className="font-black text-neutral-900 dark:text-white">Starter (₹99)</div>
+                  <div className="font-black text-neutral-900 dark:text-white">Starter (₹49)</div>
                   <div className="text-neutral-500 text-[10px]">100 credits • 100 AI searches</div>
                 </div>
                 <div className="p-2.5 rounded-xl bg-red-50/50 dark:bg-red-950/20 border border-red-200/50 dark:border-red-900/40 space-y-1">
-                  <div className="font-black text-[#E60023] dark:text-red-400">Pro (₹199)</div>
-                  <div className="text-neutral-500 text-[10px]">250 credits • 250 AI searches</div>
+                  <div className="font-black text-[#E60023] dark:text-red-400">Pro (₹99)</div>
+                  <div className="text-neutral-500 text-[10px]">250 credits • 200 AI searches</div>
                 </div>
                 <div className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800/60 space-y-1">
-                  <div className="font-black text-amber-600 dark:text-amber-400">VIP (₹399)</div>
-                  <div className="text-neutral-500 text-[10px]">600 credits • 600 AI searches</div>
+                  <div className="font-black text-amber-600 dark:text-amber-400">VIP (₹199)</div>
+                  <div className="text-neutral-500 text-[10px]">600 credits • 500 AI searches</div>
                 </div>
                 <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300/50 space-y-1">
-                  <div className="font-black text-amber-600 dark:text-amber-400">Studio 499</div>
+                  <div className="font-black text-amber-600 dark:text-amber-400">Studio 499 (₹499)</div>
                   <div className="text-neutral-500 text-[10px]">1500 credits • Unlimited AI</div>
                 </div>
               </div>

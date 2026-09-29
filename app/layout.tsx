@@ -37,16 +37,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="dark">
       <head>
-        {/* Preconnect to Cloudinary CDN & Fonts for optimal performance */}
         <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://res.cloudinary.com" />
-
-        {/* Google Site Verification */}
-        <meta
-          name="google-site-verification"
-          content="uh9o8y5P0cVpFtJIJXovv8RSzxSxcRkOYLK6ZthiZDg"
-        />
-        {/* Google tag (gtag.js) */}
         <Script
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-32DL2FJ0FQ"
@@ -63,7 +55,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             gtag('config', 'G-28QHB2KNZC');
           `}
         </Script>
-        {/* Razorpay Standard Web Checkout Script */}
         <Script
           src="https://checkout.razorpay.com/v1/checkout.js"
           strategy="lazyOnload"
