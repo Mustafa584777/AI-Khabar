@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const slug = getPromptSlug(post);
-  const cleanTitle = `${post.title} - AI Photo Prompt & Settings`;
+  const cleanTitle = post.title;
   const cleanDesc = getPromptMetaDescription(post);
   const pageUrl = `https://zeenaprompt.com/${slug}`;
 
