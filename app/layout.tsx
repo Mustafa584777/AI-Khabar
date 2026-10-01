@@ -6,10 +6,13 @@ import { AppProvider } from '@/context/AppContext';
 import { AppGlobalOverlays } from '@/components/public/AppGlobalOverlays';
 
 const poppins = Poppins({
-  weight: ['300', '400', '500', '600', '700', '800'],
+  weight: ['400', '500', '600', '700'],
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-poppins',
+  preload: true,
+  fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+  adjustFontFallback: true,
 });
 
 export const metadata: Metadata = {
@@ -37,14 +40,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="dark">
       <head>
-        <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+        <link key="preconnect-cloudinary" rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
+        <link key="dns-prefetch-cloudinary" rel="dns-prefetch" href="https://res.cloudinary.com" />
+      </head>
+      <body className={`${poppins.variable} ${poppins.className} font-sans antialiased selection:bg-[#E60023] selection:text-white`} suppressHydrationWarning>
+        <AppProvider>
+          {children}
+          <AppGlobalOverlays />
+        </AppProvider>
+
+        {/* Google Analytics (Strict Rule: G-Y6H3B2LY6D and G-28QHB2KNZC preserved) */}
         <Script
+          id="gtag-base"
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-32DL2FJ0FQ"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
-        <Script id="google-analytics" strategy="afterInteractive">
+        <Script id="google-analytics" strategy="lazyOnload">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
@@ -56,15 +68,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           `}
         </Script>
         <Script
+          id="razorpay-checkout-sdk"
           src="https://checkout.razorpay.com/v1/checkout.js"
           strategy="lazyOnload"
         />
-      </head>
-      <body className={`${poppins.variable} ${poppins.className} font-sans antialiased selection:bg-[#E60023] selection:text-white`} suppressHydrationWarning>
-        <AppProvider>
-          {children}
-          <AppGlobalOverlays />
-        </AppProvider>
       </body>
     </html>
   );

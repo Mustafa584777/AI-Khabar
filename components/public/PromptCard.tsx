@@ -49,7 +49,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   const promptSlug = getPromptSlug(post);
   const detectedRatio = detectPostAspectRatio(post);
   const currentImg = isMultiple ? (allImages[activeImageIndex] || post.imageUrl) : post.imageUrl;
-  const optimizedImgUrl = getOptimizedImageUrl(currentImg, 600);
+  const optimizedImgUrl = getOptimizedImageUrl(currentImg, 480);
 
   // Viewport IntersectionObserver: strictly loads images only when entering or near viewport
   useEffect(() => {
@@ -159,16 +159,16 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
             src={optimizedImgUrl}
             alt={post.imageAlt || post.title}
             fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
             draggable={false}
             priority={priority}
             onLoad={() => setImageLoaded(true)}
             className={`object-cover group-hover:scale-105 transition-all duration-500 ease-out select-none pointer-events-none relative z-1 ${
-              imageLoaded ? 'opacity-100' : 'opacity-0'
+              priority || imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
             referrerPolicy="no-referrer"
             loading={priority ? 'eager' : 'lazy'}
-            decoding="async"
+            decoding={priority ? 'sync' : 'async'}
           />
         ) : !post.imageUrl ? (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-tr from-neutral-800 to-neutral-900 text-neutral-400">
