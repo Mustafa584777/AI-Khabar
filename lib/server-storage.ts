@@ -101,6 +101,12 @@ function mapSupabasePost(row: any): PromptPost {
     imageWidth: row.image_width || 1024,
     imageHeight: row.image_height || 1536,
     additionalImages: Array.isArray(row.additional_images) ? row.additional_images : [],
+    additionalImageAlts: Array.isArray(row.additional_image_alts)
+      ? row.additional_image_alts
+      : (Array.isArray(parsedParams?.additionalImageAlts) ? parsedParams.additionalImageAlts : []),
+    additionalImageFileNames: Array.isArray(row.additional_image_file_names)
+      ? row.additional_image_file_names
+      : (Array.isArray(parsedParams?.additionalImageFileNames) ? parsedParams.additionalImageFileNames : []),
     parameters: parsedParams,
     variables: Array.isArray(row.variables) ? row.variables : [],
     articleContent: row.article_content || '',
@@ -139,6 +145,8 @@ function mapPostToSupabase(post: PromptPost) {
   const parameters = {
     ...(post.parameters || {}),
     isPremium,
+    additionalImageAlts: post.additionalImageAlts || post.parameters?.additionalImageAlts || [],
+    additionalImageFileNames: post.additionalImageFileNames || post.parameters?.additionalImageFileNames || [],
   };
 
   return {

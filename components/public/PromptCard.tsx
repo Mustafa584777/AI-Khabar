@@ -50,6 +50,26 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   const detectedRatio = detectPostAspectRatio(post);
   const currentImg = isMultiple ? (allImages[activeImageIndex] || post.imageUrl) : post.imageUrl;
   const optimizedImgUrl = getOptimizedImageUrl(currentImg, 600);
+  const currentAlt = isMultiple && activeImageIndex > 0
+    ? (post.additionalImageAlts?.[activeImageIndex - 1] || `${post.imageAlt || post.title} - Slide ${activeImageIndex + 1}`)
+    : (post.imageAlt || post.title);
+
+  // Auto-slide every 2 seconds when card enters viewport, stopping when reaching last image (not infinite)
+  useEffect(() => {
+    if (!inView || allImages.length <= 1) return;
+
+    const timer = setInterval(() => {
+      setActiveImageIndex((prev) => {
+        if (prev < allImages.length - 1) {
+          return prev + 1;
+        }
+        clearInterval(timer);
+        return prev;
+      });
+    }, 2000);
+
+    return () => clearInterval(timer);
+  }, [inView, allImages.length]);
 
   // Viewport IntersectionObserver: strictly loads images only when entering or near viewport
   useEffect(() => {
@@ -157,7 +177,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
         {inView && optimizedImgUrl ? (
           <Image
             src={optimizedImgUrl}
-            alt={post.imageAlt || post.title}
+            alt={currentAlt}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
             draggable={false}
@@ -249,15 +269,23 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
             </button>
 
             {/* Pinterest Dot Indicators at bottom */}
-            <div className="absolute bottom-2.5 inset-x-0 flex items-center justify-center gap-1.5 z-20 pointer-events-none">
+            <div className="absolute bottom-2.5 inset-x-0 flex items-center justify-center gap-1.5 z-20 pointer-events-auto">
               {allImages.map((_, idx) => (
-                <span
+                <button
                   key={idx}
-                  className={`transition-all duration-300 rounded-full ${
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setActiveImageIndex(idx);
+                  }}
+                  className={`transition-all duration-300 rounded-full cursor-pointer shadow-xs ${
                     idx === activeImageIndex
-                      ? 'w-4 h-1.5 bg-white shadow-md'
-                      : 'w-1.5 h-1.5 bg-white/60'
+                      ? 'w-4.5 h-1.5 bg-white shadow-md ring-1 ring-black/20'
+                      : 'w-1.5 h-1.5 bg-white/60 hover:bg-white/95'
                   }`}
+                  title={`Photo ${idx + 1}`}
+                  aria-label={`Go to slide ${idx + 1}`}
                 />
               ))}
             </div>
