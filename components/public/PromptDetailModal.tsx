@@ -270,37 +270,15 @@ export const PromptDetailModal = () => {
       } catch {}
     }
     setCurrentImageIndex(startIndex);
-    setIsModalInteracted(false);
   }, [selectedPost?.id, allImages.length]);
-
-  const [isModalInteracted, setIsModalInteracted] = useState(false);
-
-  // Auto-slide images every 2 seconds until the last image, pausing on user interaction
-  useEffect(() => {
-    if (!selectedPost || allImages.length <= 1 || isModalInteracted) return;
-
-    const timer = setInterval(() => {
-      setCurrentImageIndex((prev) => {
-        if (prev < allImages.length - 1) {
-          return prev + 1;
-        }
-        clearInterval(timer);
-        return prev;
-      });
-    }, 2000);
-
-    return () => clearInterval(timer);
-  }, [selectedPost?.id, allImages.length, isModalInteracted]);
 
   const handlePrevImage = useCallback((e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    setIsModalInteracted(true);
     setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : (allImages.length > 0 ? allImages.length - 1 : 0)));
   }, [allImages.length]);
 
   const handleNextImage = useCallback((e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    setIsModalInteracted(true);
     setCurrentImageIndex((prev) => (prev < allImages.length - 1 ? prev + 1 : 0));
   }, [allImages.length]);
 
@@ -1051,6 +1029,10 @@ export const PromptDetailModal = () => {
                       referrerPolicy="no-referrer"
                       priority
                       decoding="async"
+                      unoptimized={Boolean(
+                        (allImages[currentImageIndex] && (allImages[currentImageIndex].startsWith('data:') || allImages[currentImageIndex].startsWith('blob:'))) ||
+                        (selectedPost.imageUrl && (selectedPost.imageUrl.startsWith('data:') || selectedPost.imageUrl.startsWith('blob:')))
+                      )}
                     />
 
                     {/* Multiple Photos Badge Indicator (Pinterest Style: e.g. 1 / 4) */}
@@ -1096,13 +1078,12 @@ export const PromptDetailModal = () => {
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setIsModalInteracted(true);
                               setCurrentImageIndex(idx);
                             }}
                             className={`pointer-events-auto transition-all duration-300 rounded-full cursor-pointer ${
                               idx === currentImageIndex
-                                ? 'w-5 h-2 bg-white shadow-lg ring-1 ring-black/20'
-                                : 'w-2 h-2 bg-white/60 hover:bg-white/90 backdrop-blur-xs'
+                                ? 'w-5 h-2 bg-white shadow-lg'
+                                : 'w-2 h-2 bg-white/50 hover:bg-white/80'
                             }`}
                             aria-label={`Go to slide ${idx + 1}`}
                             title={`Photo ${idx + 1}`}
@@ -1164,6 +1145,7 @@ export const PromptDetailModal = () => {
                             fill
                             className="object-cover"
                             referrerPolicy="no-referrer"
+                            unoptimized={Boolean(thumbUrl && (thumbUrl.startsWith('data:') || thumbUrl.startsWith('blob:')))}
                           />
                         </button>
                       ))}
