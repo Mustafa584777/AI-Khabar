@@ -45,14 +45,14 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   const [isHovered, setIsHovered] = useState(false);
   const isMultiple = allImages.length > 1;
 
-  // Auto-slide images automatically when multiple images exist and not hovered
+  // Auto-slide images infinitely when multiple images exist
   useEffect(() => {
-    if (!isMultiple || isHovered) return;
+    if (!isMultiple) return;
     const timer = setInterval(() => {
       setActiveImageIndex((prev) => (prev < allImages.length - 1 ? prev + 1 : 0));
-    }, 3500);
+    }, 3000);
     return () => clearInterval(timer);
-  }, [isMultiple, allImages.length, isHovered]);
+  }, [isMultiple, allImages.length]);
 
   const isBookmarked = bookmarkedIds.includes(post.id);
   const isUnlocked = isPromptUnlocked(post.id, post.isPremium);

@@ -753,6 +753,8 @@ export const PromptDetailModal = () => {
 
   if (!selectedPost) return null;
 
+  const detectedRatio = detectPostAspectRatio(selectedPost);
+
   const isBookmarked = bookmarkedIds.includes(selectedPost.id);
   const isUnlocked = isPromptUnlocked(selectedPost.id, selectedPost.isPremium);
   const isPromptGated = Boolean(selectedPost.isPremium && !isUnlocked);
@@ -1016,16 +1018,18 @@ export const PromptDetailModal = () => {
                   className="relative w-full overflow-hidden flex flex-col items-center justify-center select-none group/slider"
                 >
                   {/* Active Main Slide Image Container */}
-                  <div className="relative w-full overflow-hidden flex items-center justify-center bg-neutral-950">
+                  <div
+                    style={{ aspectRatio: detectedRatio, maxHeight: '72vh' }}
+                    className="relative w-full overflow-hidden flex items-center justify-center bg-neutral-950"
+                  >
                     <Image
                       key={allImages[currentImageIndex] || selectedPost.imageUrl}
                       src={getOptimizedImageUrl(allImages[currentImageIndex] || selectedPost.imageUrl, 1200)}
                       alt={`${selectedPost.imageAlt || selectedPost.title} - photo ${currentImageIndex + 1}`}
-                      width={selectedPost.imageWidth || 1200}
-                      height={selectedPost.imageHeight || 1600}
+                      fill
                       sizes="(max-width: 1024px) 100vw, 60vw"
                       draggable={false}
-                      className="w-full h-auto block select-none pointer-events-none transition-all duration-300 ease-out"
+                      className="w-full h-full object-cover block select-none pointer-events-none transition-all duration-300 ease-out"
                       referrerPolicy="no-referrer"
                       priority
                       decoding="async"
