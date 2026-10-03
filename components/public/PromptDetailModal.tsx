@@ -102,18 +102,11 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
 
       {/* Photo Pin Image (rendered ONLY when inView is true) */}
       {pin.imageUrl && inView && (
-        <Image
+        <img
           src={getOptimizedImageUrl(pin.imageUrl, 500)}
           alt={pin.imageAlt || pin.title}
-          fill
-          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-          onLoad={() => setLoaded(true)}
-          className={`object-cover group-hover:scale-105 transition-all duration-500 ${
-            loaded ? 'opacity-100' : 'opacity-0'
-          }`}
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
           referrerPolicy="no-referrer"
-          loading="lazy"
-          decoding="async"
         />
       )}
 

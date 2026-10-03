@@ -167,24 +167,12 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
         {/* Full-Height Shimmer Skeleton Placeholder removed */}
 
         {inView && optimizedImgUrl ? (
-          <Image
+          <img
             src={optimizedImgUrl}
             alt={post.imageAlt || post.title}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
             draggable={false}
-            priority={priority}
-            onLoad={() => setImageLoaded(true)}
-            className={`object-cover group-hover:scale-105 transition-all duration-500 ease-out select-none pointer-events-none relative z-1 ${
-              imageLoaded ? 'opacity-100' : 'opacity-0'
-            }`}
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-all duration-500 ease-out select-none pointer-events-none"
             referrerPolicy="no-referrer"
-            loading={priority ? 'eager' : 'lazy'}
-            decoding="async"
-            unoptimized={Boolean(
-              (typeof currentImg === 'string' && (currentImg.startsWith('data:') || currentImg.startsWith('blob:'))) ||
-              (typeof optimizedImgUrl === 'string' && (optimizedImgUrl.startsWith('data:') || optimizedImgUrl.startsWith('blob:')))
-            )}
           />
         ) : !post.imageUrl ? (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-tr from-neutral-800 to-neutral-900 text-neutral-400">
