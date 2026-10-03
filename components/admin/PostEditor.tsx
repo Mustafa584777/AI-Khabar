@@ -115,7 +115,23 @@ export const PostEditor = () => {
 
   useEffect(() => {
     if (existingPost) {
+      setTitle(existingPost.title || '');
+      setSlug(existingPost.slug || '');
+      setCategory(existingPost.category || '');
+      setPromptText(existingPost.promptText || '');
+      setImageUrl(existingPost.imageUrl || '');
+      setImageAlt(existingPost.imageAlt || existingPost.title || '');
+      setImageFileName(existingPost.imageFileName || (existingPost.title ? generateImageFileNameFromTitle(existingPost.title) : ''));
+      setAdditionalImages(Array.isArray(existingPost.additionalImages) ? existingPost.additionalImages : []);
+      setStatus(existingPost.status === 'draft' ? 'draft' : 'published');
       setIsPremium(Boolean(existingPost.isPremium || existingPost.parameters?.isPremium));
+      if (existingPost.articleContent) setArticleContent(existingPost.articleContent);
+      if (Array.isArray(existingPost.tags) && existingPost.tags.length > 0) {
+        setTags(existingPost.tags);
+      }
+      if (existingPost.seo?.metaTitle) setMetaTitle(existingPost.seo.metaTitle);
+      if (existingPost.seo?.metaDescription) setMetaDescription(existingPost.seo.metaDescription);
+      if (existingPost.seo?.focusKeyword) setFocusKeyword(existingPost.seo.focusKeyword);
     }
   }, [existingPost]);
   const [articleContent, setArticleContent] = useState(

@@ -304,7 +304,7 @@ export const ServerStorage = {
   savePost: async (post: PromptPost, token?: string): Promise<PromptPost> => {
     const now = new Date().toISOString();
     const id = post.id || `prompt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
-    const posts = await ServerStorage.getAllPosts(true);
+    const posts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
     const existing = posts.find((p) => p.id === id);
 
     const isPremium = Boolean(
@@ -420,7 +420,7 @@ export const ServerStorage = {
     }
 
     // Update local cache
-    const currentList = [...posts];
+    const currentList = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
     const index = currentList.findIndex((p) => p.id === id);
     if (index >= 0) {
       currentList[index] = savedPost;
