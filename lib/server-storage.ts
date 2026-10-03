@@ -101,12 +101,6 @@ function mapSupabasePost(row: any): PromptPost {
     imageWidth: row.image_width || 1024,
     imageHeight: row.image_height || 1536,
     additionalImages: Array.isArray(row.additional_images) ? row.additional_images : [],
-    additionalImageAlts: Array.isArray(row.additional_image_alts)
-      ? row.additional_image_alts
-      : (Array.isArray(parsedParams?.additionalImageAlts) ? parsedParams.additionalImageAlts : []),
-    additionalImageFileNames: Array.isArray(row.additional_image_file_names)
-      ? row.additional_image_file_names
-      : (Array.isArray(parsedParams?.additionalImageFileNames) ? parsedParams.additionalImageFileNames : []),
     parameters: parsedParams,
     variables: Array.isArray(row.variables) ? row.variables : [],
     articleContent: row.article_content || '',
@@ -145,8 +139,6 @@ function mapPostToSupabase(post: PromptPost) {
   const parameters = {
     ...(post.parameters || {}),
     isPremium,
-    additionalImageAlts: post.additionalImageAlts || post.parameters?.additionalImageAlts || [],
-    additionalImageFileNames: post.additionalImageFileNames || post.parameters?.additionalImageFileNames || [],
   };
 
   return {
@@ -474,6 +466,17 @@ export const ServerStorage = {
   },
 
   deletePost: async (id: string, token?: string): Promise<void> => {
+    // 1. Remove from local file / memory first
+    try {
+      const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, []);
+      const filteredLocal = rawPosts.filter((p) => p.id !== id);
+      memoryPosts = filteredLocal;
+      writeJsonFile(POSTS_FILE, filteredLocal);
+    } catch (e) {
+      console.error('Local deletePost error:', e);
+    }
+
+    // 2. Remove from Supabase
     if (isSupabaseConfigured()) {
       try {
         const { error } = await db(token).from('posts').delete().eq('id', id);
@@ -484,11 +487,6 @@ export const ServerStorage = {
         console.error('Supabase deletePost exception:', err);
       }
     }
-
-    const posts = await ServerStorage.getAllPosts(true);
-    const filtered = posts.filter((p) => p.id !== id);
-    memoryPosts = filtered;
-    writeJsonFile(POSTS_FILE, filtered);
   },
 
   restorePosts: async (incomingPosts: PromptPost[], mode: 'replace' | 'merge'): Promise<PromptPost[]> => {
