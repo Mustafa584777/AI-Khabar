@@ -213,56 +213,15 @@ export const PromptDetailModal = () => {
       });
     }
 
-    if (Array.isArray((selectedPost as any).images)) {
-      (selectedPost as any).images.forEach((img: any) => {
-        if (img && typeof img === 'string' && img.trim() && !list.includes(img.trim())) {
-          list.push(img.trim());
-        }
-      });
-    }
-
-    // Only prompt-specific storage key if strictly matching this post's ID
-    if (typeof window !== 'undefined') {
-      try {
-        const storedKey = sessionStorage.getItem(`auraprompt_slider_${selectedPost.id}`);
-        if (storedKey) {
-          const parsed = JSON.parse(storedKey);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            parsed.forEach((img: any) => {
-              if (img && typeof img === 'string' && img.trim() && !list.includes(img.trim())) {
-                list.push(img.trim());
-              }
-            });
-          }
-        }
-      } catch {}
-    }
-
     return list;
-  }, [selectedPost]);
+  }, [selectedPost?.id, selectedPost?.imageUrl, selectedPost?.additionalImages]);
 
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
 
-  // Synchronize active slider image index when prompt changes
+  // Always reset slider to first photo whenever a new prompt is opened
   useEffect(() => {
-    if (!selectedPost) {
-      setCurrentImageIndex(0);
-      return;
-    }
-    let startIndex = 0;
-    if (typeof window !== 'undefined') {
-      try {
-        const savedIndex = sessionStorage.getItem(`auraprompt_slider_index_${selectedPost.id}`);
-        if (savedIndex !== null) {
-          const parsed = parseInt(savedIndex, 10);
-          if (!isNaN(parsed) && parsed >= 0 && parsed < (allImages.length || 1)) {
-            startIndex = parsed;
-          }
-        }
-      } catch {}
-    }
-    setCurrentImageIndex(startIndex);
-  }, [selectedPost?.id, allImages.length]);
+    setCurrentImageIndex(0);
+  }, [selectedPost?.id]);
 
   const handlePrevImage = useCallback((e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -1017,7 +976,7 @@ export const PromptDetailModal = () => {
                     >
                       {/* Smooth Horizontal Sliding Track */}
                       <div
-                        className="flex w-full h-full transition-transform duration-500 ease-out will-change-transform"
+                        className="absolute inset-0 flex transition-transform duration-500 ease-out will-change-transform"
                         style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
                       >
                         {allImages.map((imgUrl, idx) => (

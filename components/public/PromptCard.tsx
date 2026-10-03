@@ -84,11 +84,10 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   const handleCardClick = (e: React.MouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.button === 1) return;
     e.preventDefault();
-    if (typeof window !== 'undefined' && isMultiple) {
+    if (typeof window !== 'undefined') {
       try {
-        sessionStorage.setItem('auraprompt_active_slider_images', JSON.stringify(allImages));
-        sessionStorage.setItem(`auraprompt_slider_${post.id}`, JSON.stringify(allImages));
-        sessionStorage.setItem(`auraprompt_slider_index_${post.id}`, String(activeImageIndex));
+        sessionStorage.removeItem('auraprompt_active_slider_images');
+        sessionStorage.removeItem('auraprompt_active_slider_index');
       } catch {}
     }
     setSelectedPost(post);
