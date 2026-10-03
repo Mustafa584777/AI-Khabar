@@ -867,13 +867,11 @@ export const PostEditor = () => {
                   <span className="text-blue-600 dark:text-blue-400">Live Aspect Ratio 16:10</span>
                 </div>
                 <div className="relative w-full aspect-[16/10] rounded-2xl overflow-hidden bg-neutral-950 border border-neutral-200 dark:border-neutral-800 shadow-inner group">
-                  <Image
+                  <img
                     src={imageUrl}
                     alt={imageAlt || title || 'Preview'}
-                    fill
-                    className="object-cover"
+                    className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
-                    unoptimized={Boolean(typeof imageUrl === 'string' && (imageUrl.startsWith('data:') || imageUrl.startsWith('blob:')))}
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                     <button
@@ -953,13 +951,11 @@ export const PostEditor = () => {
                       key={idx}
                       className="relative aspect-square rounded-xl overflow-hidden bg-neutral-900 border border-neutral-200 dark:border-neutral-800 group"
                     >
-                      <Image
+                      <img
                         src={imgUrl}
                         alt={`Slide ${idx + 2}`}
-                        fill
-                        className="object-cover"
+                        className="w-full h-full object-cover"
                         referrerPolicy="no-referrer"
-                        unoptimized={Boolean(typeof imgUrl === 'string' && (imgUrl.startsWith('data:') || imgUrl.startsWith('blob:')))}
                       />
                       <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-black/70 text-[9px] font-bold text-white">
                         #{idx + 2}
@@ -1120,11 +1116,10 @@ export const PostEditor = () => {
                 {imageUrl ? (
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-indigo-700 relative bg-neutral-900">
-                      <Image
+                      <img
                         src={imageUrl}
                         alt="Uploaded preview"
-                        fill
-                        className="object-cover"
+                        className="w-full h-full object-cover"
                         referrerPolicy="no-referrer"
                       />
                     </div>
