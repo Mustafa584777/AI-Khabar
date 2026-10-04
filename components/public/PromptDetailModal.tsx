@@ -102,18 +102,11 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
 
       {/* Photo Pin Image (rendered ONLY when inView is true) */}
       {pin.imageUrl && inView && (
-        <Image
+        <img
           src={getOptimizedImageUrl(pin.imageUrl, 500)}
           alt={pin.imageAlt || pin.title}
-          fill
-          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-          onLoad={() => setLoaded(true)}
-          className={`object-cover group-hover:scale-105 transition-all duration-500 ${
-            loaded ? 'opacity-100' : 'opacity-0'
-          }`}
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
           referrerPolicy="no-referrer"
-          loading="lazy"
-          decoding="async"
         />
       )}
 
@@ -204,7 +197,7 @@ export const PromptDetailModal = () => {
   const [isUnlockModalOpen, setIsUnlockModalOpen] = useState<boolean>(false);
   const [historyStack, setHistoryStack] = useState<PromptPost[]>(() => (selectedPost ? [selectedPost] : []));
 
-  // Gather all images for this prompt (Main image + additionalImages array + session images)
+  // Gather all images for this prompt strictly for this post
   const allImages = useMemo(() => {
     if (!selectedPost) return [];
     const list: string[] = [];
@@ -220,57 +213,15 @@ export const PromptDetailModal = () => {
       });
     }
 
-    if (Array.isArray((selectedPost as any).images)) {
-      (selectedPost as any).images.forEach((img: any) => {
-        if (img && typeof img === 'string' && img.trim() && !list.includes(img.trim())) {
-          list.push(img.trim());
-        }
-      });
-    }
-
-    if (typeof window !== 'undefined') {
-      try {
-        const storedKey = sessionStorage.getItem(`auraprompt_slider_${selectedPost.id}`);
-        const activeStored = sessionStorage.getItem('auraprompt_active_slider_images');
-        const raw = storedKey || activeStored;
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            parsed.forEach((img: any) => {
-              if (img && typeof img === 'string' && img.trim() && !list.includes(img.trim())) {
-                list.push(img.trim());
-              }
-            });
-          }
-        }
-      } catch {}
-    }
-
     return list;
-  }, [selectedPost]);
+  }, [selectedPost?.id, selectedPost?.imageUrl, selectedPost?.additionalImages]);
 
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
 
-  // Synchronize active slider image index when prompt changes
+  // Always reset slider to first photo whenever a new prompt is opened
   useEffect(() => {
-    if (!selectedPost) {
-      setCurrentImageIndex(0);
-      return;
-    }
-    let startIndex = 0;
-    if (typeof window !== 'undefined') {
-      try {
-        const savedIndex = sessionStorage.getItem(`auraprompt_slider_index_${selectedPost.id}`) || sessionStorage.getItem('auraprompt_active_slider_index');
-        if (savedIndex !== null) {
-          const parsed = parseInt(savedIndex, 10);
-          if (!isNaN(parsed) && parsed >= 0 && parsed < (allImages.length || 1)) {
-            startIndex = parsed;
-          }
-        }
-      } catch {}
-    }
-    setCurrentImageIndex(startIndex);
-  }, [selectedPost?.id, allImages.length]);
+    setCurrentImageIndex(0);
+  }, [selectedPost?.id]);
 
   const handlePrevImage = useCallback((e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -753,6 +704,8 @@ export const PromptDetailModal = () => {
 
   if (!selectedPost) return null;
 
+  const detectedRatio = detectPostAspectRatio(selectedPost);
+
   const isBookmarked = bookmarkedIds.includes(selectedPost.id);
   const isUnlocked = isPromptUnlocked(selectedPost.id, selectedPost.isPremium);
   const isPromptGated = Boolean(selectedPost.isPremium && !isUnlocked);
@@ -1015,32 +968,40 @@ export const PromptDetailModal = () => {
                   onTouchEnd={allImages.length > 1 ? handleTouchEnd : undefined}
                   className="relative w-full overflow-hidden flex flex-col items-center justify-center select-none group/slider"
                 >
-                  {/* Active Main Slide Image Container */}
-                  <div className="relative w-full overflow-hidden flex items-center justify-center bg-neutral-950">
-                    <Image
-                      key={allImages[currentImageIndex] || selectedPost.imageUrl}
-                      src={getOptimizedImageUrl(allImages[currentImageIndex] || selectedPost.imageUrl, 1200)}
-                      alt={`${selectedPost.imageAlt || selectedPost.title} - photo ${currentImageIndex + 1}`}
-                      width={selectedPost.imageWidth || 1200}
-                      height={selectedPost.imageHeight || 1600}
-                      sizes="(max-width: 1024px) 100vw, 60vw"
-                      draggable={false}
-                      className="w-full h-auto block select-none pointer-events-none transition-all duration-300 ease-out"
-                      referrerPolicy="no-referrer"
-                      priority
-                      decoding="async"
-                    />
+                  {allImages.length > 1 ? (
+                    /* Multi-Image Carousel Slider with Smooth Left-to-Right Sliding Transition */
+                    <div
+                      style={{ aspectRatio: detectedRatio, maxHeight: '78vh' }}
+                      className="relative w-full overflow-hidden bg-neutral-950 select-none group/slider"
+                    >
+                      {/* Smooth Horizontal Sliding Track */}
+                      <div
+                        className="absolute inset-0 flex transition-transform duration-500 ease-out will-change-transform"
+                        style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
+                      >
+                        {allImages.map((imgUrl, idx) => (
+                          <div
+                            key={idx}
+                            className="w-full h-full shrink-0 relative overflow-hidden bg-neutral-950 flex items-center justify-center"
+                          >
+                            <img
+                              src={getOptimizedImageUrl(imgUrl, 1200)}
+                              alt={`${selectedPost.imageAlt || selectedPost.title} - photo ${idx + 1}`}
+                              className="w-full h-full object-cover block select-none pointer-events-none"
+                              referrerPolicy="no-referrer"
+                              loading={idx === 0 ? 'eager' : 'lazy'}
+                            />
+                          </div>
+                        ))}
+                      </div>
 
-                    {/* Multiple Photos Badge Indicator (Pinterest Style: e.g. 1 / 4) */}
-                    {allImages.length > 1 && (
+                      {/* Multiple Photos Badge Indicator (e.g. 1 / 4) */}
                       <div className="absolute top-4 left-4 z-20 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md text-white text-xs font-bold shadow-lg border border-white/10 flex items-center gap-1.5 pointer-events-none">
                         <Layers className="w-3.5 h-3.5 text-white/80" />
                         <span>{currentImageIndex + 1} / {allImages.length}</span>
                       </div>
-                    )}
 
-                    {/* Pinterest-Style Left Navigation Chevron Arrow */}
-                    {allImages.length > 1 && (
+                      {/* Left Navigation Chevron Arrow */}
                       <button
                         type="button"
                         onClick={handlePrevImage}
@@ -1050,10 +1011,8 @@ export const PromptDetailModal = () => {
                       >
                         <ChevronLeft className="w-5 h-5 -translate-x-0.5" />
                       </button>
-                    )}
 
-                    {/* Pinterest-Style Right Navigation Chevron Arrow */}
-                    {allImages.length > 1 && (
+                      {/* Right Navigation Chevron Arrow */}
                       <button
                         type="button"
                         onClick={handleNextImage}
@@ -1063,10 +1022,8 @@ export const PromptDetailModal = () => {
                       >
                         <ChevronRight className="w-5 h-5 translate-x-0.5" />
                       </button>
-                    )}
 
-                    {/* Pinterest-Style Pagination Indicator Dots */}
-                    {allImages.length > 1 && (
+                      {/* Pagination Indicator Dots */}
                       <div className="absolute bottom-4 inset-x-0 flex items-center justify-center gap-1.5 z-20 pointer-events-none">
                         {allImages.map((_, idx) => (
                           <button
@@ -1086,36 +1043,74 @@ export const PromptDetailModal = () => {
                           />
                         ))}
                       </div>
-                    )}
 
-                    {/* Action Icons Overlay: Download + Enlarge */}
-                    <div className="absolute bottom-4 right-4 flex items-center gap-2 z-20">
-                      <button
-                        type="button"
-                        onClick={(e) => handleDownloadImage(e, allImages[currentImageIndex])}
-                        disabled={isDownloadingImage}
-                        className="p-2.5 rounded-full bg-black/75 hover:bg-black text-white backdrop-blur-md transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer border border-white/10"
-                        title="Download Photo"
-                        aria-label="Download Photo"
-                      >
-                        {isDownloadingImage ? (
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Download className="w-4 h-4" />
-                        )}
-                      </button>
+                      {/* Action Icons Overlay: Download + Enlarge */}
+                      <div className="absolute bottom-4 right-4 flex items-center gap-2 z-20">
+                        <button
+                          type="button"
+                          onClick={(e) => handleDownloadImage(e, allImages[currentImageIndex])}
+                          disabled={isDownloadingImage}
+                          className="p-2.5 rounded-full bg-black/75 hover:bg-black text-white backdrop-blur-md transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer border border-white/10"
+                          title="Download Photo"
+                          aria-label="Download Photo"
+                        >
+                          {isDownloadingImage ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Download className="w-4 h-4" />
+                          )}
+                        </button>
 
-                      <button
-                        type="button"
-                        onClick={() => setShowFullImageModal(true)}
-                        className="p-2.5 rounded-full bg-black/75 hover:bg-black text-white backdrop-blur-md transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer border border-white/10"
-                        title="View Full Resolution Image"
-                        aria-label="Enlarge Image"
-                      >
-                        <Maximize2 className="w-4 h-4" />
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowFullImageModal(true)}
+                          className="p-2.5 rounded-full bg-black/75 hover:bg-black text-white backdrop-blur-md transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer border border-white/10"
+                          title="View Full Resolution Image"
+                          aria-label="Enlarge Image"
+                        >
+                          <Maximize2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    /* Single Image Display: Natural image height without artificial crop or fixed height */
+                    <div className="relative w-full overflow-hidden flex items-center justify-center bg-neutral-950 group/single">
+                      <img
+                        src={getOptimizedImageUrl(allImages[0] || selectedPost.imageUrl, 1200)}
+                        alt={selectedPost.imageAlt || selectedPost.title}
+                        className="w-full h-auto max-h-[85vh] object-contain block mx-auto select-none pointer-events-none transition-all duration-300"
+                        referrerPolicy="no-referrer"
+                      />
+
+                      {/* Action Icons Overlay: Download + Enlarge */}
+                      <div className="absolute bottom-4 right-4 flex items-center gap-2 z-20">
+                        <button
+                          type="button"
+                          onClick={(e) => handleDownloadImage(e, allImages[0] || selectedPost.imageUrl)}
+                          disabled={isDownloadingImage}
+                          className="p-2.5 rounded-full bg-black/75 hover:bg-black text-white backdrop-blur-md transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer border border-white/10"
+                          title="Download Photo"
+                          aria-label="Download Photo"
+                        >
+                          {isDownloadingImage ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Download className="w-4 h-4" />
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowFullImageModal(true)}
+                          className="p-2.5 rounded-full bg-black/75 hover:bg-black text-white backdrop-blur-md transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer border border-white/10"
+                          title="View Full Resolution Image"
+                          aria-label="Enlarge Image"
+                        >
+                          <Maximize2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Thumbnail Row Strip when multiple images are present */}
                   {allImages.length > 1 && (
@@ -1135,11 +1130,10 @@ export const PromptDetailModal = () => {
                           }`}
                           title={`Photo ${tIdx + 1}`}
                         >
-                          <Image
+                          <img
                             src={getOptimizedImageUrl(thumbUrl, 160)}
                             alt={`Thumbnail ${tIdx + 1}`}
-                            fill
-                            className="object-cover"
+                            className="w-full h-full object-cover"
                             referrerPolicy="no-referrer"
                           />
                         </button>
@@ -1591,12 +1585,10 @@ export const PromptDetailModal = () => {
             onContextMenu={(e) => e.preventDefault()}
             className="relative max-w-5xl max-h-[90vh] w-full h-full flex items-center justify-center select-none"
           >
-            <Image
+            <img
               key={allImages[currentImageIndex] || selectedPost.imageUrl}
               src={allImages[currentImageIndex] || selectedPost.imageUrl}
               alt={`${selectedPost.imageAlt || selectedPost.title} - photo ${currentImageIndex + 1}`}
-              width={1600}
-              height={1600}
               draggable={false}
               className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl select-none pointer-events-auto transition-all duration-200"
               referrerPolicy="no-referrer"

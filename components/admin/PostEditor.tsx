@@ -115,7 +115,23 @@ export const PostEditor = () => {
 
   useEffect(() => {
     if (existingPost) {
+      setTitle(existingPost.title || '');
+      setSlug(existingPost.slug || '');
+      setCategory(existingPost.category || '');
+      setPromptText(existingPost.promptText || '');
+      setImageUrl(existingPost.imageUrl || '');
+      setImageAlt(existingPost.imageAlt || existingPost.title || '');
+      setImageFileName(existingPost.imageFileName || (existingPost.title ? generateImageFileNameFromTitle(existingPost.title) : ''));
+      setAdditionalImages(Array.isArray(existingPost.additionalImages) ? existingPost.additionalImages : []);
+      setStatus(existingPost.status === 'draft' ? 'draft' : 'published');
       setIsPremium(Boolean(existingPost.isPremium || existingPost.parameters?.isPremium));
+      if (existingPost.articleContent) setArticleContent(existingPost.articleContent);
+      if (Array.isArray(existingPost.tags) && existingPost.tags.length > 0) {
+        setTags(existingPost.tags);
+      }
+      if (existingPost.seo?.metaTitle) setMetaTitle(existingPost.seo.metaTitle);
+      if (existingPost.seo?.metaDescription) setMetaDescription(existingPost.seo.metaDescription);
+      if (existingPost.seo?.focusKeyword) setFocusKeyword(existingPost.seo.focusKeyword);
     }
   }, [existingPost]);
   const [articleContent, setArticleContent] = useState(
@@ -867,11 +883,10 @@ export const PostEditor = () => {
                   <span className="text-blue-600 dark:text-blue-400">Live Aspect Ratio 16:10</span>
                 </div>
                 <div className="relative w-full aspect-[16/10] rounded-2xl overflow-hidden bg-neutral-950 border border-neutral-200 dark:border-neutral-800 shadow-inner group">
-                  <Image
+                  <img
                     src={imageUrl}
                     alt={imageAlt || title || 'Preview'}
-                    fill
-                    className="object-cover"
+                    className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -952,11 +967,10 @@ export const PostEditor = () => {
                       key={idx}
                       className="relative aspect-square rounded-xl overflow-hidden bg-neutral-900 border border-neutral-200 dark:border-neutral-800 group"
                     >
-                      <Image
+                      <img
                         src={imgUrl}
                         alt={`Slide ${idx + 2}`}
-                        fill
-                        className="object-cover"
+                        className="w-full h-full object-cover"
                         referrerPolicy="no-referrer"
                       />
                       <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-black/70 text-[9px] font-bold text-white">
@@ -1118,11 +1132,10 @@ export const PostEditor = () => {
                 {imageUrl ? (
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-indigo-700 relative bg-neutral-900">
-                      <Image
+                      <img
                         src={imageUrl}
                         alt="Uploaded preview"
-                        fill
-                        className="object-cover"
+                        className="w-full h-full object-cover"
                         referrerPolicy="no-referrer"
                       />
                     </div>

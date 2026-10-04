@@ -26,15 +26,43 @@ const SearchExploreModal = dynamic(() => import('@/components/public/SearchExplo
 const RazorpayCheckoutModal = dynamic(() => import('@/components/public/RazorpayCheckoutModal').then((m) => m.RazorpayCheckoutModal), { ssr: false });
 const UnlockPremiumModal = dynamic(() => import('@/components/public/UnlockPremiumModal').then((m) => m.UnlockPremiumModal), { ssr: false });
 
+function GlobalInteractiveModals() {
+  const {
+    selectedPost,
+    isBookmarksDrawerOpen,
+    isTasteModalOpen,
+    isUserAuthModalOpen,
+    showLoginModal,
+    isSearchModalOpen,
+    isProCheckoutModalOpen,
+    isUnlockPremiumModalOpen,
+    toastMessage,
+  } = useApp();
+
+  return (
+    <>
+      {isSearchModalOpen && <SearchExploreModal />}
+      {selectedPost && <PromptDetailModal />}
+      {isBookmarksDrawerOpen && <BookmarksDrawer />}
+      {isTasteModalOpen && <TasteProfileModal />}
+      {isUserAuthModalOpen && <UserAuthModal />}
+      {showLoginModal && <AdminLoginModal />}
+      {toastMessage && <ToastNotification />}
+      {isProCheckoutModalOpen && <RazorpayCheckoutModal />}
+      {isUnlockPremiumModalOpen && <UnlockPremiumModal />}
+    </>
+  );
+}
+
 function MainApp() {
-  const { currentView } = useApp();
+  const { currentView, showLoginModal, toastMessage } = useApp();
 
   if (currentView === 'admin') {
     return (
       <>
         <AdminLayout />
-        <AdminLoginModal />
-        <ToastNotification />
+        {showLoginModal && <AdminLoginModal />}
+        {toastMessage && <ToastNotification />}
       </>
     );
   }
@@ -45,15 +73,7 @@ function MainApp() {
         <Header />
         <NotificationsView />
         <BottomNav />
-        <SearchExploreModal />
-        <PromptDetailModal />
-        <BookmarksDrawer />
-        <TasteProfileModal />
-        <UserAuthModal />
-        <AdminLoginModal />
-        <ToastNotification />
-        <RazorpayCheckoutModal />
-        <UnlockPremiumModal />
+        <GlobalInteractiveModals />
       </div>
     );
   }
@@ -62,16 +82,8 @@ function MainApp() {
     return (
       <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col">
         <UserDashboard />
-        <PromptDetailModal />
-        <BookmarksDrawer />
-        <SearchExploreModal />
-        <TasteProfileModal />
-        <UserAuthModal />
-        <AdminLoginModal />
-        <ToastNotification />
         <BottomNav />
-        <RazorpayCheckoutModal />
-        <UnlockPremiumModal />
+        <GlobalInteractiveModals />
       </div>
     );
   }
@@ -81,16 +93,8 @@ function MainApp() {
       <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col">
         <Header />
         <AIStudioTool />
-        <PromptDetailModal />
-        <BookmarksDrawer />
-        <SearchExploreModal />
-        <TasteProfileModal />
-        <UserAuthModal />
-        <AdminLoginModal />
-        <ToastNotification />
         <BottomNav />
-        <RazorpayCheckoutModal />
-        <UnlockPremiumModal />
+        <GlobalInteractiveModals />
       </div>
     );
   }
@@ -107,16 +111,8 @@ function MainApp() {
       {/* Mobile Bottom Navigation */}
       <BottomNav />
 
-      {/* Global Modals & Overlays */}
-      <SearchExploreModal />
-      <PromptDetailModal />
-      <BookmarksDrawer />
-      <TasteProfileModal />
-      <UserAuthModal />
-      <AdminLoginModal />
-      <ToastNotification />
-      <RazorpayCheckoutModal />
-      <UnlockPremiumModal />
+      {/* Global Modals & Overlays (Only mounted when opened for optimal performance) */}
+      <GlobalInteractiveModals />
     </div>
   );
 }

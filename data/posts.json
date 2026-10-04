@@ -1,5 +1,358 @@
 [
   {
+    "id": "prompt-1790688197396",
+    "title": "Natural Garden Portrait Masterclass",
+    "slug": "natural-garden-portrait-masterclass",
+    "category": "Photorealistic & Portraits",
+    "aiTool": "Midjourney",
+    "promptText": "Use the uploaded USER PHOTO as the PRIMARY IDENTITY AND CLOTHING REFERENCE.\n\nUse the provided reference image ONLY for environment, seated pose, composition, flowers, lighting, camera perspective, depth of field and photographic style.\n\nIDENTITY:\nPreserve the user's exact recognizable facial identity, facial proportions, eyes, eyebrows, nose, lips, jawline, ears, skin tone, natural skin texture, hairstyle, facial hair and authentic physical characteristics.\n\nDo not replace or redesign the user's face.\n\nCLOTHING — VERY IMPORTANT:\nKeep the user's EXACT ORIGINAL CLOTHES from the USER PHOTO.\n\nDo NOT copy the white shirt and white trousers from the reference image.\n\nThe user's original outfit must remain exactly as it appears in the user photo.\n\nPreserve:\n- exact garment type\n- exact colors\n- exact patterns\n- exact fabric\n- exact fit\n- exact sleeves\n- exact neckline/collar\n- exact folds\n- exact accessories\n- exact footwear if visible\n\nOnly the environment and photographic setup should be transformed.\n\nPOSE:\nRecreate the reference's relaxed seated posture.\n\nThe user is seated on a rustic moss-covered stone/concrete bench or ledge.\n\nThe torso is upright with a slight natural angle.\n\nBoth hands rest comfortably together near the lap.\n\nThe legs extend naturally downward/outward according to the seated position.\n\nThe head is turned slightly toward the camera with a gentle relaxed smile.\n\nPreserve the exact hand placement and relaxed body language.\n\nENVIRONMENT:\nCreate a lush botanical garden completely surrounded by flowering plants.\n\nDense green foliage fills the background.\n\nInclude abundant clusters of pink, magenta, purple, orange and coral flowers.\n\nCreate flowers at different distances to form layered depth.\n\nSome leaves and flowers should enter the extreme foreground and appear softly blurred.\n\nThe bench should have realistic aged stone texture covered partially with green moss.\n\nLIGHTING:\nNatural soft daylight filtered through dense foliage.\n\nCreate dappled sunlight across the user's face, hair and original clothing.\n\nSmall patches of light and shadow should fall naturally through leaves.\n\nAvoid artificial studio lighting.\n\nSHADOWS:\nSoft organic shadows from leaves and flowers.\n\nSubtle dappled shadows across the body and bench.\n\nNatural contact shadow where the user sits.\n\nCOLOR:\nRich natural garden greens.\n\nPink, purple, orange and coral flowers.\n\nNatural skin tones.\n\nExact original clothing colors.\n\nWarm but realistic daylight.\n\nNo artificial cinematic color grading.\n\nDEPTH OF FIELD:\nModerately shallow depth of field.\n\nThe user's face remains sharp.\n\nFlowers directly around the subject remain recognizable but softly rendered.\n\nForeground leaves and flowers become creamy and blurred.\n\nBackground foliage gradually becomes softer.\n\nCAMERA:\nVertical portrait photograph.\n\nNatural 50–85mm portrait perspective.\n\nEye-level/slightly elevated camera position.\n\nSubject occupies the central-right portion of the frame.\n\nUse natural optical bokeh rather than digital blur.\n\nPHOTOGRAPHIC CHARACTER:\nHigh-end natural garden portrait photography.\n\nRealistic skin texture.\n\nNatural hair strands.\n\nRealistic plant textures.\n\nPhysically believable sunlight and shadows.\n\nNo fantasy appearance.\n\nFINAL RESULT:\nThe final image should look like a genuine photograph of the SAME USER sitting peacefully in a lush flowering garden, with the exact original clothes preserved, while everything else follows the reference photograph.\n\nNEGATIVE:\nwhite shirt from reference, white trousers, copied outfit, changed clothing, changed face, different person, altered identity, changed pose, different garden, empty background, artificial flowers, studio lighting, hard flash, cinematic grading, excessive saturation, HDR, CGI, cartoon, anime, plastic skin, distorted hands, extra fingers, extra limbs, duplicate person, text, watermark, logo.",
+    "imageUrl": "https://res.cloudinary.com/idbpgaqz/image/upload/v1790688120/prompts/prompt-1790688069214.jpg",
+    "imageAlt": "Natural Garden Portrait Masterclass",
+    "imageWidth": 1024,
+    "imageHeight": 1536,
+    "additionalImages": [
+      "https://res.cloudinary.com/idbpgaqz/image/upload/v1790688177/prompts/natural-garden-portrait-masterclass-slide-2.jpg",
+      "https://res.cloudinary.com/idbpgaqz/image/upload/v1790688187/prompts/natural-garden-portrait-masterclass-slide-3.jpg"
+    ],
+    "parameters": {
+      "isPremium": false
+    },
+    "variables": [],
+    "articleContent": "### The Art of the Garden Portrait\nThis prompt captures the essence of refined, natural portraiture. By focusing on the contrast between the sharp, elegant attire and the organic, slightly chaotic textures of a blooming garden, the AI creates a professional-grade image that feels both high-end and approachable.\n\n#### Lighting Breakdown\n* **Dappled Sunlight:** The prompt utilizes 'dappled sunlight' to replicate the natural filtration of light through tree leaves. This adds depth and prevents the subject from looking 'flat'.\n* **Golden Hour:** We specify golden hour to ensure warm, flattering skin tones and a soft glow on the subject's face.\n\n#### Camera & Optics\n* **85mm Lens:** This is the gold standard for portraiture. It provides a flattering facial compression and separates the subject from the background perfectly.\n* **f/1.8 Aperture:** By setting a wide aperture, we achieve a 'creamy bokeh' effect, turning the busy flowers in the background into a soft, colorful blur that keeps the viewer's eye strictly on the subject.\n\n#### Pro Tip for Customization\nTo change the mood, swap 'burgundy blouse' for 'linen sundress' or 'pastel silk dress'. You can also change the garden setting to 'autumnal forest' or 'serene lavender field' to completely shift the color palette while maintaining the same high-end composition.",
+    "tags": [
+      "Portrait Photography",
+      "Garden Shoot",
+      "Golden Hour",
+      "Fashion Portrait",
+      "Botanical Aesthetic",
+      "Bokeh",
+      "Elegance"
+    ],
+    "status": "published",
+    "isFeatured": false,
+    "isTrending": false,
+    "isPremium": false,
+    "viewsCount": 57828,
+    "copiesCount": 24287,
+    "likesCount": 17348,
+    "bookmarksCount": 0,
+    "seoTitle": "Mastering Garden Portrait Photography with AI",
+    "seoDescription": "Learn how to recreate this elegant garden portrait style using our expert AI prompt, featuring tips on lighting, depth of field, and composition.",
+    "author": {
+      "name": "tool.reelz",
+      "role": "Author",
+      "avatar": "/logo.png"
+    },
+    "seo": {
+      "metaTitle": "Mastering Garden Portrait Photography with AI",
+      "focusKeyword": "garden portrait photography",
+      "metaDescription": "Learn how to recreate this elegant garden portrait style using our expert AI prompt, featuring tips on lighting, depth of field, and composition."
+    },
+    "createdAt": "2026-09-29T13:23:17.396+00:00",
+    "updatedAt": "2026-09-30T01:42:24.271+00:00",
+    "publishedAt": "2026-09-29T13:23:17.396+00:00"
+  },
+  {
+    "id": "prompt-1790687039935",
+    "title": "Minimalist Chic Mirror Selfie Portrait",
+    "slug": "minimalist-chic-mirror-selfie-portrait",
+    "category": "Lifestyle & Creative Portraiture",
+    "aiTool": "Midjourney",
+    "promptText": "IMPORTANT – FACE LOCK (ABSOLUTE) Maintain the real face identity while creating a chic mirror selfie featuring a burgundy bow top and white trousers in a bright minimal bathroom with soft shadows, balanced lighting, and clean fashion aesthetics; negative prompt: flat colors, distorted hands, incorrect bow texture, reflective artifacts, low detail; aspect ratio 9:16.",
+    "imageUrl": "https://res.cloudinary.com/idbpgaqz/image/upload/v1790686996/prompts/prompt-1790686991544.jpg",
+    "imageAlt": "Minimalist Chic Mirror Selfie Portrait",
+    "imageWidth": 1024,
+    "imageHeight": 1536,
+    "additionalImages": [],
+    "parameters": {
+      "isPremium": false
+    },
+    "variables": [],
+    "articleContent": "This prompt is designed to capture the essence of a clean, high-end lifestyle mirror selfie. It leverages natural lighting and high-contrast, professional fashion choices to create a polished, influencer-ready aesthetic. The composition focuses on the subject's posture and the clean, modern environment, avoiding the cluttered look of typical amateur mirror selfies. To customize this prompt, try changing the color of the clothing or the specific details of the background (e.g., 'industrial bathroom' or 'luxury marble bathroom'). The lighting is the key factor here—ensure your model uses 'natural diffused lighting' to keep the skin tones soft and realistic.",
+    "tags": [
+      "Candid Photography",
+      "Mirror Selfie",
+      "Minimalist Fashion",
+      "Daylight Portrait",
+      "Lifestyle Aesthetic",
+      "Clean Interior",
+      "Professional Influencer"
+    ],
+    "status": "published",
+    "isFeatured": false,
+    "isTrending": false,
+    "isPremium": false,
+    "viewsCount": 17099,
+    "copiesCount": 7180,
+    "likesCount": 5129,
+    "bookmarksCount": 0,
+    "seoTitle": "Minimalist Chic Mirror Selfie Portrait Prompt for AI Art",
+    "seoDescription": "Learn how to generate professional mirror selfie style portraits with this detailed AI art prompt. Perfect for lifestyle and fashion photography.",
+    "author": {
+      "name": "tool.reelz",
+      "role": "Author",
+      "avatar": "/logo.png"
+    },
+    "seo": {
+      "metaTitle": "Minimalist Chic Mirror Selfie Portrait Prompt for AI Art",
+      "focusKeyword": "mirror selfie portrait prompt",
+      "metaDescription": "Learn how to generate professional mirror selfie style portraits with this detailed AI art prompt. Perfect for lifestyle and fashion photography."
+    },
+    "createdAt": "2026-09-29T13:03:59.936+00:00",
+    "updatedAt": "2026-09-30T01:43:10.835+00:00",
+    "publishedAt": "2026-09-29T13:03:59.936+00:00"
+  },
+  {
+    "id": "prompt-1790672177249",
+    "title": "Golden Hour Romantic Road Trip",
+    "slug": "golden-hour-romantic-road-trip",
+    "category": "Lifestyle & Creative Portraiture",
+    "aiTool": "Midjourney",
+    "promptText": "Use the uploaded reference image as the MASTER VISUAL REFERENCE.\n\nRecreate the scene as a highly realistic cinematic photograph while preserving the exact overall composition, camera angle, framing, subject placement, proportions, environment, lighting direction, atmosphere, colour palette, depth, and visual mood of the reference.\n\nSCENE:\nA vast breathtaking flower-covered valley filled with dense orange, yellow, blue, and subtle purple wildflowers stretching across rolling hills and mountains in the background. A vintage light-blue classic sedan is naturally parked in the middle of the flower field with its doors open.\n\nCOUPLE:\nKeep the couple positioned exactly like the reference:\n\nThe man is sitting casually on the roof of the vintage car, holding an open book in his hands and looking naturally toward the woman/side.\n\nThe woman is standing beside the rear side of the car, casually leaning against it with a relaxed natural posture, looking toward the man.\nPreserve realistic human anatomy, natural body proportions, authentic facial features, realistic hair movement, and subtle imperfections.\n\n\nCLOTHING:\nPreserve the clothing exactly as visible in the reference image, including colors, fabric, fit, folds, footwear, and every visible clothing detail.\n\nLIGHTING:\nReproduce the soft warm late-afternoon sunlight of the reference. Use gentle golden illumination across the flower field, couple, and vintage car, with subtle highlights on the subjects and soft natural shadows. Keep the sunlight warm but realistic rather than overly saturated.\n\nCOLOUR GRADING:\nWarm nostalgic cinematic color grading with golden yellows, soft oranges, muted greens, pale blue sky, and subtle pastel tones. Slight vintage film character, gentle contrast, natural highlights, soft atmospheric haze, and realistic dynamic range.\n\nCAMERA:\nPhotorealistic full-frame camera look, natural lens perspective, realistic depth of field, subtle background separation, detailed flowers, realistic textures, natural skin texture, and authentic photographic imperfections.\n\nIMPORTANT:\nRemove ALL text, typography, title, credits, logos, symbols, watermarks, graphic elements, and poster-like overlays from the reference. The final image must contain ONLY the realistic photographic scene.\n\nNo illustration, no CGI look, no artificial plastic skin, no excessive HDR, no oversaturation, no distorted anatomy, no extra people.\n\nAspect ratio: 3:4",
+    "imageUrl": "https://res.cloudinary.com/idbpgaqz/image/upload/v1790672152/prompts/prompt-1790672141839.jpg",
+    "imageAlt": "Golden Hour Romantic Road Trip",
+    "imageWidth": 1024,
+    "imageHeight": 1536,
+    "additionalImages": [],
+    "parameters": {
+      "isPremium": false
+    },
+    "variables": [],
+    "articleContent": "### Master the Golden Hour Aesthetic\n\nThis prompt is engineered to capture the quintessential 'travel-core' aesthetic. The combination of a vintage vehicle and a field of wildflowers creates a high-contrast color palette of cool blue against warm, saturated oranges.\n\n#### Lighting & Camera Breakdown\n- **Golden Hour:** We specifically target the 'golden hour' for soft, diffused sunlight that creates a halo effect around the subjects.\n- **Lens Choice:** By specifying a 35mm lens, the prompt achieves a 'storytelling' look that includes enough of the environment (the hills and flowers) while keeping the focus firmly on the couple.\n- **Film Stock:** Using 'Kodak Portra 400' as a descriptor tells the AI to favor warm tones, fine grain, and naturalistic skin rendering.\n\n#### Pro Tips for Customization\n- **Subjects:** Change the clothing or the specific model of the vehicle to match different regional aesthetics.\n- **Lighting:** Swap 'golden hour' for 'overcast soft light' if you prefer a moody, melancholic vibe.\n- **Action:** Replace 'reading a book' with 'laughing together' or 'looking at a map' for more dynamic human interaction.",
+    "tags": [
+      "Cinematic Photography",
+      "Golden Hour",
+      "Vintage Car",
+      "Lifestyle Portrait",
+      "Travel Inspiration",
+      "Dreamy Aesthetic",
+      "Soft Lighting"
+    ],
+    "status": "published",
+    "isFeatured": false,
+    "isTrending": false,
+    "isPremium": false,
+    "viewsCount": 22959,
+    "copiesCount": 9633,
+    "likesCount": 6872,
+    "bookmarksCount": 0,
+    "seoTitle": "Golden Hour Romantic Road Trip Lifestyle Photography Prompt",
+    "seoDescription": "Create stunning, cinematic lifestyle photography of couples on road trips with this optimized AI prompt for Midjourney and DALL-E.",
+    "author": {
+      "name": "tool.reelz",
+      "role": "Author",
+      "avatar": "/logo.png"
+    },
+    "seo": {
+      "metaTitle": "Golden Hour Romantic Road Trip Lifestyle Photography Prompt",
+      "focusKeyword": "romantic lifestyle photography",
+      "metaDescription": "Create stunning, cinematic lifestyle photography of couples on road trips with this optimized AI prompt for Midjourney and DALL-E."
+    },
+    "createdAt": "2026-09-29T08:56:17.251+00:00",
+    "updatedAt": "2026-10-01T04:22:09.893+00:00",
+    "publishedAt": "2026-09-29T08:56:17.251+00:00"
+  },
+  {
+    "id": "prompt-1790672062753",
+    "title": "Golden Hour Sunflower Field Couple Portrait",
+    "slug": "golden-hour-sunflower-field-couple-portrait",
+    "category": "Lifestyle & Creative Portraiture",
+    "aiTool": "Midjourney",
+    "promptText": "Use the uploaded reference image as the MASTER VISUAL REFERENCE.\n\nRecreate the scene as an authentic, highly realistic cinematic photograph. Preserve the exact composition, camera height, perspective, subject scale, couple positioning, environment, foreground depth, lighting direction, sky appearance, atmosphere, colour palette, and overall emotional mood of the reference.\n\nSCENE:\nA vast natural sunflower field extending toward the horizon, filled with hundreds of realistic yellow sunflowers. The foreground contains large out-of-focus sunflower heads creating strong cinematic depth. A dark green tree line stretches across the distant horizon.\n\nCOUPLE:\nKeep the couple's positions and interaction exactly like the reference:\n- The woman is positioned on the left side of the frame, standing naturally among the sunflowers with her arm extended toward the man.\n- The man is positioned on the right side, standing several feet away and looking toward her naturally.\nTheir interaction should feel spontaneous and emotionally warm rather than posed or artificial.\n\nCLOTHING:\nPreserve the exact clothing shown in the reference image for both people. Keep the same colors, garments, fabric textures, folds, fit, footwear, and visible clothing details. Do not redesign or modernize the outfits.\n\nLIGHTING:\nReproduce the dramatic natural sunlight coming from the upper-right side of the scene, filtering through scattered clouds. Create soft golden highlights on the couple and sunflower petals with realistic directional shadows. Include subtle atmospheric sunlight and gentle haze around the distant horizon.\n\nSKY:\nPreserve the large dramatic sky occupying most of the upper frame: muted teal-blue atmospheric tones with layered white and gray clouds and bright sunlight breaking through the clouds on the right side.\n\nCOLOUR GRADING:\nCinematic warm-green color grade with deep natural greens, rich sunflower yellows, muted teal-blue sky, warm golden highlights, slightly darker shadows, subtle filmic contrast, and natural skin tones. Maintain a soft nostalgic photographic character without making the image look artificially graded.\n\nFOREGROUND & DEPTH:\nKeep several large sunflowers close to the camera heavily out of focus, creating realistic foreground bokeh. The middle-ground flowers around the couple should remain more detailed, while the distant field and tree line gradually become softer with atmospheric perspective.\n\nCAMERA:\nRealistic full-frame photography, natural lens compression, shallow-to-moderate depth of field, realistic optical bokeh, subtle lens imperfections, natural skin texture, realistic hair movement, physically accurate shadows, and authentic photographic detail.\n\nIMPORTANT:\nRemove ALL text, typography, captions, logos, watermarks, graphic elements, and poster-like overlays. Do not recreate any written content from the reference.\n\nThe final result must look like a real photograph taken outdoors, not an illustration, CGI render, digital painting, or poster.\n\nNo excessive HDR, no oversaturation, no artificial skin smoothing, no distorted anatomy, no extra people.\n\nAspect ratio: 3:4",
+    "imageUrl": "https://res.cloudinary.com/idbpgaqz/image/upload/v1790672022/prompts/prompt-1790672019586.jpg",
+    "imageAlt": "Golden Hour Sunflower Field Couple Portrait",
+    "imageWidth": 1024,
+    "imageHeight": 1536,
+    "additionalImages": [],
+    "parameters": {
+      "isPremium": false
+    },
+    "variables": [],
+    "articleContent": "### Achieve the Perfect Golden Hour Aesthetic\n\nThis prompt is engineered to capture the quintessential 'Golden Hour' romance. By focusing on the interplay between the subjects and the natural environment, it creates a soft, cinematic depth that makes the subjects pop against the vibrant yellow backdrop.\n\n#### Lighting & Composition Breakdown:\n*   **Lighting:** The prompt specifies 'soft natural backlighting', which creates a halo effect around the couple and ensures the sunflowers glow warmly.\n*   **Composition:** We use a 'shallow depth of field' technique, specifically calling for foreground elements (sunflowers) to create a blurred, immersive framing that draws the viewer's eye to the center.\n*   **Camera Optics:** The '85mm lens' at 'f/1.8' is the industry gold standard for portrait photography, ensuring the subjects are sharp while the background melts into a beautiful bokeh.\n\n#### Pro Tips for Customization:\n*   **Change the Attire:** You can easily swap 'white embroidered dress' for 'modern sundress' or 'linen shirt' to change the cultural or aesthetic vibe.\n*   **Adjust Mood:** If you want a more dramatic feel, replace 'golden hour' with 'overcast twilight' or 'stormy skies' to shift the emotion of the image.",
+    "tags": [
+      "Couple Portrait",
+      "Golden Hour",
+      "Sunflower",
+      "Cinematic",
+      "Outdoor Photography",
+      "Romance",
+      "Lifestyle"
+    ],
+    "status": "published",
+    "isFeatured": false,
+    "isTrending": false,
+    "isPremium": false,
+    "viewsCount": 7840,
+    "copiesCount": 3295,
+    "likesCount": 2344,
+    "bookmarksCount": 0,
+    "seoTitle": "Golden Hour Sunflower Field Couple Portrait Prompt",
+    "seoDescription": "Create stunning, romantic couple portraits in a sunflower field with this high-end AI art prompt, optimized for photorealistic results.",
+    "author": {
+      "name": "tool.reelz",
+      "role": "Author",
+      "avatar": "/logo.png"
+    },
+    "seo": {
+      "metaTitle": "Golden Hour Sunflower Field Couple Portrait Prompt",
+      "focusKeyword": "sunflower field couple portrait",
+      "metaDescription": "Create stunning, romantic couple portraits in a sunflower field with this high-end AI art prompt, optimized for photorealistic results."
+    },
+    "createdAt": "2026-09-29T08:54:22.756+00:00",
+    "updatedAt": "2026-10-01T01:12:43.746+00:00",
+    "publishedAt": "2026-09-29T08:54:22.756+00:00"
+  },
+  {
+    "id": "prompt-1790669503091",
+    "title": "Aesthetic Travel Portrait in Italian Ruins",
+    "slug": "aesthetic-travel-portrait-italian-ruins",
+    "category": "Lifestyle & Travel Photography",
+    "aiTool": "Midjourney",
+    "promptText": "Use the uploaded reference image as the MASTER VISUAL REFERENCE for the environment, stone architecture, composition, camera perspective, lighting, background mountains, vegetation and overall photographic appearance.\n\nUse the uploaded USER PHOTO as the PRIMARY reference for the user's exact facial identity and natural physical appearance.\n\nIMPORTANT — IDENTITY:\nPreserve the user's exact recognizable facial identity, facial structure, facial proportions, eyes, eyebrows, nose, lips, jawline, skin tone, hairstyle, facial hair if present, age and natural physical characteristics.\n\nIMPORTANT — CLOTHING:\nDress the user in a simple, realistic casual outfit:\n\na clean plain white casual full-sleeve cotton shirt, naturally fitted but not tight, with realistic fabric texture and natural wrinkles\n\nclassic medium-blue denim jeans with a natural relaxed fit\n\nsimple clean white casual sneakers\n\n\nThe outfit must look like ordinary real-life clothing, not a fashion-shoot costume. Keep realistic fabric folds, stitching, shadows and natural fit.\n\nSCENE:\nRecreate the same ancient stone archway/ruins from the reference.\n\nThe user should stand naturally inside the large weathered stone doorway, framed by the stone pillars and overhead arch.\n\nKeep the old gray-brown stone texture, cracks, weathering, moss and naturally growing green vines around the architecture.\n\nBehind the arch, show the same breathtaking green mountain landscape with layered mountain slopes and a bright blue sky.\n\nPOSE:\nRecreate the same overall standing composition as the reference.\n\nPlace the user naturally inside the arch with one hand resting against the left stone pillar while the other arm hangs comfortably by the side.\n\nThe user's face should be clearly facing directly toward the camera.\n\nKeep a relaxed, natural expression with a subtle authentic smile.\n\nDo not make the pose look staged or like a professional fashion photoshoot.\n\nCAMERA:\nReal-life smartphone photograph.\nVertical 3:4 composition.\nNatural eye-level/slightly low camera perspective.\nKeep the user approximately the same scale and position within the stone arch as the reference.\n\nLIGHTING:\nBright natural mountain daylight.\nSoft sunlight naturally illuminating the user's face and white shirt.\nRealistic sunlight falling across the stone surfaces.\nNatural shadows beneath the arch.\nSubtle atmospheric haze over the distant mountains.\n\nCOLOR PALETTE:\nNatural warm gray and earthy brown stone.\nRich but realistic green vegetation.\nSoft natural blue sky.\nNatural skin tones.\nClean white shirt and medium-blue denim jeans.\n\nCOLOR GRADING:\nNatural outdoor photography with subtle cinematic depth.\nSlightly warm sunlight.\nModerate contrast.\nNatural saturation.\nNo excessive HDR.\nNo artificial teal-orange grading.\n\nPHOTOREALISM:\nMake the final image look like a genuine photograph taken during a real mountain trip with a modern smartphone camera.\n\nNatural skin pores.\nNatural individual hair strands.\nRealistic cotton shirt texture.\nRealistic denim texture and wrinkles.\nNatural shadows and reflections.\nAuthentic stone and vegetation detail.\nRealistic atmospheric perspective.\nNo beauty filter or artificial skin smoothing.\nNo CGI or AI-generated appearance.\n\nREMOVE ALL TEXT:\nNo text, logos, watermarks, captions, stickers, symbols or graphic overlays anywhere in the final image.\n\nNEGATIVE PROMPT:\ndifferent person, altered identity, copied black patterned shirt, copied black trousers, formal clothing, suit, jacket, unrealistic fashion outfit, plastic skin, beauty filter, CGI, 3D render, illustration, anime, fake mountains, fake stone, unrealistic vegetation, excessive HDR, oversaturated colors, distorted hands, extra fingers, malformed body, incorrect perspective, text, watermark, logo, caption, graphic overlay.\n\nASPECT RATIO: 3:4",
+    "imageUrl": "https://res.cloudinary.com/idbpgaqz/image/upload/v1790669393/prompts/prompt-1790669391420.webp",
+    "imageAlt": "Aesthetic Travel Portrait in Italian Ruins",
+    "imageWidth": 1024,
+    "imageHeight": 1536,
+    "additionalImages": [],
+    "parameters": {
+      "isPremium": false
+    },
+    "variables": [],
+    "articleContent": "### Capture the Perfect Travel Moment\n\nThis prompt is engineered to replicate the high-end aesthetic found in modern travel influencer photography. It focuses on the contrast between the rough, ancient texture of the stone ruins and the crisp, clean lines of modern fashion.\n\n#### Lighting & Composition\n- **Lighting:** We utilize 'Natural bright daylight' to ensure the scene feels authentic. The harsh sun typical of European summers creates high-contrast shadows that define the texture of the stone.\n- **Composition:** The 'Framing' technique is used here, with the stone arch acting as a natural window for the background, creating depth and leading the viewer's eye directly to the subject.\n\n#### Camera & Optics\n- **Lens Selection:** A 35mm lens is used to capture enough of the environment while keeping the subject prominent. An f/2.8 aperture is suggested to provide a slight separation from the background without sacrificing too much landscape detail.\n\n#### Pro Tips for Customization\n- **Subject:** Replace '[subject]' with specific clothing colors or ages to change the narrative.\n- **Setting:** Switch the 'mountain lake' to 'Mediterranean coastline' or 'ancient city walls' to instantly change the geographical aesthetic.",
+    "tags": [
+      "Travel Influencer",
+      "Golden Hour",
+      "Summer Vibe",
+      "Mens Fashion",
+      "Scenic Landscape",
+      "Candid Portrait",
+      "Luxury Lifestyle"
+    ],
+    "status": "published",
+    "isFeatured": false,
+    "isTrending": false,
+    "isPremium": false,
+    "viewsCount": 96414,
+    "copiesCount": 40509,
+    "likesCount": 28899,
+    "bookmarksCount": 0,
+    "seoTitle": "Create Stunning Travel Lifestyle Portraits with AI",
+    "seoDescription": "Learn how to generate professional-grade, photorealistic travel portraits featuring scenic ruins and mountain landscapes with our advanced AI prompt guide.",
+    "author": {
+      "name": "tool.reelz",
+      "role": "Author",
+      "avatar": "/logo.png"
+    },
+    "seo": {
+      "metaTitle": "Create Stunning Travel Lifestyle Portraits with AI",
+      "focusKeyword": "travel portrait photography",
+      "metaDescription": "Learn how to generate professional-grade, photorealistic travel portraits featuring scenic ruins and mountain landscapes with our advanced AI prompt guide."
+    },
+    "createdAt": "2026-09-29T08:11:43.096+00:00",
+    "updatedAt": "2026-10-01T04:39:35.902+00:00",
+    "publishedAt": "2026-09-29T08:11:43.096+00:00"
+  },
+  {
+    "id": "prompt-1790668806939",
+    "title": "Modern Minimalist Masculine Portrait",
+    "slug": "modern-minimalist-masculine-portrait",
+    "category": "Fashion & Editorial Photography",
+    "aiTool": "Midjourney",
+    "promptText": "Use the uploaded reference image as the MASTER VISUAL REFERENCE for the exact camera angle, composition, environment, body positioning, lighting, color palette and photographic style.\n\nUse the uploaded USER PHOTO as the ONLY identity and clothing reference.\n\nIMPORTANT — IDENTITY:\nPreserve the user's exact recognizable face and identity, including facial structure, facial proportions, eyes, eyebrows, nose, lips, jawline, skin tone, hairstyle, facial hair if present and natural skin texture.\n\nIMPORTANT — CLOTHING:\nPreserve the user's EXACT ORIGINAL CLOTHES from the uploaded user photo.\n\nDo NOT copy the teal shirt or white trousers from the reference. The user's original outfit must remain completely unchanged, including exact colors, materials, texture, patterns, buttons, folds, footwear and accessories.\n\nSCENE AND COMPOSITION:\nRecreate the same overhead photographic composition.\n\nThe user is positioned on a large architectural staircase or stepped stone/marble surface, photographed from a high angle directly above and slightly to the side.\n\nRecreate the strong diagonal staircase geometry visible in the reference, with alternating dark and light architectural strips running diagonally through the frame.\n\nPlace the user naturally across the steps with a relaxed seated/reclining posture similar to the reference.\n\nPOSE:\nKeep the same general reclining/seated body arrangement, with the user's body positioned diagonally across the staircase.\n\nHowever, rotate and adjust the user's head naturally so that the user's FACE IS CLEARLY FACING DIRECTLY TOWARD THE CAMERA.\n\nThe expression should be natural, calm and confident, not exaggerated.\n\nMaintain realistic anatomy, natural hands and realistic body proportions.\n\nCAMERA:\nHigh-angle overhead smartphone photograph.\nVertical 3:4 composition.\nThe user should occupy approximately the same percentage of the frame as the reference.\nPreserve the strong geometric perspective of the staircase.\n\nLIGHTING:\nNatural soft outdoor/architectural daylight.\nSubtle directional light across the face and clothing.\nRealistic soft shadows between the steps.\nNatural highlights on skin and fabric.\n\nCOLOR PALETTE:\nMuted charcoal black, dark gray, cool stone gray and subtle warm skin tones.\nNatural contrast with slightly cinematic depth.\nKeep the teal/blue-green atmosphere only where naturally appropriate, but DO NOT change the user's original clothing colors.\n\nPHOTOREALISM:\nMake it look like a genuine photograph taken with a high-quality modern phone camera.\nNatural skin pores.\nNatural hair texture.\nRealistic fabric wrinkles.\nRealistic shadows.\nNo artificial smoothness.\nNo CGI appearance.\nNo excessive sharpening.\n\nREMOVE ALL TEXT:\nCompletely remove the \"How I Edited This Photo\" text and every other text, logo, watermark, caption or graphic element from the reference.\n\nThe final image must contain absolutely NO text.\n\nNEGATIVE PROMPT:\ndifferent identity, different face, copied teal shirt, copied white pants, changed clothes, artificial face, plastic skin, CGI, 3D render, illustration, excessive HDR, fake shadows, distorted anatomy, extra fingers, malformed hands, incorrect perspective, text, watermark, logo, caption, graphic design, poster, collage.\n\nASPECT RATIO: 3:4",
+    "imageUrl": "https://res.cloudinary.com/idbpgaqz/image/upload/v1790668712/prompts/prompt-1790668703631.jpg",
+    "imageAlt": "Modern Minimalist Masculine Portrait",
+    "imageWidth": 1024,
+    "imageHeight": 1536,
+    "additionalImages": [],
+    "parameters": {
+      "isPremium": false
+    },
+    "variables": [],
+    "articleContent": "### Creating the Modern Masculine Portrait\n\nThis prompt is designed to capture the essence of high-end, minimalist editorial photography. The aesthetic relies on the contrast between the subject's clothing and the architectural geometry of the background. \n\n#### Lighting Breakdown\nTo achieve this look, emphasize 'Natural Soft Daylight.' The subtle shadows and even illumination across the subject's face are key to the professional editorial quality. Avoid harsh midday sun in your settings to maintain a soft transition between light and shadow.\n\n#### Camera & Optics\nWe recommend using a 35mm lens equivalent. This focal length provides a slight depth of field, keeping the subject in sharp focus while maintaining a realistic, grounded perspective that doesn't distort facial features.\n\n#### Pro Tips for Customization\n- **Subject:** Replace 'young man' with specific traits (e.g., 'rugged man with stubble' or 'clean-shaven young man') to change the vibe.\n- **Setting:** Change the staircase material to 'industrial concrete' or 'brushed steel' to shift the mood from luxury to gritty street fashion.\n- **Colors:** Swap the monochromatic outfit for a 'deep navy suit' or 'earth-toned linen ensemble' to experiment with mood.",
+    "tags": [
+      "Mens-fashion",
+      "Editorial-portrait",
+      "Minimalist",
+      "Urban-style",
+      "High-fashion",
+      "Natural-light",
+      "Street-style"
+    ],
+    "status": "published",
+    "isFeatured": false,
+    "isTrending": false,
+    "isPremium": false,
+    "viewsCount": 99520,
+    "copiesCount": 41791,
+    "likesCount": 29848,
+    "bookmarksCount": 0,
+    "seoTitle": "Mastering Masculine Editorial Photography Prompts",
+    "seoDescription": "Learn to recreate high-end, modern masculine portrait photography with this professionally reverse-engineered AI prompt for Midjourney and Gemini.",
+    "author": {
+      "name": "tool.reelz",
+      "role": "Author",
+      "avatar": "/logo.png"
+    },
+    "seo": {
+      "metaTitle": "Mastering Masculine Editorial Photography Prompts",
+      "focusKeyword": "masculine editorial portrait",
+      "metaDescription": "Learn to recreate high-end, modern masculine portrait photography with this professionally reverse-engineered AI prompt for Midjourney and Gemini."
+    },
+    "createdAt": "2026-09-29T08:00:06.942+00:00",
+    "updatedAt": "2026-10-01T04:21:16.983+00:00",
+    "publishedAt": "2026-09-29T08:00:06.942+00:00"
+  },
+  {
+    "id": "prompt-1790668593577",
+    "title": "Editorial Minimalist Men's Lifestyle Portrait",
+    "slug": "editorial-minimalist-mens-lifestyle-portrait",
+    "category": "Fashion & Editorial Photography",
+    "aiTool": "Midjourney",
+    "promptText": "Use the uploaded reference image as the MASTER VISUAL REFERENCE for the exact camera angle, top-down perspective, composition, body positioning, floor pattern, lighting direction and photographic atmosphere.\n\nUse the uploaded USER PHOTO as the ONLY identity reference.\n\nIMPORTANT — IDENTITY:\nPreserve the user's exact recognizable facial identity, facial proportions, natural skin texture, hairstyle, facial hair if present, age and authentic physical characteristics.\n\nDo not replace the user with the reference person.\n\nIMPORTANT — POSE:\nRecreate the same relaxed seated pose from the reference.\n\nThe user is sitting/reclining naturally on the patterned stone or marble floor, viewed from a high overhead camera angle.\n\nMaintain the same approximate body placement, leg positioning, arm placement, torso orientation and relaxed expression.\n\nThe camera should remain above the user, looking downward at approximately the same angle as the reference.\n\nIMPORTANT — CLOTHING:\nCompletely replace the reference clothing with a different outfit.\n\nDress the user in a premium loose-fitting cream/off-white linen shirt with subtle natural fabric texture, paired with relaxed-fit charcoal-gray trousers and simple clean white sneakers.\n\nThe clothing must look naturally worn, with realistic folds, wrinkles and fabric tension corresponding to the seated pose.\n\nDo not copy the teal shirt or white trousers from the reference.\n\nENVIRONMENT:\nRecreate the same large geometric dark-and-light stone/marble floor pattern.\n\nMaintain the strong diagonal lines and alternating rectangular floor sections visible in the reference.\n\nKeep the environment minimal and realistic.\n\nLIGHTING:\nUse soft natural daylight coming from one side, producing realistic gentle highlights across the face, hair and clothing.\n\nPreserve the slightly moody, sophisticated photographic atmosphere of the reference.\n\nUse realistic shadows beneath the body and clothing.\n\nCOLOUR & GRADING:\nNatural slightly cool-neutral colour palette with deep charcoal floor tones, soft gray highlights and warm natural skin tones.\n\nModerate contrast.\nSubtle cinematic grading.\nNo excessive saturation.\nNo artificial teal-orange effect.\n\nIMPORTANT — TEXT REMOVAL:\nCompletely remove the words \"How I Edited This Photo\" and every other text, graphic, watermark, logo or overlay visible in the reference.\n\nThe final image must contain ZERO text.\n\nPHOTOREALISM:\nMake the result look like a genuine photograph taken with a high-quality smartphone or DSLR from directly above.\n\nReal skin pores.\nNatural hair strands.\nRealistic fabric.\nRealistic floor texture.\nNatural shadows.\nNo artificial smoothness.\n\nNEGATIVE PROMPT:\ntext, typography, watermark, logo, caption, graphic overlay, sticker, teal shirt, copied reference clothing, different identity, altered face, cartoon, CGI, illustration, plastic skin, excessive retouching, unrealistic pose, distorted anatomy, extra fingers, artificial lighting, excessive HDR, oversaturation.",
+    "imageUrl": "https://res.cloudinary.com/idbpgaqz/image/upload/v1790668569/prompts/prompt-1790668565434.jpg",
+    "imageAlt": "Editorial Minimalist Men's Lifestyle Portrait",
+    "imageWidth": 1024,
+    "imageHeight": 1536,
+    "additionalImages": [],
+    "parameters": {
+      "isPremium": false
+    },
+    "variables": [],
+    "articleContent": "This prompt is designed to capture a clean, modern aesthetic perfect for fashion blogs or social media branding. The secret to this look lies in the contrast between the organic texture of the linen shirt and the rigid geometric patterns of the marble floor. To get the best result, ensure your AI model focuses on the high-angle perspective, which emphasizes the subject's posture and the surrounding environment. The 'soft directional lighting' is crucial to avoid harsh digital artifacts and keep the skin tones natural. Pro-tip: Change the [subject] and [outfit colors] to match specific seasonal fashion trends for a fresh look.",
+    "tags": [
+      "Minimalist Fashion",
+      "Lifestyle Photography",
+      "Editorial Portrait",
+      "Monochrome Architecture",
+      "Streetwear Style",
+      "Professional Lighting",
+      "High-angle Photography"
+    ],
+    "status": "published",
+    "isFeatured": false,
+    "isTrending": false,
+    "isPremium": false,
+    "viewsCount": 67419,
+    "copiesCount": 28315,
+    "likesCount": 20225,
+    "bookmarksCount": 0,
+    "seoTitle": "Editorial Minimalist Men's Lifestyle Portrait Prompt",
+    "seoDescription": "Learn how to capture professional men's fashion and lifestyle portraits using this refined AI photography prompt.",
+    "author": {
+      "name": "tool.reelz",
+      "role": "Author",
+      "avatar": "/logo.png"
+    },
+    "seo": {
+      "metaTitle": "Editorial Minimalist Men's Lifestyle Portrait Prompt",
+      "focusKeyword": "editorial men's portrait",
+      "metaDescription": "Learn how to capture professional men's fashion and lifestyle portraits using this refined AI photography prompt."
+    },
+    "createdAt": "2026-09-29T07:56:33.578+00:00",
+    "updatedAt": "2026-09-29T10:35:19.197+00:00",
+    "publishedAt": "2026-09-29T07:56:33.578+00:00"
+  },
+  {
     "id": "prompt-1790645219509",
     "title": "Cinematic Mountain Portrait Photography",
     "slug": "cinematic-mountain-portrait-photography",
@@ -8,21 +361,9 @@
     "promptText": "Use the uploaded three-panel reference image as the MASTER VISUAL REFERENCE for the complete composition.\n\nUse the uploaded user's photo as the ONLY identity and clothing reference.\n\nIMPORTANT — IDENTITY:\nPreserve the user's exact recognizable facial identity, facial proportions, eyes, eyebrows, nose, lips, jawline, skin tone, hairstyle, facial hair if present and natural physical characteristics.\n\nIMPORTANT — CLOTHING:\nPreserve the user's EXACT ORIGINAL CLOTHES.\n\nDo NOT copy the black shirt, sunglasses or watch from the reference image.\n\nThe user must wear exactly the clothes visible in their uploaded photo, with the same colors, patterns, fabric, fit, buttons, sleeves, folds, footwear and accessories.\n\nCOMPOSITION:\nCreate a vertical three-panel photographic collage.\n\nDivide the final image into THREE horizontal photographs stacked vertically with clean horizontal separation between each panel.\n\nAll three panels should feature the SAME USER.\n\nMaintain consistent identity, hairstyle, skin tone and clothing across all three panels.\n\nPANEL 1:\nRecreate the first reference pose.\n\nMedium portrait of the user standing outdoors, looking toward the right side of the frame.\n\nOne hand is raised naturally near the upper chest/collar area.\n\nThe other arm remains relaxed.\n\nUse the same approximate framing, subject scale and camera height.\n\nPANEL 2:\nRecreate the second reference pose.\n\nMedium portrait of the user standing outdoors and looking slightly toward the side.\n\nThe user wears the exact original clothes from the uploaded user photo.\n\nBoth hands are naturally positioned together around the lower chest/waist area.\n\nIf the user's original accessories are visible, preserve them exactly.\n\nPANEL 3:\nRecreate the third reference pose.\n\nMedium portrait of the same user looking toward the right side.\n\nOne hand is naturally raised toward the neck/collar area.\n\nMaintain the same relaxed masculine editorial posture.\n\nENVIRONMENT:\nAll three panels should use a similar outdoor setting with a softly blurred natural landscape in the background.\n\nGreen vegetation, distant trees and muted outdoor structures should remain softly out of focus.\n\nKeep the background realistic and understated so the subject remains the focal point.\n\nLIGHTING:\nBright natural outdoor daylight.\n\nSoft directional sunlight falling naturally across the user's face and clothing.\n\nMaintain the slightly bright, airy exposure of the reference images.\n\nUse subtle natural highlights on the face and hair.\n\nAvoid studio lighting.\n\nCOLOUR PALETTE:\nSoft sky blue,\nmuted green vegetation,\nwarm natural skin tones,\nslightly neutral clothing tones.\n\nUse the same bright, clean outdoor colour treatment throughout all three panels.\n\nCOLOUR GRADING:\nNatural smartphone-camera colour grading.\n\nSlightly lifted exposure with soft contrast.\n\nModerately warm skin tones.\n\nNatural greens and pale blue sky.\n\nNo heavy cinematic LUT.\n\nNo excessive saturation.\n\nPHOTOGRAPHIC STYLE:\nMake all three panels look like genuine outdoor photographs captured with a modern smartphone.\n\nNatural skin texture.\n\nRealistic hair strands.\n\nAuthentic fabric texture.\n\nSubtle optical imperfections.\n\nNatural depth of field.\n\nRealistic background blur.\n\nNo artificial beauty retouching.\n\nIMPORTANT:\nThe three images must look like separate real photographs taken during the same outdoor session, while maintaining the exact same user identity and original clothing.\n\nNEGATIVE PROMPT:\ndifferent person, inconsistent face, face morphing, changed clothes, copied black shirt, copied sunglasses, copied watch, different hairstyle, artificial skin, beauty filter, CGI, illustration, anime, excessive HDR, excessive saturation, fake bokeh, unrealistic background, distorted hands, extra fingers, extra limbs, warped face, unrealistic shadows, plastic skin.",
     "imageUrl": "https://res.cloudinary.com/idbpgaqz/image/upload/v1790645009/prompts/prompt-1790644998384.jpg",
     "imageAlt": "Cinematic Mountain Portrait Photography",
-    "imageFileName": "cinematic-mountain-portrait-photography.webp",
     "imageWidth": 1024,
     "imageHeight": 1536,
-    "additionalImages": [
-      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1024&q=80",
-      "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1024&q=80"
-    ],
-    "additionalImageAlts": [
-      "Cinematic Mountain Portrait Photography - Slide 2",
-      "Cinematic Mountain Portrait Photography - Slide 3"
-    ],
-    "additionalImageFileNames": [
-      "cinematic-mountain-portrait-photography-slide-2.webp",
-      "cinematic-mountain-portrait-photography-slide-3.webp"
-    ],
+    "additionalImages": [],
     "parameters": {
       "isPremium": false
     },
@@ -41,9 +382,9 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 95042,
-    "copiesCount": 39918,
-    "likesCount": 28513,
+    "viewsCount": 95099,
+    "copiesCount": 39954,
+    "likesCount": 28514,
     "bookmarksCount": 0,
     "seoTitle": "Cinematic Mountain Portrait Photography Prompt for AI Art",
     "seoDescription": "Create professional, high-end lifestyle mountain portraits with this detailed AI prompt. Perfect for Midjourney, Flux, and Stable Diffusion.",
@@ -58,7 +399,7 @@
       "metaDescription": "Create professional, high-end lifestyle mountain portraits with this detailed AI prompt. Perfect for Midjourney, Flux, and Stable Diffusion."
     },
     "createdAt": "2026-09-29T01:26:59.509+00:00",
-    "updatedAt": "2026-09-29T01:27:01.608+00:00",
+    "updatedAt": "2026-09-30T18:00:12.701+00:00",
     "publishedAt": "2026-09-29T01:26:59.509+00:00"
   },
   {
@@ -91,8 +432,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 63677,
-    "copiesCount": 26744,
+    "viewsCount": 63679,
+    "copiesCount": 26745,
     "likesCount": 19103,
     "bookmarksCount": 0,
     "seoTitle": "Create Surreal Torn Paper Portrait Effects | Gemini Prompts",
@@ -108,7 +449,7 @@
       "metaDescription": "Learn how to generate surreal, high-concept editorial photography with a torn-paper reveal effect using this master-level prompt."
     },
     "createdAt": "2026-09-29T01:22:51.384+00:00",
-    "updatedAt": "2026-09-29T01:22:54.518+00:00",
+    "updatedAt": "2026-09-29T09:10:05.134+00:00",
     "publishedAt": "2026-09-29T01:22:51.384+00:00"
   },
   {
@@ -141,8 +482,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 33146,
-    "copiesCount": 13921,
+    "viewsCount": 33150,
+    "copiesCount": 13924,
     "likesCount": 9944,
     "bookmarksCount": 0,
     "seoTitle": "Low-Angle Urban Lifestyle Portrait Prompt for AI Art",
@@ -158,7 +499,7 @@
       "metaDescription": "Master the art of lifestyle photography with this low-angle portrait prompt designed for high-end AI image generators."
     },
     "createdAt": "2026-09-29T01:22:39.021+00:00",
-    "updatedAt": "2026-09-29T01:22:41.207+00:00",
+    "updatedAt": "2026-09-30T13:52:08.876+00:00",
     "publishedAt": "2026-09-29T01:22:39.021+00:00"
   },
   {
@@ -191,7 +532,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 4915,
+    "viewsCount": 4918,
     "copiesCount": 2065,
     "likesCount": 1474,
     "bookmarksCount": 0,
@@ -208,7 +549,7 @@
       "metaDescription": "Learn how to generate moody, high-contrast night portraits with this professional AI image prompt. Perfect for Midjourney and Flux."
     },
     "createdAt": "2026-09-29T01:21:47.419+00:00",
-    "updatedAt": "2026-09-29T01:50:04.6+00:00",
+    "updatedAt": "2026-10-01T04:19:08.998+00:00",
     "publishedAt": "2026-09-29T01:21:47.419+00:00"
   },
   {
@@ -240,7 +581,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 59045,
+    "viewsCount": 59047,
     "copiesCount": 24798,
     "likesCount": 17713,
     "bookmarksCount": 0,
@@ -257,7 +598,7 @@
       "metaDescription": "Create professional-grade urban lifestyle portraits with this detailed AI photography prompt, perfect for capturing modern street style and luxury aesthetics."
     },
     "createdAt": "2026-09-29T01:21:32.406+00:00",
-    "updatedAt": "2026-09-29T01:49:55.466+00:00",
+    "updatedAt": "2026-09-30T08:31:57.161+00:00",
     "publishedAt": "2026-09-29T01:21:32.406+00:00"
   },
   {
@@ -290,9 +631,9 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 53947,
-    "copiesCount": 22658,
-    "likesCount": 16184,
+    "viewsCount": 53954,
+    "copiesCount": 22664,
+    "likesCount": 16185,
     "bookmarksCount": 0,
     "seoTitle": "Mountain Road Biker Portrait AI Prompt",
     "seoDescription": "Create stunning, high-quality portrait photography of subjects on vintage motorcycles with mountain backdrops using this Midjourney/Flux prompt.",
@@ -307,7 +648,7 @@
       "metaDescription": "Create stunning, high-quality portrait photography of subjects on vintage motorcycles with mountain backdrops using this Midjourney/Flux prompt."
     },
     "createdAt": "2026-09-29T01:20:17.632+00:00",
-    "updatedAt": "2026-09-29T01:20:19.597+00:00",
+    "updatedAt": "2026-09-30T10:20:15.434+00:00",
     "publishedAt": "2026-09-29T01:20:17.632+00:00"
   },
   {
@@ -340,8 +681,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 29650,
-    "copiesCount": 12453,
+    "viewsCount": 29657,
+    "copiesCount": 12457,
     "likesCount": 8895,
     "bookmarksCount": 0,
     "seoTitle": "Ethereal Cliffside Editorial Portrait AI Prompt | Midjourney & Flux",
@@ -357,7 +698,7 @@
       "metaDescription": "Capture the essence of high-altitude solitude with this editorial portrait prompt. Perfect for creating dramatic, moody, and fashion-forward AI imagery."
     },
     "createdAt": "2026-09-29T01:19:00.545+00:00",
-    "updatedAt": "2026-09-29T01:19:02.19+00:00",
+    "updatedAt": "2026-09-30T18:28:02.66+00:00",
     "publishedAt": "2026-09-29T01:19:00.545+00:00"
   },
   {
@@ -390,7 +731,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 24366,
+    "viewsCount": 24367,
     "copiesCount": 10234,
     "likesCount": 7310,
     "bookmarksCount": 0,
@@ -407,7 +748,7 @@
       "metaDescription": "Learn how to generate sophisticated, high-end mirror selfie portraits with this professional AI prompt. Perfect for social media and lifestyle photography."
     },
     "createdAt": "2026-09-28T14:24:53.671+00:00",
-    "updatedAt": "2026-09-28T14:25:16.281+00:00",
+    "updatedAt": "2026-09-29T16:30:28.306+00:00",
     "publishedAt": "2026-09-28T14:24:53.671+00:00"
   },
   {
@@ -440,8 +781,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 45972,
-    "copiesCount": 19308,
+    "viewsCount": 45973,
+    "copiesCount": 19309,
     "likesCount": 13792,
     "bookmarksCount": 0,
     "seoTitle": "Professional Gym Selfie Portrait Prompt for AI Art",
@@ -457,7 +798,7 @@
       "metaDescription": "Capture the perfect gym selfie look with this photorealistic AI prompt designed for Midjourney and Flux. Achieve professional-grade lighting and detail."
     },
     "createdAt": "2026-09-28T14:21:24.713+00:00",
-    "updatedAt": "2026-09-28T14:21:31.744+00:00",
+    "updatedAt": "2026-09-30T02:40:36.554+00:00",
     "publishedAt": "2026-09-28T14:21:24.713+00:00"
   },
   {
@@ -490,8 +831,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 96580,
-    "copiesCount": 40563,
+    "viewsCount": 96585,
+    "copiesCount": 40564,
     "likesCount": 28974,
     "bookmarksCount": 0,
     "seoTitle": "Capture Luxury Urban Portraits: Professional Photography Prompt",
@@ -507,7 +848,7 @@
       "metaDescription": "Learn how to recreate this sophisticated, urban lifestyle portrait of a man in a luxury vehicle using our curated AI photography prompt."
     },
     "createdAt": "2026-09-28T14:19:06.263+00:00",
-    "updatedAt": "2026-09-28T14:22:47.096+00:00",
+    "updatedAt": "2026-09-29T17:17:31.884+00:00",
     "publishedAt": "2026-09-28T14:19:06.263+00:00"
   },
   {
@@ -540,8 +881,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 10674,
-    "copiesCount": 4483,
+    "viewsCount": 10681,
+    "copiesCount": 4488,
     "likesCount": 3202,
     "bookmarksCount": 0,
     "seoTitle": "Create Cinematic Golden Hour Travel Portraits | Prompt Guide",
@@ -557,7 +898,7 @@
       "metaDescription": "Learn how to generate professional-grade golden hour travel portraits with this detailed AI prompt guide. Perfect for lifestyle photography trends."
     },
     "createdAt": "2026-09-28T14:17:09.488+00:00",
-    "updatedAt": "2026-09-28T14:17:53.016+00:00",
+    "updatedAt": "2026-10-01T02:11:37.952+00:00",
     "publishedAt": "2026-09-28T14:17:09.488+00:00"
   },
   {
@@ -640,7 +981,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 46716,
+    "viewsCount": 46719,
     "copiesCount": 19621,
     "likesCount": 14015,
     "bookmarksCount": 0,
@@ -657,7 +998,7 @@
       "metaDescription": "Learn how to generate professional, cinematic battle royale inspired character posters with this advanced Midjourney and AI prompt guide."
     },
     "createdAt": "2026-09-28T14:14:42.758+00:00",
-    "updatedAt": "2026-09-28T14:18:44.908+00:00",
+    "updatedAt": "2026-09-30T02:36:23.074+00:00",
     "publishedAt": "2026-09-28T14:14:42.758+00:00"
   },
   {
@@ -671,7 +1012,9 @@
     "imageAlt": "King of Curses Sukuna: Dark Fantasy Anime Cosplay Portrait",
     "imageWidth": 1024,
     "imageHeight": 1536,
-    "additionalImages": [],
+    "additionalImages": [
+      "https://res.cloudinary.com/idbpgaqz/image/upload/v1790672204/prompts/king-of-curses-sukuna-dark-fantasy-anime-cosplay-portrait-slide-2.jpg"
+    ],
     "parameters": {
       "isPremium": true
     },
@@ -690,7 +1033,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 81212,
+    "viewsCount": 81214,
     "copiesCount": 34109,
     "likesCount": 24364,
     "bookmarksCount": 0,
@@ -707,7 +1050,7 @@
       "metaDescription": "Capture the essence of dark fantasy anime characters with this professional cosplay photography prompt designed for Midjourney and Flux."
     },
     "createdAt": "2026-09-28T14:11:50.646+00:00",
-    "updatedAt": "2026-09-28T14:12:04.164+00:00",
+    "updatedAt": "2026-09-29T16:41:29.104+00:00",
     "publishedAt": "2026-09-28T14:11:50.646+00:00"
   },
   {
@@ -740,7 +1083,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 76111,
+    "viewsCount": 76112,
     "copiesCount": 31966,
     "likesCount": 22833,
     "bookmarksCount": 0,
@@ -757,7 +1100,7 @@
       "metaDescription": "Capture moody, atmospheric, and ethereal portraits with this high-detail prompt designed for Midjourney v6 and advanced AI models."
     },
     "createdAt": "2026-09-28T13:25:21.919+00:00",
-    "updatedAt": "2026-09-28T14:00:50.585+00:00",
+    "updatedAt": "2026-09-29T13:07:02.829+00:00",
     "publishedAt": "2026-09-28T13:25:21.919+00:00"
   },
   {
@@ -790,7 +1133,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 21569,
+    "viewsCount": 21571,
     "copiesCount": 9054,
     "likesCount": 6467,
     "bookmarksCount": 0,
@@ -807,7 +1150,7 @@
       "metaDescription": "Learn to generate high-end, professional portrait photography featuring subjects in natural settings using our expertly crafted AI image prompt."
     },
     "createdAt": "2026-09-24T13:20:34.526+00:00",
-    "updatedAt": "2026-09-28T13:50:33.522+00:00",
+    "updatedAt": "2026-09-29T13:06:41.527+00:00",
     "publishedAt": "2026-09-24T13:20:34.526+00:00"
   },
   {
@@ -891,7 +1234,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 73051,
+    "viewsCount": 73054,
     "copiesCount": 30680,
     "likesCount": 21913,
     "bookmarksCount": 0,
@@ -908,7 +1251,7 @@
       "metaDescription": "Learn how to generate professional, rugged, adventure-themed lifestyle portraits featuring vehicles and landscapes using our expertly crafted AI prompt."
     },
     "createdAt": "2026-09-24T12:59:43.931+00:00",
-    "updatedAt": "2026-09-28T13:50:34.12+00:00",
+    "updatedAt": "2026-09-29T17:34:29.322+00:00",
     "publishedAt": "2026-09-24T12:59:43.931+00:00"
   },
   {
@@ -972,7 +1315,9 @@
     "imageAlt": "Sun-Drenched Minimalism: The Golden Hour Portrait",
     "imageWidth": 1024,
     "imageHeight": 1536,
-    "additionalImages": [],
+    "additionalImages": [
+      "https://res.cloudinary.com/idbpgaqz/image/upload/v1790672577/prompts/sun-drenched-minimalism-golden-hour-portrait-slide-2.jpg"
+    ],
     "parameters": {
       "isPremium": false
     },
@@ -991,8 +1336,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 45391,
-    "copiesCount": 19059,
+    "viewsCount": 45394,
+    "copiesCount": 19060,
     "likesCount": 13612,
     "bookmarksCount": 0,
     "seoTitle": "Create Stunning Golden Hour Portraits with AI",
@@ -1008,7 +1353,7 @@
       "metaDescription": "Learn how to generate professional lifestyle portraits in natural outdoor settings using this Midjourney and Gemini-optimized prompt."
     },
     "createdAt": "2026-09-22T12:42:01.524+00:00",
-    "updatedAt": "2026-09-28T13:50:26.526+00:00",
+    "updatedAt": "2026-09-29T17:32:53.404+00:00",
     "publishedAt": "2026-09-22T12:42:01.524+00:00"
   },
   {
@@ -1041,8 +1386,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 63455,
-    "copiesCount": 26644,
+    "viewsCount": 63459,
+    "copiesCount": 26647,
     "likesCount": 19032,
     "bookmarksCount": 0,
     "seoTitle": "Create Prismatic Light Portraits: Midjourney & AI Photography Guide",
@@ -1058,7 +1403,7 @@
       "metaDescription": "Learn how to generate stunning cinematic portraits with rainbow prism lighting effects using our professional AI photography prompt guide."
     },
     "createdAt": "2026-09-21T15:33:16.485+00:00",
-    "updatedAt": "2026-09-28T13:50:39.725+00:00",
+    "updatedAt": "2026-09-29T15:41:17.225+00:00",
     "publishedAt": "2026-09-21T15:33:16.485+00:00"
   },
   {
@@ -1072,7 +1417,10 @@
     "imageAlt": "Minimalist Cinematic Monochrome Portrait",
     "imageWidth": 1024,
     "imageHeight": 1536,
-    "additionalImages": [],
+    "additionalImages": [
+      "https://res.cloudinary.com/idbpgaqz/image/upload/v1790672690/prompts/minimalist-cinematic-monochrome-portrait-slide-2.jpg",
+      "https://res.cloudinary.com/idbpgaqz/image/upload/v1790672696/prompts/minimalist-cinematic-monochrome-portrait-slide-3.jpg"
+    ],
     "parameters": {
       "isPremium": false
     },
@@ -1092,8 +1440,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 15850,
-    "copiesCount": 6650,
+    "viewsCount": 15857,
+    "copiesCount": 6653,
     "likesCount": 4746,
     "bookmarksCount": 0,
     "seoTitle": "Minimalist Monochrome Editorial Portrait Prompt | AI Art Guide",
@@ -1109,7 +1457,7 @@
       "metaDescription": "Master the art of high-end black and white portraiture with our professional AI prompt designed for photorealistic results."
     },
     "createdAt": "2026-09-20T15:10:25.055+00:00",
-    "updatedAt": "2026-09-28T14:12:01.513+00:00",
+    "updatedAt": "2026-09-30T10:20:37.31+00:00",
     "publishedAt": "2026-09-20T15:10:25.055+00:00"
   },
   {
@@ -1123,7 +1471,10 @@
     "imageAlt": "Minimalist Birthday Calendar Portrait",
     "imageWidth": 1024,
     "imageHeight": 1536,
-    "additionalImages": [],
+    "additionalImages": [
+      "https://res.cloudinary.com/idbpgaqz/image/upload/v1790672818/prompts/minimalist-birthday-calendar-portrait-slide-2.jpg",
+      "https://res.cloudinary.com/idbpgaqz/image/upload/v1790672825/prompts/minimalist-birthday-calendar-portrait-slide-3.jpg"
+    ],
     "parameters": {
       "isPremium": true
     },
@@ -1143,7 +1494,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 86319,
+    "viewsCount": 86323,
     "copiesCount": 36249,
     "likesCount": 25889,
     "bookmarksCount": 0,
@@ -1160,7 +1511,7 @@
       "metaDescription": "Learn how to generate professional, minimalist portrait photography suitable for calendars and birthday layouts using this AI prompt."
     },
     "createdAt": "2026-09-20T08:46:00.144+00:00",
-    "updatedAt": "2026-09-26T22:10:02.434+00:00",
+    "updatedAt": "2026-09-30T10:21:40.515+00:00",
     "publishedAt": "2026-09-20T08:46:00.144+00:00"
   },
   {
@@ -1193,7 +1544,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 95430,
+    "viewsCount": 95432,
     "copiesCount": 40076,
     "likesCount": 28625,
     "bookmarksCount": 0,
@@ -1210,7 +1561,7 @@
       "metaDescription": "Unlock a master-level AI portrait prompt designed to capture intimate, high-quality couple photography with natural lighting and realistic textures."
     },
     "createdAt": "2026-09-20T08:23:58.452+00:00",
-    "updatedAt": "2026-09-28T13:26:03.972+00:00",
+    "updatedAt": "2026-09-30T06:38:11.053+00:00",
     "publishedAt": "2026-09-20T08:23:58.452+00:00"
   },
   {
@@ -1243,7 +1594,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 86125,
+    "viewsCount": 86126,
     "copiesCount": 36168,
     "likesCount": 25833,
     "bookmarksCount": 0,
@@ -1260,7 +1611,7 @@
       "metaDescription": "Learn how to prompt high-end mountain adventure lifestyle portraits with this professional Midjourney/Gemini prompt guide."
     },
     "createdAt": "2026-09-20T07:57:41.446+00:00",
-    "updatedAt": "2026-09-28T13:50:46.601+00:00",
+    "updatedAt": "2026-09-29T08:30:13.49+00:00",
     "publishedAt": "2026-09-20T07:57:41.446+00:00"
   },
   {
@@ -1293,7 +1644,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 9,
+    "viewsCount": 12,
     "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -1310,7 +1661,7 @@
       "metaDescription": "Learn how to replicate the trending urban nocturnal portrait aesthetic with this professional AI prompt. Perfect for capturing moody, high-contrast night shots."
     },
     "createdAt": "2026-09-19T04:48:12.688+00:00",
-    "updatedAt": "2026-09-26T22:10:35.456+00:00",
+    "updatedAt": "2026-09-29T16:40:29.295+00:00",
     "publishedAt": "2026-09-19T04:48:12.688+00:00"
   },
   {
@@ -1443,8 +1794,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 5,
-    "copiesCount": 0,
+    "viewsCount": 6,
+    "copiesCount": 2,
     "likesCount": 0,
     "bookmarksCount": 0,
     "seoTitle": "Ethereal Wheat Field Cinematic Portrait Prompt for AI Art",
@@ -1460,7 +1811,7 @@
       "metaDescription": "Create stunning cinematic portraits in nature with this expertly crafted AI prompt. Capture movement, freedom, and moody film-style aesthetics."
     },
     "createdAt": "2026-09-19T04:46:12.16+00:00",
-    "updatedAt": "2026-09-28T13:50:49.51+00:00",
+    "updatedAt": "2026-09-29T14:35:36.02+00:00",
     "publishedAt": "2026-09-19T04:46:12.16+00:00"
   },
   {
@@ -1474,7 +1825,11 @@
     "imageAlt": "Alpine Solitude Editorial Portrait",
     "imageWidth": 1024,
     "imageHeight": 1536,
-    "additionalImages": [],
+    "additionalImages": [
+      "https://res.cloudinary.com/idbpgaqz/image/upload/v1790687890/prompts/alpine-solitude-editorial-portrait-slide-2.jpg",
+      "https://res.cloudinary.com/idbpgaqz/image/upload/v1790687901/prompts/alpine-solitude-editorial-portrait-slide-3.jpg",
+      "https://res.cloudinary.com/idbpgaqz/image/upload/v1790687910/prompts/alpine-solitude-editorial-portrait-slide-4.jpg"
+    ],
     "parameters": {
       "isPremium": true
     },
@@ -1493,7 +1848,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 4,
+    "viewsCount": 6,
     "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -1510,7 +1865,7 @@
       "metaDescription": "Create stunning editorial-style travel photos featuring subjects in majestic mountain landscapes with this high-quality AI image generation prompt."
     },
     "createdAt": "2026-09-19T04:45:48.06+00:00",
-    "updatedAt": "2026-09-28T13:50:51.82+00:00",
+    "updatedAt": "2026-09-29T13:20:29.205+00:00",
     "publishedAt": "2026-09-19T04:45:48.06+00:00"
   },
   {
@@ -1544,7 +1899,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 5,
+    "viewsCount": 7,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -1561,7 +1916,7 @@
       "metaDescription": "Learn how to generate realistic, candid couple portrait photography with this detailed AI prompt guide designed for lifestyle imagery."
     },
     "createdAt": "2026-09-19T04:44:45.303+00:00",
-    "updatedAt": "2026-09-28T13:51:10.778+00:00",
+    "updatedAt": "2026-09-29T16:06:23.646+00:00",
     "publishedAt": "2026-09-19T04:44:45.303+00:00"
   },
   {
@@ -1645,7 +2000,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 10026,
+    "viewsCount": 10027,
     "copiesCount": 3908,
     "likesCount": 1242,
     "bookmarksCount": 0,
@@ -1656,7 +2011,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-18T00:30:54.682+00:00",
-    "updatedAt": "2026-09-26T22:07:59.577+00:00",
+    "updatedAt": "2026-09-30T02:06:27.205+00:00",
     "publishedAt": "2026-09-18T00:30:54.682+00:00"
   },
   {
@@ -1689,8 +2044,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 10025,
-    "copiesCount": 3909,
+    "viewsCount": 10031,
+    "copiesCount": 3917,
     "likesCount": 1240,
     "bookmarksCount": 0,
     "author": {
@@ -1700,7 +2055,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-18T00:29:29.283+00:00",
-    "updatedAt": "2026-09-26T22:09:11.766+00:00",
+    "updatedAt": "2026-10-01T02:08:45.829+00:00",
     "publishedAt": "2026-09-18T00:29:29.283+00:00"
   },
   {
@@ -1776,8 +2131,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 10024,
-    "copiesCount": 3908,
+    "viewsCount": 10025,
+    "copiesCount": 3909,
     "likesCount": 1240,
     "bookmarksCount": 0,
     "author": {
@@ -1787,7 +2142,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-18T00:28:13.096+00:00",
-    "updatedAt": "2026-09-28T13:35:33.26+00:00",
+    "updatedAt": "2026-09-29T09:06:48.391+00:00",
     "publishedAt": "2026-09-18T00:28:13.096+00:00"
   },
   {
@@ -1865,9 +2220,9 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 10024,
+    "viewsCount": 10027,
     "copiesCount": 3908,
-    "likesCount": 1240,
+    "likesCount": 1241,
     "bookmarksCount": 0,
     "author": {
       "name": "tool.reelz",
@@ -1876,7 +2231,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-17T13:54:24.793+00:00",
-    "updatedAt": "2026-09-28T13:51:20.393+00:00",
+    "updatedAt": "2026-09-30T18:35:23.845+00:00",
     "publishedAt": "2026-09-17T13:54:24.793+00:00"
   },
   {
@@ -1953,7 +2308,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 6,
+    "viewsCount": 9,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -1964,7 +2319,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-15T10:59:32.306+00:00",
-    "updatedAt": "2026-09-28T13:51:22.354+00:00",
+    "updatedAt": "2026-09-30T02:34:33.684+00:00",
     "publishedAt": "2026-09-15T10:59:32.306+00:00"
   },
   {
@@ -1997,8 +2352,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 2,
-    "copiesCount": 0,
+    "viewsCount": 3,
+    "copiesCount": 1,
     "likesCount": 1,
     "bookmarksCount": 0,
     "author": {
@@ -2008,7 +2363,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-15T10:25:49.764+00:00",
-    "updatedAt": "2026-09-28T14:28:28.577+00:00",
+    "updatedAt": "2026-09-29T09:08:51.516+00:00",
     "publishedAt": "2026-09-15T10:25:49.764+00:00"
   },
   {
@@ -2041,8 +2396,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 0,
-    "copiesCount": 0,
+    "viewsCount": 1,
+    "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -2052,7 +2407,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-15T10:24:27.632+00:00",
-    "updatedAt": "2026-09-20T08:19:07.438+00:00",
+    "updatedAt": "2026-09-30T02:34:41.685+00:00",
     "publishedAt": "2026-09-15T10:24:27.632+00:00"
   },
   {
@@ -2129,7 +2484,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 1,
+    "viewsCount": 2,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -2140,7 +2495,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-15T10:23:35.307+00:00",
-    "updatedAt": "2026-09-22T12:41:07.696+00:00",
+    "updatedAt": "2026-09-29T09:48:32.328+00:00",
     "publishedAt": "2026-09-15T10:23:35.307+00:00"
   },
   {
@@ -2217,8 +2572,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 3,
-    "copiesCount": 0,
+    "viewsCount": 4,
+    "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -2228,7 +2583,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-15T10:22:24.658+00:00",
-    "updatedAt": "2026-09-23T15:42:24.44+00:00",
+    "updatedAt": "2026-09-29T08:59:33.908+00:00",
     "publishedAt": "2026-09-15T10:22:24.658+00:00"
   },
   {
@@ -2349,8 +2704,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 7,
-    "copiesCount": 0,
+    "viewsCount": 13,
+    "copiesCount": 3,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -2360,7 +2715,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-15T10:18:56.899+00:00",
-    "updatedAt": "2026-09-24T12:01:37.867+00:00",
+    "updatedAt": "2026-09-29T17:33:57.218+00:00",
     "publishedAt": "2026-09-15T10:18:56.899+00:00"
   },
   {
@@ -2481,8 +2836,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 2,
-    "copiesCount": 0,
+    "viewsCount": 5,
+    "copiesCount": 1,
     "likesCount": 1,
     "bookmarksCount": 0,
     "author": {
@@ -2492,7 +2847,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-15T10:15:05.722+00:00",
-    "updatedAt": "2026-09-28T13:51:29.186+00:00",
+    "updatedAt": "2026-09-30T10:23:06.394+00:00",
     "publishedAt": "2026-09-15T10:15:05.722+00:00"
   },
   {
@@ -2613,8 +2968,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 3,
-    "copiesCount": 0,
+    "viewsCount": 4,
+    "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -2624,7 +2979,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-11T04:35:22.748+00:00",
-    "updatedAt": "2026-09-20T08:19:32.825+00:00",
+    "updatedAt": "2026-09-29T15:31:59.417+00:00",
     "publishedAt": "2026-09-11T04:35:22.748+00:00"
   },
   {
@@ -2676,7 +3031,7 @@
     "id": "prompt-1789084475618",
     "title": "80s Golden Hour Vintage Portrait",
     "slug": "80s-golden-hour-vintage-portrait",
-    "category": "Photorealistic & Portraits",
+    "category": "Vintage & Retro Photography",
     "aiTool": "Midjourney",
     "promptText": "Create a picture of this person unchanged their feature face Subject: Medium waist-up portrait looking back towards viewer with a confident and chic expression, natural skin micro-texture, non-plastic finish. Hair: Voluminous 80s dynamic layered waves, soft textured strands swept gently by breeze. Dress & Style: Oversized 80s retro colorblock nylon windbreaker in vibrant magenta, teal, and navy blue layered over a white ribbed tank top and high-waisted denim jeans with a black leather belt. Accessories: Gold twisted hoop earrings and colorful stacked wrist bangles. Vibe & Emotion: Nostalgic 80s street chic, confident glamour, effortless allure. Lighting: Warm natural golden hour light with gentle key lighting and soft rim highlights. Colors: Magenta, teal, deep blue, warm sunset tones. Background: Vintage retro street scene with a classic vehicle and soft-focus backdrop. Camera Angle & Composition: Medium close-up focusing from waist up, eye level framing. Photography Style: High resolution shot on Leica M11 with 85mm f/1.4 lens, Kodak Portra 400 film grain, sharp focus.",
     "imageUrl": "https://res.cloudinary.com/idbpgaqz/image/upload/v1789084425/prompts/prompt-1789084418854.webp",
@@ -2702,18 +3057,24 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 5,
+    "viewsCount": 6,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
+    "seoTitle": "80s Golden Hour Vintage Portrait | Trending Copy Paste Photo Prompts",
+    "seoDescription": "Copy and paste this photo prompt for 80s Golden Hour Vintage Portrait.",
     "author": {
       "name": "tool.reelz",
       "role": "Author",
       "avatar": "/logo.png"
     },
-    "seo": {},
+    "seo": {
+      "metaTitle": "80s Golden Hour Vintage Portrait | Trending Copy Paste Photo Prompts",
+      "focusKeyword": "80s Golden Hour Vintage Portrait",
+      "metaDescription": "Copy and paste this photo prompt for 80s Golden Hour Vintage Portrait."
+    },
     "createdAt": "2026-09-10T23:54:35.619+00:00",
-    "updatedAt": "2026-09-28T08:43:46.892+00:00",
+    "updatedAt": "2026-09-29T15:29:48.804+00:00",
     "publishedAt": "2026-09-10T23:54:35.619+00:00"
   },
   {
@@ -2746,8 +3107,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 1,
-    "copiesCount": 0,
+    "viewsCount": 4,
+    "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -2757,7 +3118,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-10T05:16:49.285+00:00",
-    "updatedAt": "2026-09-23T23:49:14.688+00:00",
+    "updatedAt": "2026-09-30T16:01:54.42+00:00",
     "publishedAt": "2026-09-10T05:16:49.285+00:00"
   },
   {
@@ -2790,8 +3151,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 2,
-    "copiesCount": 0,
+    "viewsCount": 9,
+    "copiesCount": 4,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -2801,7 +3162,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-10T05:15:57.756+00:00",
-    "updatedAt": "2026-09-22T08:00:27.231+00:00",
+    "updatedAt": "2026-09-30T16:14:38.371+00:00",
     "publishedAt": "2026-09-10T05:15:57.756+00:00"
   },
   {
@@ -2834,7 +3195,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 5,
+    "viewsCount": 6,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -2845,7 +3206,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-10T05:14:48.907+00:00",
-    "updatedAt": "2026-09-28T13:51:59.5+00:00",
+    "updatedAt": "2026-09-30T02:34:17.076+00:00",
     "publishedAt": "2026-09-10T05:14:48.907+00:00"
   },
   {
@@ -2966,7 +3327,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 4,
+    "viewsCount": 5,
     "copiesCount": 0,
     "likesCount": 1,
     "bookmarksCount": 0,
@@ -2977,7 +3338,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-10T05:12:29.498+00:00",
-    "updatedAt": "2026-09-28T08:37:09.528+00:00",
+    "updatedAt": "2026-09-29T08:01:37.943+00:00",
     "publishedAt": "2026-09-10T05:12:29.498+00:00"
   },
   {
@@ -3097,7 +3458,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 0,
+    "viewsCount": 1,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -3108,7 +3469,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-10T04:59:57.273+00:00",
-    "updatedAt": "2026-09-20T08:19:54.128+00:00",
+    "updatedAt": "2026-09-29T12:28:33.332+00:00",
     "publishedAt": "2026-09-10T04:59:57.273+00:00"
   },
   {
@@ -3141,7 +3502,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 3,
+    "viewsCount": 4,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -3152,7 +3513,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-09T09:14:07.025+00:00",
-    "updatedAt": "2026-09-28T13:52:15.126+00:00",
+    "updatedAt": "2026-09-29T08:28:17.911+00:00",
     "publishedAt": "2026-09-09T09:14:07.025+00:00"
   },
   {
@@ -3229,7 +3590,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 8,
+    "viewsCount": 10,
     "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -3240,7 +3601,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-09T07:18:12.837+00:00",
-    "updatedAt": "2026-09-28T13:52:15.487+00:00",
+    "updatedAt": "2026-09-29T14:35:50.285+00:00",
     "publishedAt": "2026-09-09T07:18:12.84+00:00"
   },
   {
@@ -3272,8 +3633,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 4,
-    "copiesCount": 0,
+    "viewsCount": 5,
+    "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -3283,7 +3644,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-09T00:49:40.201+00:00",
-    "updatedAt": "2026-09-23T11:09:50.435+00:00",
+    "updatedAt": "2026-09-29T09:30:36.504+00:00",
     "publishedAt": "2026-09-09T00:49:40.201+00:00"
   },
   {
@@ -3358,7 +3719,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 0,
+    "viewsCount": 2,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -3369,7 +3730,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-06T05:17:24.944+00:00",
-    "updatedAt": "2026-09-20T08:20:04.962+00:00",
+    "updatedAt": "2026-09-30T10:10:38.616+00:00",
     "publishedAt": "2026-09-06T05:17:24.944+00:00"
   },
   {
@@ -3402,8 +3763,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 3,
-    "copiesCount": 0,
+    "viewsCount": 5,
+    "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -3413,7 +3774,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-05T09:47:01.463+00:00",
-    "updatedAt": "2026-09-28T13:36:06.478+00:00",
+    "updatedAt": "2026-09-30T10:02:25.75+00:00",
     "publishedAt": "2026-09-05T09:47:01.463+00:00"
   },
   {
@@ -3795,8 +4156,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 0,
-    "copiesCount": 0,
+    "viewsCount": 2,
+    "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -3806,7 +4167,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-05T09:41:10.606+00:00",
-    "updatedAt": "2026-09-20T08:32:45.641+00:00",
+    "updatedAt": "2026-09-29T10:11:26.328+00:00",
     "publishedAt": "2026-09-05T09:41:10.606+00:00"
   },
   {
@@ -3972,7 +4333,7 @@
     "isTrending": false,
     "isPremium": false,
     "viewsCount": 1,
-    "copiesCount": 0,
+    "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -3982,7 +4343,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T07:34:15.087+00:00",
-    "updatedAt": "2026-09-24T08:29:52.092+00:00",
+    "updatedAt": "2026-09-29T08:50:16.638+00:00",
     "publishedAt": "2026-09-04T07:34:15.087+00:00"
   },
   {
@@ -4016,8 +4377,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 0,
-    "copiesCount": 0,
+    "viewsCount": 1,
+    "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -4027,7 +4388,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T07:33:41.378+00:00",
-    "updatedAt": "2026-09-20T08:32:55.004+00:00",
+    "updatedAt": "2026-09-29T09:07:46.794+00:00",
     "publishedAt": "2026-09-04T07:33:41.378+00:00"
   },
   {
@@ -4281,8 +4642,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 2,
-    "copiesCount": 0,
+    "viewsCount": 4,
+    "copiesCount": 1,
     "likesCount": 1,
     "bookmarksCount": 0,
     "author": {
@@ -4292,7 +4653,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T07:31:04.516+00:00",
-    "updatedAt": "2026-09-23T15:42:39.241+00:00",
+    "updatedAt": "2026-09-29T09:04:50.587+00:00",
     "publishedAt": "2026-09-04T07:31:04.516+00:00"
   },
   {
@@ -4326,8 +4687,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 3,
-    "copiesCount": 0,
+    "viewsCount": 5,
+    "copiesCount": 2,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -4337,7 +4698,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T07:30:11.118+00:00",
-    "updatedAt": "2026-09-28T11:12:32.955+00:00",
+    "updatedAt": "2026-09-29T17:24:04.377+00:00",
     "publishedAt": "2026-09-04T07:30:11.118+00:00"
   },
   {
@@ -4414,8 +4775,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 0,
-    "copiesCount": 0,
+    "viewsCount": 1,
+    "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -4425,7 +4786,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T07:29:10.859+00:00",
-    "updatedAt": "2026-09-20T08:33:14.215+00:00",
+    "updatedAt": "2026-09-29T13:39:45.276+00:00",
     "publishedAt": "2026-09-04T07:29:10.859+00:00"
   },
   {
@@ -4546,8 +4907,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 0,
-    "copiesCount": 0,
+    "viewsCount": 1,
+    "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -4557,7 +4918,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T07:28:07.734+00:00",
-    "updatedAt": "2026-09-20T08:33:20.091+00:00",
+    "updatedAt": "2026-09-30T16:25:05.344+00:00",
     "publishedAt": "2026-09-04T07:28:07.734+00:00"
   },
   {
@@ -4854,7 +5215,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 0,
+    "viewsCount": 3,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -4865,7 +5226,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T07:25:13.017+00:00",
-    "updatedAt": "2026-09-20T08:33:33.431+00:00",
+    "updatedAt": "2026-09-29T17:17:11.664+00:00",
     "publishedAt": "2026-09-04T07:25:13.017+00:00"
   },
   {
@@ -4899,7 +5260,7 @@
     "isTrending": false,
     "isPremium": false,
     "viewsCount": 5,
-    "copiesCount": 0,
+    "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -4909,7 +5270,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T07:25:09.48+00:00",
-    "updatedAt": "2026-09-24T06:05:59.418+00:00",
+    "updatedAt": "2026-09-29T12:08:57.95+00:00",
     "publishedAt": "2026-09-04T07:25:09.48+00:00"
   },
   {
@@ -5030,7 +5391,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 0,
+    "viewsCount": 1,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -5041,7 +5402,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T07:23:42.748+00:00",
-    "updatedAt": "2026-09-28T13:53:01.759+00:00",
+    "updatedAt": "2026-09-30T00:59:04.51+00:00",
     "publishedAt": "2026-09-04T07:23:42.748+00:00"
   },
   {
@@ -5074,7 +5435,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 0,
+    "viewsCount": 2,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -5085,7 +5446,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T07:23:10.52+00:00",
-    "updatedAt": "2026-09-20T08:33:43.083+00:00",
+    "updatedAt": "2026-09-30T10:54:48.628+00:00",
     "publishedAt": "2026-09-04T07:23:10.52+00:00"
   },
   {
@@ -5118,8 +5479,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 0,
-    "copiesCount": 0,
+    "viewsCount": 5,
+    "copiesCount": 3,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -5129,7 +5490,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T07:22:57.753+00:00",
-    "updatedAt": "2026-09-20T08:33:45.035+00:00",
+    "updatedAt": "2026-09-30T14:50:16.783+00:00",
     "publishedAt": "2026-09-04T07:22:57.753+00:00"
   },
   {
@@ -5250,8 +5611,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 0,
-    "copiesCount": 0,
+    "viewsCount": 2,
+    "copiesCount": 2,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -5261,7 +5622,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T07:21:22.979+00:00",
-    "updatedAt": "2026-09-20T08:33:50.576+00:00",
+    "updatedAt": "2026-09-30T09:44:50.589+00:00",
     "publishedAt": "2026-09-04T07:21:22.979+00:00"
   },
   {
@@ -5384,8 +5745,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 5,
-    "copiesCount": 0,
+    "viewsCount": 7,
+    "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -5395,7 +5756,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T07:20:22.387+00:00",
-    "updatedAt": "2026-09-23T15:41:46.049+00:00",
+    "updatedAt": "2026-09-29T16:05:06.391+00:00",
     "publishedAt": "2026-09-04T07:20:22.387+00:00"
   },
   {
@@ -5517,8 +5878,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 1,
-    "copiesCount": 1,
+    "viewsCount": 3,
+    "copiesCount": 3,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -5528,7 +5889,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T07:17:58.315+00:00",
-    "updatedAt": "2026-09-20T08:34:02.239+00:00",
+    "updatedAt": "2026-09-30T07:19:40.2+00:00",
     "publishedAt": "2026-09-04T07:17:58.315+00:00"
   },
   {
@@ -5911,8 +6272,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 2,
-    "copiesCount": 0,
+    "viewsCount": 4,
+    "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -5922,7 +6283,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T07:09:27.266+00:00",
-    "updatedAt": "2026-09-28T13:38:27.374+00:00",
+    "updatedAt": "2026-09-30T17:27:11.788+00:00",
     "publishedAt": "2026-09-04T07:09:27.266+00:00"
   },
   {
@@ -6043,9 +6404,9 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 3,
-    "copiesCount": 0,
-    "likesCount": 0,
+    "viewsCount": 5,
+    "copiesCount": 2,
+    "likesCount": 1,
     "bookmarksCount": 0,
     "author": {
       "name": "tool.reelz",
@@ -6054,7 +6415,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T07:07:03.092+00:00",
-    "updatedAt": "2026-09-28T13:36:11.776+00:00",
+    "updatedAt": "2026-09-29T17:23:14.847+00:00",
     "publishedAt": "2026-09-04T07:07:03.092+00:00"
   },
   {
@@ -6087,7 +6448,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 0,
+    "viewsCount": 1,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -6098,7 +6459,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T07:05:54.896+00:00",
-    "updatedAt": "2026-09-20T08:34:27.318+00:00",
+    "updatedAt": "2026-09-29T12:15:12.079+00:00",
     "publishedAt": "2026-09-04T07:05:54.896+00:00"
   },
   {
@@ -6131,8 +6492,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 3,
-    "copiesCount": 1,
+    "viewsCount": 5,
+    "copiesCount": 2,
     "likesCount": 1,
     "bookmarksCount": 0,
     "author": {
@@ -6142,7 +6503,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T07:05:05.297+00:00",
-    "updatedAt": "2026-09-28T13:36:16.429+00:00",
+    "updatedAt": "2026-09-29T16:05:55.185+00:00",
     "publishedAt": "2026-09-04T07:05:05.297+00:00"
   },
   {
@@ -6308,8 +6669,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 1,
-    "copiesCount": 1,
+    "viewsCount": 2,
+    "copiesCount": 2,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -6319,7 +6680,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T07:02:24.046+00:00",
-    "updatedAt": "2026-09-28T13:53:34.791+00:00",
+    "updatedAt": "2026-09-29T14:35:56.135+00:00",
     "publishedAt": "2026-09-04T07:02:24.046+00:00"
   },
   {
@@ -6577,8 +6938,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 0,
-    "copiesCount": 0,
+    "viewsCount": 1,
+    "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -6588,7 +6949,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T05:29:35.015+00:00",
-    "updatedAt": "2026-09-20T08:34:48.229+00:00",
+    "updatedAt": "2026-09-30T00:31:21.864+00:00",
     "publishedAt": "2026-09-04T05:29:35.015+00:00"
   },
   {
@@ -6666,8 +7027,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 0,
-    "copiesCount": 0,
+    "viewsCount": 1,
+    "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -6677,7 +7038,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T05:28:05.387+00:00",
-    "updatedAt": "2026-09-20T08:34:51.939+00:00",
+    "updatedAt": "2026-09-30T10:08:51.873+00:00",
     "publishedAt": "2026-09-04T05:28:05.387+00:00"
   },
   {
@@ -6883,8 +7244,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 0,
-    "copiesCount": 0,
+    "viewsCount": 1,
+    "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -6894,7 +7255,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T05:24:10.114+00:00",
-    "updatedAt": "2026-09-20T08:35:01.52+00:00",
+    "updatedAt": "2026-10-01T01:40:39.612+00:00",
     "publishedAt": "2026-09-04T05:24:10.114+00:00"
   },
   {
@@ -6926,7 +7287,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 2,
+    "viewsCount": 4,
     "copiesCount": 2,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -6937,7 +7298,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T05:23:37.631+00:00",
-    "updatedAt": "2026-09-20T08:35:03.477+00:00",
+    "updatedAt": "2026-09-30T02:06:51.931+00:00",
     "publishedAt": "2026-09-04T05:23:37.631+00:00"
   },
   {
@@ -7015,7 +7376,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 1,
+    "viewsCount": 2,
     "copiesCount": 2,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -7026,7 +7387,7 @@
     },
     "seo": {},
     "createdAt": "2026-09-04T05:22:46.564+00:00",
-    "updatedAt": "2026-09-28T13:54:07.442+00:00",
+    "updatedAt": "2026-09-29T08:44:17.562+00:00",
     "publishedAt": "2026-09-04T05:22:46.564+00:00"
   },
   {
@@ -7196,7 +7557,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 7,
+    "viewsCount": 8,
     "copiesCount": 5,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -7207,7 +7568,7 @@
     },
     "seo": {},
     "createdAt": "2026-08-24T13:31:34.359+00:00",
-    "updatedAt": "2026-09-20T08:35:15.059+00:00",
+    "updatedAt": "2026-10-01T02:01:47.912+00:00",
     "publishedAt": "2026-08-24T13:31:34.359+00:00"
   },
   {
@@ -7239,7 +7600,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 2,
+    "viewsCount": 3,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -7250,7 +7611,7 @@
     },
     "seo": {},
     "createdAt": "2026-08-24T13:29:13.366+00:00",
-    "updatedAt": "2026-09-28T13:37:49.018+00:00",
+    "updatedAt": "2026-09-30T22:25:37.541+00:00",
     "publishedAt": "2026-08-24T13:29:13.366+00:00"
   },
   {
@@ -7373,8 +7734,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 1,
-    "copiesCount": 0,
+    "viewsCount": 2,
+    "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -7384,7 +7745,7 @@
     },
     "seo": {},
     "createdAt": "2026-08-24T07:18:09.591+00:00",
-    "updatedAt": "2026-09-20T08:35:22.826+00:00",
+    "updatedAt": "2026-09-29T12:14:01.096+00:00",
     "publishedAt": "2026-08-24T07:18:09.591+00:00"
   },
   {
@@ -7417,8 +7778,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 6,
-    "copiesCount": 3,
+    "viewsCount": 8,
+    "copiesCount": 4,
     "likesCount": 1,
     "bookmarksCount": 0,
     "author": {
@@ -7428,7 +7789,7 @@
     },
     "seo": {},
     "createdAt": "2026-08-24T07:15:15.435+00:00",
-    "updatedAt": "2026-09-23T15:42:13.008+00:00",
+    "updatedAt": "2026-09-29T11:29:47.882+00:00",
     "publishedAt": "2026-08-24T07:15:15.435+00:00"
   },
   {
@@ -7642,8 +8003,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 4,
-    "copiesCount": 0,
+    "viewsCount": 9,
+    "copiesCount": 3,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -7653,7 +8014,7 @@
     },
     "seo": {},
     "createdAt": "2026-08-23T09:16:24.225+00:00",
-    "updatedAt": "2026-09-24T03:24:42.175+00:00",
+    "updatedAt": "2026-10-01T02:02:09.138+00:00",
     "publishedAt": "2026-08-23T09:16:24.225+00:00"
   },
   {
@@ -7778,8 +8139,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 8,
-    "copiesCount": 3,
+    "viewsCount": 9,
+    "copiesCount": 4,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -7789,7 +8150,7 @@
     },
     "seo": {},
     "createdAt": "2026-08-23T08:40:37.432+00:00",
-    "updatedAt": "2026-09-21T15:15:03.202+00:00",
+    "updatedAt": "2026-09-29T12:48:26.868+00:00",
     "publishedAt": "2026-08-23T08:40:37.432+00:00"
   },
   {
@@ -7997,7 +8358,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 2,
+    "viewsCount": 3,
     "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -8008,7 +8369,7 @@
     },
     "seo": {},
     "createdAt": "2026-08-23T06:31:00.412+00:00",
-    "updatedAt": "2026-09-20T08:35:49.463+00:00",
+    "updatedAt": "2026-09-29T09:13:14.964+00:00",
     "publishedAt": "2026-08-23T06:31:00.412+00:00"
   },
   {
@@ -8041,7 +8402,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 4,
+    "viewsCount": 5,
     "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -8052,7 +8413,7 @@
     },
     "seo": {},
     "createdAt": "2026-08-23T06:04:25.958+00:00",
-    "updatedAt": "2026-09-21T14:36:28.059+00:00",
+    "updatedAt": "2026-09-30T22:23:27.778+00:00",
     "publishedAt": "2026-08-23T06:04:25.958+00:00"
   },
   {
@@ -8183,8 +8544,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 16,
-    "copiesCount": 1,
+    "viewsCount": 17,
+    "copiesCount": 2,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -8194,7 +8555,7 @@
     },
     "seo": {},
     "createdAt": "2026-08-23T05:47:07.858+00:00",
-    "updatedAt": "2026-09-24T03:45:08.295+00:00",
+    "updatedAt": "2026-09-29T15:19:22.951+00:00",
     "publishedAt": "2026-08-23T05:47:07.858+00:00"
   },
   {
@@ -8228,8 +8589,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 4,
-    "copiesCount": 0,
+    "viewsCount": 6,
+    "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -8239,7 +8600,7 @@
     },
     "seo": {},
     "createdAt": "2026-08-23T05:45:40.557+00:00",
-    "updatedAt": "2026-09-20T08:35:59.104+00:00",
+    "updatedAt": "2026-09-30T09:27:45.125+00:00",
     "publishedAt": "2026-08-23T05:45:40.558+00:00"
   },
   {
@@ -8645,8 +9006,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 6,
-    "copiesCount": 3,
+    "viewsCount": 7,
+    "copiesCount": 4,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -8656,7 +9017,7 @@
     },
     "seo": {},
     "createdAt": "2026-08-23T05:36:44.986+00:00",
-    "updatedAt": "2026-09-20T08:36:16.364+00:00",
+    "updatedAt": "2026-09-29T09:10:06.659+00:00",
     "publishedAt": "2026-08-23T05:36:44.986+00:00"
   },
   {
@@ -8785,8 +9146,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 3,
-    "copiesCount": 0,
+    "viewsCount": 4,
+    "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -8796,7 +9157,7 @@
     },
     "seo": {},
     "createdAt": "2026-08-23T05:33:39.402+00:00",
-    "updatedAt": "2026-09-21T01:29:13.916+00:00",
+    "updatedAt": "2026-09-30T13:52:22.696+00:00",
     "publishedAt": "2026-08-23T05:33:39.402+00:00"
   },
   {
@@ -8874,8 +9235,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 4,
-    "copiesCount": 1,
+    "viewsCount": 6,
+    "copiesCount": 3,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -8885,7 +9246,7 @@
     },
     "seo": {},
     "createdAt": "2026-08-23T05:31:58.073+00:00",
-    "updatedAt": "2026-09-20T08:36:25.89+00:00",
+    "updatedAt": "2026-09-30T10:21:32.019+00:00",
     "publishedAt": "2026-08-23T05:31:58.073+00:00"
   },
   {
@@ -8923,8 +9284,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 6,
-    "copiesCount": 2,
+    "viewsCount": 8,
+    "copiesCount": 3,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -8934,7 +9295,7 @@
     },
     "seo": {},
     "createdAt": "2026-08-23T05:31:23.141+00:00",
-    "updatedAt": "2026-09-28T13:38:19.683+00:00",
+    "updatedAt": "2026-09-29T15:41:15.488+00:00",
     "publishedAt": "2026-08-23T05:31:23.141+00:00"
   },
   {
@@ -9014,7 +9375,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 3,
+    "viewsCount": 4,
     "copiesCount": 2,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -9025,7 +9386,7 @@
     },
     "seo": {},
     "createdAt": "2026-08-23T05:30:34.359+00:00",
-    "updatedAt": "2026-09-20T08:36:31.152+00:00",
+    "updatedAt": "2026-09-30T09:27:03.568+00:00",
     "publishedAt": "2026-08-23T05:30:34.359+00:00"
   },
   {
@@ -9103,7 +9464,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": true,
-    "viewsCount": 2,
+    "viewsCount": 3,
     "copiesCount": 1,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -9114,7 +9475,7 @@
     },
     "seo": {},
     "createdAt": "2026-08-23T05:28:19.411+00:00",
-    "updatedAt": "2026-09-20T08:36:34.988+00:00",
+    "updatedAt": "2026-09-29T09:12:37.946+00:00",
     "publishedAt": "2026-08-23T05:28:19.411+00:00"
   },
   {
@@ -9147,7 +9508,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 1,
+    "viewsCount": 3,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -9158,7 +9519,7 @@
     },
     "seo": {},
     "createdAt": "2026-08-23T05:27:10.114+00:00",
-    "updatedAt": "2026-09-20T08:36:37.554+00:00",
+    "updatedAt": "2026-09-29T17:33:44.824+00:00",
     "publishedAt": "2026-08-23T05:27:10.114+00:00"
   },
   {
@@ -9192,7 +9553,7 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 4,
+    "viewsCount": 5,
     "copiesCount": 0,
     "likesCount": 0,
     "bookmarksCount": 0,
@@ -9203,7 +9564,7 @@
     },
     "seo": {},
     "createdAt": "2026-08-23T05:26:40.946+00:00",
-    "updatedAt": "2026-09-28T02:06:16.712+00:00",
+    "updatedAt": "2026-09-29T12:29:44.082+00:00",
     "publishedAt": "2026-08-23T05:26:40.946+00:00"
   },
   {
@@ -9418,8 +9779,8 @@
     "isFeatured": false,
     "isTrending": false,
     "isPremium": false,
-    "viewsCount": 2,
-    "copiesCount": 1,
+    "viewsCount": 4,
+    "copiesCount": 3,
     "likesCount": 0,
     "bookmarksCount": 0,
     "author": {
@@ -9429,7 +9790,7 @@
     },
     "seo": {},
     "createdAt": "2026-08-23T05:18:07.565+00:00",
-    "updatedAt": "2026-09-20T08:36:49.226+00:00",
+    "updatedAt": "2026-09-30T16:01:02.86+00:00",
     "publishedAt": "2026-08-23T05:18:07.565+00:00"
   },
   {

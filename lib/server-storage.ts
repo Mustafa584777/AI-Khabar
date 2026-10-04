@@ -304,7 +304,7 @@ export const ServerStorage = {
   savePost: async (post: PromptPost, token?: string): Promise<PromptPost> => {
     const now = new Date().toISOString();
     const id = post.id || `prompt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
-    const posts = await ServerStorage.getAllPosts(true);
+    const posts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
     const existing = posts.find((p) => p.id === id);
 
     const isPremium = Boolean(
@@ -420,7 +420,7 @@ export const ServerStorage = {
     }
 
     // Update local cache
-    const currentList = [...posts];
+    const currentList = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
     const index = currentList.findIndex((p) => p.id === id);
     if (index >= 0) {
       currentList[index] = savedPost;
@@ -466,6 +466,17 @@ export const ServerStorage = {
   },
 
   deletePost: async (id: string, token?: string): Promise<void> => {
+    // 1. Remove from local file / memory first
+    try {
+      const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, []);
+      const filteredLocal = rawPosts.filter((p) => p.id !== id);
+      memoryPosts = filteredLocal;
+      writeJsonFile(POSTS_FILE, filteredLocal);
+    } catch (e) {
+      console.error('Local deletePost error:', e);
+    }
+
+    // 2. Remove from Supabase
     if (isSupabaseConfigured()) {
       try {
         const { error } = await db(token).from('posts').delete().eq('id', id);
@@ -476,11 +487,6 @@ export const ServerStorage = {
         console.error('Supabase deletePost exception:', err);
       }
     }
-
-    const posts = await ServerStorage.getAllPosts(true);
-    const filtered = posts.filter((p) => p.id !== id);
-    memoryPosts = filtered;
-    writeJsonFile(POSTS_FILE, filtered);
   },
 
   restorePosts: async (incomingPosts: PromptPost[], mode: 'replace' | 'merge'): Promise<PromptPost[]> => {

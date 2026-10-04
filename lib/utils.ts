@@ -60,6 +60,9 @@ export function getPromptMetaDescription(post: {
 
 export function getOptimizedImageUrl(url?: string, width = 550): string {
   if (!url || typeof url !== 'string') return url || '';
+  if (url.startsWith('data:') || url.startsWith('blob:')) {
+    return url;
+  }
   if (url.includes('res.cloudinary.com') && url.includes('/image/upload/')) {
     if (url.includes('/image/upload/f_auto') || url.includes('/image/upload/q_auto') || url.includes('/image/upload/w_')) {
       return url.replace(/\/image\/upload\/[^/]+\//, `/image/upload/f_auto,q_auto:good,w_${width},c_limit/`);
