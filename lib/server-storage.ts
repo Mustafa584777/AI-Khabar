@@ -1139,9 +1139,20 @@ export const ServerStorage = {
     let highestExpiresAt = hasActiveSub ? sub.planExpiresAt : undefined;
 
     for (const curr of candidates) {
-      const currTier = curr.planTier || (curr.isProUser ? 'pro' : 'free');
-      const isCurrExpired = curr.planExpiresAt && new Date(curr.planExpiresAt).getTime() < Date.now();
-      const effCurrTier = isCurrExpired ? 'free' : currTier;
+      const hasPaymentProof = Boolean(
+        curr.lastPaymentId ||
+        curr.paymentId ||
+        curr.lastOrderId ||
+        curr.source === 'razorpay_verified'
+      );
+      const hasValidExpiry = Boolean(
+        curr.planExpiresAt &&
+        !isNaN(new Date(curr.planExpiresAt).getTime()) &&
+        new Date(curr.planExpiresAt).getTime() > Date.now()
+      );
+      const isPaidCandidate = hasActiveSub || (hasPaymentProof && hasValidExpiry);
+      const currTier = isPaidCandidate ? (curr.planTier || (curr.isProUser ? 'starter' : 'free')) : 'free';
+      const effCurrTier = currTier;
 
       if ((TIER_RANK[effCurrTier] || 0) > (TIER_RANK[highestTier] || 0)) {
         highestTier = effCurrTier;
@@ -1166,7 +1177,10 @@ export const ServerStorage = {
     }
 
     best.planTier = highestTier;
-    best.isProUser = highestTier !== 'free' || Boolean(best.isProUser || hasActiveSub);
+    best.isProUser = highestTier !== 'free';
+    if (highestTier === 'free') {
+      best.promptRequestsRemaining = 0;
+    }
     best.planStartedAt = highestStartedAt || best.planStartedAt;
     best.planExpiresAt = highestExpiresAt || best.planExpiresAt;
     best.queuedPlan = sub?.queuedPlan || best.queuedPlan || null;

@@ -1427,6 +1427,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         } else if (finalTier !== 'free') {
           const planCfg = getPlanFeaturesForCycle(finalTier, (synced.billingCycle as any) || 'monthly');
           resolvedSavesLimitCount = synced.savesLimit || planCfg.savesLimit;
+          const userSubmittedCount = Array.isArray(synced.promptRequests) ? synced.promptRequests.length : 0;
+          if (resolvedReqs <= 0 && userSubmittedCount < planCfg.promptRequests) {
+            resolvedReqs = Math.max(0, planCfg.promptRequests - userSubmittedCount);
+          }
+        } else {
+          resolvedReqs = 0;
         }
 
         // Tool credits: respect exact consumed balance (Rule 2: unused credits never expire or overwrite)
@@ -2059,7 +2065,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (synced.promptRequestsRemaining !== undefined) {
-        const resolvedReqs = Number(synced.promptRequestsRemaining);
+        let resolvedReqs = Number(synced.promptRequestsRemaining);
+        const resolvedTier = synced.planTier || 'free';
+        if (resolvedTier !== 'free') {
+          const cfg = PLAN_CONFIGS[resolvedTier as PlanTier] || PLAN_CONFIGS.free;
+          const userSubmittedCount = Array.isArray(synced.promptRequests) ? synced.promptRequests.length : 0;
+          if (resolvedReqs <= 0 && userSubmittedCount < cfg.promptRequests) {
+            resolvedReqs = Math.max(0, cfg.promptRequests - userSubmittedCount);
+          }
+        } else {
+          resolvedReqs = 0;
+        }
         setPromptRequestsRemainingState(resolvedReqs);
         if (typeof window !== 'undefined') localStorage.setItem('auraprompt_prompt_requests', String(resolvedReqs));
       }

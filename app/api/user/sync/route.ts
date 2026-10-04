@@ -417,13 +417,28 @@ export async function POST(req: NextRequest) {
           resolvedPlanTier = currentTier;
         }
       } else if (incomingTier && TIER_RANK[incomingTier] !== undefined) {
-        // Only accept incoming paid tier if user has activeSub OR incoming has valid future expiration
-        if (incomingTier === 'free') {
+        // Strictly require verified payment or active subscription for any paid tier
+        const hasPaymentProof = Boolean(
+          hasActiveSub ||
+          data.lastPaymentId ||
+          data.paymentId ||
+          data.lastOrderId ||
+          data.source === 'razorpay_verified' ||
+          existingData.lastPaymentId ||
+          existingData.paymentId ||
+          existingData.lastOrderId ||
+          existingData.source === 'razorpay_verified'
+        );
+        const hasValidFutureExpiry = Boolean(
+          data.planExpiresAt &&
+          !isNaN(new Date(data.planExpiresAt).getTime()) &&
+          new Date(data.planExpiresAt).getTime() > Date.now()
+        );
+
+        if (incomingTier === 'free' || !hasPaymentProof || (!hasActiveSub && !hasValidFutureExpiry)) {
           resolvedPlanTier = 'free';
-        } else if (hasActiveSub || (data.planExpiresAt && new Date(data.planExpiresAt).getTime() > Date.now())) {
-          resolvedPlanTier = incomingTier;
         } else {
-          resolvedPlanTier = 'free';
+          resolvedPlanTier = incomingTier;
         }
       } else {
         resolvedPlanTier = 'free';

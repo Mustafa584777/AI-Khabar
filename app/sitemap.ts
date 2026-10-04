@@ -14,13 +14,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('Error loading posts for dynamic sitemap:', err);
   }
 
-  // 1. Homepage & Essential Pages (Contact, Privacy Policy, Disclaimer)
+  // 1. Homepage & Essential Pages (Create, About, Contact, Privacy Policy, Disclaimer, Terms)
   const corePages: MetadataRoute.Sitemap = [
     {
       url: `${baseUrl}`,
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 1.0,
+    },
+    {
+      url: `${baseUrl}/create`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/about`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
     },
     {
       url: `${baseUrl}/contact`,
@@ -36,6 +48,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${baseUrl}/disclaimer`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/terms`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.7,
