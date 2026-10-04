@@ -45,9 +45,9 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   const [isHovered, setIsHovered] = useState(false);
   const isMultiple = allImages.length > 1;
 
-  // Individual natural duration between 1.0s and 1.3s (1000ms, 1100ms, 1200ms, 1300ms)
+  // Individual natural duration between 2.2s and 2.5s (2200ms, 2300ms, 2400ms, 2500ms)
   const slideInterval = React.useMemo(() => {
-    const durations = [1000, 1100, 1200, 1300];
+    const durations = [2200, 2300, 2400, 2500];
     if (!post.id) {
       return durations[Math.floor(Math.random() * durations.length)];
     }
@@ -65,7 +65,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
 
     // Stagger start time slightly so cards with the same interval don't slide simultaneously
     const charCode = post.id ? post.id.charCodeAt(post.id.length - 1) : 0;
-    const initialOffset = (charCode % 6) * 120; // 0ms to 600ms stagger
+    const initialOffset = (charCode % 8) * 180; // 0ms to 1260ms stagger
 
     let intervalId: NodeJS.Timeout | null = null;
     const timeoutId = setTimeout(() => {
@@ -193,7 +193,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
 
         {inView && isMultiple ? (
           <div
-            className="absolute inset-0 flex transition-transform duration-500 ease-out will-change-transform"
+            className="absolute inset-0 flex transition-transform duration-700 ease-in-out will-change-transform"
             style={{ transform: `translateX(-${activeImageIndex * 100}%)` }}
           >
             {allImages.map((imgUrl, idx) => (
