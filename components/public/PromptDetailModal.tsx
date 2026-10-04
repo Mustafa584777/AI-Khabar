@@ -217,11 +217,30 @@ export const PromptDetailModal = () => {
   }, [selectedPost?.id, selectedPost?.imageUrl, selectedPost?.additionalImages]);
 
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+  const [firstImageRatio, setFirstImageRatio] = useState<string | null>(null);
 
   // Always reset slider to first photo whenever a new prompt is opened
   useEffect(() => {
     setCurrentImageIndex(0);
   }, [selectedPost?.id]);
+
+  // Dynamically compute the exact natural aspect ratio of the first image
+  useEffect(() => {
+    const firstUrl = allImages[0] || selectedPost?.imageUrl;
+    if (!firstUrl) {
+      setFirstImageRatio(null);
+      return;
+    }
+    if (typeof window !== 'undefined') {
+      const img = new window.Image();
+      img.src = firstUrl;
+      img.onload = () => {
+        if (img.naturalWidth && img.naturalHeight) {
+          setFirstImageRatio(`${img.naturalWidth} / ${img.naturalHeight}`);
+        }
+      };
+    }
+  }, [allImages, selectedPost?.imageUrl]);
 
   const handlePrevImage = useCallback((e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -969,9 +988,12 @@ export const PromptDetailModal = () => {
                   className="relative w-full overflow-hidden flex flex-col items-center justify-center select-none group/slider"
                 >
                   {allImages.length > 1 ? (
-                    /* Multi-Image Carousel Slider with Smooth Left-to-Right Sliding Transition */
+                    /* Multi-Image Carousel Slider: Height strictly determined by first image natural aspect ratio */
                     <div
-                      style={{ aspectRatio: detectedRatio, maxHeight: '78vh' }}
+                      style={{
+                        aspectRatio: firstImageRatio || detectedRatio,
+                        maxHeight: '82vh',
+                      }}
                       className="relative w-full overflow-hidden bg-neutral-950 select-none group/slider"
                     >
                       {/* Smooth Horizontal Sliding Track */}
@@ -987,7 +1009,7 @@ export const PromptDetailModal = () => {
                             <img
                               src={getOptimizedImageUrl(imgUrl, 1200)}
                               alt={`${selectedPost.imageAlt || selectedPost.title} - photo ${idx + 1}`}
-                              className="w-full h-full object-cover block select-none pointer-events-none"
+                              className="w-full h-full object-cover object-top block select-none pointer-events-none"
                               referrerPolicy="no-referrer"
                               loading={idx === 0 ? 'eager' : 'lazy'}
                             />
@@ -1065,7 +1087,7 @@ export const PromptDetailModal = () => {
                           type="button"
                           onClick={() => setShowFullImageModal(true)}
                           className="p-2.5 rounded-full bg-black/75 hover:bg-black text-white backdrop-blur-md transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer border border-white/10"
-                          title="View Full Resolution Image"
+                          title="View Full Resolution Image (Uncropped)"
                           aria-label="Enlarge Image"
                         >
                           <Maximize2 className="w-4 h-4" />
@@ -1073,12 +1095,12 @@ export const PromptDetailModal = () => {
                       </div>
                     </div>
                   ) : (
-                    /* Single Image Display: Natural image height without artificial crop or fixed height */
-                    <div className="relative w-full overflow-hidden flex items-center justify-center bg-neutral-950 group/single">
+                    /* Single Image Display: Flexible natural height so entire image shows completely without rigid aspect-ratio or cropping */
+                    <div className="relative w-full flex items-center justify-center p-2 sm:p-4 bg-neutral-950/80 dark:bg-neutral-950 min-h-[300px] group/single">
                       <img
                         src={getOptimizedImageUrl(allImages[0] || selectedPost.imageUrl, 1200)}
                         alt={selectedPost.imageAlt || selectedPost.title}
-                        className="w-full h-auto max-h-[85vh] object-contain block mx-auto select-none pointer-events-none transition-all duration-300"
+                        className="max-w-full max-h-[82vh] w-auto h-auto object-contain rounded-xl sm:rounded-2xl shadow-xl block mx-auto select-none pointer-events-none transition-all duration-300"
                         referrerPolicy="no-referrer"
                       />
 
