@@ -100,7 +100,8 @@ export const PostEditor = () => {
   const [additionalImages, setAdditionalImages] = useState<string[]>(
     () => Array.isArray(existingPost?.additionalImages) ? existingPost.additionalImages : []
   );
-  const [additionalImageUrlInput, setAdditionalImageUrlInput] = useState<string>('');
+  const additionalFileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [isUploadingAdditional, setIsUploadingAdditional] = useState(false);
   const [imageSourceTab, setImageSourceTab] = useState<'upload' | 'url'>('upload');
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFileInfo, setUploadedFileInfo] = useState<{ name: string; size: string } | null>(null);
@@ -415,6 +416,56 @@ export const PostEditor = () => {
       showToast('Failed to process image file');
     } finally {
       setIsUploadingImage(false);
+    }
+  };
+
+  const handleAdditionalFileUpload = async (files: FileList | File[]) => {
+    const fileArray = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    if (fileArray.length === 0) {
+      showToast('Please select valid image file(s) (PNG, JPG, WebP, AVIF).');
+      return;
+    }
+
+    setIsUploadingAdditional(true);
+    try {
+      let addedCount = 0;
+      for (const file of fileArray) {
+        if (file.size > 15 * 1024 * 1024) {
+          showToast(`File ${file.name} exceeds 15MB limit.`);
+          continue;
+        }
+
+        const optimized = await optimizeImageFile(file);
+        if (optimized) {
+          let finalUrl = optimized;
+          try {
+            const cleanPublicId = `${slug || slugify(title) || 'slide'}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+            const uploadRes = await fetch('/api/upload', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                image: optimized,
+                folder: 'prompts',
+                publicId: cleanPublicId,
+              }),
+            });
+            const uploadData = await uploadRes.json();
+            if (uploadData && uploadData.url) {
+              finalUrl = uploadData.url;
+            }
+          } catch {}
+
+          setAdditionalImages((prev) => [...prev, finalUrl]);
+          addedCount++;
+        }
+      }
+      if (addedCount > 0) {
+        showToast(`Added ${addedCount} slide ${addedCount === 1 ? 'image' : 'images'} successfully!`);
+      }
+    } catch {
+      showToast('Failed to process slide images');
+    } finally {
+      setIsUploadingAdditional(false);
     }
   };
 
@@ -927,67 +978,89 @@ export const PostEditor = () => {
                 Add more photos to make this a multi-photo carousel slider. Users can slide through all photos in prompt cards and in the opened prompt modal.
               </p>
 
-              {/* Add Additional Image Input */}
-              <div className="flex items-center gap-2">
-                <input
-                  type="url"
-                  placeholder="Paste additional image URL (https://...)"
-                  value={additionalImageUrlInput}
-                  onChange={(e) => setAdditionalImageUrlInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      if (additionalImageUrlInput.trim()) {
-                        setAdditionalImages((prev) => [...prev, additionalImageUrlInput.trim()]);
-                        setAdditionalImageUrlInput('');
-                      }
-                    }
-                  }}
-                  className="flex-1 px-3 py-2 text-xs rounded-xl bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (additionalImageUrlInput.trim()) {
-                      setAdditionalImages((prev) => [...prev, additionalImageUrlInput.trim()]);
-                      setAdditionalImageUrlInput('');
-                    }
-                  }}
-                  className="px-3.5 py-2 text-xs font-bold rounded-xl bg-neutral-900 hover:bg-black text-white dark:bg-white dark:text-neutral-900 transition-colors shrink-0 cursor-pointer"
-                >
-                  + Add Slide
-                </button>
+              {/* Hidden file input for manual slider images upload */}
+              <input
+                ref={additionalFileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  if (e.target.files && e.target.files.length > 0) {
+                    handleAdditionalFileUpload(e.target.files);
+                    e.target.value = '';
+                  }
+                }}
+                className="hidden"
+              />
+
+              {/* Upload Slider Images Button & Dropzone */}
+              <div
+                onClick={() => additionalFileInputRef.current?.click()}
+                className="border-2 border-dashed border-neutral-300 dark:border-neutral-700 hover:border-[#E60023] dark:hover:border-[#E60023] rounded-2xl p-4 text-center cursor-pointer transition-all hover:bg-neutral-100 dark:hover:bg-neutral-900/60 flex flex-col items-center justify-center gap-2 group select-none"
+              >
+                {isUploadingAdditional ? (
+                  <div className="flex items-center gap-2 text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+                    <Loader2 className="w-4 h-4 animate-spin text-[#E60023]" />
+                    <span>Uploading slide image(s)...</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-950/60 text-[#E60023] flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Upload className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-neutral-900 dark:text-white">
+                        Click to upload slider images
+                      </p>
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                        Select one or multiple images (PNG, JPG, WebP up to 15MB)
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Slider Thumbnails Preview */}
               {additionalImages.length > 0 && (
-                <div className="grid grid-cols-4 gap-2 pt-2">
-                  {additionalImages.map((imgUrl, idx) => (
-                    <div
-                      key={idx}
-                      className="relative aspect-square rounded-xl overflow-hidden bg-neutral-900 border border-neutral-200 dark:border-neutral-800 group"
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center justify-between text-[11px] font-semibold text-neutral-500">
+                    <span>Uploaded Slides ({additionalImages.length})</span>
+                    <button
+                      type="button"
+                      onClick={() => additionalFileInputRef.current?.click()}
+                      className="text-[#E60023] hover:underline font-bold cursor-pointer"
                     >
-                      <img
-                        src={imgUrl}
-                        alt={`Slide ${idx + 2}`}
-                        className="w-full h-full object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                      <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-black/70 text-[9px] font-bold text-white">
-                        #{idx + 2}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAdditionalImages((prev) => prev.filter((_, i) => i !== idx));
-                        }}
-                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                        title="Remove Slide"
+                      + Add More Slides
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    {additionalImages.map((imgUrl, idx) => (
+                      <div
+                        key={idx}
+                        className="relative aspect-square rounded-xl overflow-hidden bg-neutral-900 border border-neutral-200 dark:border-neutral-800 group"
                       >
-                        ×
-                      </button>
-                    </div>
-                  ))}
+                        <img
+                          src={imgUrl}
+                          alt={`Slide ${idx + 2}`}
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-black/70 text-[9px] font-bold text-white">
+                          #{idx + 2}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAdditionalImages((prev) => prev.filter((_, i) => i !== idx));
+                          }}
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                          title="Remove Slide"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
