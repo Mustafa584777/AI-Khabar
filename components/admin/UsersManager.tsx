@@ -271,7 +271,7 @@ export const UsersManager = () => {
       u.name.toLowerCase().includes(q) ||
       (u.username && u.username.toLowerCase().includes(q));
 
-    const isPaid = u.isProUser || (u.planTier && u.planTier !== 'free') || (u.toolCredits && u.toolCredits > 2);
+    const isPaid = (u.planTier && u.planTier !== 'free') || Boolean(u.paymentAmount || u.source === 'razorpay_verified');
     const matchesTier =
       selectedTier === 'all' ||
       (selectedTier === 'paid' && isPaid) ||
@@ -283,7 +283,7 @@ export const UsersManager = () => {
 
   // KPI Calculations
   const totalUsersCount = users.length;
-  const paidUsersCount = users.filter((u) => u.isProUser || (u.planTier && u.planTier !== 'free') || (u.toolCredits && u.toolCredits > 2)).length;
+  const paidUsersCount = users.filter((u) => (u.planTier && u.planTier !== 'free') || Boolean(u.paymentAmount || u.source === 'razorpay_verified')).length;
   const freeUsersCount = users.length - paidUsersCount;
   const totalCreditsInSystem = users.reduce((acc, u) => acc + (u.toolCredits || 0), 0);
 
@@ -574,7 +574,7 @@ export const UsersManager = () => {
                               u.planTier
                             )}`}
                           >
-                            {u.isProUser || (u.planTier && u.planTier !== 'free') ? (
+                            {(u.planTier && u.planTier !== 'free') || Boolean(u.paymentAmount || u.source === 'razorpay_verified') ? (
                               <>
                                 <Crown className="w-3 h-3 shrink-0 text-amber-500 fill-amber-500" />
                                 <span>PAID ({u.planTier ? u.planTier.toUpperCase() : 'PRO'})</span>
@@ -600,19 +600,19 @@ export const UsersManager = () => {
                       <td className="py-3.5 px-4">
                         <div
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border font-bold text-xs ${
-                            (u.toolCredits || 0) > 2
+                            (u.toolCredits || 0) >= 50
                               ? 'bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-200'
                               : 'bg-indigo-50 dark:bg-indigo-950/50 border-indigo-200 dark:border-indigo-900/60 text-indigo-700 dark:text-indigo-300'
                           }`}
                         >
                           <Zap
                             className={`w-3.5 h-3.5 ${
-                              (u.toolCredits || 0) > 2
+                              (u.toolCredits || 0) >= 50
                                 ? 'text-amber-500 fill-amber-500'
                                 : 'text-indigo-500 fill-indigo-500'
                             }`}
                           />
-                          <span>{u.toolCredits ?? 2} Credits</span>
+                          <span>{u.toolCredits ?? 5} Credits</span>
                         </div>
                       </td>
 

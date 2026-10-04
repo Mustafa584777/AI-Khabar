@@ -180,11 +180,15 @@ export async function POST(req: NextRequest) {
       let highestExpiresAt = hasActiveSub ? activeSub.planExpiresAt : undefined;
 
       for (const curr of candidates) {
-        const currTier = (curr.planTier && curr.planTier in PLAN_CONFIGS)
+        const currTier = (curr.planTier && curr.planTier in PLAN_CONFIGS && curr.planTier !== 'free')
           ? (curr.planTier as PlanTier)
-          : (curr.isProUser ? 'pro' : 'free');
-        const isCurrExpired = curr.planExpiresAt && new Date(curr.planExpiresAt).getTime() < Date.now();
-        const effCurrTier: PlanTier = isCurrExpired ? 'free' : currTier;
+          : 'free';
+        const hasValidExpiry = Boolean(
+          curr.planExpiresAt &&
+          !isNaN(new Date(curr.planExpiresAt).getTime()) &&
+          new Date(curr.planExpiresAt).getTime() > Date.now()
+        );
+        const effCurrTier: PlanTier = (currTier !== 'free' && (hasValidExpiry || hasActiveSub)) ? currTier : 'free';
 
         if ((TIER_RANK[effCurrTier] || 0) > (TIER_RANK[highestTier] || 0)) {
           highestTier = effCurrTier;
@@ -262,10 +266,19 @@ export async function POST(req: NextRequest) {
         best.toolCredits = 5;
       }
 
-      if (best.promptRequestsRemaining === undefined || best.promptRequestsRemaining === null) {
-        best.promptRequestsRemaining = best.planTier !== 'free' ? planCfg.promptRequests : 0;
+      const submittedRequestsCount = Array.isArray(best.promptRequests) ? best.promptRequests.length : 0;
+      if (best.planTier !== 'free') {
+        if (
+          best.promptRequestsRemaining === undefined ||
+          best.promptRequestsRemaining === null ||
+          (Number(best.promptRequestsRemaining) === 0 && submittedRequestsCount === 0)
+        ) {
+          best.promptRequestsRemaining = planCfg.promptRequests;
+        } else {
+          best.promptRequestsRemaining = Number(best.promptRequestsRemaining);
+        }
       } else {
-        best.promptRequestsRemaining = Number(best.promptRequestsRemaining);
+        best.promptRequestsRemaining = 0;
       }
 
       if (planCfg.unlimitedSearches) {
@@ -299,14 +312,14 @@ export async function POST(req: NextRequest) {
 
       if (syncData) {
         const cloned = { ...syncData };
-        let tier = (cloned.planTier && cloned.planTier in PLAN_CONFIGS)
+        let tier = (cloned.planTier && cloned.planTier in PLAN_CONFIGS && cloned.planTier !== 'free')
           ? cloned.planTier
-          : (cloned.isProUser ? 'pro' : 'free');
+          : 'free';
 
-        // Check if plan has expired (never expire if user holds active subscription)
-        if (tier !== 'free' && cloned.planExpiresAt && !hasActiveSub) {
-          const exp = new Date(cloned.planExpiresAt).getTime();
-          if (!isNaN(exp) && exp < Date.now()) {
+        // Check if plan has expired or lacks expiration (never expire if user holds active subscription)
+        if (tier !== 'free' && !hasActiveSub) {
+          const exp = cloned.planExpiresAt ? new Date(cloned.planExpiresAt).getTime() : 0;
+          if (!exp || isNaN(exp) || exp <= Date.now()) {
             if (cloned.queuedPlan) {
               const qp = cloned.queuedPlan;
               const qpCfg = getPlanFeaturesForCycle(qp.planTier as PlanTier, qp.billingCycle || 'monthly');
@@ -322,6 +335,7 @@ export async function POST(req: NextRequest) {
             } else {
               tier = 'free';
               cloned.isProUser = false;
+              cloned.planTier = 'free';
               cloned.promptRequestsRemaining = 0;
               cloned.aiSearchRemaining = 5;
               cloned.savesLimit = 10;
@@ -380,12 +394,18 @@ export async function POST(req: NextRequest) {
 
       // Safe Plan Tier resolution (vip > pro > starter > free)
       const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3, ultra: 4 };
-      const currentTier = existingData.planTier || (existingData.isProUser ? 'pro' : 'free');
+      const currentTier: PlanTier = (existingData.planTier && existingData.planTier in PLAN_CONFIGS && existingData.planTier !== 'free')
+        ? (existingData.planTier as PlanTier)
+        : 'free';
       const incomingTier = data.planTier;
-      let resolvedPlanTier = currentTier;
+      let resolvedPlanTier: PlanTier = currentTier;
 
       // Check if current tier is paid and unexpired
-      const isCurrentPaidAndActive = currentTier !== 'free' && (!existingData.planExpiresAt || new Date(existingData.planExpiresAt).getTime() > Date.now());
+      const isCurrentPaidAndActive = currentTier !== 'free' && Boolean(
+        existingData.planExpiresAt &&
+        !isNaN(new Date(existingData.planExpiresAt).getTime()) &&
+        new Date(existingData.planExpiresAt).getTime() > Date.now()
+      );
 
       if (hasActiveSub && activeSub) {
         resolvedPlanTier = activeSub.planTier;
@@ -397,16 +417,25 @@ export async function POST(req: NextRequest) {
           resolvedPlanTier = currentTier;
         }
       } else if (incomingTier && TIER_RANK[incomingTier] !== undefined) {
-        resolvedPlanTier = incomingTier;
+        // Only accept incoming paid tier if user has activeSub OR incoming has valid future expiration
+        if (incomingTier === 'free') {
+          resolvedPlanTier = 'free';
+        } else if (hasActiveSub || (data.planExpiresAt && new Date(data.planExpiresAt).getTime() > Date.now())) {
+          resolvedPlanTier = incomingTier;
+        } else {
+          resolvedPlanTier = 'free';
+        }
+      } else {
+        resolvedPlanTier = 'free';
       }
 
-      let resolvedIsPro = resolvedPlanTier !== 'free' || Boolean(data.isProUser ?? existingData.isProUser ?? hasActiveSub);
+      let resolvedIsPro = resolvedPlanTier !== 'free' || Boolean(hasActiveSub);
 
       // Check plan expiration if provided
       const resolvedPlanExpiresAt = activeSub?.planExpiresAt || data.planExpiresAt || existingData.planExpiresAt;
-      if (resolvedPlanTier !== 'free' && resolvedPlanExpiresAt && !hasActiveSub) {
-        const exp = new Date(resolvedPlanExpiresAt).getTime();
-        if (!isNaN(exp) && exp < Date.now()) {
+      if (resolvedPlanTier !== 'free' && !hasActiveSub) {
+        const exp = resolvedPlanExpiresAt ? new Date(resolvedPlanExpiresAt).getTime() : 0;
+        if (!exp || isNaN(exp) || exp <= Date.now()) {
           resolvedPlanTier = 'free';
           resolvedIsPro = false;
         }
@@ -484,12 +513,17 @@ export async function POST(req: NextRequest) {
 
       // Prompt requests: strictly preserve consumed count (do NOT force Math.max)
       let finalRequests: number;
-      if (data.promptRequestsRemaining !== undefined) {
-        finalRequests = Number(data.promptRequestsRemaining);
-      } else if (existingData.promptRequestsRemaining !== undefined && existingData.promptRequestsRemaining !== null) {
-        finalRequests = Number(existingData.promptRequestsRemaining);
+      const submittedRequestsCount = Array.isArray(existingData.promptRequests) ? existingData.promptRequests.length : 0;
+      if (resolvedPlanTier !== 'free') {
+        if (data.promptRequestsRemaining !== undefined && Number(data.promptRequestsRemaining) > 0) {
+          finalRequests = Number(data.promptRequestsRemaining);
+        } else if (existingData.promptRequestsRemaining !== undefined && existingData.promptRequestsRemaining !== null && Number(existingData.promptRequestsRemaining) > 0) {
+          finalRequests = Number(existingData.promptRequestsRemaining);
+        } else {
+          finalRequests = Math.max(0, planCfg.promptRequests - submittedRequestsCount);
+        }
       } else {
-        finalRequests = resolvedPlanTier !== 'free' ? planCfg.promptRequests : 0;
+        finalRequests = 0;
       }
 
       // AI searches: strictly preserve consumed searches

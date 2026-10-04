@@ -49,14 +49,43 @@ export async function GET(req: NextRequest) {
           if (!key) continue;
 
           const rawCredits = typeof syncData.toolCredits === 'number' ? syncData.toolCredits : 5;
-          const isExplicitPro = Boolean(syncData.isProUser);
-          const rawTier: PlanTier = syncData.planTier || (isExplicitPro ? 'pro' : 'free');
-          
-          // A user is strictly a Paid user if rawTier !== 'free' OR rawCredits > 2 OR isExplicitPro
-          const isProUser = rawTier !== 'free' || isExplicitPro || rawCredits > 2;
-          const planTier: PlanTier = isProUser && rawTier === 'free'
-            ? (rawCredits >= 180 ? 'vip' : (rawCredits >= 60 ? 'pro' : 'starter'))
-            : rawTier;
+          const explicitTier: PlanTier = (syncData.planTier && ['starter', 'pro', 'vip', 'ultra', 'free'].includes(syncData.planTier))
+            ? syncData.planTier
+            : 'free';
+
+          // Strictly determine if user has a verified payment or active unexpired subscription
+          const hasPaymentProof = Boolean(
+            syncData.lastPaymentId ||
+            syncData.paymentId ||
+            syncData.lastOrderId ||
+            syncData.source === 'razorpay_verified'
+          );
+          const hasValidUnexpiredPlan = Boolean(
+            syncData.planExpiresAt &&
+            !isNaN(new Date(syncData.planExpiresAt).getTime()) &&
+            new Date(syncData.planExpiresAt).getTime() > Date.now()
+          );
+
+          // A user is ONLY paid if they have an explicit paid tier AND (payment proof OR valid unexpired plan)
+          const isGenuinelyPaid = explicitTier !== 'free' && (hasPaymentProof || hasValidUnexpiredPlan);
+          const planTier: PlanTier = isGenuinelyPaid ? explicitTier : 'free';
+          const isProUser = isGenuinelyPaid;
+
+          // Auto-heal database record if user was mistakenly marked as paid without payment
+          if (syncData.planTier && syncData.planTier !== 'free' && !isGenuinelyPaid) {
+            try {
+              const healedData = {
+                ...syncData,
+                planTier: 'free',
+                isProUser: false,
+                promptRequestsRemaining: 0,
+              };
+              void client.from('settings').update({ data: healedData }).eq('id', row.id);
+            } catch (healErr) {
+              console.warn('Notice healing user tier in settings:', healErr);
+            }
+          }
+
           const toolCredits = rawCredits;
           const points = typeof syncData.points === 'number' ? syncData.points : 10;
           const planExpiresAt = syncData.planExpiresAt;
