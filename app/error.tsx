@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
 import { Home, RefreshCw } from 'lucide-react';
 
 export default function ErrorPage({
@@ -31,13 +32,13 @@ export default function ErrorPage({
             <RefreshCw className="w-4 h-4" />
             <span>Try Again</span>
           </button>
-          <a
+          <Link
             href="/"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad001a] text-white font-bold text-xs transition-colors"
           >
             <Home className="w-4 h-4" />
             <span>Go Home</span>
-          </a>
+          </Link>
         </div>
       </div>
     </div>

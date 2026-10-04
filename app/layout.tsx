@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
 import { Poppins } from 'next/font/google';
-import ReactDOM from 'react-dom';
 import './globals.css';
 import { AppProvider } from '@/context/AppContext';
 import { AppGlobalOverlays } from '@/components/public/AppGlobalOverlays';
@@ -38,13 +37,12 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  ReactDOM.preconnect('https://res.cloudinary.com', { crossOrigin: 'anonymous' });
-  if (typeof (ReactDOM as any).prefetchDNS === 'function') {
-    (ReactDOM as any).prefetchDNS('https://res.cloudinary.com');
-  }
-
   return (
     <html lang="en" className="dark">
+      <head>
+        <link key="preconnect-cloudinary" rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
+        <link key="dns-prefetch-cloudinary" rel="dns-prefetch" href="https://res.cloudinary.com" />
+      </head>
       <body className={`${poppins.variable} ${poppins.className} font-sans antialiased selection:bg-[#E60023] selection:text-white`} suppressHydrationWarning>
         <AppProvider>
           {children}

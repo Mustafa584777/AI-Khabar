@@ -173,32 +173,23 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
             {allImages.map((imgUrl, idx) => (
               <div key={idx} className="w-full h-full shrink-0 relative overflow-hidden bg-neutral-900">
                 <img
-                  src={getOptimizedImageUrl(imgUrl, 500)}
+                  src={getOptimizedImageUrl(imgUrl, 600)}
                   alt={`${post.imageAlt || post.title} - photo ${idx + 1}`}
                   draggable={false}
                   className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
                   referrerPolicy="no-referrer"
-                  loading={priority && idx === 0 ? 'eager' : 'lazy'}
-                  fetchPriority={priority && idx === 0 ? 'high' : 'auto'}
-                  decoding={priority && idx === 0 ? 'sync' : 'async'}
-                  width={450}
-                  height={600}
+                  loading={idx === 0 ? 'eager' : 'lazy'}
                 />
               </div>
             ))}
           </div>
         ) : inView && post.imageUrl ? (
           <img
-            src={getOptimizedImageUrl(post.imageUrl, 500)}
+            src={getOptimizedImageUrl(post.imageUrl, 600)}
             alt={post.imageAlt || post.title}
             draggable={false}
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-all duration-500 ease-out select-none pointer-events-none"
             referrerPolicy="no-referrer"
-            loading={priority ? 'eager' : 'lazy'}
-            fetchPriority={priority ? 'high' : 'auto'}
-            decoding={priority ? 'sync' : 'async'}
-            width={450}
-            height={600}
           />
         ) : !post.imageUrl ? (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-tr from-neutral-800 to-neutral-900 text-neutral-400">
