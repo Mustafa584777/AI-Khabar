@@ -3,6 +3,7 @@ import type {NextConfig} from 'next';
 const nextConfig: NextConfig = {
   output: 'standalone',
   reactStrictMode: true,
+  compress: true,
   turbopack: {},
   typescript: {
     ignoreBuildErrors: false,
@@ -59,6 +60,24 @@ const nextConfig: NextConfig = {
   transpilePackages: ['motion'],
   async headers() {
     return [
+       {
+        source: '/images/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/(favicon.ico|logo.png|ads.txt)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, stale-while-revalidate=604800',
+          },
+        ],
+      },
       {
         source: '/:path*',
         headers: [

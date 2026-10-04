@@ -344,7 +344,7 @@ export const PromptGrid = () => {
                   <PromptCard
                     key={post.id}
                     post={post}
-                    priority={colIdx === 0 && postIdx === 0}
+                    priority={postIdx === 0}
                   />
                 ))}
               </div>

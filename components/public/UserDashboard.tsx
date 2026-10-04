@@ -148,6 +148,16 @@ export const UserDashboard = () => {
     return Boolean(emailMatch || idMatch);
   });
 
+  const maxPlanRequests = isPaid ? (currentPlanConfig.promptRequests || 0) : 0;
+  const userSubmittedRequestsCount = userRequests.length;
+  // Accurate, non-overwritten available prompt requests for the user:
+  // If user has paid plan, remaining should not be zero unless user actually consumed/submitted requests
+  const effectivePromptRequestsRemaining = isPaid
+    ? (promptRequestsRemaining > 0
+        ? Math.min(promptRequestsRemaining, maxPlanRequests)
+        : Math.max(0, maxPlanRequests - userSubmittedRequestsCount))
+    : 0;
+
   // Filtered saved posts
   const savedPosts = posts.filter((p) => bookmarkedIds.includes(p.id));
 
@@ -400,9 +410,9 @@ export const UserDashboard = () => {
             </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
-                {isPaid ? `${Math.min(Math.max(0, promptRequestsRemaining), currentPlanConfig.promptRequests)}/${currentPlanConfig.promptRequests}` : '0'}
+                {isPaid ? `${effectivePromptRequestsRemaining}/${maxPlanRequests}` : '0'}
               </div>
-              <div className="text-[11px] text-neutral-500 font-medium">Prompt Requests</div>
+              <div className="text-[11px] text-neutral-500 font-medium">Prompt Requests Left</div>
             </div>
           </div>
         </div>
@@ -1141,7 +1151,7 @@ export const UserDashboard = () => {
                       <span>Prompt Requests Available</span>
                     </div>
                     <div className="text-lg font-black text-neutral-900 dark:text-white">
-                      {promptRequestsRemaining} Available
+                      {effectivePromptRequestsRemaining} / {maxPlanRequests} Available
                     </div>
                   </div>
                 </div>
@@ -1212,15 +1222,15 @@ export const UserDashboard = () => {
 
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-1">
                     <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                      {promptRequestsRemaining > 0
-                        ? `Using 1 of ${promptRequestsRemaining} available requests.`
+                      {effectivePromptRequestsRemaining > 0
+                        ? `Using 1 of ${effectivePromptRequestsRemaining} available requests.`
                         : 'You have 0 request available. Upgrade to a plan to unlock prompt requests.'}
                     </p>
 
                     <button
                       id="btn-submit-prompt-request"
                       type="submit"
-                      disabled={isSubmittingRequest || promptRequestsRemaining <= 0}
+                      disabled={isSubmittingRequest || effectivePromptRequestsRemaining <= 0}
                       className="px-6 py-2.5 rounded-2xl bg-[#E60023] hover:bg-[#ad081b] disabled:opacity-50 text-white text-xs font-black shadow-md flex items-center gap-2 transition-all"
                     >
                       {isSubmittingRequest ? (
