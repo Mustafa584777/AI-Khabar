@@ -19,14 +19,6 @@ export const StorageService = {
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            // Invalidate legacy base64 bloated cache
-            const hasLegacyBase64 = parsed.some(
-              (p: any) => typeof p.imageUrl === 'string' && p.imageUrl.startsWith('data:image/')
-            );
-            if (hasLegacyBase64) {
-              localStorage.removeItem(STORAGE_KEY_CACHED_POSTS);
-              return INITIAL_POSTS || [];
-            }
             return parsed;
           }
         }

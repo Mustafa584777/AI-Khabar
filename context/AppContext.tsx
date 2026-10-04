@@ -1770,24 +1770,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const syncFromRemote = React.useCallback(async () => {
     if (isSavingRef.current) return;
     try {
-      // Fetch posts independently and quickly for fast initial render
-      const postsUrl = isAuthenticated ? '/api/posts?all=true' : '/api/posts';
-      const fetchPosts = fetch(postsUrl, { cache: isAuthenticated ? 'no-store' : 'default' })
+      // Fetch posts independently and quickly for fast initial render with cache busting
+      const postsUrl = `/api/posts?all=true&_t=${Date.now()}`;
+      const fetchPosts = fetch(postsUrl, { cache: 'no-store' })
         .then(async (res) => {
           if (res.ok && !isSavingRef.current) {
             const data = await res.json();
             if (data.success && Array.isArray(data.posts)) {
-              setPosts((prevPosts) => {
-                if (!prevPosts || prevPosts.length === 0) return data.posts;
-                const remoteMap = new Map<string, PromptPost>(data.posts.map((p: PromptPost) => [p.id, p]));
-                const updated = prevPosts.map((p) => {
-                  const remote = remoteMap.get(p.id);
-                  return remote ? { ...p, ...remote } : p;
-                });
-                const existingIds = new Set(prevPosts.map((p) => p.id));
-                const brandNew = data.posts.filter((p: PromptPost) => !existingIds.has(p.id));
-                return [...updated, ...brandNew];
-              });
+              setPosts(data.posts);
               StorageService.saveCachedPosts(data.posts);
             }
           }
@@ -2283,6 +2273,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const data = await res.json();
       if (data.success && Array.isArray(data.posts)) {
         setPosts(data.posts);
+        StorageService.saveCachedPosts(data.posts);
         const savedPost = data.post || post;
         showToast(
           savedPost.status === 'published'
@@ -2334,6 +2325,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const data = await res.json();
       if (data.success && Array.isArray(data.posts)) {
         setPosts(data.posts);
+        StorageService.saveCachedPosts(data.posts);
       }
       showToast('Prompt removed from server');
       return true;
