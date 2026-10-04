@@ -600,7 +600,7 @@ export const AIStudioTool = () => {
                   <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block">
                     Or Pick a Sample Photo:
                   </span>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
                     {sampleImages.map((sample, idx) => (
                       <button
                         key={`${sample.name}-${idx}`}
@@ -610,7 +610,7 @@ export const AIStudioTool = () => {
                           setExtractedData(null);
                           setIsSavedExtracted(false);
                         }}
-                        className="group relative block w-full rounded-2xl overflow-hidden aspect-square border border-neutral-200 dark:border-neutral-800 hover:ring-2 hover:ring-[#E60023] transition-all bg-neutral-100 dark:bg-neutral-800 shadow-xs cursor-pointer text-left"
+                        className="group relative block w-full rounded-xl sm:rounded-2xl overflow-hidden aspect-square border border-neutral-200 dark:border-neutral-800 hover:ring-2 hover:ring-[#E60023] transition-all bg-neutral-100 dark:bg-neutral-800 shadow-xs cursor-pointer text-left"
                       >
                         <img
                           src={sample.url}
@@ -628,7 +628,7 @@ export const AIStudioTool = () => {
                             e.currentTarget.src = fallbacks[idx % fallbacks.length];
                           }}
                         />
-                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/50 to-transparent pt-4 pb-1.5 px-2 text-[10px] font-bold text-white truncate">
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent pt-3 pb-1 px-1 sm:px-1.5 text-[8.5px] sm:text-[10px] font-bold text-white truncate text-center leading-tight">
                           {sample.name}
                         </div>
                       </button>

@@ -713,12 +713,17 @@ export const UserDashboard = () => {
                     {/* Image */}
                     <div className="relative w-full aspect-[3/4] bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
                       {post.imageUrl ? (
-                        <Image
-                          src={post.imageUrl}
+                        <img
+                          src={getOptimizedImageUrl(post.imageUrl, 500)}
                           alt={post.title}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           referrerPolicy="no-referrer"
+                          loading="lazy"
+                          onError={(e) => {
+                            if (post.imageUrl && e.currentTarget.src !== post.imageUrl) {
+                              e.currentTarget.src = post.imageUrl;
+                            }
+                          }}
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-neutral-400">
@@ -916,13 +921,17 @@ export const UserDashboard = () => {
                       {/* Visual Thumbnail */}
                       {item.imageUrl && (
                         <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 mb-3 group">
-                          <Image
+                          <img
                             src={getOptimizedImageUrl(item.imageUrl, 400)}
                             alt={item.title}
-                            fill
-                            sizes="(max-width: 640px) 100vw, 300px"
-                            className="object-cover"
+                            className="w-full h-full object-cover"
                             referrerPolicy="no-referrer"
+                            loading="lazy"
+                            onError={(e) => {
+                              if (item.imageUrl && e.currentTarget.src !== item.imageUrl) {
+                                e.currentTarget.src = item.imageUrl;
+                              }
+                            }}
                           />
                           {item.modelUsed && (
                             <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-white text-[10px] font-bold">

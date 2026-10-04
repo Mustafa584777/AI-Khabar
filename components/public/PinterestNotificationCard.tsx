@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { PushNotificationItem } from '@/types/notification';
 import { NotificationService } from '@/lib/notifications';
+import { getOptimizedImageUrl } from '@/lib/utils';
 import { Bell, ChevronUp, ChevronDown, ExternalLink, Sparkles, Check, ArrowRight } from 'lucide-react';
 
 interface PinterestNotificationCardProps {
@@ -172,13 +173,17 @@ export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps>
                   className="relative w-full h-full bg-neutral-100 dark:bg-neutral-800 rounded-xl sm:rounded-2xl overflow-hidden group/img shadow-xs cursor-pointer hover:ring-2 hover:ring-[#E60023] transition-all"
                   title={`View image ${idx + 1}`}
                 >
-                  <Image
-                    src={img}
+                  <img
+                    src={getOptimizedImageUrl(img, 400)}
                     alt={`${notification.title} preview ${idx + 1}`}
-                    fill
-                    sizes="(max-width: 640px) 25vw, 15vw"
-                    className="object-cover group-hover/img:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
                     referrerPolicy="no-referrer"
+                    loading="lazy"
+                    onError={(e) => {
+                      if (img && e.currentTarget.src !== img) {
+                        e.currentTarget.src = img;
+                      }
+                    }}
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors" />
                 </div>
@@ -186,13 +191,17 @@ export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps>
             </div>
           ) : images.length === 1 ? (
             <div className="relative w-full h-44 sm:h-52 rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 shadow-xs">
-              <Image
-                src={images[0]}
+              <img
+                src={getOptimizedImageUrl(images[0], 800)}
                 alt={notification.title}
-                fill
-                sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-cover group-hover:scale-102 transition-transform duration-300"
+                className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
                 referrerPolicy="no-referrer"
+                loading="lazy"
+                onError={(e) => {
+                  if (images[0] && e.currentTarget.src !== images[0]) {
+                    e.currentTarget.src = images[0];
+                  }
+                }}
               />
             </div>
           ) : null}

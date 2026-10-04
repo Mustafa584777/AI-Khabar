@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
   },
   // Allow access to remote image placeholder.
   images: {
+    contentDispositionType: 'inline',
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 86400,
     remotePatterns: [

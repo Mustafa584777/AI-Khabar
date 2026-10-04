@@ -455,13 +455,17 @@ export const SearchExploreModal = () => {
                     >
                       {/* Image Thumbnail */}
                       <div className="relative aspect-square w-full overflow-hidden bg-neutral-800">
-                        <Image
+                        <img
                           src={getOptimizedImageUrl(post.imageUrl, 250) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'}
                           alt={post.title}
-                          fill
-                          sizes="(max-width: 640px) 50vw, 25vw"
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           referrerPolicy="no-referrer"
+                          loading="lazy"
+                          onError={(e) => {
+                            if (post.imageUrl && e.currentTarget.src !== post.imageUrl) {
+                              e.currentTarget.src = post.imageUrl;
+                            }
+                          }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
 
@@ -539,13 +543,17 @@ export const SearchExploreModal = () => {
                   className="group relative h-32 sm:h-36 rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all duration-300 transform active:scale-95"
                 >
                   {/* Category Image from its Most Viewed Prompt */}
-                  <Image
+                  <img
                     src={getOptimizedImageUrl(cat.topImage, 300)}
                     alt={cat.name}
-                    fill
-                    sizes="(max-width: 640px) 50vw, 25vw"
-                    className="object-cover group-hover:scale-110 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     referrerPolicy="no-referrer"
+                    loading="lazy"
+                    onError={(e) => {
+                      if (cat.topImage && e.currentTarget.src !== cat.topImage) {
+                        e.currentTarget.src = cat.topImage;
+                      }
+                    }}
                   />
 
                   {/* Dark Vignette Gradient Overlay */}
