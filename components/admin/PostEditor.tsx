@@ -27,6 +27,7 @@ import {
   Crown,
   Bell,
   Layers,
+  Trash2,
 } from 'lucide-react';
 import Image from 'next/image';
 import { cleanTagsArray, canonicalizeTag, slugify } from '@/lib/utils';
@@ -107,6 +108,10 @@ export const PostEditor = () => {
   const [uploadedFileInfo, setUploadedFileInfo] = useState<{ name: string; size: string } | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
+  // Track the ID of the post currently loaded in the editor
+  // This ensures background polling/syncFromRemote does not clobber user's active edits or uploaded carousel images
+  const loadedPostIdRef = React.useRef<string | null>(editingPostId || null);
+
   const [status, setStatus] = useState<'published' | 'draft'>(
     () => (existingPost?.status === 'draft' ? 'draft' : 'published')
   );
@@ -115,26 +120,48 @@ export const PostEditor = () => {
   );
 
   useEffect(() => {
-    if (existingPost) {
-      setTitle(existingPost.title || '');
-      setSlug(existingPost.slug || '');
-      setCategory(existingPost.category || '');
-      setPromptText(existingPost.promptText || '');
-      setImageUrl(existingPost.imageUrl || '');
-      setImageAlt(existingPost.imageAlt || existingPost.title || '');
-      setImageFileName(existingPost.imageFileName || (existingPost.title ? generateImageFileNameFromTitle(existingPost.title) : ''));
-      setAdditionalImages(Array.isArray(existingPost.additionalImages) ? existingPost.additionalImages : []);
-      setStatus(existingPost.status === 'draft' ? 'draft' : 'published');
-      setIsPremium(Boolean(existingPost.isPremium || existingPost.parameters?.isPremium));
-      if (existingPost.articleContent) setArticleContent(existingPost.articleContent);
-      if (Array.isArray(existingPost.tags) && existingPost.tags.length > 0) {
-        setTags(existingPost.tags);
+    // Only load from existingPost if switching to a DIFFERENT post or switching between create/edit modes
+    if (editingPostId && editingPostId !== loadedPostIdRef.current) {
+      loadedPostIdRef.current = editingPostId;
+      if (existingPost) {
+        setTitle(existingPost.title || '');
+        setSlug(existingPost.slug || '');
+        setCategory(existingPost.category || '');
+        setPromptText(existingPost.promptText || '');
+        setImageUrl(existingPost.imageUrl || '');
+        setImageAlt(existingPost.imageAlt || existingPost.title || '');
+        setImageFileName(existingPost.imageFileName || (existingPost.title ? generateImageFileNameFromTitle(existingPost.title) : ''));
+        setAdditionalImages(Array.isArray(existingPost.additionalImages) ? existingPost.additionalImages : []);
+        setStatus(existingPost.status === 'draft' ? 'draft' : 'published');
+        setIsPremium(Boolean(existingPost.isPremium || existingPost.parameters?.isPremium));
+        if (existingPost.articleContent) setArticleContent(existingPost.articleContent);
+        if (Array.isArray(existingPost.tags) && existingPost.tags.length > 0) {
+          setTags(existingPost.tags);
+        }
+        if (existingPost.seo?.metaTitle) setMetaTitle(existingPost.seo.metaTitle);
+        if (existingPost.seo?.metaDescription) setMetaDescription(existingPost.seo.metaDescription);
+        if (existingPost.seo?.focusKeyword) setFocusKeyword(existingPost.seo.focusKeyword);
       }
-      if (existingPost.seo?.metaTitle) setMetaTitle(existingPost.seo.metaTitle);
-      if (existingPost.seo?.metaDescription) setMetaDescription(existingPost.seo.metaDescription);
-      if (existingPost.seo?.focusKeyword) setFocusKeyword(existingPost.seo.focusKeyword);
+    } else if (!editingPostId && loadedPostIdRef.current !== null) {
+      // Switched from editing to new post creation mode
+      loadedPostIdRef.current = null;
+      setTitle('');
+      setSlug('');
+      setCategory(categories[0]?.name || 'Photorealistic & Portraits');
+      setPromptText('');
+      setImageUrl('');
+      setImageAlt('');
+      setImageFileName('');
+      setAdditionalImages([]);
+      setStatus('published');
+      setIsPremium(false);
+      setArticleContent('## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.');
+      setTags(['AI Prompt', 'Photorealistic', 'Masterpiece']);
+      setMetaTitle('');
+      setMetaDescription('');
+      setFocusKeyword('');
     }
-  }, [existingPost]);
+  }, [editingPostId, existingPost, categories]);
   const [articleContent, setArticleContent] = useState(
     () =>
       existingPost?.articleContent ||
@@ -1022,42 +1049,81 @@ export const PostEditor = () => {
 
               {/* Slider Thumbnails Preview */}
               {additionalImages.length > 0 && (
-                <div className="space-y-2 pt-1">
+                <div className="space-y-3 pt-2">
                   <div className="flex items-center justify-between text-[11px] font-semibold text-neutral-500">
-                    <span>Uploaded Slides ({additionalImages.length})</span>
-                    <button
-                      type="button"
-                      onClick={() => additionalFileInputRef.current?.click()}
-                      className="text-[#E60023] hover:underline font-bold cursor-pointer"
-                    >
-                      + Add More Slides
-                    </button>
+                    <span className="flex items-center gap-1.5 font-bold text-neutral-800 dark:text-neutral-200">
+                      <span>Uploaded Slides ({additionalImages.length})</span>
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAdditionalImages([]);
+                          showToast('All carousel slides cleared');
+                        }}
+                        className="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 font-bold hover:underline cursor-pointer"
+                      >
+                        Clear All Slides
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => additionalFileInputRef.current?.click()}
+                        className="text-[#E60023] hover:underline font-bold cursor-pointer"
+                      >
+                        + Add More Slides
+                      </button>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {additionalImages.map((imgUrl, idx) => (
                       <div
                         key={idx}
-                        className="relative aspect-square rounded-xl overflow-hidden bg-neutral-900 border border-neutral-200 dark:border-neutral-800 group"
+                        className="relative rounded-2xl overflow-hidden bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs p-1 flex flex-col group"
                       >
-                        <img
-                          src={imgUrl}
-                          alt={`Slide ${idx + 2}`}
-                          className="w-full h-full object-cover"
-                          referrerPolicy="no-referrer"
-                        />
-                        <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-black/70 text-[9px] font-bold text-white">
-                          #{idx + 2}
+                        <div className="relative aspect-square rounded-xl overflow-hidden bg-neutral-950">
+                          <img
+                            src={imgUrl}
+                            alt={`Slide ${idx + 2}`}
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                          <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-black/80 text-[10px] font-black text-white shadow-xs">
+                            Slide #{idx + 2}
+                          </div>
+                          {/* Prominent Always-Visible Circular Remove Button on Top Right */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAdditionalImages((prev) => prev.filter((_, i) => i !== idx));
+                              showToast(`Removed Slide #${idx + 2}`);
+                            }}
+                            className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-red-600 hover:bg-red-700 active:scale-95 text-white flex items-center justify-center shadow-lg transition-transform cursor-pointer border border-white/60 z-10"
+                            title={`Remove Slide #${idx + 2}`}
+                            aria-label={`Remove Slide #${idx + 2}`}
+                          >
+                            <X className="w-4 h-4 stroke-[2.5]" />
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setAdditionalImages((prev) => prev.filter((_, i) => i !== idx));
-                          }}
-                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                          title="Remove Slide"
-                        >
-                          ×
-                        </button>
+                        {/* Dedicated Bottom Remove Action Button */}
+                        <div className="pt-2 pb-1 px-1 flex items-center justify-between gap-1">
+                          <span className="text-[11px] font-semibold text-neutral-500 truncate">
+                            Photo #{idx + 2}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAdditionalImages((prev) => prev.filter((_, i) => i !== idx));
+                              showToast(`Removed Slide #${idx + 2}`);
+                            }}
+                            className="px-2 py-1 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-950/60 dark:hover:bg-red-900/80 text-red-600 dark:text-red-400 text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                            title={`Remove Slide #${idx + 2}`}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span>Remove</span>
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>

@@ -20,7 +20,6 @@ import {
   Wand2,
   Edit3,
 } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PromptEditorTool } from '@/components/public/PromptEditorTool';
@@ -28,22 +27,22 @@ import { PromptEditorTool } from '@/components/public/PromptEditorTool';
 const SAMPLE_IMAGES_FALLBACK = [
   {
     name: 'Sun-Drenched Minimalism',
-    url: 'https://res.cloudinary.com/idbpgaqz/image/upload/v1790080100/prompts/prompt-1790080096492.webp',
+    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
     style: 'Lifestyle & Creative Portraiture',
   },
   {
-    name: 'Prismatic Light Portrait',
-    url: 'https://res.cloudinary.com/idbpgaqz/image/upload/v1790004650/prompts/prompt-1790004647479.webp',
+    name: 'Prismatic Studio Portrait',
+    url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80',
     style: 'Fashion & Editorial Photography',
   },
   {
     name: 'Cinematic Monochrome',
-    url: 'https://res.cloudinary.com/idbpgaqz/image/upload/v1789916991/prompts/prompt-1789916984383.webp',
+    url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
     style: 'Fashion & Editorial Photography',
   },
   {
-    name: 'Birthday Calendar Portrait',
-    url: 'https://res.cloudinary.com/idbpgaqz/image/upload/v1789893926/prompts/prompt-1789893925047.webp',
+    name: 'Golden Hour Urban Nomad',
+    url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80',
     style: 'Lifestyle & Creative Portraiture',
   },
 ];
@@ -93,16 +92,26 @@ export const AIStudioTool = () => {
   } = useApp();
 
   const sampleImages = React.useMemo(() => {
-    const validPosts = (posts || []).filter((p) => p.imageUrl && p.imageUrl.trim().length > 0);
-    const latest4 = validPosts.slice(0, 4);
-    if (latest4.length === 0) {
-      return SAMPLE_IMAGES_FALLBACK;
+    const validPosts = (posts || []).filter(
+      (p) => p.imageUrl && p.imageUrl.trim().length > 0 && !p.imageUrl.startsWith('data:image')
+    );
+    const list: { name: string; url: string; style: string }[] = [];
+    validPosts.slice(0, 4).forEach((p) => {
+      list.push({
+        name: p.title || 'Trending Prompt',
+        url: p.imageUrl,
+        style: p.category || 'AI Photography',
+      });
+    });
+    // Ensure we always have 4 samples
+    if (list.length < 4) {
+      SAMPLE_IMAGES_FALLBACK.forEach((fb) => {
+        if (list.length < 4 && !list.some((it) => it.url === fb.url)) {
+          list.push(fb);
+        }
+      });
     }
-    return latest4.map((p) => ({
-      name: p.title || 'Trending Prompt',
-      url: p.imageUrl,
-      style: p.category || 'AI Photography',
-    }));
+    return list.slice(0, 4);
   }, [posts]);
 
   const [uploadedImage, setUploadedImage] = useState<string | null>(() => {
@@ -552,17 +561,17 @@ export const AIStudioTool = () => {
 
                 {uploadedImage ? (
                   <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 group">
-                    <Image
+                    <img
                       src={uploadedImage}
                       alt="Uploaded target"
-                      fill
-                      className="object-contain"
+                      className="w-full h-full object-contain"
                       referrerPolicy="no-referrer"
                     />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
                       <button
+                        type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="px-3.5 py-1.5 rounded-full bg-white text-neutral-900 text-xs font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-1.5"
+                        className="px-3.5 py-1.5 rounded-full bg-white text-neutral-900 text-xs font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-1.5 cursor-pointer"
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
                         <span>Change Photo</span>
@@ -591,25 +600,35 @@ export const AIStudioTool = () => {
                   <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block">
                     Or Pick a Sample Photo:
                   </span>
-                  <div className="grid grid-cols-4 gap-2">
-                    {sampleImages.map((sample) => (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    {sampleImages.map((sample, idx) => (
                       <button
-                        key={sample.name}
+                        key={`${sample.name}-${idx}`}
+                        type="button"
                         onClick={() => {
                           setUploadedImage(sample.url);
                           setExtractedData(null);
                           setIsSavedExtracted(false);
                         }}
-                        className="group relative rounded-xl overflow-hidden aspect-square border border-neutral-200 dark:border-neutral-700 hover:ring-2 hover:ring-[#E60023] transition-all"
+                        className="group relative block w-full rounded-2xl overflow-hidden aspect-square border border-neutral-200 dark:border-neutral-800 hover:ring-2 hover:ring-[#E60023] transition-all bg-neutral-100 dark:bg-neutral-800 shadow-xs cursor-pointer text-left"
                       >
-                        <Image
+                        <img
                           src={sample.url}
                           alt={sample.name}
-                          fill
-                          className="object-cover group-hover:scale-110 transition-transform duration-300"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           referrerPolicy="no-referrer"
+                          loading="lazy"
+                          onError={(e) => {
+                            const fallbacks = [
+                              'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+                              'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80',
+                              'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
+                              'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80',
+                            ];
+                            e.currentTarget.src = fallbacks[idx % fallbacks.length];
+                          }}
                         />
-                        <div className="absolute inset-x-0 bottom-0 bg-black/70 py-0.5 px-1 text-[9px] font-bold text-white text-center truncate">
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/50 to-transparent pt-4 pb-1.5 px-2 text-[10px] font-bold text-white truncate">
                           {sample.name}
                         </div>
                       </button>

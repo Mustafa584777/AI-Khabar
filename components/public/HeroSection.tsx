@@ -41,6 +41,8 @@ export const HeroSection = () => {
     isProUser,
     setIsProCheckoutModalOpen,
     showToast,
+    userAccount,
+    openAuthModal,
   } = useApp();
 
   const [isSortOpen, setIsSortOpen] = useState(false);
@@ -146,6 +148,12 @@ export const HeroSection = () => {
             type="button"
             onClick={(e) => {
               e.stopPropagation();
+              const isLoggedIn = Boolean(userAccount && userAccount.isLoggedIn);
+              if (!isLoggedIn) {
+                showToast('Please log in to your account to use AI Search!');
+                openAuthModal('Please sign in or create a free account to use AI Search.');
+                return;
+              }
               if (!isAiSearchEnabled && !isProUser && aiSearchRemaining <= 0) {
                 showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
                 setIsProCheckoutModalOpen(true);
@@ -154,14 +162,20 @@ export const HeroSection = () => {
               setIsAiSearchEnabled(!isAiSearchEnabled);
             }}
             className={`absolute right-3 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-full text-[10px] font-extrabold flex items-center gap-1 transition-all z-10 ${
-              isAiSearchEnabled
+              isAiSearchEnabled && userAccount?.isLoggedIn && (isProUser || aiSearchRemaining > 0)
                 ? 'bg-gradient-to-r from-[#E60023] to-rose-600 text-white shadow-sm'
                 : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300'
             }`}
-            title={isAiSearchEnabled ? 'AI Search Enabled (Click to disable)' : 'AI Search Disabled (Click to enable)'}
+            title={
+              !userAccount?.isLoggedIn
+                ? 'Log in to enable AI Search'
+                : isAiSearchEnabled && (isProUser || aiSearchRemaining > 0)
+                ? 'AI Search Enabled (Click to disable)'
+                : 'AI Search Disabled (Click to enable)'
+            }
           >
             <Sparkles className="w-3 h-3" />
-            <span>AI {isAiSearchEnabled ? 'ON' : 'OFF'}</span>
+            <span>AI {isAiSearchEnabled && userAccount?.isLoggedIn && (isProUser || aiSearchRemaining > 0) ? 'ON' : 'OFF'}</span>
           </button>
 
           {/* Search Suggestions & Most Viewed Categories Overlay (Matching Screenshot) */}

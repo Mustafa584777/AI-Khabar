@@ -1119,6 +1119,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setLikedIds([]);
     setAiHistory([]);
     setTasteProfile(INITIAL_TASTE_PROFILE);
+    setIsAiSearchEnabledState(false);
+    setAiSearchResults(null);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auraprompt_ai_search_enabled', 'false');
+    }
 
     showToast('Signed out successfully. Session cache cleared.');
   };
@@ -1599,10 +1604,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const [isAiSearchEnabled, setIsAiSearchEnabledState] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
+      const acc = StorageService.getUserAccount();
+      if (!acc || !acc.isLoggedIn) return false;
       const saved = localStorage.getItem('auraprompt_ai_search_enabled');
       if (saved !== null) return saved === 'true';
+      return true;
     }
-    return true; // Default ON
+    return false;
   });
 
   const setIsAiSearchEnabled = useCallback((enabled: boolean) => {
@@ -1638,6 +1646,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const aiSearchDeductedRef = useRef<Set<string>>(new Set());
 
   const performAiSearch = useCallback(async (query: string, deductQuota: boolean = true): Promise<AiSearchResult | null> => {
+    // STRICT REQUIREMENT: Only logged-in users are permitted to access and run AI search
+    const acc = userAccount || (typeof window !== 'undefined' ? StorageService.getUserAccount() : null);
+    if (!acc || !acc.isLoggedIn) {
+      setAiSearchResults(null);
+      setIsAiSearching(false);
+      return null;
+    }
+
     const clean = query.trim();
     if (!clean || clean.length < 2 || !isAiSearchEnabled) {
       setAiSearchResults(null);
@@ -1658,6 +1674,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       showToast(`You have used all of your AI search quota (${planCfg.aiSearchQuota} searches). Please upgrade your plan to unlock more searches!`);
       setIsProCheckoutModalOpen(true);
       setIsAiSearchEnabled(false);
+      setAiSearchResults(null);
+      setIsAiSearching(false);
       return null;
     }
 
@@ -1690,9 +1708,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
               if (typeof window !== 'undefined') {
                 localStorage.setItem('auraprompt_ai_search_remaining', next.toString());
               }
-              const acc = userAccount || StorageService.getUserAccount();
               if (acc && acc.isLoggedIn) {
                 void UserSyncService.pushUserData(acc.id, acc.email, { aiSearchRemaining: next });
+              }
+              if (next === 0) {
+                setIsAiSearchEnabledState(false);
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('auraprompt_ai_search_enabled', 'false');
+                }
               }
               return next;
             });
@@ -1708,17 +1731,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setIsAiSearching(false);
     }
     return null;
-  }, [isAiSearchEnabled, planTier, aiSearchRemaining, setAiSearchRemaining, showToast, setIsProCheckoutModalOpen, setIsAiSearchEnabled, userAccount]);
+  }, [isAiSearchEnabled, planTier, aiSearchRemaining, showToast, setIsProCheckoutModalOpen, setIsAiSearchEnabled, userAccount]);
 
   const clearAiSearch = useCallback(() => {
     setAiSearchResults(null);
     setIsAiSearching(false);
   }, []);
 
-  // Whenever searchQuery updates, trigger performAiSearch if enabled (debounced 300ms)
+  // Whenever searchQuery updates, trigger performAiSearch if enabled and user is logged in (debounced 300ms)
   useEffect(() => {
     const q = searchQuery.trim();
-    if (!isAiSearchEnabled || !q || q.length < 2) {
+    const acc = userAccount || (typeof window !== 'undefined' ? StorageService.getUserAccount() : null);
+    if (!isAiSearchEnabled || !acc || !acc.isLoggedIn || !q || q.length < 2) {
       setAiSearchResults(null);
       return;
     }
@@ -1726,7 +1750,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       void performAiSearch(q);
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchQuery, isAiSearchEnabled, performAiSearch]);
+  }, [searchQuery, isAiSearchEnabled, userAccount, performAiSearch]);
 
   const fetchSearchQueries = async () => {
     try {

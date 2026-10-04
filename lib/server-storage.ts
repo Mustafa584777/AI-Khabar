@@ -403,6 +403,53 @@ export const ServerStorage = {
       }
     }
 
+    // Process additionalImages if any of them contain base64 data URIs
+    if (Array.isArray(savedPost.additionalImages) && savedPost.additionalImages.length > 0) {
+      const processedAdditional: string[] = [];
+      for (let i = 0; i < savedPost.additionalImages.length; i++) {
+        let slideUrl = savedPost.additionalImages[i];
+        if (slideUrl && slideUrl.startsWith('data:image/')) {
+          let uploaded = false;
+          try {
+            const clRes = await uploadImageToCloudinary(slideUrl, {
+              folder: 'prompts',
+              publicId: `${savedPost.slug || savedPost.id}-slide-${i + 1}-${Date.now().toString(36)}`,
+            });
+            if (clRes.success && clRes.url) {
+              slideUrl = clRes.url;
+              uploaded = true;
+            }
+          } catch (e) {
+            console.warn('ServerStorage slide upload fallback:', e);
+          }
+
+          if (!uploaded) {
+            try {
+              const match = slideUrl.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
+              if (match) {
+                const safeId = `${(savedPost.id || `prompt_${Date.now()}`).replace(/[^a-zA-Z0-9_-]/g, '_')}_slide_${i + 1}`;
+                let ext = match[1] === 'jpeg' ? 'jpg' : match[1];
+                if (ext.includes('webp')) ext = 'webp';
+                const promptsDir = path.join(process.cwd(), 'public', 'images', 'prompts');
+                if (!fs.existsSync(promptsDir)) {
+                  fs.mkdirSync(promptsDir, { recursive: true });
+                }
+                const filename = `${safeId}.${ext}`;
+                const filePath = path.join(promptsDir, filename);
+                const buffer = Buffer.from(match[2], 'base64');
+                fs.writeFileSync(filePath, buffer);
+                slideUrl = `/images/prompts/${filename}`;
+              }
+            } catch (err) {
+              console.error('Failed to save static slide image:', err);
+            }
+          }
+        }
+        processedAdditional.push(slideUrl);
+      }
+      savedPost.additionalImages = processedAdditional;
+    }
+
     // Save to Supabase
     if (isSupabaseConfigured()) {
       try {
