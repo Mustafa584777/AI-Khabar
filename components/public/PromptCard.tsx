@@ -42,17 +42,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   }, [post.imageUrl, post.additionalImages]);
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
   const isMultiple = allImages.length > 1;
-
-  // Auto-slide images infinitely when multiple images exist
-  useEffect(() => {
-    if (!isMultiple) return;
-    const timer = setInterval(() => {
-      setActiveImageIndex((prev) => (prev < allImages.length - 1 ? prev + 1 : 0));
-    }, 3000);
-    return () => clearInterval(timer);
-  }, [isMultiple, allImages.length]);
 
   const isBookmarked = bookmarkedIds.includes(post.id);
   const isUnlocked = isPromptUnlocked(post.id, post.isPremium);
@@ -84,10 +74,11 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   const handleCardClick = (e: React.MouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.button === 1) return;
     e.preventDefault();
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && isMultiple) {
       try {
-        sessionStorage.removeItem('auraprompt_active_slider_images');
-        sessionStorage.removeItem('auraprompt_active_slider_index');
+        sessionStorage.setItem('auraprompt_active_slider_images', JSON.stringify(allImages));
+        sessionStorage.setItem(`auraprompt_slider_${post.id}`, JSON.stringify(allImages));
+        sessionStorage.setItem(`auraprompt_slider_index_${post.id}`, String(activeImageIndex));
       } catch {}
     }
     setSelectedPost(post);
@@ -138,8 +129,6 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
       className="group relative rounded-[20px] sm:rounded-[24px] overflow-hidden bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800/80 cursor-pointer shadow-xs hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 select-none w-full"
       id={`prompt-pin-${post.id}`}
       style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       <h2 className="sr-only" itemProp="name">{post.title}</h2>
       <p className="sr-only" itemProp="description">{getPromptMetaDescription(post)}</p>
@@ -166,12 +155,20 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
         {/* Full-Height Shimmer Skeleton Placeholder removed */}
 
         {inView && optimizedImgUrl ? (
-          <img
+          <Image
             src={optimizedImgUrl}
             alt={post.imageAlt || post.title}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
             draggable={false}
-            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-all duration-500 ease-out select-none pointer-events-none"
+            priority={priority}
+            onLoad={() => setImageLoaded(true)}
+            className={`object-cover group-hover:scale-105 transition-all duration-500 ease-out select-none pointer-events-none relative z-1 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
             referrerPolicy="no-referrer"
+            loading={priority ? 'eager' : 'lazy'}
+            decoding="async"
           />
         ) : !post.imageUrl ? (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-tr from-neutral-800 to-neutral-900 text-neutral-400">
@@ -215,6 +212,12 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
         {/* Multi-Image Pinterest Slider Controls on Card */}
         {isMultiple && (
           <>
+            {/* Multiple Photos Badge Indicator (e.g. 1/4) */}
+            <div className="absolute top-2.5 right-2.5 z-20 px-2 py-0.5 rounded-full bg-black/75 backdrop-blur-md text-white text-[10px] font-bold shadow-md border border-white/10 flex items-center gap-1 pointer-events-none">
+              <Layers className="w-3 h-3 text-white/80" />
+              <span>{activeImageIndex + 1}/{allImages.length}</span>
+            </div>
+
             {/* Left Chevron Arrow on card hover */}
             <button
               type="button"

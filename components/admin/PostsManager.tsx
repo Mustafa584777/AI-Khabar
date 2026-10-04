@@ -277,10 +277,11 @@ export const PostsManager = () => {
                         <div className="flex items-center gap-3">
                           {post.imageUrl && (
                             <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-neutral-900 shrink-0 border border-neutral-200 dark:border-neutral-800">
-                              <img
+                              <Image
                                 src={post.imageUrl}
                                 alt={post.title}
-                                className="w-full h-full object-cover"
+                                fill
+                                className="object-cover"
                                 referrerPolicy="no-referrer"
                               />
                             </div>

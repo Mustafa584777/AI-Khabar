@@ -46,7 +46,7 @@ export const Header = () => {
       setUnreadNotifs(list.filter((n) => !n.read).length);
     };
     update();
-    const timer = setInterval(update, 30000);
+    const timer = setInterval(update, 8000);
     return () => clearInterval(timer);
   }, []);
 

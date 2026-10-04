@@ -1771,8 +1771,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (isSavingRef.current) return;
     try {
       // Fetch posts independently and quickly for fast initial render
-      const postsUrl = isAuthenticated ? '/api/posts?all=true' : '/api/posts';
-      const fetchPosts = fetch(postsUrl, { cache: isAuthenticated ? 'no-store' : 'default' })
+      const fetchPosts = fetch('/api/posts?all=true', { cache: 'no-store' })
         .then(async (res) => {
           if (res.ok && !isSavingRef.current) {
             const data = await res.json();
@@ -1797,7 +1796,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         })
         .finally(() => setIsLoadingPosts(false));
 
-      const fetchCats = fetch('/api/categories')
+      const fetchCats = fetch('/api/categories', { cache: 'no-store' })
         .then(async (res) => {
           if (res.ok) {
             const data = await res.json();
@@ -1811,7 +1810,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           console.warn('Network sync categories notice (using cache):', err?.message || err);
         });
 
-      const fetchTags = fetch('/api/tags')
+      const fetchTags = fetch('/api/tags', { cache: 'no-store' })
         .then(async (res) => {
           if (res.ok) {
             const data = await res.json();
@@ -1825,7 +1824,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           console.warn('Network sync tags notice (using cache):', err?.message || err);
         });
 
-      const fetchSettings = fetch('/api/settings')
+      const fetchSettings = fetch('/api/settings', { cache: 'no-store' })
         .then(async (res) => {
           if (res.ok) {
             const data = await res.json();
