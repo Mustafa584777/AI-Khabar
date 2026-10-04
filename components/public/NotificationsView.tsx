@@ -85,7 +85,7 @@ export const NotificationsView: React.FC = () => {
       // Immediate real browser notification popup with sound chime
       await NotificationService.showNativeNotification({
         id: `notif-welcome-${Date.now()}`,
-        title: 'tool.reelz: Trending Photo Prompts',
+        title: 'zeenaprompt.com: Trending Photo Prompts',
         subtitle: 'Browser Push Notifications Active! 🔔',
         body: 'You are now ready! Whenever trending prompts drop in your chosen categories, you will receive native alerts directly.',
         category: 'all',
@@ -106,7 +106,7 @@ export const NotificationsView: React.FC = () => {
 
     const success = await NotificationService.showNativeNotification({
       id: `notif-test-${Date.now()}`,
-      title: 'tool.reelz: Trending AI Photo Prompts',
+      title: 'zeenaprompt.com: Trending AI Photo Prompts',
       subtitle: 'Instant Browser Push Test 🔔',
       body: 'Live browser notification popup is working perfectly on your device!',
       category: 'all',

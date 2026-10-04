@@ -108,7 +108,7 @@ export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps>
           <div className="w-8 h-8 rounded-full overflow-hidden shadow-xs shrink-0 select-none bg-neutral-100 dark:bg-neutral-800 relative border border-neutral-200 dark:border-neutral-700">
             <Image
               src="/logo.png"
-              alt="tool.reelz"
+              alt="zeenaprompt.com"
               width={32}
               height={32}
               className="w-full h-full object-cover"
@@ -116,7 +116,7 @@ export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps>
           </div>
 
           <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400 font-medium">
-            <span className="font-bold text-neutral-800 dark:text-neutral-200">tool.reelz</span>
+            <span className="font-bold text-neutral-800 dark:text-neutral-200">zeenaprompt.com</span>
             <span>•</span>
             <span>{timeAgo}</span>
             <Bell className="w-3 h-3 text-neutral-400 fill-neutral-400" />

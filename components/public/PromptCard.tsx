@@ -45,14 +45,40 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   const [isHovered, setIsHovered] = useState(false);
   const isMultiple = allImages.length > 1;
 
-  // Auto-slide images infinitely when multiple images exist
+  // Individual natural duration between 1.0s and 1.3s (1000ms, 1100ms, 1200ms, 1300ms)
+  const slideInterval = React.useMemo(() => {
+    const durations = [1000, 1100, 1200, 1300];
+    if (!post.id) {
+      return durations[Math.floor(Math.random() * durations.length)];
+    }
+    let hash = 0;
+    for (let i = 0; i < post.id.length; i++) {
+      hash = (hash << 5) - hash + post.id.charCodeAt(i);
+      hash |= 0;
+    }
+    return durations[Math.abs(hash) % durations.length];
+  }, [post.id]);
+
+  // Auto-slide images infinitely when multiple images exist with natural asynchronous stagger
   useEffect(() => {
-    if (!isMultiple) return;
-    const timer = setInterval(() => {
-      setActiveImageIndex((prev) => (prev < allImages.length - 1 ? prev + 1 : 0));
-    }, 3000);
-    return () => clearInterval(timer);
-  }, [isMultiple, allImages.length]);
+    if (!isMultiple || !inView) return;
+
+    // Stagger start time slightly so cards with the same interval don't slide simultaneously
+    const charCode = post.id ? post.id.charCodeAt(post.id.length - 1) : 0;
+    const initialOffset = (charCode % 6) * 120; // 0ms to 600ms stagger
+
+    let intervalId: NodeJS.Timeout | null = null;
+    const timeoutId = setTimeout(() => {
+      intervalId = setInterval(() => {
+        setActiveImageIndex((prev) => (prev < allImages.length - 1 ? prev + 1 : 0));
+      }, slideInterval);
+    }, initialOffset);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isMultiple, inView, allImages.length, slideInterval, post.id]);
 
   const isBookmarked = bookmarkedIds.includes(post.id);
   const isUnlocked = isPromptUnlocked(post.id, post.isPremium);
@@ -167,7 +193,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
 
         {inView && isMultiple ? (
           <div
-            className="absolute inset-0 flex transition-transform duration-700 ease-in-out will-change-transform"
+            className="absolute inset-0 flex transition-transform duration-500 ease-out will-change-transform"
             style={{ transform: `translateX(-${activeImageIndex * 100}%)` }}
           >
             {allImages.map((imgUrl, idx) => (
