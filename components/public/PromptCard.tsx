@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { PromptPost } from '@/types/prompt';
 import { useApp } from '@/context/AppContext';
 import Image from 'next/image';
-import { Sparkles, Bookmark, Crown, ChevronLeft, ChevronRight, Layers } from 'lucide-react';
+import { Sparkles, Bookmark, Crown, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Layers } from 'lucide-react';
 import { getPromptSlug, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription } from '@/lib/utils';
 
 export const PromptCard = ({ post, priority = false }: { post: PromptPost; priority?: boolean }) => {
@@ -45,9 +45,33 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   const [isHovered, setIsHovered] = useState(false);
   const isMultiple = allImages.length > 1;
 
-  // Individual natural duration between 2.2s and 2.5s (2200ms, 2300ms, 2400ms, 2500ms)
+  // Selected prompt cards (~40%) slide vertically top-to-bottom, rest slide horizontally
+  const isVerticalSlide = React.useMemo(() => {
+    if (!post.id) return false;
+    let hash = 0;
+    for (let i = 0; i < post.id.length; i++) {
+      hash = (hash << 5) - hash + post.id.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash) % 5 < 2; // 40% vertical top-to-bottom
+  }, [post.id]);
+
+  // In vertical top-to-bottom mode, render reverse order in DOM so that +100% translation steps slide from top to bottom
+  const displayImages = React.useMemo(() => {
+    if (isVerticalSlide) {
+      return [...allImages].reverse();
+    }
+    return allImages;
+  }, [allImages, isVerticalSlide]);
+
+  const translateYPercent = React.useMemo(() => {
+    if (!isVerticalSlide || allImages.length === 0) return 0;
+    return -((allImages.length - 1 - activeImageIndex) * 100);
+  }, [isVerticalSlide, allImages.length, activeImageIndex]);
+
+  // Individual natural duration: 2.6s, 2.7s, 2.8s, 3.0s (2600ms, 2700ms, 2800ms, 3000ms)
   const slideInterval = React.useMemo(() => {
-    const durations = [2200, 2300, 2400, 2500];
+    const durations = [2600, 2700, 2800, 3000];
     if (!post.id) {
       return durations[Math.floor(Math.random() * durations.length)];
     }
@@ -65,7 +89,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
 
     // Stagger start time slightly so cards with the same interval don't slide simultaneously
     const charCode = post.id ? post.id.charCodeAt(post.id.length - 1) : 0;
-    const initialOffset = (charCode % 8) * 180; // 0ms to 1260ms stagger
+    const initialOffset = (charCode % 8) * 200; // 0ms to 1400ms stagger
 
     let intervalId: NodeJS.Timeout | null = null;
     const timeoutId = setTimeout(() => {
@@ -193,10 +217,16 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
 
         {inView && isMultiple ? (
           <div
-            className="absolute inset-0 flex transition-transform duration-700 ease-in-out will-change-transform"
-            style={{ transform: `translateX(-${activeImageIndex * 100}%)` }}
+            className={`absolute inset-0 flex ${
+              isVerticalSlide ? 'flex-col' : 'flex-row'
+            } transition-transform duration-700 ease-in-out will-change-transform`}
+            style={{
+              transform: isVerticalSlide
+                ? `translateY(${translateYPercent}%)`
+                : `translateX(-${activeImageIndex * 100}%)`,
+            }}
           >
-            {allImages.map((imgUrl, idx) => (
+            {displayImages.map((imgUrl, idx) => (
               <div key={idx} className="w-full h-full shrink-0 relative overflow-hidden bg-neutral-900">
                 <img
                   src={getOptimizedImageUrl(imgUrl, 500)}
@@ -268,49 +298,99 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
         {/* Multi-Image Pinterest Slider Controls on Card */}
         {isMultiple && (
           <>
-            {/* Left Chevron Arrow on card hover */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setActiveImageIndex((prev) => (prev > 0 ? prev - 1 : allImages.length - 1));
-              }}
-              className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/95 dark:bg-black/90 hover:bg-white text-neutral-900 dark:text-white shadow-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 active:scale-95 cursor-pointer border border-neutral-200/50"
-              title="Previous photo"
-              aria-label="Previous photo"
-            >
-              <ChevronLeft className="w-4 h-4 -translate-x-0.5" />
-            </button>
+            {isVerticalSlide ? (
+              <>
+                {/* Up Chevron Arrow on card hover (Previous photo) */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setActiveImageIndex((prev) => (prev > 0 ? prev - 1 : allImages.length - 1));
+                  }}
+                  className="absolute top-2.5 left-1/2 -translate-x-1/2 z-20 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/95 dark:bg-black/90 hover:bg-white text-neutral-900 dark:text-white shadow-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 active:scale-95 cursor-pointer border border-neutral-200/50"
+                  title="Previous photo"
+                  aria-label="Previous photo"
+                >
+                  <ChevronUp className="w-4 h-4 -translate-y-0.5" />
+                </button>
 
-            {/* Right Chevron Arrow on card hover */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setActiveImageIndex((prev) => (prev < allImages.length - 1 ? prev + 1 : 0));
-              }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/95 dark:bg-black/90 hover:bg-white text-neutral-900 dark:text-white shadow-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 active:scale-95 cursor-pointer border border-neutral-200/50"
-              title="Next photo"
-              aria-label="Next photo"
-            >
-              <ChevronRight className="w-4 h-4 translate-x-0.5" />
-            </button>
+                {/* Down Chevron Arrow on card hover (Next photo) */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setActiveImageIndex((prev) => (prev < allImages.length - 1 ? prev + 1 : 0));
+                  }}
+                  className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-20 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/95 dark:bg-black/90 hover:bg-white text-neutral-900 dark:text-white shadow-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 active:scale-95 cursor-pointer border border-neutral-200/50"
+                  title="Next photo"
+                  aria-label="Next photo"
+                >
+                  <ChevronDown className="w-4 h-4 translate-y-0.5" />
+                </button>
 
-            {/* Pinterest Dot Indicators at bottom */}
-            <div className="absolute bottom-2.5 inset-x-0 flex items-center justify-center gap-1.5 z-20 pointer-events-none">
-              {allImages.map((_, idx) => (
-                <span
-                  key={idx}
-                  className={`transition-all duration-300 rounded-full ${
-                    idx === activeImageIndex
-                      ? 'w-4 h-1.5 bg-white shadow-md'
-                      : 'w-1.5 h-1.5 bg-white/60'
-                  }`}
-                />
-              ))}
-            </div>
+                {/* Vertical Dot Indicators on right edge */}
+                <div className="absolute right-2.5 inset-y-0 flex flex-col items-center justify-center gap-1.5 z-20 pointer-events-none">
+                  {allImages.map((_, idx) => (
+                    <span
+                      key={idx}
+                      className={`transition-all duration-300 rounded-full ${
+                        idx === activeImageIndex
+                          ? 'h-3.5 w-1 bg-white shadow-md'
+                          : 'w-1 h-1 bg-white/60'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Left Chevron Arrow on card hover */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setActiveImageIndex((prev) => (prev > 0 ? prev - 1 : allImages.length - 1));
+                  }}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/95 dark:bg-black/90 hover:bg-white text-neutral-900 dark:text-white shadow-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 active:scale-95 cursor-pointer border border-neutral-200/50"
+                  title="Previous photo"
+                  aria-label="Previous photo"
+                >
+                  <ChevronLeft className="w-4 h-4 -translate-x-0.5" />
+                </button>
+
+                {/* Right Chevron Arrow on card hover */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setActiveImageIndex((prev) => (prev < allImages.length - 1 ? prev + 1 : 0));
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/95 dark:bg-black/90 hover:bg-white text-neutral-900 dark:text-white shadow-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 active:scale-95 cursor-pointer border border-neutral-200/50"
+                  title="Next photo"
+                  aria-label="Next photo"
+                >
+                  <ChevronRight className="w-4 h-4 translate-x-0.5" />
+                </button>
+
+                {/* Pinterest Dot Indicators at bottom */}
+                <div className="absolute bottom-2.5 inset-x-0 flex items-center justify-center gap-1.5 z-20 pointer-events-none">
+                  {allImages.map((_, idx) => (
+                    <span
+                      key={idx}
+                      className={`transition-all duration-300 rounded-full ${
+                        idx === activeImageIndex
+                          ? 'w-4 h-1.5 bg-white shadow-md'
+                          : 'w-1.5 h-1.5 bg-white/60'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </>
         )}
       </a>
