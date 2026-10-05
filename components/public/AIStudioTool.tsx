@@ -23,6 +23,7 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PromptEditorTool } from '@/components/public/PromptEditorTool';
+import { ensureAspectRatio34 } from '@/lib/utils';
 
 const SAMPLE_IMAGES_FALLBACK = [
   {
@@ -316,8 +317,17 @@ export const AIStudioTool = () => {
 
       const json = await res.json();
       if (json.success && json.data) {
+        const rawPrompt = json.data.promptText || json.data.prompt || '';
+        const finalPrompt = ensureAspectRatio34(rawPrompt);
+        const preparedData: ExtractedPromptData = {
+          ...json.data,
+          promptText: finalPrompt,
+          prompt: finalPrompt,
+          aspectRatio: '3:4',
+          aspect_ratio: '3:4',
+        };
         deductToolCredit(IMAGE_TO_PROMPT_COST);
-        setExtractedData(json.data);
+        setExtractedData(preparedData);
         showToast(`Prompt reverse-engineered! 2 credits used (${Math.max(0, toolCredits - IMAGE_TO_PROMPT_COST)} left)`);
       } else {
         showToast(json.error || 'Failed to extract prompt from image');
@@ -328,6 +338,41 @@ export const AIStudioTool = () => {
     } finally {
       setIsExtractingPrompt(false);
     }
+  };
+
+  const getBreakdownAsPrompt = () => {
+    if (!extractedData) return '';
+    const a = extractedData.analysis || {};
+
+    const breakdownItems = [
+      { label: 'Subject & Presentation', value: a.subject },
+      { label: 'Pose & Body Language', value: a.pose },
+      { label: 'Composition & Framing', value: a.composition || extractedData.composition },
+      { label: 'Camera & Optical Physics', value: a.camera || extractedData.camera },
+      { label: 'Lighting Dynamics', value: a.lighting || extractedData.lighting },
+      { label: 'Color Grading & Palette', value: a.color_grading || extractedData.colorPalette },
+    ];
+
+    const clauses = breakdownItems
+      .filter((item) => item.value && typeof item.value === 'string' && item.value.trim().length > 0)
+      .map((item) => {
+        // Strip any list numbers (like "1. ", "2. ", "1.", etc.) from the text
+        let cleanVal = item.value!.trim().replace(/^\d+[\.\)\:\-]\s*/, '').trim();
+        cleanVal = cleanVal.replace(/[,.:\s]+$/, '');
+        return `${item.label}: ${cleanVal}`;
+      });
+
+    if (clauses.length === 0) {
+      return ensureAspectRatio34(extractedData.promptText || '');
+    }
+
+    return ensureAspectRatio34(clauses.join('. '));
+  };
+
+  const handleCopyBreakdownPrompt = () => {
+    const prompt = getBreakdownAsPrompt();
+    if (!prompt) return;
+    copyToClipboard(prompt, 'breakdown-prompt', 'Breakdown copied as prompt (without list numbers)!');
   };
 
   const handleEditPromptInEditor = (text: string) => {
@@ -818,10 +863,46 @@ export const AIStudioTool = () => {
 
                   {/* Detailed Photographic Breakdown */}
                   <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
-                    <h4 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                      <Camera className="w-4 h-4 text-[#E60023]" />
-                      <span>Detailed Photographic & Visual Breakdown</span>
-                    </h4>
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <h4 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                        <Camera className="w-4 h-4 text-[#E60023]" />
+                        <span>Detailed Photographic & Visual Breakdown</span>
+                      </h4>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const prompt = getBreakdownAsPrompt();
+                            handleEditPromptInEditor(prompt);
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-semibold transition-all flex items-center gap-1 border border-neutral-200 dark:border-neutral-700 shadow-xs active:scale-95"
+                          title="Edit breakdown prompt in Prompt Editor"
+                        >
+                          <Edit3 className="w-3.5 h-3.5 text-red-500" />
+                          <span>Edit</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleCopyBreakdownPrompt}
+                          className="px-3.5 py-1.5 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs active:scale-95"
+                          title="Copy visual breakdown text as an AI prompt without list numbers"
+                        >
+                          {copiedKey === 'breakdown-prompt' ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-white" />
+                              <span>Copied as Prompt!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5 text-white" />
+                              <span>Copy as Prompt</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                       <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-1">

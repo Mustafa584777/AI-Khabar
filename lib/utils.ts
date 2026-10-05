@@ -113,5 +113,19 @@ export function detectPostAspectRatio(post: {
   return '3 / 4';
 }
 
+/**
+ * Appends 'aspect ratio 3:4' by default to an AI generation prompt,
+ * removing any redundant or previous aspect ratio flags.
+ */
+export function ensureAspectRatio34(text: string): string {
+  let clean = (text || '').trim();
+  // Strip existing aspect ratio flags if present
+  clean = clean.replace(/--ar\s+[0-9]+:[0-9]+/gi, '').trim();
+  clean = clean.replace(/(,\s*)?aspect\s*ratio\s*:?\s*[0-9]+:[0-9]+/gi, '').trim();
+  // Remove any trailing commas, periods, colons or whitespace
+  clean = clean.replace(/[,.:\s]+$/, '').trim();
+  return clean ? `${clean}, aspect ratio 3:4` : 'aspect ratio 3:4';
+}
+
 export * from './tag-utils';
 

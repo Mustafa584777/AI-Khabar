@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
+import { ensureAspectRatio34 } from '@/lib/utils';
 
 const IMAGE_TO_PROMPT_SYSTEM_INSTRUCTION = `You are an elite expert image-to-prompt reconstruction engine, professional photographer, cinematographer, art director, and fashion stylist simultaneously.
 
@@ -21,7 +22,7 @@ MASTER VISUAL REFERENCE STRUCTURE FOR THE PROMPT:
 11. IMAGE TEXTURE & PHOTOGRAPHIC CHARACTER: Film grain, sensor noise, organic texture, raw realism.
 
 OUTPUT FORMAT:
-Return ONLY valid JSON matching the required schema with a masterfully written, highly comprehensive detailed prompt string in the "prompt" field.`;
+Return ONLY valid JSON matching the required schema with a masterfully written, highly comprehensive detailed prompt string in the "prompt" field. The prompt MUST always specify and end with ", aspect ratio 3:4".`;
 
 async function generateWithModel(ai: GoogleGenAI, preferredModel: string | undefined, payload: any) {
   const candidateModels = [
@@ -72,12 +73,12 @@ function generateLocalImageToPrompt(customInstructionsOrStyle?: string) {
       effects: 'Natural optical depth blur, subtle organic grain, crisp in-focus subject without digital over-sharpening',
       text_and_layout: 'None visible',
     },
-    prompt: `Masterful realistic photograph of the subject with authentic physical presence. Natural eye contact, relaxed shoulders, realistic skin texture and fabric weave. Shot with natural portrait lens perspective, soft balanced key and fill lighting, shallow depth of field, natural color grade and true black levels${customRules} --ar 16:9 --v 6.1 --style raw`,
-    promptText: `Masterful realistic photograph of the subject with authentic physical presence. Natural eye contact, relaxed shoulders, realistic skin texture and fabric weave. Shot with natural portrait lens perspective, soft balanced key and fill lighting, shallow depth of field, natural color grade and true black levels${customRules} --ar 16:9 --v 6.1 --style raw`,
+    prompt: `Masterful realistic photograph of the subject with authentic physical presence. Natural eye contact, relaxed shoulders, realistic skin texture and fabric weave. Shot with natural portrait lens perspective, soft balanced key and fill lighting, shallow depth of field, natural color grade and true black levels${customRules}, aspect ratio 3:4`,
+    promptText: `Masterful realistic photograph of the subject with authentic physical presence. Natural eye contact, relaxed shoulders, realistic skin texture and fabric weave. Shot with natural portrait lens perspective, soft balanced key and fill lighting, shallow depth of field, natural color grade and true black levels${customRules}, aspect ratio 3:4`,
     negative_prompt: 'cartoon, anime, CGI, plastic skin, altered face, distorted anatomy, extra fingers, extra limbs, unrealistic hands, incorrect object geometry, unnatural shadows, excessive blur, oversaturation, watermark',
     negativePrompt: 'cartoon, anime, CGI, plastic skin, altered face, distorted anatomy, extra fingers, extra limbs, unrealistic hands, incorrect object geometry, unnatural shadows, excessive blur, oversaturation, watermark',
-    aspect_ratio: '16:9',
-    aspectRatio: '16:9',
+    aspect_ratio: '3:4',
+    aspectRatio: '3:4',
     confidence: 'high',
     camera: 'Full-frame sensor with 85mm portrait lens',
     lighting: 'Soft directional key light with subtle rim highlights',
@@ -356,12 +357,17 @@ Return the final response strictly conforming to the required JSON schema.`;
 
         const parsed = JSON.parse(response.text || '{}');
         
+        const rawPrompt = parsed.prompt || parsed.promptText || '';
+        const finalPrompt = ensureAspectRatio34(rawPrompt);
+
         // Normalize fields so all UI bindings and new schemas work seamlessly
         const normalizedData = {
           ...parsed,
-          promptText: parsed.prompt || parsed.promptText || '',
+          prompt: finalPrompt,
+          promptText: finalPrompt,
           negativePrompt: parsed.negative_prompt || parsed.negativePrompt || '',
-          aspectRatio: parsed.aspect_ratio || parsed.aspectRatio || '16:9',
+          aspectRatio: '3:4',
+          aspect_ratio: '3:4',
           camera: parsed.analysis?.camera || parsed.camera || '',
           lighting: parsed.analysis?.lighting || parsed.lighting || '',
           composition: parsed.analysis?.composition || parsed.composition || '',
