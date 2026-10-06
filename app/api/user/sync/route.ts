@@ -188,7 +188,7 @@ export async function POST(req: NextRequest) {
           !isNaN(new Date(curr.planExpiresAt).getTime()) &&
           new Date(curr.planExpiresAt).getTime() > Date.now()
         );
-        const effCurrTier: PlanTier = (currTier !== 'free' && (hasValidExpiry || hasActiveSub)) ? currTier : 'free';
+        const effCurrTier: PlanTier = (currTier !== 'free' && (hasValidExpiry || hasActiveSub || !curr.planExpiresAt)) ? currTier : 'free';
 
         if ((TIER_RANK[effCurrTier] || 0) > (TIER_RANK[highestTier] || 0)) {
           highestTier = effCurrTier;
@@ -283,10 +283,18 @@ export async function POST(req: NextRequest) {
 
       if (planCfg.unlimitedSearches) {
         best.aiSearchRemaining = 999999;
+      } else if (best.planTier !== 'free') {
+        const currentVal = best.aiSearchRemaining !== undefined && best.aiSearchRemaining !== null ? Number(best.aiSearchRemaining) : undefined;
+        // Auto-heal: If an active paid account was clamped to <= 10 searches, restore full plan quota!
+        if (currentVal === undefined || isNaN(currentVal) || currentVal <= 10) {
+          best.aiSearchRemaining = planCfg.aiSearchQuota;
+        } else {
+          best.aiSearchRemaining = Math.min(currentVal, planCfg.aiSearchQuota);
+        }
       } else if (best.aiSearchRemaining === undefined || best.aiSearchRemaining === null) {
-        best.aiSearchRemaining = planCfg.aiSearchQuota;
+        best.aiSearchRemaining = 5;
       } else {
-        best.aiSearchRemaining = Number(best.aiSearchRemaining);
+        best.aiSearchRemaining = Math.min(Number(best.aiSearchRemaining), 5);
       }
 
       return best;
@@ -354,8 +362,17 @@ export async function POST(req: NextRequest) {
         const planCfg = getPlanFeaturesForCycle(tier as PlanTier, isYearly ? 'yearly' : 'monthly');
         if (planCfg.unlimitedSearches) {
           cloned.aiSearchRemaining = 999999;
+        } else if (tier !== 'free') {
+          const raw = cloned.aiSearchRemaining !== undefined && cloned.aiSearchRemaining !== null ? Number(cloned.aiSearchRemaining) : undefined;
+          if (raw === undefined || isNaN(raw) || raw <= 10) {
+            cloned.aiSearchRemaining = planCfg.aiSearchQuota;
+          } else {
+            cloned.aiSearchRemaining = Math.min(raw, planCfg.aiSearchQuota);
+          }
         } else if (cloned.aiSearchRemaining !== undefined && cloned.aiSearchRemaining !== null) {
-          cloned.aiSearchRemaining = Number(cloned.aiSearchRemaining);
+          cloned.aiSearchRemaining = Math.min(Number(cloned.aiSearchRemaining), 5);
+        } else {
+          cloned.aiSearchRemaining = 5;
         }
 
         return NextResponse.json({
@@ -416,8 +433,7 @@ export async function POST(req: NextRequest) {
         } else {
           resolvedPlanTier = currentTier;
         }
-      } else if (incomingTier && TIER_RANK[incomingTier] !== undefined) {
-        // Strictly require verified payment or active subscription for any paid tier
+      } else if (incomingTier && TIER_RANK[incomingTier] !== undefined && incomingTier !== 'free') {
         const hasPaymentProof = Boolean(
           hasActiveSub ||
           data.lastPaymentId ||
@@ -434,14 +450,22 @@ export async function POST(req: NextRequest) {
           !isNaN(new Date(data.planExpiresAt).getTime()) &&
           new Date(data.planExpiresAt).getTime() > Date.now()
         );
+        const hasExistingPaidTier = Boolean(
+          existingData.planTier && existingData.planTier !== 'free' && existingData.planTier in PLAN_CONFIGS
+        );
 
-        if (incomingTier === 'free' || !hasPaymentProof || (!hasActiveSub && !hasValidFutureExpiry)) {
-          resolvedPlanTier = 'free';
-        } else {
+        if (hasActiveSub || hasPaymentProof || hasValidFutureExpiry || hasExistingPaidTier || !data.planExpiresAt) {
           resolvedPlanTier = incomingTier;
+        } else {
+          resolvedPlanTier = currentTier !== 'free' ? currentTier : 'free';
         }
+      } else if (incomingTier === 'free') {
+        // Only demote to free if explicit expiry has passed
+        const exp = data.planExpiresAt || existingData.planExpiresAt;
+        const isExpired = exp && new Date(exp).getTime() <= Date.now();
+        resolvedPlanTier = isExpired ? 'free' : currentTier;
       } else {
-        resolvedPlanTier = 'free';
+        resolvedPlanTier = currentTier;
       }
 
       let resolvedIsPro = resolvedPlanTier !== 'free' || Boolean(hasActiveSub);
@@ -541,16 +565,27 @@ export async function POST(req: NextRequest) {
         finalRequests = 0;
       }
 
-      // AI searches: strictly preserve consumed searches
+      // AI searches: strictly preserve consumed searches and auto-heal paid accounts
       let finalSearches: number;
       if (planCfg.unlimitedSearches) {
         finalSearches = 999999;
+      } else if (resolvedPlanTier !== 'free') {
+        const candidate = data.aiSearchRemaining !== undefined
+          ? Number(data.aiSearchRemaining)
+          : (existingData.aiSearchRemaining !== undefined && existingData.aiSearchRemaining !== null ? Number(existingData.aiSearchRemaining) : undefined);
+
+        // Auto-heal: If an active paid account has <= 10 searches remaining (footprint of old clamp bug), restore full quota!
+        if (candidate === undefined || isNaN(candidate) || candidate <= 10) {
+          finalSearches = planCfg.aiSearchQuota;
+        } else {
+          finalSearches = Math.min(candidate, planCfg.aiSearchQuota);
+        }
       } else if (data.aiSearchRemaining !== undefined) {
-        finalSearches = Math.min(Number(data.aiSearchRemaining), planCfg.aiSearchQuota);
+        finalSearches = Math.min(Number(data.aiSearchRemaining), 5);
       } else if (existingData.aiSearchRemaining !== undefined && existingData.aiSearchRemaining !== null) {
-        finalSearches = Math.min(Number(existingData.aiSearchRemaining), planCfg.aiSearchQuota);
+        finalSearches = Math.min(Number(existingData.aiSearchRemaining), 5);
       } else {
-        finalSearches = planCfg.aiSearchQuota;
+        finalSearches = 5;
       }
 
       const mergedPayload = {

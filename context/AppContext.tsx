@@ -980,9 +980,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('auraprompt_prompt_requests', String(resolvedRequests));
       }
 
-      const resolvedSearches = synced.aiSearchRemaining !== undefined
-        ? synced.aiSearchRemaining
-        : (resolvedTier === 'free' ? 5 : cycleCfg.aiSearchQuota || 5);
+      const isPaidTier = resolvedTier !== 'free' || synced.isProUser === true;
+      const targetQuota = cycleCfg.unlimitedSearches ? 999999 : (cycleCfg.aiSearchQuota || 5);
+      let resolvedSearches: number;
+      if (isPaidTier) {
+        const rawSearches = synced.aiSearchRemaining !== undefined ? Number(synced.aiSearchRemaining) : targetQuota;
+        // Auto-heal: If an active paid plan had searches erroneously clamped to <= 10, restore to full plan quota!
+        resolvedSearches = (!isNaN(rawSearches) && rawSearches > 10) ? Math.min(rawSearches, targetQuota) : targetQuota;
+      } else {
+        resolvedSearches = synced.aiSearchRemaining !== undefined ? Math.min(Number(synced.aiSearchRemaining), 5) : 5;
+      }
       setAiSearchRemainingState(resolvedSearches);
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_ai_search_remaining', String(resolvedSearches));
@@ -1064,9 +1071,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         : (PLAN_CONFIGS[resolvedTier]?.promptRequests || 0);
       setPromptRequestsRemainingState(resolvedRequests);
 
-      const resolvedSearches = synced.aiSearchRemaining !== undefined
-        ? synced.aiSearchRemaining
-        : (PLAN_CONFIGS[resolvedTier]?.aiSearchQuota || 5);
+      const isPaidTierAcc = resolvedTier !== 'free' || synced.isProUser === true;
+      const targetQuotaAcc = PLAN_CONFIGS[resolvedTier]?.unlimitedSearches ? 999999 : (PLAN_CONFIGS[resolvedTier]?.aiSearchQuota || 100);
+      let resolvedSearches: number;
+      if (isPaidTierAcc) {
+        const raw = synced.aiSearchRemaining !== undefined ? Number(synced.aiSearchRemaining) : targetQuotaAcc;
+        resolvedSearches = (!isNaN(raw) && raw > 10) ? Math.min(raw, targetQuotaAcc) : targetQuotaAcc;
+      } else {
+        resolvedSearches = synced.aiSearchRemaining !== undefined ? Math.min(Number(synced.aiSearchRemaining), 5) : 5;
+      }
       setAiSearchRemainingState(resolvedSearches);
 
       setUnlockedPromptIds(synced.unlockedPromptIds || []);
@@ -1391,7 +1404,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           resolvedCredits = 5;
         }
         let resolvedReqs = synced.promptRequestsRemaining !== undefined ? Number(synced.promptRequestsRemaining) : 0;
-        let resolvedAiSearchCount = synced.aiSearchRemaining !== undefined ? Number(synced.aiSearchRemaining) : 10;
+        let resolvedAiSearchCount = synced.aiSearchRemaining !== undefined ? Number(synced.aiSearchRemaining) : (finalTier !== 'free' ? 200 : 5);
         let resolvedSavesLimitCount = 10;
 
         if (isExpiredNow) {
@@ -1431,8 +1444,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           if (resolvedReqs <= 0 && userSubmittedCount < planCfg.promptRequests) {
             resolvedReqs = Math.max(0, planCfg.promptRequests - userSubmittedCount);
           }
+          // Auto-heal: If an active paid account has <= 10 AI searches remaining (from earlier clamp bug), restore to full plan quota!
+          const targetQuota = planCfg.unlimitedSearches ? 999999 : planCfg.aiSearchQuota;
+          if (resolvedAiSearchCount <= 10) {
+            resolvedAiSearchCount = targetQuota;
+          } else {
+            resolvedAiSearchCount = Math.min(resolvedAiSearchCount, targetQuota);
+          }
         } else {
           resolvedReqs = 0;
+          resolvedAiSearchCount = Math.min(resolvedAiSearchCount, 5);
         }
 
         // Tool credits: respect exact consumed balance (Rule 2: unused credits never expire or overwrite)
@@ -1628,16 +1649,31 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const [aiSearchRemaining, setAiSearchRemainingState] = useState<number>(() => {
     if (typeof window !== 'undefined') {
-      const tier = (localStorage.getItem('auraprompt_plan_tier') as PlanTier) || 'free';
-      const planCfg = PLAN_CONFIGS[tier] || PLAN_CONFIGS.free;
+      const savedTier = localStorage.getItem('auraprompt_plan_tier') as PlanTier;
+      const acc = StorageService.getUserAccount();
+      const isProMember = localStorage.getItem('auraprompt_pro_member') === 'true' || acc?.isProUser === true;
+      const effectiveTier: PlanTier = (savedTier && ['starter', 'pro', 'vip', 'ultra'].includes(savedTier))
+        ? savedTier
+        : (acc?.planTier && ['starter', 'pro', 'vip', 'ultra'].includes(acc.planTier))
+          ? acc.planTier
+          : (isProMember ? 'pro' : 'free');
+
+      const planCfg = PLAN_CONFIGS[effectiveTier] || PLAN_CONFIGS.free;
+      if (planCfg.unlimitedSearches) return 999999;
+
       const saved = localStorage.getItem('auraprompt_ai_search_remaining');
       if (saved !== null) {
         const parsed = parseInt(saved, 10);
         if (!isNaN(parsed) && parsed >= 0) {
-          return planCfg.unlimitedSearches ? 999999 : Math.min(parsed, planCfg.aiSearchQuota);
+          // If on a paid plan and parsed is <= 10 (clamped by earlier bug), auto-heal to full plan quota!
+          if (effectiveTier !== 'free') {
+            if (parsed <= 10) return planCfg.aiSearchQuota;
+            return Math.min(parsed, planCfg.aiSearchQuota);
+          }
+          return Math.min(parsed, 5);
         }
       }
-      return planCfg.unlimitedSearches ? 999999 : planCfg.aiSearchQuota;
+      return effectiveTier !== 'free' ? planCfg.aiSearchQuota : 5;
     }
     return 5; // 5 free AI searches lifetime for free users
   });
@@ -1715,7 +1751,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 localStorage.setItem('auraprompt_ai_search_remaining', next.toString());
               }
               if (acc && acc.isLoggedIn) {
-                void UserSyncService.pushUserData(acc.id, acc.email, { aiSearchRemaining: next });
+                void UserSyncService.pushUserData(acc.id, acc.email, {
+                  aiSearchRemaining: next,
+                  planTier: planTier,
+                  isProUser: isProUser,
+                  planExpiresAt: planExpiresAt || undefined,
+                });
               }
               if (next === 0) {
                 setIsAiSearchEnabledState(false);

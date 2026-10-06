@@ -78,14 +78,26 @@ export const UserSyncService = {
   ): Promise<boolean> => {
     if ((!userId && !email) || !data) return false;
 
-    // Attach active paid plan details from localStorage if not explicitly provided
+    // Attach active paid plan details from localStorage or user account if not explicitly provided
     const payload: Partial<UserSyncData> = { ...data };
     if (typeof window !== 'undefined') {
-      const savedTier = localStorage.getItem('auraprompt_plan_tier') as PlanTier;
+      let savedTier = localStorage.getItem('auraprompt_plan_tier') as PlanTier;
+      let acc: any = null;
+      try {
+        const rawAcc = localStorage.getItem('promptcms_user_account');
+        if (rawAcc) acc = JSON.parse(rawAcc);
+      } catch {}
+
+      if (!savedTier || savedTier === 'free') {
+        if (acc?.planTier && ['starter', 'pro', 'vip', 'ultra'].includes(acc.planTier)) {
+          savedTier = acc.planTier;
+        }
+      }
+
       const isPaid = savedTier && ['starter', 'pro', 'vip', 'ultra'].includes(savedTier);
-      const isProMember = localStorage.getItem('auraprompt_pro_member') === 'true' || isPaid;
-      const savedExpires = localStorage.getItem('auraprompt_plan_expires_at');
-      const savedStarted = localStorage.getItem('auraprompt_plan_started_at');
+      const isProMember = localStorage.getItem('auraprompt_pro_member') === 'true' || isPaid || Boolean(acc?.isProUser);
+      const savedExpires = localStorage.getItem('auraprompt_plan_expires_at') || acc?.planExpiresAt;
+      const savedStarted = localStorage.getItem('auraprompt_plan_started_at') || acc?.planStartedAt;
       const savedCredits = localStorage.getItem('auraprompt_tool_credits');
 
       if (isPaid && payload.planTier === undefined) {
@@ -382,12 +394,22 @@ export const UserSyncService = {
     let resolvedAiSearches: number;
     if (planCfg.unlimitedSearches) {
       resolvedAiSearches = 999999;
+    } else if (resolvedTier !== 'free') {
+      const remoteVal = remote.aiSearchRemaining !== undefined && remote.aiSearchRemaining !== null ? Number(remote.aiSearchRemaining) : undefined;
+      const localVal = localSearches !== undefined && localSearches !== null ? Number(localSearches) : undefined;
+      const candidate = remoteVal !== undefined ? remoteVal : localVal;
+      // Auto-heal if an active paid user was erroneously clamped to <= 10 searches:
+      if (candidate === undefined || isNaN(candidate) || candidate <= 10) {
+        resolvedAiSearches = planCfg.aiSearchQuota;
+      } else {
+        resolvedAiSearches = Math.min(candidate, planCfg.aiSearchQuota);
+      }
     } else if (remote.aiSearchRemaining !== undefined && remote.aiSearchRemaining !== null) {
-      resolvedAiSearches = Number(remote.aiSearchRemaining);
+      resolvedAiSearches = Math.min(Number(remote.aiSearchRemaining), 5);
     } else if (localSearches !== undefined && localSearches !== null) {
-      resolvedAiSearches = localSearches;
+      resolvedAiSearches = Math.min(localSearches, 5);
     } else {
-      resolvedAiSearches = resolvedTier !== 'free' ? planCfg.aiSearchQuota : PLAN_CONFIGS.free.aiSearchQuota;
+      resolvedAiSearches = 5;
     }
 
     // Non-destructive Union for Bookmarks, Liked IDs, and Unlocked Prompts (Never drop any saved item)

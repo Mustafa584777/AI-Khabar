@@ -250,11 +250,24 @@ export async function POST(req: NextRequest) {
       ? Number(cloned.promptRequestsRemaining)
       : (tier !== 'free' ? planCfg.promptRequests : 0);
 
-    let currentAiSearchRemaining = planCfg.unlimitedSearches
-      ? 999999
-      : (cloned.aiSearchRemaining !== undefined && cloned.aiSearchRemaining !== null
-          ? Number(cloned.aiSearchRemaining)
-          : planCfg.aiSearchQuota);
+    let currentAiSearchRemaining: number;
+    if (planCfg.unlimitedSearches) {
+      currentAiSearchRemaining = 999999;
+    } else if (tier !== 'free') {
+      const raw = cloned.aiSearchRemaining !== undefined && cloned.aiSearchRemaining !== null
+        ? Number(cloned.aiSearchRemaining)
+        : undefined;
+      // Auto-heal: If an active paid plan had searches erroneously clamped to <= 10, restore to full plan quota!
+      if (raw === undefined || isNaN(raw) || raw <= 10) {
+        currentAiSearchRemaining = planCfg.aiSearchQuota;
+      } else {
+        currentAiSearchRemaining = Math.min(raw, planCfg.aiSearchQuota);
+      }
+    } else {
+      currentAiSearchRemaining = cloned.aiSearchRemaining !== undefined && cloned.aiSearchRemaining !== null
+        ? Math.min(Number(cloned.aiSearchRemaining), 5)
+        : 5;
+    }
 
     return NextResponse.json({
       success: true,

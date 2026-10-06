@@ -1150,7 +1150,8 @@ export const ServerStorage = {
         !isNaN(new Date(curr.planExpiresAt).getTime()) &&
         new Date(curr.planExpiresAt).getTime() > Date.now()
       );
-      const isPaidCandidate = hasActiveSub || (hasPaymentProof && hasValidExpiry);
+      const hasPaidTier = Boolean(curr.planTier && curr.planTier !== 'free' && curr.planTier in PLAN_CONFIGS);
+      const isPaidCandidate = hasActiveSub || hasPaymentProof || (hasPaidTier && hasValidExpiry) || (hasPaidTier && !curr.planExpiresAt);
       const currTier = isPaidCandidate ? (curr.planTier || (curr.isProUser ? 'starter' : 'free')) : 'free';
       const effCurrTier = currTier;
 
@@ -1216,11 +1217,18 @@ export const ServerStorage = {
 
     if (planCfg.unlimitedSearches) {
       best.aiSearchRemaining = 999999;
+    } else if (best.planTier !== 'free') {
+      const currentVal = best.aiSearchRemaining !== undefined && best.aiSearchRemaining !== null ? Number(best.aiSearchRemaining) : undefined;
+      // Auto-heal: If an active paid account was clamped to <= 10 searches, restore full plan quota!
+      if (currentVal === undefined || isNaN(currentVal) || currentVal <= 10) {
+        best.aiSearchRemaining = planCfg.aiSearchQuota;
+      } else {
+        best.aiSearchRemaining = Math.min(currentVal, planCfg.aiSearchQuota);
+      }
     } else if (best.aiSearchRemaining === undefined || best.aiSearchRemaining === null) {
-      best.aiSearchRemaining = planCfg.aiSearchQuota;
+      best.aiSearchRemaining = 5;
     } else {
-      // Prevent overflow like 999/10 when not on an unlimited search plan
-      best.aiSearchRemaining = Math.min(Number(best.aiSearchRemaining), planCfg.aiSearchQuota);
+      best.aiSearchRemaining = Math.min(Number(best.aiSearchRemaining), 5);
     }
 
     return best;
