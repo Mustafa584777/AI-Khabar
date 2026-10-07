@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Home } from 'lucide-react';
 
 export default function NotFound() {
@@ -14,13 +15,13 @@ export default function NotFound() {
           The prompt, guide, or page you are looking for might have been moved or does not exist.
         </p>
         <div className="flex items-center justify-center gap-3 pt-2">
-          <a
+          <Link
             href="/"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad001a] text-white font-bold text-xs transition-colors"
           >
             <Home className="w-4 h-4" />
             <span>Go Home</span>
-          </a>
+          </Link>
         </div>
       </div>
     </div>

@@ -52,7 +52,7 @@ export const INITIAL_CATEGORIES: Category[] = [
     name: 'SEO & Copywriting',
     slug: 'seo-copywriting',
     iconName: 'FileText',
-    description: 'High-ranking content, viral marketing hooks, ad copies, and YouTube scripts',
+    description: 'High-ranking blog posts, viral marketing hooks, ad copies, and YouTube scripts',
     color: '#6366F1',
     badgeBg: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800',
   },
@@ -79,16 +79,18 @@ export const INITIAL_CATEGORIES: Category[] = [
 export const INITIAL_POSTS: PromptPost[] = (Array.isArray(defaultPostsData) ? defaultPostsData : []) as unknown as PromptPost[];
 
 export const INITIAL_SETTINGS: SiteSettings = {
-  siteName: 'Zeenaprompt',
+  siteName: 'Trending Copy Paste Photo Prompts',
   siteTagline: 'Free Copy-Paste AI Photo Prompts, Codes & Creative Guides',
-  siteUrl: 'https://zeenaprompt.com',
-  logoText: 'Zeenaprompt',
+  siteUrl: 'https://trendinggeminiprompts.com',
+  logoText: 'Trending Copy Paste Photo Prompts',
+  logoUrl: '/logo.png',
+  faviconUrl: '/favicon.ico',
   heroHeadline: 'Trending Copy Paste Photo Prompts',
   heroSubheadline: 'Explore curated photo prompts for Gemini, Midjourney and ChatGPT. Copy with 1 click.',
   defaultTool: 'Gemini',
   enableAiGenerator: true,
-  footerText: '© 2026 Zeenaprompt - Built for creators, designers & engineers. All prompts free to copy and commercial use.',
-  adminEmail: 'admin@zeenaprompt.com',
+  footerText: '© 2026 Trending Copy Paste Photo Prompts - Built for creators, designers & engineers. All prompts free to copy and commercial use.',
+  adminEmail: 'admin@trendinggeminiprompts.com',
   popularTags: [
     'Cinematic 8K',
     '3D Character',
@@ -98,4 +100,5 @@ export const INITIAL_SETTINGS: SiteSettings = {
     'Vintage 35mm',
     'Hyperrealistic',
   ],
+  geminiCustomInstructions: '',
 };

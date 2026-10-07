@@ -71,9 +71,7 @@ export async function POST(req: NextRequest) {
           item.content ||
           item.body ||
           item.description ||
-          item.title ||
-          item.name ||
-          `AI Prompt #${idx + 1}`
+          ''
         )
           .toString()
           .trim();
@@ -86,6 +84,8 @@ export async function POST(req: NextRequest) {
         )
           .toString()
           .trim();
+
+        if (!promptText && !title) return null;
 
         const id = (
           item.id ||
@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
           publishedAt: item.publishedAt || new Date().toISOString(),
         };
       })
-      .filter((p): p is any => p !== null);
+      .filter((p): p is any => p !== null && p.title.length > 0 && p.promptText.length > 0);
 
     if (!incomingPosts || incomingPosts.length === 0) {
       return NextResponse.json(
@@ -165,15 +165,6 @@ export async function POST(req: NextRequest) {
             // ignore
           }
         }
-      }
-    }
-
-    // If incoming tags were also supplied, save them
-    if (Array.isArray(body.tags) && body.tags.length > 0) {
-      try {
-        await ServerStorage.saveAllTags(body.tags);
-      } catch {
-        // ignore
       }
     }
 

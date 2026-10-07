@@ -125,20 +125,3 @@ create policy "Public categories access" on public.categories for all using (tru
 create policy "Public settings access" on public.settings for all using (true) with check (true);
 create policy "Public tags access" on public.tags for all using (true) with check (true);
 create policy "Public search queries access" on public.search_queries for all using (true) with check (true);
-
--- 7. PROMPT REQUESTS TABLE
-create table if not exists public.prompt_requests (
-  id text primary key,
-  user_id text,
-  user_name text,
-  user_email text,
-  user_avatar text,
-  request_text text not null,
-  category text,
-  status text default 'pending',
-  likes_count integer default 0,
-  created_at timestamptz default now()
-);
-alter table public.prompt_requests enable row level security;
-drop policy if exists "Public prompt requests access" on public.prompt_requests;
-create policy "Public prompt requests access" on public.prompt_requests for all using (true) with check (true);

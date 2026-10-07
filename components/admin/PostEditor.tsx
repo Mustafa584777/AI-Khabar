@@ -1,9 +1,9 @@
 'use client';
-/* eslint-disable react-hooks/set-state-in-effect */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { PromptPost, Category } from '@/types/prompt';
+import { CARTOON_AVATARS } from '@/lib/avatar-constants';
 import {
   Save,
   Globe,
@@ -24,14 +24,10 @@ import {
   Plus,
   X,
   Check,
-  Crown,
-  Bell,
-  Layers,
-  Trash2,
+  User,
 } from 'lucide-react';
 import Image from 'next/image';
 import { cleanTagsArray, canonicalizeTag, slugify } from '@/lib/utils';
-import { SendPushNotificationModal } from './SendPushNotificationModal';
 
 const generateImageFileNameFromTitle = (titleText: string, currentFileName?: string): string => {
   const fallback = 'photo-prompt.webp';
@@ -71,6 +67,7 @@ export const PostEditor = () => {
     savePost,
     categories,
     saveCategory,
+    promptRequests,
     editingPostId,
     setEditingPostId,
     setAdminSubView,
@@ -83,12 +80,40 @@ export const PostEditor = () => {
   const existingPost = editingPostId ? posts.find((p) => p.id === editingPostId) : null;
 
   // Form State
-  const [title, setTitle] = useState(() => existingPost?.title || '');
+  const [title, setTitle] = useState(() => {
+    if (existingPost?.title) return existingPost.title;
+    if (typeof window !== 'undefined') {
+      const val = sessionStorage.getItem('promptcms_new_post_title');
+      if (val) {
+        sessionStorage.removeItem('promptcms_new_post_title');
+        return val;
+      }
+    }
+    return '';
+  });
   const [slug, setSlug] = useState(() => existingPost?.slug || '');
-  const [category, setCategory] = useState(
-    () => existingPost?.category || (existingPost?.title ? detectCategoryFromText(existingPost.title) : (categories[0]?.name || 'Photorealistic & Portraits'))
-  );
-  const [promptText, setPromptText] = useState(() => existingPost?.promptText || '');
+  const [category, setCategory] = useState(() => {
+    if (existingPost?.category) return existingPost.category;
+    if (typeof window !== 'undefined') {
+      const val = sessionStorage.getItem('promptcms_new_post_category');
+      if (val) {
+        sessionStorage.removeItem('promptcms_new_post_category');
+        return val;
+      }
+    }
+    return categories[0]?.name || 'Photorealistic & Portraits';
+  });
+  const [promptText, setPromptText] = useState(() => {
+    if (existingPost?.promptText) return existingPost.promptText;
+    if (typeof window !== 'undefined') {
+      const val = sessionStorage.getItem('promptcms_new_post_prompt');
+      if (val) {
+        sessionStorage.removeItem('promptcms_new_post_prompt');
+        return val;
+      }
+    }
+    return '';
+  });
   const [imageUrl, setImageUrl] = useState(
     () => existingPost?.imageUrl || ''
   );
@@ -98,70 +123,152 @@ export const PostEditor = () => {
   const [imageFileName, setImageFileName] = useState(
     () => existingPost?.imageFileName || (existingPost?.title ? generateImageFileNameFromTitle(existingPost.title) : '')
   );
-  const [additionalImages, setAdditionalImages] = useState<string[]>(
-    () => Array.isArray(existingPost?.additionalImages) ? existingPost.additionalImages : []
-  );
-  const additionalFileInputRef = React.useRef<HTMLInputElement | null>(null);
-  const [isUploadingAdditional, setIsUploadingAdditional] = useState(false);
   const [imageSourceTab, setImageSourceTab] = useState<'upload' | 'url'>('upload');
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFileInfo, setUploadedFileInfo] = useState<{ name: string; size: string } | null>(null);
+  const [uploadedBase64, setUploadedBase64] = useState<string>('');
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
-
-  // Track the ID of the post currently loaded in the editor
-  // This ensures background polling/syncFromRemote does not clobber user's active edits or uploaded carousel images
-  const loadedPostIdRef = React.useRef<string | null>(editingPostId || null);
 
   const [status, setStatus] = useState<'published' | 'draft'>(
     () => (existingPost?.status === 'draft' ? 'draft' : 'published')
   );
-  const [isPremium, setIsPremium] = useState<boolean>(
-    () => Boolean(existingPost?.isPremium || existingPost?.parameters?.isPremium)
-  );
-
-  useEffect(() => {
-    // Only load from existingPost if switching to a DIFFERENT post or switching between create/edit modes
-    if (editingPostId && editingPostId !== loadedPostIdRef.current) {
-      loadedPostIdRef.current = editingPostId;
-      if (existingPost) {
-        setTitle(existingPost.title || '');
-        setSlug(existingPost.slug || '');
-        setCategory(existingPost.category || '');
-        setPromptText(existingPost.promptText || '');
-        setImageUrl(existingPost.imageUrl || '');
-        setImageAlt(existingPost.imageAlt || existingPost.title || '');
-        setImageFileName(existingPost.imageFileName || (existingPost.title ? generateImageFileNameFromTitle(existingPost.title) : ''));
-        setAdditionalImages(Array.isArray(existingPost.additionalImages) ? existingPost.additionalImages : []);
-        setStatus(existingPost.status === 'draft' ? 'draft' : 'published');
-        setIsPremium(Boolean(existingPost.isPremium || existingPost.parameters?.isPremium));
-        if (existingPost.articleContent) setArticleContent(existingPost.articleContent);
-        if (Array.isArray(existingPost.tags) && existingPost.tags.length > 0) {
-          setTags(existingPost.tags);
-        }
-        if (existingPost.seo?.metaTitle) setMetaTitle(existingPost.seo.metaTitle);
-        if (existingPost.seo?.metaDescription) setMetaDescription(existingPost.seo.metaDescription);
-        if (existingPost.seo?.focusKeyword) setFocusKeyword(existingPost.seo.focusKeyword);
+  const [isRequested, setIsRequested] = useState<boolean>(() => {
+    if (existingPost?.isRequested) return true;
+    if (typeof window !== 'undefined') {
+      const val = sessionStorage.getItem('promptcms_new_post_is_requested');
+      if (val === 'true') {
+        sessionStorage.removeItem('promptcms_new_post_is_requested');
+        return true;
       }
-    } else if (!editingPostId && loadedPostIdRef.current !== null) {
-      // Switched from editing to new post creation mode
-      loadedPostIdRef.current = null;
-      setTitle('');
-      setSlug('');
-      setCategory(categories[0]?.name || 'Photorealistic & Portraits');
-      setPromptText('');
-      setImageUrl('');
-      setImageAlt('');
-      setImageFileName('');
-      setAdditionalImages([]);
-      setStatus('published');
-      setIsPremium(false);
-      setArticleContent('## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.');
-      setTags(['AI Prompt', 'Photorealistic', 'Masterpiece']);
-      setMetaTitle('');
-      setMetaDescription('');
-      setFocusKeyword('');
     }
-  }, [editingPostId, existingPost, categories]);
+    return false;
+  });
+  const [requestedByName, setRequestedByName] = useState<string>(() => {
+    if (existingPost?.requestedByName) return existingPost.requestedByName;
+    if (typeof window !== 'undefined') {
+      const val = sessionStorage.getItem('promptcms_new_post_requested_by_name');
+      if (val) {
+        sessionStorage.removeItem('promptcms_new_post_requested_by_name');
+        return val;
+      }
+    }
+    return '';
+  });
+  const [requestedByEmail, setRequestedByEmail] = useState<string>(() => {
+    if (existingPost?.requestedByEmail) return existingPost.requestedByEmail;
+    if (typeof window !== 'undefined') {
+      const val = sessionStorage.getItem('promptcms_new_post_requested_by_email');
+      if (val) {
+        sessionStorage.removeItem('promptcms_new_post_requested_by_email');
+        return val;
+      }
+    }
+    return '';
+  });
+  const [requestedPromptDescription, setRequestedPromptDescription] = useState<string>(() => {
+    if (existingPost?.requestedPromptDescription) return existingPost.requestedPromptDescription;
+    if (typeof window !== 'undefined') {
+      const val = sessionStorage.getItem('promptcms_new_post_requested_prompt_desc');
+      if (val) {
+        sessionStorage.removeItem('promptcms_new_post_requested_prompt_desc');
+        return val;
+      }
+    }
+    return '';
+  });
+  const [requestedByAvatar, setRequestedByAvatar] = useState<string>(() => {
+    if (existingPost?.requestedByAvatar) return existingPost.requestedByAvatar;
+    if (typeof window !== 'undefined') {
+      const val = sessionStorage.getItem('promptcms_new_post_requested_by_avatar');
+      if (val) {
+        sessionStorage.removeItem('promptcms_new_post_requested_by_avatar');
+        return val;
+      }
+    }
+    return '';
+  });
+  const [isUploadingRequesterAvatar, setIsUploadingRequesterAvatar] = useState(false);
+  const requesterAvatarInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const handleRequesterAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select a valid image file (PNG, JPG, WEBP)');
+      return;
+    }
+
+    setIsUploadingRequesterAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.url) {
+          setRequestedByAvatar(data.url);
+          showToast('Requester profile photo uploaded successfully!');
+        } else {
+          // Fallback to local DataURL
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            if (ev.target?.result) {
+              setRequestedByAvatar(ev.target.result as string);
+              showToast('Requester profile photo saved!');
+            }
+          };
+          reader.readAsDataURL(file);
+        }
+      } else {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          if (ev.target?.result) {
+            setRequestedByAvatar(ev.target.result as string);
+            showToast('Requester profile photo saved!');
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        if (ev.target?.result) {
+          setRequestedByAvatar(ev.target.result as string);
+          showToast('Requester profile photo saved!');
+        }
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setIsUploadingRequesterAvatar(false);
+    }
+  };
+
+  const handleSelectAutofillRequest = (requestId: string) => {
+    if (!requestId) return;
+    const req = promptRequests.find((r) => r.id === requestId);
+    if (!req) return;
+
+    setIsRequested(true);
+    setRequestedByName(req.userName || '');
+    setRequestedByEmail(req.userEmail || '');
+    setRequestedPromptDescription(req.requestText || '');
+    if (req.userAvatar) {
+      setRequestedByAvatar(req.userAvatar);
+    }
+    if (req.category) {
+      const matchedCat = categories.find((c) => c.name.toLowerCase() === req.category?.toLowerCase());
+      if (matchedCat) {
+        setCategory(matchedCat.name);
+      }
+    }
+    showToast(`Autofilled request by ${req.userName}!`);
+  };
   const [articleContent, setArticleContent] = useState(
     () =>
       existingPost?.articleContent ||
@@ -181,7 +288,6 @@ export const PostEditor = () => {
   const [aiSuggestedTags, setAiSuggestedTags] = useState<string[]>([]);
   const [isAddingCustomCat, setIsAddingCustomCat] = useState(false);
   const [customCatInput, setCustomCatInput] = useState('');
-  const [isPushModalOpen, setIsPushModalOpen] = useState(false);
 
   const handleCreateAndAssignCategory = async (rawCatName: string) => {
     const trimmed = rawCatName.trim();
@@ -324,12 +430,6 @@ export const PostEditor = () => {
           return;
         }
 
-        // Only convert to WebP if image file size is > 500 KB
-        if (file.size <= 500 * 1024) {
-          resolve(dataUrl);
-          return;
-        }
-
         const img = document.createElement('img');
         img.onload = () => {
           const maxDimension = 1600;
@@ -415,6 +515,7 @@ export const PostEditor = () => {
           showToast('Image processed and attached locally!');
         }
 
+        setUploadedBase64(optimized);
         setImageUrl(finalImageUrl);
 
         const formattedSize =
@@ -433,66 +534,11 @@ export const PostEditor = () => {
 
         const autoFileName = generateImageFileNameFromTitle(title || file.name, file.name);
         setImageFileName(autoFileName);
-
-        // Auto-assign category & tags if title or prompt is present
-        if (title.trim() || promptText.trim()) {
-          handleAutoTaxonomy();
-        }
       }
     } catch {
       showToast('Failed to process image file');
     } finally {
       setIsUploadingImage(false);
-    }
-  };
-
-  const handleAdditionalFileUpload = async (files: FileList | File[]) => {
-    const fileArray = Array.from(files).filter((f) => f.type.startsWith('image/'));
-    if (fileArray.length === 0) {
-      showToast('Please select valid image file(s) (PNG, JPG, WebP, AVIF).');
-      return;
-    }
-
-    setIsUploadingAdditional(true);
-    try {
-      let addedCount = 0;
-      for (const file of fileArray) {
-        if (file.size > 15 * 1024 * 1024) {
-          showToast(`File ${file.name} exceeds 15MB limit.`);
-          continue;
-        }
-
-        const optimized = await optimizeImageFile(file);
-        if (optimized) {
-          let finalUrl = optimized;
-          try {
-            const cleanPublicId = `${slug || slugify(title) || 'slide'}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
-            const uploadRes = await fetch('/api/upload', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                image: optimized,
-                folder: 'prompts',
-                publicId: cleanPublicId,
-              }),
-            });
-            const uploadData = await uploadRes.json();
-            if (uploadData && uploadData.url) {
-              finalUrl = uploadData.url;
-            }
-          } catch {}
-
-          setAdditionalImages((prev) => [...prev, finalUrl]);
-          addedCount++;
-        }
-      }
-      if (addedCount > 0) {
-        showToast(`Added ${addedCount} slide ${addedCount === 1 ? 'image' : 'images'} successfully!`);
-      }
-    } catch {
-      showToast('Failed to process slide images');
-    } finally {
-      setIsUploadingAdditional(false);
     }
   };
 
@@ -565,7 +611,7 @@ export const PostEditor = () => {
       return;
     }
 
-    if (autoFillMode === 'image' && !imageUrl) {
+    if (autoFillMode === 'image' && !imageUrl && !uploadedBase64) {
       showToast('Please upload or select a Featured Image first to auto-fill from image');
       return;
     }
@@ -584,8 +630,8 @@ export const PostEditor = () => {
         body: JSON.stringify({
           action: 'generate_full_post',
           mode: autoFillMode,
-          topic: effectiveTopic || 'Photorealistic Artwork Recreation',
-          image: autoFillMode === 'image' ? imageUrl : undefined,
+          topic: autoFillMode === 'title' ? effectiveTopic : (effectiveTopic || undefined),
+          image: autoFillMode === 'image' ? (uploadedBase64 || imageUrl) : undefined,
           tool: 'Gemini',
           category,
           categories: categories.map((c) => c.name),
@@ -706,21 +752,20 @@ export const PostEditor = () => {
       title,
       slug: slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       category: chosenCat,
-      aiTool: existingPost?.aiTool || 'Midjourney',
+      aiTool: 'ChatGPT',
       promptText,
       imageUrl: imageUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80',
       imageAlt: finalAlt,
       imageFileName: finalFileName,
-      additionalImages: additionalImages.filter(Boolean),
       variables: [],
       articleContent,
       tags: cleanTagsArray(tags.length > 0 ? tags : [chosenCat || 'AI Prompt']),
       status: publishStatus,
-      isPremium: Boolean(isPremium),
-      parameters: {
-        ...(existingPost?.parameters || {}),
-        isPremium: Boolean(isPremium),
-      },
+      isRequested,
+      requestedByName: isRequested ? (requestedByName.trim() || undefined) : undefined,
+      requestedByEmail: isRequested ? (requestedByEmail.trim() || undefined) : undefined,
+      requestedByAvatar: isRequested ? (requestedByAvatar.trim() || undefined) : undefined,
+      requestedPromptDescription: isRequested ? (requestedPromptDescription.trim() || undefined) : undefined,
       viewsCount: existingPost?.viewsCount || 0,
       copiesCount: existingPost?.copiesCount || 0,
       likesCount: existingPost?.likesCount || 0,
@@ -772,27 +817,13 @@ export const PostEditor = () => {
             <h1 className="text-2xl font-extrabold text-neutral-900 dark:text-white">
               {isEditing ? 'Edit Prompt Article' : 'Create New Prompt Article'}
             </h1>
+            <p className="text-xs text-neutral-500 mt-0.5">
+              Author: <span className="font-semibold text-neutral-800 dark:text-neutral-200">tool.reelz</span>
+            </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={() => {
-              if (!title.trim()) {
-                showToast('Please enter a title before sending notification.');
-                return;
-              }
-              setIsPushModalOpen(true);
-            }}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-lg shadow-red-500/20 transition-all transform active:scale-95"
-            id="btn-send-prompt-notification"
-            title="Broadcast Push Notification for this Prompt"
-          >
-            <Bell className="w-4 h-4" />
-            <span>Send Notification</span>
-          </button>
-
           <button
             type="button"
             disabled={isSavingPost}
@@ -961,10 +992,11 @@ export const PostEditor = () => {
                   <span className="text-blue-600 dark:text-blue-400">Live Aspect Ratio 16:10</span>
                 </div>
                 <div className="relative w-full aspect-[16/10] rounded-2xl overflow-hidden bg-neutral-950 border border-neutral-200 dark:border-neutral-800 shadow-inner group">
-                  <img
+                  <Image
                     src={imageUrl}
                     alt={imageAlt || title || 'Preview'}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
                     referrerPolicy="no-referrer"
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -989,147 +1021,6 @@ export const PostEditor = () => {
                 </div>
               </div>
             )}
-
-            {/* Multi-Image Carousel / Slider Photos (Pinterest Style) */}
-            <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950/70 border border-neutral-200 dark:border-neutral-800 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-800 dark:text-neutral-200">
-                  <Layers className="w-3.5 h-3.5 text-[#E60023]" />
-                  <span>Pinterest Carousel / Slider Photos</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 font-normal">
-                    {additionalImages.length} additional {additionalImages.length === 1 ? 'photo' : 'photos'}
-                  </span>
-                </div>
-              </div>
-              <p className="text-[11px] text-neutral-500">
-                Add more photos to make this a multi-photo carousel slider. Users can slide through all photos in prompt cards and in the opened prompt modal.
-              </p>
-
-              {/* Hidden file input for manual slider images upload */}
-              <input
-                ref={additionalFileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => {
-                  if (e.target.files && e.target.files.length > 0) {
-                    handleAdditionalFileUpload(e.target.files);
-                    e.target.value = '';
-                  }
-                }}
-                className="hidden"
-              />
-
-              {/* Upload Slider Images Button & Dropzone */}
-              <div
-                onClick={() => additionalFileInputRef.current?.click()}
-                className="border-2 border-dashed border-neutral-300 dark:border-neutral-700 hover:border-[#E60023] dark:hover:border-[#E60023] rounded-2xl p-4 text-center cursor-pointer transition-all hover:bg-neutral-100 dark:hover:bg-neutral-900/60 flex flex-col items-center justify-center gap-2 group select-none"
-              >
-                {isUploadingAdditional ? (
-                  <div className="flex items-center gap-2 text-xs font-semibold text-neutral-600 dark:text-neutral-400">
-                    <Loader2 className="w-4 h-4 animate-spin text-[#E60023]" />
-                    <span>Uploading slide image(s)...</span>
-                  </div>
-                ) : (
-                  <>
-                    <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-950/60 text-[#E60023] flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Upload className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-neutral-900 dark:text-white">
-                        Click to upload slider images
-                      </p>
-                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
-                        Select one or multiple images (PNG, JPG, WebP up to 15MB)
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Slider Thumbnails Preview */}
-              {additionalImages.length > 0 && (
-                <div className="space-y-3 pt-2">
-                  <div className="flex items-center justify-between text-[11px] font-semibold text-neutral-500">
-                    <span className="flex items-center gap-1.5 font-bold text-neutral-800 dark:text-neutral-200">
-                      <span>Uploaded Slides ({additionalImages.length})</span>
-                    </span>
-                    <div className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAdditionalImages([]);
-                          showToast('All carousel slides cleared');
-                        }}
-                        className="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 font-bold hover:underline cursor-pointer"
-                      >
-                        Clear All Slides
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => additionalFileInputRef.current?.click()}
-                        className="text-[#E60023] hover:underline font-bold cursor-pointer"
-                      >
-                        + Add More Slides
-                      </button>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {additionalImages.map((imgUrl, idx) => (
-                      <div
-                        key={idx}
-                        className="relative rounded-2xl overflow-hidden bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs p-1 flex flex-col group"
-                      >
-                        <div className="relative aspect-square rounded-xl overflow-hidden bg-neutral-950">
-                          <img
-                            src={imgUrl}
-                            alt={`Slide ${idx + 2}`}
-                            className="w-full h-full object-cover"
-                            referrerPolicy="no-referrer"
-                          />
-                          <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-black/80 text-[10px] font-black text-white shadow-xs">
-                            Slide #{idx + 2}
-                          </div>
-                          {/* Prominent Always-Visible Circular Remove Button on Top Right */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setAdditionalImages((prev) => prev.filter((_, i) => i !== idx));
-                              showToast(`Removed Slide #${idx + 2}`);
-                            }}
-                            className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-red-600 hover:bg-red-700 active:scale-95 text-white flex items-center justify-center shadow-lg transition-transform cursor-pointer border border-white/60 z-10"
-                            title={`Remove Slide #${idx + 2}`}
-                            aria-label={`Remove Slide #${idx + 2}`}
-                          >
-                            <X className="w-4 h-4 stroke-[2.5]" />
-                          </button>
-                        </div>
-                        {/* Dedicated Bottom Remove Action Button */}
-                        <div className="pt-2 pb-1 px-1 flex items-center justify-between gap-1">
-                          <span className="text-[11px] font-semibold text-neutral-500 truncate">
-                            Photo #{idx + 2}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setAdditionalImages((prev) => prev.filter((_, i) => i !== idx));
-                              showToast(`Removed Slide #${idx + 2}`);
-                            }}
-                            className="px-2 py-1 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-950/60 dark:hover:bg-red-900/80 text-red-600 dark:text-red-400 text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
-                            title={`Remove Slide #${idx + 2}`}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                            <span>Remove</span>
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
 
             {/* Image SEO: Alt Text & File Name (Auto-derived from Title) */}
             <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950/70 border border-neutral-200 dark:border-neutral-800 space-y-3">
@@ -1271,10 +1162,11 @@ export const PostEditor = () => {
                 {imageUrl ? (
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-indigo-700 relative bg-neutral-900">
-                      <img
+                      <Image
                         src={imageUrl}
                         alt="Uploaded preview"
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
                         referrerPolicy="no-referrer"
                       />
                     </div>
@@ -1376,55 +1268,6 @@ export const PostEditor = () => {
 
         {/* Right 1 Column: Categories & Taxonomy, SEO Meta Settings */}
         <div className="space-y-6">
-          {/* Premium Prompt Toggle Card */}
-          <div className="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-amber-300/80 dark:border-amber-700/60 shadow-sm space-y-4 bg-gradient-to-br from-amber-500/5 via-transparent to-transparent">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/20">
-                  <Crown className="w-5 h-5 fill-amber-500/20" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                    <span>Premium Prompt</span>
-                    {isPremium ? (
-                      <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[9px] font-black tracking-wider uppercase">
-                        PRO ONLY
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500 text-[9px] font-semibold">
-                        FREE
-                      </span>
-                    )}
-                  </h3>
-                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
-                    Gate prompt text for Starter, Pro & VIP subscribers
-                  </p>
-                </div>
-              </div>
-
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  id="toggle-is-premium-prompt"
-                  checked={isPremium}
-                  onChange={(e) => setIsPremium(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer dark:bg-neutral-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-              </label>
-            </div>
-
-            {isPremium ? (
-              <div className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-300 bg-amber-100/70 dark:bg-amber-950/40 p-3 rounded-2xl border border-amber-300/60 dark:border-amber-800/60">
-                ✨ <strong>Premium Protected:</strong> This prompt card will display a PRO badge on the home page. Visitors can view full image, tags, and category, but prompt text will be locked with an upgrade CTA leading to the pricing page.
-              </div>
-            ) : (
-              <p className="text-[11px] text-neutral-500">
-                Standard prompt: public and free to copy for everyone.
-              </p>
-            )}
-          </div>
-
           {/* Category & AI Taxonomy Manager */}
           <div className="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-5">
             <div className="flex items-center justify-between">
@@ -1630,6 +1473,214 @@ export const PostEditor = () => {
             </div>
           </div>
 
+          {/* Prompt Request Status Card */}
+          <div className="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
+            <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#E60023]" />
+              <span>Prompt Request Fulfillment</span>
+            </h3>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isRequested}
+                onChange={(e) => setIsRequested(e.target.checked)}
+                className="w-4 h-4 rounded border-neutral-300 text-[#E60023] focus:ring-[#E60023]"
+              />
+              <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200">
+                Mark as Requested Prompt (Fulfilled Community Request)
+              </span>
+            </label>
+            <p className="text-[11px] text-neutral-500">
+              When checked, this prompt displays in the &apos;Requested&apos; tab and is searchable by the requester&apos;s name, email, or prompt description.
+            </p>
+
+            {isRequested && (
+              <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800 space-y-4 animate-in fade-in duration-200">
+                {/* 1. Quick Autofill from Pending Community Requests */}
+                {promptRequests && promptRequests.length > 0 && (
+                  <div className="p-3 bg-red-50/60 dark:bg-red-950/30 rounded-2xl border border-red-200/80 dark:border-red-900/60 space-y-1.5">
+                    <label className="block text-[11px] font-extrabold text-red-800 dark:text-red-300">
+                      ⚡ Quick Autofill from Community Requests ({promptRequests.length} available)
+                    </label>
+                    <select
+                      onChange={(e) => handleSelectAutofillRequest(e.target.value)}
+                      defaultValue=""
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-neutral-900 border border-red-200 dark:border-red-800 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-[#E60023] focus:outline-none"
+                    >
+                      <option value="" disabled>
+                        Select a user request to autofill...
+                      </option>
+                      {promptRequests.map((req) => (
+                        <option key={req.id} value={req.id}>
+                          {req.userName || 'Anonymous'} ({req.userEmail || 'No email'}) - &quot;{req.requestText.slice(0, 45)}...&quot;
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* 2. Requester Profile Preview Badge */}
+                <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex items-center gap-3">
+                  <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-red-200 dark:border-red-900 bg-neutral-200 dark:bg-neutral-800 shrink-0 flex items-center justify-center shadow-xs">
+                    {requestedByAvatar ? (
+                      <Image
+                        src={requestedByAvatar}
+                        alt={requestedByName || 'Requester'}
+                        fill
+                        sizes="48px"
+                        className="object-cover rounded-full"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <User className="w-6 h-6 text-neutral-400" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-neutral-900 dark:text-white truncate">
+                      {requestedByName || 'Requester Name (Not set)'}
+                    </p>
+                    <p className="text-[11px] text-neutral-500 truncate">
+                      {requestedByEmail || 'No email address specified'}
+                    </p>
+                    <span className="inline-block mt-0.5 text-[10px] font-semibold text-[#E60023]">
+                      Will appear on card: &quot;Req by {requestedByName || 'User'}&quot;
+                    </span>
+                  </div>
+                </div>
+
+                {/* 3. Requester Profile Image Upload / Avatar Selector */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                    Requester Profile Photo / Avatar (Shown on cards)
+                  </label>
+                  
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      type="file"
+                      ref={requesterAvatarInputRef}
+                      onChange={handleRequesterAvatarFileChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => requesterAvatarInputRef.current?.click()}
+                      disabled={isUploadingRequesterAvatar}
+                      className="px-3.5 py-2 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-bold hover:opacity-90 transition-all flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+                    >
+                      {isUploadingRequesterAvatar ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Upload className="w-3.5 h-3.5" />
+                      )}
+                      <span>Upload Profile Image</span>
+                    </button>
+
+                    {requestedByAvatar && (
+                      <button
+                        type="button"
+                        onClick={() => setRequestedByAvatar('')}
+                        className="px-3 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 transition-colors"
+                      >
+                        Remove Photo
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Quick 2D/3D Cartoon Avatars Selection */}
+                  <div className="pt-1.5">
+                    <span className="text-[10px] font-bold text-neutral-400 block mb-1.5">
+                      Or pick a 3D/2D Cartoon Avatar:
+                    </span>
+                    <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-none">
+                      {CARTOON_AVATARS.slice(0, 8).map((av) => (
+                        <button
+                          key={av.id}
+                          type="button"
+                          onClick={() => setRequestedByAvatar(av.url)}
+                          className={`w-9 h-9 rounded-full border-2 overflow-hidden transition-all shrink-0 relative ${
+                            requestedByAvatar === av.url
+                              ? 'border-[#E60023] ring-2 ring-red-400 scale-110'
+                              : 'border-neutral-200 dark:border-neutral-700 hover:scale-105'
+                          }`}
+                          title={av.name}
+                        >
+                          <Image
+                            src={av.url}
+                            alt={av.name}
+                            width={36}
+                            height={36}
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Or Manual Avatar URL input */}
+                  <div className="pt-1">
+                    <input
+                      type="url"
+                      value={requestedByAvatar}
+                      onChange={(e) => setRequestedByAvatar(e.target.value)}
+                      placeholder="Or paste external avatar image URL (https://...)"
+                      className="w-full px-3 py-1.5 text-[11px] rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 focus:ring-1 focus:ring-[#E60023] focus:outline-none font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* 4. Requester Name */}
+                <div>
+                  <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                    Requester User Name
+                  </label>
+                  <input
+                    type="text"
+                    value={requestedByName}
+                    onChange={(e) => setRequestedByName(e.target.value)}
+                    placeholder="e.g. Rahul Sharma"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-[#E60023] focus:outline-none"
+                  />
+                </div>
+
+                {/* 5. Requester Email */}
+                <div>
+                  <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                    Requester Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={requestedByEmail}
+                    onChange={(e) => setRequestedByEmail(e.target.value)}
+                    placeholder="e.g. rahul@example.com"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-[#E60023] focus:outline-none"
+                  />
+                  <span className="text-[10px] text-neutral-400 mt-1 block">
+                    Used to automatically display this fulfilled prompt in the user&apos;s dashboard after login.
+                  </span>
+                </div>
+
+                {/* 6. Original Prompt Request Description */}
+                <div>
+                  <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">
+                    User&apos;s Original Prompt Request Description
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={requestedPromptDescription}
+                    onChange={(e) => setRequestedPromptDescription(e.target.value)}
+                    placeholder="e.g. Traditional Indian red saree portrait in cinematic golden hour lighting..."
+                    className="w-full p-3 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium focus:ring-2 focus:ring-[#E60023] focus:outline-none"
+                  />
+                  <span className="text-[10px] text-neutral-400 mt-0.5 block">
+                    Users can search using any keywords from their submitted request.
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* SEO Meta Box */}
           <div className="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
             <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
@@ -1646,7 +1697,7 @@ export const PostEditor = () => {
                 {metaTitle || `${title || 'Prompt Title'} | Trending Copy Paste Photo Prompts`}
               </p>
               <p className="text-[11px] text-emerald-700 dark:text-emerald-500 font-mono truncate">
-                https://zeenaprompt.com/{slug || 'sample-prompt'}
+                https://trendinggeminiprompts.com/prompt/{slug || 'sample-prompt'}
               </p>
               <p className="text-[11px] text-neutral-600 dark:text-neutral-400 line-clamp-2 leading-relaxed">
                 {metaDescription || `Copy and paste this photo prompt for ${title}.`}
@@ -1694,16 +1745,6 @@ export const PostEditor = () => {
           </div>
         </div>
       </div>
-
-      <SendPushNotificationModal
-        isOpen={isPushModalOpen}
-        onClose={() => setIsPushModalOpen(false)}
-        defaultTitle={title}
-        defaultCategory={category}
-        defaultImageUrl={imageUrl}
-        defaultUrl={`/${slug || slugify(title) || 'explore'}`}
-        defaultPromptText={promptText}
-      />
     </div>
   );
 };
