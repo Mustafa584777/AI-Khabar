@@ -50,8 +50,6 @@ export const AdminLayout = () => {
         return <PostEditor key={editingPostId || 'new-post'} />;
       case 'categories':
         return <CategoriesManager key={settings.popularTags?.join(',') || 'categories'} />;
-      case 'requested-prompts':
-        return <RequestedPromptsManager />;
       case 'notifications':
         return <PushNotificationsManager />;
       case 'search-history':

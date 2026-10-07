@@ -74,12 +74,6 @@ export const AdminSidebar = () => {
       icon: FolderTree,
     },
     {
-      id: 'requested-prompts',
-      label: 'Requested Prompts',
-      icon: MessageSquare,
-      badge: pendingRequestsCount > 0 ? pendingRequestsCount : null,
-    },
-    {
       id: 'notifications',
       label: 'Push Notifications',
       icon: Bell,
