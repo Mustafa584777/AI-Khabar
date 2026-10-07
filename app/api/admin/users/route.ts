@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, supabase } from '@/lib/supabase';
 import { RegisteredUserRecord, PlanTier } from '@/types/prompt';
 import { getClientIp, checkRateLimit, createRateLimitResponse, sanitizePayload } from '@/lib/security';
+import fs from 'fs';
+import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
@@ -137,6 +139,47 @@ export async function GET(req: NextRequest) {
       }
     } catch (err) {
       console.warn('Sync table fetch error:', err);
+    }
+
+    // 1.5. Fetch from local users.json file to ensure zero user data loss
+    try {
+      const USERS_FILE = path.join(process.cwd(), 'data', 'users.json');
+      if (fs.existsSync(USERS_FILE)) {
+        const rawLocal = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
+        if (Array.isArray(rawLocal)) {
+          for (const u of rawLocal) {
+            const email = getCleanEmail(u.email);
+            const userId = u.id || u.userId;
+            const key = email || userId;
+            if (!key) continue;
+
+            const existing = usersMap.get(key);
+            if (!existing) {
+              usersMap.set(key, {
+                id: userId || `u_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+                email: email || `${userId || 'user'}@user.local`,
+                name: u.name || (email ? email.split('@')[0] : 'User'),
+                username: u.username || (email ? `@${email.split('@')[0]}` : '@user'),
+                avatar: u.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
+                planTier: u.planTier || 'free',
+                isProUser: Boolean(u.isProUser || (u.planTier && u.planTier !== 'free')),
+                toolCredits: typeof u.toolCredits === 'number' ? u.toolCredits : 5,
+                points: typeof u.points === 'number' ? u.points : 10,
+                unlockedPromptIds: Array.isArray(u.unlockedPromptIds) ? u.unlockedPromptIds : [],
+                promptRequestsRemaining: u.promptRequestsRemaining || 0,
+                aiHistoryCount: Array.isArray(u.aiHistory) ? u.aiHistory.length : 0,
+                bookmarksCount: Array.isArray(u.bookmarkedIds) ? u.bookmarkedIds.length : (u.bookmarksCount || 0),
+                likesCount: Array.isArray(u.likedIds) ? u.likedIds.length : (u.likesCount || 0),
+                joinedDate: u.joinedDate || 'Recently',
+                lastSyncedAt: u.updatedAt || u.lastSyncedAt || new Date().toISOString(),
+                source: 'local_store',
+              });
+            }
+          }
+        }
+      }
+    } catch (lErr) {
+      console.warn('Local users read notice:', lErr);
     }
 
     // 2. Fetch from Supabase Auth Admin Users (if service role key is active)

@@ -589,11 +589,20 @@ export const ServerStorage = {
 
   // Categories
   getAllCategories: async (): Promise<Category[]> => {
+    const initial = INITIAL_CATEGORIES.map((c, i) => ({ ...c, sortOrder: i }));
+    let localCats: Category[] = [];
+    try {
+      localCats = readJsonFile<Category[]>(CATEGORIES_FILE, initial);
+    } catch {
+      localCats = initial;
+    }
+
+    let remoteCats: Category[] = [];
     if (isSupabaseConfigured()) {
       try {
         const { data, error } = await db().from('categories').select('*').order('sort_order', { ascending: true });
-        if (!error && data && Array.isArray(data) && data.length > 0) {
-          const cats: Category[] = data.map((c) => ({
+        if (!error && data && Array.isArray(data)) {
+          remoteCats = data.map((c) => ({
             id: c.id,
             name: c.name,
             slug: c.slug,
@@ -605,20 +614,40 @@ export const ServerStorage = {
             count: c.count || 0,
             sortOrder: c.sort_order || 0,
           }));
-          memoryCategories = cats;
-          writeJsonFile(CATEGORIES_FILE, cats);
-          return cats;
         }
       } catch (err) {
         console.warn('Supabase getAllCategories fallback:', err);
       }
     }
 
-    if (memoryCategories === null) {
-      const initial = INITIAL_CATEGORIES.map((c, i) => ({ ...c, sortOrder: i }));
-      memoryCategories = readJsonFile<Category[]>(CATEGORIES_FILE, initial);
+    const catMap = new Map<string, Category>();
+    for (const c of localCats) {
+      if (c && c.name) {
+        catMap.set(c.name.toLowerCase().trim(), c);
+        if (c.id) catMap.set(c.id, c);
+      }
     }
-    return memoryCategories;
+    for (const c of remoteCats) {
+      if (c && c.name) {
+        const key = c.name.toLowerCase().trim();
+        const existing = catMap.get(key) || (c.id ? catMap.get(c.id) : undefined);
+        if (!existing) {
+          catMap.set(key, c);
+          if (c.id) catMap.set(c.id, c);
+        } else {
+          // merge
+          catMap.set(key, { ...existing, ...c, count: Math.max(existing.count || 0, c.count || 0) });
+          if (c.id) catMap.set(c.id, { ...existing, ...c, count: Math.max(existing.count || 0, c.count || 0) });
+        }
+      }
+    }
+
+    const merged = Array.from(catMap.values()).filter((c, idx, arr) => arr.findIndex((x) => x.name.toLowerCase() === c.name.toLowerCase()) === idx);
+    merged.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
+    memoryCategories = merged;
+    writeJsonFile(CATEGORIES_FILE, merged);
+    return merged;
   },
 
   saveCategory: async (category: Category): Promise<Category> => {

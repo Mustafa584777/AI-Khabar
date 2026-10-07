@@ -198,7 +198,9 @@ function normalizeIncomingPosts(rawList: any[]): PromptPost[] {
         item.content ||
         item.body ||
         item.description ||
-        ''
+        item.title ||
+        item.name ||
+        `AI Prompt #${idx + 1}`
       )
         .toString()
         .trim();
@@ -211,8 +213,6 @@ function normalizeIncomingPosts(rawList: any[]): PromptPost[] {
       )
         .toString()
         .trim();
-
-      if (!promptText && !title) return null;
 
       const rawId = item.id || item._id || `prompt-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`;
       const safeId = String(rawId).replace(/[\/\s#?\[\]]+/g, '_').slice(0, 100);
@@ -286,7 +286,7 @@ function normalizeIncomingPosts(rawList: any[]): PromptPost[] {
         publishedAt: item.publishedAt || (item.status === 'published' ? new Date().toISOString() : undefined),
       } as PromptPost;
     })
-    .filter((p): p is PromptPost => p !== null && p.title.length > 0 && p.promptText.length > 0);
+    .filter((p): p is PromptPost => p !== null);
 }
 
 // -------------------------------------------------------------
