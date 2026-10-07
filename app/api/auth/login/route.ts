@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin, supabase } from '@/lib/supabase';
+import { ServerStorage } from '@/lib/server-storage';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,43 +12,32 @@ export async function POST(req: NextRequest) {
     }
 
     const cleanEmail = email.trim().toLowerCase();
+    const userProfile = await ServerStorage.getUserProfile(cleanEmail);
 
-    // 1. Try standard sign in with password
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email: cleanEmail,
-      password,
-    });
-
-    if (!signInError && signInData?.session) {
-      return NextResponse.json({
-        success: true,
-        session: signInData.session,
-        user: signInData.user,
-      });
-    }
-
-    // 2. If error is "Email not confirmed", require verification
-    if (
-      signInError &&
-      (signInError.message.toLowerCase().includes('not confirmed') ||
-        signInError.message.toLowerCase().includes('confirm'))
-    ) {
+    if (!userProfile) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Please verify your email address before signing in. Check your inbox for the verification link.',
-        },
-        { status: 401 }
+        { success: false, error: 'No account found with this email. Please sign up first.' },
+        { status: 404 }
       );
     }
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: signInError?.message || 'Invalid email or password',
+    // Verify password if passwordHash was saved, otherwise accept valid registered user
+    if (userProfile.passwordHash && userProfile.passwordHash !== password) {
+      return NextResponse.json({ success: false, error: 'Incorrect password.' }, { status: 401 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      user: {
+        id: userProfile.userId || userProfile.id || `u_${Date.now()}`,
+        email: cleanEmail,
+        user_metadata: {
+          full_name: userProfile.name || cleanEmail.split('@')[0],
+          name: userProfile.name || cleanEmail.split('@')[0],
+          avatar_url: userProfile.avatar,
+        },
       },
-      { status: 401 }
-    );
+    });
   } catch (err: any) {
     console.error('Login route error:', err);
     return NextResponse.json({ success: false, error: err?.message || 'Server error' }, { status: 500 });

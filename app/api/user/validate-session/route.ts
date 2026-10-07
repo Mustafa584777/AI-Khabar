@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin, supabase } from '@/lib/supabase';
 import { getClientIp, checkRateLimit, createRateLimitResponse, sanitizePayload } from '@/lib/security';
 import { PLAN_CONFIGS, getPlanFeaturesForCycle } from '@/lib/plans';
 import { PlanTier } from '@/types/prompt';
@@ -45,9 +44,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const client = supabaseAdmin || supabase;
-
-    // Fetch authoritative user record checking ServerStorage, active subscription, and Supabase
+    // Fetch authoritative user record checking ServerStorage & active subscription
     let rowData: any = null;
 
     // 1. Check ServerStorage profile & active subscription
@@ -57,18 +54,6 @@ export async function POST(req: NextRequest) {
         activeSub = await ServerStorage.getUserSubscription(cleanEmail);
       } catch (e) {
         console.warn('ServerStorage subscription check notice:', e);
-      }
-
-      // Also check directly in Supabase if not found in ServerStorage
-      if (!activeSub) {
-        try {
-          const cleanKey = cleanEmail.replace(/[^a-z0-9_]/g, '_');
-          const subId = `sub_${cleanKey}`;
-          const { data: subRow } = await client.from('settings').select('data').eq('id', subId).maybeSingle();
-          if (subRow?.data) {
-            activeSub = subRow.data;
-          }
-        } catch {}
       }
     }
 
@@ -105,38 +90,6 @@ export async function POST(req: NextRequest) {
       }
     } catch (e) {
       console.warn('ServerStorage profile check notice:', e);
-    }
-
-    // 2. Check Supabase by emailKey or userKey if not already found
-    if (!rowData) {
-      if (emailKey) {
-        const { data: row } = await client
-          .from('settings')
-          .select('data')
-          .eq('id', emailKey)
-          .maybeSingle();
-        if (row?.data) rowData = row.data;
-      }
-      if (!rowData && userKey) {
-        const { data: row } = await client
-          .from('settings')
-          .select('data')
-          .eq('id', userKey)
-          .maybeSingle();
-        if (row?.data) rowData = row.data;
-      }
-      if (!rowData && cleanEmail) {
-        const { data: rows } = await client
-          .from('settings')
-          .select('id, data')
-          .filter('data->>email', 'eq', cleanEmail);
-        if (Array.isArray(rows) && rows.length > 0) {
-          const userRows = rows.filter((r) => r?.data && r.id?.startsWith('user_sync_'));
-          if (userRows.length > 0) {
-            rowData = userRows[0].data;
-          }
-        }
-      }
     }
 
     // If an active subscription exists, enforce the active paid plan without restoring consumed credits

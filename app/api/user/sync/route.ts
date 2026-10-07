@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin, supabase } from '@/lib/supabase';
 import { getClientIp, checkRateLimit, createRateLimitResponse, sanitizePayload } from '@/lib/security';
 import { PLAN_CONFIGS, getPlanFeaturesForCycle } from '@/lib/plans';
 import { PlanTier } from '@/types/prompt';
@@ -45,26 +44,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const client = supabaseAdmin || supabase;
-
-    // Helper: Check active permanent subscription across ServerStorage and Supabase
+    // Helper: Check active permanent subscription across ServerStorage
     let activeSub: any = null;
     if (cleanEmail) {
       try {
         activeSub = await ServerStorage.getUserSubscription(cleanEmail);
       } catch (e) {
         console.warn('ServerStorage subscription check warning:', e);
-      }
-
-      if (!activeSub) {
-        try {
-          const cleanKey = cleanEmail.replace(/[^a-z0-9_]/g, '_');
-          const subId = `sub_${cleanKey}`;
-          const { data: subRow } = await client.from('settings').select('data').eq('id', subId).maybeSingle();
-          if (subRow?.data) {
-            activeSub = subRow.data;
-          }
-        } catch {}
       }
     }
     // Check if activeSub has expired but holds a queuedPlan
@@ -105,41 +91,6 @@ export async function POST(req: NextRequest) {
           if (storedProfile) candidates.push(storedProfile);
         } catch (e) {
           console.warn('ServerStorage profile check warning:', e);
-        }
-      }
-
-      // 3. Check Supabase by emailKey
-      if (emailKey) {
-        const { data: row } = await client
-          .from('settings')
-          .select('data')
-          .eq('id', emailKey)
-          .maybeSingle();
-        if (row?.data) candidates.push(row.data);
-      }
-
-      // 4. Check Supabase by userKey
-      if (userKey && userKey !== emailKey) {
-        const { data: row } = await client
-          .from('settings')
-          .select('data')
-          .eq('id', userKey)
-          .maybeSingle();
-        if (row?.data) candidates.push(row.data);
-      }
-
-      // 5. Check Supabase by jsonb filter (filtering only user_sync_ records)
-      if (cleanEmail) {
-        const { data: rows } = await client
-          .from('settings')
-          .select('id, data')
-          .filter('data->>email', 'eq', cleanEmail);
-        if (Array.isArray(rows)) {
-          for (const r of rows) {
-            if (r?.data && typeof r.data === 'object' && r.id?.startsWith('user_sync_')) {
-              candidates.push(r.data);
-            }
-          }
         }
       }
 
@@ -303,20 +254,6 @@ export async function POST(req: NextRequest) {
     // 1. PULL: Retrieve synced data for user
     if (action === 'pull' || !action) {
       let syncData = await fetchExistingData();
-
-      // Mirror to both emailKey and userKey to prevent desync
-      if (syncData) {
-        if (emailKey) {
-          try {
-            await client.from('settings').upsert({ id: emailKey, data: syncData }, { onConflict: 'id' });
-          } catch {}
-        }
-        if (userKey && userKey !== emailKey) {
-          try {
-            await client.from('settings').upsert({ id: userKey, data: syncData }, { onConflict: 'id' });
-          } catch {}
-        }
-      }
 
       if (syncData) {
         const cloned = { ...syncData };
@@ -609,33 +546,11 @@ export async function POST(req: NextRequest) {
         updatedAt: new Date().toISOString(),
       };
 
-      // 1. Primary Save: Local server-storage persistent backup
+      // 1. Primary Save: Local and Firebase persistent storage
       try {
         await ServerStorage.saveUserProfile(cleanEmail, userId, mergedPayload);
       } catch (e) {
         console.error('ServerStorage saveUserProfile error:', e);
-      }
-
-      // 2. Save to Supabase emailKey if email is provided
-      if (emailKey) {
-        const { error: emailUpsertError } = await client
-          .from('settings')
-          .upsert({ id: emailKey, data: mergedPayload }, { onConflict: 'id' });
-
-        if (emailUpsertError) {
-          console.error('User sync email upsert error:', emailUpsertError);
-        }
-      }
-
-      // 3. Secondary Mirror: Save to userKey if provided
-      if (userKey && userKey !== emailKey) {
-        const { error: userUpsertError } = await client
-          .from('settings')
-          .upsert({ id: userKey, data: mergedPayload }, { onConflict: 'id' });
-
-        if (userUpsertError) {
-          console.error('User sync user upsert error:', userUpsertError);
-        }
       }
 
       return NextResponse.json({ success: true, syncData: mergedPayload });
@@ -664,11 +579,10 @@ export async function POST(req: NextRequest) {
         updatedAt: new Date().toISOString(),
       };
 
-      if (emailKey) {
-        await client.from('settings').upsert({ id: emailKey, data: mergedPayload });
-      }
-      if (userKey && userKey !== emailKey) {
-        await client.from('settings').upsert({ id: userKey, data: mergedPayload });
+      try {
+        await ServerStorage.saveUserProfile(cleanEmail, userId, mergedPayload);
+      } catch (e) {
+        console.error('ServerStorage saveUserProfile bookmark error:', e);
       }
 
       return NextResponse.json({ success: true, bookmarkedIds: updatedList });
@@ -724,11 +638,10 @@ export async function POST(req: NextRequest) {
         updatedAt: new Date().toISOString(),
       };
 
-      if (emailKey) {
-        await client.from('settings').upsert({ id: emailKey, data: mergedPayload });
-      }
-      if (userKey && userKey !== emailKey) {
-        await client.from('settings').upsert({ id: userKey, data: mergedPayload });
+      try {
+        await ServerStorage.saveUserProfile(cleanEmail, userId, mergedPayload);
+      } catch (e) {
+        console.error('ServerStorage saveUserProfile taste error:', e);
       }
 
       return NextResponse.json({ success: true, tasteProfile: mergedTasteProfile });

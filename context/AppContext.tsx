@@ -6,7 +6,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem, AiSearchResult, PlanTier, PromptRequestItem, QueuedPlan } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
-import { supabase, supabaseUserToUserAccount } from '@/lib/supabase';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import { UserSyncService } from '@/lib/user-sync';
 import { INITIAL_POSTS, INITIAL_CATEGORIES, INITIAL_SETTINGS } from '@/lib/initial-data';
 import {
@@ -1111,9 +1112,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const logoutUser = async () => {
     try {
-      await supabase.auth.signOut();
+      await firebaseSignOut(auth);
     } catch (e) {
-      console.warn('Supabase signOut error:', e);
+      console.warn('Firebase signOut error:', e);
     }
 
     // Complete cleanup of all local and session cache
@@ -2142,19 +2143,37 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       });
     };
 
-    // Check Supabase Auth Session (Google OAuth login return or existing session)
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
+    // Check Firebase Auth Session
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
         const existing = StorageService.getUserAccount();
-        const account = supabaseUserToUserAccount(session.user, existing);
+        const emailPrefix = firebaseUser.email ? firebaseUser.email.split('@')[0] : 'Creator';
+        const account: UserAccount = {
+          id: firebaseUser.uid,
+          name: firebaseUser.displayName || existing?.name || emailPrefix,
+          username: existing?.username || `@${emailPrefix.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+          email: firebaseUser.email || existing?.email || '',
+          avatar:
+            firebaseUser.photoURL ||
+            existing?.avatar ||
+            'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
+          isLoggedIn: true,
+          joinedDate: existing?.joinedDate || 'Recently',
+          points: existing?.points ?? 10,
+          requestsMade: existing?.requestsMade || 0,
+          likesCountForPoints: existing?.likesCountForPoints || 0,
+          savesCountForPoints: existing?.savesCountForPoints || 0,
+          generationsCountForPoints: existing?.generationsCountForPoints || 0,
+          sharesCountForPoints: existing?.sharesCountForPoints || 0,
+          referralsCountForPoints: existing?.referralsCountForPoints || 0,
+          toolCredits: existing?.toolCredits !== undefined ? existing.toolCredits : 5,
+        };
         setUserAccount(account);
         StorageService.saveUserAccount(account);
 
-        // Load all cloud bookmarks, likes, points, history, and taste profile
         const synced = await UserSyncService.reconcileOnLogin(account);
         applySynced(synced);
       } else {
-        // If not authenticated in Supabase, check if user was stored locally
         const acc = StorageService.getUserAccount();
         if (acc && acc.isLoggedIn) {
           UserSyncService.reconcileOnLogin(acc).then(applySynced);
@@ -2162,36 +2181,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        const existing = StorageService.getUserAccount();
-        const account = supabaseUserToUserAccount(session.user, existing);
-        setUserAccount(account);
-        StorageService.saveUserAccount(account);
-
-        const synced = await UserSyncService.reconcileOnLogin(account);
-        applySynced(synced);
-      } else if (_event === 'SIGNED_OUT') {
-        // Do NOT call StorageService.clearAllUserData() here!
-        // Background token refresh or transient connection drops must NEVER wipe user's local storage and purchases!
-        // Explicit logout is handled cleanly by `logoutUser()`.
-      }
-    });
-
     const handleAuthMessage = (event: MessageEvent) => {
       if (typeof window !== 'undefined' && event.origin === window.location.origin) {
-        if (event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
-          supabase.auth.getSession().then(async ({ data: { session } }) => {
-            if (session?.user) {
-              const existing = StorageService.getUserAccount();
-              const account = supabaseUserToUserAccount(session.user, existing);
-              setUserAccount(account);
-              StorageService.saveUserAccount(account);
-
-              const synced = await UserSyncService.reconcileOnLogin(account);
-              applySynced(synced);
-            }
-          });
+        if (event.data?.type === 'FIREBASE_AUTH_SUCCESS' || event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
+          const acc = StorageService.getUserAccount();
+          if (acc && acc.isLoggedIn) {
+            void UserSyncService.reconcileOnLogin(acc).then(applySynced);
+          }
         }
       }
     };
@@ -2249,7 +2245,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     window.addEventListener('storage', handleStorage);
     window.addEventListener('taste_profile_updated', handleTasteProfileEvent);
     return () => {
-      subscription?.unsubscribe();
       window.removeEventListener('message', handleAuthMessage);
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('storage', handleStorage);

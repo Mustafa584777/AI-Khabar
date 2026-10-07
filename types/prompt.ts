@@ -209,7 +209,7 @@ export interface RegisteredUserRecord {
   aiHistory?: any[];
   joinedDate: string;
   lastSyncedAt?: string;
-  source: 'supabase_auth' | 'supabase_sync' | 'local_store' | 'razorpay' | 'razorpay_verified';
+  source: 'supabase_auth' | 'supabase_sync' | 'local_store' | 'razorpay' | 'razorpay_verified' | 'firebase';
   paymentAmount?: number;
   paymentId?: string;
   paymentDate?: string;
@@ -268,6 +268,9 @@ export interface SearchQueryItem {
   query: string;
   count: number;
   lastSearched: number;
+  resultsCount?: number;
+  category?: string;
+  createdAt?: string | number;
 }
 
 export interface AiSearchResult {

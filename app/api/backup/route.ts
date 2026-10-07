@@ -168,6 +168,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // If incoming tags were also supplied, save them
+    if (Array.isArray(body.tags) && body.tags.length > 0) {
+      try {
+        await ServerStorage.saveAllTags(body.tags);
+      } catch {
+        // ignore
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: `Successfully restored ${incomingPosts.length} prompt cards (${mode} mode)`,

@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
-import { supabase } from '@/lib/supabase';
+import { auth } from '@/lib/firebase';
+import { GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail } from 'firebase/auth';
 import {
   X,
   Sparkles,
@@ -102,86 +103,40 @@ export const UserAuthModal = () => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const origin = typeof window !== 'undefined'
-        ? window.location.origin
-        : 'https://zeenaprompt.com';
-      const redirectUrl = `${origin}/auth/callback`;
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      const result = await signInWithPopup(auth, provider);
+      const u = result.user;
+      if (u) {
+        const name = u.displayName || u.email?.split('@')[0] || 'Creator';
+        const avatar = u.photoURL || defaultAvatar;
 
-      // Detect mobile device
-      const isMobile =
-        typeof navigator !== 'undefined' &&
-        /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-      if (isMobile) {
-        // Mobile browsers block popups aggressively: use direct browser redirect
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: redirectUrl,
-            skipBrowserRedirect: false,
-          },
-        });
-        if (error) {
-          setErrorMessage(error.message);
-          showToast(`Google Sign-In: ${error.message}`);
-          setIsLoading(false);
-        }
-        return;
-      }
-
-      // Desktop: Attempt popup with direct fallback
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          skipBrowserRedirect: true,
-        },
-      });
-
-      if (error) {
-        console.warn('Supabase OAuth error:', error);
-        setErrorMessage(error.message);
-        showToast(`Google Sign-In: ${error.message}`);
-        setIsLoading(false);
-        return;
-      }
-
-      if (data?.url) {
-        const width = 520;
-        const height = 640;
-        const left = window.screenX + (window.outerWidth - width) / 2;
-        const top = window.screenY + (window.outerHeight - height) / 2;
-
-        let popup: Window | null = null;
-        try {
-          popup = window.open(
-            data.url,
-            'SupabaseOAuth',
-            `width=${width},height=${height},left=${left},top=${top},toolbar=0,scrollbars=1,status=1,resizable=1,location=1,menuBar=0`
-          );
-        } catch {
-          popup = null;
-        }
-
-        // If popup was blocked by browser
-        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-          window.location.href = data.url;
-          return;
-        }
-
-        // Check if popup closed
-        const checkClosed = setInterval(() => {
-          if (popup && popup.closed) {
-            clearInterval(checkClosed);
-            setTimeout(() => {
-              setIsLoading(false);
-            }, 1000);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('auraprompt_signup_modal_already_shown', 'true');
+          localStorage.setItem('auraprompt_first_login_claimed', 'true');
+          localStorage.setItem('auraprompt_signup_bonus_claimed', 'true');
+          if (!localStorage.getItem('auraprompt_tool_credits')) {
+            localStorage.setItem('auraprompt_tool_credits', '5');
           }
-        }, 1000);
+          if (u.email) {
+            const cleanE = u.email.trim().toLowerCase();
+            localStorage.setItem(`auraprompt_signup_modal_already_shown_${cleanE}`, 'true');
+            localStorage.setItem(`auraprompt_signup_modal_shown_${cleanE}`, 'true');
+            localStorage.setItem(`auraprompt_signup_bonus_claimed_${cleanE}`, 'true');
+          }
+        }
+
+        await loginUser(u.email || '', '', name, avatar, u.uid);
+        setIsFirstLoginModalOpen(false);
+        showToast(`Welcome ${name}! Signed in via Google.`);
+        setIsLoading(false);
+        setIsUserAuthModalOpen(false);
+        checkAndRedirectStudio();
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Google login failed');
-      showToast(err.message || 'Google login failed');
+      console.warn('Google sign-in error:', err);
+      setErrorMessage(err.message || 'Google sign-in could not be completed.');
+      showToast(err.message || 'Google sign-in could not be completed.');
       setIsLoading(false);
     }
   };
@@ -196,11 +151,7 @@ export const UserAuthModal = () => {
     }
     setIsLoading(true);
     try {
-      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://zeenaprompt.com';
-      const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
-        redirectTo: `${origin}/auth/callback?type=recovery`,
-      });
-      if (error) throw error;
+      await sendPasswordResetEmail(auth, cleanEmail);
       setForgotSuccess(true);
       showToast('Password reset instructions sent to your email!');
     } catch (err: any) {
@@ -271,18 +222,8 @@ export const UserAuthModal = () => {
           return;
         }
 
-        // 2. Sign in to Supabase to establish client session
-        const { data: signData, error: signError } = await supabase.auth.signInWithPassword({
-          email: cleanEmail,
-          password,
-        });
-
-        if (signError) {
-          console.warn('Post-signup client sign-in notice:', signError.message);
-        }
-
-        // 3. Initialize account in App state (which triggers cloud sync)
-        const newUserId = signupData.user?.id || signData?.user?.id;
+        // 2. Initialize account in App state (which triggers cloud sync)
+        const newUserId = signupData.user?.id || `u_${Date.now()}`;
         await signupUser(userName, userHandle, cleanEmail, password, defaultAvatar, newUserId);
         showToast(`Welcome ${userName}! 5 Free Credits added to your account 🎉`);
         setIsLoading(false);
@@ -322,11 +263,6 @@ export const UserAuthModal = () => {
 
         if (!loginRes.ok || !loginData.success) {
           throw new Error(loginData.error || 'Invalid email or password');
-        }
-
-        // 2. Set session on client Supabase instance if provided
-        if (loginData.session) {
-          await supabase.auth.setSession(loginData.session);
         }
 
         const userName = loginData.user?.user_metadata?.full_name || cleanEmail.split('@')[0];

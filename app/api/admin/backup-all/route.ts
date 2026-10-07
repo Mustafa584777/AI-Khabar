@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ServerStorage } from '@/lib/server-storage';
 import { NotificationServerStore } from '@/lib/notification-storage';
-import { supabase, supabaseAdmin, isSupabaseConfigured } from '@/lib/supabase';
 import { db as firestoreDb, isFirebaseConfigured } from '@/lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
-import { RegisteredUserRecord, PromptPost, Category, SearchQueryItem, PromptRequestItem, SiteSettings, PlanTier } from '@/types/prompt';
+import { doc, setDoc, getDoc, getDocs, collection, writeBatch } from 'firebase/firestore';
+import {
+  RegisteredUserRecord,
+  PromptPost,
+  Category,
+  SearchQueryItem,
+  PromptRequestItem,
+  SiteSettings,
+  PlanTier,
+} from '@/types/prompt';
 import { cleanTagsArray } from '@/lib/tag-utils';
 import fs from 'fs';
 import path from 'path';
@@ -19,15 +26,6 @@ const PROMPT_REQUESTS_KEY = 'prompt_requests';
 
 function getCleanEmail(email?: string): string {
   return (email || '').trim().toLowerCase();
-}
-
-function getSyncKey(userId?: string, email?: string): string {
-  if (userId) return `user_sync_${userId}`;
-  if (email) {
-    const clean = email.toLowerCase().replace(/[^a-z0-9_]/g, '_');
-    return `user_sync_email_${clean}`;
-  }
-  return '';
 }
 
 function readLocalJson<T>(filePath: string, fallback: T): T {
@@ -53,140 +51,168 @@ function writeLocalJson<T>(filePath: string, data: T): void {
   }
 }
 
-// Fetch all registered users from DB and local files
+function cleanForFirestore<T = any>(obj: any): T {
+  if (obj === null || obj === undefined) return null as any;
+  if (Array.isArray(obj)) return obj.map((item) => cleanForFirestore(item)) as any;
+  if (typeof obj === 'object') {
+    const res: Record<string, any> = {};
+    for (const [k, v] of Object.entries(obj)) {
+      if (v !== undefined) {
+        res[k] = cleanForFirestore(v);
+      }
+    }
+    return res as any;
+  }
+  return obj;
+}
+
+// Fetch all registered users from Firestore and local files
 async function fetchAllRegisteredUsers(): Promise<RegisteredUserRecord[]> {
-  const client = supabaseAdmin || supabase;
   const usersMap = new Map<string, RegisteredUserRecord>();
 
-  // 1. Fetch from Supabase settings table (user_sync_* rows)
-  if (isSupabaseConfigured()) {
+  // 1. Fetch from Firestore users collection
+  if (isFirebaseConfigured()) {
     try {
-      const { data: syncRows, error } = await client
-        .from('settings')
-        .select('*')
-        .like('id', 'user_sync_%');
+      const snap = await getDocs(collection(firestoreDb, 'users'));
+      for (const d of snap.docs) {
+        const syncData = d.data() as any;
+        const email = getCleanEmail(syncData.email);
+        const userId = syncData.userId || syncData.id || d.id;
+        const key = email || userId;
+        if (!key) continue;
 
-      if (!error && Array.isArray(syncRows)) {
-        for (const row of syncRows) {
-          const syncData = row.data || {};
-          const email = getCleanEmail(syncData.email);
-          const userId = syncData.userId || row.id.replace(/^user_sync_email_/, '').replace(/^user_sync_/, '');
-          const key = email || userId;
-          if (!key) continue;
-
-          const rawCredits = typeof syncData.toolCredits === 'number' ? syncData.toolCredits : 5;
-          const explicitTier: PlanTier = (syncData.planTier && ['starter', 'pro', 'vip', 'ultra', 'free'].includes(syncData.planTier))
+        const rawCredits = typeof syncData.toolCredits === 'number' ? syncData.toolCredits : 5;
+        const explicitTier: PlanTier =
+          syncData.planTier && ['starter', 'pro', 'vip', 'ultra', 'free'].includes(syncData.planTier)
             ? syncData.planTier
             : 'free';
 
-          const hasPaymentProof = Boolean(
-            syncData.lastPaymentId ||
-            syncData.paymentId ||
-            syncData.lastOrderId ||
-            syncData.source === 'razorpay_verified'
-          );
-          const hasValidUnexpiredPlan = Boolean(
-            syncData.planExpiresAt &&
-            !isNaN(new Date(syncData.planExpiresAt).getTime()) &&
-            new Date(syncData.planExpiresAt).getTime() > Date.now()
-          );
+        const isGenuinelyPaid = explicitTier !== 'free' || Boolean(syncData.isProUser);
+        const planTier: PlanTier = isGenuinelyPaid ? explicitTier : 'free';
+        const isProUser = isGenuinelyPaid;
 
-          const isGenuinelyPaid = explicitTier !== 'free' && (hasPaymentProof || hasValidUnexpiredPlan);
-          const planTier: PlanTier = isGenuinelyPaid ? explicitTier : 'free';
-          const isProUser = isGenuinelyPaid || Boolean(syncData.isProUser);
-
-          usersMap.set(key, {
-            id: userId,
-            email,
-            name: syncData.name || (email ? email.split('@')[0] : 'Creator'),
-            username: syncData.username || (email ? `@${email.split('@')[0]}` : '@creator'),
-            avatar: syncData.avatar,
-            planTier,
-            isProUser,
-            toolCredits: rawCredits,
-            aiSearchRemaining: typeof syncData.aiSearchRemaining === 'number' ? syncData.aiSearchRemaining : 5,
-            promptRequestsRemaining: typeof syncData.promptRequestsRemaining === 'number' ? syncData.promptRequestsRemaining : 0,
-            points: typeof syncData.points === 'number' ? syncData.points : 10,
-            planExpiresAt: syncData.planExpiresAt,
-            unlockedPromptIds: Array.isArray(syncData.unlockedPromptIds) ? syncData.unlockedPromptIds : [],
-            bookmarkedIds: Array.isArray(syncData.bookmarkedIds) ? syncData.bookmarkedIds : [],
-            likedIds: Array.isArray(syncData.likedIds) ? syncData.likedIds : [],
-            aiHistory: Array.isArray(syncData.aiHistory) ? syncData.aiHistory : [],
-            joinedDate: syncData.joinedDate || new Date().toISOString(),
-            lastSyncedAt: syncData.updatedAt || syncData.lastSyncedAt || new Date().toISOString(),
-            paymentId: syncData.lastPaymentId || syncData.paymentId,
-            source: syncData.source || 'supabase_sync',
-          });
-        }
-      }
-    } catch (err) {
-      console.warn('Error fetching users from Supabase in backup-all:', err);
-    }
-  }
-
-  // 2. Fetch from local files (data/users.json and data/subscriptions.json)
-  const localUsers = readLocalJson<any[]>(USERS_FILE, []);
-  if (Array.isArray(localUsers)) {
-    for (const u of localUsers) {
-      const email = getCleanEmail(u.email);
-      const id = u.id || u.userId;
-      const key = email || id;
-      if (!key) continue;
-
-      if (!usersMap.has(key)) {
         usersMap.set(key, {
-          id: id || `u_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          id: userId,
           email,
-          name: u.name || (email ? email.split('@')[0] : 'User'),
-          username: u.username || (email ? `@${email.split('@')[0]}` : '@user'),
-          avatar: u.avatar,
-          planTier: u.planTier || 'free',
-          isProUser: Boolean(u.isProUser || (u.planTier && u.planTier !== 'free')),
-          toolCredits: typeof u.toolCredits === 'number' ? u.toolCredits : 5,
-          aiSearchRemaining: typeof u.aiSearchRemaining === 'number' ? u.aiSearchRemaining : 5,
-          promptRequestsRemaining: typeof u.promptRequestsRemaining === 'number' ? u.promptRequestsRemaining : 0,
-          points: typeof u.points === 'number' ? u.points : 10,
-          planExpiresAt: u.planExpiresAt,
-          unlockedPromptIds: Array.isArray(u.unlockedPromptIds) ? u.unlockedPromptIds : [],
-          bookmarkedIds: Array.isArray(u.bookmarkedIds) ? u.bookmarkedIds : [],
-          likedIds: Array.isArray(u.likedIds) ? u.likedIds : [],
-          aiHistory: Array.isArray(u.aiHistory) ? u.aiHistory : [],
-          joinedDate: u.joinedDate || new Date().toISOString(),
-          lastSyncedAt: u.updatedAt || u.lastSyncedAt || new Date().toISOString(),
-          paymentId: u.lastPaymentId || u.paymentId,
-          source: 'local_store',
+          name: syncData.name || (email ? email.split('@')[0] : 'Creator'),
+          username: syncData.username || (email ? `@${email.split('@')[0]}` : '@creator'),
+          avatar: syncData.avatar,
+          planTier,
+          isProUser,
+          toolCredits: rawCredits,
+          aiSearchRemaining: typeof syncData.aiSearchRemaining === 'number' ? syncData.aiSearchRemaining : 5,
+          promptRequestsRemaining:
+            typeof syncData.promptRequestsRemaining === 'number' ? syncData.promptRequestsRemaining : 0,
+          points: typeof syncData.points === 'number' ? syncData.points : 10,
+          planExpiresAt: syncData.planExpiresAt,
+          unlockedPromptIds: Array.isArray(syncData.unlockedPromptIds) ? syncData.unlockedPromptIds : [],
+          bookmarkedIds: Array.isArray(syncData.bookmarkedIds) ? syncData.bookmarkedIds : [],
+          likedIds: Array.isArray(syncData.likedIds) ? syncData.likedIds : [],
+          aiHistory: Array.isArray(syncData.aiHistory) ? syncData.aiHistory : [],
+          joinedDate: syncData.joinedDate || new Date().toISOString(),
+          lastSyncedAt: syncData.updatedAt || syncData.lastSyncedAt || new Date().toISOString(),
+          paymentId: syncData.lastPaymentId || syncData.paymentId,
+          source: 'firebase',
         });
       }
-    }
-  }
-
-  return Array.from(usersMap.values());
-}
-
-// Fetch all prompt requests from DB or local
-async function fetchAllPromptRequests(): Promise<PromptRequestItem[]> {
-  const client = supabaseAdmin || supabase;
-  if (isSupabaseConfigured()) {
-    try {
-      const { data, error } = await client
-        .from('settings')
-        .select('data')
-        .eq('id', PROMPT_REQUESTS_KEY)
-        .maybeSingle();
-
-      if (!error && data?.data && Array.isArray(data.data)) {
-        return data.data as PromptRequestItem[];
-      }
     } catch (err) {
-      console.warn('Error loading prompt requests from Supabase in backup-all:', err);
+      console.warn('Error fetching users from Firestore in backup-all:', err);
     }
   }
 
-  const local = readLocalJson<PromptRequestItem[]>(path.join(DATA_DIR, 'prompt_requests.json'), []);
-  return Array.isArray(local) ? local : [];
+  // 2. Fetch from local files (data/users.json)
+  const localUsers = readLocalJson<any>(USERS_FILE, []);
+  const localArray = Array.isArray(localUsers) ? localUsers : Object.values(localUsers);
+  for (const u of localArray) {
+    if (!u || typeof u !== 'object') continue;
+    const email = getCleanEmail(u.email);
+    const id = u.id || u.userId;
+    const key = email || id;
+    if (!key) continue;
+
+    if (!usersMap.has(key)) {
+      usersMap.set(key, {
+        id: id || `u_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        email,
+        name: u.name || (email ? email.split('@')[0] : 'User'),
+        username: u.username || (email ? `@${email.split('@')[0]}` : '@user'),
+        avatar: u.avatar,
+        planTier: u.planTier || 'free',
+        isProUser: Boolean(u.isProUser || (u.planTier && u.planTier !== 'free')),
+        toolCredits: typeof u.toolCredits === 'number' ? u.toolCredits : 5,
+        aiSearchRemaining: typeof u.aiSearchRemaining === 'number' ? u.aiSearchRemaining : 5,
+        promptRequestsRemaining: u.promptRequestsRemaining || 0,
+        points: typeof u.points === 'number' ? u.points : 10,
+        planExpiresAt: u.planExpiresAt,
+        unlockedPromptIds: Array.isArray(u.unlockedPromptIds) ? u.unlockedPromptIds : [],
+        bookmarkedIds: Array.isArray(u.bookmarkedIds) ? u.bookmarkedIds : [],
+        likedIds: Array.isArray(u.likedIds) ? u.likedIds : [],
+        aiHistory: Array.isArray(u.aiHistory) ? u.aiHistory : [],
+        joinedDate: u.joinedDate || new Date().toISOString(),
+        lastSyncedAt: u.updatedAt || u.lastSyncedAt || new Date().toISOString(),
+        paymentId: u.lastPaymentId || u.paymentId,
+        source: 'local_store',
+      });
+    }
+  }
+
+  // 3. Fetch from subscriptions.json
+  const localSubs = readLocalJson<Record<string, any>>(SUBSCRIPTIONS_FILE, {});
+  for (const [keyEmail, sub] of Object.entries(localSubs)) {
+    if (!sub || typeof sub !== 'object') continue;
+    const email = getCleanEmail(sub.email || keyEmail);
+    if (!email) continue;
+
+    if (usersMap.has(email)) {
+      const user = usersMap.get(email)!;
+      user.planTier = sub.planTier || user.planTier;
+      user.isProUser = true;
+      user.planExpiresAt = sub.planExpiresAt || user.planExpiresAt;
+      user.paymentId = sub.paymentId || user.paymentId;
+    } else {
+      usersMap.set(email, {
+        id: sub.userId || `u_${Date.now()}`,
+        email,
+        name: email.split('@')[0],
+        username: `@${email.split('@')[0]}`,
+        planTier: sub.planTier || 'pro',
+        isProUser: true,
+        toolCredits: sub.credits || 250,
+        aiSearchRemaining: sub.aiSearchQuota || 200,
+        promptRequestsRemaining: sub.promptRequests || 2,
+        points: 30,
+        unlockedPromptIds: [],
+        bookmarkedIds: [],
+        likedIds: [],
+        aiHistory: [],
+        joinedDate: sub.planStartedAt || new Date().toISOString(),
+        lastSyncedAt: sub.updatedAt || new Date().toISOString(),
+        paymentId: sub.paymentId,
+        source: 'local_store',
+      });
+    }
+  }
+
+  return Array.from(usersMap.values()).sort(
+    (a, b) => new Date(b.lastSyncedAt || 0).getTime() - new Date(a.lastSyncedAt || 0).getTime()
+  );
 }
 
-// Helper to normalize any incoming array/object of prompts
+// Fetch prompt requests
+async function fetchAllPromptRequests(): Promise<PromptRequestItem[]> {
+  if (isFirebaseConfigured()) {
+    try {
+      const snap = await getDoc(doc(firestoreDb, 'settings', PROMPT_REQUESTS_KEY));
+      if (snap.exists() && Array.isArray(snap.data()?.requests)) {
+        return snap.data()?.requests;
+      }
+    } catch {}
+  }
+  const localReqs = readLocalJson<PromptRequestItem[]>(path.join(DATA_DIR, 'prompt_requests.json'), []);
+  return localReqs;
+}
+
+// Normalize incoming prompts safely
 function normalizeIncomingPosts(rawList: any[]): PromptPost[] {
   return rawList
     .map((item: any, idx: number) => {
@@ -204,6 +230,7 @@ function normalizeIncomingPosts(rawList: any[]): PromptPost[] {
       )
         .toString()
         .trim();
+
       const title = (
         item.title ||
         item.name ||
@@ -232,20 +259,13 @@ function normalizeIncomingPosts(rawList: any[]): PromptPost[] {
         ''
       ).toString();
 
-      let postTags: string[] = [];
+      let tags: string[] = [];
       if (Array.isArray(item.tags)) {
-        postTags = item.tags.map((t: any) => String(t).trim()).filter(Boolean);
+        tags = item.tags.map((t: any) => String(t).trim()).filter(Boolean);
       } else if (typeof item.tags === 'string') {
-        postTags = item.tags.split(',').map((t: string) => t.trim()).filter(Boolean);
+        tags = item.tags.split(',').map((t: string) => t.trim()).filter(Boolean);
       }
-      if (postTags.length === 0) postTags = ['AI Prompt'];
-
-      const isPremium = Boolean(
-        item.isPremium ||
-        item.is_premium ||
-        item.parameters?.isPremium ||
-        item.parameters?.is_premium
-      );
+      if (tags.length === 0) tags = ['AI Prompt'];
 
       return {
         id: safeId,
@@ -255,18 +275,17 @@ function normalizeIncomingPosts(rawList: any[]): PromptPost[] {
         aiTool,
         promptText: promptText || title,
         negativePrompt: (item.negativePrompt || item.negative || '').toString(),
-        imageUrl,
+        imageUrl: imageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe',
         imageAlt: (item.imageAlt || title).toString(),
         imageFileName: item.imageFileName,
         additionalImages: Array.isArray(item.additionalImages) ? item.additionalImages : [],
-        parameters: typeof item.parameters === 'object' && item.parameters ? { ...item.parameters, isPremium } : { isPremium },
+        parameters: typeof item.parameters === 'object' && item.parameters ? item.parameters : {},
         variables: Array.isArray(item.variables) ? item.variables : [],
         articleContent: (item.articleContent || item.article || '').toString(),
-        tags: cleanTagsArray(postTags),
+        tags: cleanTagsArray(tags),
         status: item.status === 'draft' ? 'draft' : 'published',
         isFeatured: Boolean(item.isFeatured),
         isTrending: Boolean(item.isTrending),
-        isPremium,
         viewsCount: Number(item.viewsCount) || 0,
         copiesCount: Number(item.copiesCount) || 0,
         likesCount: Number(item.likesCount) || 0,
@@ -283,100 +302,96 @@ function normalizeIncomingPosts(rawList: any[]): PromptPost[] {
         },
         createdAt: item.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        publishedAt: item.publishedAt || (item.status === 'published' ? new Date().toISOString() : undefined),
+        publishedAt: item.publishedAt || new Date().toISOString(),
       } as PromptPost;
     })
-    .filter((p): p is PromptPost => p !== null);
+    .filter((p): p is PromptPost => p !== null && p.promptText.length > 0);
 }
 
 // -------------------------------------------------------------
-// GET: Full Comprehensive Backup Export (All Website Data)
+// GET: Export entire website data
 // -------------------------------------------------------------
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url);
+    const download = searchParams.get('download') === 'true';
+
     const [
       allPosts,
-      allUsers,
       allCategories,
       allTags,
-      allSearchQueries,
-      pushNotifications,
-      pushSubscribers,
-      pushStats,
-      allPromptRequests,
-      siteSettings,
+      settings,
+      searchQueries,
+      registeredUsers,
+      promptRequests,
+      subscribers,
+      notifications,
+      notificationStats,
     ] = await Promise.all([
       ServerStorage.getAllPosts(true),
-      fetchAllRegisteredUsers(),
       ServerStorage.getAllCategories(),
       ServerStorage.getAllTags(),
-      ServerStorage.getAllSearchQueries(),
-      NotificationServerStore.getNotifications(),
-      NotificationServerStore.getSubscribers(),
-      NotificationServerStore.getStats(),
-      fetchAllPromptRequests(),
       ServerStorage.getSettings(),
+      ServerStorage.getSearchQueries(200),
+      fetchAllRegisteredUsers(),
+      fetchAllPromptRequests(),
+      NotificationServerStore.getSubscribers(),
+      NotificationServerStore.getNotifications(),
+      NotificationServerStore.getStats(),
     ]);
 
-    const dateStr = new Date().toISOString().slice(0, 10);
-    const summary = {
-      totalPrompts: allPosts.length,
-      totalUsers: allUsers.length,
-      totalCategories: allCategories.length,
-      totalTags: allTags.length,
-      totalSearchQueries: allSearchQueries.length,
-      totalPushNotifications: pushNotifications.length,
-      totalPushSubscribers: pushSubscribers.length,
-      totalRequestedPrompts: allPromptRequests.length,
-    };
-
-    const fullArchive = {
-      version: '2.0',
-      backupType: 'all_website_data',
-      exportedAt: new Date().toISOString(),
+    const backupPayload = {
       site: 'tool.reelz',
-      summary,
-      posts: allPosts,
-      users: allUsers,
-      categories: allCategories,
-      tags: allTags,
-      searchQueries: allSearchQueries,
-      pushNotifications: {
-        notifications: pushNotifications,
-        subscribers: pushSubscribers,
-        stats: pushStats,
+      version: '3.0',
+      backupType: 'all_website_master_backup',
+      exportedAt: new Date().toISOString(),
+      summary: {
+        totalPrompts: allPosts.length,
+        totalRegisteredUsers: registeredUsers.length,
+        totalCategories: allCategories.length,
+        totalTags: allTags.length,
+        totalSearchQueries: searchQueries.length,
+        totalPushNotifications: notifications.length,
+        totalPushSubscribers: subscribers.length,
+        totalPromptRequests: promptRequests.length,
       },
-      promptRequests: allPromptRequests,
-      settings: siteSettings,
+      data: {
+        posts: allPosts,
+        categories: allCategories,
+        tags: allTags,
+        settings,
+        searchQueries,
+        registeredUsers,
+        promptRequests,
+        pushNotifications: notifications,
+        pushSubscribers: subscribers,
+        notificationStats,
+      },
     };
 
-    return NextResponse.json(
-      { success: true, ...fullArchive },
-      {
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate',
-          'Content-Disposition': `attachment; filename="promptcms-all-website-data-backup-${dateStr}.json"`,
-        },
-      }
-    );
+    const headers: Record<string, string> = {
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+    };
+
+    if (download) {
+      headers['Content-Disposition'] =
+        `attachment; filename="toolreelz-master-backup-${new Date().toISOString().slice(0, 10)}.json"`;
+    }
+
+    return NextResponse.json({ success: true, ...backupPayload }, { headers });
   } catch (error: any) {
-    console.error('All website data backup export error:', error);
-    return NextResponse.json(
-      { success: false, error: error.message || 'Failed to generate comprehensive website backup' },
-      { status: 500 }
-    );
+    console.error('All website backup export error:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
 
 // -------------------------------------------------------------
-// POST: One-Click Restore for All Website Data
+// POST: Restore entire website data
 // -------------------------------------------------------------
 export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.json();
-    const mode = rawBody.mode === 'replace' ? 'replace' : 'merge';
-
-    // Support both wrapped payload { data: { posts, ... } } and direct payload { posts, ... }
+    const mode: 'merge' | 'replace' = rawBody.mode === 'replace' ? 'replace' : 'merge';
     const payload = rawBody.data && typeof rawBody.data === 'object' ? rawBody.data : rawBody;
 
     const restoredSummary = {
@@ -391,8 +406,6 @@ export async function POST(req: NextRequest) {
       settingsRestored: false,
     };
 
-    const client = supabaseAdmin || supabase;
-
     // 1. RESTORE PROMPTS
     const rawPostsList = Array.isArray(payload.posts)
       ? payload.posts
@@ -405,64 +418,70 @@ export async function POST(req: NextRequest) {
       if (normalizedPosts.length > 0) {
         await ServerStorage.restorePosts(normalizedPosts, mode);
         restoredSummary.restoredPrompts = normalizedPosts.length;
-
-        // Sync to Firebase Firestore
-        if (isFirebaseConfigured()) {
-          try {
-            for (const post of normalizedPosts) {
-              await setDoc(doc(firestoreDb, 'posts', post.id), post);
-            }
-          } catch (fErr) {
-            console.warn('Firestore restore posts notice:', fErr);
-          }
-        }
       }
     }
 
     // 2. RESTORE REGISTERED USERS
-    const rawUsersList = Array.isArray(payload.users)
-      ? payload.users
-      : Array.isArray(payload.registeredUsers)
+    const rawUsersList = Array.isArray(payload.registeredUsers)
       ? payload.registeredUsers
+      : Array.isArray(payload.users)
+      ? payload.users
       : [];
 
     if (rawUsersList.length > 0) {
-      const existingLocalUsers = readLocalJson<any[]>(USERS_FILE, []);
-      const usersToSaveLocally: any[] = mode === 'replace' ? [] : [...existingLocalUsers];
+      const existingLocalUsers = readLocalJson<any>(USERS_FILE, {});
+      const localUsersDict: Record<string, any> = Array.isArray(existingLocalUsers)
+        ? {}
+        : { ...existingLocalUsers };
 
       for (const item of rawUsersList) {
         if (!item || typeof item !== 'object') continue;
         try {
           const userId = item.id || item.userId || `u_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
           const email = getCleanEmail(item.email);
-          const key = getSyncKey(userId, email);
+          const key = userId || email;
           if (!key) continue;
 
           let existingData: any = {};
-          if (mode === 'merge' && isSupabaseConfigured()) {
-            const { data: row } = await client.from('settings').select('data').eq('id', key).single();
-            if (row?.data) existingData = row.data;
+          if (mode === 'merge' && isFirebaseConfigured()) {
+            try {
+              const snap = await getDoc(doc(firestoreDb, 'users', userId));
+              if (snap.exists()) existingData = snap.data();
+            } catch {}
           }
 
           const resolvedTier: PlanTier = item.planTier || existingData.planTier || 'free';
-          const resolvedCredits = typeof item.toolCredits === 'number'
-            ? (mode === 'replace' ? item.toolCredits : Math.max(item.toolCredits, existingData.toolCredits || 0))
-            : (existingData.toolCredits || 5);
-          const resolvedPoints = typeof item.points === 'number'
-            ? (mode === 'replace' ? item.points : Math.max(item.points, existingData.points || 0))
-            : (existingData.points || 10);
-          const resolvedAiSearchRemaining = typeof item.aiSearchRemaining === 'number'
-            ? item.aiSearchRemaining
-            : (existingData.aiSearchRemaining ?? 5);
+          const resolvedCredits =
+            typeof item.toolCredits === 'number'
+              ? mode === 'replace'
+                ? item.toolCredits
+                : Math.max(item.toolCredits, existingData.toolCredits || 0)
+              : existingData.toolCredits || 5;
+          const resolvedPoints =
+            typeof item.points === 'number'
+              ? mode === 'replace'
+                ? item.points
+                : Math.max(item.points, existingData.points || 0)
+              : existingData.points || 10;
+          const resolvedAiSearchRemaining =
+            typeof item.aiSearchRemaining === 'number'
+              ? item.aiSearchRemaining
+              : existingData.aiSearchRemaining ?? 5;
 
           const resolvedUnlocks = Array.from(
-            new Set([...(mode === 'replace' ? [] : (existingData.unlockedPromptIds || [])), ...(item.unlockedPromptIds || [])])
+            new Set([
+              ...(mode === 'replace' ? [] : existingData.unlockedPromptIds || []),
+              ...(item.unlockedPromptIds || []),
+            ])
           );
           const resolvedBookmarks = Array.from(
-            new Set([...(mode === 'replace' ? [] : (existingData.bookmarkedIds || [])), ...(item.bookmarkedIds || [])])
+            new Set([
+              ...(mode === 'replace' ? [] : existingData.bookmarkedIds || []),
+              ...(item.bookmarkedIds || []),
+            ])
           );
           const resolvedLikes = Array.from(
-            new Set([...(mode === 'replace' ? [] : (existingData.likedIds || [])), ...(item.likedIds || [])])
+            new Set([...(mode === 'replace' ? [] : existingData.likedIds || []), ...(item.likedIds || [])])
           );
 
           const userRecord = {
@@ -481,47 +500,33 @@ export async function POST(req: NextRequest) {
             unlockedPromptIds: resolvedUnlocks,
             bookmarkedIds: resolvedBookmarks,
             likedIds: resolvedLikes,
-            aiHistory: Array.isArray(item.aiHistory) ? item.aiHistory : (existingData.aiHistory || []),
+            aiHistory: Array.isArray(item.aiHistory) ? item.aiHistory : existingData.aiHistory || [],
             joinedDate: item.joinedDate || existingData.joinedDate || new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             restoredAt: new Date().toISOString(),
           };
 
-          // Save to Supabase
-          if (isSupabaseConfigured()) {
-            await client.from('settings').upsert({ id: key, data: userRecord });
+          // Save to Firebase Firestore
+          if (isFirebaseConfigured()) {
+            await setDoc(doc(firestoreDb, 'users', userId), cleanForFirestore(userRecord));
             if (email) {
-              const emailKey = getSyncKey(undefined, email);
-              if (emailKey !== key) {
-                await client.from('settings').upsert({ id: emailKey, data: userRecord });
+              const cleanEKey = email.replace(/[^a-z0-9_]/g, '_');
+              if (cleanEKey !== userId) {
+                await setDoc(doc(firestoreDb, 'users', cleanEKey), cleanForFirestore(userRecord));
               }
             }
           }
 
-          // Save to Firebase Firestore
-          if (isFirebaseConfigured()) {
-            try {
-              await setDoc(doc(firestoreDb, 'users', userId), userRecord);
-            } catch (fErr) {
-              console.warn('Firestore restore user notice:', fErr);
-            }
-          }
-
           // Save locally
-          const existingIdx = usersToSaveLocally.findIndex((u) => u.id === userId || (email && u.email === email));
-          if (existingIdx >= 0) {
-            usersToSaveLocally[existingIdx] = userRecord;
-          } else {
-            usersToSaveLocally.push(userRecord);
-          }
-
+          if (email) localUsersDict[email] = userRecord;
+          localUsersDict[userId] = userRecord;
           restoredSummary.restoredUsers++;
         } catch (uErr) {
           console.warn('Error restoring single user:', uErr);
         }
       }
 
-      writeLocalJson(USERS_FILE, usersToSaveLocally);
+      writeLocalJson(USERS_FILE, localUsersDict);
     }
 
     // 3. RESTORE CATEGORIES
@@ -530,9 +535,6 @@ export async function POST(req: NextRequest) {
         if (cat && (cat.name || cat.id)) {
           try {
             await ServerStorage.saveCategory(cat);
-            if (isFirebaseConfigured() && cat.id) {
-              await setDoc(doc(firestoreDb, 'categories', cat.id), cat);
-            }
             restoredSummary.restoredCategories++;
           } catch (cErr) {
             console.warn('Error restoring category:', cErr);
@@ -546,9 +548,6 @@ export async function POST(req: NextRequest) {
       try {
         const cleanTags = cleanTagsArray(payload.tags);
         await ServerStorage.saveAllTags(cleanTags);
-        if (isFirebaseConfigured()) {
-          await setDoc(doc(firestoreDb, 'settings', 'all_tags'), { tags: cleanTags });
-        }
         restoredSummary.restoredTags = cleanTags.length;
       } catch (tErr) {
         console.warn('Error restoring tags:', tErr);
@@ -556,115 +555,68 @@ export async function POST(req: NextRequest) {
     }
 
     // 5. RESTORE SEARCH QUERIES
-    const rawQueries = Array.isArray(payload.searchQueries)
-      ? payload.searchQueries
-      : Array.isArray(payload.queries)
-      ? payload.queries
-      : [];
-
-    if (rawQueries.length > 0) {
+    if (Array.isArray(payload.searchQueries) && payload.searchQueries.length > 0) {
       try {
-        await ServerStorage.restoreSearchQueries(rawQueries);
-        if (isFirebaseConfigured()) {
-          for (const q of rawQueries) {
-            if (q && q.query) {
-              const qId = q.id || `q_${q.query.trim().toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
-              await setDoc(doc(firestoreDb, 'search_queries', qId), q);
-            }
-          }
-        }
-        restoredSummary.restoredSearchQueries = rawQueries.length;
+        await ServerStorage.restoreSearchQueries(payload.searchQueries);
+        restoredSummary.restoredSearchQueries = payload.searchQueries.length;
       } catch (sqErr) {
         console.warn('Error restoring search queries:', sqErr);
       }
     }
 
-    // 6. RESTORE PUSH NOTIFICATIONS & SUBSCRIBERS
-    const pushData = payload.pushNotifications || {};
-    const notifs = Array.isArray(pushData.notifications) ? pushData.notifications : (Array.isArray(payload.notifications) ? payload.notifications : []);
-    const subs = Array.isArray(pushData.subscribers) ? pushData.subscribers : (Array.isArray(payload.subscribers) ? payload.subscribers : []);
-
-    if (notifs.length > 0) {
+    // 6. RESTORE PUSH NOTIFICATIONS
+    if (Array.isArray(payload.pushNotifications) && payload.pushNotifications.length > 0) {
       try {
-        await NotificationServerStore.saveNotifications(notifs);
-        if (isFirebaseConfigured()) {
-          for (const n of notifs) {
-            if (n && n.id) {
-              await setDoc(doc(firestoreDb, 'push_notifications', n.id), n);
-            }
-          }
-        }
-        restoredSummary.restoredNotifications = notifs.length;
+        await NotificationServerStore.saveNotifications(payload.pushNotifications);
+        restoredSummary.restoredNotifications = payload.pushNotifications.length;
       } catch (nErr) {
         console.warn('Error restoring notifications:', nErr);
       }
     }
 
-    if (subs.length > 0) {
+    // 7. RESTORE SUBSCRIBERS
+    if (Array.isArray(payload.pushSubscribers) && payload.pushSubscribers.length > 0) {
       try {
-        for (const s of subs) {
-          if (s && s.id) {
-            await NotificationServerStore.addOrUpdateSubscriber(s);
-          }
-        }
-        restoredSummary.restoredSubscribers = subs.length;
+        await NotificationServerStore.saveSubscribers(payload.pushSubscribers);
+        restoredSummary.restoredSubscribers = payload.pushSubscribers.length;
       } catch (sErr) {
         console.warn('Error restoring subscribers:', sErr);
       }
     }
 
-    // 7. RESTORE REQUESTED PROMPTS
-    const rawRequests = Array.isArray(payload.promptRequests)
-      ? payload.promptRequests
-      : Array.isArray(payload.requests)
-      ? payload.requests
-      : [];
-
-    if (rawRequests.length > 0) {
+    // 8. RESTORE PROMPT REQUESTS
+    if (Array.isArray(payload.promptRequests) && payload.promptRequests.length > 0) {
       try {
-        if (isSupabaseConfigured()) {
-          await client.from('settings').upsert({
-            id: PROMPT_REQUESTS_KEY,
-            data: rawRequests,
+        if (isFirebaseConfigured()) {
+          await setDoc(doc(firestoreDb, 'settings', PROMPT_REQUESTS_KEY), {
+            requests: payload.promptRequests,
+            updatedAt: new Date().toISOString(),
           });
         }
-        if (isFirebaseConfigured()) {
-          for (const r of rawRequests) {
-            if (r && r.id) {
-              await setDoc(doc(firestoreDb, 'prompt_requests', r.id), r);
-            }
-          }
-        }
-        writeLocalJson(path.join(DATA_DIR, 'prompt_requests.json'), rawRequests);
-        restoredSummary.restoredRequests = rawRequests.length;
+        writeLocalJson(path.join(DATA_DIR, 'prompt_requests.json'), payload.promptRequests);
+        restoredSummary.restoredRequests = payload.promptRequests.length;
       } catch (rErr) {
         console.warn('Error restoring prompt requests:', rErr);
       }
     }
 
-    // 8. RESTORE SITE SETTINGS
+    // 9. RESTORE SITE SETTINGS
     if (payload.settings && typeof payload.settings === 'object') {
       try {
         await ServerStorage.saveSettings(payload.settings);
-        if (isFirebaseConfigured()) {
-          await setDoc(doc(firestoreDb, 'settings', 'general_settings'), payload.settings);
-        }
         restoredSummary.settingsRestored = true;
-      } catch (setErr) {
-        console.warn('Error restoring settings:', setErr);
+      } catch (stErr) {
+        console.warn('Error restoring site settings:', stErr);
       }
     }
 
     return NextResponse.json({
       success: true,
-      message: `Complete website data successfully restored! (${restoredSummary.restoredPrompts} prompts, ${restoredSummary.restoredUsers} users, ${restoredSummary.restoredCategories} categories, ${restoredSummary.restoredTags} tags, ${restoredSummary.restoredSearchQueries} queries, ${restoredSummary.restoredNotifications} notifications, ${restoredSummary.restoredRequests} requests)`,
+      message: `Complete website data successfully restored into Firebase (${mode} mode)!`,
       summary: restoredSummary,
     });
   } catch (error: any) {
-    console.error('All website data restore error:', error);
-    return NextResponse.json(
-      { success: false, error: error.message || 'Failed to restore website data' },
-      { status: 500 }
-    );
+    console.error('All website restore error:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

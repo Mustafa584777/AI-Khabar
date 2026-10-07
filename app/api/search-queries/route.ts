@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     if (!query || typeof query !== 'string') {
       return NextResponse.json({ error: 'Query string is required' }, { status: 400 });
     }
-    await ServerStorage.recordSearchQuery(query);
+    await ServerStorage.recordSearchQuery(query, 0, 'all');
     return NextResponse.json({ success: true });
   } catch (err: any) {
     console.error('Failed to record search query:', err);
