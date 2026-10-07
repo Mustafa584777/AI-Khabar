@@ -79,7 +79,7 @@ export const UserDashboard = () => {
     aiSearchRemaining,
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'saved' | 'history' | 'taste'>('saved');
+  const [activeTab, setActiveTab] = useState<'saved' | 'history' | 'taste' | 'request'>('saved');
   const [historyFilter, setHistoryFilter] = useState<'all' | 'image_to_prompt' | 'idea_to_prompt'>('all');
   const [historySearch, setHistorySearch] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -106,7 +106,57 @@ export const UserDashboard = () => {
     }
   }, [userAccount?.isLoggedIn, openAuthModal]);
 
+  // Request a prompt form state
+  const [requestText, setRequestText] = useState('');
+  const [requestCategory, setRequestCategory] = useState('Photorealistic');
+  const [requestAiTool, setRequestAiTool] = useState('Gemini');
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
+  const [copiedRequestId, setCopiedRequestId] = useState<string | null>(null);
   const [isCreditsInfoOpen, setIsCreditsInfoOpen] = useState(false);
+
+  const handleRequestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!requestText.trim()) {
+      showToast('Please describe the prompt you want our experts to craft');
+      return;
+    }
+    setIsSubmittingRequest(true);
+    try {
+      const success = await addPromptRequest(requestText, requestCategory, requestAiTool);
+      if (success) {
+        setRequestText('');
+      }
+    } finally {
+      setIsSubmittingRequest(false);
+    }
+  };
+
+  const handleCopyFulfilledPrompt = (promptText: string, reqId: string) => {
+    navigator.clipboard.writeText(promptText);
+    setCopiedRequestId(reqId);
+    showToast('Prompt copied to clipboard!');
+    setTimeout(() => setCopiedRequestId(null), 2500);
+  };
+
+  // Filter requests belonging specifically to this logged in user
+  const userRequests = promptRequests.filter((r) => {
+    if (!userAccount) return false;
+    const cleanUserEmail = userAccount.email?.trim().toLowerCase();
+    const cleanReqEmail = r.userEmail?.trim().toLowerCase();
+    const emailMatch = cleanUserEmail && cleanReqEmail && cleanUserEmail === cleanReqEmail;
+    const idMatch = userAccount.id && r.userId === userAccount.id;
+    return Boolean(emailMatch || idMatch);
+  });
+
+  const maxPlanRequests = isPaid ? (currentPlanConfig.promptRequests || 0) : 0;
+  const userSubmittedRequestsCount = userRequests.length;
+  // Accurate, non-overwritten available prompt requests for the user:
+  // If user has paid plan, remaining should not be zero unless user actually consumed/submitted requests
+  const effectivePromptRequestsRemaining = isPaid
+    ? (promptRequestsRemaining > 0
+        ? Math.min(promptRequestsRemaining, maxPlanRequests)
+        : Math.max(0, maxPlanRequests - userSubmittedRequestsCount))
+    : 0;
 
   // Filtered saved posts
   const savedPosts = posts.filter((p) => bookmarkedIds.includes(p.id));
