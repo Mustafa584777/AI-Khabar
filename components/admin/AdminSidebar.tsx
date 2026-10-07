@@ -32,11 +32,9 @@ export const AdminSidebar = () => {
     logout,
     posts,
     currentUser,
-    promptRequests,
   } = useApp();
 
   const draftCount = posts.filter((p) => p.status === 'draft').length;
-  const pendingRequestsCount = promptRequests.filter((r) => r.status === 'pending').length;
 
   interface NavItem {
     id: string;
@@ -72,12 +70,6 @@ export const AdminSidebar = () => {
       id: 'categories',
       label: 'Categories & Tags',
       icon: FolderTree,
-    },
-    {
-      id: 'requested-prompts',
-      label: 'Requested Prompts',
-      icon: MessageSquare,
-      badge: pendingRequestsCount > 0 ? pendingRequestsCount : null,
     },
     {
       id: 'notifications',

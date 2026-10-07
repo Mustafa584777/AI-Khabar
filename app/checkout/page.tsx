@@ -132,10 +132,6 @@ const FAQS = [
     question: 'What is AI Search and how does it work?',
     answer: 'AI Search allows you to search across thousands of curated visual prompts using natural conversational queries. Paid plans include generous AI Search quotas ranging from 100 searches up to unlimited in Studio 499.',
   },
-  {
-    question: 'How do prompt requests work for custom creations?',
-    answer: 'Depending on your plan tier (Starter, Pro, VIP, Studio 499), you receive custom prompt generation requests where our system crafts hyper-optimized prompts for your exact creative vision.',
-  },
 ];
 
 export default function CheckoutPage() {
@@ -392,12 +388,6 @@ export default function CheckoutPage() {
                       </span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-neutral-400 font-bold">✕</span>
-                      <span className="text-neutral-400">
-                        0 Custom Prompt Requests
-                      </span>
-                    </li>
-                    <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
                       <span className="font-bold text-emerald-600 dark:text-emerald-400">
                         {billingCycle === 'yearly' ? '1,200 saves & history' : '100 saves & history'}
@@ -467,12 +457,6 @@ export default function CheckoutPage() {
                       </span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-neutral-400 font-bold">✕</span>
-                      <span className="text-neutral-400">
-                        0 Custom Prompt Requests
-                      </span>
-                    </li>
-                    <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
                       <span className="font-bold text-[#E60023]">
                         {billingCycle === 'yearly' ? '2,400 saves & history' : '200 saves & history'}
@@ -538,12 +522,7 @@ export default function CheckoutPage() {
                         <strong>{billingCycle === 'yearly' ? '6,000 AI Searches' : '500 AI Searches'}</strong> {billingCycle === 'yearly' ? '/ year' : '/ mo'}
                       </span>
                     </li>
-                    <li className="flex items-center gap-2">
-                      <span className="text-purple-500 font-bold">✓</span>
-                      <span>
-                        <strong>{billingCycle === 'yearly' ? '12 Prompt Requests' : '1 Prompt Request'}</strong>
-                      </span>
-                    </li>
+
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
                       <span className="font-bold text-purple-600 dark:text-purple-400">
@@ -611,12 +590,7 @@ export default function CheckoutPage() {
                       <span className="text-amber-400 font-bold">✓</span>
                       <span className="font-bold text-amber-300">Unlimited AI Search</span>
                     </li>
-                    <li className="flex items-center gap-2">
-                      <span className="text-amber-400 font-bold">✓</span>
-                      <span>
-                        <strong>{billingCycle === 'yearly' ? '36 Prompt Requests' : '3 Prompt Requests'}</strong> {billingCycle === 'yearly' ? '/ year' : '/ mo'}
-                      </span>
-                    </li>
+
                     <li className="flex items-center gap-2">
                       <span className="text-amber-400 font-bold">✓</span>
                       <span className="font-bold text-amber-400">Unlimited saves & history</span>
@@ -728,20 +702,7 @@ export default function CheckoutPage() {
                   </td>
                   <td className="py-3.5 px-4 text-center font-bold text-amber-600 dark:text-amber-400">Unlimited</td>
                 </tr>
-                <tr>
-                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">
-                    {billingCycle === 'monthly' ? 'Custom Prompt Requests' : 'Total Prompt Requests'}
-                  </td>
-                  <td className="py-3.5 px-4 text-center text-neutral-400"><X className="w-4 h-4 mx-auto" /></td>
-                  <td className="py-3.5 px-4 text-center text-neutral-400"><X className="w-4 h-4 mx-auto" /></td>
-                  <td className="py-3.5 px-4 text-center text-neutral-400"><X className="w-4 h-4 mx-auto" /></td>
-                  <td className="py-3.5 px-4 text-center font-bold">
-                    {billingCycle === 'monthly' ? '1 / mo' : '12 / yr'}
-                  </td>
-                  <td className="py-3.5 px-4 text-center font-bold text-amber-500">
-                    {billingCycle === 'monthly' ? '3 / mo' : '36 / yr'}
-                  </td>
-                </tr>
+
                 <tr>
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">
                     {billingCycle === 'monthly' ? 'Saves & History Limit' : 'Total Combined Saves'}

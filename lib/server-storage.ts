@@ -1188,4 +1188,45 @@ export const ServerStorage = {
 
     return payload;
   },
+
+  getPopularSearchQueriesCached: async (): Promise<string[]> => {
+    const CACHE_FILE = path.join(DATA_DIR, 'popular_queries_cache.json');
+    const THREE_DAYS = 3 * 24 * 60 * 60 * 1000;
+    
+    try {
+      if (fs.existsSync(CACHE_FILE)) {
+        const raw = fs.readFileSync(CACHE_FILE, 'utf-8');
+        const data = JSON.parse(raw);
+        if (data && Array.isArray(data.queries) && data.updatedAt && (Date.now() - data.updatedAt < THREE_DAYS)) {
+          return data.queries;
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading popular queries cache:', e);
+    }
+
+    let realQueries: string[] = [];
+    try {
+      const recorded = await ServerStorage.getSearchQueries(50);
+      const unique = Array.from(new Set(recorded.map(r => r.query?.trim()).filter(Boolean)));
+      realQueries = unique.slice(0, 10);
+    } catch {}
+
+    if (realQueries.length === 0) {
+      try {
+        const posts = await ServerStorage.getAllPosts(false);
+        const titles = posts.slice(0, 10).map(p => p.title).filter(Boolean);
+        realQueries = titles;
+      } catch {}
+    }
+
+    try {
+      ensureDataDir();
+      fs.writeFileSync(CACHE_FILE, JSON.stringify({ queries: realQueries, updatedAt: Date.now() }, null, 2), 'utf-8');
+    } catch (e) {
+      console.error('Error writing popular queries cache:', e);
+    }
+
+    return realQueries;
+  },
 };
