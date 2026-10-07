@@ -408,6 +408,11 @@ export const UserDashboard = () => {
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">AI Search Quota</div>
             </div>
+            <div className="text-center md:text-left">
+              <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
+                {isPaid ? `${effectivePromptRequestsRemaining}/${maxPlanRequests}` : '0'}
+              </div>
+              <div className="text-[11px] text-neutral-500 font-medium">Prompt Requests Left</div>
             </div>
           </div>
         </div>
