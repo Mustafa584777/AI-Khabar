@@ -23,30 +23,33 @@ import {
 export const NotificationsView: React.FC = () => {
   const { categories, showToast } = useApp();
 
-  const [notifications, setNotifications] = useState<PushNotificationItem[]>([]);
+  const cachedInitial = typeof window !== 'undefined' ? NotificationService.getNotifications() : [];
+  const [notifications, setNotifications] = useState<PushNotificationItem[]>(cachedInitial);
+  const [isLoading, setIsLoading] = useState<boolean>(cachedInitial.length === 0);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
   const [unreadOnly, setUnreadOnly] = useState<boolean>(false);
   const [isInterestModalOpen, setIsInterestModalOpen] = useState<boolean>(false);
   const [browserPushPermission, setBrowserPushPermission] = useState<NotificationPermission | 'unsupported'>('default');
   const [userInterests, setUserInterests] = useState<string[]>([]);
 
-  // Load initial data & sync from Supabase
-  const loadNotifications = async () => {
+  // Load initial data & sync from server in background if already cached
+  const loadNotifications = async (isBackground = false) => {
+    if (!isBackground && notifications.length === 0) {
+      setIsLoading(true);
+    }
     try {
-      const res = await fetch('/api/notifications/send');
+      const res = await fetch('/api/notifications/send', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
-        if (data.success && Array.isArray(data.notifications)) {
+        if (data.success && Array.isArray(data.notifications) && data.notifications.length > 0) {
           setNotifications(data.notifications);
           NotificationService.saveNotifications(data.notifications);
-        } else {
-          setNotifications(NotificationService.getNotifications());
         }
-      } else {
-        setNotifications(NotificationService.getNotifications());
       }
     } catch {
-      setNotifications(NotificationService.getNotifications());
+      // Keep cached notifications on network error
+    } finally {
+      setIsLoading(false);
     }
     const prefs = NotificationService.getPreferences();
     setUserInterests(prefs.selectedInterests || []);
@@ -54,19 +57,20 @@ export const NotificationsView: React.FC = () => {
   };
 
   useEffect(() => {
-    loadNotifications();
-    NotificationService.syncWithServer().then(() => loadNotifications());
+    // If cached notifications exist, load silently in background without showing loader skeleton
+    loadNotifications(notifications.length > 0);
+    NotificationService.syncWithServer().then(() => loadNotifications(true));
 
     // Listen for live push notifications across tabs
     const handleNewNotif = () => {
-      loadNotifications();
+      loadNotifications(true);
     };
     window.addEventListener('promptcms_new_notification', handleNewNotif);
 
-    // Periodic sync every 10 seconds for real-time delivery
+    // Periodic sync every 15 seconds for real-time delivery in background
     const interval = setInterval(() => {
-      NotificationService.syncWithServer().then(() => loadNotifications());
-    }, 10000);
+      NotificationService.syncWithServer().then(() => loadNotifications(true));
+    }, 15000);
 
     return () => {
       window.removeEventListener('promptcms_new_notification', handleNewNotif);
@@ -82,7 +86,7 @@ export const NotificationsView: React.FC = () => {
       // Immediate real browser notification popup with sound chime
       await NotificationService.showNativeNotification({
         id: `notif-welcome-${Date.now()}`,
-        title: 'tool.reelz: Trending Photo Prompts',
+        title: 'zeenaprompt.com: Trending Photo Prompts',
         subtitle: 'Browser Push Notifications Active! 🔔',
         body: 'You are now ready! Whenever trending prompts drop in your chosen categories, you will receive native alerts directly.',
         category: 'all',
@@ -103,7 +107,7 @@ export const NotificationsView: React.FC = () => {
 
     const success = await NotificationService.showNativeNotification({
       id: `notif-test-${Date.now()}`,
-      title: 'tool.reelz: Trending AI Photo Prompts',
+      title: 'zeenaprompt.com: Trending AI Photo Prompts',
       subtitle: 'Instant Browser Push Test 🔔',
       body: 'Live browser notification popup is working perfectly on your device!',
       category: 'all',
@@ -328,7 +332,12 @@ export const NotificationsView: React.FC = () => {
 
       {/* Notifications Cards Feed */}
       <div className="space-y-4">
-        {filteredNotifications.length > 0 ? (
+        {isLoading ? (
+          <div className="p-16 text-center rounded-3xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 space-y-3">
+            <div className="w-10 h-10 border-4 border-[#E60023] border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <p className="text-xs font-bold text-neutral-500">Loading notifications...</p>
+          </div>
+        ) : filteredNotifications.length > 0 ? (
           filteredNotifications.map((notif) => (
             <NotificationCard
               key={notif.id}

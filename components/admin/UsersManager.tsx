@@ -24,6 +24,7 @@ import {
   FileCheck,
   Database,
   SlidersHorizontal,
+  Trash2,
 } from 'lucide-react';
 
 export const UsersManager = () => {
@@ -45,6 +46,36 @@ export const UsersManager = () => {
   const [previewBackupData, setPreviewBackupData] = useState<UsersBackupPayload | null>(null);
   const [restoreError, setRestoreError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Delete User handler
+  const handleDeleteUser = async (userId: string, email: string) => {
+    if (!confirm(`Are you sure you want to delete user "${email}"? This will permanently remove them from Supabase auth and database along with all their data.`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'delete_user',
+          userId,
+          email,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast(`User ${email} deleted successfully from Supabase!`);
+        await handleSyncUsers(false);
+      } else {
+        throw new Error(data.error || 'Failed to delete user');
+      }
+    } catch (err: any) {
+      console.error('Delete user error:', err);
+      showToast(err?.message || 'Could not delete user.');
+    }
+  };
 
   // Fetch Users function (runs automatically on mount and on manual refresh)
   const handleSyncUsers = useCallback(async (isAuto: boolean = false) => {
@@ -102,7 +133,7 @@ export const UsersManager = () => {
     showToast(`Copied ${email} to clipboard!`);
   };
 
-  // Export All Users Data as JSON Backup
+  // Export All Users Data as JSON Backup (Dashboard data only)
   const handleExportUsers = () => {
     if (users.length === 0) {
       showToast('No user records loaded. Click "Sync Users from Supabase" first before exporting.');
@@ -111,12 +142,26 @@ export const UsersManager = () => {
 
     setIsExporting(true);
     try {
-      const payload: UsersBackupPayload = {
+      const dashboardUsers = users.map((u) => ({
+        id: u.id,
+        email: u.email,
+        name: u.name,
+        planTier: u.planTier,
+        isProUser: u.isProUser,
+        toolCredits: u.toolCredits,
+        points: u.points,
+        unlockedPromptIds: u.unlockedPromptIds,
+        aiSearchRemaining: u.rawSyncData?.aiSearchRemaining ?? 5,
+        bookmarkedIds: u.rawSyncData?.bookmarkedIds ?? [],
+        joinedDate: u.joinedDate,
+      }));
+
+      const payload = {
         version: '1.0',
         exportedAt: new Date().toISOString(),
-        system: 'Trending Photo Prompts SaaS User Registry',
-        totalUsers: users.length,
-        users,
+        system: 'Trending Photo Prompts SaaS User Dashboard Registry',
+        totalUsers: dashboardUsers.length,
+        users: dashboardUsers,
       };
 
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -124,13 +169,13 @@ export const UsersManager = () => {
       const link = document.createElement('a');
       const dateStr = new Date().toISOString().slice(0, 10);
       link.href = url;
-      link.download = `saas-all-users-backup-${dateStr}.json`;
+      link.download = `saas-user-dashboard-backup-${dateStr}.json`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      showToast(`Exported ${users.length} user accounts backup successfully!`);
+      showToast(`Exported dashboard data for ${dashboardUsers.length} users successfully!`);
     } catch (err: any) {
       console.error('Export error:', err);
       showToast('Failed to export users backup.');
@@ -226,7 +271,7 @@ export const UsersManager = () => {
       u.name.toLowerCase().includes(q) ||
       (u.username && u.username.toLowerCase().includes(q));
 
-    const isPaid = u.isProUser || (u.planTier && u.planTier !== 'free') || (u.toolCredits && u.toolCredits > 2);
+    const isPaid = (u.planTier && u.planTier !== 'free') || Boolean(u.paymentAmount || u.source === 'razorpay_verified');
     const matchesTier =
       selectedTier === 'all' ||
       (selectedTier === 'paid' && isPaid) ||
@@ -238,7 +283,7 @@ export const UsersManager = () => {
 
   // KPI Calculations
   const totalUsersCount = users.length;
-  const paidUsersCount = users.filter((u) => u.isProUser || (u.planTier && u.planTier !== 'free') || (u.toolCredits && u.toolCredits > 2)).length;
+  const paidUsersCount = users.filter((u) => (u.planTier && u.planTier !== 'free') || Boolean(u.paymentAmount || u.source === 'razorpay_verified')).length;
   const freeUsersCount = users.length - paidUsersCount;
   const totalCreditsInSystem = users.reduce((acc, u) => acc + (u.toolCredits || 0), 0);
 
@@ -466,7 +511,6 @@ export const UsersManager = () => {
                     <th className="py-3.5 px-4">Email / Gmail</th>
                     <th className="py-3.5 px-4">Plan Tier</th>
                     <th className="py-3.5 px-4">Tool Credits</th>
-                    <th className="py-3.5 px-4">Points</th>
                     <th className="py-3.5 px-4">Unlocked</th>
                     <th className="py-3.5 px-4">Joined</th>
                     <th className="py-3.5 px-4 text-right">Actions</th>
@@ -530,7 +574,7 @@ export const UsersManager = () => {
                               u.planTier
                             )}`}
                           >
-                            {u.isProUser || (u.planTier && u.planTier !== 'free') ? (
+                            {(u.planTier && u.planTier !== 'free') || Boolean(u.paymentAmount || u.source === 'razorpay_verified') ? (
                               <>
                                 <Crown className="w-3 h-3 shrink-0 text-amber-500 fill-amber-500" />
                                 <span>PAID ({u.planTier ? u.planTier.toUpperCase() : 'PRO'})</span>
@@ -556,27 +600,19 @@ export const UsersManager = () => {
                       <td className="py-3.5 px-4">
                         <div
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border font-bold text-xs ${
-                            (u.toolCredits || 0) > 2
+                            (u.toolCredits || 0) >= 50
                               ? 'bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-200'
                               : 'bg-indigo-50 dark:bg-indigo-950/50 border-indigo-200 dark:border-indigo-900/60 text-indigo-700 dark:text-indigo-300'
                           }`}
                         >
                           <Zap
                             className={`w-3.5 h-3.5 ${
-                              (u.toolCredits || 0) > 2
+                              (u.toolCredits || 0) >= 50
                                 ? 'text-amber-500 fill-amber-500'
                                 : 'text-indigo-500 fill-indigo-500'
                             }`}
                           />
-                          <span>{u.toolCredits ?? 2} Credits</span>
-                        </div>
-                      </td>
-
-                      {/* Points */}
-                      <td className="py-3.5 px-4">
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 font-bold text-amber-700 dark:text-amber-300 text-xs">
-                          <Coins className="w-3.5 h-3.5 text-amber-500" />
-                          <span>{u.points ?? 10} pts</span>
+                          <span>{u.toolCredits ?? 5} Credits</span>
                         </div>
                       </td>
 
@@ -599,10 +635,12 @@ export const UsersManager = () => {
                       {/* Actions */}
                       <td className="py-3.5 px-4 text-right">
                         <button
-                          onClick={() => copyEmail(u.email)}
-                          className="px-2.5 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-[11px] font-semibold transition-colors"
+                          onClick={() => handleDeleteUser(u.id, u.email)}
+                          className="px-2.5 py-1 rounded-lg bg-red-50 dark:bg-red-950/60 hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-400 text-[11px] font-bold transition-colors inline-flex items-center gap-1"
+                          title="Permanently delete user from Supabase and database"
                         >
-                          Copy
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Delete</span>
                         </button>
                       </td>
                     </tr>

@@ -1,5 +1,6 @@
-import { UserAccount, AIHistoryItem, PlanTier, PromptRequestItem } from '@/types/prompt';
+import { UserAccount, AIHistoryItem, PlanTier, PromptRequestItem, QueuedPlan } from '@/types/prompt';
 import { INITIAL_TASTE_PROFILE, UserTasteProfile } from './personalization';
+import { PLAN_CONFIGS, calculatePlanDates, getPlanFeaturesForCycle } from './plans';
 
 export interface UserSyncData {
   userId?: string;
@@ -14,12 +15,21 @@ export interface UserSyncData {
   planTier?: PlanTier;
   isProUser?: boolean;
   toolCredits?: number;
+  aiSearchRemaining?: number;
   lastDailyCreditDate?: string;
   promptRequestsRemaining?: number;
   unlockedPromptIds?: string[];
+  signupBonusClaimed?: boolean;
+  signupModalShown?: boolean;
+  billingCycle?: 'monthly' | 'yearly';
+  signupCreditsAwarded?: boolean;
+  savesLimit?: number;
   planStartedAt?: string;
   planExpiresAt?: string;
+  queuedPlan?: QueuedPlan | null;
+  queuedPlans?: QueuedPlan[];
   promptRequests?: PromptRequestItem[];
+  joinedDate?: string;
   updatedAt?: string;
 }
 
@@ -58,7 +68,8 @@ export const UserSyncService = {
   },
 
   /**
-   * Push user state changes directly to Supabase cloud storage (database)
+   * Push user state changes directly to Supabase cloud storage (database).
+   * Automatically safeguards and includes active paid subscription from localStorage if not specified.
    */
   pushUserData: async (
     userId?: string,
@@ -66,6 +77,47 @@ export const UserSyncService = {
     data?: Partial<UserSyncData>
   ): Promise<boolean> => {
     if ((!userId && !email) || !data) return false;
+
+    // Attach active paid plan details from localStorage or user account if not explicitly provided
+    const payload: Partial<UserSyncData> = { ...data };
+    if (typeof window !== 'undefined') {
+      let savedTier = localStorage.getItem('auraprompt_plan_tier') as PlanTier;
+      let acc: any = null;
+      try {
+        const rawAcc = localStorage.getItem('promptcms_user_account');
+        if (rawAcc) acc = JSON.parse(rawAcc);
+      } catch {}
+
+      if (!savedTier || savedTier === 'free') {
+        if (acc?.planTier && ['starter', 'pro', 'vip', 'ultra'].includes(acc.planTier)) {
+          savedTier = acc.planTier;
+        }
+      }
+
+      const isPaid = savedTier && ['starter', 'pro', 'vip', 'ultra'].includes(savedTier);
+      const isProMember = localStorage.getItem('auraprompt_pro_member') === 'true' || isPaid || Boolean(acc?.isProUser);
+      const savedExpires = localStorage.getItem('auraprompt_plan_expires_at') || acc?.planExpiresAt;
+      const savedStarted = localStorage.getItem('auraprompt_plan_started_at') || acc?.planStartedAt;
+      const savedCredits = localStorage.getItem('auraprompt_tool_credits');
+
+      if (isPaid && payload.planTier === undefined) {
+        payload.planTier = savedTier;
+      }
+      if (isProMember && payload.isProUser === undefined) {
+        payload.isProUser = true;
+      }
+      if (savedExpires && payload.planExpiresAt === undefined) {
+        payload.planExpiresAt = savedExpires;
+      }
+      if (savedStarted && payload.planStartedAt === undefined) {
+        payload.planStartedAt = savedStarted;
+      }
+      if (savedCredits !== null && payload.toolCredits === undefined) {
+        const parsedCredits = parseInt(savedCredits, 10);
+        if (!isNaN(parsedCredits)) payload.toolCredits = parsedCredits;
+      }
+    }
+
     try {
       const res = await fetch('/api/user/sync', {
         method: 'POST',
@@ -74,7 +126,7 @@ export const UserSyncService = {
           action: 'push',
           userId,
           email,
-          data,
+          data: payload,
         }),
       });
       return res.ok;
@@ -107,8 +159,11 @@ export const UserSyncService = {
   },
 
   /**
-   * Called whenever a user logs in. Pulls remote user data from database.
-   * STRICT GUARANTEE: Never inherits or leaks credits, plans, or bookmarks from previous sessions or guests.
+   * Called whenever a user logs in or page refreshes.
+   * STRICT GUARANTEE:
+   * 1. Never downgrades an active, unexpired paid plan (starter, pro, vip, ultra) to free.
+   * 2. If remote sync fails (rate limit, offline, timeout), preserves all local data without clearing.
+   * 3. Merges bookmarks, liked IDs, unlocked prompts, and AI history non-destructively with union.
    */
   reconcileOnLogin: async (
     user: UserAccount
@@ -121,120 +176,376 @@ export const UserSyncService = {
     planTier: PlanTier;
     isProUser: boolean;
     toolCredits: number;
+    aiSearchRemaining: number;
     promptRequestsRemaining: number;
     unlockedPromptIds: string[];
     planStartedAt?: string;
     planExpiresAt?: string;
+    queuedPlan?: QueuedPlan | null;
   }> => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    // 1. Gather all existing local client state
+    let localTier: PlanTier = 'free';
+    let localIsPro = false;
+    let localCredits = 0;
+    let localRequests = 0;
+    let localSearches = 5;
+    let localBookmarks: string[] = [];
+    let localLikes: string[] = [];
+    let localUnlocked: string[] = [];
+    let localHistory: AIHistoryItem[] = [];
+    let localTaste: UserTasteProfile = INITIAL_TASTE_PROFILE;
+    let localPlanExpiresAt: string | undefined = undefined;
+    let localPlanStartedAt: string | undefined = undefined;
+
+    if (typeof window !== 'undefined') {
+      try {
+        const savedTier = localStorage.getItem('auraprompt_plan_tier') as PlanTier;
+        if (['starter', 'pro', 'vip', 'ultra', 'free'].includes(savedTier)) {
+          localTier = savedTier;
+        } else if ((user as any).planTier && ['starter', 'pro', 'vip', 'ultra'].includes((user as any).planTier)) {
+          localTier = (user as any).planTier;
+        }
+
+        localIsPro = localStorage.getItem('auraprompt_pro_member') === 'true' || localTier !== 'free' || Boolean((user as any).isProUser);
+
+        const savedCr = localStorage.getItem('auraprompt_tool_credits');
+        if (savedCr !== null) {
+          const parsed = parseInt(savedCr, 10);
+          if (!isNaN(parsed)) localCredits = parsed;
+        } else if (typeof (user as any).toolCredits === 'number') {
+          localCredits = (user as any).toolCredits;
+        } else {
+          localCredits = 5;
+        }
+
+        const savedReqs = localStorage.getItem('auraprompt_prompt_requests');
+        if (savedReqs !== null) {
+          const parsed = parseInt(savedReqs, 10);
+          if (!isNaN(parsed)) localRequests = parsed;
+        }
+
+        const savedSrch = localStorage.getItem('auraprompt_ai_search_remaining');
+        if (savedSrch !== null) {
+          const parsed = parseInt(savedSrch, 10);
+          if (!isNaN(parsed)) localSearches = parsed;
+        }
+
+        const savedUnlocks = localStorage.getItem('auraprompt_unlocked_prompts');
+        if (savedUnlocks) {
+          try {
+            const parsed = JSON.parse(savedUnlocks);
+            if (Array.isArray(parsed)) localUnlocked = parsed;
+          } catch {}
+        }
+
+        const savedBm = localStorage.getItem('promptcms_user_bookmarks');
+        if (savedBm) {
+          try {
+            const parsed = JSON.parse(savedBm);
+            if (Array.isArray(parsed)) localBookmarks = parsed;
+          } catch {}
+        }
+
+        const savedLk = localStorage.getItem('promptcms_user_likes');
+        if (savedLk) {
+          try {
+            const parsed = JSON.parse(savedLk);
+            if (Array.isArray(parsed)) localLikes = parsed;
+          } catch {}
+        }
+
+        const savedHist = localStorage.getItem('promptcms_ai_history');
+        if (savedHist) {
+          try {
+            const parsed = JSON.parse(savedHist);
+            if (Array.isArray(parsed)) localHistory = parsed;
+          } catch {}
+        }
+
+        localPlanExpiresAt = localStorage.getItem('auraprompt_plan_expires_at') || (user as any).planExpiresAt || undefined;
+        localPlanStartedAt = localStorage.getItem('auraprompt_plan_started_at') || (user as any).planStartedAt || undefined;
+      } catch (e) {
+        console.warn('Error reading local state in reconcileOnLogin:', e);
+      }
+    }
+
+    // Evaluate local plan and expiration
+    const isLocalPaid = localTier !== 'free';
+    const isLocalExpired = Boolean(localPlanExpiresAt && new Date(localPlanExpiresAt).getTime() < Date.now());
+    const effectiveLocalTier: PlanTier = (isLocalPaid && !isLocalExpired) ? localTier : 'free';
+    const effectiveLocalPro = effectiveLocalTier !== 'free' || localIsPro;
+
+    // 2. Attempt to pull authoritative remote record
     const remote = await UserSyncService.pullUserData(user.id, user.email);
 
     if (!remote) {
-      // First time login for this specific user: grant 2 daily credits for today on clean free tier
-      const initialData: UserSyncData = {
+      // Network failure, rate limit, or remote not created yet (new account):
+      const initialCredits = (localCredits !== undefined && localCredits !== null && localCredits > 0) ? localCredits : 5;
+      localCredits = initialCredits;
+
+      // Immediately push to server database so new account is persisted with 5 credits!
+      void UserSyncService.pushUserData(user.id, user.email, {
         userId: user.id,
         email: user.email,
         name: user.name,
         avatar: user.avatar,
         points: user.points || 10,
-        bookmarkedIds: [],
-        likedIds: [],
-        aiHistory: [],
-        tasteProfile: INITIAL_TASTE_PROFILE,
-        planTier: 'free',
-        isProUser: false,
-        toolCredits: 2, // 2 daily credits start after login
-        lastDailyCreditDate: todayStr,
-        promptRequestsRemaining: 0,
-        unlockedPromptIds: [],
-        updatedAt: new Date().toISOString(),
-      };
+        planTier: effectiveLocalTier,
+        isProUser: effectiveLocalPro,
+        toolCredits: initialCredits,
+        savesLimit: 10,
+        aiSearchRemaining: localSearches,
+        promptRequestsRemaining: localRequests,
+        planStartedAt: localPlanStartedAt,
+        planExpiresAt: localPlanExpiresAt,
+        bookmarkedIds: localBookmarks,
+        likedIds: localLikes,
+        unlockedPromptIds: localUnlocked,
+        signupCreditsAwarded: true,
+        signupBonusClaimed: true,
+        signupModalShown: true,
+      });
 
-      void UserSyncService.pushUserData(user.id, user.email, initialData);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auraprompt_tool_credits', String(initialCredits));
+      }
 
       return {
-        bookmarkedIds: [],
-        likedIds: [],
+        bookmarkedIds: localBookmarks,
+        likedIds: localLikes,
         points: user.points || 10,
-        aiHistory: [],
-        tasteProfile: INITIAL_TASTE_PROFILE,
-        planTier: 'free',
-        isProUser: false,
-        toolCredits: 2,
-        promptRequestsRemaining: 0,
-        unlockedPromptIds: [],
+        aiHistory: localHistory,
+        tasteProfile: localTaste,
+        planTier: effectiveLocalTier,
+        isProUser: effectiveLocalPro,
+        toolCredits: initialCredits,
+        aiSearchRemaining: localSearches,
+        promptRequestsRemaining: localRequests,
+        unlockedPromptIds: localUnlocked,
+        planStartedAt: localPlanStartedAt,
+        planExpiresAt: localPlanExpiresAt,
+        queuedPlan: typeof window !== 'undefined' ? (() => {
+          try {
+            const raw = localStorage.getItem('auraprompt_queued_plan');
+            return raw ? JSON.parse(raw) : null;
+          } catch {
+            return null;
+          }
+        })() : null,
       };
     }
 
-    // Remote account exists for this user: use strictly their remote verified plan & credits
-    let resolvedTier: PlanTier = (remote.planTier && ['starter', 'pro', 'vip', 'ultra', 'free'].includes(remote.planTier))
+    // 3. Remote account exists: Non-destructively reconcile remote with local
+    // Evaluate remote plan and expiration
+    let remoteTier: PlanTier = (remote.planTier && ['starter', 'pro', 'vip', 'ultra', 'free'].includes(remote.planTier))
       ? remote.planTier
       : (remote.isProUser ? 'pro' : 'free');
-    
-    let resolvedIsPro: boolean = resolvedTier !== 'free' || Boolean(remote.isProUser);
+    const isRemoteExpired = remote.planExpiresAt && new Date(remote.planExpiresAt).getTime() < Date.now();
+    if (remoteTier !== 'free' && isRemoteExpired) {
+      remoteTier = 'free';
+    }
 
-    // Validate plan expiration if an expiration date is present
-    if (resolvedTier !== 'free' && remote.planExpiresAt) {
-      const expTime = new Date(remote.planExpiresAt).getTime();
-      if (!isNaN(expTime) && expTime < Date.now()) {
+    // Resolved tier: Highest unexpired tier between remote and local
+    const TIER_WEIGHT_LOCAL: Record<PlanTier, number> = { free: 0, starter: 1, pro: 2, vip: 3, ultra: 4 };
+    let resolvedTier: PlanTier = remoteTier;
+    if (TIER_WEIGHT_LOCAL[effectiveLocalTier] > TIER_WEIGHT_LOCAL[remoteTier]) {
+      resolvedTier = effectiveLocalTier;
+    }
+    let resolvedIsPro: boolean = resolvedTier !== 'free' || Boolean(remote.isProUser || localIsPro);
+
+    const isYearly = Boolean(
+      (remote as any).billingCycle === 'yearly' ||
+      (remote.planExpiresAt && remote.planStartedAt && (new Date(remote.planExpiresAt).getTime() - new Date(remote.planStartedAt).getTime()) > 60 * 24 * 60 * 60 * 1000) ||
+      (localPlanExpiresAt && localPlanStartedAt && (new Date(localPlanExpiresAt).getTime() - new Date(localPlanStartedAt).getTime()) > 60 * 24 * 60 * 60 * 1000)
+    );
+    const planCfg = getPlanFeaturesForCycle(resolvedTier, isYearly ? 'yearly' : 'monthly');
+
+    // Rule 2 & 8: Strictly preserve consumed balance and quotas.
+    // For free new users who haven't consumed credits, default to 5 credits!
+    let resolvedCredits: number;
+    if (remote.toolCredits !== undefined && remote.toolCredits !== null) {
+      resolvedCredits = Number(remote.toolCredits);
+    } else if (localCredits > 0) {
+      resolvedCredits = localCredits;
+    } else {
+      resolvedCredits = resolvedTier !== 'free' ? planCfg.credits : 5;
+    }
+
+    // Auto-heal new free users whose accounts had 0 credits due to earlier signup bug:
+    if (
+      resolvedCredits === 0 &&
+      (!remote.unlockedPromptIds || remote.unlockedPromptIds.length === 0) &&
+      (!remote.aiHistory || remote.aiHistory.length === 0) &&
+      (!localUnlocked || localUnlocked.length === 0) &&
+      resolvedTier === 'free'
+    ) {
+      resolvedCredits = 5;
+    }
+
+    let resolvedRequests: number;
+    if (remote.promptRequestsRemaining !== undefined && remote.promptRequestsRemaining !== null) {
+      resolvedRequests = Number(remote.promptRequestsRemaining);
+    } else if (localRequests !== undefined && localRequests !== null) {
+      resolvedRequests = localRequests;
+    } else {
+      resolvedRequests = resolvedTier !== 'free' ? planCfg.promptRequests : 0;
+    }
+
+    let resolvedAiSearches: number;
+    if (planCfg.unlimitedSearches) {
+      resolvedAiSearches = 999999;
+    } else if (resolvedTier !== 'free') {
+      const remoteVal = remote.aiSearchRemaining !== undefined && remote.aiSearchRemaining !== null ? Number(remote.aiSearchRemaining) : undefined;
+      const localVal = localSearches !== undefined && localSearches !== null ? Number(localSearches) : undefined;
+      const candidate = remoteVal !== undefined ? remoteVal : localVal;
+      // Auto-heal if an active paid user was erroneously clamped to <= 10 searches:
+      if (candidate === undefined || isNaN(candidate) || candidate <= 10) {
+        resolvedAiSearches = planCfg.aiSearchQuota;
+      } else {
+        resolvedAiSearches = Math.min(candidate, planCfg.aiSearchQuota);
+      }
+    } else if (remote.aiSearchRemaining !== undefined && remote.aiSearchRemaining !== null) {
+      resolvedAiSearches = Math.min(Number(remote.aiSearchRemaining), 5);
+    } else if (localSearches !== undefined && localSearches !== null) {
+      resolvedAiSearches = Math.min(localSearches, 5);
+    } else {
+      resolvedAiSearches = 5;
+    }
+
+    // Non-destructive Union for Bookmarks, Liked IDs, and Unlocked Prompts (Never drop any saved item)
+    const mergedBookmarks = Array.from(new Set([...localBookmarks, ...(Array.isArray(remote.bookmarkedIds) ? remote.bookmarkedIds : [])]));
+    const mergedLikes = Array.from(new Set([...localLikes, ...(Array.isArray(remote.likedIds) ? remote.likedIds : [])]));
+    const mergedUnlocked = Array.from(new Set([...localUnlocked, ...(Array.isArray(remote.unlockedPromptIds) ? remote.unlockedPromptIds : [])]));
+
+    // Non-destructive AI History merge by ID
+    const historyMap = new Map<string, AIHistoryItem>();
+    localHistory.forEach((item) => {
+      if (item && item.id) historyMap.set(item.id, item);
+    });
+    if (Array.isArray(remote.aiHistory)) {
+      remote.aiHistory.forEach((item) => {
+        if (item && item.id) historyMap.set(item.id, item);
+      });
+    }
+    const mergedHistory = Array.from(historyMap.values())
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+      .slice(0, 100);
+
+    // Check queued plan from remote or local storage
+    let activeQueuedPlan: QueuedPlan | null = remote.queuedPlan || null;
+    if (!activeQueuedPlan && typeof window !== 'undefined') {
+      try {
+        const rawQueue = localStorage.getItem('auraprompt_queued_plan');
+        if (rawQueue) activeQueuedPlan = JSON.parse(rawQueue);
+      } catch {}
+    }
+
+    // Determine plan dates with strict preservation of historical start date
+    let resolvedPlanStartedAt = remote.planStartedAt || localPlanStartedAt;
+    let resolvedPlanExpiresAt = remote.planExpiresAt || localPlanExpiresAt;
+
+    if (resolvedTier !== 'free') {
+      if (!resolvedPlanStartedAt || !resolvedPlanExpiresAt) {
+        const initDates = calculatePlanDates(resolvedPlanStartedAt || new Date(), 30);
+        resolvedPlanStartedAt = resolvedPlanStartedAt || initDates.planStartedAt;
+        resolvedPlanExpiresAt = resolvedPlanExpiresAt || initDates.planExpiresAt;
+      }
+    }
+
+    // Check if the current plan has expired!
+    const isPlanCurrentlyExpired = Boolean(
+      resolvedPlanExpiresAt && new Date(resolvedPlanExpiresAt).getTime() <= Date.now()
+    );
+
+    if (isPlanCurrentlyExpired) {
+      if (activeQueuedPlan) {
+        // Automatically activate queued plan!
+        const qp = activeQueuedPlan;
+        const qpCfg = PLAN_CONFIGS[qp.planTier] || PLAN_CONFIGS.pro;
+        resolvedTier = qp.planTier;
+        resolvedIsPro = true;
+        // Rule 2: Unused credits never expire; add queued plan credits to remaining balance
+        resolvedCredits = (Number(resolvedCredits) || 0) + (qp.credits || qpCfg.credits);
+        resolvedRequests = qp.promptRequests || qpCfg.promptRequests;
+        resolvedAiSearches = qpCfg.unlimitedSearches ? 999999 : (qp.aiSearchQuota || qpCfg.aiSearchQuota);
+        resolvedPlanStartedAt = qp.scheduledStartAt || new Date().toISOString();
+        resolvedPlanExpiresAt = qp.scheduledExpiresAt;
+        activeQueuedPlan = null;
+        if (typeof window !== 'undefined') localStorage.removeItem('auraprompt_queued_plan');
+      } else {
+        // Rule 4 & 7: Demote to free tier without loss of any data. Remaining credits, history, and unlocked prompts stay intact.
         resolvedTier = 'free';
         resolvedIsPro = false;
+        resolvedRequests = 0; // Rule 7: prompt request 0 ho jayegi
+        resolvedAiSearches = 5; // Rule 7: ai searches 5/5 per set ho jayegi
+        // resolvedCredits is NOT reset - credits never expire and stay intact!
       }
     }
 
-    let currentCredits = Number(remote.toolCredits ?? 0);
-    let lastCreditDate = remote.lastDailyCreditDate;
-
-    // Daily 2 credits refresh logic: if free user logs in on a new day, refresh daily credits to at least 2
-    if (!resolvedIsPro && resolvedTier === 'free') {
-      if (lastCreditDate !== todayStr) {
-        currentCredits = Math.max(currentCredits, 2);
-        lastCreditDate = todayStr;
+    // Save consolidated state safely to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auraprompt_plan_tier', resolvedTier);
+      localStorage.setItem('auraprompt_pro_member', String(resolvedIsPro));
+      localStorage.setItem('auraprompt_tool_credits', String(resolvedCredits));
+      localStorage.setItem('auraprompt_prompt_requests', String(resolvedRequests));
+      localStorage.setItem('auraprompt_ai_search_remaining', String(resolvedAiSearches));
+      localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(mergedUnlocked));
+      localStorage.setItem('promptcms_user_bookmarks', JSON.stringify(mergedBookmarks));
+      localStorage.setItem('promptcms_user_likes', JSON.stringify(mergedLikes));
+      localStorage.setItem('promptcms_ai_history', JSON.stringify(mergedHistory));
+      localStorage.setItem('auraprompt_first_login_claimed', 'true');
+      if (user.email) {
+        localStorage.setItem(`auraprompt_signup_bonus_claimed_${user.email.toLowerCase().trim()}`, 'true');
+      }
+      if (resolvedPlanStartedAt) localStorage.setItem('auraprompt_plan_started_at', resolvedPlanStartedAt);
+      if (resolvedPlanExpiresAt) localStorage.setItem('auraprompt_plan_expires_at', resolvedPlanExpiresAt);
+      if (activeQueuedPlan) {
+        localStorage.setItem('auraprompt_queued_plan', JSON.stringify(activeQueuedPlan));
+      } else {
+        localStorage.removeItem('auraprompt_queued_plan');
       }
     }
 
-    const mergedData: UserSyncData = {
-      userId: user.id,
-      email: user.email,
-      name: user.name,
-      avatar: user.avatar,
-      points: remote.points !== undefined ? Number(remote.points) : (user.points || 10),
-      bookmarkedIds: Array.isArray(remote.bookmarkedIds) ? remote.bookmarkedIds : [],
-      likedIds: Array.isArray(remote.likedIds) ? remote.likedIds : [],
-      aiHistory: Array.isArray(remote.aiHistory) ? remote.aiHistory : [],
-      tasteProfile: remote.tasteProfile || INITIAL_TASTE_PROFILE,
-      planTier: resolvedTier,
-      isProUser: resolvedIsPro,
-      toolCredits: currentCredits,
-      lastDailyCreditDate: lastCreditDate,
-      promptRequestsRemaining: Number(remote.promptRequestsRemaining || 0),
-      unlockedPromptIds: Array.isArray(remote.unlockedPromptIds) ? remote.unlockedPromptIds : [],
-      planStartedAt: remote.planStartedAt,
-      planExpiresAt: remote.planExpiresAt,
-      updatedAt: new Date().toISOString(),
-    };
+    // If local held newer/higher data (e.g. bookmarks or active plan), push back to remote to sync database
+    const needsPushBack =
+      mergedBookmarks.length > (remote.bookmarkedIds?.length || 0) ||
+      mergedUnlocked.length > (remote.unlockedPromptIds?.length || 0) ||
+      mergedHistory.length > (remote.aiHistory?.length || 0) ||
+      (resolvedTier !== 'free' && remoteTier === 'free') ||
+      Boolean(activeQueuedPlan && !remote.queuedPlan);
 
-    // Keep database in sync with any daily credit refresh
-    if (lastCreditDate === todayStr && remote.lastDailyCreditDate !== todayStr) {
+    if (needsPushBack) {
       void UserSyncService.pushUserData(user.id, user.email, {
-        toolCredits: currentCredits,
-        lastDailyCreditDate: lastCreditDate,
+        planTier: resolvedTier,
+        isProUser: resolvedIsPro,
+        toolCredits: resolvedCredits,
+        promptRequestsRemaining: resolvedRequests,
+        aiSearchRemaining: resolvedAiSearches,
+        bookmarkedIds: mergedBookmarks,
+        likedIds: mergedLikes,
+        unlockedPromptIds: mergedUnlocked,
+        aiHistory: mergedHistory,
+        planStartedAt: resolvedPlanStartedAt,
+        planExpiresAt: resolvedPlanExpiresAt,
+        queuedPlan: activeQueuedPlan,
       });
     }
 
     return {
-      bookmarkedIds: mergedData.bookmarkedIds || [],
-      likedIds: mergedData.likedIds || [],
-      points: mergedData.points !== undefined ? mergedData.points : 10,
-      aiHistory: mergedData.aiHistory || [],
-      tasteProfile: mergedData.tasteProfile || INITIAL_TASTE_PROFILE,
+      bookmarkedIds: mergedBookmarks,
+      likedIds: mergedLikes,
+      points: remote.points !== undefined ? Number(remote.points) : (user.points || 10),
+      aiHistory: mergedHistory,
+      tasteProfile: remote.tasteProfile || localTaste,
       planTier: resolvedTier,
       isProUser: resolvedIsPro,
-      toolCredits: currentCredits,
-      promptRequestsRemaining: mergedData.promptRequestsRemaining || 0,
-      unlockedPromptIds: mergedData.unlockedPromptIds || [],
-      planStartedAt: remote.planStartedAt,
-      planExpiresAt: remote.planExpiresAt,
+      toolCredits: resolvedCredits,
+      aiSearchRemaining: resolvedAiSearches,
+      promptRequestsRemaining: resolvedRequests,
+      unlockedPromptIds: mergedUnlocked,
+      planStartedAt: resolvedPlanStartedAt,
+      planExpiresAt: resolvedPlanExpiresAt,
+      queuedPlan: activeQueuedPlan,
     };
   },
 

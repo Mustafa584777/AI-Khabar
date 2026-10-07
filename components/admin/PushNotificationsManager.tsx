@@ -526,20 +526,20 @@ export const PushNotificationsManager: React.FC = () => {
 
             {/* Push Notification Card */}
             <div className="relative z-10 w-full rounded-3xl bg-white/95 dark:bg-neutral-900/95 backdrop-blur-2xl shadow-xl border border-white/60 dark:border-neutral-800/80 p-4 sm:p-5 space-y-2.5 transition-all text-left">
-              {/* Header: tool.reelz logo + tool.reelz now 🔔 */}
+              {/* Header: zeenaprompt.com logo + zeenaprompt.com now 🔔 */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-full overflow-hidden shadow-xs relative bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
                     <Image
                       src="/logo.png"
-                      alt="tool.reelz"
+                      alt="zeenaprompt.com"
                       width={28}
                       height={28}
                       className="w-full h-full object-cover"
                     />
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-400 font-medium">
-                    <span className="font-bold text-neutral-900 dark:text-white">tool.reelz</span>
+                    <span className="font-bold text-neutral-900 dark:text-white">zeenaprompt.com</span>
                     <span>now</span>
                     <Bell className="w-3 h-3 text-neutral-400 fill-neutral-400" />
                   </div>

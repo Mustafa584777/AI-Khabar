@@ -20,31 +20,31 @@ import {
   Wand2,
   Edit3,
 } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PromptEditorTool } from '@/components/public/PromptEditorTool';
+import { ensureAspectRatio34 } from '@/lib/utils';
 
-const SAMPLE_IMAGES = [
+const SAMPLE_IMAGES_FALLBACK = [
   {
-    name: 'Cyberpunk Neon',
-    url: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=800&auto=format&fit=crop&q=80',
-    style: 'Cyberpunk & Sci-Fi',
+    name: 'Sun-Drenched Minimalism',
+    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+    style: 'Lifestyle & Creative Portraiture',
   },
   {
-    name: 'Studio Portrait',
-    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80',
-    style: 'Photorealistic & Portraits',
+    name: 'Prismatic Studio Portrait',
+    url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80',
+    style: 'Fashion & Editorial Photography',
   },
   {
-    name: 'Cinematic Nature',
-    url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80',
-    style: 'Cinematic 8K',
+    name: 'Cinematic Monochrome',
+    url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
+    style: 'Fashion & Editorial Photography',
   },
   {
-    name: '3D Render',
-    url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
-    style: '3D Art & Unreal Engine',
+    name: 'Golden Hour Urban Nomad',
+    url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80',
+    style: 'Lifestyle & Creative Portraiture',
   },
 ];
 
@@ -89,7 +89,31 @@ export const AIStudioTool = () => {
     toolCredits,
     deductToolCredit,
     isAuthenticated,
+    posts,
   } = useApp();
+
+  const sampleImages = React.useMemo(() => {
+    const validPosts = (posts || []).filter(
+      (p) => p.imageUrl && p.imageUrl.trim().length > 0 && !p.imageUrl.startsWith('data:image')
+    );
+    const list: { name: string; url: string; style: string }[] = [];
+    validPosts.slice(0, 4).forEach((p) => {
+      list.push({
+        name: p.title || 'Trending Prompt',
+        url: p.imageUrl,
+        style: p.category || 'AI Photography',
+      });
+    });
+    // Ensure we always have 4 samples
+    if (list.length < 4) {
+      SAMPLE_IMAGES_FALLBACK.forEach((fb) => {
+        if (list.length < 4 && !list.some((it) => it.url === fb.url)) {
+          list.push(fb);
+        }
+      });
+    }
+    return list.slice(0, 4);
+  }, [posts]);
 
   const [uploadedImage, setUploadedImage] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
@@ -143,7 +167,7 @@ export const AIStudioTool = () => {
   const [selectedLighting, setSelectedLighting] = useState<string>('Cinematic Golden Hour');
   const [selectedColor, setSelectedColor] = useState<string>('Cinematic Teal & Orange');
   const [selectedGender, setSelectedGender] = useState<string>('Any / None');
-  const [selectedAspectRatio, setSelectedAspectRatio] = useState<string>('16:9');
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState<string>('3:4');
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState<boolean>(false);
   const [generatedPromptData, setGeneratedPromptData] = useState<any | null>(null);
   const [isSavedGenerated, setIsSavedGenerated] = useState<boolean>(false);
@@ -269,10 +293,10 @@ export const AIStudioTool = () => {
       return;
     }
 
-    const IMAGE_TO_PROMPT_COST = 3;
+    const IMAGE_TO_PROMPT_COST = 2;
     if (toolCredits < IMAGE_TO_PROMPT_COST) {
       setIsOutOfCreditsModalOpen(true);
-      showToast(`Image-to-prompt requires 3 credits (You have ${toolCredits}). Top up credits or upgrade!`);
+      showToast(`Image-to-prompt requires 2 credits (You have ${toolCredits}). Top up credits or upgrade!`);
       return;
     }
 
@@ -293,9 +317,18 @@ export const AIStudioTool = () => {
 
       const json = await res.json();
       if (json.success && json.data) {
+        const rawPrompt = json.data.promptText || json.data.prompt || '';
+        const finalPrompt = ensureAspectRatio34(rawPrompt);
+        const preparedData: ExtractedPromptData = {
+          ...json.data,
+          promptText: finalPrompt,
+          prompt: finalPrompt,
+          aspectRatio: '3:4',
+          aspect_ratio: '3:4',
+        };
         deductToolCredit(IMAGE_TO_PROMPT_COST);
-        setExtractedData(json.data);
-        showToast(`Prompt reverse-engineered! 3 credits used (${Math.max(0, toolCredits - IMAGE_TO_PROMPT_COST)} left)`);
+        setExtractedData(preparedData);
+        showToast(`Prompt reverse-engineered! 2 credits used (${Math.max(0, toolCredits - IMAGE_TO_PROMPT_COST)} left)`);
       } else {
         showToast(json.error || 'Failed to extract prompt from image');
       }
@@ -305,6 +338,41 @@ export const AIStudioTool = () => {
     } finally {
       setIsExtractingPrompt(false);
     }
+  };
+
+  const getBreakdownAsPrompt = () => {
+    if (!extractedData) return '';
+    const a = extractedData.analysis || {};
+
+    const breakdownItems = [
+      { label: 'Subject & Presentation', value: a.subject },
+      { label: 'Pose & Body Language', value: a.pose },
+      { label: 'Composition & Framing', value: a.composition || extractedData.composition },
+      { label: 'Camera & Optical Physics', value: a.camera || extractedData.camera },
+      { label: 'Lighting Dynamics', value: a.lighting || extractedData.lighting },
+      { label: 'Color Grading & Palette', value: a.color_grading || extractedData.colorPalette },
+    ];
+
+    const clauses = breakdownItems
+      .filter((item) => item.value && typeof item.value === 'string' && item.value.trim().length > 0)
+      .map((item) => {
+        // Strip any list numbers (like "1. ", "2. ", "1.", etc.) from the text
+        let cleanVal = item.value!.trim().replace(/^\d+[\.\)\:\-]\s*/, '').trim();
+        cleanVal = cleanVal.replace(/[,.:\s]+$/, '');
+        return `${item.label}: ${cleanVal}`;
+      });
+
+    if (clauses.length === 0) {
+      return ensureAspectRatio34(extractedData.promptText || '');
+    }
+
+    return ensureAspectRatio34(clauses.join('. '));
+  };
+
+  const handleCopyBreakdownPrompt = () => {
+    const prompt = getBreakdownAsPrompt();
+    if (!prompt) return;
+    copyToClipboard(prompt, 'breakdown-prompt', 'Breakdown copied as prompt (without list numbers)!');
   };
 
   const handleEditPromptInEditor = (text: string) => {
@@ -369,7 +437,7 @@ export const AIStudioTool = () => {
               Sign In to Access AI Studio
             </h1>
             <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-              Image-to-Prompt extraction, AI reverse-engineering, and prompt generation require an active account. Sign in or register to get started with your daily free credits.
+              Image-to-Prompt extraction, AI reverse-engineering, and prompt generation require an active account. Sign in or register to get started with 5 bonus signup credits.
             </p>
           </div>
           <div className="space-y-3 pt-2">
@@ -416,7 +484,7 @@ export const AIStudioTool = () => {
               <Coins className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
               <span>{toolCredits} Credits</span>
               <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium hidden sm:inline">
-                • {activeStudioTab === 'reverse' ? '3 cr / extraction' : '1 cr / generation'}
+                • {activeStudioTab === 'reverse' ? '2 cr / extraction' : '1 cr / generation'}
               </span>
               <Link
                 href="/pricing"
@@ -450,11 +518,11 @@ export const AIStudioTool = () => {
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-neutral-900 dark:text-white tracking-tight flex items-center gap-2.5">
               <Sparkles className="w-7 h-7 text-[#E60023]" />
-              <span>{activeStudioTab === 'reverse' ? 'AI Image-to-Prompt Studio' : 'AI Prompt Generator Studio'}</span>
+              <span>{activeStudioTab === 'reverse' ? 'Image to Prompt Studio' : 'Prompt Generator Studio'}</span>
             </h1>
             <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1">
               {activeStudioTab === 'reverse'
-                ? 'Reverse-engineer precise, high-fidelity AI prompts from any photo or visual with optical analysis.'
+                ? 'Extract precise, high-fidelity AI prompts from any photo or visual with optical analysis.'
                 : 'Generate professional-grade detailed image prompts from basic concepts with expert styling presets.'}
             </p>
           </div>
@@ -472,7 +540,7 @@ export const AIStudioTool = () => {
               }`}
             >
               <Camera className="w-4 h-4" />
-              <span>Reverse-Engineer (Image to Prompt)</span>
+              <span>Image to Prompt</span>
             </button>
             <button
               onClick={() => setActiveStudioTab('generator')}
@@ -483,7 +551,7 @@ export const AIStudioTool = () => {
               }`}
             >
               <Wand2 className="w-4 h-4" />
-              <span>AI Prompt Generator (Idea to Prompt)</span>
+              <span>Idea to Prompt</span>
             </button>
             <button
               onClick={() => setActiveStudioTab('editor')}
@@ -512,7 +580,7 @@ export const AIStudioTool = () => {
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
                     <Upload className="w-4 h-4 text-[#E60023]" />
-                    <span>Upload Image to Reverse</span>
+                    <span>Upload Image to Reverse Engineer</span>
                   </h3>
                   {uploadedImage && (
                     <button
@@ -538,17 +606,17 @@ export const AIStudioTool = () => {
 
                 {uploadedImage ? (
                   <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 group">
-                    <Image
+                    <img
                       src={uploadedImage}
                       alt="Uploaded target"
-                      fill
-                      className="object-contain"
+                      className="w-full h-full object-contain"
                       referrerPolicy="no-referrer"
                     />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
                       <button
+                        type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="px-3.5 py-1.5 rounded-full bg-white text-neutral-900 text-xs font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-1.5"
+                        className="px-3.5 py-1.5 rounded-full bg-white text-neutral-900 text-xs font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-1.5 cursor-pointer"
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
                         <span>Change Photo</span>
@@ -577,25 +645,35 @@ export const AIStudioTool = () => {
                   <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block">
                     Or Pick a Sample Photo:
                   </span>
-                  <div className="grid grid-cols-4 gap-2">
-                    {SAMPLE_IMAGES.map((sample) => (
+                  <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
+                    {sampleImages.map((sample, idx) => (
                       <button
-                        key={sample.name}
+                        key={`${sample.name}-${idx}`}
+                        type="button"
                         onClick={() => {
                           setUploadedImage(sample.url);
                           setExtractedData(null);
                           setIsSavedExtracted(false);
                         }}
-                        className="group relative rounded-xl overflow-hidden aspect-square border border-neutral-200 dark:border-neutral-700 hover:ring-2 hover:ring-[#E60023] transition-all"
+                        className="group relative block w-full rounded-xl sm:rounded-2xl overflow-hidden aspect-square border border-neutral-200 dark:border-neutral-800 hover:ring-2 hover:ring-[#E60023] transition-all bg-neutral-100 dark:bg-neutral-800 shadow-xs cursor-pointer text-left"
                       >
-                        <Image
+                        <img
                           src={sample.url}
                           alt={sample.name}
-                          fill
-                          className="object-cover group-hover:scale-110 transition-transform duration-300"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           referrerPolicy="no-referrer"
+                          loading="lazy"
+                          onError={(e) => {
+                            const fallbacks = [
+                              'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+                              'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80',
+                              'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
+                              'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80',
+                            ];
+                            e.currentTarget.src = fallbacks[idx % fallbacks.length];
+                          }}
                         />
-                        <div className="absolute inset-x-0 bottom-0 bg-black/70 py-0.5 px-1 text-[9px] font-bold text-white text-center truncate">
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent pt-3 pb-1 px-1 sm:px-1.5 text-[8.5px] sm:text-[10px] font-bold text-white truncate text-center leading-tight">
                           {sample.name}
                         </div>
                       </button>
@@ -679,7 +757,7 @@ export const AIStudioTool = () => {
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4" />
-                      <span>Extract AI Prompt from Image (3 Credits)</span>
+                      <span>Extract AI Prompt from Image (2 Credits)</span>
                     </>
                   )}
                 </button>
@@ -785,10 +863,46 @@ export const AIStudioTool = () => {
 
                   {/* Detailed Photographic Breakdown */}
                   <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
-                    <h4 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                      <Camera className="w-4 h-4 text-[#E60023]" />
-                      <span>Detailed Photographic & Visual Breakdown</span>
-                    </h4>
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <h4 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                        <Camera className="w-4 h-4 text-[#E60023]" />
+                        <span>Detailed Photographic & Visual Breakdown</span>
+                      </h4>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const prompt = getBreakdownAsPrompt();
+                            handleEditPromptInEditor(prompt);
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-semibold transition-all flex items-center gap-1 border border-neutral-200 dark:border-neutral-700 shadow-xs active:scale-95"
+                          title="Edit breakdown prompt in Prompt Editor"
+                        >
+                          <Edit3 className="w-3.5 h-3.5 text-red-500" />
+                          <span>Edit</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleCopyBreakdownPrompt}
+                          className="px-3.5 py-1.5 rounded-xl bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs active:scale-95"
+                          title="Copy visual breakdown text as an AI prompt without list numbers"
+                        >
+                          {copiedKey === 'breakdown-prompt' ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-white" />
+                              <span>Copied as Prompt!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5 text-white" />
+                              <span>Copy as Prompt</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                       <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-1">
@@ -1148,7 +1262,7 @@ export const AIStudioTool = () => {
                 Out of Tool Credits
               </h3>
               <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                Image reverse-engineering requires <strong className="text-neutral-900 dark:text-white">3 credits</strong>, and AI Prompt generation requires <strong className="text-neutral-900 dark:text-white">1 credit</strong>. Every user receives <strong className="text-neutral-900 dark:text-white">2 free credits daily</strong>, or you can top up anytime.
+                Image-to-prompt extraction requires <strong className="text-neutral-900 dark:text-white">2 credits</strong>, and AI Prompt generation requires <strong className="text-neutral-900 dark:text-white">1 credit</strong>. Every user receives <strong className="text-neutral-900 dark:text-white">5 bonus credits</strong> on signup, or you can top up anytime.
               </p>
             </div>
 
@@ -1178,7 +1292,7 @@ export const AIStudioTool = () => {
                 onClick={() => setIsOutOfCreditsModalOpen(false)}
                 className="w-full py-2.5 rounded-full text-xs font-semibold text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
               >
-                Wait for Daily Free Credits
+                Maybe Later
               </button>
             </div>
           </div>

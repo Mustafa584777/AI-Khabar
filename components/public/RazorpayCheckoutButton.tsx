@@ -11,6 +11,7 @@ export interface RazorpayCheckoutButtonProps {
   currency?: string;
   planName?: string;
   planTier?: 'starter' | 'pro' | 'vip' | 'ultra';
+  billingCycle?: 'monthly' | 'yearly';
   creditsToAdd?: number; // Added directly to toolCredits balance upon payment
   description?: string;
   buttonText?: string;
@@ -18,6 +19,7 @@ export interface RazorpayCheckoutButtonProps {
   variant?: 'primary' | 'secondary' | 'outline' | 'pill' | 'dark';
   size?: 'sm' | 'md' | 'lg';
   showIcon?: boolean;
+  showPaymentIcons?: boolean;
   notes?: Record<string, string>;
   onSuccess?: (data: any) => void;
   onFailure?: (error: any) => void;
@@ -28,6 +30,7 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
   currency = 'INR',
   planName = 'Pro Creator Pass',
   planTier = 'pro',
+  billingCycle = 'monthly',
   creditsToAdd,
   description = 'Unlimited AI Studio Generations & VIP Prompts',
   buttonText,
@@ -35,19 +38,26 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
   variant = 'primary',
   size = 'md',
   showIcon = true,
+  showPaymentIcons = true,
   notes,
   onSuccess,
   onFailure,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const { showToast, setIsProUser, upgradePlan, addToolCredits, userAccount } = useApp();
+  const { showToast, setIsProUser, upgradePlan, addToolCredits, userAccount, openAuthModal } = useApp();
 
   const handleCheckout = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (isLoading) return;
+
+    if (!userAccount || !userAccount.isLoggedIn) {
+      openAuthModal('Please sign in or create an account first so your subscription plan and credits are safely saved to your account.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -58,11 +68,16 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
         description: `${planName} - ${description}`,
         receipt: `rcpt_${Date.now()}`,
         prefill: {
-          name: userAccount?.name || userAccount?.username || 'Creative Member',
-          email: userAccount?.email || 'member@trendprompts.com',
+          name: userAccount.name || userAccount.username || userAccount.email.split('@')[0],
+          email: userAccount.email,
         },
         notes: {
           plan: planName,
+          planTier: planTier || 'pro',
+          billingCycle: billingCycle || 'monthly',
+          userEmail: userAccount.email,
+          userId: userAccount.id,
+          ...(creditsToAdd ? { creditsToAdd: String(creditsToAdd) } : {}),
           ...notes,
         },
         themeColor: '#E60023',
@@ -74,9 +89,15 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
             addToolCredits(creditsToAdd);
             showToast(`Payment Verified! Added ${creditsToAdd} Credits to your account 🎉`);
           } else {
-            setIsProUser(true);
-            upgradePlan(planTier);
-            showToast(`Payment Verified! Order ${verifyData.order_id.slice(-6)} successful 🎉`);
+            const isQueued = Boolean(verifyData?.isQueued);
+            upgradePlan(planTier, verifyData?.userSyncData, isQueued, billingCycle);
+            if (isQueued) {
+              showToast(verifyData?.message || `Your new ${planTier.toUpperCase()} plan is queued and will activate once your current plan ends!`);
+            } else {
+              setIsProUser(true);
+              const cycleText = billingCycle === 'yearly' ? 'Yearly' : 'Monthly';
+              showToast(`Payment Verified! Upgraded to ${planTier.toUpperCase()} (${cycleText}) Plan 🎉`);
+            }
           }
 
           try {
@@ -155,30 +176,32 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
   const label = buttonText || `Pay with Razorpay ${displayAmount}`;
 
   return (
-    <button
-      type="button"
-      onClick={handleCheckout}
-      disabled={isLoading}
-      className={`inline-flex items-center justify-center font-bold transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed ${getVariantStyles()} ${getSizeStyles()} ${className}`}
-      id={`razorpay-btn-${amount}`}
-      title={`Checkout via Razorpay ${displayAmount}`}
-    >
-      {isLoading ? (
-        <>
-          <Loader2 className="w-4 h-4 animate-spin" />
-          <span>Processing...</span>
-        </>
-      ) : isSuccess ? (
-        <>
-          <CheckCircle2 className="w-4 h-4 text-emerald-300 animate-bounce" />
-          <span>Payment Verified!</span>
-        </>
-      ) : (
-        <>
-          {showIcon && (variant === 'pill' ? <Sparkles className="w-4 h-4" /> : <CreditCard className="w-4 h-4" />)}
-          <span>{label}</span>
-        </>
-      )}
-    </button>
+    <div className="flex flex-col items-center w-full space-y-2">
+      <button
+        type="button"
+        onClick={handleCheckout}
+        disabled={isLoading}
+        className={`inline-flex items-center justify-center font-bold transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed ${getVariantStyles()} ${getSizeStyles()} ${className}`}
+        id={`razorpay-btn-${amount}`}
+        title={`Checkout via Razorpay ${displayAmount}`}
+      >
+        {isLoading ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>Processing...</span>
+          </>
+        ) : isSuccess ? (
+          <>
+            <CheckCircle2 className="w-4 h-4 text-emerald-300 animate-bounce" />
+            <span>Payment Verified!</span>
+          </>
+        ) : (
+          <>
+            {showIcon && (variant === 'pill' ? <Sparkles className="w-4 h-4" /> : <CreditCard className="w-4 h-4" />)}
+            <span>{label}</span>
+          </>
+        )}
+      </button>
+    </div>
   );
 };

@@ -25,6 +25,14 @@ export const PromptGrid = () => {
     selectedSort,
     tasteProfile,
     bookmarkedIds,
+    isAiSearchEnabled,
+    setIsAiSearchEnabled,
+    aiSearchRemaining,
+    isProUser,
+    setIsProCheckoutModalOpen,
+    showToast,
+    userAccount,
+    openAuthModal,
   } = useApp();
 
   const currentFilterKey = `${searchQuery}_${selectedCategory}_${selectedTool}_${selectedSort}_${tasteProfile.genderVibe}`;
@@ -336,7 +344,7 @@ export const PromptGrid = () => {
                   <PromptCard
                     key={post.id}
                     post={post}
-                    priority={colIdx < 2 && postIdx < 2}
+                    priority={postIdx === 0}
                   />
                 ))}
               </div>
@@ -370,6 +378,68 @@ export const PromptGrid = () => {
             <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">
               You&apos;ve reached the end of our prompt collection. Come back later for more posts.
             </p>
+          ) : searchQuery.trim() && !isAiSearchEnabled ? (
+            <div className="space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto mb-2">
+                <Sparkles className="w-7 h-7" />
+              </div>
+              <p className="text-sm font-bold text-amber-700 dark:text-amber-300">
+                no results for this term try using AI search
+              </p>
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const isLoggedIn = Boolean(userAccount && userAccount.isLoggedIn);
+                    if (!isLoggedIn) {
+                      showToast('Please log in to your account to use AI Search!');
+                      openAuthModal('Please sign in or create a free account to use AI Search.');
+                      return;
+                    }
+                    if (!isProUser && aiSearchRemaining <= 0) {
+                      showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
+                      setIsProCheckoutModalOpen(true);
+                    } else {
+                      setIsAiSearchEnabled(true);
+                    }
+                  }}
+                  className="px-5 py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-md transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Try AI Search</span>
+                </button>
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="px-5 py-2.5 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs font-bold transition-all"
+                >
+                  Clear Search
+                </button>
+              </div>
+            </div>
+          ) : searchQuery.trim() && aiSearchRemaining <= 0 && !isProUser ? (
+            <div className="space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center mx-auto mb-2">
+                <Sparkles className="w-7 h-7" />
+              </div>
+              <p className="text-sm font-bold text-red-600 dark:text-red-400">
+                You have used all of your AI search quota, please upgrade plan to unlock more limit
+              </p>
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsProCheckoutModalOpen(true)}
+                  className="px-5 py-2.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-md transition-all inline-flex items-center gap-1.5"
+                >
+                  <span>Upgrade Plan</span>
+                </button>
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="px-5 py-2.5 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs font-bold transition-all"
+                >
+                  Clear Search
+                </button>
+              </div>
+            </div>
           ) : (
             <>
               <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto mb-4">

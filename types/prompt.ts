@@ -33,7 +33,9 @@ export interface PromptParameters {
   renderEngine?: string; // e.g. "Unreal Engine 5, Octane Render"
   temperature?: string; // For text models
   isPremium?: boolean | string;
-  [key: string]: string | boolean | undefined;
+  additionalImageAlts?: string[];
+  additionalImageFileNames?: string[];
+  [key: string]: string | boolean | string[] | undefined;
 }
 
 export interface Author {
@@ -65,6 +67,8 @@ export interface PromptPost {
   imageWidth?: number;
   imageHeight?: number;
   additionalImages?: string[];
+  additionalImageAlts?: string[];
+  additionalImageFileNames?: string[];
   parameters?: PromptParameters;
   variables?: PromptVariable[];
   articleContent: string; // Rich markdown or HTML guide
@@ -144,8 +148,14 @@ export interface UserAccount {
   sharesCountForPoints: number;
   referralsCountForPoints: number;
   isPremium?: boolean;
+  isProUser?: boolean;
+  authProvider?: string;
   membershipPlan?: 'free' | 'starter' | 'pro' | 'vip';
   planTier?: PlanTier;
+  billingCycle?: 'monthly' | 'yearly';
+  savesLimit?: number;
+  signupBonusClaimed?: boolean;
+  signupCreditsAwarded?: boolean;
   planExpiresAt?: string;
   planStartedAt?: string;
   toolCredits?: number;
@@ -153,6 +163,25 @@ export interface UserAccount {
   credits?: number;
   lastCreditRefresh?: string;
   promptRequestsAllowed?: number;
+  queuedPlan?: QueuedPlan | null;
+  queuedPlans?: QueuedPlan[];
+}
+
+export interface QueuedPlan {
+  planTier: PlanTier;
+  planName: string;
+  credits: number;
+  promptRequests: number;
+  aiSearchQuota: number;
+  billingCycle?: 'monthly' | 'yearly';
+  unlimitedSearches?: boolean;
+  unlimitedSaves?: boolean;
+  scheduledStartAt: string;
+  scheduledExpiresAt: string;
+  orderId?: string;
+  paymentId?: string;
+  purchasedAt: string;
+  durationDays?: number;
 }
 
 export interface RegisteredUserRecord {
@@ -164,16 +193,23 @@ export interface RegisteredUserRecord {
   planTier: PlanTier;
   isProUser: boolean;
   planExpiresAt?: string;
+  planStartedAt?: string;
+  queuedPlan?: QueuedPlan | null;
   toolCredits: number;
   points: number;
   unlockedPromptIds: string[];
   promptRequestsRemaining?: number;
+  aiSearchQuota?: number;
+  aiSearchRemaining?: number;
   aiHistoryCount?: number;
   bookmarksCount?: number;
+  bookmarkedIds?: string[];
   likesCount?: number;
+  likedIds?: string[];
+  aiHistory?: any[];
   joinedDate: string;
   lastSyncedAt?: string;
-  source: 'supabase_auth' | 'supabase_sync' | 'local_store' | 'razorpay' | 'razorpay_verified';
+  source: 'supabase_auth' | 'supabase_sync' | 'local_store' | 'razorpay' | 'razorpay_verified' | 'firebase';
   paymentAmount?: number;
   paymentId?: string;
   paymentDate?: string;
@@ -232,6 +268,9 @@ export interface SearchQueryItem {
   query: string;
   count: number;
   lastSearched: number;
+  resultsCount?: number;
+  category?: string;
+  createdAt?: string | number;
 }
 
 export interface AiSearchResult {

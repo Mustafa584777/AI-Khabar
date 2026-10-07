@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { PushNotificationItem } from '@/types/notification';
 import { NotificationService } from '@/lib/notifications';
+import { getOptimizedImageUrl } from '@/lib/utils';
 import { Bell, ChevronUp, ChevronDown, ExternalLink, Sparkles, Check, ArrowRight } from 'lucide-react';
 
 interface PinterestNotificationCardProps {
@@ -31,6 +32,12 @@ export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps>
     }
     NotificationService.recordNotificationClick(notification.id);
     if (onRead) onRead(notification.id);
+    if (images.length > 1 && typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem('auraprompt_active_slider_images', JSON.stringify(images));
+        sessionStorage.setItem('auraprompt_active_slider_index', '0');
+      } catch {}
+    }
     if (notification.url) {
       router.push(notification.url);
     }
@@ -40,6 +47,12 @@ export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps>
     e.stopPropagation();
     NotificationService.recordNotificationClick(notification.id);
     if (onRead) onRead(notification.id);
+    if (images.length > 1 && typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem('auraprompt_active_slider_images', JSON.stringify(images));
+        sessionStorage.setItem('auraprompt_active_slider_index', '0');
+      } catch {}
+    }
     router.push(url);
   };
 
@@ -95,7 +108,7 @@ export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps>
           <div className="w-8 h-8 rounded-full overflow-hidden shadow-xs shrink-0 select-none bg-neutral-100 dark:bg-neutral-800 relative border border-neutral-200 dark:border-neutral-700">
             <Image
               src="/logo.png"
-              alt="tool.reelz"
+              alt="zeenaprompt.com"
               width={32}
               height={32}
               className="w-full h-full object-cover"
@@ -103,7 +116,7 @@ export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps>
           </div>
 
           <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400 font-medium">
-            <span className="font-bold text-neutral-800 dark:text-neutral-200">tool.reelz</span>
+            <span className="font-bold text-neutral-800 dark:text-neutral-200">zeenaprompt.com</span>
             <span>•</span>
             <span>{timeAgo}</span>
             <Bell className="w-3 h-3 text-neutral-400 fill-neutral-400" />
@@ -145,15 +158,32 @@ export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps>
               {images.map((img, idx) => (
                 <div
                   key={idx}
-                  className="relative w-full h-full bg-neutral-100 dark:bg-neutral-800 rounded-xl sm:rounded-2xl overflow-hidden group/img shadow-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    NotificationService.recordNotificationClick(notification.id);
+                    if (onRead) onRead(notification.id);
+                    if (images.length > 1 && typeof window !== 'undefined') {
+                      try {
+                        sessionStorage.setItem('auraprompt_active_slider_images', JSON.stringify(images));
+                        sessionStorage.setItem('auraprompt_active_slider_index', String(idx));
+                      } catch {}
+                    }
+                    if (notification.url) router.push(notification.url);
+                  }}
+                  className="relative w-full h-full bg-neutral-100 dark:bg-neutral-800 rounded-xl sm:rounded-2xl overflow-hidden group/img shadow-xs cursor-pointer hover:ring-2 hover:ring-[#E60023] transition-all"
+                  title={`View image ${idx + 1}`}
                 >
-                  <Image
-                    src={img}
+                  <img
+                    src={getOptimizedImageUrl(img, 400)}
                     alt={`${notification.title} preview ${idx + 1}`}
-                    fill
-                    sizes="(max-width: 640px) 25vw, 15vw"
-                    className="object-cover group-hover/img:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
                     referrerPolicy="no-referrer"
+                    loading="lazy"
+                    onError={(e) => {
+                      if (img && e.currentTarget.src !== img) {
+                        e.currentTarget.src = img;
+                      }
+                    }}
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors" />
                 </div>
@@ -161,13 +191,17 @@ export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps>
             </div>
           ) : images.length === 1 ? (
             <div className="relative w-full h-44 sm:h-52 rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 shadow-xs">
-              <Image
-                src={images[0]}
+              <img
+                src={getOptimizedImageUrl(images[0], 800)}
                 alt={notification.title}
-                fill
-                sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-cover group-hover:scale-102 transition-transform duration-300"
+                className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
                 referrerPolicy="no-referrer"
+                loading="lazy"
+                onError={(e) => {
+                  if (images[0] && e.currentTarget.src !== images[0]) {
+                    e.currentTarget.src = images[0];
+                  }
+                }}
               />
             </div>
           ) : null}

@@ -58,7 +58,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h4 className="font-bold text-neutral-900 dark:text-white">Email Address</h4>
-                  <p className="text-neutral-500 mt-0.5">contact@geminipromptgenerator.online</p>
+                  <p className="text-neutral-500 mt-0.5">contact@zeenaprompt.com</p>
                 </div>
               </div>
 

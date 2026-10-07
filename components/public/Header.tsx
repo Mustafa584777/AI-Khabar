@@ -46,7 +46,7 @@ export const Header = () => {
       setUnreadNotifs(list.filter((n) => !n.read).length);
     };
     update();
-    const timer = setInterval(update, 8000);
+    const timer = setInterval(update, 30000);
     return () => clearInterval(timer);
   }, []);
 
@@ -187,7 +187,7 @@ export const Header = () => {
           >
             <Bookmark className="w-4 h-4 fill-current" />
             <span className="hidden sm:inline">Saved</span>
-            {userAccount?.isLoggedIn && bookmarkedIds.length > 0 && (
+            {bookmarkedIds.length > 0 && (
               <span className="px-1.5 py-0.2 rounded-full bg-white text-[#E60023] text-[11px] font-black">
                 {bookmarkedIds.length}
               </span>

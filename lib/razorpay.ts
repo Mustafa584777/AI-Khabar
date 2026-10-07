@@ -45,6 +45,9 @@ export interface CheckoutOptions {
     order_id: string;
     payment_id: string;
     message: string;
+    isQueued?: boolean;
+    queuedPlan?: any;
+    userSyncData?: any;
   }) => void;
   onFailure?: (error: { message: string; details?: any }) => void;
   onDismiss?: () => void;
@@ -160,7 +163,7 @@ export async function startRazorpayCheckout(options: CheckoutOptions): Promise<v
       },
       handler: async function (response: RazorpayPaymentSuccessResponse) {
         try {
-          // 4. Verify payment signature on backend
+          // 4. Verify payment signature on backend and activate plan
           const verifyRes = await fetch('/api/verify-payment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -168,6 +171,13 @@ export async function startRazorpayCheckout(options: CheckoutOptions): Promise<v
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
+              email: prefill?.email || notes?.userEmail,
+              userId: notes?.userId,
+              planTier: notes?.planTier || notes?.tier_or_pack,
+              billingCycle: notes?.billingCycle || 'monthly',
+              checkoutType: notes?.type,
+              creditsToAdd: notes?.creditsToAdd ? Number(notes?.creditsToAdd) : undefined,
+              planName: notes?.plan || notes?.item,
             }),
           });
 

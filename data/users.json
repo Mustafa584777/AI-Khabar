@@ -1,0 +1,42 @@
+{
+  "tmus7884@gmail.com": {
+    "name": "Mohammad Mustaffa",
+    "email": "tmus7884@gmail.com",
+    "avatar": "https://lh3.googleusercontent.com/a/ACg8ocI1n7wcXBw2t7EQxzhL95XYzCqOsKO_S7Yxfbrsk-erXWLsJAOm=s96-c",
+    "points": 30,
+    "userId": "71c2de38-d921-45f0-a3a4-aac42cdb9378",
+    "likedIds": [],
+    "planTier": "pro",
+    "aiHistory": [],
+    "isProUser": true,
+    "updatedAt": "2026-09-26T09:53:51.625Z",
+    "joinedDate": "2026-09-25T12:10:15.741Z",
+    "toolCredits": 250,
+    "bookmarkedIds": [],
+    "planExpiresAt": "2026-10-26T09:52:04.894Z",
+    "planStartedAt": "2026-09-26T09:52:04.894Z",
+    "aiSearchRemaining": 200,
+    "unlockedPromptIds": [],
+    "promptRequestsRemaining": 2
+  },
+  "71c2de38-d921-45f0-a3a4-aac42cdb9378": {
+    "name": "Mohammad Mustaffa",
+    "email": "tmus7884@gmail.com",
+    "avatar": "https://lh3.googleusercontent.com/a/ACg8ocI1n7wcXBw2t7EQxzhL95XYzCqOsKO_S7Yxfbrsk-erXWLsJAOm=s96-c",
+    "points": 30,
+    "userId": "71c2de38-d921-45f0-a3a4-aac42cdb9378",
+    "likedIds": [],
+    "planTier": "pro",
+    "aiHistory": [],
+    "isProUser": true,
+    "updatedAt": "2026-09-26T09:53:51.625Z",
+    "joinedDate": "2026-09-25T12:10:15.741Z",
+    "toolCredits": 250,
+    "bookmarkedIds": [],
+    "planExpiresAt": "2026-10-26T09:52:04.894Z",
+    "planStartedAt": "2026-09-26T09:52:04.894Z",
+    "aiSearchRemaining": 200,
+    "unlockedPromptIds": [],
+    "promptRequestsRemaining": 2
+  }
+}

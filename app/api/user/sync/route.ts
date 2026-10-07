@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin, supabase } from '@/lib/supabase';
 import { getClientIp, checkRateLimit, createRateLimitResponse, sanitizePayload } from '@/lib/security';
+import { PLAN_CONFIGS, getPlanFeaturesForCycle } from '@/lib/plans';
+import { PlanTier } from '@/types/prompt';
+import { ServerStorage } from '@/lib/server-storage';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,55 +44,273 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const client = supabaseAdmin || supabase;
+    // Helper: Check active permanent subscription across ServerStorage
+    let activeSub: any = null;
+    if (cleanEmail) {
+      try {
+        activeSub = await ServerStorage.getUserSubscription(cleanEmail);
+      } catch (e) {
+        console.warn('ServerStorage subscription check warning:', e);
+      }
+    }
+    // Check if activeSub has expired but holds a queuedPlan
+    if (activeSub && activeSub.planExpiresAt && new Date(activeSub.planExpiresAt).getTime() <= Date.now()) {
+      if (activeSub.queuedPlan) {
+        const qp = activeSub.queuedPlan;
+        const qpCfg = PLAN_CONFIGS[qp.planTier as PlanTier] || PLAN_CONFIGS.pro;
+        activeSub = {
+          ...activeSub,
+          planTier: qp.planTier,
+          status: 'active',
+          isProUser: true,
+          planStartedAt: qp.scheduledStartAt || new Date().toISOString(),
+          planExpiresAt: qp.scheduledExpiresAt,
+          credits: qp.credits || qpCfg.credits,
+          promptRequests: qp.promptRequests || qpCfg.promptRequests,
+          aiSearchQuota: qp.aiSearchQuota || qpCfg.aiSearchQuota,
+          queuedPlan: null,
+        };
+        void ServerStorage.saveUserSubscription(activeSub);
+      }
+    }
 
-    // Helper: fetch existing row checking emailKey first, then userKey
+    const hasActiveSub = Boolean(
+      activeSub &&
+      activeSub.status === 'active' &&
+      (!activeSub.planExpiresAt || new Date(activeSub.planExpiresAt).getTime() > Date.now())
+    );
+
+    // Helper: fetch existing row checking emailKey, userKey, subscriptions, and server backups
     const fetchExistingData = async () => {
-      if (emailKey) {
-        const { data: row } = await client
-          .from('settings')
-          .select('data')
-          .eq('id', emailKey)
-          .single();
-        if (row?.data) return row.data;
+      const candidates: any[] = [];
+
+      // 1. Check ServerStorage profile backup
+      if (cleanEmail || userId) {
+        try {
+          const storedProfile = await ServerStorage.getUserProfile(cleanEmail, userId);
+          if (storedProfile) candidates.push(storedProfile);
+        } catch (e) {
+          console.warn('ServerStorage profile check warning:', e);
+        }
       }
-      if (userKey) {
-        const { data: row } = await client
-          .from('settings')
-          .select('data')
-          .eq('id', userKey)
-          .single();
-        if (row?.data) return row.data;
+
+      if (candidates.length === 0) {
+        if (hasActiveSub) {
+          return {
+            email: cleanEmail,
+            userId,
+            planTier: activeSub.planTier,
+            isProUser: true,
+            toolCredits: activeSub.credits,
+            aiSearchRemaining: activeSub.aiSearchQuota,
+            promptRequestsRemaining: activeSub.promptRequests,
+            planStartedAt: activeSub.planStartedAt,
+            planExpiresAt: activeSub.planExpiresAt,
+            bookmarkedIds: [],
+            likedIds: [],
+            unlockedPromptIds: [],
+            aiHistory: [],
+            updatedAt: new Date().toISOString(),
+          };
+        }
+        return null;
       }
-      return null;
+
+      // Sort by updatedAt descending to prioritize latest saved state
+      candidates.sort((a, b) => {
+        const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+        const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+        return timeB - timeA;
+      });
+
+      const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3, ultra: 4 };
+
+      // Determine highest active unexpired plan tier
+      let highestTier: PlanTier = hasActiveSub ? (activeSub.planTier as PlanTier) : 'free';
+      let highestStartedAt = hasActiveSub ? activeSub.planStartedAt : undefined;
+      let highestExpiresAt = hasActiveSub ? activeSub.planExpiresAt : undefined;
+
+      for (const curr of candidates) {
+        const currTier = (curr.planTier && curr.planTier in PLAN_CONFIGS && curr.planTier !== 'free')
+          ? (curr.planTier as PlanTier)
+          : 'free';
+        const hasValidExpiry = Boolean(
+          curr.planExpiresAt &&
+          !isNaN(new Date(curr.planExpiresAt).getTime()) &&
+          new Date(curr.planExpiresAt).getTime() > Date.now()
+        );
+        const effCurrTier: PlanTier = (currTier !== 'free' && (hasValidExpiry || hasActiveSub || !curr.planExpiresAt)) ? currTier : 'free';
+
+        if ((TIER_RANK[effCurrTier] || 0) > (TIER_RANK[highestTier] || 0)) {
+          highestTier = effCurrTier;
+          highestStartedAt = curr.planStartedAt || highestStartedAt;
+          highestExpiresAt = curr.planExpiresAt || highestExpiresAt;
+        }
+      }
+
+      // Pick matching candidate with highestTier to retrieve exact consumed balance
+      const matchingCandidate = candidates.find(c => {
+        const t = (c.planTier && c.planTier in PLAN_CONFIGS) ? c.planTier : (c.isProUser ? 'pro' : 'free');
+        return t === highestTier;
+      }) || candidates[0];
+
+      let best = { ...matchingCandidate };
+
+      // Merge bookmarks, unlocked prompts, liked IDs uniquely across all candidates
+      for (const curr of candidates) {
+        best.bookmarkedIds = Array.from(new Set([...(best.bookmarkedIds || []), ...(curr.bookmarkedIds || [])]));
+        best.unlockedPromptIds = Array.from(new Set([...(best.unlockedPromptIds || []), ...(curr.unlockedPromptIds || [])]));
+        best.likedIds = Array.from(new Set([...(best.likedIds || []), ...(curr.likedIds || [])]));
+      }
+
+      best.planTier = highestTier;
+      best.isProUser = highestTier !== 'free' || Boolean(best.isProUser || hasActiveSub);
+      best.planStartedAt = highestStartedAt || best.planStartedAt;
+      best.planExpiresAt = highestExpiresAt || best.planExpiresAt;
+      best.queuedPlan = activeSub?.queuedPlan || best.queuedPlan || null;
+
+      // Check if plan has expired: if a queued plan exists, automatically activate it!
+      const isPlanExpired = Boolean(best.planExpiresAt && new Date(best.planExpiresAt).getTime() <= Date.now());
+      if (isPlanExpired && best.queuedPlan) {
+        const qp = best.queuedPlan;
+        const qpCfg = getPlanFeaturesForCycle(qp.planTier as PlanTier, qp.billingCycle || 'monthly');
+        best.planTier = qp.planTier;
+        best.isProUser = true;
+        best.planStartedAt = qp.scheduledStartAt || new Date().toISOString();
+        best.planExpiresAt = qp.scheduledExpiresAt;
+        // Rule 2: Credits never expire or overwrite; add queued plan credits
+        best.toolCredits = (Number(best.toolCredits) || 0) + (qp.credits || qpCfg.credits);
+        best.promptRequestsRemaining = qp.promptRequests || qpCfg.promptRequests;
+        best.aiSearchRemaining = qpCfg.unlimitedSearches ? 999999 : (qp.aiSearchQuota || qpCfg.aiSearchQuota);
+        best.savesLimit = qpCfg.savesLimit;
+        best.queuedPlan = null;
+      } else if (isPlanExpired && best.planTier !== 'free') {
+        // Demote to free account without loss of any data (Rule 4 & 7)
+        best.planTier = 'free';
+        best.isProUser = false;
+        best.promptRequestsRemaining = 0; // Rule 7: prompt request 0 ho jayegi
+        best.aiSearchRemaining = 5; // Rule 7: ai searches 5/5 per set ho jayegi
+        best.savesLimit = 10; // Rule 7: saves limit free tier ke 10 saves tak reset ho jayegi
+        // best.toolCredits stays intact!
+      }
+
+      const isYearly = Boolean(
+        best.billingCycle === 'yearly' ||
+        (best.planExpiresAt && best.planStartedAt && (new Date(best.planExpiresAt).getTime() - new Date(best.planStartedAt).getTime()) > 60 * 24 * 60 * 60 * 1000)
+      );
+      const planCfg = getPlanFeaturesForCycle(best.planTier as PlanTier, isYearly ? 'yearly' : 'monthly');
+
+      // Strictly preserve consumed balance! Free users get 5 credits ONLY ONCE on initial account creation.
+      if (best.toolCredits === undefined || best.toolCredits === null) {
+        best.toolCredits = best.planTier === 'free' ? 5 : planCfg.credits;
+      } else {
+        best.toolCredits = Number(best.toolCredits);
+      }
+
+      // If user is on free tier, has 0 unlocked prompts, 0 ai history, and has 0 credits (e.g. from previous bug), heal them to 5:
+      if (
+        best.toolCredits === 0 &&
+        (!best.unlockedPromptIds || best.unlockedPromptIds.length === 0) &&
+        (!best.aiHistory || best.aiHistory.length === 0) &&
+        best.planTier === 'free'
+      ) {
+        best.toolCredits = 5;
+      }
+
+      const submittedRequestsCount = Array.isArray(best.promptRequests) ? best.promptRequests.length : 0;
+      if (best.planTier !== 'free') {
+        if (
+          best.promptRequestsRemaining === undefined ||
+          best.promptRequestsRemaining === null ||
+          (Number(best.promptRequestsRemaining) === 0 && submittedRequestsCount === 0)
+        ) {
+          best.promptRequestsRemaining = planCfg.promptRequests;
+        } else {
+          best.promptRequestsRemaining = Number(best.promptRequestsRemaining);
+        }
+      } else {
+        best.promptRequestsRemaining = 0;
+      }
+
+      if (planCfg.unlimitedSearches) {
+        best.aiSearchRemaining = 999999;
+      } else if (best.planTier !== 'free') {
+        const currentVal = best.aiSearchRemaining !== undefined && best.aiSearchRemaining !== null ? Number(best.aiSearchRemaining) : undefined;
+        // Auto-heal: If an active paid account was clamped to <= 10 searches, restore full plan quota!
+        if (currentVal === undefined || isNaN(currentVal) || currentVal <= 10) {
+          best.aiSearchRemaining = planCfg.aiSearchQuota;
+        } else {
+          best.aiSearchRemaining = Math.min(currentVal, planCfg.aiSearchQuota);
+        }
+      } else if (best.aiSearchRemaining === undefined || best.aiSearchRemaining === null) {
+        best.aiSearchRemaining = 5;
+      } else {
+        best.aiSearchRemaining = Math.min(Number(best.aiSearchRemaining), 5);
+      }
+
+      return best;
     };
 
     // 1. PULL: Retrieve synced data for user
     if (action === 'pull' || !action) {
       let syncData = await fetchExistingData();
 
-      // If found under userKey but not yet mirrored to emailKey, backfill immediately
-      if (syncData && emailKey) {
-        try {
-          await client.from('settings').upsert({ id: emailKey, data: syncData });
-        } catch {}
-      }
-
       if (syncData) {
         const cloned = { ...syncData };
-        let tier = cloned.planTier || (cloned.isProUser ? 'pro' : 'free');
+        let tier = (cloned.planTier && cloned.planTier in PLAN_CONFIGS && cloned.planTier !== 'free')
+          ? cloned.planTier
+          : 'free';
 
-        // Check if plan has expired
-        if (tier !== 'free' && cloned.planExpiresAt) {
-          const exp = new Date(cloned.planExpiresAt).getTime();
-          if (!isNaN(exp) && exp < Date.now()) {
-            tier = 'free';
-            cloned.isProUser = false;
+        // Check if plan has expired or lacks expiration (never expire if user holds active subscription)
+        if (tier !== 'free' && !hasActiveSub) {
+          const exp = cloned.planExpiresAt ? new Date(cloned.planExpiresAt).getTime() : 0;
+          if (!exp || isNaN(exp) || exp <= Date.now()) {
+            if (cloned.queuedPlan) {
+              const qp = cloned.queuedPlan;
+              const qpCfg = getPlanFeaturesForCycle(qp.planTier as PlanTier, qp.billingCycle || 'monthly');
+              tier = qp.planTier;
+              cloned.isProUser = true;
+              cloned.toolCredits = (Number(cloned.toolCredits) || 0) + (qp.credits || qpCfg.credits);
+              cloned.promptRequestsRemaining = qp.promptRequests || qpCfg.promptRequests;
+              cloned.aiSearchRemaining = qpCfg.unlimitedSearches ? 999999 : (qp.aiSearchQuota || qpCfg.aiSearchQuota);
+              cloned.savesLimit = qpCfg.savesLimit;
+              cloned.planStartedAt = qp.scheduledStartAt || new Date().toISOString();
+              cloned.planExpiresAt = qp.scheduledExpiresAt;
+              cloned.queuedPlan = null;
+            } else {
+              tier = 'free';
+              cloned.isProUser = false;
+              cloned.planTier = 'free';
+              cloned.promptRequestsRemaining = 0;
+              cloned.aiSearchRemaining = 5;
+              cloned.savesLimit = 10;
+            }
           }
         }
 
         cloned.planTier = tier;
         cloned.isProUser = tier !== 'free' || Boolean(cloned.isProUser);
+
+        // DO NOT overwrite consumed balance with plan initial quota on pull!
+        const isYearly = Boolean(
+          cloned.billingCycle === 'yearly' ||
+          (cloned.planExpiresAt && cloned.planStartedAt && (new Date(cloned.planExpiresAt).getTime() - new Date(cloned.planStartedAt).getTime()) > 60 * 24 * 60 * 60 * 1000)
+        );
+        const planCfg = getPlanFeaturesForCycle(tier as PlanTier, isYearly ? 'yearly' : 'monthly');
+        if (planCfg.unlimitedSearches) {
+          cloned.aiSearchRemaining = 999999;
+        } else if (tier !== 'free') {
+          const raw = cloned.aiSearchRemaining !== undefined && cloned.aiSearchRemaining !== null ? Number(cloned.aiSearchRemaining) : undefined;
+          if (raw === undefined || isNaN(raw) || raw <= 10) {
+            cloned.aiSearchRemaining = planCfg.aiSearchQuota;
+          } else {
+            cloned.aiSearchRemaining = Math.min(raw, planCfg.aiSearchQuota);
+          }
+        } else if (cloned.aiSearchRemaining !== undefined && cloned.aiSearchRemaining !== null) {
+          cloned.aiSearchRemaining = Math.min(Number(cloned.aiSearchRemaining), 5);
+        } else {
+          cloned.aiSearchRemaining = 5;
+        }
 
         return NextResponse.json({
           success: true,
@@ -126,26 +346,72 @@ export async function POST(req: NextRequest) {
         new Set([...(existingData.unlockedPromptIds || []), ...(data.unlockedPromptIds || [])])
       );
 
-      // Safe Tool Credits (maintain balance, never drop unexpectedly)
-      const resolvedToolCredits = data.toolCredits !== undefined
-        ? Number(data.toolCredits)
-        : (existingData.toolCredits !== undefined ? Number(existingData.toolCredits) : 2);
-
       // Safe Plan Tier resolution (vip > pro > starter > free)
       const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3, ultra: 4 };
-      const currentTier = existingData.planTier || (existingData.isProUser ? 'pro' : 'free');
+      const currentTier: PlanTier = (existingData.planTier && existingData.planTier in PLAN_CONFIGS && existingData.planTier !== 'free')
+        ? (existingData.planTier as PlanTier)
+        : 'free';
       const incomingTier = data.planTier;
-      let resolvedPlanTier = currentTier;
-      if (incomingTier && TIER_RANK[incomingTier] !== undefined) {
-        resolvedPlanTier = incomingTier;
+      let resolvedPlanTier: PlanTier = currentTier;
+
+      // Check if current tier is paid and unexpired
+      const isCurrentPaidAndActive = currentTier !== 'free' && Boolean(
+        existingData.planExpiresAt &&
+        !isNaN(new Date(existingData.planExpiresAt).getTime()) &&
+        new Date(existingData.planExpiresAt).getTime() > Date.now()
+      );
+
+      if (hasActiveSub && activeSub) {
+        resolvedPlanTier = activeSub.planTier;
+      } else if (isCurrentPaidAndActive) {
+        // If user already holds an active paid plan, do NOT let it get downgraded to free by a push
+        if (incomingTier && (TIER_RANK[incomingTier] || 0) > (TIER_RANK[currentTier] || 0)) {
+          resolvedPlanTier = incomingTier;
+        } else {
+          resolvedPlanTier = currentTier;
+        }
+      } else if (incomingTier && TIER_RANK[incomingTier] !== undefined && incomingTier !== 'free') {
+        const hasPaymentProof = Boolean(
+          hasActiveSub ||
+          data.lastPaymentId ||
+          data.paymentId ||
+          data.lastOrderId ||
+          data.source === 'razorpay_verified' ||
+          existingData.lastPaymentId ||
+          existingData.paymentId ||
+          existingData.lastOrderId ||
+          existingData.source === 'razorpay_verified'
+        );
+        const hasValidFutureExpiry = Boolean(
+          data.planExpiresAt &&
+          !isNaN(new Date(data.planExpiresAt).getTime()) &&
+          new Date(data.planExpiresAt).getTime() > Date.now()
+        );
+        const hasExistingPaidTier = Boolean(
+          existingData.planTier && existingData.planTier !== 'free' && existingData.planTier in PLAN_CONFIGS
+        );
+
+        if (hasActiveSub || hasPaymentProof || hasValidFutureExpiry || hasExistingPaidTier || !data.planExpiresAt) {
+          resolvedPlanTier = incomingTier;
+        } else {
+          resolvedPlanTier = currentTier !== 'free' ? currentTier : 'free';
+        }
+      } else if (incomingTier === 'free') {
+        // Only demote to free if explicit expiry has passed
+        const exp = data.planExpiresAt || existingData.planExpiresAt;
+        const isExpired = exp && new Date(exp).getTime() <= Date.now();
+        resolvedPlanTier = isExpired ? 'free' : currentTier;
+      } else {
+        resolvedPlanTier = currentTier;
       }
-      let resolvedIsPro = resolvedPlanTier !== 'free' || Boolean(data.isProUser ?? existingData.isProUser);
+
+      let resolvedIsPro = resolvedPlanTier !== 'free' || Boolean(hasActiveSub);
 
       // Check plan expiration if provided
-      const resolvedPlanExpiresAt = data.planExpiresAt || existingData.planExpiresAt;
-      if (resolvedPlanTier !== 'free' && resolvedPlanExpiresAt) {
-        const exp = new Date(resolvedPlanExpiresAt).getTime();
-        if (!isNaN(exp) && exp < Date.now()) {
+      const resolvedPlanExpiresAt = activeSub?.planExpiresAt || data.planExpiresAt || existingData.planExpiresAt;
+      if (resolvedPlanTier !== 'free' && !hasActiveSub) {
+        const exp = resolvedPlanExpiresAt ? new Date(resolvedPlanExpiresAt).getTime() : 0;
+        if (!exp || isNaN(exp) || exp <= Date.now()) {
           resolvedPlanTier = 'free';
           resolvedIsPro = false;
         }
@@ -209,44 +475,82 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      const planCfg = PLAN_CONFIGS[resolvedPlanTier as PlanTier] || PLAN_CONFIGS.free;
+
+      // Tool credits: strictly preserve consumed or updated balance
+      let resolvedToolCredits: number;
+      if (data.toolCredits !== undefined) {
+        resolvedToolCredits = Number(data.toolCredits);
+      } else if (existingData.toolCredits !== undefined && existingData.toolCredits !== null) {
+        resolvedToolCredits = Number(existingData.toolCredits);
+      } else {
+        resolvedToolCredits = resolvedPlanTier === 'free' ? 5 : planCfg.credits;
+      }
+
+      // Prompt requests: strictly preserve consumed count (do NOT force Math.max)
+      let finalRequests: number;
+      const submittedRequestsCount = Array.isArray(existingData.promptRequests) ? existingData.promptRequests.length : 0;
+      if (resolvedPlanTier !== 'free') {
+        if (data.promptRequestsRemaining !== undefined && data.promptRequestsRemaining !== null && !isNaN(Number(data.promptRequestsRemaining))) {
+          finalRequests = Number(data.promptRequestsRemaining);
+        } else if (existingData.promptRequestsRemaining !== undefined && existingData.promptRequestsRemaining !== null && !isNaN(Number(existingData.promptRequestsRemaining))) {
+          finalRequests = Number(existingData.promptRequestsRemaining);
+        } else {
+          finalRequests = Math.max(0, planCfg.promptRequests - submittedRequestsCount);
+        }
+      } else {
+        finalRequests = 0;
+      }
+
+      // AI searches: strictly preserve consumed searches and auto-heal paid accounts
+      let finalSearches: number;
+      if (planCfg.unlimitedSearches) {
+        finalSearches = 999999;
+      } else if (resolvedPlanTier !== 'free') {
+        const candidate = data.aiSearchRemaining !== undefined
+          ? Number(data.aiSearchRemaining)
+          : (existingData.aiSearchRemaining !== undefined && existingData.aiSearchRemaining !== null ? Number(existingData.aiSearchRemaining) : undefined);
+
+        // Auto-heal: If an active paid account has <= 10 searches remaining (footprint of old clamp bug), restore full quota!
+        if (candidate === undefined || isNaN(candidate) || candidate <= 10) {
+          finalSearches = planCfg.aiSearchQuota;
+        } else {
+          finalSearches = Math.min(candidate, planCfg.aiSearchQuota);
+        }
+      } else if (data.aiSearchRemaining !== undefined) {
+        finalSearches = Math.min(Number(data.aiSearchRemaining), 5);
+      } else if (existingData.aiSearchRemaining !== undefined && existingData.aiSearchRemaining !== null) {
+        finalSearches = Math.min(Number(existingData.aiSearchRemaining), 5);
+      } else {
+        finalSearches = 5;
+      }
+
       const mergedPayload = {
         ...existingData,
         ...data,
         email: cleanEmail || existingData.email,
         userId: userId || existingData.userId,
-        bookmarkedIds: data.bookmarkedIds !== undefined ? data.bookmarkedIds : mergedBookmarks,
-        likedIds: data.likedIds !== undefined ? data.likedIds : mergedLikes,
-        unlockedPromptIds: data.unlockedPromptIds !== undefined ? data.unlockedPromptIds : mergedUnlockedPromptIds,
+        bookmarkedIds: mergedBookmarks,
+        likedIds: mergedLikes,
+        unlockedPromptIds: mergedUnlockedPromptIds,
         planTier: resolvedPlanTier,
         isProUser: resolvedIsPro,
         toolCredits: resolvedToolCredits,
+        promptRequestsRemaining: finalRequests,
+        aiSearchRemaining: finalSearches,
         aiHistory: mergedAiHistory,
         tasteProfile: mergedTasteProfile !== undefined ? mergedTasteProfile : existingData.tasteProfile,
         planStartedAt: data.planStartedAt || existingData.planStartedAt,
         planExpiresAt: resolvedPlanExpiresAt,
+        queuedPlan: data.queuedPlan !== undefined ? data.queuedPlan : (existingData.queuedPlan || activeSub?.queuedPlan || null),
         updatedAt: new Date().toISOString(),
       };
 
-      // 1. Primary Save: Always save to emailKey if email is provided
-      if (emailKey) {
-        const { error: emailUpsertError } = await client
-          .from('settings')
-          .upsert({ id: emailKey, data: mergedPayload });
-
-        if (emailUpsertError) {
-          console.error('User sync email upsert error:', emailUpsertError);
-        }
-      }
-
-      // 2. Secondary Mirror: Save to userKey if provided
-      if (userKey && userKey !== emailKey) {
-        const { error: userUpsertError } = await client
-          .from('settings')
-          .upsert({ id: userKey, data: mergedPayload });
-
-        if (userUpsertError) {
-          console.error('User sync user upsert error:', userUpsertError);
-        }
+      // 1. Primary Save: Local and Firebase persistent storage
+      try {
+        await ServerStorage.saveUserProfile(cleanEmail, userId, mergedPayload);
+      } catch (e) {
+        console.error('ServerStorage saveUserProfile error:', e);
       }
 
       return NextResponse.json({ success: true, syncData: mergedPayload });
@@ -275,11 +579,10 @@ export async function POST(req: NextRequest) {
         updatedAt: new Date().toISOString(),
       };
 
-      if (emailKey) {
-        await client.from('settings').upsert({ id: emailKey, data: mergedPayload });
-      }
-      if (userKey && userKey !== emailKey) {
-        await client.from('settings').upsert({ id: userKey, data: mergedPayload });
+      try {
+        await ServerStorage.saveUserProfile(cleanEmail, userId, mergedPayload);
+      } catch (e) {
+        console.error('ServerStorage saveUserProfile bookmark error:', e);
       }
 
       return NextResponse.json({ success: true, bookmarkedIds: updatedList });
@@ -335,11 +638,10 @@ export async function POST(req: NextRequest) {
         updatedAt: new Date().toISOString(),
       };
 
-      if (emailKey) {
-        await client.from('settings').upsert({ id: emailKey, data: mergedPayload });
-      }
-      if (userKey && userKey !== emailKey) {
-        await client.from('settings').upsert({ id: userKey, data: mergedPayload });
+      try {
+        await ServerStorage.saveUserProfile(cleanEmail, userId, mergedPayload);
+      } catch (e) {
+        console.error('ServerStorage saveUserProfile taste error:', e);
       }
 
       return NextResponse.json({ success: true, tasteProfile: mergedTasteProfile });

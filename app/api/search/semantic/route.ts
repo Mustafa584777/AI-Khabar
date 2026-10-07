@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
     const query = rawQuery.trim();
 
     // 1. Record search query immediately on server (Requirement 2)
-    void ServerStorage.recordSearchQuery(query).catch((e) => {
+    void ServerStorage.recordSearchQuery(query, 0, 'semantic').catch((e) => {
       console.warn('Background search query recording error:', e);
     });
 

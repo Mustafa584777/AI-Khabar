@@ -26,6 +26,8 @@ import {
   Check,
   Crown,
   Bell,
+  Layers,
+  Trash2,
 } from 'lucide-react';
 import Image from 'next/image';
 import { cleanTagsArray, canonicalizeTag, slugify } from '@/lib/utils';
@@ -96,10 +98,19 @@ export const PostEditor = () => {
   const [imageFileName, setImageFileName] = useState(
     () => existingPost?.imageFileName || (existingPost?.title ? generateImageFileNameFromTitle(existingPost.title) : '')
   );
+  const [additionalImages, setAdditionalImages] = useState<string[]>(
+    () => Array.isArray(existingPost?.additionalImages) ? existingPost.additionalImages : []
+  );
+  const additionalFileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [isUploadingAdditional, setIsUploadingAdditional] = useState(false);
   const [imageSourceTab, setImageSourceTab] = useState<'upload' | 'url'>('upload');
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFileInfo, setUploadedFileInfo] = useState<{ name: string; size: string } | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  // Track the ID of the post currently loaded in the editor
+  // This ensures background polling/syncFromRemote does not clobber user's active edits or uploaded carousel images
+  const loadedPostIdRef = React.useRef<string | null>(editingPostId || null);
 
   const [status, setStatus] = useState<'published' | 'draft'>(
     () => (existingPost?.status === 'draft' ? 'draft' : 'published')
@@ -109,10 +120,48 @@ export const PostEditor = () => {
   );
 
   useEffect(() => {
-    if (existingPost) {
-      setIsPremium(Boolean(existingPost.isPremium || existingPost.parameters?.isPremium));
+    // Only load from existingPost if switching to a DIFFERENT post or switching between create/edit modes
+    if (editingPostId && editingPostId !== loadedPostIdRef.current) {
+      loadedPostIdRef.current = editingPostId;
+      if (existingPost) {
+        setTitle(existingPost.title || '');
+        setSlug(existingPost.slug || '');
+        setCategory(existingPost.category || '');
+        setPromptText(existingPost.promptText || '');
+        setImageUrl(existingPost.imageUrl || '');
+        setImageAlt(existingPost.imageAlt || existingPost.title || '');
+        setImageFileName(existingPost.imageFileName || (existingPost.title ? generateImageFileNameFromTitle(existingPost.title) : ''));
+        setAdditionalImages(Array.isArray(existingPost.additionalImages) ? existingPost.additionalImages : []);
+        setStatus(existingPost.status === 'draft' ? 'draft' : 'published');
+        setIsPremium(Boolean(existingPost.isPremium || existingPost.parameters?.isPremium));
+        if (existingPost.articleContent) setArticleContent(existingPost.articleContent);
+        if (Array.isArray(existingPost.tags) && existingPost.tags.length > 0) {
+          setTags(existingPost.tags);
+        }
+        if (existingPost.seo?.metaTitle) setMetaTitle(existingPost.seo.metaTitle);
+        if (existingPost.seo?.metaDescription) setMetaDescription(existingPost.seo.metaDescription);
+        if (existingPost.seo?.focusKeyword) setFocusKeyword(existingPost.seo.focusKeyword);
+      }
+    } else if (!editingPostId && loadedPostIdRef.current !== null) {
+      // Switched from editing to new post creation mode
+      loadedPostIdRef.current = null;
+      setTitle('');
+      setSlug('');
+      setCategory(categories[0]?.name || 'Photorealistic & Portraits');
+      setPromptText('');
+      setImageUrl('');
+      setImageAlt('');
+      setImageFileName('');
+      setAdditionalImages([]);
+      setStatus('published');
+      setIsPremium(false);
+      setArticleContent('## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.');
+      setTags(['AI Prompt', 'Photorealistic', 'Masterpiece']);
+      setMetaTitle('');
+      setMetaDescription('');
+      setFocusKeyword('');
     }
-  }, [existingPost]);
+  }, [editingPostId, existingPost, categories]);
   const [articleContent, setArticleContent] = useState(
     () =>
       existingPost?.articleContent ||
@@ -275,6 +324,12 @@ export const PostEditor = () => {
           return;
         }
 
+        // Only convert to WebP if image file size is > 500 KB
+        if (file.size <= 500 * 1024) {
+          resolve(dataUrl);
+          return;
+        }
+
         const img = document.createElement('img');
         img.onload = () => {
           const maxDimension = 1600;
@@ -388,6 +443,56 @@ export const PostEditor = () => {
       showToast('Failed to process image file');
     } finally {
       setIsUploadingImage(false);
+    }
+  };
+
+  const handleAdditionalFileUpload = async (files: FileList | File[]) => {
+    const fileArray = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    if (fileArray.length === 0) {
+      showToast('Please select valid image file(s) (PNG, JPG, WebP, AVIF).');
+      return;
+    }
+
+    setIsUploadingAdditional(true);
+    try {
+      let addedCount = 0;
+      for (const file of fileArray) {
+        if (file.size > 15 * 1024 * 1024) {
+          showToast(`File ${file.name} exceeds 15MB limit.`);
+          continue;
+        }
+
+        const optimized = await optimizeImageFile(file);
+        if (optimized) {
+          let finalUrl = optimized;
+          try {
+            const cleanPublicId = `${slug || slugify(title) || 'slide'}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+            const uploadRes = await fetch('/api/upload', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                image: optimized,
+                folder: 'prompts',
+                publicId: cleanPublicId,
+              }),
+            });
+            const uploadData = await uploadRes.json();
+            if (uploadData && uploadData.url) {
+              finalUrl = uploadData.url;
+            }
+          } catch {}
+
+          setAdditionalImages((prev) => [...prev, finalUrl]);
+          addedCount++;
+        }
+      }
+      if (addedCount > 0) {
+        showToast(`Added ${addedCount} slide ${addedCount === 1 ? 'image' : 'images'} successfully!`);
+      }
+    } catch {
+      showToast('Failed to process slide images');
+    } finally {
+      setIsUploadingAdditional(false);
     }
   };
 
@@ -606,6 +711,7 @@ export const PostEditor = () => {
       imageUrl: imageUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80',
       imageAlt: finalAlt,
       imageFileName: finalFileName,
+      additionalImages: additionalImages.filter(Boolean),
       variables: [],
       articleContent,
       tags: cleanTagsArray(tags.length > 0 ? tags : [chosenCat || 'AI Prompt']),
@@ -855,11 +961,10 @@ export const PostEditor = () => {
                   <span className="text-blue-600 dark:text-blue-400">Live Aspect Ratio 16:10</span>
                 </div>
                 <div className="relative w-full aspect-[16/10] rounded-2xl overflow-hidden bg-neutral-950 border border-neutral-200 dark:border-neutral-800 shadow-inner group">
-                  <Image
+                  <img
                     src={imageUrl}
                     alt={imageAlt || title || 'Preview'}
-                    fill
-                    className="object-cover"
+                    className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -884,6 +989,147 @@ export const PostEditor = () => {
                 </div>
               </div>
             )}
+
+            {/* Multi-Image Carousel / Slider Photos (Pinterest Style) */}
+            <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950/70 border border-neutral-200 dark:border-neutral-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-800 dark:text-neutral-200">
+                  <Layers className="w-3.5 h-3.5 text-[#E60023]" />
+                  <span>Pinterest Carousel / Slider Photos</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 font-normal">
+                    {additionalImages.length} additional {additionalImages.length === 1 ? 'photo' : 'photos'}
+                  </span>
+                </div>
+              </div>
+              <p className="text-[11px] text-neutral-500">
+                Add more photos to make this a multi-photo carousel slider. Users can slide through all photos in prompt cards and in the opened prompt modal.
+              </p>
+
+              {/* Hidden file input for manual slider images upload */}
+              <input
+                ref={additionalFileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  if (e.target.files && e.target.files.length > 0) {
+                    handleAdditionalFileUpload(e.target.files);
+                    e.target.value = '';
+                  }
+                }}
+                className="hidden"
+              />
+
+              {/* Upload Slider Images Button & Dropzone */}
+              <div
+                onClick={() => additionalFileInputRef.current?.click()}
+                className="border-2 border-dashed border-neutral-300 dark:border-neutral-700 hover:border-[#E60023] dark:hover:border-[#E60023] rounded-2xl p-4 text-center cursor-pointer transition-all hover:bg-neutral-100 dark:hover:bg-neutral-900/60 flex flex-col items-center justify-center gap-2 group select-none"
+              >
+                {isUploadingAdditional ? (
+                  <div className="flex items-center gap-2 text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+                    <Loader2 className="w-4 h-4 animate-spin text-[#E60023]" />
+                    <span>Uploading slide image(s)...</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-950/60 text-[#E60023] flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Upload className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-neutral-900 dark:text-white">
+                        Click to upload slider images
+                      </p>
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                        Select one or multiple images (PNG, JPG, WebP up to 15MB)
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Slider Thumbnails Preview */}
+              {additionalImages.length > 0 && (
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between text-[11px] font-semibold text-neutral-500">
+                    <span className="flex items-center gap-1.5 font-bold text-neutral-800 dark:text-neutral-200">
+                      <span>Uploaded Slides ({additionalImages.length})</span>
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAdditionalImages([]);
+                          showToast('All carousel slides cleared');
+                        }}
+                        className="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 font-bold hover:underline cursor-pointer"
+                      >
+                        Clear All Slides
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => additionalFileInputRef.current?.click()}
+                        className="text-[#E60023] hover:underline font-bold cursor-pointer"
+                      >
+                        + Add More Slides
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {additionalImages.map((imgUrl, idx) => (
+                      <div
+                        key={idx}
+                        className="relative rounded-2xl overflow-hidden bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs p-1 flex flex-col group"
+                      >
+                        <div className="relative aspect-square rounded-xl overflow-hidden bg-neutral-950">
+                          <img
+                            src={imgUrl}
+                            alt={`Slide ${idx + 2}`}
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                          <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-black/80 text-[10px] font-black text-white shadow-xs">
+                            Slide #{idx + 2}
+                          </div>
+                          {/* Prominent Always-Visible Circular Remove Button on Top Right */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAdditionalImages((prev) => prev.filter((_, i) => i !== idx));
+                              showToast(`Removed Slide #${idx + 2}`);
+                            }}
+                            className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-red-600 hover:bg-red-700 active:scale-95 text-white flex items-center justify-center shadow-lg transition-transform cursor-pointer border border-white/60 z-10"
+                            title={`Remove Slide #${idx + 2}`}
+                            aria-label={`Remove Slide #${idx + 2}`}
+                          >
+                            <X className="w-4 h-4 stroke-[2.5]" />
+                          </button>
+                        </div>
+                        {/* Dedicated Bottom Remove Action Button */}
+                        <div className="pt-2 pb-1 px-1 flex items-center justify-between gap-1">
+                          <span className="text-[11px] font-semibold text-neutral-500 truncate">
+                            Photo #{idx + 2}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAdditionalImages((prev) => prev.filter((_, i) => i !== idx));
+                              showToast(`Removed Slide #${idx + 2}`);
+                            }}
+                            className="px-2 py-1 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-950/60 dark:hover:bg-red-900/80 text-red-600 dark:text-red-400 text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                            title={`Remove Slide #${idx + 2}`}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span>Remove</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Image SEO: Alt Text & File Name (Auto-derived from Title) */}
             <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950/70 border border-neutral-200 dark:border-neutral-800 space-y-3">
@@ -1025,11 +1271,10 @@ export const PostEditor = () => {
                 {imageUrl ? (
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-indigo-700 relative bg-neutral-900">
-                      <Image
+                      <img
                         src={imageUrl}
                         alt="Uploaded preview"
-                        fill
-                        className="object-cover"
+                        className="w-full h-full object-cover"
                         referrerPolicy="no-referrer"
                       />
                     </div>
@@ -1401,7 +1646,7 @@ export const PostEditor = () => {
                 {metaTitle || `${title || 'Prompt Title'} | Trending Copy Paste Photo Prompts`}
               </p>
               <p className="text-[11px] text-emerald-700 dark:text-emerald-500 font-mono truncate">
-                https://geminipromptgenerator.online/{slug || 'sample-prompt'}
+                https://zeenaprompt.com/{slug || 'sample-prompt'}
               </p>
               <p className="text-[11px] text-neutral-600 dark:text-neutral-400 line-clamp-2 leading-relaxed">
                 {metaDescription || `Copy and paste this photo prompt for ${title}.`}

@@ -1,15 +1,19 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
 import { Poppins } from 'next/font/google';
+import ReactDOM from 'react-dom';
 import './globals.css';
 import { AppProvider } from '@/context/AppContext';
 import { AppGlobalOverlays } from '@/components/public/AppGlobalOverlays';
 
 const poppins = Poppins({
-  weight: ['300', '400', '500', '600', '700', '800'],
+  weight: ['400', '500', '600', '700'],
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-poppins',
+  preload: true,
+  fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+  adjustFontFallback: true,
 });
 
 export const metadata: Metadata = {
@@ -34,45 +38,42 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  ReactDOM.preconnect('https://res.cloudinary.com', { crossOrigin: 'anonymous' });
+  if (typeof (ReactDOM as any).prefetchDNS === 'function') {
+    (ReactDOM as any).prefetchDNS('https://res.cloudinary.com');
+  }
+
   return (
     <html lang="en" className="dark">
-      <head>
-        {/* Preconnect to Cloudinary CDN & Fonts for optimal performance */}
-        <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://res.cloudinary.com" />
-
-        {/* Google Site Verification */}
-        <meta
-          name="google-site-verification"
-          content="uh9o8y5P0cVpFtJIJXovv8RSzxSxcRkOYLK6ZthiZDg"
-        />
-        {/* Google tag (gtag.js) */}
-        <Script
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=G-Y6H3B2LY6D"
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-
-            gtag('config', 'G-Y6H3B2LY6D');
-            gtag('config', 'G-28QHB2KNZC');
-          `}
-        </Script>
-        {/* Razorpay Standard Web Checkout Script */}
-        <Script
-          src="https://checkout.razorpay.com/v1/checkout.js"
-          strategy="lazyOnload"
-        />
-      </head>
       <body className={`${poppins.variable} ${poppins.className} font-sans antialiased selection:bg-[#E60023] selection:text-white`} suppressHydrationWarning>
         <AppProvider>
           {children}
           <AppGlobalOverlays />
         </AppProvider>
+
+        {/* Google Analytics (Strict Rule: G-Y6H3B2LY6D and G-28QHB2KNZC preserved) */}
+        <Script
+          id="gtag-base"
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-32DL2FJ0FQ"
+          strategy="lazyOnload"
+        />
+        <Script id="google-analytics" strategy="lazyOnload">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', 'G-32DL2FJ0FQ');
+            gtag('config', 'G-Y6H3B2LY6D');
+            gtag('config', 'G-28QHB2KNZC');
+          `}
+        </Script>
+        <Script
+          id="razorpay-checkout-sdk"
+          src="https://checkout.razorpay.com/v1/checkout.js"
+          strategy="lazyOnload"
+        />
       </body>
     </html>
   );

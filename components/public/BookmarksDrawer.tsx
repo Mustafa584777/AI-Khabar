@@ -95,12 +95,17 @@ export const BookmarksDrawer = () => {
                     }}
                     className="relative w-16 h-20 rounded-xl overflow-hidden bg-neutral-900 shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
                   >
-                    <Image
-                      src={getOptimizedImageUrl(post.imageUrl, 200)}
+                    <img
+                      src={getOptimizedImageUrl(post.imageUrl, 250)}
                       alt={post.title}
-                      fill
-                      className="object-cover"
+                      className="w-full h-full object-cover"
                       referrerPolicy="no-referrer"
+                      loading="lazy"
+                      onError={(e) => {
+                        if (post.imageUrl && e.currentTarget.src !== post.imageUrl) {
+                          e.currentTarget.src = post.imageUrl;
+                        }
+                      }}
                     />
                   </div>
                 )}
