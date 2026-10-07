@@ -15,11 +15,16 @@ export const StorageService = {
   getCachedPosts: (): PromptPost[] => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem(STORAGE_KEY_CACHED_POSTS);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed;
+        const savedTime = localStorage.getItem('promptcms_cached_posts_time');
+        const now = Date.now();
+        const TWELVE_HOURS = 12 * 60 * 60 * 1000;
+        if (savedTime && now - parseInt(savedTime, 10) < TWELVE_HOURS) {
+          const saved = localStorage.getItem(STORAGE_KEY_CACHED_POSTS);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              return parsed;
+            }
           }
         }
       } catch (e) {
@@ -33,6 +38,7 @@ export const StorageService = {
     if (typeof window !== 'undefined' && Array.isArray(posts)) {
       try {
         localStorage.setItem(STORAGE_KEY_CACHED_POSTS, JSON.stringify(posts));
+        localStorage.setItem('promptcms_cached_posts_time', String(Date.now()));
       } catch (e) {
         console.error('Error saving cached posts:', e);
       }

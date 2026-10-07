@@ -7,8 +7,8 @@ import { SearchX, Filter, Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { PromptPost } from '@/types/prompt';
 import { PersonalizationEngine } from '@/lib/personalization';
 
-const INITIAL_BATCH_SIZE = 12;
-const SCROLL_BATCH_SIZE = 12;
+const INITIAL_BATCH_SIZE = 10;
+const SCROLL_BATCH_SIZE = 10;
 
 export const PromptGrid = () => {
   const {
