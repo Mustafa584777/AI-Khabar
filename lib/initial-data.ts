@@ -79,16 +79,16 @@ export const INITIAL_CATEGORIES: Category[] = [
 export const INITIAL_POSTS: PromptPost[] = (Array.isArray(defaultPostsData) ? defaultPostsData : []) as unknown as PromptPost[];
 
 export const INITIAL_SETTINGS: SiteSettings = {
-  siteName: 'Zeenaprompt',
+  siteName: 'Trending Copy Paste Photo Prompts',
   siteTagline: 'Free Copy-Paste AI Photo Prompts, Codes & Creative Guides',
-  siteUrl: 'https://zeenaprompt.com',
-  logoText: 'Zeenaprompt',
+  siteUrl: 'https://trendinggeminiprompts.com',
+  logoText: 'Trending Copy Paste Photo Prompts',
   heroHeadline: 'Trending Copy Paste Photo Prompts',
   heroSubheadline: 'Explore curated photo prompts for Gemini, Midjourney and ChatGPT. Copy with 1 click.',
   defaultTool: 'Gemini',
   enableAiGenerator: true,
-  footerText: '© 2026 Zeenaprompt - Built for creators, designers & engineers. All prompts free to copy and commercial use.',
-  adminEmail: 'admin@zeenaprompt.com',
+  footerText: '© 2026 Trending Copy Paste Photo Prompts - Built for creators, designers & engineers. All prompts free to copy and commercial use.',
+  adminEmail: 'admin@trendinggeminiprompts.com',
   popularTags: [
     'Cinematic 8K',
     '3D Character',

@@ -25,7 +25,6 @@ import {
 import Image from 'next/image';
 import JSZip from 'jszip';
 import { UsersManager } from './UsersManager';
-import { AllWebsiteBackupManager } from './AllWebsiteBackupManager';
 
 interface ParsedBackupData {
   version?: string;
@@ -35,14 +34,14 @@ interface ParsedBackupData {
   categories?: Category[];
   tags?: string[];
   filename?: string;
-  fileType: 'zip' | 'json';
+  fileType: 'zip';
   fileSize?: string;
 }
 
 export const BackupRestoreView = () => {
   const { posts, categories, tags, settings, restorePromptCards, showToast, refreshData } = useApp();
 
-  const [backupDomain, setBackupDomain] = useState<'all' | 'prompts' | 'users'>('all');
+  const [backupDomain, setBackupDomain] = useState<'prompts' | 'users'>('prompts');
   const [isExportingZip, setIsExportingZip] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [restoreMode, setRestoreMode] = useState<'merge' | 'replace'>('merge');
@@ -249,16 +248,15 @@ Open Admin Panel -> Backup & Restore -> Upload this .zip file or prompts.json.`
     }
   };
 
-  // 2. Process Uploaded JSON or ZIP File
+  // 2. Process Uploaded ZIP File
   const handleFileSelect = async (file: File) => {
     setParseError(null);
     setRestoreSuccessCount(null);
 
     const isZip = file.name.endsWith('.zip') || file.type.includes('zip') || file.type.includes('octet-stream');
-    const isJson = file.name.endsWith('.json') || file.type.includes('json');
 
-    if (!isZip && !isJson) {
-      setParseError('Please upload a valid .json or .zip backup file.');
+    if (!isZip) {
+      setParseError('Please upload a valid .zip backup archive.');
       return;
     }
 
@@ -267,136 +265,84 @@ Open Admin Panel -> Backup & Restore -> Upload this .zip file or prompts.json.`
       : `${(file.size / 1024).toFixed(1)} KB`;
 
     try {
-      let rawPosts: any[] = [];
-      let parsedCategories: Category[] | undefined;
-      let parsedTags: string[] | undefined;
+      const zip = new JSZip();
+      const zipData = await zip.loadAsync(file);
 
-      if (isJson) {
-        // Direct JSON file parsing
-        const text = await file.text();
-        let parsed: any;
-        try {
-          parsed = JSON.parse(text);
-        } catch (jsonErr: any) {
-          throw new Error(`Invalid JSON file syntax: ${jsonErr.message}`);
+      let promptsJsonStr: string | null = null;
+      let categoriesJsonStr: string | null = null;
+      let tagsJsonStr: string | null = null;
+
+      // Search for prompts.json, backup.json, or any .json file inside zip
+      const candidateFiles = Object.keys(zipData.files).filter((k) => !zipData.files[k].dir);
+
+      for (const filename of candidateFiles) {
+        const lower = filename.toLowerCase();
+        if (lower.endsWith('prompts.json') || lower.endsWith('backup.json') || lower.endsWith('data.json')) {
+          promptsJsonStr = await zipData.files[filename].async('string');
+          break;
         }
+      }
 
-        if (Array.isArray(parsed)) {
-          rawPosts = parsed;
-        } else if (parsed && typeof parsed === 'object') {
-          if (Array.isArray(parsed.posts)) rawPosts = parsed.posts;
-          else if (Array.isArray(parsed.prompts)) rawPosts = parsed.prompts;
-          else if (Array.isArray(parsed.data)) rawPosts = parsed.data;
-          else if (Array.isArray(parsed.items)) rawPosts = parsed.items;
-          else if (Array.isArray(parsed.cards)) rawPosts = parsed.cards;
-          else if (Array.isArray(parsed.records)) rawPosts = parsed.records;
-          else {
-            rawPosts = Object.values(parsed).filter(
-              (v: any) => v && typeof v === 'object' && (v.prompt || v.promptText || v.title)
-            );
-          }
-
-          if (Array.isArray(parsed.categories)) parsedCategories = parsed.categories;
-          if (Array.isArray(parsed.tags)) parsedTags = parsed.tags;
-        }
-      } else {
-        // ZIP archive handling
-        const zip = new JSZip();
-        const zipData = await zip.loadAsync(file);
-
-        let promptsJsonStr: string | null = null;
-        let categoriesJsonStr: string | null = null;
-        let tagsJsonStr: string | null = null;
-
-        // Search for prompts.json, backup.json, or any .json file inside zip
-        const candidateFiles = Object.keys(zipData.files).filter((k) => !zipData.files[k].dir);
-
+      // If not found by specific name, find first valid json
+      if (!promptsJsonStr) {
         for (const filename of candidateFiles) {
-          const lower = filename.toLowerCase();
-          if (lower.endsWith('prompts.json') || lower.endsWith('backup.json') || lower.endsWith('data.json')) {
+          if (filename.toLowerCase().endsWith('.json') && !filename.toLowerCase().includes('manifest')) {
             promptsJsonStr = await zipData.files[filename].async('string');
             break;
           }
         }
+      }
 
-        // If not found by specific name, find first valid json
-        if (!promptsJsonStr) {
-          for (const filename of candidateFiles) {
-            if (filename.toLowerCase().endsWith('.json') && !filename.toLowerCase().includes('manifest')) {
-              promptsJsonStr = await zipData.files[filename].async('string');
-              break;
-            }
-          }
+      // Check for categories & tags
+      for (const filename of candidateFiles) {
+        const lower = filename.toLowerCase();
+        if (lower.endsWith('categories.json')) {
+          categoriesJsonStr = await zipData.files[filename].async('string');
         }
-
-        // Check for categories & tags
-        for (const filename of candidateFiles) {
-          const lower = filename.toLowerCase();
-          if (lower.endsWith('categories.json')) {
-            categoriesJsonStr = await zipData.files[filename].async('string');
-          }
-          if (lower.endsWith('tags.json')) {
-            tagsJsonStr = await zipData.files[filename].async('string');
-          }
+        if (lower.endsWith('tags.json')) {
+          tagsJsonStr = await zipData.files[filename].async('string');
         }
+      }
 
-        if (promptsJsonStr) {
-          const parsed = JSON.parse(promptsJsonStr);
-          if (Array.isArray(parsed)) rawPosts = parsed;
-          else if (parsed && typeof parsed === 'object') {
-            if (Array.isArray(parsed.posts)) rawPosts = parsed.posts;
-            else if (Array.isArray(parsed.prompts)) rawPosts = parsed.prompts;
-            else if (Array.isArray(parsed.data)) rawPosts = parsed.data;
-            else if (Array.isArray(parsed.items)) rawPosts = parsed.items;
-            else rawPosts = Object.values(parsed);
-          }
-        } else {
-          // Parse plain text files from zip if no JSON exists
-          const txtFiles = candidateFiles.filter((k) => k.endsWith('.txt') && !k.toLowerCase().includes('readme'));
-          for (const txtFile of txtFiles) {
-            const content = await zipData.files[txtFile].async('string');
-            const lines = content.split('\n');
-            let title = txtFile.replace(/\.txt$/, '').replace(/^\d+[-_]/, '');
-            let promptText = '';
-            let category = 'General';
-            let tool = 'ChatGPT';
-
-            for (const line of lines) {
-              if (line.startsWith('TITLE:')) title = line.replace('TITLE:', '').trim();
-              if (line.startsWith('CATEGORY:')) category = line.replace('CATEGORY:', '').trim();
-              if (line.startsWith('AI TOOL:')) tool = line.replace('AI TOOL:', '').trim();
-            }
-
-            const promptIdx = content.indexOf('--- MASTER PROMPT ---');
-            if (promptIdx !== -1) {
-              const after = content.slice(promptIdx + '--- MASTER PROMPT ---'.length);
-              const negIdx = after.indexOf('--- NEGATIVE PROMPT ---');
-              promptText = (negIdx !== -1 ? after.slice(0, negIdx) : after).trim();
-            } else {
-              promptText = content;
-            }
-
-            if (promptText) {
-              rawPosts.push({ title, promptText, category, aiTool: tool });
-            }
-          }
+      let rawPosts: any[] = [];
+      if (promptsJsonStr) {
+        const parsed = JSON.parse(promptsJsonStr);
+        if (Array.isArray(parsed)) rawPosts = parsed;
+        else if (parsed && typeof parsed === 'object') {
+          if (Array.isArray(parsed.posts)) rawPosts = parsed.posts;
+          else if (Array.isArray(parsed.prompts)) rawPosts = parsed.prompts;
+          else if (Array.isArray(parsed.data)) rawPosts = parsed.data;
+          else if (Array.isArray(parsed.items)) rawPosts = parsed.items;
+          else rawPosts = Object.values(parsed);
         }
+      } else {
+        // Parse plain text files from zip if no JSON exists
+        const txtFiles = candidateFiles.filter((k) => k.endsWith('.txt') && !k.toLowerCase().includes('readme'));
+        for (const txtFile of txtFiles) {
+          const content = await zipData.files[txtFile].async('string');
+          const lines = content.split('\n');
+          let title = txtFile.replace(/\.txt$/, '').replace(/^\d+[-_]/, '');
+          let promptText = '';
+          let category = 'General';
+          let tool = 'ChatGPT';
 
-        if (categoriesJsonStr) {
-          try {
-            const catParsed = JSON.parse(categoriesJsonStr);
-            if (Array.isArray(catParsed)) parsedCategories = catParsed;
-          } catch {
-            // ignore
+          for (const line of lines) {
+            if (line.startsWith('TITLE:')) title = line.replace('TITLE:', '').trim();
+            if (line.startsWith('CATEGORY:')) category = line.replace('CATEGORY:', '').trim();
+            if (line.startsWith('AI TOOL:')) tool = line.replace('AI TOOL:', '').trim();
           }
-        }
 
-        if (tagsJsonStr) {
-          try {
-            const tagsParsed = JSON.parse(tagsJsonStr);
-            if (Array.isArray(tagsParsed)) parsedTags = tagsParsed;
-          } catch {
-            // ignore
+          const promptIdx = content.indexOf('--- MASTER PROMPT ---');
+          if (promptIdx !== -1) {
+            const after = content.slice(promptIdx + '--- MASTER PROMPT ---'.length);
+            const negIdx = after.indexOf('--- NEGATIVE PROMPT ---');
+            promptText = (negIdx !== -1 ? after.slice(0, negIdx) : after).trim();
+          } else {
+            promptText = content;
+          }
+
+          if (promptText) {
+            rawPosts.push({ title, promptText, category, aiTool: tool });
           }
         }
       }
@@ -404,9 +350,29 @@ Open Admin Panel -> Backup & Restore -> Upload this .zip file or prompts.json.`
       const validPosts = normalizeIncomingPosts(rawPosts);
 
       if (validPosts.length === 0) {
-        setParseError('Could not find any readable prompt cards in the uploaded backup file.');
+        setParseError('Could not find any readable prompt cards in the uploaded .zip archive.');
         setParsedBackup(null);
         return;
+      }
+
+      let parsedCategories: Category[] | undefined;
+      if (categoriesJsonStr) {
+        try {
+          const catParsed = JSON.parse(categoriesJsonStr);
+          if (Array.isArray(catParsed)) parsedCategories = catParsed;
+        } catch {
+          // ignore
+        }
+      }
+
+      let parsedTags: string[] | undefined;
+      if (tagsJsonStr) {
+        try {
+          const tagsParsed = JSON.parse(tagsJsonStr);
+          if (Array.isArray(tagsParsed)) parsedTags = tagsParsed;
+        } catch {
+          // ignore
+        }
       }
 
       setParsedBackup({
@@ -417,14 +383,14 @@ Open Admin Panel -> Backup & Restore -> Upload this .zip file or prompts.json.`
         categories: parsedCategories,
         tags: parsedTags,
         filename: file.name,
-        fileType: isZip ? 'zip' : 'json',
+        fileType: 'zip',
         fileSize: fileSizeStr,
       });
 
-      showToast(`Loaded ${validPosts.length} prompts from ${file.name}`);
+      showToast(`Extracted ${validPosts.length} prompts from ${file.name}`);
     } catch (err: any) {
-      console.error('Backup extraction error:', err);
-      setParseError(`Failed to read backup file: ${err.message || 'Corrupted or invalid file'}`);
+      console.error('ZIP extraction error:', err);
+      setParseError(`Failed to extract ZIP archive: ${err.message || 'Corrupted or invalid file'}`);
       setParsedBackup(null);
     }
   };
@@ -477,18 +443,10 @@ Open Admin Panel -> Backup & Restore -> Upload this .zip file or prompts.json.`
         <div>
           <h1 className="text-2xl font-extrabold text-neutral-900 dark:text-white flex items-center gap-2.5">
             <Database className="w-7 h-7 text-blue-600 dark:text-blue-400" />
-            <span>
-              {backupDomain === 'all'
-                ? 'All Website Data Master Backup & Restore'
-                : backupDomain === 'users'
-                ? 'All Registered Users & SaaS Data'
-                : 'Prompt Cards Backup & Restore'}
-            </span>
+            <span>{backupDomain === 'users' ? 'All Registered Users & SaaS Data' : 'Prompt Cards Backup & Restore'}</span>
           </h1>
           <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-            {backupDomain === 'all'
-              ? 'Complete website backup and instant restore: Prompts, registered users, subscription plans, credits, search queries, categories, tags, push notifications, and requested prompts.'
-              : backupDomain === 'users'
+            {backupDomain === 'users'
               ? 'Export all user accounts, active subscription tiers, credits balance, and generation history in one click, or restore them safely into the database.'
               : 'Download full ZIP archives or standalone JSON backups of prompt cards, or restore them directly into the database.'}
           </p>
@@ -510,18 +468,6 @@ Open Admin Panel -> Backup & Restore -> Upload this .zip file or prompts.json.`
       <div className="flex flex-wrap items-center gap-2 p-1.5 bg-neutral-200/70 dark:bg-neutral-900 border border-neutral-300/80 dark:border-neutral-800 rounded-2xl w-fit">
         <button
           type="button"
-          onClick={() => setBackupDomain('all')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            backupDomain === 'all'
-              ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-extrabold'
-              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-          }`}
-        >
-          <Sparkles className="w-4 h-4 text-amber-300" />
-          <span>All Website Data (Master Backup & Restore)</span>
-        </button>
-        <button
-          type="button"
           onClick={() => setBackupDomain('prompts')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
             backupDomain === 'prompts'
@@ -530,7 +476,7 @@ Open Admin Panel -> Backup & Restore -> Upload this .zip file or prompts.json.`
           }`}
         >
           <Database className="w-4 h-4" />
-          <span>Prompt Cards Only (ZIP / JSON)</span>
+          <span>Prompt Cards Archive (ZIP / JSON)</span>
         </button>
         <button
           type="button"
@@ -542,13 +488,11 @@ Open Admin Panel -> Backup & Restore -> Upload this .zip file or prompts.json.`
           }`}
         >
           <Users className="w-4 h-4" />
-          <span>Registered Users Only (JSON)</span>
+          <span>All Registered Users & SaaS Data (JSON)</span>
         </button>
       </div>
 
-      {backupDomain === 'all' ? (
-        <AllWebsiteBackupManager />
-      ) : backupDomain === 'users' ? (
+      {backupDomain === 'users' ? (
         <div className="animate-fade-in">
           <UsersManager />
         </div>
@@ -686,7 +630,7 @@ Open Admin Panel -> Backup & Restore -> Upload this .zip file or prompts.json.`
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".json,.zip,application/json,application/zip,application/x-zip-compressed"
+                accept=".zip,application/zip,application/x-zip-compressed"
                 className="hidden"
                 onChange={(e) => {
                   if (e.target.files && e.target.files[0]) {
@@ -701,10 +645,10 @@ Open Admin Panel -> Backup & Restore -> Upload this .zip file or prompts.json.`
 
               <div>
                 <p className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-white">
-                  Click to select or drag & drop backup <span className="text-blue-600 font-bold">.JSON</span> or <span className="text-blue-600 font-bold">.ZIP</span> file
+                  Click to select or drag & drop backup <span className="text-blue-600 font-bold">.ZIP</span> archive
                 </p>
                 <p className="text-[11px] text-neutral-500 mt-0.5">
-                  Accepts <code className="text-blue-500 font-mono">*.json</code> backup files and <code className="text-blue-500 font-mono">*.zip</code> complete archives
+                  Accepts <code className="text-blue-500 font-mono">*.zip</code> complete archives
                 </p>
               </div>
             </div>

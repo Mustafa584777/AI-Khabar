@@ -38,7 +38,7 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
       setUnreadNotifs(list.filter((n) => !n.read).length);
     };
     updateUnread();
-    const interval = setInterval(updateUnread, 30000);
+    const interval = setInterval(updateUnread, 8000);
     return () => clearInterval(interval);
   }, []);
 

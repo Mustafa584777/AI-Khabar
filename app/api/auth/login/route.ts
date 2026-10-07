@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ServerStorage } from '@/lib/server-storage';
+import { supabaseAdmin, supabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,32 +12,61 @@ export async function POST(req: NextRequest) {
     }
 
     const cleanEmail = email.trim().toLowerCase();
-    const userProfile = await ServerStorage.getUserProfile(cleanEmail);
 
-    if (!userProfile) {
-      return NextResponse.json(
-        { success: false, error: 'No account found with this email. Please sign up first.' },
-        { status: 404 }
-      );
-    }
-
-    // Verify password if passwordHash was saved, otherwise accept valid registered user
-    if (userProfile.passwordHash && userProfile.passwordHash !== password) {
-      return NextResponse.json({ success: false, error: 'Incorrect password.' }, { status: 401 });
-    }
-
-    return NextResponse.json({
-      success: true,
-      user: {
-        id: userProfile.userId || userProfile.id || `u_${Date.now()}`,
-        email: cleanEmail,
-        user_metadata: {
-          full_name: userProfile.name || cleanEmail.split('@')[0],
-          name: userProfile.name || cleanEmail.split('@')[0],
-          avatar_url: userProfile.avatar,
-        },
-      },
+    // 1. Try standard sign in with password
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email: cleanEmail,
+      password,
     });
+
+    if (!signInError && signInData?.session) {
+      return NextResponse.json({
+        success: true,
+        session: signInData.session,
+        user: signInData.user,
+      });
+    }
+
+    // 2. If error is "Email not confirmed", auto-confirm via admin client and retry
+    if (
+      signInError &&
+      (signInError.message.toLowerCase().includes('not confirmed') ||
+        signInError.message.toLowerCase().includes('confirm'))
+    ) {
+      if (supabaseAdmin) {
+        try {
+          const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+          const found = listData?.users?.find((u) => u.email?.toLowerCase() === cleanEmail);
+          if (found) {
+            await supabaseAdmin.auth.admin.updateUserById(found.id, { email_confirm: true });
+
+            // Retry signInWithPassword
+            const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
+              email: cleanEmail,
+              password,
+            });
+
+            if (!retryError && retryData?.session) {
+              return NextResponse.json({
+                success: true,
+                session: retryData.session,
+                user: retryData.user,
+              });
+            }
+          }
+        } catch (adminErr) {
+          console.error('Auto-confirm retry error:', adminErr);
+        }
+      }
+    }
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: signInError?.message || 'Invalid email or password',
+      },
+      { status: 401 }
+    );
   } catch (err: any) {
     console.error('Login route error:', err);
     return NextResponse.json({ success: false, error: err?.message || 'Server error' }, { status: 500 });

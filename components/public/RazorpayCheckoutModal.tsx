@@ -18,7 +18,7 @@ import { useApp } from '@/context/AppContext';
 import { startRazorpayCheckout } from '@/lib/razorpay';
 
 interface PlanOption {
-  id: 'starter' | 'pro' | 'vip' | 'ultra';
+  id: 'starter' | 'pro' | 'vip';
   name: string;
   amountPaise: number;
   displayPrice: string;
@@ -35,7 +35,7 @@ const SUBSCRIPTION_PLANS: PlanOption[] = [
     amountPaise: 4900,
     displayPrice: '₹49',
     period: '/ month',
-    features: ['Unlock all premium prompts', '100 prompt tools credits', '100 AI Searches', '100 saves & history'],
+    features: ['Unlock all premium prompts', '30 prompt tools credits', 'Unlimited prompt & history saves'],
     icon: <Sparkles className="w-5 h-5 text-amber-500" />,
   },
   {
@@ -45,7 +45,7 @@ const SUBSCRIPTION_PLANS: PlanOption[] = [
     displayPrice: '₹99',
     period: '/ month',
     badge: 'Most Popular',
-    features: ['Unlock all premium prompts', '250 prompt tools credits', '200 AI Searches', '200 saves & history'],
+    features: ['Unlock all premium prompts', '60 prompt tools credits', 'Unlimited prompt & history saves', 'Priority fast-lane'],
     icon: <Zap className="w-5 h-5 text-[#E60023]" />,
   },
   {
@@ -55,18 +55,8 @@ const SUBSCRIPTION_PLANS: PlanOption[] = [
     displayPrice: '₹199',
     period: '/ month',
     badge: 'Best Value',
-    features: ['Unlock all premium prompts', '600 prompt tools credits', '500 AI Searches', '400 saves & history'],
+    features: ['Unlock all premium prompts', '180 prompt tools credits', 'Unlimited prompt & history saves'],
     icon: <Crown className="w-5 h-5 text-purple-500" />,
-  },
-  {
-    id: 'ultra',
-    name: 'Studio 499',
-    amountPaise: 49900,
-    displayPrice: '₹499',
-    period: '/ month',
-    badge: 'Ultimate Studio',
-    features: ['Unlock all premium prompts', '1,500 credits / mo', 'Unlimited AI Search', 'Unlimited saves & history'],
-    icon: <Crown className="w-5 h-5 text-amber-500" />,
   },
 ];
 
@@ -84,14 +74,14 @@ interface CreditPackOption {
 
 const CREDIT_PACK_OPTIONS: CreditPackOption[] = [
   {
-    id: 'pack-120',
-    name: '120 Credits',
-    credits: 120,
+    id: 'pack-100',
+    name: '100 Credits',
+    credits: 100,
     amountPaise: 4900,
     displayPrice: '₹49',
-    rateText: '₹0.41/cr',
+    rateText: '₹0.49/cr',
     badge: undefined,
-    features: ['Unlock 120 prompts', 'Up to 60 image runs', 'Never expires'],
+    features: ['Unlock 100 prompts', 'Up to 33 image runs', 'Never expires'],
     icon: <Coins className="w-5 h-5 text-amber-500" />,
   },
   {
@@ -100,32 +90,21 @@ const CREDIT_PACK_OPTIONS: CreditPackOption[] = [
     credits: 250,
     amountPaise: 9900,
     displayPrice: '₹99',
-    rateText: '₹0.40/cr',
+    rateText: '₹0.39/cr',
     badge: 'Popular',
-    features: ['Unlock 250 prompts', 'Up to 125 image runs', 'Never expires'],
+    features: ['Unlock 250 prompts', 'Up to 83 image runs', 'Never expires'],
     icon: <Zap className="w-5 h-5 text-[#E60023]" />,
   },
   {
-    id: 'pack-550',
-    name: '550 Credits',
-    credits: 550,
+    id: 'pack-499',
+    name: '499 Credits',
+    credits: 499,
     amountPaise: 19900,
     displayPrice: '₹199',
-    rateText: '₹0.36/cr',
+    rateText: '₹0.39/cr',
     badge: 'Best Value',
-    features: ['Unlock 550 prompts', 'Up to 275 image runs', 'Never expires'],
+    features: ['Unlock 499 prompts', 'Up to 166 image runs', 'Never expires'],
     icon: <Crown className="w-5 h-5 text-purple-500" />,
-  },
-  {
-    id: 'pack-1500',
-    name: '1,500 Credits',
-    credits: 1500,
-    amountPaise: 49900,
-    displayPrice: '₹499',
-    rateText: '₹0.33/cr',
-    badge: 'Studio Choice',
-    features: ['Unlock 1,500 prompts', 'Up to 750 image runs', 'Never expires'],
-    icon: <Sparkles className="w-5 h-5 text-amber-500" />,
   },
 ];
 
@@ -139,12 +118,11 @@ export const RazorpayCheckoutModal: React.FC = () => {
     toolCredits,
     userAccount,
     showToast,
-    openAuthModal,
   } = useApp();
 
   const [checkoutType, setCheckoutType] = useState<'credits' | 'subscription'>('credits');
   const [selectedCreditPackId, setSelectedCreditPackId] = useState<string>('pack-250');
-  const [selectedPlanId, setSelectedPlanId] = useState<'starter' | 'pro' | 'vip' | 'ultra'>('pro');
+  const [selectedPlanId, setSelectedPlanId] = useState<'starter' | 'pro' | 'vip'>('pro');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [paymentResult, setPaymentResult] = useState<{
     success: boolean;
@@ -187,13 +165,6 @@ export const RazorpayCheckoutModal: React.FC = () => {
 
   const handlePayNow = async () => {
     setErrorMessage(null);
-
-    if (!userAccount || !userAccount.isLoggedIn) {
-      setIsProCheckoutModalOpen(false);
-      openAuthModal('Please sign in or create an account first so your subscription plan and credits are safely saved to your account.');
-      return;
-    }
-
     const amountPaise = getEffectiveAmountPaise();
 
     if (amountPaise < 100) {
@@ -214,15 +185,13 @@ export const RazorpayCheckoutModal: React.FC = () => {
         description: `${itemTitle} - Instant Access`,
         receipt: `rcpt_${Date.now()}`,
         prefill: {
-          name: userAccount.name || userAccount.username || userAccount.email.split('@')[0],
-          email: userAccount.email,
+          name: userAccount?.name || userAccount?.username || 'Creative Member',
+          email: userAccount?.email || 'member@trendprompts.com',
         },
         notes: {
           item: itemTitle,
           type: checkoutType,
           tier_or_pack: isCreditPack ? selectedCreditPackId : selectedPlanId,
-          userEmail: userAccount.email,
-          userId: userAccount.id,
         },
         themeColor: '#E60023',
         onSuccess: (data) => {
@@ -239,19 +208,14 @@ export const RazorpayCheckoutModal: React.FC = () => {
               message: `Successfully added ${selectedPack.credits} Credits to your account.`,
             });
           } else {
-            const isQueued = Boolean(data?.isQueued);
-            upgradePlan(selectedPlanId, data.userSyncData, isQueued);
-            if (isQueued) {
-              showToast(data?.message || `Your new ${(selectedPlanId || 'pro').toUpperCase()} plan is queued and will activate once your current plan ends!`);
-            } else {
-              setIsProUser(true);
-              showToast(`Payment verified! Upgraded to ${(selectedPlanId || 'pro').toUpperCase()} Plan 🎉`);
-            }
+            setIsProUser(true);
+            upgradePlan(selectedPlanId);
+            showToast('Payment verified! Welcome to Pro Membership 🎉');
             setPaymentResult({
               success: true,
               orderId: data.order_id,
               paymentId: data.payment_id,
-              message: data.message || `Successfully processed ${(selectedPlanId || 'pro').toUpperCase()} plan.`,
+              message: `Successfully upgraded to ${(selectedPlanId || 'pro').toUpperCase()} plan.`,
             });
           }
 
@@ -459,7 +423,7 @@ export const RazorpayCheckoutModal: React.FC = () => {
                   Select Monthly Plan:
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   {SUBSCRIPTION_PLANS.map((plan) => {
                     const isSelected = selectedPlanId === plan.id;
                     return (
@@ -508,7 +472,7 @@ export const RazorpayCheckoutModal: React.FC = () => {
               <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
                 <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
                 <span className="text-[11px]">
-                  <strong>1 Credit</strong> = Unlock Prompt • <strong>2 Credits</strong> = Image to Prompt
+                  <strong>1 Credit</strong> = Unlock Premium Prompt • <strong>3 Credits</strong> = Image to Prompt
                 </span>
               </div>
               <span className="text-[10px] font-bold text-neutral-400">UPI / Cards</span>

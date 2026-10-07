@@ -1,8 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { PushNotificationItem, PushSubscriber } from '@/types/notification';
-import { db as firestoreDb, isFirebaseConfigured } from './firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { supabase, supabaseAdmin, isSupabaseConfigured } from './supabase';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const SUBSCRIBERS_FILE = path.join(DATA_DIR, 'subscribers.json');
@@ -12,6 +11,8 @@ const STATS_FILE = path.join(DATA_DIR, 'notification_stats.json');
 const NOTIF_SETTINGS_ID = 'push_notifications_list';
 const SUBS_SETTINGS_ID = 'push_subscribers_list';
 const STATS_SETTINGS_ID = 'push_notification_stats';
+
+const db = () => supabaseAdmin || supabase;
 
 export interface NotificationServerStats {
   totalSent: number;
@@ -55,14 +56,20 @@ function writeJson<T>(filePath: string, data: T): void {
 export const NotificationServerStore = {
   // SUBSCRIBERS
   getSubscribers: async (): Promise<PushSubscriber[]> => {
-    if (isFirebaseConfigured()) {
+    if (isSupabaseConfigured()) {
       try {
-        const snap = await getDoc(doc(firestoreDb, 'settings', SUBS_SETTINGS_ID));
-        if (snap.exists() && Array.isArray(snap.data()?.data)) {
-          return snap.data().data as PushSubscriber[];
+        const client = db();
+        const { data: row, error } = await client
+          .from('settings')
+          .select('data')
+          .eq('id', SUBS_SETTINGS_ID)
+          .maybeSingle();
+
+        if (!error && row && Array.isArray(row.data)) {
+          return row.data;
         }
       } catch (e) {
-        console.warn('Firestore getSubscribers fallback:', e);
+        console.warn('Supabase getSubscribers fallback:', e);
       }
     }
     return readJson<PushSubscriber[]>(SUBSCRIBERS_FILE, []);
@@ -91,27 +98,20 @@ export const NotificationServerStore = {
     // Save locally
     writeJson(SUBSCRIBERS_FILE, list);
 
-    // Save to Firebase Firestore
-    if (isFirebaseConfigured()) {
+    // Save to Supabase
+    if (isSupabaseConfigured()) {
       try {
-        await setDoc(doc(firestoreDb, 'settings', SUBS_SETTINGS_ID), { data: list });
+        const client = db();
+        await client.from('settings').upsert({
+          id: SUBS_SETTINGS_ID,
+          data: list,
+        });
       } catch (e) {
-        console.error('Failed to save subscribers to Firestore:', e);
+        console.error('Failed to save subscribers to Supabase:', e);
       }
     }
 
     return { subscribers: list, count: list.length };
-  },
-
-  saveSubscribers: async (subs: PushSubscriber[]): Promise<void> => {
-    writeJson(SUBSCRIBERS_FILE, subs);
-    if (isFirebaseConfigured()) {
-      try {
-        await setDoc(doc(firestoreDb, 'settings', SUBS_SETTINGS_ID), { data: subs });
-      } catch (e) {
-        console.error('Failed to save subscribers to Firestore:', e);
-      }
-    }
   },
 
   removeSubscriber: async (id: string): Promise<{ count: number }> => {
@@ -120,11 +120,15 @@ export const NotificationServerStore = {
 
     writeJson(SUBSCRIBERS_FILE, filtered);
 
-    if (isFirebaseConfigured()) {
+    if (isSupabaseConfigured()) {
       try {
-        await setDoc(doc(firestoreDb, 'settings', SUBS_SETTINGS_ID), { data: filtered });
+        const client = db();
+        await client.from('settings').upsert({
+          id: SUBS_SETTINGS_ID,
+          data: filtered,
+        });
       } catch (e) {
-        console.error('Failed to remove subscriber in Firestore:', e);
+        console.error('Failed to remove subscriber in Supabase:', e);
       }
     }
 
@@ -133,14 +137,20 @@ export const NotificationServerStore = {
 
   // NOTIFICATIONS
   getNotifications: async (): Promise<PushNotificationItem[]> => {
-    if (isFirebaseConfigured()) {
+    if (isSupabaseConfigured()) {
       try {
-        const snap = await getDoc(doc(firestoreDb, 'settings', NOTIF_SETTINGS_ID));
-        if (snap.exists() && Array.isArray(snap.data()?.data)) {
-          return snap.data().data as PushNotificationItem[];
+        const client = db();
+        const { data: row, error } = await client
+          .from('settings')
+          .select('data')
+          .eq('id', NOTIF_SETTINGS_ID)
+          .maybeSingle();
+
+        if (!error && row && Array.isArray(row.data)) {
+          return row.data;
         }
       } catch (e) {
-        console.warn('Firestore getNotifications fallback:', e);
+        console.warn('Supabase getNotifications fallback:', e);
       }
     }
     return readJson<PushNotificationItem[]>(NOTIFICATIONS_FILE, []);
@@ -148,11 +158,15 @@ export const NotificationServerStore = {
 
   saveNotifications: async (items: PushNotificationItem[]): Promise<void> => {
     writeJson(NOTIFICATIONS_FILE, items);
-    if (isFirebaseConfigured()) {
+    if (isSupabaseConfigured()) {
       try {
-        await setDoc(doc(firestoreDb, 'settings', NOTIF_SETTINGS_ID), { data: items });
+        const client = db();
+        await client.from('settings').upsert({
+          id: NOTIF_SETTINGS_ID,
+          data: items,
+        });
       } catch (e) {
-        console.error('Failed to save notifications to Firestore:', e);
+        console.error('Failed to save notifications to Supabase:', e);
       }
     }
   },
@@ -179,11 +193,15 @@ export const NotificationServerStore = {
     stats.lastSentAt = item.sentAt;
 
     writeJson(STATS_FILE, stats);
-    if (isFirebaseConfigured()) {
+    if (isSupabaseConfigured()) {
       try {
-        await setDoc(doc(firestoreDb, 'settings', STATS_SETTINGS_ID), { data: stats });
+        const client = db();
+        await client.from('settings').upsert({
+          id: STATS_SETTINGS_ID,
+          data: stats,
+        });
       } catch (e) {
-        console.error('Failed to save stats to Firestore:', e);
+        console.error('Failed to save stats to Supabase:', e);
       }
     }
 
@@ -192,14 +210,20 @@ export const NotificationServerStore = {
 
   getStats: async (): Promise<NotificationServerStats> => {
     let stats: NotificationServerStats = { totalSent: 0, totalSubscribers: 0, totalClicks: 0 };
-    if (isFirebaseConfigured()) {
+    if (isSupabaseConfigured()) {
       try {
-        const snap = await getDoc(doc(firestoreDb, 'settings', STATS_SETTINGS_ID));
-        if (snap.exists() && snap.data()?.data) {
-          stats = snap.data().data as NotificationServerStats;
+        const client = db();
+        const { data: row } = await client
+          .from('settings')
+          .select('data')
+          .eq('id', STATS_SETTINGS_ID)
+          .maybeSingle();
+
+        if (row && row.data) {
+          stats = row.data as NotificationServerStats;
         }
       } catch (e) {
-        console.warn('Firestore getStats fallback:', e);
+        console.warn('Supabase getStats fallback:', e);
       }
     }
     if (!stats || typeof stats.totalSent !== 'number') {

@@ -1,9 +1,7 @@
 import { ServerStorage } from '@/lib/server-storage';
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 21600;
 
 export async function GET(req: NextRequest) {
   try {
@@ -35,11 +33,15 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    const cacheHeader = includeDrafts
+      ? 'no-store, no-cache, must-revalidate'
+      : 'public, s-maxage=21600, stale-while-revalidate=43200';
+
     return NextResponse.json(
       { success: true, posts },
       {
         headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+          'Cache-Control': cacheHeader,
         },
       }
     );
@@ -64,16 +66,11 @@ export async function POST(req: NextRequest) {
     const saved = await ServerStorage.savePost(body, token);
     const allPosts = await ServerStorage.getAllPosts(true);
 
-    try {
-      revalidatePath('/');
-      revalidatePath('/api/posts');
-    } catch {}
-
     return NextResponse.json(
       { success: true, post: saved, posts: allPosts },
       {
         headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
         },
       }
     );
@@ -95,20 +92,7 @@ export async function DELETE(req: NextRequest) {
 
     await ServerStorage.deletePost(id, token);
     const allPosts = await ServerStorage.getAllPosts(true);
-
-    try {
-      revalidatePath('/');
-      revalidatePath('/api/posts');
-    } catch {}
-
-    return NextResponse.json(
-      { success: true, posts: allPosts },
-      {
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-        },
-      }
-    );
+    return NextResponse.json({ success: true, posts: allPosts });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

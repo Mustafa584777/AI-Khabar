@@ -19,6 +19,14 @@ export const StorageService = {
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
+            // Invalidate legacy base64 bloated cache
+            const hasLegacyBase64 = parsed.some(
+              (p: any) => typeof p.imageUrl === 'string' && p.imageUrl.startsWith('data:image/')
+            );
+            if (hasLegacyBase64) {
+              localStorage.removeItem(STORAGE_KEY_CACHED_POSTS);
+              return INITIAL_POSTS || [];
+            }
             return parsed;
           }
         }
@@ -197,29 +205,6 @@ export const StorageService = {
     return isLiked;
   },
 
-  // Unlocked Premium Prompts
-  getUnlockedPromptIds: (): string[] => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('auraprompt_unlocked_prompts');
-        return saved ? JSON.parse(saved) : [];
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    return [];
-  },
-
-  setUnlockedPromptIds: (ids: string[]): void => {
-    if (typeof window !== 'undefined' && Array.isArray(ids)) {
-      try {
-        localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(ids));
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  },
-
   // Admin Auth Helpers
   authenticateAdmin: (email: string, pass: string): boolean => {
     const validEmail = 'admin@trendinggeminiprompts.com';
@@ -306,7 +291,6 @@ export const StorageService = {
         'promptcms_studio_image_preload',
         'auraprompt_plan_started_at',
         'auraprompt_plan_expires_at',
-        'auraprompt_queued_plan',
       ];
       userKeys.forEach((k) => {
         try {

@@ -61,11 +61,11 @@ export function checkRateLimit(
   customConfig?: Partial<RateLimitConfig>
 ): { allowed: boolean; remaining: number; resetInMs: number } {
   const defaults: Record<string, RateLimitConfig> = {
-    admin: { maxRequests: 60, windowMs: 60 * 1000 },      // 60 reqs/min for admin ops
-    sync: { maxRequests: 300, windowMs: 60 * 1000 },      // 300 syncs/min for user state & refreshes
-    ai: { maxRequests: 40, windowMs: 60 * 1000 },         // 40 AI generations/min
-    auth: { maxRequests: 30, windowMs: 60 * 1000 },       // 30 auth attempts/min
-    general: { maxRequests: 300, windowMs: 60 * 1000 },   // 300 general requests/min
+    admin: { maxRequests: 35, windowMs: 60 * 1000 },      // 35 reqs/min for admin ops
+    sync: { maxRequests: 90, windowMs: 60 * 1000 },       // 90 syncs/min for user state
+    ai: { maxRequests: 25, windowMs: 60 * 1000 },         // 25 AI generations/min
+    auth: { maxRequests: 15, windowMs: 60 * 1000 },       // 15 auth attempts/min
+    general: { maxRequests: 120, windowMs: 60 * 1000 },   // 120 general requests/min
   };
 
   const config = { ...defaults[bucket], ...customConfig };

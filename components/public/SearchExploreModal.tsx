@@ -37,14 +37,6 @@ export const SearchExploreModal = () => {
     setSelectedPost,
     copyPromptToClipboard,
     setCurrentView,
-    isAiSearchEnabled,
-    setIsAiSearchEnabled,
-    aiSearchRemaining,
-    isProUser,
-    setIsProCheckoutModalOpen,
-    showToast,
-    userAccount,
-    openAuthModal,
   } = useApp();
 
   const [localInput, setLocalInput] = useState(searchQuery || '');
@@ -61,28 +53,23 @@ export const SearchExploreModal = () => {
     }
   }
 
-  // Debounced AI Search for Modal - strictly requires login and active quota
+  // Debounced AI Search for Modal
   useEffect(() => {
     const q = localInput.trim();
-    if (q.length < 2 || !isAiSearchEnabled || !userAccount?.isLoggedIn) {
-      setModalAiResult(null);
-      setIsModalSearching(false);
-      return;
-    }
-    if (!isProUser && aiSearchRemaining <= 0) {
+    if (q.length < 2) {
       setModalAiResult(null);
       setIsModalSearching(false);
       return;
     }
     setIsModalSearching(true);
     const timer = setTimeout(() => {
-      performAiSearch(q, false).then((res) => {
+      performAiSearch(q).then((res) => {
         setModalAiResult(res);
         setIsModalSearching(false);
       });
-    }, 320);
+    }, 280);
     return () => clearTimeout(timer);
-  }, [localInput, isAiSearchEnabled, userAccount, isProUser, aiSearchRemaining, performAiSearch]);
+  }, [localInput, performAiSearch]);
 
   // Handle focus and body scroll lock when modal opens
   useEffect(() => {
@@ -113,14 +100,6 @@ export const SearchExploreModal = () => {
       recordSearchQuery(trimmed);
       setSearchQuery(trimmed);
       setSelectedCategory('all');
-      if (isAiSearchEnabled && userAccount?.isLoggedIn) {
-        if (!isProUser && aiSearchRemaining <= 0) {
-          showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
-          setIsProCheckoutModalOpen(true);
-        } else {
-          void performAiSearch(trimmed, true);
-        }
-      }
     }
     setCurrentView('public');
     setIsSearchModalOpen(false);
@@ -269,43 +248,9 @@ export const SearchExploreModal = () => {
                 }
               }}
               placeholder="Search prompts for aesthetics, cameras, or subjects..."
-              className="w-full pl-12 pr-28 sm:pr-32 py-3 bg-[#f0f0f0] dark:bg-neutral-800/90 text-neutral-900 dark:text-white rounded-full text-sm font-semibold placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#E60023] transition-all"
+              className="w-full pl-12 pr-10 py-3 bg-[#f0f0f0] dark:bg-neutral-800/90 text-neutral-900 dark:text-white rounded-full text-sm font-semibold placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#E60023] transition-all"
               id="search-explore-modal-input"
             />
-            {/* AI Search Toggle Button Inside Search Box */}
-            <button
-              type="button"
-              onClick={() => {
-                if (!userAccount || !userAccount.isLoggedIn) {
-                  showToast('Please log in to your account to use AI Search!');
-                  openAuthModal('Please sign in or create a free account to use AI Search.');
-                  return;
-                }
-                if (!isAiSearchEnabled && !isProUser && aiSearchRemaining <= 0) {
-                  showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
-                  setIsProCheckoutModalOpen(true);
-                  setIsAiSearchEnabled(false);
-                  return;
-                }
-                setIsAiSearchEnabled(!isAiSearchEnabled);
-              }}
-              className={`absolute right-10 sm:right-12 px-2.5 py-1 rounded-full text-[10px] font-extrabold flex items-center gap-1 transition-all ${
-                isAiSearchEnabled && userAccount?.isLoggedIn && (isProUser || aiSearchRemaining > 0)
-                  ? 'bg-gradient-to-r from-[#E60023] to-rose-600 text-white shadow-sm'
-                  : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300'
-              }`}
-              title={
-                !userAccount?.isLoggedIn
-                  ? 'Log in to enable AI Search'
-                  : isAiSearchEnabled && (isProUser || aiSearchRemaining > 0)
-                  ? 'AI Search Enabled (Click to disable)'
-                  : 'AI Search Disabled (Click to enable)'
-              }
-            >
-              <Sparkles className="w-3 h-3" />
-              <span>AI {isAiSearchEnabled && userAccount?.isLoggedIn && (isProUser || aiSearchRemaining > 0) ? 'ON' : 'OFF'}</span>
-            </button>
-
             {localInput && (
               <button
                 type="button"
@@ -394,50 +339,9 @@ export const SearchExploreModal = () => {
                   <p className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
                     No prompts matching &ldquo;{localInput}&rdquo;
                   </p>
-                  {!isAiSearchEnabled ? (
-                    <div className="space-y-2 max-w-sm mx-auto">
-                      <p className="text-xs text-amber-600 dark:text-amber-400 font-bold">
-                        no results for this term try using AI search
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!userAccount || !userAccount.isLoggedIn) {
-                            showToast('Please log in to your account to use AI Search!');
-                            openAuthModal('Please sign in or create a free account to use AI Search.');
-                            return;
-                          }
-                          if (!isProUser && aiSearchRemaining <= 0) {
-                            showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
-                            setIsProCheckoutModalOpen(true);
-                          } else {
-                            setIsAiSearchEnabled(true);
-                          }
-                        }}
-                        className="px-4 py-2 rounded-full bg-[#E60023] text-white text-xs font-bold hover:bg-[#ad081b] transition-all shadow-md inline-flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>Enable AI Search</span>
-                      </button>
-                    </div>
-                  ) : aiSearchRemaining <= 0 && !isProUser ? (
-                    <div className="space-y-2 max-w-sm mx-auto">
-                      <p className="text-xs text-red-600 dark:text-red-400 font-bold">
-                        You have used all of your AI search quota, please upgrade plan to unlock more limit
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => setIsProCheckoutModalOpen(true)}
-                        className="px-4 py-2 rounded-full bg-amber-500 text-white text-xs font-bold hover:bg-amber-600 transition-all shadow-md inline-flex items-center gap-1.5"
-                      >
-                        <span>Upgrade Plan</span>
-                      </button>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-neutral-500 max-w-sm mx-auto">
-                      Try searching for different terms like <em>35mm portrait</em>, <em>cyberpunk</em>, or select a category below.
-                    </p>
-                  )}
+                  <p className="text-xs text-neutral-500 max-w-sm mx-auto">
+                    Try searching for different terms like <em>35mm portrait</em>, <em>cyberpunk</em>, or select a category below.
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -455,17 +359,13 @@ export const SearchExploreModal = () => {
                     >
                       {/* Image Thumbnail */}
                       <div className="relative aspect-square w-full overflow-hidden bg-neutral-800">
-                        <img
+                        <Image
                           src={getOptimizedImageUrl(post.imageUrl, 250) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'}
                           alt={post.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          fill
+                          sizes="(max-width: 640px) 50vw, 25vw"
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
                           referrerPolicy="no-referrer"
-                          loading="lazy"
-                          onError={(e) => {
-                            if (post.imageUrl && e.currentTarget.src !== post.imageUrl) {
-                              e.currentTarget.src = post.imageUrl;
-                            }
-                          }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
 
@@ -543,17 +443,13 @@ export const SearchExploreModal = () => {
                   className="group relative h-32 sm:h-36 rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all duration-300 transform active:scale-95"
                 >
                   {/* Category Image from its Most Viewed Prompt */}
-                  <img
+                  <Image
                     src={getOptimizedImageUrl(cat.topImage, 300)}
                     alt={cat.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    fill
+                    sizes="(max-width: 640px) 50vw, 25vw"
+                    className="object-cover group-hover:scale-110 transition-transform duration-500"
                     referrerPolicy="no-referrer"
-                    loading="lazy"
-                    onError={(e) => {
-                      if (cat.topImage && e.currentTarget.src !== cat.topImage) {
-                        e.currentTarget.src = cat.topImage;
-                      }
-                    }}
                   />
 
                   {/* Dark Vignette Gradient Overlay */}

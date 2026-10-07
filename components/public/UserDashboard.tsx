@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
-import { PromptPost, AIHistoryItem, PlanTier } from '@/types/prompt';
+import { PromptPost, AIHistoryItem } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
 import { getPromptSlug, getOptimizedImageUrl } from '@/lib/utils';
 import {
@@ -36,12 +36,10 @@ import {
   CheckCircle2,
   MessageSquarePlus,
   ExternalLink,
-  Coins,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { RazorpayCheckoutButton } from './RazorpayCheckoutButton';
-import { PLAN_CONFIGS, formatPlanDateWithTime, formatExpiryDateWithHour, getPlanFeaturesForCycle } from '@/lib/plans';
 
 export const UserDashboard = () => {
   const router = useRouter();
@@ -74,9 +72,6 @@ export const UserDashboard = () => {
     isSyncingUserData,
     unlockedPromptIds,
     planExpiresAt,
-    planStartedAt,
-    queuedPlan,
-    aiSearchRemaining,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'saved' | 'history' | 'taste' | 'request'>('saved');
@@ -84,20 +79,13 @@ export const UserDashboard = () => {
   const [historySearch, setHistorySearch] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const expiryDisplay = planExpiresAt ? formatExpiryDateWithHour(planExpiresAt) : 'Active';
+  const expiryDisplay = planExpiresAt ? new Date(planExpiresAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : 'Active';
 
   // Strict paid tier resolution for Dashboard display
   const isPaid = Boolean(
-    (isProUser || (planTier && ['starter', 'pro', 'vip', 'ultra'].includes(planTier))) &&
-    (!planExpiresAt || new Date(planExpiresAt).getTime() > Date.now())
+    isProUser && (planTier === 'starter' || planTier === 'pro' || planTier === 'vip')
   );
-  const effectivePlanTier: PlanTier = isPaid ? (['starter', 'pro', 'vip', 'ultra'].includes(planTier) ? planTier : 'pro') : 'free';
-  const isYearlyPlan = Boolean(
-    userAccount?.billingCycle === 'yearly' ||
-    (typeof window !== 'undefined' && localStorage.getItem('auraprompt_billing_cycle') === 'yearly') ||
-    (planExpiresAt && planStartedAt && (new Date(planExpiresAt).getTime() - new Date(planStartedAt).getTime()) > 60 * 24 * 60 * 60 * 1000)
-  );
-  const currentPlanConfig = getPlanFeaturesForCycle(effectivePlanTier, isYearlyPlan ? 'yearly' : 'monthly');
+  const effectivePlanTier = isPaid ? planTier : 'free';
 
   // Automatically prompt auth modal if unauthenticated
   React.useEffect(() => {
@@ -109,10 +97,9 @@ export const UserDashboard = () => {
   // Request a prompt form state
   const [requestText, setRequestText] = useState('');
   const [requestCategory, setRequestCategory] = useState('Photorealistic');
-  const [requestAiTool, setRequestAiTool] = useState('Gemini');
+  const [requestAiTool, setRequestAiTool] = useState('Midjourney');
   const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
   const [copiedRequestId, setCopiedRequestId] = useState<string | null>(null);
-  const [isCreditsInfoOpen, setIsCreditsInfoOpen] = useState(false);
 
   const handleRequestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,16 +134,6 @@ export const UserDashboard = () => {
     const idMatch = userAccount.id && r.userId === userAccount.id;
     return Boolean(emailMatch || idMatch);
   });
-
-  const maxPlanRequests = isPaid ? (currentPlanConfig.promptRequests || 0) : 0;
-  const userSubmittedRequestsCount = userRequests.length;
-  // Accurate, non-overwritten available prompt requests for the user:
-  // If user has paid plan, remaining should not be zero unless user actually consumed/submitted requests
-  const effectivePromptRequestsRemaining = isPaid
-    ? (promptRequestsRemaining > 0
-        ? Math.min(promptRequestsRemaining, maxPlanRequests)
-        : Math.max(0, maxPlanRequests - userSubmittedRequestsCount))
-    : 0;
 
   // Filtered saved posts
   const savedPosts = posts.filter((p) => bookmarkedIds.includes(p.id));
@@ -224,7 +201,7 @@ export const UserDashboard = () => {
               Sign In to Your Dashboard
             </h1>
             <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-              Your Creator Dashboard, saved bookmarks, AI generation history, and credits require an active account.
+              Your Creator Dashboard, saved bookmarks, AI generation history, and daily credits require an active account.
             </p>
           </div>
           <div className="space-y-3 pt-2">
@@ -371,93 +348,35 @@ export const UserDashboard = () => {
           </div>
 
           {/* Quick Metrics */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 border-t md:border-t-0 md:border-l border-neutral-100 dark:border-neutral-800 pt-4 md:pt-0 md:pl-6">
-            <div className="text-center md:text-left relative">
-              <div className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400 flex items-center justify-center md:justify-start gap-1">
-                <span>{toolCredits}</span>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    setIsCreditsInfoOpen((prev) => !prev);
-                  }}
-                  className="cursor-pointer inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 text-[9px] font-black hover:bg-amber-200 transition-colors"
-                  title="Click for credit usage info"
-                >
-                  i
-                </button>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 border-t md:border-t-0 md:border-l border-neutral-100 dark:border-neutral-800 pt-4 md:pt-0 md:pl-6">
+            <div className="text-center md:text-left">
+              <div className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400">
+                {toolCredits}
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">Credits Available</div>
             </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
-                {isPaid ? `All (${currentPlanConfig.name})` : unlockedPromptIds.length}
+                {isProUser ? 'All (Pro)' : unlockedPromptIds.length}
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">Unlocked Prompts</div>
             </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
-                {currentPlanConfig.unlimitedSaves ? `${bookmarkedIds.length + aiHistory.length} (Unlimited)` : `${bookmarkedIds.length + aiHistory.length}/${currentPlanConfig.savesLimit}`}
+                {savedPosts.length}
               </div>
-              <div className="text-[11px] text-neutral-500 font-medium">Saves & History</div>
+              <div className="text-[11px] text-neutral-500 font-medium">Saved Prompts</div>
             </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
-                {currentPlanConfig.unlimitedSearches ? 'Unlimited' : `${Math.min(Math.max(0, aiSearchRemaining), currentPlanConfig.aiSearchQuota)}/${currentPlanConfig.aiSearchQuota}`}
+                {aiHistory.length}
               </div>
-              <div className="text-[11px] text-neutral-500 font-medium">AI Search Quota</div>
-            </div>
+              <div className="text-[11px] text-neutral-500 font-medium">AI Generations</div>
             </div>
           </div>
         </div>
 
-        {/* Semi-transparent floating modal for Credit Consumption Details */}
-        {isCreditsInfoOpen && (
-          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md border border-neutral-200 dark:border-neutral-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200 text-left">
-              <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-3">
-                <div className="flex items-center gap-2">
-                  <Coins className="w-5 h-5 text-amber-500 fill-amber-500" />
-                  <h3 className="font-bold text-base text-neutral-900 dark:text-white">Credit Consumption Details</h3>
-                </div>
-                <button
-                  onClick={() => setIsCreditsInfoOpen(false)}
-                  className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
-                >
-                  ×
-                </button>
-              </div>
-              <p className="text-xs text-neutral-600 dark:text-neutral-300">
-                Tool credits power AI generations, extractions, and prompt unlock utility across the platform:
-              </p>
-              <div className="space-y-2 text-xs font-medium">
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
-                  <span className="text-neutral-700 dark:text-neutral-300">Unlock Premium Prompt</span>
-                  <strong className="text-amber-600 dark:text-amber-400">1 Credit</strong>
-                </div>
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
-                  <span className="text-neutral-700 dark:text-neutral-300">AI Prompt Generator</span>
-                  <strong className="text-amber-600 dark:text-amber-400">1 Credit</strong>
-                </div>
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
-                  <span className="text-neutral-700 dark:text-neutral-300">Image-to-Prompt Extraction</span>
-                  <strong className="text-amber-600 dark:text-amber-400">2 Credits</strong>
-                </div>
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
-                  <span className="text-neutral-700 dark:text-neutral-300">Prompt Editor Tool</span>
-                  <strong className="text-amber-600 dark:text-amber-400">1 Credit</strong>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsCreditsInfoOpen(false)}
-                className="w-full py-3 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-bold text-xs hover:opacity-90 transition-opacity"
-              >
-                Got it
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Guest Banner if not logged in */}
         {!userAccount?.isLoggedIn && (
           <div className="p-5 rounded-3xl bg-gradient-to-r from-red-500/10 via-amber-500/10 to-transparent border border-red-200 dark:border-red-950/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -483,118 +402,70 @@ export const UserDashboard = () => {
         )}
 
         {/* Membership Tier Banner */}
-        <div className="relative overflow-hidden p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-neutral-900 via-neutral-900 to-neutral-950 text-white border border-neutral-800 shadow-xl space-y-6">
-          {/* Background Decorative Glow */}
-          <div className="absolute -top-24 -right-24 w-72 h-72 bg-red-600/20 rounded-full blur-3xl pointer-events-none"></div>
-          <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-neutral-950 flex items-center justify-center shrink-0 shadow-lg shadow-amber-500/20">
-                <Crown className="w-7 h-7 fill-neutral-950" />
-              </div>
-              <div className="space-y-1.5">
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <h3 className="text-lg sm:text-xl font-black text-white tracking-tight">
-                    {isPaid ? `${currentPlanConfig.name.toUpperCase()} Membership Active` : 'Upgrade to Creator Plan'}
-                  </h3>
-                  <span
-                    className={`px-3 py-1 rounded-full text-[10px] font-mono font-extrabold tracking-wide uppercase ${
-                      isPaid
-                        ? 'bg-amber-500 text-neutral-950 shadow-md shadow-amber-500/30'
-                        : 'bg-white/10 text-neutral-300 border border-white/20'
-                    }`}
-                  >
-                    {isPaid ? `PAID (${currentPlanConfig.name.toUpperCase()})` : 'FREE TIER'}
-                  </span>
-                </div>
-                <p className="text-xs sm:text-sm text-neutral-300 max-w-xl leading-relaxed">
-                  {isPaid
-                    ? `You have full access to all premium prompts, ${toolCredits} prompt tool credits, ${currentPlanConfig.unlimitedSaves ? 'unlimited' : currentPlanConfig.savesLimit} saves & history, and ${currentPlanConfig.unlimitedSearches ? 'unlimited' : currentPlanConfig.aiSearchQuota} AI searches.`
-                    : 'Unlock all premium prompts instantly, priority tool credits, increased saves & history quota, and custom prompt requests.'}
-                </p>
-                {isPaid && (
-                  <div className="space-y-1 text-xs text-amber-400 font-bold">
-                    <p>Plan Started On: {planStartedAt ? formatPlanDateWithTime(planStartedAt) : 'Recently'}</p>
-                    <p>Plan Subscription Expires On: {expiryDisplay}</p>
-                  </div>
-                )}
-                {queuedPlan && (
-                  <div className="mt-3 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs space-y-1.5 animate-in fade-in duration-300">
-                    <div className="flex items-center gap-2 font-black text-amber-400">
-                      <Clock className="w-4 h-4 text-amber-400 shrink-0" />
-                      <span>Upcoming Scheduled Plan: {queuedPlan.planName?.toUpperCase() || queuedPlan.planTier.toUpperCase()}</span>
-                      <span className="px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-bold">
-                        Scheduled
-                      </span>
-                    </div>
-                    <p className="text-neutral-300 leading-relaxed">
-                      Your current plan is active. This plan will start automatically on{' '}
-                      <span className="font-bold text-white">{formatExpiryDateWithHour(queuedPlan.scheduledStartAt)}</span> after your current plan expires.
-                    </p>
-                    <div className="text-[11px] text-amber-400/90 font-medium flex items-center gap-3">
-                      <span>• {queuedPlan.credits} tool credits will be granted</span>
-                      <span>• Full {queuedPlan.planName || queuedPlan.planTier} features</span>
-                    </div>
-                  </div>
-                )}
-              </div>
+        <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div
+              className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border ${
+                isPaid
+                  ? 'bg-amber-500/10 text-amber-500 dark:text-amber-400 border-amber-500/20'
+                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 border-neutral-200 dark:border-neutral-700'
+              }`}
+            >
+              <Crown className={`w-6 h-6 ${isPaid ? 'fill-amber-500 text-amber-500' : ''}`} />
             </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-3 shrink-0 pt-2 lg:pt-0">
-              {!isPaid ? (
-                <>
-                  <RazorpayCheckoutButton
-                    amount={4900}
-                    planTier="starter"
-                    planName="Starter"
-                    buttonText="Get Starter for ₹49"
-                    variant="pill"
-                    size="md"
-                  />
-                  <button
-                    onClick={() => router.push('/pricing')}
-                    className="px-5 py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold text-white transition-all shadow-sm"
-                  >
-                    View All Plans & Packs
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={() => router.push('/pricing')}
-                  className="px-6 py-3 rounded-full bg-amber-500 hover:bg-amber-400 text-neutral-950 text-xs font-black shadow-lg shadow-amber-500/20 transition-all"
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm sm:text-base font-black text-neutral-900 dark:text-white">
+                  {isPaid ? `${effectivePlanTier.toUpperCase()} Membership Active` : 'Upgrade to Creator Pro'}
+                </h3>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                    isPaid
+                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
+                      : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
+                  }`}
                 >
-                  Manage Membership & Top-Up
-                </button>
+                  {isPaid ? `PAID (${effectivePlanTier.toUpperCase()})` : 'FREE TIER'}
+                </span>
+              </div>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                {isPaid
+                  ? `${toolCredits} prompt tools credits available • All premium prompts unlocked • Unlimited prompt & history saves.`
+                  : `${toolCredits} credits available. 1 credit unlocks any premium prompt • 3 credits per image extraction. Top up credits anytime.`}
+              </p>
+              {isPaid && (
+                <p className="text-[11px] text-amber-600 dark:text-amber-400 font-bold mt-1">
+                  Plan Subscription Expires on: {expiryDisplay}
+                </p>
               )}
             </div>
           </div>
 
-          {/* Premium Features Grid (Accurately reflects currentPlanConfig) */}
-          <div className="relative z-10 pt-4 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {[
-              { title: 'Unlock All Prompts', desc: 'Instant access to 500+ elite prompts' },
-              { title: `${currentPlanConfig.credits} Tool Credits`, desc: 'For prompt studio, extraction & edits' },
-              {
-                title: currentPlanConfig.unlimitedSaves ? 'Unlimited Saves' : `${currentPlanConfig.savesLimit} Saves Quota`,
-                desc: currentPlanConfig.unlimitedSaves ? 'No limits on bookmarks & history' : `Save up to ${currentPlanConfig.savesLimit} prompts & history`,
-              },
-              {
-                title: currentPlanConfig.unlimitedSearches ? 'Unlimited AI Search' : `${currentPlanConfig.aiSearchQuota} AI Searches / mo`,
-                desc: currentPlanConfig.unlimitedSearches ? 'Uncapped conversational AI discovery' : `${currentPlanConfig.aiSearchQuota} semantic searches per month`,
-              },
-            ].map((feat, idx) => (
-              <div key={idx} className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
-                  <CheckCircle2 className="w-4 h-4" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white">{feat.title}</h4>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">{feat.desc}</p>
-                </div>
-              </div>
-            ))}
+          <div className="flex items-center gap-2 shrink-0 self-start md:self-auto">
+            {!isPaid ? (
+              <>
+                <RazorpayCheckoutButton
+                  amount={9900}
+                  planName="Pro Creator"
+                  buttonText="Get Pro (₹99)"
+                  variant="pill"
+                  size="sm"
+                />
+                <button
+                  onClick={() => router.push('/pricing')}
+                  className="px-3.5 py-2 rounded-full border border-neutral-300 dark:border-neutral-700 hover:border-neutral-400 text-xs font-bold text-neutral-700 dark:text-neutral-200 transition-colors"
+                >
+                  All Plans
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => router.push('/pricing')}
+                className="px-4 py-2 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 text-xs font-bold hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+              >
+                View Plans & Upgrade
+              </button>
+            )}
           </div>
         </div>
 
@@ -611,7 +482,7 @@ export const UserDashboard = () => {
             }`}
           >
             <Bookmark className="w-4 h-4 fill-current" />
-            <span>Saved Prompts ({bookmarkedIds.length})</span>
+            <span>Saved Prompts ({savedPosts.length})</span>
           </button>
 
           <button
@@ -665,7 +536,7 @@ export const UserDashboard = () => {
           )}
         </div>
 
-        {/* TAB 1: Saves */}
+        {/* TAB 1: Saved Prompts */}
         {activeTab === 'saved' && (
           <div>
             {savedPosts.length === 0 ? (
@@ -708,17 +579,12 @@ export const UserDashboard = () => {
                     {/* Image */}
                     <div className="relative w-full aspect-[3/4] bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
                       {post.imageUrl ? (
-                        <img
-                          src={getOptimizedImageUrl(post.imageUrl, 500)}
+                        <Image
+                          src={post.imageUrl}
                           alt={post.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
                           referrerPolicy="no-referrer"
-                          loading="lazy"
-                          onError={(e) => {
-                            if (post.imageUrl && e.currentTarget.src !== post.imageUrl) {
-                              e.currentTarget.src = post.imageUrl;
-                            }
-                          }}
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-neutral-400">
@@ -916,17 +782,13 @@ export const UserDashboard = () => {
                       {/* Visual Thumbnail */}
                       {item.imageUrl && (
                         <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 mb-3 group">
-                          <img
+                          <Image
                             src={getOptimizedImageUrl(item.imageUrl, 400)}
                             alt={item.title}
-                            className="w-full h-full object-cover"
+                            fill
+                            sizes="(max-width: 640px) 100vw, 300px"
+                            className="object-cover"
                             referrerPolicy="no-referrer"
-                            loading="lazy"
-                            onError={(e) => {
-                              if (item.imageUrl && e.currentTarget.src !== item.imageUrl) {
-                                e.currentTarget.src = item.imageUrl;
-                              }
-                            }}
                           />
                           {item.modelUsed && (
                             <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-white text-[10px] font-bold">
@@ -1147,19 +1009,69 @@ export const UserDashboard = () => {
                   </p>
                 </div>
 
-                {/* Quota Badge */}
+                {/* Quota / Points Badge */}
                 <div className="px-5 py-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex items-center gap-3">
-                  <div>
-                    <div className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                      <Crown className="w-3.5 h-3.5" />
-                      <span>Prompt Requests Available</span>
+                  {promptRequestsRemaining > 0 ? (
+                    <div>
+                      <div className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                        <Crown className="w-3.5 h-3.5" />
+                        <span>Pro Plan Requests</span>
+                      </div>
+                      <div className="text-lg font-black text-neutral-900 dark:text-white">
+                        {promptRequestsRemaining} Available
+                      </div>
                     </div>
-                    <div className="text-lg font-black text-neutral-900 dark:text-white">
-                      {effectivePromptRequestsRemaining} / {maxPlanRequests} Available
+                  ) : (
+                    <div>
+                      <div className="text-[11px] font-bold text-neutral-500">Available Activity Points</div>
+                      <div className="text-lg font-black text-[#E60023]">
+                        {userAccount?.points || 0} Points
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Progress & Activities Bar */}
+              {promptRequestsRemaining <= 0 && (
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-neutral-600 dark:text-neutral-400">
+                    <span>
+                      {(userAccount?.points || 0) >= 10 || (userAccount?.requestsMade || 0) === 0
+                        ? '1 Request Ready'
+                        : `Need ${Math.max(0, 10 - (userAccount?.points || 0))} more points to request`}
+                    </span>
+                    <span>{Math.min(100, Math.round(((userAccount?.points || 0) / 10) * 100))}%</span>
+                  </div>
+                  <div className="w-full h-2.5 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-[#E60023] to-amber-500 transition-all duration-500 rounded-full"
+                      style={{
+                        width: (userAccount?.requestsMade || 0) === 0 ? '100%' : `${Math.min(100, ((userAccount?.points || 0) / 10) * 100)}%`,
+                      }}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                    <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-center">
+                      <div className="text-[10px] text-neutral-500">Like 10 Prompts</div>
+                      <div className="text-xs font-bold text-neutral-900 dark:text-white">+1 Point</div>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-center">
+                      <div className="text-[10px] text-neutral-500">Save 5 Prompts</div>
+                      <div className="text-xs font-bold text-neutral-900 dark:text-white">+1 Point</div>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-center">
+                      <div className="text-[10px] text-neutral-500">Generate Art in Studio</div>
+                      <div className="text-xs font-bold text-neutral-900 dark:text-white">+1 Point</div>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-center">
+                      <div className="text-[10px] text-neutral-500">Refer a Creator</div>
+                      <div className="text-xs font-bold text-neutral-900 dark:text-white">+5 Points</div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Request Form */}
               <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800 space-y-4">
@@ -1204,9 +1116,11 @@ export const UserDashboard = () => {
                         onChange={(e) => setRequestAiTool(e.target.value)}
                         className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-bold focus:outline-none focus:ring-2 focus:ring-red-500"
                       >
-                        <option value="Gemini">Gemini</option>
-                        <option value="ChatGPT">ChatGPT</option>
-                        <option value="Midjourney">Midjourney</option>
+                        <option value="Midjourney">Midjourney (v6 / Niji)</option>
+                        <option value="Flux.1">Flux.1 Schnell / Dev</option>
+                        <option value="Stable Diffusion">Stable Diffusion XL</option>
+                        <option value="DALL-E 3">DALL-E 3</option>
+                        <option value="Ideogram">Ideogram (Typography)</option>
                       </select>
                     </div>
                   </div>
@@ -1226,15 +1140,22 @@ export const UserDashboard = () => {
 
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-1">
                     <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                      {effectivePromptRequestsRemaining > 0
-                        ? `Using 1 of ${effectivePromptRequestsRemaining} available requests.`
-                        : 'You have 0 request available. Upgrade to a plan to unlock prompt requests.'}
+                      {promptRequestsRemaining > 0
+                        ? `Using 1 of ${promptRequestsRemaining} included plan requests.`
+                        : (userAccount?.requestsMade || 0) === 0
+                        ? '1st prompt request is free on us!'
+                        : 'Requires 10 activity points.'}
                     </p>
 
                     <button
                       id="btn-submit-prompt-request"
                       type="submit"
-                      disabled={isSubmittingRequest || effectivePromptRequestsRemaining <= 0}
+                      disabled={
+                        isSubmittingRequest ||
+                        (promptRequestsRemaining <= 0 &&
+                          (userAccount?.points || 0) < 10 &&
+                          (userAccount?.requestsMade || 0) > 0)
+                      }
                       className="px-6 py-2.5 rounded-2xl bg-[#E60023] hover:bg-[#ad081b] disabled:opacity-50 text-white text-xs font-black shadow-md flex items-center gap-2 transition-all"
                     >
                       {isSubmittingRequest ? (
@@ -1385,16 +1306,16 @@ export const UserDashboard = () => {
                             </div>
                           )}
 
-                          {/* Quick action to edit & enhance */}
+                          {/* Quick action to test in Studio */}
                           <div className="flex items-center justify-end pt-1">
                             <button
                               onClick={() => {
-                                sessionStorage.setItem('promptcms_editor_preload', req.fulfilledPrompt!);
-                                router.push('/prompt-editor');
+                                handleCopyFulfilledPrompt(req.fulfilledPrompt!, req.id);
+                                setCurrentView('studio-tool');
                               }}
                               className="text-xs font-bold text-neutral-700 dark:text-neutral-300 hover:text-[#E60023] flex items-center gap-1 transition-colors"
                             >
-                              <span>Edit & Enhance</span>
+                              <span>Test in AI Studio</span>
                               <ArrowUpRight className="w-3.5 h-3.5" />
                             </button>
                           </div>

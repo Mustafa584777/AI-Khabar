@@ -1,26 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db as firestoreDb, isFirebaseConfigured } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { supabaseAdmin, supabase } from '@/lib/supabase';
 import { getClientIp, checkRateLimit, createRateLimitResponse, sanitizePayload } from '@/lib/security';
 import { PromptRequestItem } from '@/types/prompt';
-import fs from 'fs';
-import path from 'path';
 
 export const dynamic = 'force-dynamic';
-
-const DATA_DIR = path.join(process.cwd(), 'data');
-const PROMPT_REQUESTS_FILE = path.join(DATA_DIR, 'prompt_requests.json');
-const SETTINGS_KEY = 'prompt_requests';
-
-function ensureDataDir(): void {
-  try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-  } catch (err) {
-    console.error('Failed to create data dir:', err);
-  }
-}
 
 function cleanEmail(email?: string | null): string {
   if (!email || typeof email !== 'string') return '';
@@ -32,52 +15,44 @@ function getEmailKey(email: string): string {
   return `user_sync_email_${clean}`;
 }
 
-// Helper to load prompt requests from Firestore / local file
-async function loadAllPromptRequests(): Promise<PromptRequestItem[]> {
-  if (isFirebaseConfigured()) {
-    try {
-      const snap = await getDoc(doc(firestoreDb, 'settings', SETTINGS_KEY));
-      if (snap.exists() && Array.isArray(snap.data()?.data)) {
-        return snap.data().data as PromptRequestItem[];
-      }
-    } catch (err) {
-      console.error('Error loading prompt requests from Firestore:', err);
-    }
-  }
+const SETTINGS_KEY = 'prompt_requests';
 
+// Helper to load prompt requests from Supabase settings
+async function loadAllPromptRequests(): Promise<PromptRequestItem[]> {
+  const client = supabaseAdmin || supabase;
   try {
-    ensureDataDir();
-    if (fs.existsSync(PROMPT_REQUESTS_FILE)) {
-      const raw = fs.readFileSync(PROMPT_REQUESTS_FILE, 'utf-8');
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
+    const { data, error } = await client
+      .from('settings')
+      .select('data')
+      .eq('id', SETTINGS_KEY)
+      .maybeSingle();
+
+    if (!error && data?.data && Array.isArray(data.data)) {
+      return data.data as PromptRequestItem[];
     }
   } catch (err) {
-    console.warn('Error reading local prompt requests:', err);
+    console.error('Error loading prompt requests from Supabase:', err);
   }
-
   return [];
 }
 
-// Helper to save prompt requests to Firestore and local file
+// Helper to save prompt requests to Supabase settings
 async function saveAllPromptRequests(requests: PromptRequestItem[]): Promise<boolean> {
+  const client = supabaseAdmin || supabase;
   try {
-    ensureDataDir();
-    fs.writeFileSync(PROMPT_REQUESTS_FILE, JSON.stringify(requests, null, 2), 'utf-8');
-  } catch (err) {
-    console.warn('Error writing local prompt requests:', err);
-  }
-
-  if (isFirebaseConfigured()) {
-    try {
-      await setDoc(doc(firestoreDb, 'settings', SETTINGS_KEY), { data: requests });
-      return true;
-    } catch (err) {
-      console.error('Error saving prompt_requests to Firestore:', err);
+    const { error } = await client.from('settings').upsert({
+      id: SETTINGS_KEY,
+      data: requests,
+    });
+    if (error) {
+      console.error('Error upserting prompt_requests in settings:', error);
       return false;
     }
+    return true;
+  } catch (err) {
+    console.error('Error saving prompt_requests:', err);
+    return false;
   }
-  return true;
 }
 
 export async function GET(req: NextRequest) {
@@ -94,6 +69,7 @@ export async function GET(req: NextRequest) {
 
     let allRequests = await loadAllPromptRequests();
 
+    // If filtered by email or userId, return only matching requests
     if (filterEmail || filterUserId) {
       allRequests = allRequests.filter((r) => {
         const matchesEmail = filterEmail && cleanEmail(r.userEmail) === filterEmail;
@@ -102,6 +78,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    // Sort newest first
     allRequests.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
     return NextResponse.json({
@@ -128,35 +105,68 @@ export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.json();
     const body = sanitizePayload(rawBody);
-    const { action, request } = body;
+    const action = body.action || 'create';
 
     const allRequests = await loadAllPromptRequests();
 
-    if (action === 'submit' || action === 'create') {
+    if (action === 'create') {
+      const { request } = body;
       if (!request || !request.requestText?.trim()) {
         return NextResponse.json(
-          { success: false, error: 'Request description is required' },
+          { success: false, error: 'requestText is required' },
           { status: 400 }
         );
       }
 
-      const userEmail = cleanEmail(request.userEmail);
+      const userEmail = cleanEmail(request.userEmail || request.email);
+      const userId = request.userId || `user_${Date.now()}`;
+      const userName = request.userName || userEmail.split('@')[0] || 'Creator';
+
       const newRequest: PromptRequestItem = {
         id: request.id || `req_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-        userId: request.userId || 'guest',
-        userEmail: userEmail || 'guest@user.local',
-        userName: request.userName || (userEmail ? userEmail.split('@')[0] : 'Creator'),
-        userAvatar: request.userAvatar,
+        userId,
+        userEmail,
+        userName,
+        userAvatar: request.userAvatar || undefined,
         requestText: request.requestText.trim(),
-        category: request.category || 'General',
-        aiTool: request.aiTool || 'ChatGPT',
+        category: request.category || 'Photorealistic',
+        aiTool: request.aiTool || 'Midjourney',
         status: 'pending',
         createdAt: request.createdAt || Date.now(),
         likesCount: 0,
       };
 
+      // Add to front of list
       const updatedList = [newRequest, ...allRequests.filter((r) => r.id !== newRequest.id)];
       await saveAllPromptRequests(updatedList);
+
+      // Also mirror to the user's specific cloud record if email is present
+      if (userEmail) {
+        const client = supabaseAdmin || supabase;
+        const emailKey = getEmailKey(userEmail);
+        try {
+          const { data: existingRow } = await client
+            .from('settings')
+            .select('data')
+            .eq('id', emailKey)
+            .maybeSingle();
+
+          const prevData = existingRow?.data || {};
+          const prevRequests: PromptRequestItem[] = prevData.promptRequests || [];
+          const mergedRequests = [newRequest, ...prevRequests.filter((r) => r.id !== newRequest.id)];
+
+          await client.from('settings').upsert({
+            id: emailKey,
+            data: {
+              ...prevData,
+              promptRequests: mergedRequests,
+              lastUpdated: new Date().toISOString(),
+            },
+          });
+        } catch (syncErr) {
+          console.warn('Warning syncing request to user record:', syncErr);
+        }
+      }
 
       return NextResponse.json({
         success: true,
@@ -200,6 +210,40 @@ export async function POST(req: NextRequest) {
 
       await saveAllPromptRequests(updatedList);
 
+      // Mirror update to the user's private cloud record so user dashboard syncs immediately
+      const targetUserEmail = cleanEmail((targetReq as PromptRequestItem).userEmail);
+      if (targetUserEmail) {
+        const client = supabaseAdmin || supabase;
+        const emailKey = getEmailKey(targetUserEmail);
+        try {
+          const { data: existingRow } = await client
+            .from('settings')
+            .select('data')
+            .eq('id', emailKey)
+            .maybeSingle();
+
+          if (existingRow?.data) {
+            const prevData = existingRow.data;
+            const prevRequests: PromptRequestItem[] = prevData.promptRequests || [];
+            const userUpdated = prevRequests.map((r) => (r.id === requestId ? targetReq! : r));
+            if (!userUpdated.some((r) => r.id === requestId)) {
+              userUpdated.unshift(targetReq!);
+            }
+
+            await client.from('settings').upsert({
+              id: emailKey,
+              data: {
+                ...prevData,
+                promptRequests: userUpdated,
+                lastUpdated: new Date().toISOString(),
+              },
+            });
+          }
+        } catch (syncErr) {
+          console.warn('Warning syncing fulfilled request to user record:', syncErr);
+        }
+      }
+
       return NextResponse.json({
         success: true,
         request: targetReq,
@@ -222,11 +266,26 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    if (action === 'update_status') {
+      const { requestId, status } = body;
+      if (!requestId || !status) {
+        return NextResponse.json({ success: false, error: 'requestId and status are required' }, { status: 400 });
+      }
+
+      const updatedList = allRequests.map((r) => (r.id === requestId ? { ...r, status } : r));
+      await saveAllPromptRequests(updatedList);
+
+      return NextResponse.json({
+        success: true,
+        requests: updatedList,
+      });
+    }
+
     return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
   } catch (err: any) {
     console.error('Error in POST /api/prompt-requests:', err);
     return NextResponse.json(
-      { success: false, error: err.message || 'Server error' },
+      { success: false, error: err.message || 'Internal error' },
       { status: 500 }
     );
   }
