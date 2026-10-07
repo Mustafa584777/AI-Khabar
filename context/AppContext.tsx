@@ -1597,16 +1597,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSearchModalOpen, setIsSearchModalOpen] = useState<boolean>(false);
   const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState<boolean>(false);
-  const [popularSearchQueries, setPopularSearchQueries] = useState<string[]>([
-    'Traditional saree',
-    'Cyberpunk neon portrait',
-    'Cinematic golden hour',
-    'Vintage 35mm film',
-    'Anime masterpiece',
-    'Minimalist aesthetic logo',
-    'Hyperrealistic 8K model',
-    'Indian fashion portrait',
-  ]);
+  const [popularSearchQueries, setPopularSearchQueries] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('auraprompt_popular_queries_cache');
+        const cachedTime = localStorage.getItem('auraprompt_popular_queries_time');
+        const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+        if (cached && cachedTime && (Date.now() - Number(cachedTime) < THREE_DAYS_MS)) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch {}
+    }
+    return [];
+  });
   const [selectedCategory, setSelectedCategoryState] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('selectedCategory') || 'all';
@@ -1802,11 +1806,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchSearchQueries = async () => {
     try {
+      if (typeof window !== 'undefined') {
+        const cachedTime = localStorage.getItem('auraprompt_popular_queries_time');
+        const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+        if (cachedTime && (Date.now() - Number(cachedTime) < THREE_DAYS_MS)) {
+          return; // Skip DB call if within 3 days
+        }
+      }
       const res = await fetch('/api/search-queries');
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.queries) && data.queries.length > 0) {
-          setPopularSearchQueries(data.queries.map((q: any) => q.query));
+          const queries = data.queries.map((q: any) => q.query);
+          setPopularSearchQueries(queries);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('auraprompt_popular_queries_cache', JSON.stringify(queries));
+            localStorage.setItem('auraprompt_popular_queries_time', String(Date.now()));
+          }
         }
       }
     } catch (e) {
@@ -1819,7 +1835,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const trimmed = queryText.trim();
     setPopularSearchQueries((prev) => {
       const filtered = prev.filter((q) => q.toLowerCase() !== trimmed.toLowerCase());
-      return [trimmed, ...filtered].slice(0, 12);
+      const updated = [trimmed, ...filtered].slice(0, 12);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auraprompt_popular_queries_cache', JSON.stringify(updated));
+        localStorage.setItem('auraprompt_popular_queries_time', String(Date.now()));
+      }
+      return updated;
     });
     try {
       fetch('/api/search-queries', {
