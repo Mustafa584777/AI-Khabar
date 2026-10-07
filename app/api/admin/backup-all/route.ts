@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ServerStorage } from '@/lib/server-storage';
 import { NotificationServerStore } from '@/lib/notification-storage';
 import { supabase, supabaseAdmin, isSupabaseConfigured } from '@/lib/supabase';
+import { db as firestoreDb, isFirebaseConfigured } from '@/lib/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 import { RegisteredUserRecord, PromptPost, Category, SearchQueryItem, PromptRequestItem, SiteSettings, PlanTier } from '@/types/prompt';
 import { cleanTagsArray } from '@/lib/tag-utils';
 import fs from 'fs';
@@ -403,6 +405,17 @@ export async function POST(req: NextRequest) {
       if (normalizedPosts.length > 0) {
         await ServerStorage.restorePosts(normalizedPosts, mode);
         restoredSummary.restoredPrompts = normalizedPosts.length;
+
+        // Sync to Firebase Firestore
+        if (isFirebaseConfigured()) {
+          try {
+            for (const post of normalizedPosts) {
+              await setDoc(doc(firestoreDb, 'posts', post.id), post);
+            }
+          } catch (fErr) {
+            console.warn('Firestore restore posts notice:', fErr);
+          }
+        }
       }
     }
 
@@ -485,6 +498,15 @@ export async function POST(req: NextRequest) {
             }
           }
 
+          // Save to Firebase Firestore
+          if (isFirebaseConfigured()) {
+            try {
+              await setDoc(doc(firestoreDb, 'users', userId), userRecord);
+            } catch (fErr) {
+              console.warn('Firestore restore user notice:', fErr);
+            }
+          }
+
           // Save locally
           const existingIdx = usersToSaveLocally.findIndex((u) => u.id === userId || (email && u.email === email));
           if (existingIdx >= 0) {
@@ -508,6 +530,9 @@ export async function POST(req: NextRequest) {
         if (cat && (cat.name || cat.id)) {
           try {
             await ServerStorage.saveCategory(cat);
+            if (isFirebaseConfigured() && cat.id) {
+              await setDoc(doc(firestoreDb, 'categories', cat.id), cat);
+            }
             restoredSummary.restoredCategories++;
           } catch (cErr) {
             console.warn('Error restoring category:', cErr);
@@ -521,6 +546,9 @@ export async function POST(req: NextRequest) {
       try {
         const cleanTags = cleanTagsArray(payload.tags);
         await ServerStorage.saveAllTags(cleanTags);
+        if (isFirebaseConfigured()) {
+          await setDoc(doc(firestoreDb, 'settings', 'all_tags'), { tags: cleanTags });
+        }
         restoredSummary.restoredTags = cleanTags.length;
       } catch (tErr) {
         console.warn('Error restoring tags:', tErr);
@@ -537,6 +565,14 @@ export async function POST(req: NextRequest) {
     if (rawQueries.length > 0) {
       try {
         await ServerStorage.restoreSearchQueries(rawQueries);
+        if (isFirebaseConfigured()) {
+          for (const q of rawQueries) {
+            if (q && q.query) {
+              const qId = q.id || `q_${q.query.trim().toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+              await setDoc(doc(firestoreDb, 'search_queries', qId), q);
+            }
+          }
+        }
         restoredSummary.restoredSearchQueries = rawQueries.length;
       } catch (sqErr) {
         console.warn('Error restoring search queries:', sqErr);
@@ -551,6 +587,13 @@ export async function POST(req: NextRequest) {
     if (notifs.length > 0) {
       try {
         await NotificationServerStore.saveNotifications(notifs);
+        if (isFirebaseConfigured()) {
+          for (const n of notifs) {
+            if (n && n.id) {
+              await setDoc(doc(firestoreDb, 'push_notifications', n.id), n);
+            }
+          }
+        }
         restoredSummary.restoredNotifications = notifs.length;
       } catch (nErr) {
         console.warn('Error restoring notifications:', nErr);
@@ -585,6 +628,13 @@ export async function POST(req: NextRequest) {
             data: rawRequests,
           });
         }
+        if (isFirebaseConfigured()) {
+          for (const r of rawRequests) {
+            if (r && r.id) {
+              await setDoc(doc(firestoreDb, 'prompt_requests', r.id), r);
+            }
+          }
+        }
         writeLocalJson(path.join(DATA_DIR, 'prompt_requests.json'), rawRequests);
         restoredSummary.restoredRequests = rawRequests.length;
       } catch (rErr) {
@@ -596,6 +646,9 @@ export async function POST(req: NextRequest) {
     if (payload.settings && typeof payload.settings === 'object') {
       try {
         await ServerStorage.saveSettings(payload.settings);
+        if (isFirebaseConfigured()) {
+          await setDoc(doc(firestoreDb, 'settings', 'general_settings'), payload.settings);
+        }
         restoredSummary.settingsRestored = true;
       } catch (setErr) {
         console.warn('Error restoring settings:', setErr);
