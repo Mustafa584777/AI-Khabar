@@ -101,14 +101,30 @@ export async function uploadImageToCloudinary(
       secure: true,
     });
 
-    const uploadResult = await cloudinary.uploader.upload(image, {
+    let isLargeFile = true;
+    if (image.startsWith('data:')) {
+      try {
+        const base64Data = image.split(',')[1] || '';
+        const approxBytes = (base64Data.length * 3) / 4;
+        if (approxBytes <= 500 * 1024) {
+          isLargeFile = false;
+        }
+      } catch {}
+    }
+
+    const uploadOptions: any = {
       folder: options?.folder || 'prompts',
       resource_type: 'image',
-      format: 'webp',
       public_id: options?.publicId ? options.publicId.replace(/[^a-zA-Z0-9-_]/g, '-').slice(0, 100) : undefined,
       overwrite: true,
       invalidate: true,
-    });
+    };
+
+    if (isLargeFile) {
+      uploadOptions.format = 'webp';
+    }
+
+    const uploadResult = await cloudinary.uploader.upload(image, uploadOptions);
 
     if (uploadResult && uploadResult.secure_url) {
       return {

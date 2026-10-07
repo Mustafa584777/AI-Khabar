@@ -32,7 +32,10 @@ export interface PromptParameters {
   camera?: string; // e.g. "Sony A7 IV, 85mm f/1.4"
   renderEngine?: string; // e.g. "Unreal Engine 5, Octane Render"
   temperature?: string; // For text models
-  [key: string]: string | undefined;
+  isPremium?: boolean | string;
+  additionalImageAlts?: string[];
+  additionalImageFileNames?: string[];
+  [key: string]: string | boolean | string[] | undefined;
 }
 
 export interface Author {
@@ -64,6 +67,8 @@ export interface PromptPost {
   imageWidth?: number;
   imageHeight?: number;
   additionalImages?: string[];
+  additionalImageAlts?: string[];
+  additionalImageFileNames?: string[];
   parameters?: PromptParameters;
   variables?: PromptVariable[];
   articleContent: string; // Rich markdown or HTML guide
@@ -71,11 +76,7 @@ export interface PromptPost {
   status: 'published' | 'draft' | 'scheduled';
   isFeatured?: boolean;
   isTrending?: boolean;
-  isRequested?: boolean;
-  requestedByName?: string;
-  requestedByEmail?: string;
-  requestedByAvatar?: string;
-  requestedPromptDescription?: string;
+  isPremium?: boolean;
   viewsCount: number;
   copiesCount: number;
   likesCount: number;
@@ -88,6 +89,8 @@ export interface PromptPost {
   updatedAt: string;
   publishedAt?: string;
 }
+
+export type PlanTier = 'free' | 'starter' | 'pro' | 'vip' | 'ultra';
 
 export interface Category {
   id: string;
@@ -107,8 +110,6 @@ export interface SiteSettings {
   siteTagline: string;
   siteUrl: string;
   logoText: string;
-  logoUrl?: string;
-  faviconUrl?: string;
   heroHeadline: string;
   heroSubheadline: string;
   defaultTool: AITool;
@@ -120,7 +121,6 @@ export interface SiteSettings {
   cloudinaryApiKey?: string;
   cloudinaryApiSecret?: string;
   cloudinaryUploadPreset?: string;
-  geminiCustomInstructions?: string;
 }
 
 export interface AdminUser {
@@ -147,26 +147,105 @@ export interface UserAccount {
   generationsCountForPoints: number;
   sharesCountForPoints: number;
   referralsCountForPoints: number;
+  isPremium?: boolean;
+  isProUser?: boolean;
+  authProvider?: string;
+  membershipPlan?: 'free' | 'starter' | 'pro' | 'vip';
+  planTier?: PlanTier;
+  billingCycle?: 'monthly' | 'yearly';
+  savesLimit?: number;
+  signupBonusClaimed?: boolean;
+  signupCreditsAwarded?: boolean;
+  planExpiresAt?: string;
+  planStartedAt?: string;
+  toolCredits?: number;
+  unlockedPromptIds?: string[];
+  credits?: number;
+  lastCreditRefresh?: string;
+  promptRequestsAllowed?: number;
+  queuedPlan?: QueuedPlan | null;
+  queuedPlans?: QueuedPlan[];
+}
+
+export interface QueuedPlan {
+  planTier: PlanTier;
+  planName: string;
+  credits: number;
+  promptRequests: number;
+  aiSearchQuota: number;
+  billingCycle?: 'monthly' | 'yearly';
+  unlimitedSearches?: boolean;
+  unlimitedSaves?: boolean;
+  scheduledStartAt: string;
+  scheduledExpiresAt: string;
+  orderId?: string;
+  paymentId?: string;
+  purchasedAt: string;
+  durationDays?: number;
+}
+
+export interface RegisteredUserRecord {
+  id: string;
+  email: string;
+  name: string;
+  username?: string;
+  avatar?: string;
+  planTier: PlanTier;
+  isProUser: boolean;
+  planExpiresAt?: string;
+  planStartedAt?: string;
+  queuedPlan?: QueuedPlan | null;
+  toolCredits: number;
+  points: number;
+  unlockedPromptIds: string[];
+  promptRequestsRemaining?: number;
+  aiSearchQuota?: number;
+  aiSearchRemaining?: number;
+  aiHistoryCount?: number;
+  bookmarksCount?: number;
+  bookmarkedIds?: string[];
+  likesCount?: number;
+  likedIds?: string[];
+  aiHistory?: any[];
+  joinedDate: string;
+  lastSyncedAt?: string;
+  source: 'supabase_auth' | 'supabase_sync' | 'local_store' | 'razorpay' | 'razorpay_verified' | 'firebase';
+  paymentAmount?: number;
+  paymentId?: string;
+  paymentDate?: string;
+  paymentMethod?: string;
+  rawSyncData?: any;
+}
+
+export interface UsersBackupPayload {
+  version: string;
+  exportedAt: string;
+  system: string;
+  totalUsers: number;
+  users: RegisteredUserRecord[];
 }
 
 export interface PromptRequestItem {
   id: string;
   userId: string;
+  userEmail: string;
   userName: string;
-  userEmail?: string;
   userAvatar?: string;
   requestText: string;
   category?: string;
   aiTool?: string;
-  status: 'pending' | 'in_progress' | 'completed';
-  fulfilledPostId?: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'rejected';
   createdAt: number;
-  likesCount: number;
+  likesCount?: number;
+  fulfilledPrompt?: string;
+  fulfilledAt?: number | string;
+  adminNotes?: string;
+  fulfilledBy?: string;
 }
 
 export interface AIHistoryItem {
   id: string;
-  type: 'image_to_prompt' | 'prompt_to_image';
+  type: 'image_to_prompt' | 'idea_to_prompt' | 'prompt_to_image';
   title: string;
   promptText: string;
   negativePrompt?: string;
@@ -189,5 +268,21 @@ export interface SearchQueryItem {
   query: string;
   count: number;
   lastSearched: number;
+  resultsCount?: number;
+  category?: string;
+  createdAt?: string | number;
 }
+
+export interface AiSearchResult {
+  query: string;
+  correctedQuery: string;
+  expandedKeywords: string[];
+  matchedPostIds: string[];
+  explanation: string;
+  isAiPowered: boolean;
+}
+
+export type { UserTasteProfile, GenderVibe } from '@/lib/personalization';
+
+
 

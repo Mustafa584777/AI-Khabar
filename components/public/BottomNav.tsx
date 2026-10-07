@@ -1,14 +1,19 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
-import { Home, Search, Plus, User, Sparkles } from 'lucide-react';
+import { Home, Search, Plus, User, Bell } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
+import { NotificationService } from '@/lib/notifications';
 
 interface BottomNavProps {
   onSearchClick?: () => void;
 }
 
 export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
+  const router = useRouter();
+  const pathname = usePathname();
+  
   const {
     selectedCategory,
     setSelectedCategory,
@@ -19,13 +24,33 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
     setCurrentView,
     setIsTasteModalOpen,
     setIsSearchModalOpen,
+    setIsNotificationsModalOpen,
+    isNotificationsModalOpen,
+    userAccount,
+    openAuthModal,
   } = useApp();
+
+  const [unreadNotifs, setUnreadNotifs] = useState(0);
+
+  useEffect(() => {
+    const updateUnread = () => {
+      const list = NotificationService.getNotifications();
+      setUnreadNotifs(list.filter((n) => !n.read).length);
+    };
+    updateUnread();
+    const interval = setInterval(updateUnread, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleHomeClick = () => {
     setCurrentView('public');
     setSelectedCategory('all');
     setSearchQuery('');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (pathname !== '/') {
+      router.push('/');
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleSearchClick = () => {
@@ -36,21 +61,16 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
     }
   };
 
-  const handleForYouClick = () => {
-    setCurrentView('for-you');
-    setSelectedCategory('all');
-    setSelectedSort('trending');
-    setSearchQuery('');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const handleNotificationsClick = () => {
+    router.push('/notifications');
   };
 
   const handleCreateStudioClick = () => {
-    setCurrentView('studio-tool');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    router.push('/create');
   };
 
   const handleAccountClick = () => {
-    setCurrentView('user-dashboard');
+    router.push('/dashboard');
   };
 
   return (
@@ -62,14 +82,14 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
       <button
         onClick={handleHomeClick}
         className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 ${
-          currentView === 'public' && selectedCategory === 'all'
+          pathname === '/' && currentView === 'public' && selectedCategory === 'all'
             ? 'text-[#E60023] scale-105 font-bold'
             : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
         }`}
         title="Home Feed"
         id="bottom-nav-home"
       >
-        <Home className={`w-6 h-6 ${currentView === 'public' && selectedCategory === 'all' ? 'fill-current' : ''}`} />
+        <Home className={`w-6 h-6 ${pathname === '/' && currentView === 'public' && selectedCategory === 'all' ? 'fill-current' : ''}`} />
         <span className="text-[10px] mt-0.5 font-medium">Home</span>
       </button>
 
@@ -84,57 +104,66 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
         <span className="text-[10px] mt-0.5 font-medium">Explore</span>
       </button>
 
-      {/* 3. AI Studio / Create (+) Button (Prominent Center/Action) */}
+      {/* 3. Create (+) Button (Prominent Center/Action) */}
       <button
         onClick={handleCreateStudioClick}
         className={`flex flex-col items-center justify-center p-1.5 transition-all duration-200 ${
-          currentView === 'studio-tool' ? 'scale-110' : 'hover:scale-105'
+          pathname === '/create' ? 'scale-110' : 'hover:scale-105'
         }`}
-        title="AI Studio - Image to Prompt & Prompt to Image"
+        title="Create - Image to Prompt & Text to Image"
         id="bottom-nav-create-tool"
       >
         <div
           className={`w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-colors ${
-            currentView === 'studio-tool'
+            pathname === '/create'
               ? 'bg-[#E60023] text-white shadow-red-500/40 ring-2 ring-red-400'
               : 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:bg-[#E60023]'
           }`}
         >
           <Plus className="w-6 h-6 stroke-[2.5]" />
         </div>
-        <span className={`text-[10px] mt-0.5 font-black ${currentView === 'studio-tool' ? 'text-[#E60023]' : 'text-neutral-600 dark:text-neutral-400'}`}>
+        <span className={`text-[10px] mt-0.5 font-black ${pathname === '/create' ? 'text-[#E60023]' : 'text-neutral-600 dark:text-neutral-400'}`}>
           Create
         </span>
       </button>
 
-      {/* 4. Requested Prompts Feed Button */}
+      {/* 4. Notifications Tab (Replacing For You) */}
       <button
-        onClick={handleForYouClick}
-        id="bottom-nav-requested"
-        className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 ${
-          currentView === 'for-you'
+        onClick={handleNotificationsClick}
+        id="bottom-nav-notifications"
+        className={`relative flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 ${
+          pathname === '/notifications'
             ? 'text-[#E60023] scale-105 font-bold'
             : 'text-neutral-500 hover:text-[#E60023] dark:hover:text-white'
         }`}
-        title="Community Requested Prompts"
+        title="Notifications & Trending Drops"
       >
-        <Sparkles className="w-6 h-6 text-[#E60023]" />
-        <span className="text-[10px] mt-0.5 font-medium">Requested</span>
+        <div className="relative">
+          <Bell className={`w-6 h-6 ${pathname === '/notifications' ? 'fill-current' : ''}`} />
+          {unreadNotifs > 0 && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#E60023] text-white text-[9px] font-black flex items-center justify-center ring-2 ring-white dark:ring-neutral-950 animate-pulse">
+              {unreadNotifs > 9 ? '9+' : unreadNotifs}
+            </span>
+          )}
+        </div>
+        <span className="text-[10px] mt-0.5 font-medium">Updates</span>
       </button>
 
       {/* 5. Account / Profile Button */}
       <button
         onClick={handleAccountClick}
         className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 ${
-          currentView === 'user-dashboard'
+          pathname === '/dashboard'
             ? 'text-[#E60023] font-bold'
             : 'text-neutral-500 hover:text-[#E60023] dark:hover:text-white'
         }`}
         title="My Creative Dashboard"
         id="bottom-nav-account"
       >
-        <User className={`w-6 h-6 ${currentView === 'user-dashboard' ? 'fill-current' : ''}`} />
-        <span className="text-[10px] mt-0.5 font-medium">Dashboard</span>
+        <User className={`w-6 h-6 ${pathname === '/dashboard' ? 'fill-current' : ''}`} />
+        <span className="text-[10px] mt-0.5 font-medium">
+          {userAccount?.isLoggedIn ? 'Dashboard' : 'Sign In'}
+        </span>
       </button>
     </nav>
   );

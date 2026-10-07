@@ -18,6 +18,9 @@ import {
   Zap,
   Database,
   Search,
+  Users,
+  Bell,
+  MessageSquare,
 } from 'lucide-react';
 
 export const AdminSidebar = () => {
@@ -28,11 +31,12 @@ export const AdminSidebar = () => {
     setEditingPostId,
     logout,
     posts,
-    promptRequests,
     currentUser,
+    promptRequests,
   } = useApp();
 
   const draftCount = posts.filter((p) => p.status === 'draft').length;
+  const pendingRequestsCount = promptRequests.filter((r) => r.status === 'pending').length;
 
   interface NavItem {
     id: string;
@@ -56,12 +60,6 @@ export const AdminSidebar = () => {
       badge: posts.length,
     },
     {
-      id: 'requested-prompts',
-      label: 'Requested Prompts',
-      icon: Sparkles,
-      badge: promptRequests?.length || 0,
-    },
-    {
       id: 'new-post',
       label: 'Add New Prompt',
       icon: PlusCircle,
@@ -76,10 +74,25 @@ export const AdminSidebar = () => {
       icon: FolderTree,
     },
     {
+      id: 'requested-prompts',
+      label: 'Requested Prompts',
+      icon: MessageSquare,
+      badge: pendingRequestsCount > 0 ? pendingRequestsCount : null,
+    },
+    {
+      id: 'notifications',
+      label: 'Push Notifications',
+      icon: Bell,
+    },
+    {
+      id: 'users',
+      label: 'Registered Users',
+      icon: Users,
+    },
+    {
       id: 'search-history',
       label: 'User Search History',
       icon: Search,
-      badge: null,
     },
     {
       id: 'backup-restore',
@@ -95,7 +108,7 @@ export const AdminSidebar = () => {
 
   return (
     <aside className="w-64 bg-neutral-900 text-neutral-300 flex flex-col shrink-0 border-r border-neutral-800 min-h-screen">
-      {/* WordPress Brand Header */}
+      {/* Brand Header */}
       <div className="p-4 border-b border-neutral-800 flex items-center gap-3">
         <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 relative bg-blue-600 shadow-md shadow-blue-500/20">
           <Image
@@ -107,7 +120,7 @@ export const AdminSidebar = () => {
           />
         </div>
         <div>
-          <h2 className="text-sm font-bold text-white tracking-tight">WordPress CMS</h2>
+          <h2 className="text-sm font-bold text-white tracking-tight">Editorial Suite</h2>
           <span className="text-[11px] text-blue-400 font-medium">Trending Photo Prompts</span>
         </div>
       </div>

@@ -282,7 +282,14 @@ export const PersonalizationEngine = {
     const viewCount = profile.clickedPostIds[post.id] || 0;
 
     // 1. Category Affinity (0 - 35 points)
-    const catScore = profile.categoryAffinities[post.category] || 0;
+    let catScore = profile.categoryAffinities[post.category] || 0;
+    
+    // Check if category is in user's favorite styles (now storing both categories and tags)
+    if (profile.favoriteStyles.some((s) => post.category.toLowerCase().includes(s.toLowerCase()) || s.toLowerCase().includes(post.category.toLowerCase()))) {
+      catScore += 15;
+      badges.push(post.category);
+    }
+    
     if (catScore > 0) {
       score += Math.min(catScore * 2, 35);
       if (catScore >= 6) {
@@ -379,7 +386,7 @@ export const PersonalizationEngine = {
     const globalVelocity = Math.min((copies * 2 + likes + views * 0.1) * 0.05, 10);
     score += globalVelocity;
 
-    // Normalize match percentage to a realistic Pinterest-like 75% - 99% for top items
+    // Normalize match percentage to a realistic 75% - 99% for top items
     const rawMatch = Math.min(Math.max(Math.round((score / 80) * 100), 65), 99);
 
     const primaryReason =

@@ -1,14 +1,13 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
-import { ServerStorage } from '@/lib/server-storage';
-import fs from 'fs';
-import path from 'path';
 
-// Prioritized model fallback sequence with valid Gemini API aliases
+// Prioritized model fallback sequence: if one model fails or is unavailable, switch to the next
 const CANDIDATE_MODELS = [
-  'gemini-flash-latest',
+  'gemini-2.5-flash',
   'gemini-3.7-flash',
   'gemini-3.1-flash-lite',
+  'gemini-flash-latest',
+  'gemini-2.5-pro',
 ];
 
 // Reusable executor that tries candidate models in sequence
@@ -40,33 +39,20 @@ function determineDynamicCategory(topic: string, defaultCat?: string) {
   if (text.includes('cyber') || text.includes('sci-fi') || text.includes('robot') || text.includes('future') || text.includes('mecha')) return 'Sci-Fi & Cyberpunk';
   if (text.includes('anime') || text.includes('manga') || text.includes('ghibli') || text.includes('chibi') || text.includes('otaku')) return 'Anime & Manga';
   if (text.includes('car') || text.includes('vehicle') || text.includes('supercar') || text.includes('auto') || text.includes('bike')) return 'Vehicles & Automotive';
-  if (text.includes('architecture') || text.includes('interior') || text.includes('room') || text.includes('villa') || text.includes('building') || text.includes('japandi')) return 'Architecture & Interiors';
+  if (text.includes('architecture') || text.includes('interior') || text.includes('room') || text.includes('villa') || text.includes('building')) return 'Architecture & Interiors';
   if (text.includes('nature') || text.includes('animal') || text.includes('landscape') || text.includes('forest') || text.includes('ocean') || text.includes('wildlife')) return 'Landscapes & Nature';
-  if (text.includes('logo') || text.includes('vector') || text.includes('icon') || text.includes('branding') || text.includes('sticker') || text.includes('minimal')) return 'Logos & Graphic Design';
+  if (text.includes('logo') || text.includes('vector') || text.includes('icon') || text.includes('branding') || text.includes('sticker')) return 'Logos & Graphic Design';
   if (text.includes('3d') || text.includes('render') || text.includes('blender') || text.includes('cgi') || text.includes('unreal') || text.includes('isometric')) return '3D Art & CGI';
   if (text.includes('fantasy') || text.includes('dragon') || text.includes('magic') || text.includes('myth') || text.includes('fairy')) return 'Fantasy & Mythological';
   if (text.includes('vintage') || text.includes('35mm') || text.includes('retro') || text.includes('analog') || text.includes('film')) return 'Photography & Vintage';
-  if (text.includes('fashion') || text.includes('outfit') || text.includes('streetwear') || text.includes('dress') || text.includes('runway') || text.includes('model')) return 'Fashion & Apparel';
+  if (text.includes('fashion') || text.includes('outfit') || text.includes('streetwear') || text.includes('dress') || text.includes('runway')) return 'Fashion & Apparel';
   return defaultCat || 'Photorealistic & Portraits';
 }
 
-function generateFallbackPost(topic?: string, tool?: string, category?: string, isFromImage = false) {
-  const defaultIdeas = [
-    'Cinematic Golden Hour Portrait',
-    'Neon Cyberpunk Tokyo Street',
-    'Minimalist Japandi Living Room',
-    'Moody Atmospheric Alpine Landscape',
-    'Vogue Studio Editorial Portrait',
-    'Vintage 35mm Ferrari in Rome',
-    'Ethereal Celestial Fantasy Dragon',
-    'Modern Isometric 3D Workspace',
-  ];
-  const randomIdea = defaultIdeas[Math.floor(Math.random() * defaultIdeas.length)];
-
-  let cleanTitle = topic && topic.trim() && topic !== 'Photorealistic Artwork Recreation'
-    ? topic.trim().replace(/^["']|["']$/g, '')
-    : (isFromImage ? 'Cinematic Visual Composition' : randomIdea);
-
+function generateFallbackPost(topic: string, tool: string, category: string, isFromImage = false) {
+  const cleanTitle = (topic || 'Cinematic Photo Composition')
+    .trim()
+    .replace(/^["']|["']$/g, '');
   const cleanSlug = cleanTitle
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
@@ -75,8 +61,8 @@ function generateFallbackPost(topic?: string, tool?: string, category?: string, 
   const dynamicCategory = determineDynamicCategory(cleanTitle, category);
 
   const promptText = isFromImage
-    ? `Masterpiece photograph of ${cleanTitle.toLowerCase()}, captured with 85mm f/1.4 GM lens, cinematic golden hour soft rim lighting, natural color grade, photorealistic textures, shallow depth of field, 8K ultra high detail, authentic studio art direction --ar 16:9 --v 6.1`
-    : `Editorial portrait of ${cleanTitle.toLowerCase()}, atmospheric cinematic contrast, shot on Sony A7R V with 85mm f/1.4 lens, hyper-detailed skin texture and fabrics, masterpiece studio quality --ar 16:9 --v 6.1`;
+    ? `Masterpiece photograph of [subject], captured with [camera_lens], cinematic [lighting_setup], natural color grade, photorealistic textures, shallow depth of field, 8K ultra high detail, aesthetic studio art direction --ar 16:9 --v 6.1`
+    : `Editorial portrait of [subject], atmospheric [lighting], rich cinematic contrast, shot on [camera_angle], 85mm f/1.4 lens, hyper-detailed skin texture and fabrics, masterpiece quality --ar 16:9 --v 6.1`;
 
   return {
     title: cleanTitle,
@@ -152,17 +138,14 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      const settings = await ServerStorage.getSettings().catch(() => null);
-      const customIns = settings?.geminiCustomInstructions || '';
       const systemInstruction = `You are a world-class prompt engineer and AI art director specializing in Midjourney v6, ChatGPT-4o, Flux.1, Stable Diffusion XL, Claude 3.5, and Gemini.
 Generate a comprehensive, high-quality prompt package formatted for a prompt directory article like trendinggeminiprompts.com.
-Ensure the prompt includes dynamic variable placeholders like [subject], [lighting], [style] so users can customize them.
-${customIns ? `\nUSER CUSTOM SYSTEM INSTRUCTIONS & GUIDELINES:\n${customIns}` : ''}`;
+Ensure the prompt includes dynamic variable placeholders like [subject], [lighting], [style] so users can customize them.`;
 
       let contentsPayload: any;
 
       if (isImageMode && image) {
-        // Extract base64 image data or fetch remote/local image
+        // Extract base64 image data or fetch remote image
         let mimeType = 'image/jpeg';
         let base64Data = '';
 
@@ -172,36 +155,14 @@ ${customIns ? `\nUSER CUSTOM SYSTEM INSTRUCTIONS & GUIDELINES:\n${customIns}` : 
             mimeType = match[1];
             base64Data = match[2];
           }
-        } else if (image.startsWith('http://') || image.startsWith('https://')) {
+        } else if (image.startsWith('http')) {
           try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 8000);
-            const imgRes = await fetch(image, { signal: controller.signal });
-            clearTimeout(timeoutId);
-            if (imgRes.ok) {
-              const arrayBuffer = await imgRes.arrayBuffer();
-              base64Data = Buffer.from(arrayBuffer).toString('base64');
-              mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
-            }
+            const imgRes = await fetch(image);
+            const arrayBuffer = await imgRes.arrayBuffer();
+            base64Data = Buffer.from(arrayBuffer).toString('base64');
+            mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
           } catch (fetchErr) {
             console.warn('Failed to fetch remote image for multimodal analysis:', fetchErr);
-          }
-        } else if (image.startsWith('/')) {
-          // Local static file in public directory
-          try {
-            const cleanPath = image.replace(/^\/+/, '');
-            const localFilePath = path.join(process.cwd(), 'public', cleanPath);
-            if (fs.existsSync(localFilePath)) {
-              const buffer = fs.readFileSync(localFilePath);
-              base64Data = buffer.toString('base64');
-              const ext = path.extname(cleanPath).toLowerCase();
-              if (ext === '.png') mimeType = 'image/png';
-              else if (ext === '.webp') mimeType = 'image/webp';
-              else if (ext === '.gif') mimeType = 'image/gif';
-              else mimeType = 'image/jpeg';
-            }
-          } catch (localReadErr) {
-            console.warn('Failed to read local image file for Gemini vision:', localReadErr);
           }
         }
 
@@ -213,37 +174,31 @@ ${customIns ? `\nUSER CUSTOM SYSTEM INSTRUCTIONS & GUIDELINES:\n${customIns}` : 
             },
           };
           const textPart = {
-            text: `Carefully inspect and analyze this attached photograph / artwork.
-Reverse-engineer its visual elements and reconstruct the exact AI prompt that reproduces this image:
-1. "title": Create a compelling, creative, and highly specific descriptive title for this exact image (DO NOT use generic titles like "Photorealistic Artwork Recreation", "Featured Photo Prompt", or "Masterpiece"). Describe what is actually visible in the picture (e.g., "Cyberpunk Girl with Neon VR Visor in Rain", "Vintage 35mm Ferrari in Italian Countryside", "Minimalist Japandi Living Room with Oak Table", "Golden Hour Portrait with Natural Freckles").
-2. "slug": Generate a clean URL slug matching the title (e.g. "cyberpunk-girl-neon-vr-visor-rain").
-3. "category": Pick the single most accurate category from: [${existingCatsList}], or if none fit, generate a precise new category name (e.g. "Anime & Manga", "Sci-Fi & Cyberpunk", "Architecture & Interiors", "3D Art & CGI", "Landscapes & Nature", "Fashion & Apparel", "Vehicles & Automotive", "Photorealistic & Portraits").
-4. "promptText": Generate a complete, ready-to-run copy-paste prompt that accurately reconstructs the subject, pose, lighting, lens/camera framing, color grading, background, and rendering style of this exact image for ${tool || 'Midjourney'}.
-5. "negativePrompt": Generate a comprehensive negative prompt to eliminate blur, deformities, bad anatomy, and artifacts.
-6. "suggestedParameters": Provide calibrated parameters for aspectRatio, model, stylize, steps, cfgScale, lighting, camera, renderEngine.
-7. "tags": 5-8 unique, highly relevant discovery tags tailored to this image (do not duplicate the category name).
-8. "seo": metaTitle, metaDescription, focusKeyword.
-9. "articleContent": A structured markdown guide with:
-   - ## About This Prompt
-   - ### Composition & Optics Breakdown (Subject Framing, Lighting Dynamics, Lens & Optics)
-   - ### Pro Tips for Highest Quality
+            text: `Thoroughly inspect and reverse-engineer this attached photograph/artwork.
+Reverse-engineer its exact aesthetic, lighting setup, subject matter, composition, color palette, camera optics, and mood into a master-level ${tool || 'Midjourney'} ready-to-run prompt package.
 
-Return strictly valid JSON adhering to the schema.`,
+Category Instructions:
+Select the most accurate category from platform categories: [${existingCatsList}], OR if none is a good fit, generate a clean, concise, relevant new category name (e.g. "Cyberpunk & Sci-Fi", "Anime & Manga", "Luxury Vehicles", "Architecture & Interior", "Wildlife & Nature", "Fantasy Characters", "Food Photography", etc.).
+
+Provide a structured JSON output with:
+- "title": Compelling concise title
+- "slug": URL slug
+- "category": Most accurate category name
+- "promptText": fully formed, ready-to-copy photographic prompt without placeholder brackets
+- "negativePrompt": negative prompt
+- "suggestedParameters": aspectRatio, model, stylize, steps, cfgScale, lighting, camera, renderEngine
+- "tags": array of 5-8 relevant, unique tags (exclude duplicate category names)
+- "seo": metaTitle, metaDescription, focusKeyword
+- "articleContent": rich markdown guide explaining how the prompt works, lighting/camera breakdowns, parameter settings, and pro tips.`,
           };
           contentsPayload = { parts: [imagePart, textPart] };
         } else {
-          // Fallback to text prompt with topic or intelligent concept
-          const fallbackTopic = topic && topic.trim() && topic !== 'Photorealistic Artwork Recreation'
-            ? topic.trim()
-            : 'Cinematic High-Detail Visual Composition';
-          contentsPayload = `Create a complete prompt post based on concept: "${fallbackTopic}" for ${tool || 'Midjourney'}. Available Categories: [${existingCatsList}]. Provide structured JSON with unique title, category, promptText, negativePrompt, parameters, tags, seo, and articleContent.`;
+          // Fallback to text prompt
+          contentsPayload = `Create a complete prompt post based on image concept: "${topic || 'Photorealistic Artwork'}" for ${tool || 'Midjourney'}. Available Categories: [${existingCatsList}].`;
         }
       } else {
-        const fallbackTopic = topic && topic.trim() && topic !== 'Photorealistic Artwork Recreation'
-          ? topic.trim()
-          : 'Futuristic Cinematic Masterpiece';
         contentsPayload = `Create a complete, master-level prompt post for:
-Topic / Idea: "${fallbackTopic}"
+Topic / Idea: "${topic || 'Futuristic cybernetic portrait'}"
 Target AI Platform: "${tool || 'Midjourney'}"
 Available Categories: [${existingCatsList}]
 

@@ -19,38 +19,61 @@ const TasteProfileModal = dynamic(() => import('@/components/public/TasteProfile
 const UserDashboard = dynamic(() => import('@/components/public/UserDashboard').then((m) => m.UserDashboard), { ssr: false });
 const AIStudioTool = dynamic(() => import('@/components/public/AIStudioTool').then((m) => m.AIStudioTool), { ssr: false });
 const UserAuthModal = dynamic(() => import('@/components/public/UserAuthModal').then((m) => m.UserAuthModal), { ssr: false });
+const NotificationsView = dynamic(() => import('@/components/public/NotificationsView').then((m) => m.NotificationsView), { ssr: false });
 const AdminLayout = dynamic(() => import('@/components/admin/AdminLayout').then((m) => m.AdminLayout), { ssr: false });
 const AdminLoginModal = dynamic(() => import('@/components/admin/AdminLoginModal').then((m) => m.AdminLoginModal), { ssr: false });
 const SearchExploreModal = dynamic(() => import('@/components/public/SearchExploreModal').then((m) => m.SearchExploreModal), { ssr: false });
-const RequestedPromptsFeed = dynamic(() => import('@/components/public/RequestedPromptsFeed').then((m) => m.RequestedPromptsFeed), { ssr: false });
+const RazorpayCheckoutModal = dynamic(() => import('@/components/public/RazorpayCheckoutModal').then((m) => m.RazorpayCheckoutModal), { ssr: false });
+const UnlockPremiumModal = dynamic(() => import('@/components/public/UnlockPremiumModal').then((m) => m.UnlockPremiumModal), { ssr: false });
+
+function GlobalInteractiveModals() {
+  const {
+    selectedPost,
+    isBookmarksDrawerOpen,
+    isTasteModalOpen,
+    isUserAuthModalOpen,
+    showLoginModal,
+    isSearchModalOpen,
+    isProCheckoutModalOpen,
+    isUnlockPremiumModalOpen,
+    toastMessage,
+  } = useApp();
+
+  return (
+    <>
+      {isSearchModalOpen && <SearchExploreModal />}
+      {selectedPost && <PromptDetailModal />}
+      {isBookmarksDrawerOpen && <BookmarksDrawer />}
+      {isTasteModalOpen && <TasteProfileModal />}
+      {isUserAuthModalOpen && <UserAuthModal />}
+      {showLoginModal && <AdminLoginModal />}
+      {toastMessage && <ToastNotification />}
+      {isProCheckoutModalOpen && <RazorpayCheckoutModal />}
+      {isUnlockPremiumModalOpen && <UnlockPremiumModal />}
+    </>
+  );
+}
 
 function MainApp() {
-  const { currentView } = useApp();
+  const { currentView, showLoginModal, toastMessage } = useApp();
 
   if (currentView === 'admin') {
     return (
       <>
         <AdminLayout />
-        <AdminLoginModal />
-        <ToastNotification />
+        {showLoginModal && <AdminLoginModal />}
+        {toastMessage && <ToastNotification />}
       </>
     );
   }
 
-  if (currentView === 'for-you') {
+  if (currentView === 'notifications' || currentView === 'for-you') {
     return (
       <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col pb-20 sm:pb-8">
         <Header />
-        <RequestedPromptsFeed />
-        <Footer />
+        <NotificationsView />
         <BottomNav />
-        <SearchExploreModal />
-        <PromptDetailModal />
-        <BookmarksDrawer />
-        <TasteProfileModal />
-        <UserAuthModal />
-        <AdminLoginModal />
-        <ToastNotification />
+        <GlobalInteractiveModals />
       </div>
     );
   }
@@ -59,14 +82,8 @@ function MainApp() {
     return (
       <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col">
         <UserDashboard />
-        <PromptDetailModal />
-        <BookmarksDrawer />
-        <SearchExploreModal />
-        <TasteProfileModal />
-        <UserAuthModal />
-        <AdminLoginModal />
-        <ToastNotification />
         <BottomNav />
+        <GlobalInteractiveModals />
       </div>
     );
   }
@@ -76,14 +93,8 @@ function MainApp() {
       <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col">
         <Header />
         <AIStudioTool />
-        <PromptDetailModal />
-        <BookmarksDrawer />
-        <SearchExploreModal />
-        <TasteProfileModal />
-        <UserAuthModal />
-        <AdminLoginModal />
-        <ToastNotification />
         <BottomNav />
+        <GlobalInteractiveModals />
       </div>
     );
   }
@@ -97,25 +108,17 @@ function MainApp() {
       <SEOContentSection />
       <Footer />
 
-      {/* Pinterest Mobile Bottom Navigation */}
+      {/* Mobile Bottom Navigation */}
       <BottomNav />
 
-      {/* Global Modals & Overlays */}
-      <SearchExploreModal />
-      <PromptDetailModal />
-      <BookmarksDrawer />
-      <TasteProfileModal />
-      <UserAuthModal />
-      <AdminLoginModal />
-      <ToastNotification />
+      {/* Global Modals & Overlays (Only mounted when opened for optimal performance) */}
+      <GlobalInteractiveModals />
     </div>
   );
 }
 
 export default function Page() {
   return (
-    <AppProvider>
-      <MainApp />
-    </AppProvider>
+    <MainApp />
   );
 }

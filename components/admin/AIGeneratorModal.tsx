@@ -84,7 +84,7 @@ export const AIGeneratorModal = () => {
       likesCount: 0,
       author: {
         name: 'tool.reelz',
-        avatar: '/logo.webp',
+        avatar: '/logo.png',
         role: 'Author',
       },
       seo: generatedData.seo || {
@@ -110,7 +110,7 @@ export const AIGeneratorModal = () => {
           <span>Gemini AI Prompt Studio</span>
         </h1>
         <p className="text-xs text-neutral-500 mt-1">
-          Generate master prompts and full tutorial articles using server-side Gemini AI.
+          Generate master prompts and content using server-side Gemini AI.
         </p>
       </div>
 

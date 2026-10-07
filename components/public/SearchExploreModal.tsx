@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
@@ -19,7 +20,6 @@ import {
 import { Category, PromptPost } from '@/types/prompt';
 import { getPromptSlug, getOptimizedImageUrl } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
-import { semanticSearchPosts } from '@/lib/semantic-search';
 
 export const SearchExploreModal = () => {
   const router = useRouter();
@@ -32,14 +32,25 @@ export const SearchExploreModal = () => {
     posts,
     popularSearchQueries,
     recordSearchQuery,
+    performAiSearch,
     setSelectedCategory,
     setSelectedPost,
     copyPromptToClipboard,
     setCurrentView,
+    isAiSearchEnabled,
+    setIsAiSearchEnabled,
+    aiSearchRemaining,
+    isProUser,
+    setIsProCheckoutModalOpen,
+    showToast,
+    userAccount,
+    openAuthModal,
   } = useApp();
 
   const [localInput, setLocalInput] = useState(searchQuery || '');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [modalAiResult, setModalAiResult] = useState<any>(null);
+  const [isModalSearching, setIsModalSearching] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [prevIsOpen, setPrevIsOpen] = useState(isSearchModalOpen);
@@ -49,6 +60,29 @@ export const SearchExploreModal = () => {
       setLocalInput(searchQuery || '');
     }
   }
+
+  // Debounced AI Search for Modal - strictly requires login and active quota
+  useEffect(() => {
+    const q = localInput.trim();
+    if (q.length < 2 || !isAiSearchEnabled || !userAccount?.isLoggedIn) {
+      setModalAiResult(null);
+      setIsModalSearching(false);
+      return;
+    }
+    if (!isProUser && aiSearchRemaining <= 0) {
+      setModalAiResult(null);
+      setIsModalSearching(false);
+      return;
+    }
+    setIsModalSearching(true);
+    const timer = setTimeout(() => {
+      performAiSearch(q, false).then((res) => {
+        setModalAiResult(res);
+        setIsModalSearching(false);
+      });
+    }, 320);
+    return () => clearTimeout(timer);
+  }, [localInput, isAiSearchEnabled, userAccount, isProUser, aiSearchRemaining, performAiSearch]);
 
   // Handle focus and body scroll lock when modal opens
   useEffect(() => {
@@ -79,6 +113,14 @@ export const SearchExploreModal = () => {
       recordSearchQuery(trimmed);
       setSearchQuery(trimmed);
       setSelectedCategory('all');
+      if (isAiSearchEnabled && userAccount?.isLoggedIn) {
+        if (!isProUser && aiSearchRemaining <= 0) {
+          showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
+          setIsProCheckoutModalOpen(true);
+        } else {
+          void performAiSearch(trimmed, true);
+        }
+      }
     }
     setCurrentView('public');
     setIsSearchModalOpen(false);
@@ -119,15 +161,60 @@ export const SearchExploreModal = () => {
     return catWithStats.sort((a, b) => b.totalViews - a.totalViews || b.postCount - a.postCount);
   }, [categories, posts]);
 
-  // Live Instant Search Filter Results with Semantic Engine
+  // Live Instant Search Filter Results (with Gemini AI semantic fallback & sorting)
   const liveResults = useMemo(() => {
-    const query = localInput.trim();
+    const query = localInput.trim().toLowerCase();
     if (!query || query.length < 2) return [];
 
     const published = posts.filter((p) => p.status === 'published');
-    return semanticSearchPosts(published, query);
-  }, [localInput, posts]);
+    const hasAiMatches = modalAiResult && modalAiResult.query?.toLowerCase() === query;
+    const matchedIds = hasAiMatches ? new Set<string>(modalAiResult.matchedPostIds || []) : new Set<string>();
+    const expandedTerms = hasAiMatches
+      ? [
+          (modalAiResult.correctedQuery || '').toLowerCase(),
+          ...(Array.isArray(modalAiResult.expandedKeywords) ? modalAiResult.expandedKeywords : []).map((k: string) => k.toLowerCase()),
+        ].filter(Boolean)
+      : [];
 
+    const matches = published.filter((post) => {
+      // Direct ID match from Gemini AI
+      if (matchedIds.has(post.id)) return true;
+
+      // Exact keyword match
+      const titleMatch = post.title?.toLowerCase().includes(query);
+      const promptMatch = post.promptText?.toLowerCase().includes(query);
+      const catMatch = post.category?.toLowerCase().includes(query);
+      const tagMatch = Array.isArray(post.tags) && post.tags.some((t) => t.toLowerCase().includes(query));
+      const toolMatch = post.aiTool?.toLowerCase().includes(query);
+      if (titleMatch || promptMatch || catMatch || tagMatch || toolMatch) return true;
+
+      // Semantic expanded terms
+      if (expandedTerms.length > 0) {
+        const title = post.title?.toLowerCase() || '';
+        const prompt = post.promptText?.toLowerCase() || '';
+        const tags = Array.isArray(post.tags) ? post.tags.map((t) => t.toLowerCase()) : [];
+        return expandedTerms.some(
+          (term) =>
+            term.length >= 3 &&
+            (title.includes(term) || prompt.includes(term) || tags.some((t) => t.includes(term)))
+        );
+      }
+
+      return false;
+    });
+
+    if (hasAiMatches && matchedIds.size > 0) {
+      const orderMap = new Map<string, number>();
+      (modalAiResult.matchedPostIds || []).forEach((id: string, idx: number) => orderMap.set(id, idx));
+      return [...matches].sort((a, b) => {
+        const rankA = orderMap.has(a.id) ? orderMap.get(a.id)! : 9999;
+        const rankB = orderMap.has(b.id) ? orderMap.get(b.id)! : 9999;
+        return rankA - rankB;
+      });
+    }
+
+    return matches;
+  }, [localInput, posts, modalAiResult]);
 
   const handleCopyPrompt = (e: React.MouseEvent, post: PromptPost) => {
     e.stopPropagation();
@@ -182,9 +269,43 @@ export const SearchExploreModal = () => {
                 }
               }}
               placeholder="Search prompts for aesthetics, cameras, or subjects..."
-              className="w-full pl-12 pr-10 py-3 bg-[#f0f0f0] dark:bg-neutral-800/90 text-neutral-900 dark:text-white rounded-full text-sm font-semibold placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#E60023] transition-all"
+              className="w-full pl-12 pr-28 sm:pr-32 py-3 bg-[#f0f0f0] dark:bg-neutral-800/90 text-neutral-900 dark:text-white rounded-full text-sm font-semibold placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#E60023] transition-all"
               id="search-explore-modal-input"
             />
+            {/* AI Search Toggle Button Inside Search Box */}
+            <button
+              type="button"
+              onClick={() => {
+                if (!userAccount || !userAccount.isLoggedIn) {
+                  showToast('Please log in to your account to use AI Search!');
+                  openAuthModal('Please sign in or create a free account to use AI Search.');
+                  return;
+                }
+                if (!isAiSearchEnabled && !isProUser && aiSearchRemaining <= 0) {
+                  showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
+                  setIsProCheckoutModalOpen(true);
+                  setIsAiSearchEnabled(false);
+                  return;
+                }
+                setIsAiSearchEnabled(!isAiSearchEnabled);
+              }}
+              className={`absolute right-10 sm:right-12 px-2.5 py-1 rounded-full text-[10px] font-extrabold flex items-center gap-1 transition-all ${
+                isAiSearchEnabled && userAccount?.isLoggedIn && (isProUser || aiSearchRemaining > 0)
+                  ? 'bg-gradient-to-r from-[#E60023] to-rose-600 text-white shadow-sm'
+                  : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300'
+              }`}
+              title={
+                !userAccount?.isLoggedIn
+                  ? 'Log in to enable AI Search'
+                  : isAiSearchEnabled && (isProUser || aiSearchRemaining > 0)
+                  ? 'AI Search Enabled (Click to disable)'
+                  : 'AI Search Disabled (Click to enable)'
+              }
+            >
+              <Sparkles className="w-3 h-3" />
+              <span>AI {isAiSearchEnabled && userAccount?.isLoggedIn && (isProUser || aiSearchRemaining > 0) ? 'ON' : 'OFF'}</span>
+            </button>
+
             {localInput && (
               <button
                 type="button"
@@ -213,24 +334,57 @@ export const SearchExploreModal = () => {
           {/* A. If user typed a search query: Show Live Results */}
           {localInput.trim().length >= 2 ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Sparkles className="w-4 h-4 text-[#E60023]" />
                   <h3 className="text-sm font-black text-neutral-900 dark:text-white">
                     Live Search Results ({liveResults.length})
                   </h3>
+                  {modalAiResult?.isAiPowered && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
+                      Gemini AI Powered
+                    </span>
+                  )}
+                  {isModalSearching && (
+                    <span className="text-xs text-neutral-400 animate-pulse">
+                      Analyzing semantics...
+                    </span>
+                  )}
                 </div>
                 {liveResults.length > 0 && (
                   <button
                     type="button"
                     onClick={() => handleExecuteSearch(localInput)}
-                    className="text-xs font-bold text-[#E60023] hover:underline flex items-center gap-1"
+                    className="text-xs font-bold text-[#E60023] hover:underline flex items-center gap-1 self-start sm:self-auto"
                   >
                     <span>View all in feed</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
+
+              {/* AI Semantic query interpretation banner */}
+              {modalAiResult?.correctedQuery &&
+                modalAiResult.correctedQuery.toLowerCase() !== localInput.trim().toLowerCase() && (
+                  <div className="px-3.5 py-2 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 text-xs border border-amber-200/80 dark:border-amber-900/60 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-3.5 h-3.5 text-[#E60023] shrink-0" />
+                      <span>
+                        Showing visual results for <strong className="text-[#E60023]">&ldquo;{modalAiResult.correctedQuery}&rdquo;</strong> (understood from &ldquo;{localInput}&rdquo;)
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLocalInput(modalAiResult.correctedQuery);
+                        handleExecuteSearch(modalAiResult.correctedQuery);
+                      }}
+                      className="text-[11px] font-bold underline shrink-0 hover:text-black dark:hover:text-white"
+                    >
+                      Use this query
+                    </button>
+                  </div>
+                )}
 
               {liveResults.length === 0 ? (
                 <div className="py-12 text-center space-y-3">
@@ -240,9 +394,50 @@ export const SearchExploreModal = () => {
                   <p className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
                     No prompts matching &ldquo;{localInput}&rdquo;
                   </p>
-                  <p className="text-xs text-neutral-500 max-w-sm mx-auto">
-                    Try searching for different terms like <em>35mm portrait</em>, <em>cyberpunk</em>, or select a category below.
-                  </p>
+                  {!isAiSearchEnabled ? (
+                    <div className="space-y-2 max-w-sm mx-auto">
+                      <p className="text-xs text-amber-600 dark:text-amber-400 font-bold">
+                        no results for this term try using AI search
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!userAccount || !userAccount.isLoggedIn) {
+                            showToast('Please log in to your account to use AI Search!');
+                            openAuthModal('Please sign in or create a free account to use AI Search.');
+                            return;
+                          }
+                          if (!isProUser && aiSearchRemaining <= 0) {
+                            showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
+                            setIsProCheckoutModalOpen(true);
+                          } else {
+                            setIsAiSearchEnabled(true);
+                          }
+                        }}
+                        className="px-4 py-2 rounded-full bg-[#E60023] text-white text-xs font-bold hover:bg-[#ad081b] transition-all shadow-md inline-flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Enable AI Search</span>
+                      </button>
+                    </div>
+                  ) : aiSearchRemaining <= 0 && !isProUser ? (
+                    <div className="space-y-2 max-w-sm mx-auto">
+                      <p className="text-xs text-red-600 dark:text-red-400 font-bold">
+                        You have used all of your AI search quota, please upgrade plan to unlock more limit
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setIsProCheckoutModalOpen(true)}
+                        className="px-4 py-2 rounded-full bg-amber-500 text-white text-xs font-bold hover:bg-amber-600 transition-all shadow-md inline-flex items-center gap-1.5"
+                      >
+                        <span>Upgrade Plan</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-neutral-500 max-w-sm mx-auto">
+                      Try searching for different terms like <em>35mm portrait</em>, <em>cyberpunk</em>, or select a category below.
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -252,7 +447,7 @@ export const SearchExploreModal = () => {
                       onClick={() => {
                         setSelectedPost(post);
                         if (typeof window !== 'undefined') {
-                          window.history.pushState({ postId: post.id }, '', `/prompt/${getPromptSlug(post)}`);
+                          window.history.pushState({ postId: post.id }, '', `/${getPromptSlug(post)}`);
                         }
                         setIsSearchModalOpen(false);
                       }}
@@ -260,13 +455,17 @@ export const SearchExploreModal = () => {
                     >
                       {/* Image Thumbnail */}
                       <div className="relative aspect-square w-full overflow-hidden bg-neutral-800">
-                        <Image
+                        <img
                           src={getOptimizedImageUrl(post.imageUrl, 250) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'}
                           alt={post.title}
-                          fill
-                          sizes="(max-width: 640px) 50vw, 25vw"
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           referrerPolicy="no-referrer"
+                          loading="lazy"
+                          onError={(e) => {
+                            if (post.imageUrl && e.currentTarget.src !== post.imageUrl) {
+                              e.currentTarget.src = post.imageUrl;
+                            }
+                          }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
 
@@ -335,7 +534,7 @@ export const SearchExploreModal = () => {
               </span>
             </div>
 
-            {/* Pinterest-Style Visual Category Cards Grid */}
+            {/* Visual Category Cards Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {mostViewedCategories.map((cat) => (
                 <div
@@ -344,13 +543,17 @@ export const SearchExploreModal = () => {
                   className="group relative h-32 sm:h-36 rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all duration-300 transform active:scale-95"
                 >
                   {/* Category Image from its Most Viewed Prompt */}
-                  <Image
+                  <img
                     src={getOptimizedImageUrl(cat.topImage, 300)}
                     alt={cat.name}
-                    fill
-                    sizes="(max-width: 640px) 50vw, 25vw"
-                    className="object-cover group-hover:scale-110 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     referrerPolicy="no-referrer"
+                    loading="lazy"
+                    onError={(e) => {
+                      if (cat.topImage && e.currentTarget.src !== cat.topImage) {
+                        e.currentTarget.src = cat.topImage;
+                      }
+                    }}
                   />
 
                   {/* Dark Vignette Gradient Overlay */}

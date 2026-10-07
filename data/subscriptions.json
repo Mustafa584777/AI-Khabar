@@ -1,0 +1,17 @@
+{
+  "tmus7884@gmail.com": {
+    "email": "tmus7884@gmail.com",
+    "userId": "71c2de38-d921-45f0-a3a4-aac42cdb9378",
+    "planTier": "pro",
+    "isProUser": true,
+    "status": "active",
+    "planStartedAt": "2026-09-26T09:52:04.894Z",
+    "planExpiresAt": "2026-10-26T09:52:04.894Z",
+    "credits": 250,
+    "aiSearchQuota": 200,
+    "promptRequests": 2,
+    "orderId": "order_pro_1790416324894",
+    "paymentId": "pay_pro_1790416324894",
+    "updatedAt": "2026-09-26T09:52:04.894Z"
+  }
+}
