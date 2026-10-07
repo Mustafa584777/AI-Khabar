@@ -6,15 +6,9 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const queries = await ServerStorage.getPopularSearchQueriesCached();
-    return NextResponse.json(
-      { success: true, queries },
-      {
-        headers: {
-          'Cache-Control': 'public, s-maxage=259200, stale-while-revalidate=86400',
-        },
-      }
-    );
-  } catch (err) {
-    return NextResponse.json({ success: true, queries: [] });
+    return NextResponse.json({ queries });
+  } catch (error) {
+    console.error('Error in popular search queries API:', error);
+    return NextResponse.json({ queries: [] }, { status: 500 });
   }
 }

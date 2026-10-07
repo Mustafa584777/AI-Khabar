@@ -28,8 +28,8 @@ interface AppContextType {
   // Navigation & Views
   currentView: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications';
   setCurrentView: (view: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications') => void;
-  adminSubView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications';
-  setAdminSubView: (subView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications') => void;
+  adminSubView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications' | 'requested-prompts';
+  setAdminSubView: (subView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications' | 'requested-prompts') => void;
   editingPostId: string | null;
   setEditingPostId: (id: string | null) => void;
   selectedPost: PromptPost | null;
@@ -64,9 +64,14 @@ interface AppContextType {
   logoutUser: () => void;
   awardPoints: (amount: number, type: 'like' | 'save' | 'generation' | 'share' | 'referral') => void;
 
-  // Persistent Reference Photo
+  // Persistent Reference Photo & Prompt Requests
   persistentRefImage: string | null;
   setPersistentRefImage: (url: string | null) => void;
+  promptRequests: PromptRequestItem[];
+  addPromptRequest: (requestText: string, category?: string, aiTool?: string) => Promise<boolean>;
+  fulfillPromptRequest: (requestId: string, fulfilledPrompt: string, adminNotes?: string, aiTool?: string) => Promise<boolean>;
+  deletePromptRequest: (requestId: string) => Promise<boolean>;
+  refreshPromptRequests: (userEmail?: string) => Promise<void>;
 
   // AI Studio History (Image to Prompt & Prompt to Image)
   aiHistory: AIHistoryItem[];
@@ -198,7 +203,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [pathname]);
 
   const [adminSubView, setAdminSubView] = useState<
-    'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications'
+    'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications' | 'requested-prompts'
   >('dashboard');
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [selectedPost, setSelectedPostState] = useState<PromptPost | null>(null);
@@ -362,7 +367,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return 0; // Guest session has 0 credits until login
   });
 
-
+  const [promptRequestsRemaining, setPromptRequestsRemainingState] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const isPro = localStorage.getItem('auraprompt_pro_member') === 'true';
+      const tier = localStorage.getItem('auraprompt_plan_tier') || 'free';
+      if (isPro) {
+        const saved = localStorage.getItem('auraprompt_prompt_requests');
+        if (saved !== null) {
+          const parsed = parseInt(saved, 10);
+          if (!isNaN(parsed)) return parsed;
+        }
+        if (tier === 'starter') return 1;
+        if (tier === 'pro') return 2;
+        if (tier === 'vip') return 3;
+        if (tier === 'ultra') return 5;
+        return 2;
+      }
+    }
+    return 0; // Free user gets 0 prompt requests
+  });
 
   // Toast
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -663,7 +686,173 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Prompt Requests State
+  const [promptRequests, setPromptRequests] = useState<PromptRequestItem[]>([]);
 
+  const refreshPromptRequests = async (userEmail?: string) => {
+    try {
+      const url = userEmail ? `/api/prompt-requests?email=${encodeURIComponent(userEmail)}` : '/api/prompt-requests';
+      const res = await fetch(url);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.requests)) {
+          setPromptRequests(json.requests);
+          StorageService.setPromptRequests(json.requests);
+        }
+      }
+    } catch (e) {
+      console.warn('Notice loading prompt requests from API:', e);
+    }
+  };
+
+  const addPromptRequest = async (requestText: string, category?: string, aiTool?: string): Promise<boolean> => {
+    if (!userAccount || !userAccount.isLoggedIn) {
+      openAuthModal('Please sign in to request a prompt.');
+      return false;
+    }
+
+    if (!requestText.trim()) {
+      showToast('Please enter what prompt you would like created.');
+      return false;
+    }
+
+    if (promptRequestsRemaining <= 0) {
+      showToast('You have 0 prompt requests remaining. Upgrade to a plan to request custom prompts!');
+      setIsProCheckoutModalOpen(true);
+      return false;
+    }
+
+    const nextRemaining = Math.max(0, promptRequestsRemaining - 1);
+    setPromptRequestsRemainingState(nextRemaining);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auraprompt_prompt_requests', String(nextRemaining));
+    }
+    void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
+      promptRequestsRemaining: nextRemaining,
+    });
+
+    const newReq: PromptRequestItem = {
+      id: `req_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      userId: userAccount.id,
+      userEmail: userAccount.email,
+      userName: userAccount.name || userAccount.email.split('@')[0],
+      userAvatar: userAccount.avatar,
+      requestText: requestText.trim(),
+      category: category || 'Photorealistic',
+      aiTool: aiTool || 'Midjourney',
+      status: 'pending',
+      createdAt: Date.now(),
+      likesCount: 0,
+    };
+
+    const updatedList = StorageService.savePromptRequest(newReq);
+    setPromptRequests(updatedList);
+
+    try {
+      const res = await fetch('/api/prompt-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'create', request: newReq }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.requests && Array.isArray(json.requests)) {
+          setPromptRequests(json.requests);
+          StorageService.setPromptRequests(json.requests);
+        }
+      }
+    } catch (e) {
+      console.warn('API sync warning for prompt request:', e);
+    }
+
+    confetti({ particleCount: 75, spread: 65, origin: { y: 0.6 } });
+    showToast('Prompt request submitted! We will fulfill it to your dashboard.');
+    return true;
+  };
+
+  const fulfillPromptRequest = async (
+    requestId: string,
+    fulfilledPrompt: string,
+    adminNotes?: string,
+    aiTool?: string
+  ): Promise<boolean> => {
+    let updatedReq: PromptRequestItem | null = null;
+    const nextList = promptRequests.map((r) => {
+      if (r.id === requestId) {
+        updatedReq = {
+          ...r,
+          status: 'completed' as const,
+          fulfilledPrompt: fulfilledPrompt.trim(),
+          fulfilledAt: Date.now(),
+          adminNotes: adminNotes?.trim() || undefined,
+          aiTool: aiTool || r.aiTool || 'Midjourney',
+          fulfilledBy: currentUser?.name || 'Admin',
+        };
+        return updatedReq;
+      }
+      return r;
+    });
+
+    if (!updatedReq) {
+      showToast('Prompt request not found');
+      return false;
+    }
+
+    setPromptRequests(nextList);
+    StorageService.updatePromptRequest(updatedReq);
+
+    try {
+      const res = await fetch('/api/prompt-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'fulfill',
+          requestId,
+          fulfilledPrompt,
+          adminNotes,
+          aiTool,
+        }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.requests && Array.isArray(json.requests)) {
+          setPromptRequests(json.requests);
+          StorageService.setPromptRequests(json.requests);
+        }
+      }
+    } catch (e) {
+      console.warn('Fulfillment API sync error:', e);
+    }
+
+    confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
+    showToast('Request fulfilled! Delivered to user dashboard.');
+    return true;
+  };
+
+  const deletePromptRequest = async (requestId: string): Promise<boolean> => {
+    const nextList = StorageService.deletePromptRequest(requestId);
+    setPromptRequests(nextList);
+
+    try {
+      const res = await fetch('/api/prompt-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', requestId }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.requests && Array.isArray(json.requests)) {
+          setPromptRequests(json.requests);
+          StorageService.setPromptRequests(json.requests);
+        }
+      }
+    } catch (e) {
+      console.warn('Error deleting request via API:', e);
+    }
+
+    showToast('Prompt request deleted');
+    return true;
+  };
 
   const awardPoints = (amount: number, type: 'like' | 'save' | 'generation' | 'share' | 'referral') => {
     if (!userAccount || !userAccount.isLoggedIn) return;
@@ -1408,17 +1597,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSearchModalOpen, setIsSearchModalOpen] = useState<boolean>(false);
   const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState<boolean>(false);
-  const [popularSearchQueries, setPopularSearchQueries] = useState<string[]>([]);
-  useEffect(() => {
-    fetch('/api/search-queries/popular')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && Array.isArray(data.queries)) {
-          setPopularSearchQueries(data.queries);
-        }
-      })
-      .catch(() => {});
-  }, []);
+  const [popularSearchQueries, setPopularSearchQueries] = useState<string[]>([
+    'Traditional saree',
+    'Cyberpunk neon portrait',
+    'Cinematic golden hour',
+    'Vintage 35mm film',
+    'Anime masterpiece',
+    'Minimalist aesthetic logo',
+    'Hyperrealistic 8K model',
+    'Indian fashion portrait',
+  ]);
   const [selectedCategory, setSelectedCategoryState] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('selectedCategory') || 'all';
@@ -2585,11 +2773,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         awardPoints,
         persistentRefImage,
         setPersistentRefImage,
-        promptRequests,
-        addPromptRequest,
-        fulfillPromptRequest,
-        deletePromptRequest,
-        refreshPromptRequests,
         aiHistory,
         saveAiHistoryItem,
         deleteAiHistoryItem,
@@ -2658,7 +2841,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         deductToolCredit,
         useToolCredit,
         addToolCredits,
-        promptRequestsRemaining,
         upgradePlan,
         unlockedPromptIds,
         isPromptUnlocked,
