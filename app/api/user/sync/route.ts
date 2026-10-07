@@ -491,9 +491,9 @@ export async function POST(req: NextRequest) {
       let finalRequests: number;
       const submittedRequestsCount = Array.isArray(existingData.promptRequests) ? existingData.promptRequests.length : 0;
       if (resolvedPlanTier !== 'free') {
-        if (data.promptRequestsRemaining !== undefined && Number(data.promptRequestsRemaining) > 0) {
+        if (data.promptRequestsRemaining !== undefined && data.promptRequestsRemaining !== null && !isNaN(Number(data.promptRequestsRemaining))) {
           finalRequests = Number(data.promptRequestsRemaining);
-        } else if (existingData.promptRequestsRemaining !== undefined && existingData.promptRequestsRemaining !== null && Number(existingData.promptRequestsRemaining) > 0) {
+        } else if (existingData.promptRequestsRemaining !== undefined && existingData.promptRequestsRemaining !== null && !isNaN(Number(existingData.promptRequestsRemaining))) {
           finalRequests = Number(existingData.promptRequestsRemaining);
         } else {
           finalRequests = Math.max(0, planCfg.promptRequests - submittedRequestsCount);
