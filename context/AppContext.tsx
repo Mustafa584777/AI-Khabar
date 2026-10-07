@@ -1597,16 +1597,35 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSearchModalOpen, setIsSearchModalOpen] = useState<boolean>(false);
   const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState<boolean>(false);
-  const [popularSearchQueries, setPopularSearchQueries] = useState<string[]>([
-    'Traditional saree',
-    'Cyberpunk neon portrait',
-    'Cinematic golden hour',
-    'Vintage 35mm film',
-    'Anime masterpiece',
-    'Minimalist aesthetic logo',
-    'Hyperrealistic 8K model',
-    'Indian fashion portrait',
-  ]);
+  const [popularSearchQueries, setPopularSearchQueries] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedTime = localStorage.getItem('auraprompt_popular_queries_time');
+        const savedQueries = localStorage.getItem('auraprompt_popular_queries');
+        const THREE_DAYS = 3 * 24 * 60 * 60 * 1000;
+        const now = Date.now();
+        if (savedTime && savedQueries && now - parseInt(savedTime, 10) < THREE_DAYS) {
+          const parsed = JSON.parse(savedQueries);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {}
+    }
+    const realQueries: string[] = [];
+    const sourcePosts = INITIAL_POSTS || [];
+    sourcePosts.forEach((p) => {
+      if (p.title) realQueries.push(p.title);
+      if (Array.isArray(p.tags)) p.tags.forEach((t) => realQueries.push(t));
+      if (p.category) realQueries.push(p.category);
+    });
+    const uniqueReal = Array.from(new Set(realQueries)).slice(0, 8);
+    if (typeof window !== 'undefined' && uniqueReal.length > 0) {
+      try {
+        localStorage.setItem('auraprompt_popular_queries', JSON.stringify(uniqueReal));
+        localStorage.setItem('auraprompt_popular_queries_time', String(Date.now()));
+      } catch {}
+    }
+    return uniqueReal.length > 0 ? uniqueReal : ['Portrait photography', 'Cinematic lighting', 'Cyberpunk portrait', 'Vintage film'];
+  });
   const [selectedCategory, setSelectedCategoryState] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('selectedCategory') || 'all';
