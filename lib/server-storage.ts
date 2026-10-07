@@ -801,6 +801,35 @@ export const ServerStorage = {
     writeJsonFile(SEARCH_QUERIES_FILE, []);
   },
 
+  restoreSearchQueries: async (queries: SearchQueryItem[]): Promise<void> => {
+    if (!Array.isArray(queries) || queries.length === 0) return;
+    const cleanList = queries
+      .filter((q) => q && typeof q.query === 'string' && q.query.trim().length > 0)
+      .map((q) => ({
+        id: q.id || `q_${q.query.trim().toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
+        query: q.query.trim(),
+        count: typeof q.count === 'number' ? q.count : 1,
+        lastSearched: typeof q.lastSearched === 'number' ? q.lastSearched : Date.now(),
+      }));
+
+    if (isSupabaseConfigured()) {
+      try {
+        const rows = cleanList.map((q) => ({
+          id: q.id,
+          query: q.query,
+          count: q.count,
+          last_searched_at: new Date(q.lastSearched).toISOString(),
+        }));
+        await db().from('search_queries').upsert(rows, { onConflict: 'id' });
+      } catch (e) {
+        console.error('Supabase restoreSearchQueries error:', e);
+      }
+    }
+
+    memorySearchQueries = cleanList;
+    writeJsonFile(SEARCH_QUERIES_FILE, cleanList);
+  },
+
   // Settings
   getSettings: async (): Promise<SiteSettings> => {
     if (isSupabaseConfigured()) {
@@ -909,6 +938,23 @@ export const ServerStorage = {
     memoryTags = filtered;
     writeJsonFile(TAGS_FILE, filtered);
     return filtered;
+  },
+
+  saveAllTags: async (tags: string[]): Promise<string[]> => {
+    const cleaned = cleanTagsArray(tags);
+    if (isSupabaseConfigured()) {
+      try {
+        await db().from('tags').upsert({
+          id: 'all_tags',
+          tags: cleaned,
+        }, { onConflict: 'id' });
+      } catch (err) {
+        console.error('Supabase saveAllTags exception:', err);
+      }
+    }
+    memoryTags = cleaned;
+    writeJsonFile(TAGS_FILE, cleaned);
+    return cleaned;
   },
 
   // Subscriptions & Memberships
