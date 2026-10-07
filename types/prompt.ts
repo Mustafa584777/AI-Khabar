@@ -199,9 +199,14 @@ export interface RegisteredUserRecord {
   points: number;
   unlockedPromptIds: string[];
   promptRequestsRemaining?: number;
+  aiSearchQuota?: number;
+  aiSearchRemaining?: number;
   aiHistoryCount?: number;
   bookmarksCount?: number;
+  bookmarkedIds?: string[];
   likesCount?: number;
+  likedIds?: string[];
+  aiHistory?: any[];
   joinedDate: string;
   lastSyncedAt?: string;
   source: 'supabase_auth' | 'supabase_sync' | 'local_store' | 'razorpay' | 'razorpay_verified';

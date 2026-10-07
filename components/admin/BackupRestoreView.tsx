@@ -25,6 +25,7 @@ import {
 import Image from 'next/image';
 import JSZip from 'jszip';
 import { UsersManager } from './UsersManager';
+import { AllWebsiteBackupManager } from './AllWebsiteBackupManager';
 
 interface ParsedBackupData {
   version?: string;
@@ -41,7 +42,7 @@ interface ParsedBackupData {
 export const BackupRestoreView = () => {
   const { posts, categories, tags, settings, restorePromptCards, showToast, refreshData } = useApp();
 
-  const [backupDomain, setBackupDomain] = useState<'prompts' | 'users'>('prompts');
+  const [backupDomain, setBackupDomain] = useState<'all' | 'prompts' | 'users'>('all');
   const [isExportingZip, setIsExportingZip] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [restoreMode, setRestoreMode] = useState<'merge' | 'replace'>('merge');
@@ -443,10 +444,18 @@ Open Admin Panel -> Backup & Restore -> Upload this .zip file or prompts.json.`
         <div>
           <h1 className="text-2xl font-extrabold text-neutral-900 dark:text-white flex items-center gap-2.5">
             <Database className="w-7 h-7 text-blue-600 dark:text-blue-400" />
-            <span>{backupDomain === 'users' ? 'All Registered Users & SaaS Data' : 'Prompt Cards Backup & Restore'}</span>
+            <span>
+              {backupDomain === 'all'
+                ? 'All Website Data Master Backup & Restore'
+                : backupDomain === 'users'
+                ? 'All Registered Users & SaaS Data'
+                : 'Prompt Cards Backup & Restore'}
+            </span>
           </h1>
           <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-            {backupDomain === 'users'
+            {backupDomain === 'all'
+              ? 'Complete website backup and instant restore: Prompts, registered users, subscription plans, credits, search queries, categories, tags, push notifications, and requested prompts.'
+              : backupDomain === 'users'
               ? 'Export all user accounts, active subscription tiers, credits balance, and generation history in one click, or restore them safely into the database.'
               : 'Download full ZIP archives or standalone JSON backups of prompt cards, or restore them directly into the database.'}
           </p>
@@ -468,6 +477,18 @@ Open Admin Panel -> Backup & Restore -> Upload this .zip file or prompts.json.`
       <div className="flex flex-wrap items-center gap-2 p-1.5 bg-neutral-200/70 dark:bg-neutral-900 border border-neutral-300/80 dark:border-neutral-800 rounded-2xl w-fit">
         <button
           type="button"
+          onClick={() => setBackupDomain('all')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            backupDomain === 'all'
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-extrabold'
+              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-amber-300" />
+          <span>All Website Data (Master Backup & Restore)</span>
+        </button>
+        <button
+          type="button"
           onClick={() => setBackupDomain('prompts')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
             backupDomain === 'prompts'
@@ -476,7 +497,7 @@ Open Admin Panel -> Backup & Restore -> Upload this .zip file or prompts.json.`
           }`}
         >
           <Database className="w-4 h-4" />
-          <span>Prompt Cards Archive (ZIP / JSON)</span>
+          <span>Prompt Cards Only (ZIP / JSON)</span>
         </button>
         <button
           type="button"
@@ -488,11 +509,13 @@ Open Admin Panel -> Backup & Restore -> Upload this .zip file or prompts.json.`
           }`}
         >
           <Users className="w-4 h-4" />
-          <span>All Registered Users & SaaS Data (JSON)</span>
+          <span>Registered Users Only (JSON)</span>
         </button>
       </div>
 
-      {backupDomain === 'users' ? (
+      {backupDomain === 'all' ? (
+        <AllWebsiteBackupManager />
+      ) : backupDomain === 'users' ? (
         <div className="animate-fade-in">
           <UsersManager />
         </div>
