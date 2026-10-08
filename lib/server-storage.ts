@@ -80,10 +80,10 @@ function cleanForFirestore<T = any>(obj: any): T {
   return obj;
 }
 
-// In-memory runtime cache with 30-minute TTL
+// In-memory runtime cache with 24-hour TTL
 let memoryPosts: PromptPost[] | null = null;
 let memoryPostsTimestamp = 0;
-const POSTS_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+const POSTS_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 let memoryCategories: Category[] | null = null;
 let memorySettings: SiteSettings | null = null;
@@ -109,8 +109,9 @@ export const ServerStorage = {
       localPosts = INITIAL_POSTS || [];
     }
 
+    // If we have local posts, use them immediately without querying Firestore on every read request to eliminate read costs!
     let remotePosts: PromptPost[] = [];
-    if (isFirebaseConfigured()) {
+    if (isFirebaseConfigured() && localPosts.length === 0) {
       try {
         const snap = await getDocs(collection(firestoreDb, 'posts'));
         if (!snap.empty) {
