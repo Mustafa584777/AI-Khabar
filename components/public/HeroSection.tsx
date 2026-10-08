@@ -41,6 +41,7 @@ export const HeroSection = () => {
     showToast,
     userAccount,
     openAuthModal,
+    performAiSearch,
   } = useApp();
 
   const [isSortOpen, setIsSortOpen] = useState(false);
@@ -125,6 +126,23 @@ export const HeroSection = () => {
               setSearchQuery(e.target.value);
               setIsSearchOpen(true);
             }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                const q = searchQuery.trim();
+                if (q) {
+                  recordSearchQuery(q);
+                  setIsSearchOpen(false);
+                  if (isAiSearchEnabled && userAccount?.isLoggedIn) {
+                    if (!isProUser && aiSearchRemaining <= 0) {
+                      showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
+                      setIsProCheckoutModalOpen(true);
+                    } else {
+                      void performAiSearch(q, true);
+                    }
+                  }
+                }
+              }
+            }}
             placeholder="Search prompts for aesthetics, cameras, or subjects..."
             className="w-full pl-12 pr-28 sm:pr-32 py-3.5 bg-[#efefef] dark:bg-neutral-800 border-0 rounded-full text-sm font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]/40 placeholder:text-neutral-500 transition-all shadow-sm"
             id="hero-search-input"
@@ -204,6 +222,14 @@ export const HeroSection = () => {
                         recordSearchQuery(query);
                         setSearchQuery(query);
                         setIsSearchOpen(false);
+                        if (isAiSearchEnabled && userAccount?.isLoggedIn) {
+                          if (!isProUser && aiSearchRemaining <= 0) {
+                            showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
+                            setIsProCheckoutModalOpen(true);
+                          } else {
+                            void performAiSearch(query, true);
+                          }
+                        }
                       }}
                       className="px-3.5 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-[#E60023] hover:text-white text-neutral-700 dark:text-neutral-300 text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs hover:shadow-xs"
                     >
@@ -391,6 +417,15 @@ export const HeroSection = () => {
             onClick={() => {
               setSearchQuery(tag);
               setSelectedCategory('all');
+              recordSearchQuery(tag);
+              if (isAiSearchEnabled && userAccount?.isLoggedIn) {
+                if (!isProUser && aiSearchRemaining <= 0) {
+                  showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
+                  setIsProCheckoutModalOpen(true);
+                } else {
+                  void performAiSearch(tag, true);
+                }
+              }
             }}
             className={`px-4 py-1.5 rounded-full border text-[11px] font-bold transition-all shadow-xs ${
               searchQuery.toLowerCase() === tag.toLowerCase()

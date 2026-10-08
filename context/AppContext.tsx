@@ -403,31 +403,28 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       openAuthModal('Please sign in or create a free account to use credits.');
       return false;
     }
-    let success = false;
-    setToolCreditsState((prev) => {
-      let currentCredits = prev;
-      if (typeof window !== 'undefined') {
-        const saved = localStorage.getItem('auraprompt_tool_credits');
-        if (saved !== null) {
-          const parsed = parseInt(saved, 10);
-          if (!isNaN(parsed)) currentCredits = parsed;
-        }
+    let current = toolCredits;
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('auraprompt_tool_credits');
+      if (saved !== null) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed)) current = Math.min(current, parsed);
       }
-      if (currentCredits >= amount) {
-        const next = currentCredits - amount;
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('auraprompt_tool_credits', next.toString());
-        }
-        success = true;
-        if (acc && acc.id) {
-          void UserSyncService.pushUserData(acc.id, acc.email, { toolCredits: next });
-        }
-        return next;
-      }
-      return prev;
-    });
-    return success;
-  }, [userAccount, openAuthModal]);
+    }
+    if (current < amount) {
+      return false;
+    }
+    const next = Math.max(0, current - amount);
+    setToolCreditsState(next);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auraprompt_tool_credits', next.toString());
+    }
+    setUserAccount((prev) => (prev ? { ...prev, toolCredits: next } : prev));
+    if (acc && acc.id) {
+      void UserSyncService.pushUserData(acc.id, acc.email, { toolCredits: next });
+    }
+    return true;
+  }, [userAccount, toolCredits, openAuthModal]);
 
   const useToolCredit = deductToolCredit;
 
@@ -504,7 +501,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const saved = localStorage.getItem('auraprompt_tool_credits');
         if (saved !== null) {
           const parsed = parseInt(saved, 10);
-          if (!isNaN(parsed)) currentCredits = Math.max(toolCredits, parsed);
+          if (!isNaN(parsed)) currentCredits = Math.min(toolCredits, parsed);
         }
       }
 
@@ -520,6 +517,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_tool_credits', nextCredits.toString());
       }
+      setUserAccount((prev) => (prev ? { ...prev, toolCredits: nextCredits } : prev));
 
       const nextUnlocked = Array.from(new Set([...existingUnlocked, promptId]));
       setUnlockedPromptIds(nextUnlocked);
@@ -947,15 +945,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         resolvedCredits = resolvedTier === 'free' ? 5 : (cycleCfg.credits || 5);
       }
 
-      // Automatically grant 5 credits to any new account on free tier that hasn't consumed credits
-      if (
-        resolvedCredits === 0 &&
-        (!synced.unlockedPromptIds || synced.unlockedPromptIds.length === 0) &&
-        (!synced.aiHistory || synced.aiHistory.length === 0) &&
-        resolvedTier === 'free'
-      ) {
-        resolvedCredits = 5;
-      }
+      // Consumed credits must strictly remain intact and never reset back to 5
 
       setToolCreditsState(resolvedCredits);
       if (typeof window !== 'undefined') {
@@ -1268,10 +1258,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (typeof window !== 'undefined') localStorage.setItem('auraprompt_pro_member', String(synced.isProUser));
       }
       if (synced.toolCredits !== undefined) {
-        let cr = Number(synced.toolCredits);
-        if (cr === 0 && (!synced.unlockedPromptIds || synced.unlockedPromptIds.length === 0) && (!synced.aiHistory || synced.aiHistory.length === 0) && (!synced.planTier || synced.planTier === 'free')) {
-          cr = 5;
-        }
+        const cr = Number(synced.toolCredits);
         setToolCreditsState(cr);
         if (typeof window !== 'undefined') localStorage.setItem('auraprompt_tool_credits', String(cr));
       }
@@ -1390,9 +1377,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const queuedToPromote = synced.queuedPlan || queuedPlan;
         
         let resolvedCredits = synced.toolCredits !== undefined ? Number(synced.toolCredits) : Number(localStorage.getItem('auraprompt_tool_credits') || 5);
-        if (resolvedCredits === 0 && (!synced.unlockedPromptIds || synced.unlockedPromptIds.length === 0) && (!synced.aiHistory || synced.aiHistory.length === 0) && finalTier === 'free') {
-          resolvedCredits = 5;
-        }
         let resolvedReqs = synced.promptRequestsRemaining !== undefined ? Number(synced.promptRequestsRemaining) : 0;
         let resolvedAiSearchCount = synced.aiSearchRemaining !== undefined ? Number(synced.aiSearchRemaining) : (finalTier !== 'free' ? 200 : 5);
         let resolvedSavesLimitCount = 10;
@@ -1695,8 +1679,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const aiSearchDeductedRef = useRef<Set<string>>(new Set());
+  const aiSearchRemainingRef = useRef<number>(aiSearchRemaining);
+  useEffect(() => {
+    aiSearchRemainingRef.current = aiSearchRemaining;
+  }, [aiSearchRemaining]);
 
-  const performAiSearch = useCallback(async (query: string, deductQuota: boolean = true): Promise<AiSearchResult | null> => {
+  const performAiSearch = useCallback(async (query: string, deductQuota: boolean = false): Promise<AiSearchResult | null> => {
     // STRICT REQUIREMENT: Only logged-in users are permitted to access and run AI search
     const acc = userAccount || (typeof window !== 'undefined' ? StorageService.getUserAccount() : null);
     if (!acc || !acc.isLoggedIn) {
@@ -1712,22 +1700,51 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return null;
     }
 
-    const cacheKey = clean.toLowerCase();
-    if (aiSearchCacheRef.current.has(cacheKey)) {
-      const cached = aiSearchCacheRef.current.get(cacheKey)!;
-      setAiSearchResults(cached);
-      return cached;
-    }
-
     const planCfg = PLAN_CONFIGS[planTier] || PLAN_CONFIGS.free;
+    const currentRemaining = aiSearchRemainingRef.current;
 
-    if (!planCfg.unlimitedSearches && aiSearchRemaining <= 0) {
+    if (!planCfg.unlimitedSearches && currentRemaining <= 0) {
       showToast(`You have used all of your AI search quota (${planCfg.aiSearchQuota} searches). Please upgrade your plan to unlock more searches!`);
       setIsProCheckoutModalOpen(true);
       setIsAiSearchEnabled(false);
       setAiSearchResults(null);
       setIsAiSearching(false);
       return null;
+    }
+
+    const cacheKey = clean.toLowerCase();
+
+    // Helper to safely deduct exactly 1 search point on completed search
+    const deductOnePoint = () => {
+      if (!planCfg.unlimitedSearches && deductQuota && !aiSearchDeductedRef.current.has(cacheKey)) {
+        aiSearchDeductedRef.current.add(cacheKey);
+        setAiSearchRemainingState((prev) => {
+          const next = Math.max(0, prev - 1);
+          aiSearchRemainingRef.current = next;
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('auraprompt_ai_search_remaining', next.toString());
+          }
+          if (acc && acc.id && acc.isLoggedIn) {
+            void UserSyncService.pushUserData(acc.id, acc.email, {
+              aiSearchRemaining: next,
+            });
+          }
+          if (next === 0) {
+            setIsAiSearchEnabledState(false);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('auraprompt_ai_search_enabled', 'false');
+            }
+          }
+          return next;
+        });
+      }
+    };
+
+    if (aiSearchCacheRef.current.has(cacheKey)) {
+      const cached = aiSearchCacheRef.current.get(cacheKey)!;
+      setAiSearchResults(cached);
+      deductOnePoint();
+      return cached;
     }
 
     setIsAiSearching(true);
@@ -1750,33 +1767,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           };
           aiSearchCacheRef.current.set(cacheKey, result);
           setAiSearchResults(result);
-
-          // Deduct quota only once per unique query when successfully completed and deductQuota is true
-          if (!planCfg.unlimitedSearches && deductQuota && !aiSearchDeductedRef.current.has(cacheKey)) {
-            aiSearchDeductedRef.current.add(cacheKey);
-            setAiSearchRemainingState((prev) => {
-              const next = Math.max(0, prev - 1);
-              if (typeof window !== 'undefined') {
-                localStorage.setItem('auraprompt_ai_search_remaining', next.toString());
-              }
-              if (acc && acc.isLoggedIn) {
-                void UserSyncService.pushUserData(acc.id, acc.email, {
-                  aiSearchRemaining: next,
-                  planTier: planTier,
-                  isProUser: isProUser,
-                  planExpiresAt: planExpiresAt || undefined,
-                });
-              }
-              if (next === 0) {
-                setIsAiSearchEnabledState(false);
-                if (typeof window !== 'undefined') {
-                  localStorage.setItem('auraprompt_ai_search_enabled', 'false');
-                }
-              }
-              return next;
-            });
-          }
-
+          deductOnePoint();
           setIsAiSearching(false);
           return result;
         }
@@ -1787,14 +1778,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setIsAiSearching(false);
     }
     return null;
-  }, [isAiSearchEnabled, planTier, aiSearchRemaining, showToast, setIsProCheckoutModalOpen, setIsAiSearchEnabled, userAccount]);
+  }, [isAiSearchEnabled, planTier, showToast, setIsProCheckoutModalOpen, setIsAiSearchEnabled, userAccount]);
 
   const clearAiSearch = useCallback(() => {
     setAiSearchResults(null);
     setIsAiSearching(false);
   }, []);
 
-  // Whenever searchQuery updates, trigger performAiSearch if enabled and user is logged in (debounced 300ms)
+  // Whenever searchQuery updates, trigger performAiSearch for live preview without deducting quota
   useEffect(() => {
     const q = searchQuery.trim();
     const acc = userAccount || (typeof window !== 'undefined' ? StorageService.getUserAccount() : null);
@@ -1803,8 +1794,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     const timer = setTimeout(() => {
-      void performAiSearch(q);
-    }, 300);
+      void performAiSearch(q, false);
+    }, 350);
     return () => clearTimeout(timer);
   }, [searchQuery, isAiSearchEnabled, userAccount, performAiSearch]);
 
@@ -2106,9 +2097,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
       // Tool credits: respect consumed balance
       let resolvedCredits = synced.toolCredits !== undefined ? Number(synced.toolCredits) : Number(localStorage.getItem('auraprompt_tool_credits') || 5);
-      if (resolvedCredits === 0 && (!synced.unlockedPromptIds || synced.unlockedPromptIds.length === 0) && (!synced.aiHistory || synced.aiHistory.length === 0) && finalTier === 'free') {
-        resolvedCredits = 5;
-      }
       setToolCreditsState(resolvedCredits);
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_tool_credits', String(resolvedCredits));

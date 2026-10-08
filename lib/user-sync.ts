@@ -112,10 +112,8 @@ export const UserSyncService = {
       if (savedStarted && payload.planStartedAt === undefined) {
         payload.planStartedAt = savedStarted;
       }
-      if (savedCredits !== null && payload.toolCredits === undefined) {
-        const parsedCredits = parseInt(savedCredits, 10);
-        if (!isNaN(parsedCredits)) payload.toolCredits = parsedCredits;
-      }
+      // Strict Rule: NEVER auto-attach toolCredits or aiSearchRemaining from localStorage if undefined!
+      // Credits and quota must ONLY be sent when explicitly updated by the caller to prevent stale overwrites.
     }
 
     try {
@@ -371,17 +369,7 @@ export const UserSyncService = {
       resolvedCredits = resolvedTier !== 'free' ? planCfg.credits : 5;
     }
 
-    // Auto-heal new free users whose accounts had 0 credits due to earlier signup bug:
-    if (
-      resolvedCredits === 0 &&
-      (!remote.unlockedPromptIds || remote.unlockedPromptIds.length === 0) &&
-      (!remote.aiHistory || remote.aiHistory.length === 0) &&
-      (!localUnlocked || localUnlocked.length === 0) &&
-      resolvedTier === 'free'
-    ) {
-      resolvedCredits = 5;
-    }
-
+    // Strictly preserve consumed balance - never auto-heal 0 credits back to 5!
     let resolvedRequests: number;
     if (remote.promptRequestsRemaining !== undefined && remote.promptRequestsRemaining !== null) {
       resolvedRequests = Number(remote.promptRequestsRemaining);
@@ -518,9 +506,7 @@ export const UserSyncService = {
       void UserSyncService.pushUserData(user.id, user.email, {
         planTier: resolvedTier,
         isProUser: resolvedIsPro,
-        toolCredits: resolvedCredits,
         promptRequestsRemaining: resolvedRequests,
-        aiSearchRemaining: resolvedAiSearches,
         bookmarkedIds: mergedBookmarks,
         likedIds: mergedLikes,
         unlockedPromptIds: mergedUnlocked,
