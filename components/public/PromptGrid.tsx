@@ -115,26 +115,7 @@ export const PromptGrid = () => {
       }
     } else {
       // Deterministic Stable Sort: Never shuffle or change on user click/bookmark events
-      if (selectedSort === 'trending') {
-        list = [...list].sort((a, b) => {
-          const metricB = (b.copiesCount || 0) * 3 + (b.likesCount || 0) * 2 + (b.viewsCount || 0);
-          const metricA = (a.copiesCount || 0) * 3 + (a.likesCount || 0) * 2 + (a.viewsCount || 0);
-          if (metricB !== metricA) return metricB - metricA;
-          return (b.createdAt || '').localeCompare(a.createdAt || '') || a.id.localeCompare(b.id);
-        });
-      } else if (selectedSort === 'most-popular') {
-        list = [...list].sort((a, b) => {
-          const diff = (b.viewsCount || 0) - (a.viewsCount || 0);
-          if (diff !== 0) return diff;
-          return (b.createdAt || '').localeCompare(a.createdAt || '') || a.id.localeCompare(b.id);
-        });
-      } else if (selectedSort === 'most-liked') {
-        list = [...list].sort((a, b) => {
-          const diff = (b.likesCount || 0) - (a.likesCount || 0);
-          if (diff !== 0) return diff;
-          return (b.createdAt || '').localeCompare(a.createdAt || '') || a.id.localeCompare(b.id);
-        });
-      } else if (selectedSort === 'most-copied') {
+      if (selectedSort === 'most-copied' || selectedSort === 'trending' || selectedSort === 'most-popular' || selectedSort === 'most-liked') {
         list = [...list].sort((a, b) => {
           const diff = (b.copiesCount || 0) - (a.copiesCount || 0);
           if (diff !== 0) return diff;

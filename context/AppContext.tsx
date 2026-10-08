@@ -2497,35 +2497,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const toggleLike = (id: string) => {
-    const isNowLiked = StorageService.toggleLikeLocal(id);
-    const updatedLikes = StorageService.getLikedIds();
-    setLikedIds(updatedLikes);
-    fetch(`/api/posts/${encodeURIComponent(id)}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'like' }),
-    }).catch(() => {});
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === id
-          ? { ...p, likesCount: Math.max(0, (p.likesCount || 0) + (isNowLiked ? 1 : -1)) }
-          : p
-      )
-    );
-    const post = posts.find((p) => p.id === id);
-    let updatedProfile = tasteProfile;
-    if (post) {
-      updatedProfile = PersonalizationEngine.recordLike(post, isNowLiked);
-      setTasteProfile(updatedProfile);
-    }
-
-    // Push updated likes and taste profile to Supabase cloud
-    if (userAccount && userAccount.isLoggedIn) {
-      void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
-        likedIds: updatedLikes,
-        tasteProfile: updatedProfile,
-      });
-    }
+    // Likes system disabled to avoid unnecessary writes and reads
   };
 
   const toggleBookmark = (id: string) => {

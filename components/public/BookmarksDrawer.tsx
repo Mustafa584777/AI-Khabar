@@ -133,7 +133,7 @@ export const BookmarksDrawer = () => {
                       className="flex items-center gap-1 text-[11px] font-bold text-[#E60023] hover:underline"
                     >
                       <Copy className="w-3 h-3" />
-                      <span>Copy Prompt</span>
+                      <span>Copy Prompt ({post.copiesCount || 0})</span>
                     </button>
                     <button
                       onClick={() => toggleBookmark(post.id)}

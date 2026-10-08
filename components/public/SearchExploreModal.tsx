@@ -14,7 +14,6 @@ import {
   Copy,
   Check,
   ChevronRight,
-  Eye,
   Tag,
 } from 'lucide-react';
 import { Category, PromptPost } from '@/types/prompt';
@@ -143,22 +142,22 @@ export const SearchExploreModal = () => {
         (p) => p.category?.toLowerCase() === cat.name?.toLowerCase()
       );
 
-      // Sort by viewsCount desc
-      const sortedPosts = [...catPosts].sort((a, b) => (b.viewsCount || 0) - (a.viewsCount || 0));
-      const totalViews = catPosts.reduce((sum, p) => sum + (p.viewsCount || 0), 0);
+      // Sort by copiesCount desc
+      const sortedPosts = [...catPosts].sort((a, b) => (b.copiesCount || 0) - (a.copiesCount || 0));
+      const totalCopies = catPosts.reduce((sum, p) => sum + (p.copiesCount || 0), 0);
       const topImage = sortedPosts[0]?.imageUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80';
 
       return {
         ...cat,
-        totalViews,
+        totalCopies,
         topImage,
         postCount: catPosts.length,
         posts: sortedPosts.slice(0, 4),
       };
     });
 
-    // Sort categories by totalViews desc, then by count
-    return catWithStats.sort((a, b) => b.totalViews - a.totalViews || b.postCount - a.postCount);
+    // Sort categories by totalCopies desc, then by count
+    return catWithStats.sort((a, b) => b.totalCopies - a.totalCopies || b.postCount - a.postCount);
   }, [categories, posts]);
 
   // Live Instant Search Filter Results (with Gemini AI semantic fallback & sorting)
@@ -571,10 +570,14 @@ export const SearchExploreModal = () => {
                       <h4 className="text-xs sm:text-sm font-black text-white group-hover:text-red-200 transition-colors drop-shadow-sm leading-tight">
                         {cat.name}
                       </h4>
-                      {cat.totalViews > 0 && (
+                      {cat.totalCopies > 0 ? (
                         <p className="text-[10px] text-white/70 font-medium flex items-center gap-1 mt-0.5">
-                          <Eye className="w-3 h-3" />
-                          <span>{cat.totalViews.toLocaleString()} views</span>
+                          <Copy className="w-3 h-3" />
+                          <span>{cat.totalCopies.toLocaleString()} copies</span>
+                        </p>
+                      ) : (
+                        <p className="text-[10px] text-white/70 font-medium flex items-center gap-1 mt-0.5">
+                          <span>{cat.postCount} prompts</span>
                         </p>
                       )}
                     </div>

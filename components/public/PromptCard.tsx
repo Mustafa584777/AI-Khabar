@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { PromptPost } from '@/types/prompt';
 import { useApp } from '@/context/AppContext';
 import Image from 'next/image';
-import { Sparkles, Bookmark, Crown, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Layers } from 'lucide-react';
+import { Sparkles, Bookmark, Crown, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Layers, Copy } from 'lucide-react';
 import { getPromptSlug, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription } from '@/lib/utils';
 
 export const PromptCard = ({ post, priority = false }: { post: PromptPost; priority?: boolean }) => {
@@ -18,6 +18,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
     isProUser,
     userAccount,
     openAuthModal,
+    copyPromptToClipboard,
   } = useApp();
 
   const router = useRouter();
@@ -263,34 +264,49 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
         ) : null}
 
         {/* Dark Semi-Transparent Overlay with White Popup Action Buttons */}
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto flex items-center justify-center gap-3.5 z-10">
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto flex items-center justify-center gap-2.5 z-10 px-2">
           {userAccount?.isLoggedIn && (
             <button
               type="button"
               onClick={handleBookmark}
-              className={`w-12 h-12 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl flex items-center justify-center transition-all duration-300 ease-out transform scale-75 group-hover:scale-100 hover:scale-110 active:scale-95 ${
+              className={`w-10 h-10 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl flex items-center justify-center transition-all duration-300 ease-out transform scale-75 group-hover:scale-100 hover:scale-110 active:scale-95 ${
                 isBookmarked ? 'ring-2 ring-[#E60023] text-[#E60023]' : 'text-neutral-900'
               }`}
               title={isBookmarked ? 'Saved (Click to remove)' : 'Save prompt'}
               aria-label="Save prompt"
             >
               {isBookmarked ? (
-                <Bookmark className="w-5 h-5 fill-[#E60023] text-[#E60023]" />
+                <Bookmark className="w-4 h-4 fill-[#E60023] text-[#E60023]" />
               ) : (
-                <Bookmark className="w-5 h-5 text-neutral-800" />
+                <Bookmark className="w-4 h-4 text-neutral-800" />
               )}
             </button>
           )}
 
           <button
             type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              copyPromptToClipboard(post.promptText, post.id);
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl transition-all duration-300 ease-out transform scale-75 group-hover:scale-100 hover:scale-110 active:scale-95 text-xs font-bold"
+            title="Copy prompt"
+            aria-label="Copy prompt"
+          >
+            <Copy className="w-3.5 h-3.5 text-neutral-800" />
+            <span>Copy ({post.copiesCount || 0})</span>
+          </button>
+
+          <button
+            type="button"
             onClick={handleDeconstructImagePrompt}
             data-action="decode-prompt"
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl transition-all duration-300 ease-out transform scale-75 group-hover:scale-100 hover:scale-110 active:scale-95 text-xs font-bold"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl transition-all duration-300 ease-out transform scale-75 group-hover:scale-100 hover:scale-110 active:scale-95 text-xs font-bold"
             title="Decode"
             aria-label="Decode"
           >
-            <Sparkles className="w-4 h-4 text-amber-600" />
+            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
             <span>Decode</span>
           </button>
         </div>

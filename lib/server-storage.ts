@@ -479,11 +479,8 @@ export const ServerStorage = {
   },
 
   incrementViews: async (id: string, token?: string): Promise<void> => {
-    const post = await ServerStorage.getPostById(id);
-    if (post) {
-      post.viewsCount = (post.viewsCount || 0) + 1;
-      await ServerStorage.savePost(post, token);
-    }
+    // Views tracking removed to eliminate writes and reads
+    return;
   },
 
   incrementCopies: async (id: string, token?: string): Promise<void> => {
@@ -499,15 +496,13 @@ export const ServerStorage = {
   },
 
   incrementViewCount: async (id: string, token?: string): Promise<void> => {
-    return await ServerStorage.incrementViews(id, token);
+    // Views tracking removed to eliminate writes and reads
+    return;
   },
 
   toggleLike: async (id: string, token?: string): Promise<void> => {
-    const post = await ServerStorage.getPostById(id);
-    if (post) {
-      post.likesCount = (post.likesCount || 0) + 1;
-      await ServerStorage.savePost(post, token);
-    }
+    // Likes system removed
+    return;
   },
 
   // Categories

@@ -9,8 +9,6 @@ import {
   Sparkles,
   TrendingUp,
   Flame,
-  Star,
-  Heart,
   Copy,
   Clock,
   Check,
@@ -79,18 +77,6 @@ export const HeroSection = () => {
       label: 'Newest First',
       icon: Clock,
       desc: 'Recently published prompts',
-    },
-    {
-      id: 'most-popular' as const,
-      label: 'Most Popular',
-      icon: Star,
-      desc: 'Most viewed prompts',
-    },
-    {
-      id: 'most-liked' as const,
-      label: 'Most Liked',
-      icon: Heart,
-      desc: 'Highest community likes',
     },
     {
       id: 'most-copied' as const,
