@@ -125,11 +125,10 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
             <button
               type="button"
               onClick={(e) => onCopy(e, pin)}
-              className="px-2.5 py-1 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-md transition-all hover:scale-105 flex items-center gap-1 text-[10px] font-bold"
+              className="p-1.5 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-md transition-all hover:scale-105"
               title="Quick Copy Prompt"
             >
               {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{pin.copiesCount || 0}</span>
             </button>
 
             <button
@@ -1183,7 +1182,6 @@ export const PromptDetailModal = () => {
                           <span>Copy</span>
                         </>
                       )}
-                      <span className="opacity-75 font-semibold">({copiesCount})</span>
                     </button>
 
                     {/* Decode Button */}
@@ -1327,7 +1325,6 @@ export const PromptDetailModal = () => {
                                 <span>Copy Prompt</span>
                               </>
                             )}
-                            <span className="opacity-90 font-medium">({copiesCount})</span>
                           </button>
                         </div>
                       </div>

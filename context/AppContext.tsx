@@ -2463,26 +2463,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       }
     }
     navigator.clipboard.writeText(text);
-    if (postId) {
-      fetch(`/api/posts/${encodeURIComponent(postId)}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'copy' }),
-      }).catch(() => {});
-      setPosts((prev) =>
-        prev.map((p) => (p.id === postId ? { ...p, copiesCount: (p.copiesCount || 0) + 1 } : p))
-      );
-      const post = posts.find((p) => p.id === postId);
-      if (post) {
-        const updated = PersonalizationEngine.recordCopy(post);
-        setTasteProfile(updated);
-        if (userAccount && userAccount.isLoggedIn) {
-          void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
-            tasteProfile: updated,
-          });
-        }
-      }
-    }
     try {
       confetti({
         particleCount: 40,

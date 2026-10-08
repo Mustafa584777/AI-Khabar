@@ -295,7 +295,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
             aria-label="Copy prompt"
           >
             <Copy className="w-3.5 h-3.5 text-neutral-800" />
-            <span>Copy ({post.copiesCount || 0})</span>
+            <span>Copy</span>
           </button>
 
           <button
