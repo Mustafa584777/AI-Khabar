@@ -133,7 +133,7 @@ export default function ContactPage() {
                       type="text"
                       value={subject}
                       onChange={(e) => setSubject(e.target.value)}
-                      placeholder="e.g. Prompt Request or Feedback"
+                      placeholder="e.g. Prompt Feedback or Feature Suggestion"
                       className="w-full px-4 py-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]"
                     />
                   </div>

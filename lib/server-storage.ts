@@ -80,8 +80,11 @@ function cleanForFirestore<T = any>(obj: any): T {
   return obj;
 }
 
-// In-memory runtime cache
+// In-memory runtime cache with 30-minute TTL
 let memoryPosts: PromptPost[] | null = null;
+let memoryPostsTimestamp = 0;
+const POSTS_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
 let memoryCategories: Category[] | null = null;
 let memorySettings: SiteSettings | null = null;
 let memoryTags: string[] | null = null;
@@ -90,6 +93,11 @@ let memorySearchQueries: SearchQueryItem[] | null = null;
 export const ServerStorage = {
   // Posts
   getAllPosts: async (includeDrafts = true): Promise<PromptPost[]> => {
+    const now = Date.now();
+    if (memoryPosts && memoryPosts.length > 0 && (now - memoryPostsTimestamp < POSTS_CACHE_TTL)) {
+      return includeDrafts ? memoryPosts : memoryPosts.filter((p) => p.status === 'published');
+    }
+
     let localPosts: PromptPost[] = [];
     try {
       const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
@@ -146,6 +154,7 @@ export const ServerStorage = {
     });
 
     memoryPosts = merged;
+    memoryPostsTimestamp = Date.now();
     writeJsonFile(POSTS_FILE, merged);
 
     // If Firestore was completely empty but we have local posts, seed to Firestore
@@ -317,6 +326,7 @@ export const ServerStorage = {
       currentList.unshift(savedPost);
     }
     memoryPosts = currentList;
+    memoryPostsTimestamp = 0;
     writeJsonFile(POSTS_FILE, currentList);
 
     // Auto-create category if needed
@@ -359,6 +369,7 @@ export const ServerStorage = {
       const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, []);
       const filteredLocal = rawPosts.filter((p) => p.id !== id);
       memoryPosts = filteredLocal;
+      memoryPostsTimestamp = 0;
       writeJsonFile(POSTS_FILE, filteredLocal);
     } catch (e) {
       console.error('Local deletePost error:', e);

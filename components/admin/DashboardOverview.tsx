@@ -30,13 +30,10 @@ export const DashboardOverview = () => {
     setSelectedPost,
     togglePublishStatus,
     showToast,
-    promptRequests,
   } = useApp();
 
   const [quickTitle, setQuickTitle] = useState('');
   const [quickPrompt, setQuickPrompt] = useState('');
-
-  const pendingRequestsCount = promptRequests.filter((r) => r.status === 'pending').length;
 
   const publishedCount = posts.filter((p) => p.status === 'published').length;
   const draftCount = posts.filter((p) => p.status === 'draft').length;

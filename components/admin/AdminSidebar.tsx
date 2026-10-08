@@ -32,11 +32,9 @@ export const AdminSidebar = () => {
     logout,
     posts,
     currentUser,
-    promptRequests,
   } = useApp();
 
   const draftCount = posts.filter((p) => p.status === 'draft').length;
-  const pendingRequestsCount = promptRequests.filter((r) => r.status === 'pending').length;
 
   interface NavItem {
     id: string;

@@ -177,10 +177,6 @@ export default function CheckoutPage() {
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   {(planTier || 'Pro').toUpperCase()} Plan {planExpiresAt ? `(Expires ${formatExpiryDateWithHour(planExpiresAt)})` : ''}
                 </span>
-                <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700">•</span>
-                <span className="text-neutral-500">
-                  {promptRequestsRemaining} Prompt Requests Left
-                </span>
               </>
             )}
             {queuedPlan && (
@@ -392,12 +388,6 @@ export default function CheckoutPage() {
                       </span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-neutral-400 font-bold">✕</span>
-                      <span className="text-neutral-400">
-                        0 Custom Prompt Requests
-                      </span>
-                    </li>
-                    <li className="flex items-center gap-2">
                       <span className="text-emerald-500 font-bold">✓</span>
                       <span className="font-bold text-emerald-600 dark:text-emerald-400">
                         {billingCycle === 'yearly' ? '1,200 saves & history' : '100 saves & history'}
@@ -467,12 +457,6 @@ export default function CheckoutPage() {
                       </span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-neutral-400 font-bold">✕</span>
-                      <span className="text-neutral-400">
-                        0 Custom Prompt Requests
-                      </span>
-                    </li>
-                    <li className="flex items-center gap-2">
                       <span className="text-[#E60023] font-bold">✓</span>
                       <span className="font-bold text-[#E60023]">
                         {billingCycle === 'yearly' ? '2,400 saves & history' : '200 saves & history'}
@@ -536,12 +520,6 @@ export default function CheckoutPage() {
                       <span className="text-purple-500 font-bold">✓</span>
                       <span>
                         <strong>{billingCycle === 'yearly' ? '6,000 AI Searches' : '500 AI Searches'}</strong> {billingCycle === 'yearly' ? '/ year' : '/ mo'}
-                      </span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="text-purple-500 font-bold">✓</span>
-                      <span>
-                        <strong>{billingCycle === 'yearly' ? '12 Prompt Requests' : '1 Prompt Request'}</strong>
                       </span>
                     </li>
                     <li className="flex items-center gap-2">
@@ -613,12 +591,6 @@ export default function CheckoutPage() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-amber-400 font-bold">✓</span>
-                      <span>
-                        <strong>{billingCycle === 'yearly' ? '36 Prompt Requests' : '3 Prompt Requests'}</strong> {billingCycle === 'yearly' ? '/ year' : '/ mo'}
-                      </span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="text-amber-400 font-bold">✓</span>
                       <span className="font-bold text-amber-400">Unlimited saves & history</span>
                     </li>
                   </ul>
@@ -632,7 +604,7 @@ export default function CheckoutPage() {
                   description={
                     billingCycle === 'monthly'
                       ? 'Studio 499 - 1500 Credits, Unlimited AI Search'
-                      : 'Yearly Studio 499 - 18000 Credits, Unlimited AI Searches, 36 Requests, Unlimited Saves upfront'
+                      : 'Yearly Studio 499 - 18000 Credits, Unlimited AI Searches, Unlimited Saves upfront'
                   }
                   buttonText={billingCycle === 'monthly' ? 'Get Studio for ₹499' : 'Get Studio Yearly for ₹4,990'}
                   variant="dark"
@@ -728,20 +700,7 @@ export default function CheckoutPage() {
                   </td>
                   <td className="py-3.5 px-4 text-center font-bold text-amber-600 dark:text-amber-400">Unlimited</td>
                 </tr>
-                <tr>
-                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">
-                    {billingCycle === 'monthly' ? 'Custom Prompt Requests' : 'Total Prompt Requests'}
-                  </td>
-                  <td className="py-3.5 px-4 text-center text-neutral-400"><X className="w-4 h-4 mx-auto" /></td>
-                  <td className="py-3.5 px-4 text-center text-neutral-400"><X className="w-4 h-4 mx-auto" /></td>
-                  <td className="py-3.5 px-4 text-center text-neutral-400"><X className="w-4 h-4 mx-auto" /></td>
-                  <td className="py-3.5 px-4 text-center font-bold">
-                    {billingCycle === 'monthly' ? '1 / mo' : '12 / yr'}
-                  </td>
-                  <td className="py-3.5 px-4 text-center font-bold text-amber-500">
-                    {billingCycle === 'monthly' ? '3 / mo' : '36 / yr'}
-                  </td>
-                </tr>
+
                 <tr>
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">
                     {billingCycle === 'monthly' ? 'Saves & History Limit' : 'Total Combined Saves'}
