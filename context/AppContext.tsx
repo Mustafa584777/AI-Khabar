@@ -1601,9 +1601,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   });
   const [selectedCategory, setSelectedCategoryState] = useState<string>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('selectedCategory') || 'trending';
+      return localStorage.getItem('selectedCategory') || 'all';
     }
-    return 'trending';
+    return 'all';
   });
 
   const setSelectedCategory = (cat: string) => {
@@ -1615,7 +1615,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [selectedTool, setSelectedTool] = useState<string>('all');
   const [selectedSort, setSelectedSort] = useState<
     'trending' | 'most-popular' | 'most-liked' | 'most-copied' | 'newest'
-  >('newest');
+  >('trending');
 
   // Gemini AI Search State & Cache
   const [aiSearchResults, setAiSearchResults] = useState<AiSearchResult | null>(null);

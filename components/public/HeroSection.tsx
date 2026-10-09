@@ -46,6 +46,7 @@ export const HeroSection = () => {
 
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchBoxTop, setSearchBoxTop] = useState<number | null>(null);
   const isMounted = React.useSyncExternalStore(
     () => () => {},
     () => true,
@@ -54,10 +55,46 @@ export const HeroSection = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
+  // Measure search input bottom position for mobile box expansion down to bottom navigation
+  useEffect(() => {
+    const updatePos = () => {
+      if (isSearchOpen && searchContainerRef.current) {
+        const rect = searchContainerRef.current.getBoundingClientRect();
+        setSearchBoxTop(rect.bottom + 8);
+      }
+    };
+    if (isSearchOpen) {
+      updatePos();
+      window.addEventListener('resize', updatePos);
+      window.addEventListener('scroll', updatePos);
+      return () => {
+        window.removeEventListener('resize', updatePos);
+        window.removeEventListener('scroll', updatePos);
+      };
+    }
+  }, [isSearchOpen]);
+
   // Automatically assign popular tags based on number of times they are used across posts
   const popularTags = useMemo(() => {
     return getDynamicPopularTags(posts, 7);
   }, [posts]);
+
+  // Filter Most Viewed Categories with at least 5 prompts
+  const validMostViewedCategories = useMemo(() => {
+    const published = posts.filter((p) => p.status === 'published');
+    return categories
+      .map((cat) => {
+        const catPosts = published.filter(
+          (p) => p.category.toLowerCase() === cat.name.toLowerCase()
+        );
+        return {
+          ...cat,
+          postCount: catPosts.length,
+          previewPosts: catPosts.slice(0, 4),
+        };
+      })
+      .filter((cat) => cat.postCount >= 5);
+  }, [categories, posts]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -73,6 +110,12 @@ export const HeroSection = () => {
   }, []);
 
   const sortOptions = [
+    {
+      id: 'trending' as const,
+      label: 'Trending',
+      icon: Flame,
+      desc: 'Random trending prompts on every refresh',
+    },
     {
       id: 'newest' as const,
       label: 'Newest First',
@@ -144,11 +187,11 @@ export const HeroSection = () => {
               }
             }}
             placeholder="Search prompts for aesthetics, cameras, or subjects..."
-            className="w-full pl-12 pr-36 sm:pr-40 py-3.5 bg-[#efefef] dark:bg-neutral-800 border-0 rounded-full text-sm font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]/40 placeholder:text-neutral-500 transition-all shadow-sm"
+            className="w-full pl-12 pr-44 sm:pr-48 py-3.5 bg-[#efefef] dark:bg-neutral-800 border-0 rounded-full text-sm font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]/40 placeholder:text-neutral-500 transition-all shadow-sm"
             id="hero-search-input"
           />
           
-          {/* Red Clear Text Button before AI Search button */}
+          {/* Red Clear Text Button before AI Search button with increased right margin */}
           {searchQuery && (
             <button
               type="button"
@@ -156,14 +199,14 @@ export const HeroSection = () => {
                 e.stopPropagation();
                 setSearchQuery('');
               }}
-              className="absolute right-24 sm:right-28 top-1/2 -translate-y-1/2 text-xs font-bold text-[#E60023] hover:underline bg-transparent border-none p-1 cursor-pointer transition-colors z-10"
+              className="absolute right-32 sm:right-36 top-1/2 -translate-y-1/2 text-xs font-bold text-[#E60023] hover:underline bg-transparent border-none p-1 cursor-pointer transition-colors z-10"
               title="Clear text"
             >
               Clear
             </button>
           )}
 
-          {/* AI Search Toggle Button Inside Hero Search Box */}
+          {/* AI Search Toggle Button Inside Hero Search Box (No red button background) */}
           <button
             type="button"
             onClick={(e) => {
@@ -181,11 +224,7 @@ export const HeroSection = () => {
               }
               setIsAiSearchEnabled(!isAiSearchEnabled);
             }}
-            className={`absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1.5 rounded-full text-[10px] font-extrabold flex items-center gap-1.5 transition-all z-10 ${
-              isAiSearchEnabled && userAccount?.isLoggedIn && (isProUser || aiSearchRemaining > 0)
-                ? 'bg-gradient-to-r from-[#E60023] to-rose-600 text-white shadow-sm'
-                : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300'
-            }`}
+            className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1.5 rounded-full text-[10px] font-extrabold flex items-center gap-1.5 transition-all z-10 bg-neutral-200 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200 hover:bg-neutral-300 dark:hover:bg-neutral-600 shadow-xs cursor-pointer"
             title={
               !userAccount?.isLoggedIn
                 ? 'Log in to enable AI Search'
@@ -194,15 +233,28 @@ export const HeroSection = () => {
                 : 'AI Search Disabled (Click to enable)'
             }
           >
-            <div className={`w-5 h-3 rounded-full transition-colors flex items-center px-0.5 ${isAiSearchEnabled && userAccount?.isLoggedIn && (isProUser || aiSearchRemaining > 0) ? 'bg-white/40 justify-end' : 'bg-neutral-400 dark:bg-neutral-600 justify-start'}`}>
+            <div
+              className={`w-5 h-3 rounded-full transition-colors flex items-center px-0.5 ${
+                isAiSearchEnabled && userAccount?.isLoggedIn && (isProUser || aiSearchRemaining > 0)
+                  ? 'bg-[#E60023] justify-end'
+                  : 'bg-neutral-400 dark:bg-neutral-500 justify-start'
+              }`}
+            >
               <div className="w-2 h-2 rounded-full bg-white shadow-xs" />
             </div>
             <span>AI Search</span>
           </button>
 
-          {/* Search Suggestions & Most Viewed Categories Overlay (Matching Screenshot) */}
+          {/* Search Suggestions & Most Viewed Categories Overlay (Expanded down to bottom navigation menu on mobile) */}
           {isSearchOpen && (
-            <div className="absolute top-full left-0 right-0 mt-3 bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-neutral-800 p-5 z-50 text-left max-h-[500px] overflow-y-auto space-y-6 animate-fade-in">
+            <div
+              style={
+                searchBoxTop && typeof window !== 'undefined' && window.innerWidth < 640
+                  ? { top: `${searchBoxTop}px`, bottom: '4rem' }
+                  : undefined
+              }
+              className="fixed inset-x-3 sm:absolute sm:inset-x-0 sm:top-full sm:bottom-auto sm:mt-3 bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-neutral-800 p-4 sm:p-5 z-50 text-left overflow-y-auto sm:max-h-[520px] space-y-6 animate-fade-in"
+            >
               {/* Most Searched Queries (Real User Search Queries) */}
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
@@ -258,78 +310,78 @@ export const HeroSection = () => {
                 </div>
               </div>
 
-              {/* Most Viewed Categories with Image Previews (Screenshot layout) */}
-              <div className="space-y-5 pt-3 border-t border-neutral-100 dark:border-neutral-800">
-                <span className="text-xs font-black text-neutral-400 uppercase tracking-wider block">
-                  Most Viewed Categories
-                </span>
-                
-                {categories.map((cat) => {
-                  const catPosts = posts.filter(
-                    (p) => p.category.toLowerCase() === cat.name.toLowerCase()
-                  ).slice(0, 4);
+              {/* Most Viewed Categories with Image Previews (Excluding categories with < 5 prompts) */}
+              {validMostViewedCategories.length > 0 && (
+                <div className="space-y-5 pt-3 border-t border-neutral-100 dark:border-neutral-800">
+                  <span className="text-xs font-black text-neutral-400 uppercase tracking-wider block">
+                    Most Viewed Categories
+                  </span>
+                  
+                  {validMostViewedCategories.map((cat) => {
+                    const catPosts = cat.previewPosts;
 
-                  return (
-                    <div key={cat.id} className="space-y-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedCategory(cat.name);
-                          setSearchQuery('');
-                          setIsSearchOpen(false);
-                        }}
-                        className="flex items-center gap-1 text-sm font-black text-neutral-900 dark:text-white hover:text-[#E60023] transition-colors group"
-                      >
-                        <span>{cat.name}</span>
-                        <ChevronDown className="w-4 h-4 -rotate-90 group-hover:translate-x-1 transition-transform" />
-                      </button>
+                    return (
+                      <div key={cat.id} className="space-y-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedCategory(cat.name);
+                            setSearchQuery('');
+                            setIsSearchOpen(false);
+                          }}
+                          className="flex items-center gap-1 text-sm font-black text-neutral-900 dark:text-white hover:text-[#E60023] transition-colors group"
+                        >
+                          <span>{cat.name}</span>
+                          <ChevronDown className="w-4 h-4 -rotate-90 group-hover:translate-x-1 transition-transform" />
+                        </button>
 
-                      {/* 4 Image Thumbnails Row */}
-                      <div className="grid grid-cols-4 gap-2 sm:gap-3">
-                        {catPosts.length > 0 ? (
-                          catPosts.map((post) => (
-                            <div
-                              key={post.id}
-                              onClick={() => {
-                                setSelectedPost(post);
-                                if (typeof window !== 'undefined') {
-                                  window.history.pushState({ postId: post.id }, '', `/${getPromptSlug(post)}`);
-                                }
-                                setIsSearchOpen(false);
-                              }}
-                              className="relative aspect-square rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 cursor-pointer group shadow-xs hover:shadow-md transition-all"
-                            >
-                              <Image
-                                src={getOptimizedImageUrl(post.imageUrl, 200)}
-                                alt={post.title}
-                                fill
-                                sizes="80px"
-                                className="object-cover group-hover:scale-105 transition-transform duration-300"
-                                referrerPolicy="no-referrer"
-                                loading="lazy"
-                              />
-                              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-                                <span className="text-[10px] font-bold text-white truncate">
-                                  {post.title}
-                                </span>
+                        {/* 4 Image Thumbnails Row */}
+                        <div className="grid grid-cols-4 gap-2 sm:gap-3">
+                          {catPosts.length > 0 ? (
+                            catPosts.map((post) => (
+                              <div
+                                key={post.id}
+                                onClick={() => {
+                                  setSelectedPost(post);
+                                  if (typeof window !== 'undefined') {
+                                    window.history.pushState({ postId: post.id }, '', `/${getPromptSlug(post)}`);
+                                  }
+                                  setIsSearchOpen(false);
+                                }}
+                                className="relative aspect-square rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 cursor-pointer group shadow-xs hover:shadow-md transition-all"
+                              >
+                                <Image
+                                  src={getOptimizedImageUrl(post.imageUrl, 200)}
+                                  alt={post.title}
+                                  fill
+                                  sizes="80px"
+                                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                  referrerPolicy="no-referrer"
+                                  loading="lazy"
+                                />
+                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                                  <span className="text-[10px] font-bold text-white truncate">
+                                    {post.title}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
-                          ))
-                        ) : (
-                          [1, 2, 3, 4].map((i) => (
-                            <div
-                              key={i}
-                              className="aspect-square rounded-2xl bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-[10px] text-neutral-400 font-bold"
-                            >
-                              Preview
-                            </div>
-                          ))
-                        )}
+                            ))
+                          ) : (
+                            [1, 2, 3, 4].map((i) => (
+                              <div
+                                key={i}
+                                className="aspect-square rounded-2xl bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-[10px] text-neutral-400 font-bold"
+                              >
+                                Preview
+                              </div>
+                            ))
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>

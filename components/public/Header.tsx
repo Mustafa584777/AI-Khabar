@@ -26,6 +26,7 @@ export const Header = () => {
     setCurrentView,
     selectedCategory,
     setSelectedCategory,
+    setSelectedSort,
     searchQuery,
     setSearchQuery,
     setIsSearchModalOpen,
@@ -52,7 +53,8 @@ export const Header = () => {
 
   const handleHomeClick = () => {
     setCurrentView('public');
-    setSelectedCategory('trending');
+    setSelectedCategory('all');
+    setSelectedSort('trending');
     setSearchQuery('');
     if (pathname !== '/') {
       router.push('/');

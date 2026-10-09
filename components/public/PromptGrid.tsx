@@ -41,13 +41,15 @@ export const PromptGrid = () => {
   const [prevFilterKey, setPrevFilterKey] = useState<string>(currentFilterKey);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
 
-  const [trendingOrder, setTrendingOrder] = useState<PromptPost[]>([]);
+  const [randomTrendingIds, setRandomTrendingIds] = useState<Map<string, number>>(new Map());
 
   useEffect(() => {
     const published = posts.filter((p) => p.status === 'published');
-    // Shuffle randomly every time page mounts / reloads
+    // Fresh random shuffle per session / reload for each user
     const shuffled = [...published].sort(() => Math.random() - 0.5);
-    setTrendingOrder(shuffled);
+    const map = new Map<string, number>();
+    shuffled.forEach((p, idx) => map.set(p.id, idx));
+    setRandomTrendingIds(map);
   }, [posts]);
 
   // Reset pagination if filter key changed during render
@@ -60,9 +62,7 @@ export const PromptGrid = () => {
   const filteredPosts = useMemo(() => {
     let list = posts.filter((p) => p.status === 'published');
 
-    if (selectedCategory && selectedCategory === 'trending') {
-      list = trendingOrder.length > 0 ? trendingOrder : list;
-    } else if (selectedCategory && selectedCategory !== 'all') {
+    if (selectedCategory && selectedCategory !== 'all') {
       list = list.filter(
         (p) => p.category.toLowerCase() === selectedCategory.toLowerCase()
       );
@@ -126,8 +126,14 @@ export const PromptGrid = () => {
         });
       }
     } else {
-      // Deterministic Stable Sort: Never shuffle or change on user click/bookmark events
-      if (selectedSort === 'most-copied' || selectedSort === 'trending' || selectedSort === 'most-popular' || selectedSort === 'most-liked') {
+      if (selectedSort === 'trending') {
+        // Random prompt cards on every refresh / reload for each user
+        list = [...list].sort((a, b) => {
+          const rankA = randomTrendingIds.has(a.id) ? randomTrendingIds.get(a.id)! : 999999;
+          const rankB = randomTrendingIds.has(b.id) ? randomTrendingIds.get(b.id)! : 999999;
+          return rankA - rankB;
+        });
+      } else if (selectedSort === 'most-copied' || selectedSort === 'most-popular' || selectedSort === 'most-liked') {
         list = [...list].sort((a, b) => {
           const diff = (b.copiesCount || 0) - (a.copiesCount || 0);
           if (diff !== 0) return diff;

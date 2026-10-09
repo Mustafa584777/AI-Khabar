@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
-import { Wand2, Sparkles } from 'lucide-react';
+import { Wand2 } from 'lucide-react';
 
 export const GeminiPromptBox = () => {
   const router = useRouter();
@@ -64,9 +64,6 @@ export const GeminiPromptBox = () => {
 
         {/* Quick Example Chips */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
-          <span className="text-neutral-400 dark:text-neutral-500 font-bold shrink-0 flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-[#E60023]" /> Try:
-          </span>
           {examples.map((ex) => (
             <button
               key={ex}
