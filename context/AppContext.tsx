@@ -2287,9 +2287,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const recordPromptClick = (post: PromptPost) => {
     const updated = PersonalizationEngine.recordView(post);
     setTasteProfile(updated);
-    if (userAccount && userAccount.isLoggedIn) {
-      debounceSyncTasteProfile(userAccount.id, userAccount.email, updated);
-    }
   };
 
   const handleSelectPostWithTracking = (post: PromptPost | null) => {
@@ -2297,9 +2294,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (post) {
       const updated = PersonalizationEngine.recordView(post);
       setTasteProfile(updated);
-      if (userAccount && userAccount.isLoggedIn) {
-        debounceSyncTasteProfile(userAccount.id, userAccount.email, updated);
-      }
     }
   };
 

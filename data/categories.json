@@ -110,6 +110,28 @@
     "sortOrder": 0
   },
   {
+    "color": "blue",
+    "slug": "instagram-trend",
+    "description": "",
+    "badgeBg": "bg-blue-500/10 text-blue-500",
+    "sortOrder": 0,
+    "name": "Instagram Trend",
+    "id": "cat-1789214010442",
+    "count": 0,
+    "iconName": "TrendingUp"
+  },
+  {
+    "slug": "vintage-editorial-photography",
+    "sortOrder": 0,
+    "count": 1,
+    "iconName": "Sparkles",
+    "description": "Curated collection of Vintage Editorial Photography copy-paste AI photo prompts.",
+    "badgeBg": "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-300 dark:border-red-800",
+    "name": "Vintage Editorial Photography",
+    "color": "#E60023",
+    "id": "cat-vintage-editorial-photography-mu2iyl99"
+  },
+  {
     "id": "cat-1788856797139",
     "name": "Cyberpunk",
     "slug": "cyberpunk",
@@ -117,5 +139,35 @@
     "description": "Cyberpunk AI image prompts and inspirations.",
     "count": 1,
     "sortOrder": 11
+  },
+  {
+    "name": "Lifestyle & Creative Portraiture",
+    "slug": "lifestyle-creative-portraiture",
+    "count": 1,
+    "description": "Lifestyle & Creative Portraiture AI image prompts and inspirations.",
+    "imageUrl": "https://res.cloudinary.com/idbpgaqz/image/upload/v1790672152/prompts/prompt-1790672141839.jpg",
+    "id": "cat-1791365950986",
+    "sortOrder": 12,
+    "iconName": "Sparkles"
+  },
+  {
+    "name": "Lifestyle & Portrait Photography",
+    "slug": "lifestyle-portrait-photography",
+    "id": "cat-1791396783712",
+    "iconName": "Sparkles",
+    "count": 1,
+    "sortOrder": 12,
+    "imageUrl": "https://res.cloudinary.com/idbpgaqz/image/upload/v1791376912/prompts/prompt-1791376906837.jpg",
+    "description": "Lifestyle & Portrait Photography AI image prompts and inspirations."
+  },
+  {
+    "iconName": "Sparkles",
+    "sortOrder": 14,
+    "imageUrl": "https://res.cloudinary.com/idbpgaqz/image/upload/v1789084425/prompts/prompt-1789084418854.webp",
+    "count": 1,
+    "id": "cat-1790670622063",
+    "name": "Vintage & Retro Photography",
+    "slug": "vintage-retro-photography",
+    "description": "Vintage & Retro Photography AI image prompts and inspirations."
   }
 ]

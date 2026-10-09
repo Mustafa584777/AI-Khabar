@@ -39,7 +39,9 @@ export async function GET(req: NextRequest) {
       { success: true, posts },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=3600',
+          'Cache-Control': includeDrafts
+            ? 'no-store, no-cache, must-revalidate, max-age=0'
+            : 'public, s-maxage=60, stale-while-revalidate=120',
         },
       }
     );

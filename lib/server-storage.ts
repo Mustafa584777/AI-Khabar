@@ -109,9 +109,8 @@ export const ServerStorage = {
       localPosts = INITIAL_POSTS || [];
     }
 
-    // If we have local posts, use them immediately without querying Firestore on every read request to eliminate read costs!
     let remotePosts: PromptPost[] = [];
-    if (isFirebaseConfigured() && localPosts.length === 0) {
+    if (isFirebaseConfigured()) {
       try {
         const snap = await getDocs(collection(firestoreDb, 'posts'));
         if (!snap.empty) {
@@ -157,25 +156,6 @@ export const ServerStorage = {
     memoryPosts = merged;
     memoryPostsTimestamp = Date.now();
     writeJsonFile(POSTS_FILE, merged);
-
-    // If Firestore was completely empty but we have local posts, seed to Firestore
-    if (isFirebaseConfigured() && remotePosts.length === 0 && merged.length > 0) {
-      void (async () => {
-        try {
-          const chunkSize = 250;
-          for (let i = 0; i < merged.length; i += chunkSize) {
-            const chunk = merged.slice(i, i + chunkSize);
-            const batch = writeBatch(firestoreDb);
-            for (const p of chunk) {
-              batch.set(doc(firestoreDb, 'posts', p.id), cleanForFirestore(p));
-            }
-            await batch.commit();
-          }
-        } catch (e) {
-          console.warn('Auto-seed Firestore posts background notice:', e);
-        }
-      })();
-    }
 
     return includeDrafts ? merged : merged.filter((p) => p.status === 'published');
   },
@@ -318,8 +298,10 @@ export const ServerStorage = {
       }
     }
 
-    // Update local cache
-    const currentList = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
+    // Update memory and local cache
+    const currentList = memoryPosts && memoryPosts.length > 0
+      ? [...memoryPosts]
+      : readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
     const index = currentList.findIndex((p) => p.id === id);
     if (index >= 0) {
       currentList[index] = savedPost;
@@ -327,7 +309,7 @@ export const ServerStorage = {
       currentList.unshift(savedPost);
     }
     memoryPosts = currentList;
-    memoryPostsTimestamp = 0;
+    memoryPostsTimestamp = Date.now();
     writeJsonFile(POSTS_FILE, currentList);
 
     // Auto-create category if needed
@@ -367,10 +349,12 @@ export const ServerStorage = {
   deletePost: async (id: string, token?: string): Promise<void> => {
     // 1. Remove from local file / memory
     try {
-      const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, []);
+      const rawPosts = memoryPosts && memoryPosts.length > 0
+        ? [...memoryPosts]
+        : readJsonFile<PromptPost[]>(POSTS_FILE, []);
       const filteredLocal = rawPosts.filter((p) => p.id !== id);
       memoryPosts = filteredLocal;
-      memoryPostsTimestamp = 0;
+      memoryPostsTimestamp = Date.now();
       writeJsonFile(POSTS_FILE, filteredLocal);
     } catch (e) {
       console.error('Local deletePost error:', e);
@@ -485,11 +469,18 @@ export const ServerStorage = {
   },
 
   incrementCopies: async (id: string, token?: string): Promise<void> => {
-    const post = await ServerStorage.getPostById(id);
-    if (post) {
-      post.copiesCount = (post.copiesCount || 0) + 1;
-      await ServerStorage.savePost(post, token);
+    if (memoryPosts) {
+      const p = memoryPosts.find((x) => x.id === id);
+      if (p) p.copiesCount = (p.copiesCount || 0) + 1;
     }
+    try {
+      const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, []);
+      const p = rawPosts.find((x) => x.id === id);
+      if (p) {
+        p.copiesCount = (p.copiesCount || 0) + 1;
+        writeJsonFile(POSTS_FILE, rawPosts);
+      }
+    } catch {}
   },
 
   incrementCopyCount: async (id: string, token?: string): Promise<void> => {
@@ -508,6 +499,10 @@ export const ServerStorage = {
 
   // Categories
   getAllCategories: async (): Promise<Category[]> => {
+    if (memoryCategories && memoryCategories.length > 0) {
+      return memoryCategories;
+    }
+
     const initial = INITIAL_CATEGORIES.map((c, i) => ({ ...c, sortOrder: i }));
     let localCats: Category[] = [];
     try {
@@ -544,21 +539,6 @@ export const ServerStorage = {
     const merged = Array.from(catMap.values()).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
     memoryCategories = merged;
     writeJsonFile(CATEGORIES_FILE, merged);
-
-    // If remote was empty but local has categories, auto-seed to Firestore
-    if (isFirebaseConfigured() && remoteCats.length === 0 && merged.length > 0) {
-      void (async () => {
-        try {
-          const batch = writeBatch(firestoreDb);
-          for (const c of merged) {
-            batch.set(doc(firestoreDb, 'categories', c.id), cleanForFirestore(c));
-          }
-          await batch.commit();
-        } catch (e) {
-          console.warn('Auto-seed Firestore categories notice:', e);
-        }
-      })();
-    }
 
     return merged;
   },
@@ -818,14 +798,6 @@ export const ServerStorage = {
 
     memorySearchQueries = updated;
     writeJsonFile(SEARCH_QUERIES_FILE, updated);
-
-    if (isFirebaseConfigured()) {
-      try {
-        await setDoc(doc(firestoreDb, 'settings', 'search_queries'), { queries: updated, updatedAt: now });
-      } catch (err) {
-        console.error('Firestore recordSearchQuery error:', err);
-      }
-    }
   },
 
   clearAllSearchQueries: async (): Promise<void> => {
@@ -1184,10 +1156,8 @@ export const ServerStorage = {
     // 2. Firebase Firestore
     if (isFirebaseConfigured()) {
       try {
-        await setDoc(doc(firestoreDb, 'users', docKey), cleanForFirestore(payload));
-        if (cleanKey && cleanKey !== docKey) {
-          await setDoc(doc(firestoreDb, 'users', cleanKey), cleanForFirestore(payload));
-        }
+        const primaryKey = cleanKey || docKey;
+        await setDoc(doc(firestoreDb, 'users', primaryKey), cleanForFirestore(payload));
       } catch (err) {
         console.error('Firestore saveUserProfile error:', err);
       }
