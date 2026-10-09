@@ -1601,9 +1601,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   });
   const [selectedCategory, setSelectedCategoryState] = useState<string>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('selectedCategory') || 'all';
+      return localStorage.getItem('selectedCategory') || 'trending';
     }
-    return 'all';
+    return 'trending';
   });
 
   const setSelectedCategory = (cat: string) => {

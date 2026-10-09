@@ -52,7 +52,7 @@ export const Header = () => {
 
   const handleHomeClick = () => {
     setCurrentView('public');
-    setSelectedCategory('all');
+    setSelectedCategory('trending');
     setSearchQuery('');
     if (pathname !== '/') {
       router.push('/');

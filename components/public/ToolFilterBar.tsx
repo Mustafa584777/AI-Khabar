@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Flame } from 'lucide-react';
 import { getCategoryIcon } from '@/lib/icons';
 import { PersonalizationEngine } from '@/lib/personalization';
 
@@ -30,7 +30,22 @@ export const ToolFilterBar = () => {
       <div className="flex items-center gap-2">
         {/* Style Pill Tabs Slider */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1.5 no-scrollbar flex-1 scroll-smooth">
-          {/* 1. "Latest Posts" (Default Main Tab) */}
+          {/* 1. "Trending" (Default Main Tab with Random Prompts) */}
+          <button
+            onClick={() => {
+              setSelectedCategory('trending');
+            }}
+            className={`flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 shrink-0 ${
+              selectedCategory === 'trending'
+                ? 'bg-[#E60023] text-white shadow-sm shadow-[#E60023]/30 scale-100'
+                : 'bg-[#efefef] dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 hover:bg-[#e2e2e2] dark:hover:bg-neutral-700'
+            }`}
+          >
+            <Flame className="w-3.5 h-3.5" />
+            <span>Trending</span>
+          </button>
+
+          {/* 2. "All Posts" / "Latest Posts" */}
           <button
             onClick={() => {
               setSelectedCategory('all');

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { PromptCard } from './PromptCard';
 import { SearchX, Filter, Loader2, Sparkles, Wand2 } from 'lucide-react';
@@ -40,6 +41,15 @@ export const PromptGrid = () => {
   const [prevFilterKey, setPrevFilterKey] = useState<string>(currentFilterKey);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
 
+  const [trendingOrder, setTrendingOrder] = useState<PromptPost[]>([]);
+
+  useEffect(() => {
+    const published = posts.filter((p) => p.status === 'published');
+    // Shuffle randomly every time page mounts / reloads
+    const shuffled = [...published].sort(() => Math.random() - 0.5);
+    setTrendingOrder(shuffled);
+  }, [posts]);
+
   // Reset pagination if filter key changed during render
   if (currentFilterKey !== prevFilterKey) {
     setPrevFilterKey(currentFilterKey);
@@ -50,7 +60,9 @@ export const PromptGrid = () => {
   const filteredPosts = useMemo(() => {
     let list = posts.filter((p) => p.status === 'published');
 
-    if (selectedCategory && selectedCategory !== 'all') {
+    if (selectedCategory && selectedCategory === 'trending') {
+      list = trendingOrder.length > 0 ? trendingOrder : list;
+    } else if (selectedCategory && selectedCategory !== 'all') {
       list = list.filter(
         (p) => p.category.toLowerCase() === selectedCategory.toLowerCase()
       );
@@ -238,9 +250,11 @@ export const PromptGrid = () => {
       {searchQuery.trim() && (
         <div className="mb-6 p-4 sm:p-5 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
           <div className="flex items-start sm:items-center gap-3.5">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#E60023] via-rose-500 to-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-red-500/20">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#E60023] via-rose-500 to-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-red-500/20 relative overflow-hidden">
               {isAiSearching ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <div className="w-7 h-7 rounded-full overflow-hidden animate-spin flex items-center justify-center bg-white/20 p-0.5">
+                  <Image src="/logo.png" alt="Logo" width={28} height={28} className="w-full h-full object-cover rounded-full" referrerPolicy="no-referrer" />
+                </div>
               ) : (
                 <Sparkles className="w-5 h-5" />
               )}
@@ -249,7 +263,7 @@ export const PromptGrid = () => {
             <div className="space-y-0.5">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[11px] font-black uppercase tracking-wider text-[#E60023] dark:text-red-400">
-                  Gemini AI Visual Search
+                  AI Visual Search
                 </span>
                 {aiSearchResults?.isAiPowered && (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/70 dark:border-blue-800">
