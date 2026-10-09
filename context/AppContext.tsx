@@ -1601,15 +1601,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   });
   const [selectedCategory, setSelectedCategoryState] = useState<string>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('selectedCategory') || 'all';
+      try {
+        const stored = localStorage.getItem('selectedCategory');
+        if (stored && stored !== 'all' && stored !== 'none') return stored;
+      } catch {}
     }
-    return 'all';
+    return '';
   });
 
   const setSelectedCategory = (cat: string) => {
-    setSelectedCategoryState(cat);
+    const clean = cat === 'all' ? '' : cat;
+    setSelectedCategoryState(clean);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('selectedCategory', cat);
+      try {
+        localStorage.setItem('selectedCategory', clean);
+      } catch {}
     }
   };
   const [selectedTool, setSelectedTool] = useState<string>('all');

@@ -11,6 +11,19 @@ import { PersonalizationEngine } from '@/lib/personalization';
 const INITIAL_BATCH_SIZE = 10;
 const SCROLL_BATCH_SIZE = 10;
 
+// Deterministic session random seed generated ONCE per page reload / fresh visit.
+// This guarantees that random cards NEVER reshuffle while browsing, on state updates,
+// or tab switches — only on full page reload (F5 / browser refresh)!
+const PAGE_SESSION_SEED = typeof window !== 'undefined' ? Math.floor(Math.random() * 10000000) + 1 : 1234567;
+
+function getTrendingSessionRank(id: string, seed: number = PAGE_SESSION_SEED): number {
+  let hash = seed;
+  for (let i = 0; i < id.length; i++) {
+    hash = ((hash << 5) - hash + id.charCodeAt(i)) | 0;
+  }
+  return hash;
+}
+
 export const PromptGrid = () => {
   const {
     posts,
@@ -41,17 +54,6 @@ export const PromptGrid = () => {
   const [prevFilterKey, setPrevFilterKey] = useState<string>(currentFilterKey);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
 
-  const [randomTrendingIds, setRandomTrendingIds] = useState<Map<string, number>>(new Map());
-
-  useEffect(() => {
-    const published = posts.filter((p) => p.status === 'published');
-    // Fresh random shuffle per session / reload for each user
-    const shuffled = [...published].sort(() => Math.random() - 0.5);
-    const map = new Map<string, number>();
-    shuffled.forEach((p, idx) => map.set(p.id, idx));
-    setRandomTrendingIds(map);
-  }, [posts]);
-
   // Reset pagination if filter key changed during render
   if (currentFilterKey !== prevFilterKey) {
     setPrevFilterKey(currentFilterKey);
@@ -62,7 +64,7 @@ export const PromptGrid = () => {
   const filteredPosts = useMemo(() => {
     let list = posts.filter((p) => p.status === 'published');
 
-    if (selectedCategory && selectedCategory !== 'all') {
+    if (selectedCategory && selectedCategory !== 'all' && selectedCategory !== 'latest') {
       list = list.filter(
         (p) => p.category.toLowerCase() === selectedCategory.toLowerCase()
       );
@@ -126,11 +128,19 @@ export const PromptGrid = () => {
         });
       }
     } else {
-      if (selectedSort === 'trending') {
-        // Random prompt cards on every refresh / reload for each user
+      if (selectedCategory === 'latest' || selectedSort === 'newest') {
+        // "Latest Posts" filter or "Newest" sort selected: Always prioritize newest published posts first
         list = [...list].sort((a, b) => {
-          const rankA = randomTrendingIds.has(a.id) ? randomTrendingIds.get(a.id)! : 999999;
-          const rankB = randomTrendingIds.has(b.id) ? randomTrendingIds.get(b.id)! : 999999;
+          const timeB = new Date(b.publishedAt || b.createdAt || 0).getTime();
+          const timeA = new Date(a.publishedAt || a.createdAt || 0).getTime();
+          if (timeB !== timeA && !isNaN(timeB) && !isNaN(timeA)) return timeB - timeA;
+          return (b.createdAt || '').localeCompare(a.createdAt || '') || b.id.localeCompare(a.id);
+        });
+      } else if (selectedSort === 'trending') {
+        // Stable random shuffle generated per page reload session (never shuffles while browsing)
+        list = [...list].sort((a, b) => {
+          const rankA = getTrendingSessionRank(a.id);
+          const rankB = getTrendingSessionRank(b.id);
           return rankA - rankB;
         });
       } else if (selectedSort === 'most-copied' || selectedSort === 'most-popular' || selectedSort === 'most-liked') {

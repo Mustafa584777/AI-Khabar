@@ -46,7 +46,6 @@ export const HeroSection = () => {
 
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchBoxTop, setSearchBoxTop] = useState<number | null>(null);
   const isMounted = React.useSyncExternalStore(
     () => () => {},
     () => true,
@@ -54,25 +53,6 @@ export const HeroSection = () => {
   );
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
-
-  // Measure search input bottom position for mobile box expansion down to bottom navigation
-  useEffect(() => {
-    const updatePos = () => {
-      if (isSearchOpen && searchContainerRef.current) {
-        const rect = searchContainerRef.current.getBoundingClientRect();
-        setSearchBoxTop(rect.bottom + 8);
-      }
-    };
-    if (isSearchOpen) {
-      updatePos();
-      window.addEventListener('resize', updatePos);
-      window.addEventListener('scroll', updatePos);
-      return () => {
-        window.removeEventListener('resize', updatePos);
-        window.removeEventListener('scroll', updatePos);
-      };
-    }
-  }, [isSearchOpen]);
 
   // Automatically assign popular tags based on number of times they are used across posts
   const popularTags = useMemo(() => {
@@ -157,8 +137,13 @@ export const HeroSection = () => {
       {/* Action Bar: Search & Sort Dropdown */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 animate-fade-in [animation-delay:300ms]">
         {/* Search Bar */}
-        <div className="flex-1 relative group" ref={searchContainerRef}>
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-neutral-400 group-focus-within:text-[#E60023] transition-colors">
+        <div
+          className={`flex-1 relative group transition-all ${
+            isSearchOpen ? 'z-40' : 'z-20'
+          }`}
+          ref={searchContainerRef}
+        >
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-neutral-400 group-focus-within:text-[#E60023] transition-colors z-30">
             <Search className="w-5 h-5" />
           </div>
           <input
@@ -187,7 +172,7 @@ export const HeroSection = () => {
               }
             }}
             placeholder="Search prompts for aesthetics, cameras, or subjects..."
-            className="w-full pl-12 pr-44 sm:pr-48 py-3.5 bg-[#efefef] dark:bg-neutral-800 border-0 rounded-full text-sm font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]/40 placeholder:text-neutral-500 transition-all shadow-sm"
+            className="w-full relative z-20 pl-12 pr-44 sm:pr-48 py-3.5 bg-[#efefef] dark:bg-neutral-800 border-0 rounded-full text-sm font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]/40 placeholder:text-neutral-500 transition-all shadow-sm"
             id="hero-search-input"
           />
           
@@ -199,7 +184,7 @@ export const HeroSection = () => {
                 e.stopPropagation();
                 setSearchQuery('');
               }}
-              className="absolute right-32 sm:right-36 top-1/2 -translate-y-1/2 text-xs font-bold text-[#E60023] hover:underline bg-transparent border-none p-1 cursor-pointer transition-colors z-10"
+              className="absolute right-32 sm:right-36 top-1/2 -translate-y-1/2 text-xs font-bold text-[#E60023] hover:underline bg-transparent border-none p-1 cursor-pointer transition-colors z-30"
               title="Clear text"
             >
               Clear
@@ -224,7 +209,7 @@ export const HeroSection = () => {
               }
               setIsAiSearchEnabled(!isAiSearchEnabled);
             }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1.5 rounded-full text-[10px] font-extrabold flex items-center gap-1.5 transition-all z-10 bg-neutral-200 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200 hover:bg-neutral-300 dark:hover:bg-neutral-600 shadow-xs cursor-pointer"
+            className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1.5 rounded-full text-[10px] font-extrabold flex items-center gap-1.5 transition-all z-30 bg-neutral-200 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200 hover:bg-neutral-300 dark:hover:bg-neutral-600 shadow-xs cursor-pointer"
             title={
               !userAccount?.isLoggedIn
                 ? 'Log in to enable AI Search'
@@ -245,15 +230,10 @@ export const HeroSection = () => {
             <span>AI Search</span>
           </button>
 
-          {/* Search Suggestions & Most Viewed Categories Overlay (Expanded down to bottom navigation menu on mobile) */}
+          {/* Search Suggestions & Most Viewed Categories Overlay (Anchored directly below input, expands to bottom nav with scroll) */}
           {isSearchOpen && (
             <div
-              style={
-                searchBoxTop && typeof window !== 'undefined' && window.innerWidth < 640
-                  ? { top: `${searchBoxTop}px`, bottom: '4rem' }
-                  : undefined
-              }
-              className="fixed inset-x-3 sm:absolute sm:inset-x-0 sm:top-full sm:bottom-auto sm:mt-3 bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-neutral-800 p-4 sm:p-5 z-50 text-left overflow-y-auto sm:max-h-[520px] space-y-6 animate-fade-in"
+              className="absolute top-full inset-x-0 mt-2 bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-neutral-800 p-4 sm:p-5 z-40 text-left overflow-y-auto max-h-[calc(100dvh-200px)] sm:max-h-[520px] space-y-6 animate-fade-in"
             >
               {/* Most Searched Queries (Real User Search Queries) */}
               <div className="space-y-2.5">
