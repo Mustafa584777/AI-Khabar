@@ -99,6 +99,7 @@ export const UserSyncService = {
       const savedExpires = localStorage.getItem('auraprompt_plan_expires_at') || acc?.planExpiresAt;
       const savedStarted = localStorage.getItem('auraprompt_plan_started_at') || acc?.planStartedAt;
       const savedCredits = localStorage.getItem('auraprompt_tool_credits');
+      const savedSearches = localStorage.getItem('auraprompt_ai_search_remaining');
 
       if (isPaid && payload.planTier === undefined) {
         payload.planTier = savedTier;
@@ -112,8 +113,14 @@ export const UserSyncService = {
       if (savedStarted && payload.planStartedAt === undefined) {
         payload.planStartedAt = savedStarted;
       }
-      // Strict Rule: NEVER auto-attach toolCredits or aiSearchRemaining from localStorage if undefined!
-      // Credits and quota must ONLY be sent when explicitly updated by the caller to prevent stale overwrites.
+      if (savedCredits !== null && payload.toolCredits === undefined) {
+        const parsed = parseInt(savedCredits, 10);
+        if (!isNaN(parsed)) payload.toolCredits = parsed;
+      }
+      if (savedSearches !== null && payload.aiSearchRemaining === undefined) {
+        const parsed = parseInt(savedSearches, 10);
+        if (!isNaN(parsed)) payload.aiSearchRemaining = parsed;
+      }
     }
 
     try {

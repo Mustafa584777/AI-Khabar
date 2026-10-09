@@ -1714,10 +1714,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const cacheKey = clean.toLowerCase();
 
+    let shouldDeduct = false;
+    if (!planCfg.unlimitedSearches && deductQuota) {
+      if (!aiSearchDeductedRef.current.has(cacheKey)) {
+        aiSearchDeductedRef.current.add(cacheKey);
+        shouldDeduct = true;
+      }
+    }
+
     // Helper to safely deduct exactly 1 search point on completed search
     const deductOnePoint = () => {
-      if (!planCfg.unlimitedSearches && deductQuota && !aiSearchDeductedRef.current.has(cacheKey)) {
-        aiSearchDeductedRef.current.add(cacheKey);
+      if (shouldDeduct) {
         setAiSearchRemainingState((prev) => {
           const next = Math.max(0, prev - 1);
           aiSearchRemainingRef.current = next;

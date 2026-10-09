@@ -4,7 +4,15 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { auth } from '@/lib/firebase';
-import { GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail } from 'firebase/auth';
+import { 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  sendPasswordResetEmail,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendEmailVerification,
+  updateProfile
+} from 'firebase/auth';
 import {
   X,
   Sparkles,
@@ -53,49 +61,6 @@ export const UserAuthModal = () => {
     }
     return false;
   }, [router]);
-
-  // Listen for callback messages from /auth/callback popup
-  React.useEffect(() => {
-    const handleMessage = async (event: MessageEvent) => {
-      if (event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
-        const session = event.data.session;
-        const u = event.data.user || session?.user;
-        if (u) {
-          const name = u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split('@')[0] || 'Creator';
-          const avatar = u.user_metadata?.avatar_url || u.user_metadata?.picture || defaultAvatar;
-
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('auraprompt_signup_modal_already_shown', 'true');
-            localStorage.setItem('auraprompt_first_login_claimed', 'true');
-            localStorage.setItem('auraprompt_signup_bonus_claimed', 'true');
-            if (!localStorage.getItem('auraprompt_tool_credits')) {
-              localStorage.setItem('auraprompt_tool_credits', '5');
-            }
-            if (u.email) {
-              const cleanE = u.email.trim().toLowerCase();
-              localStorage.setItem(`auraprompt_signup_modal_already_shown_${cleanE}`, 'true');
-              localStorage.setItem(`auraprompt_signup_modal_shown_${cleanE}`, 'true');
-              localStorage.setItem(`auraprompt_signup_bonus_claimed_${cleanE}`, 'true');
-            }
-          }
-
-          await loginUser(u.email || '', '', name, avatar, u.id);
-          setIsFirstLoginModalOpen(false);
-          showToast(`Welcome ${name}! Signed in via Google.`);
-          setIsLoading(false);
-          setIsUserAuthModalOpen(false);
-          checkAndRedirectStudio();
-        }
-      } else if (event.data?.type === 'SUPABASE_AUTH_FAILED') {
-        setErrorMessage(event.data.error || 'Google sign-in could not be completed.');
-        showToast(event.data.error || 'Google sign-in could not be completed.');
-        setIsLoading(false);
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [loginUser, showToast, setIsUserAuthModalOpen, setIsFirstLoginModalOpen, checkAndRedirectStudio]);
 
   if (!isUserAuthModalOpen) return null;
 
@@ -171,8 +136,8 @@ export const UserAuthModal = () => {
       showToast('Please enter a valid email address');
       return;
     }
-    if (!password || password.length < 4) {
-      showToast('Password must be at least 4 characters');
+    if (!password || password.length < 6) {
+      showToast('Password must be at least 6 characters');
       return;
     }
 
@@ -183,56 +148,23 @@ export const UserAuthModal = () => {
         const userName = fullName.trim() || cleanEmail.split('@')[0];
         const userHandle = '@' + userName.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-        // 1. Create auto-confirmed account on Supabase via API route
-        const signupRes = await fetch('/api/auth/signup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: cleanEmail,
-            password,
-            name: userName,
-            username: userHandle,
-            avatar: defaultAvatar,
-          }),
-        });
-
-        const signupData = await signupRes.json();
-
-        if (!signupRes.ok && !signupData.success) {
-          if (signupData.isGoogleUser) {
-            setErrorMessage(signupData.error || 'This email is already registered via Google Sign-In.');
-            showToast('Please use Continue with Google to sign in.');
-            setIsLoading(false);
-            return;
-          }
-          if (signupData.alreadyExists) {
-            setMode('login');
-            setErrorMessage('An account with this email already exists. Please enter your password to sign in.');
-            setIsLoading(false);
-            return;
-          }
-          throw new Error(signupData.error || 'Failed to create account');
+        const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+        const u = userCredential.user;
+        if (fullName) {
+          await updateProfile(u, { displayName: fullName }).catch(() => {});
+        }
+        try {
+          await sendEmailVerification(u);
+        } catch (err) {
+          console.warn('Verification email error:', err);
         }
 
-        if (signupData.needsConfirmation) {
-          showToast('Verification email sent! Please check your inbox to confirm your account.');
-          setErrorMessage('Verification email sent! Please check your inbox and verify your email before signing in.');
-          setMode('login');
-          setIsLoading(false);
-          return;
-        }
-
-        // 2. Initialize account in App state (which triggers cloud sync)
-        const newUserId = signupData.user?.id || `u_${Date.now()}`;
-        await signupUser(userName, userHandle, cleanEmail, password, defaultAvatar, newUserId);
-        showToast(`Welcome ${userName}! 5 Free Credits added to your account 🎉`);
+        await signupUser(userName, userHandle, cleanEmail, password, defaultAvatar, u.uid);
+        showToast(`Welcome ${userName}! Verification email sent. 5 Free Credits added 🎉`);
+        setErrorMessage('Account created successfully! Verification email sent to your inbox.');
         setIsLoading(false);
         setIsUserAuthModalOpen(false);
-        setEmail('');
-        setPassword('');
-        setFullName('');
 
-        // Mark signup bonus as claimed and modal shown so it NEVER shows again in any future session or device
         if (typeof window !== 'undefined') {
           localStorage.setItem('auraprompt_first_login_claimed', 'true');
           localStorage.setItem('auraprompt_signup_bonus_claimed', 'true');
@@ -246,29 +178,15 @@ export const UserAuthModal = () => {
           }
         }
 
-        // Popup is completely removed. User automatically receives 5 credits directly on account creation!
         setIsFirstLoginModalOpen(false);
-
         checkAndRedirectStudio();
       } else {
         // Mode: LOGIN
-        // 1. Attempt login with auto-confirm support via /api/auth/login
-        const loginRes = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: cleanEmail, password }),
-        });
+        const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
+        const u = userCredential.user;
+        const userName = u.displayName || cleanEmail.split('@')[0];
+        const userAvatar = u.photoURL || defaultAvatar;
 
-        const loginData = await loginRes.json();
-
-        if (!loginRes.ok || !loginData.success) {
-          throw new Error(loginData.error || 'Invalid email or password');
-        }
-
-        const userName = loginData.user?.user_metadata?.full_name || cleanEmail.split('@')[0];
-        const userAvatar = loginData.user?.user_metadata?.avatar_url || defaultAvatar;
-
-        // Ensure popup is strictly closed on login and marked claimed
         setIsFirstLoginModalOpen(false);
         if (typeof window !== 'undefined') {
           localStorage.setItem('auraprompt_signup_modal_already_shown', 'true');
@@ -279,7 +197,7 @@ export const UserAuthModal = () => {
           localStorage.setItem(`auraprompt_signup_modal_shown_${cleanEmail}`, 'true');
         }
 
-        await loginUser(cleanEmail, password, userName, userAvatar, loginData.user?.id);
+        await loginUser(cleanEmail, password, userName, userAvatar, u.uid);
         showToast(`Welcome back, ${userName}! Logged in successfully.`);
         setIsLoading(false);
         setIsUserAuthModalOpen(false);
@@ -289,8 +207,17 @@ export const UserAuthModal = () => {
       }
     } catch (err: any) {
       console.error('Auth submit error:', err);
-      setErrorMessage(err.message || 'Authentication failed. Please check your details.');
-      showToast(err.message || 'Authentication failed');
+      let msg = err.message || 'Authentication failed. Please check your credentials.';
+      if (err.code === 'auth/email-already-in-use') {
+        msg = 'This email is already registered. Please sign in instead.';
+        setMode('login');
+      } else if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+        msg = 'Invalid email or password. Please check your details.';
+      } else if (err.code === 'auth/weak-password') {
+        msg = 'Password should be at least 6 characters.';
+      }
+      setErrorMessage(msg);
+      showToast(msg);
       setIsLoading(false);
     }
   };
@@ -389,7 +316,7 @@ export const UserAuthModal = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="your.email@gmail.com"
-                      className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                      className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 text-neutral-900 dark:text-white"
                     />
                   </div>
                 </div>
@@ -460,22 +387,142 @@ export const UserAuthModal = () => {
                 <span>Continue with Google</span>
               </button>
 
-              <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl text-center space-y-2">
-                <Sparkles className="w-6 h-6 text-amber-600 dark:text-amber-400 mx-auto" />
-                <h4 className="font-bold text-xs text-neutral-900 dark:text-white">Instant Google Sign-In</h4>
-                <p className="text-[11px] text-neutral-600 dark:text-neutral-300">
-                  Email & password login is temporarily disabled. Please continue with Google for instant, secure access.
-                </p>
+              <div className="flex items-center my-3">
+                <div className="flex-grow border-t border-neutral-200 dark:border-neutral-800"></div>
+                <span className="px-3 text-xs text-neutral-400 font-medium uppercase tracking-wider">Or email & password</span>
+                <div className="flex-grow border-t border-neutral-200 dark:border-neutral-800"></div>
               </div>
+
+              {/* Email & Password Form */}
+              <form onSubmit={handleSubmit} className="space-y-3">
+                {mode === 'signup' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+                      Full Name
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                      <input
+                        type="text"
+                        required
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="Creator Name"
+                        className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 text-neutral-900 dark:text-white"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="your.email@gmail.com"
+                      className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 text-neutral-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                      Password
+                    </label>
+                    {mode === 'login' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMode('forgot');
+                          setErrorMessage(null);
+                        }}
+                        className="text-xs text-red-600 dark:text-red-400 hover:underline font-medium"
+                      >
+                        Forgot password?
+                      </button>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                    <input
+                      type="password"
+                      required
+                      minLength={6}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="At least 6 characters"
+                      className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50 text-neutral-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-bold text-sm shadow-lg shadow-red-500/25 transition-all flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-70 mt-2"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>{mode === 'signup' ? 'Creating Account...' : 'Signing In...'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>{mode === 'signup' ? 'Create Account & Get 5 Credits' : 'Sign In'}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+
+                <div className="pt-2 text-center text-xs text-neutral-500 dark:text-neutral-400">
+                  {mode === 'signup' ? (
+                    <span>
+                      Already have an account?{' '}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMode('login');
+                          setErrorMessage(null);
+                        }}
+                        className="text-red-600 dark:text-red-400 font-bold hover:underline"
+                      >
+                        Sign In
+                      </button>
+                    </span>
+                  ) : (
+                    <span>
+                      Don't have an account?{' '}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMode('signup');
+                          setErrorMessage(null);
+                        }}
+                        className="text-red-600 dark:text-red-400 font-bold hover:underline"
+                      >
+                        Sign Up
+                      </button>
+                    </span>
+                  )}
+                </div>
+              </form>
             </>
           )}
 
           <div className="flex items-center justify-center gap-1.5 text-[11px] text-neutral-400 pt-1">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-            <span>Secure Supabase Authentication • 100% Free Forever</span>
+            <span>Secure Firebase Authentication • 100% Free Forever</span>
           </div>
         </div>
       </div>
     </div>
   );
 };
+
