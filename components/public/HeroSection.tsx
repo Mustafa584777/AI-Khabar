@@ -144,9 +144,25 @@ export const HeroSection = () => {
               }
             }}
             placeholder="Search prompts for aesthetics, cameras, or subjects..."
-            className="w-full pl-12 pr-28 sm:pr-32 py-3.5 bg-[#efefef] dark:bg-neutral-800 border-0 rounded-full text-sm font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]/40 placeholder:text-neutral-500 transition-all shadow-sm"
+            className="w-full pl-12 pr-36 sm:pr-40 py-3.5 bg-[#efefef] dark:bg-neutral-800 border-0 rounded-full text-sm font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]/40 placeholder:text-neutral-500 transition-all shadow-sm"
             id="hero-search-input"
           />
+          
+          {/* Red Clear Text Button before AI Search button */}
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSearchQuery('');
+              }}
+              className="absolute right-24 sm:right-28 top-1/2 -translate-y-1/2 text-xs font-bold text-[#E60023] hover:underline bg-transparent border-none p-1 cursor-pointer transition-colors z-10"
+              title="Clear text"
+            >
+              Clear
+            </button>
+          )}
+
           {/* AI Search Toggle Button Inside Hero Search Box */}
           <button
             type="button"
@@ -165,7 +181,7 @@ export const HeroSection = () => {
               }
               setIsAiSearchEnabled(!isAiSearchEnabled);
             }}
-            className={`absolute right-3 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-full text-[10px] font-extrabold flex items-center gap-1 transition-all z-10 ${
+            className={`absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1.5 rounded-full text-[10px] font-extrabold flex items-center gap-1.5 transition-all z-10 ${
               isAiSearchEnabled && userAccount?.isLoggedIn && (isProUser || aiSearchRemaining > 0)
                 ? 'bg-gradient-to-r from-[#E60023] to-rose-600 text-white shadow-sm'
                 : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300'
@@ -178,8 +194,10 @@ export const HeroSection = () => {
                 : 'AI Search Disabled (Click to enable)'
             }
           >
-            <Sparkles className="w-3 h-3" />
-            <span>AI {isAiSearchEnabled && userAccount?.isLoggedIn && (isProUser || aiSearchRemaining > 0) ? 'ON' : 'OFF'}</span>
+            <div className={`w-5 h-3 rounded-full transition-colors flex items-center px-0.5 ${isAiSearchEnabled && userAccount?.isLoggedIn && (isProUser || aiSearchRemaining > 0) ? 'bg-white/40 justify-end' : 'bg-neutral-400 dark:bg-neutral-600 justify-start'}`}>
+              <div className="w-2 h-2 rounded-full bg-white shadow-xs" />
+            </div>
+            <span>AI Search</span>
           </button>
 
           {/* Search Suggestions & Most Viewed Categories Overlay (Matching Screenshot) */}

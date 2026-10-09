@@ -133,7 +133,7 @@ export const SearchExploreModal = () => {
     setIsSearchModalOpen(false);
   };
 
-  // Calculate Most Viewed Categories with their top visual image
+  // Calculate Most Viewed Categories with their top visual image (excluding categories with < 5 prompts)
   const mostViewedCategories = useMemo(() => {
     const publishedPosts = posts.filter((p) => p.status === 'published');
 
@@ -156,8 +156,11 @@ export const SearchExploreModal = () => {
       };
     });
 
+    // Exclude categories where total prompts are less than 5
+    const validCats = catWithStats.filter((cat) => cat.postCount >= 5);
+
     // Sort categories by totalCopies desc, then by count
-    return catWithStats.sort((a, b) => b.totalCopies - a.totalCopies || b.postCount - a.postCount);
+    return validCats.sort((a, b) => b.totalCopies - a.totalCopies || b.postCount - a.postCount);
   }, [categories, posts]);
 
   // Live Instant Search Filter Results (with Gemini AI semantic fallback & sorting)
@@ -232,8 +235,8 @@ export const SearchExploreModal = () => {
       role="dialog"
       aria-modal="true"
     >
-      {/* Modal Container */}
-      <div className="w-full max-w-4xl mx-auto bg-white dark:bg-neutral-950 min-h-screen sm:min-h-0 sm:max-h-[92vh] sm:my-auto sm:rounded-3xl shadow-2xl border border-neutral-200/80 dark:border-neutral-800 flex flex-col overflow-hidden">
+      {/* Modal Container - Expanded to bottom navigation menu on mobile with vertical scroll */}
+      <div className="fixed inset-x-0 top-0 bottom-14 sm:bottom-auto sm:inset-auto sm:w-full sm:max-w-4xl sm:mx-auto bg-white dark:bg-neutral-950 sm:max-h-[92vh] sm:my-auto sm:rounded-3xl shadow-2xl border border-neutral-200/80 dark:border-neutral-800 flex flex-col overflow-hidden">
         
         {/* 1. Header Search Bar */}
         <div className="px-4 sm:px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-md shrink-0 flex items-center gap-3">
@@ -268,10 +271,23 @@ export const SearchExploreModal = () => {
                 }
               }}
               placeholder="Search prompts for aesthetics, cameras, or subjects..."
-              className="w-full pl-12 pr-28 sm:pr-32 py-3 bg-[#f0f0f0] dark:bg-neutral-800/90 text-neutral-900 dark:text-white rounded-full text-sm font-semibold placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#E60023] transition-all"
+              className="w-full pl-12 pr-36 sm:pr-40 py-3 bg-[#f0f0f0] dark:bg-neutral-800/90 text-neutral-900 dark:text-white rounded-full text-sm font-semibold placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#E60023] transition-all"
               id="search-explore-modal-input"
             />
-            {/* AI Search Toggle Button Inside Search Box */}
+            
+            {/* Red Clear Text Button before AI Search button */}
+            {localInput && (
+              <button
+                type="button"
+                onClick={() => setLocalInput('')}
+                className="absolute right-24 sm:right-28 text-xs font-bold text-[#E60023] hover:underline bg-transparent border-none p-1 cursor-pointer transition-colors z-10"
+                title="Clear text"
+              >
+                Clear
+              </button>
+            )}
+
+            {/* AI Search Toggle Button with Toggle Switch and AI Search text */}
             <button
               type="button"
               onClick={() => {
@@ -288,7 +304,7 @@ export const SearchExploreModal = () => {
                 }
                 setIsAiSearchEnabled(!isAiSearchEnabled);
               }}
-              className={`absolute right-10 sm:right-12 px-2.5 py-1 rounded-full text-[10px] font-extrabold flex items-center gap-1 transition-all ${
+              className={`absolute right-2 px-2.5 py-1 rounded-full text-[10px] font-extrabold flex items-center gap-1.5 transition-all ${
                 isAiSearchEnabled && userAccount?.isLoggedIn && (isProUser || aiSearchRemaining > 0)
                   ? 'bg-gradient-to-r from-[#E60023] to-rose-600 text-white shadow-sm'
                   : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300'
@@ -301,20 +317,11 @@ export const SearchExploreModal = () => {
                   : 'AI Search Disabled (Click to enable)'
               }
             >
-              <Sparkles className="w-3 h-3" />
-              <span>AI {isAiSearchEnabled && userAccount?.isLoggedIn && (isProUser || aiSearchRemaining > 0) ? 'ON' : 'OFF'}</span>
+              <div className={`w-5 h-3 rounded-full transition-colors flex items-center px-0.5 ${isAiSearchEnabled && userAccount?.isLoggedIn && (isProUser || aiSearchRemaining > 0) ? 'bg-white/40 justify-end' : 'bg-neutral-400 dark:bg-neutral-600 justify-start'}`}>
+                <div className="w-2 h-2 rounded-full bg-white shadow-xs" />
+              </div>
+              <span>AI Search</span>
             </button>
-
-            {localInput && (
-              <button
-                type="button"
-                onClick={() => setLocalInput('')}
-                className="absolute right-3 p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-white transition-colors"
-                title="Clear search input"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
           </div>
 
           {localInput && (
