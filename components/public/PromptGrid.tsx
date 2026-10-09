@@ -11,19 +11,6 @@ import { PersonalizationEngine } from '@/lib/personalization';
 const INITIAL_BATCH_SIZE = 10;
 const SCROLL_BATCH_SIZE = 10;
 
-// Deterministic session random seed generated ONCE per page reload / fresh visit.
-// This guarantees that random cards NEVER reshuffle while browsing, on state updates,
-// or tab switches — only on full page reload (F5 / browser refresh)!
-const PAGE_SESSION_SEED = typeof window !== 'undefined' ? Math.floor(Math.random() * 10000000) + 1 : 1234567;
-
-function getTrendingSessionRank(id: string, seed: number = PAGE_SESSION_SEED): number {
-  let hash = seed;
-  for (let i = 0; i < id.length; i++) {
-    hash = ((hash << 5) - hash + id.charCodeAt(i)) | 0;
-  }
-  return hash;
-}
-
 export const PromptGrid = () => {
   const {
     posts,
@@ -135,13 +122,6 @@ export const PromptGrid = () => {
           const timeA = new Date(a.publishedAt || a.createdAt || 0).getTime();
           if (timeB !== timeA && !isNaN(timeB) && !isNaN(timeA)) return timeB - timeA;
           return (b.createdAt || '').localeCompare(a.createdAt || '') || b.id.localeCompare(a.id);
-        });
-      } else if (selectedSort === 'trending') {
-        // Stable random shuffle generated per page reload session (never shuffles while browsing)
-        list = [...list].sort((a, b) => {
-          const rankA = getTrendingSessionRank(a.id);
-          const rankB = getTrendingSessionRank(b.id);
-          return rankA - rankB;
         });
       } else if (selectedSort === 'most-copied' || selectedSort === 'most-popular' || selectedSort === 'most-liked') {
         list = [...list].sort((a, b) => {

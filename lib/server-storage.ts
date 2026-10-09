@@ -344,17 +344,8 @@ export const ServerStorage = {
       }
     }
 
-    // Save to Firebase Firestore
-    if (isFirebaseConfigured()) {
-      try {
-        await setDoc(doc(firestoreDb, 'posts', savedPost.id), cleanForFirestore(savedPost));
-      } catch (fErr) {
-        console.error('Firestore savePost error:', fErr);
-      }
-    }
-
-    // Update memory and local cache
-    await unrecordDeletedPostId(savedPost.id);
+    // Update memory and local cache immediately
+    unrecordDeletedPostId(savedPost.id);
     const currentList = memoryPosts && memoryPosts.length > 0
       ? [...memoryPosts]
       : readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
@@ -367,6 +358,12 @@ export const ServerStorage = {
     memoryPosts = currentList;
     memoryPostsTimestamp = Date.now();
     writeJsonFile(POSTS_FILE, currentList);
+
+    // Save to Firebase Firestore in background (non-blocking)
+    if (isFirebaseConfigured()) {
+      setDoc(doc(firestoreDb, 'posts', savedPost.id), cleanForFirestore(savedPost))
+        .catch((fErr) => console.error('Firestore background savePost error:', fErr));
+    }
 
     // Auto-create category if needed
     if (savedPost.category && savedPost.category.trim()) {

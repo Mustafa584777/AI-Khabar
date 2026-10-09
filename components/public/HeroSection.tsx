@@ -91,12 +91,6 @@ export const HeroSection = () => {
 
   const sortOptions = [
     {
-      id: 'trending' as const,
-      label: 'Trending',
-      icon: Flame,
-      desc: 'Random trending prompts on every refresh',
-    },
-    {
       id: 'newest' as const,
       label: 'Newest First',
       icon: Clock,

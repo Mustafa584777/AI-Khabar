@@ -37,7 +37,7 @@ export const ToolFilterBar = () => {
             onClick={() => {
               if (selectedCategory === 'latest') {
                 setSelectedCategory('');
-                setSelectedSort('trending');
+                setSelectedSort('newest');
               } else {
                 setSelectedCategory('latest');
                 setSelectedSort('newest');
