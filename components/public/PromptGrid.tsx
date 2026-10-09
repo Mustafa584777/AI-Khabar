@@ -129,7 +129,7 @@ export const PromptGrid = () => {
       }
     } else {
       if (selectedCategory === 'latest' || selectedSort === 'newest') {
-        // "Latest Posts" filter or "Newest" sort selected: Always prioritize newest published posts first
+        // "Latest Prompts" filter or "Newest" sort selected: Always prioritize newest published posts first
         list = [...list].sort((a, b) => {
           const timeB = new Date(b.publishedAt || b.createdAt || 0).getTime();
           const timeA = new Date(a.publishedAt || a.createdAt || 0).getTime();
