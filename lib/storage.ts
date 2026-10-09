@@ -15,6 +15,10 @@ export const StorageService = {
   getCachedPosts: (): PromptPost[] => {
     if (typeof window !== 'undefined') {
       try {
+        const deletedRaw = localStorage.getItem('promptcms_deleted_ids');
+        const deletedList: string[] = deletedRaw ? JSON.parse(deletedRaw) : [];
+        const deletedSet = new Set(deletedList);
+
         const savedTime = localStorage.getItem('promptcms_cached_posts_time');
         const now = Date.now();
         const TWELVE_HOURS = 12 * 60 * 60 * 1000;
@@ -23,10 +27,11 @@ export const StorageService = {
           if (saved) {
             const parsed = JSON.parse(saved);
             if (Array.isArray(parsed) && parsed.length > 0) {
-              return parsed;
+              return parsed.filter((p: PromptPost) => !deletedSet.has(p.id));
             }
           }
         }
+        return (INITIAL_POSTS || []).filter((p: PromptPost) => !deletedSet.has(p.id));
       } catch (e) {
         console.error('Error reading cached posts:', e);
       }

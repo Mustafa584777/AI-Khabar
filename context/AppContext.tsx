@@ -1600,24 +1600,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
     return uniqueReal.length > 0 ? uniqueReal : ['Portrait photography', 'Cinematic lighting', 'Cyberpunk portrait', 'Vintage film'];
   });
-  const [selectedCategory, setSelectedCategoryState] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('selectedCategory');
-        if (stored && stored !== 'all' && stored !== 'none') return stored;
-      } catch {}
-    }
-    return '';
-  });
+  const [selectedCategory, setSelectedCategoryState] = useState<string>('');
 
   const setSelectedCategory = (cat: string) => {
-    const clean = cat === 'all' ? '' : cat;
+    const clean = cat === 'all' || cat === 'none' ? '' : cat;
     setSelectedCategoryState(clean);
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('selectedCategory', clean);
-      } catch {}
-    }
   };
   const [selectedTool, setSelectedTool] = useState<string>('all');
   const [selectedSort, setSelectedSort] = useState<
@@ -1862,8 +1849,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           if (res.ok && !isSavingRef.current) {
             const data = await res.json();
             if (data.success && Array.isArray(data.posts)) {
-              setPosts(data.posts);
-              StorageService.saveCachedPosts(data.posts);
+              let deletedSet = new Set<string>();
+              if (typeof window !== 'undefined') {
+                try {
+                  const rawDel = localStorage.getItem('promptcms_deleted_ids');
+                  if (rawDel) {
+                    const parsed = JSON.parse(rawDel);
+                    if (Array.isArray(parsed)) deletedSet = new Set(parsed);
+                  }
+                } catch {}
+              }
+              const cleanList = data.posts.filter((p: PromptPost) => !deletedSet.has(p.id));
+              setPosts(cleanList);
+              StorageService.saveCachedPosts(cleanList);
             }
           }
         })
@@ -1926,6 +1924,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // 1. Read cached localStorage data immediately on client mount
     try {
+      localStorage.removeItem('selectedCategory');
       if (localStorage.getItem('promptcms_auth') === 'true') {
         setIsAuthenticated(true);
         setCurrentUser({
@@ -2331,6 +2330,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const savePost = async (post: PromptPost): Promise<PromptPost> => {
     isSavingRef.current = true;
 
+    // Unrecord from deleted IDs list if re-saving
+    if (typeof window !== 'undefined') {
+      try {
+        const rawDel = localStorage.getItem('promptcms_deleted_ids');
+        if (rawDel) {
+          const list: string[] = JSON.parse(rawDel);
+          const filtered = list.filter((id) => id !== post.id);
+          localStorage.setItem('promptcms_deleted_ids', JSON.stringify(filtered));
+        }
+      } catch {}
+    }
+
     // Immediate optimistic local update
     setPosts((prev) => {
       const idx = prev.findIndex((p) => p.id === post.id);
@@ -2380,6 +2391,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     isSavingRef.current = true;
     const idSet = new Set(ids);
 
+    // Save deleted IDs to localStorage permanently
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('promptcms_deleted_ids');
+        const list: string[] = raw ? JSON.parse(raw) : [];
+        ids.forEach((id) => {
+          if (!list.includes(id)) list.push(id);
+        });
+        localStorage.setItem('promptcms_deleted_ids', JSON.stringify(list));
+      } catch {}
+    }
+
     // 1. Instant optimistic update in memory & local storage
     setPosts((prev) => {
       const updated = prev.filter((p) => !idSet.has(p.id));
@@ -2414,8 +2437,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       });
       const data = await res.json();
       if (data.success && Array.isArray(data.posts)) {
-        setPosts(data.posts);
-        StorageService.saveCachedPosts(data.posts);
+        // Guarantee deleted IDs are NEVER reintroduced from server response
+        const remaining = data.posts.filter((p: PromptPost) => !idSet.has(p.id));
+        setPosts(remaining);
+        StorageService.saveCachedPosts(remaining);
       }
       return true;
     } catch (err) {

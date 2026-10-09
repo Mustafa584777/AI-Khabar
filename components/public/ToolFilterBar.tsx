@@ -31,12 +31,13 @@ export const ToolFilterBar = () => {
       <div className="flex items-center gap-2">
         {/* Style Pill Tabs Slider */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1.5 no-scrollbar flex-1 scroll-smooth">
-          {/* 1. "Latest Posts" Filter Button (Unselected by default, activates only on user click) */}
+          {/* 1. "Latest Prompts" Filter Button (Unselected by default, activates only on user click) */}
           <button
             type="button"
             onClick={() => {
               if (selectedCategory === 'latest') {
                 setSelectedCategory('');
+                setSelectedSort('trending');
               } else {
                 setSelectedCategory('latest');
                 setSelectedSort('newest');
@@ -49,7 +50,7 @@ export const ToolFilterBar = () => {
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Latest Posts</span>
+            <span>Latest Prompts</span>
           </button>
 
           {/* AI Ranked Personalized Category Tabs */}

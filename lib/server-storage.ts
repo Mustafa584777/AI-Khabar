@@ -65,24 +65,82 @@ function writeJsonFile<T>(filePath: string, data: T): void {
   }
 }
 
-function getDeletedPostIds(): Set<string> {
-  const list = readJsonFile<string[]>(DELETED_POSTS_FILE, []);
-  return new Set(Array.isArray(list) ? list : []);
+let memoryDeletedIds: Set<string> | null = null;
+
+async function getDeletedPostIdsAsync(): Promise<Set<string>> {
+  if (memoryDeletedIds) return memoryDeletedIds;
+
+  const localList = readJsonFile<string[]>(DELETED_POSTS_FILE, []);
+  const set = new Set<string>(Array.isArray(localList) ? localList : []);
+
+  if (isFirebaseConfigured()) {
+    try {
+      const snap = await getDoc(doc(firestoreDb, 'settings', 'deleted_posts'));
+      if (snap.exists()) {
+        const data = snap.data();
+        if (Array.isArray(data?.ids)) {
+          data.ids.forEach((id: string) => {
+            if (id) set.add(id);
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Firestore get deleted_posts notice:', e);
+    }
+  }
+
+  memoryDeletedIds = set;
+  writeJsonFile(DELETED_POSTS_FILE, Array.from(set));
+  return set;
 }
 
-function recordDeletedPostIds(ids: string[]): void {
-  const current = getDeletedPostIds();
+async function recordDeletedPostIds(ids: string[]): Promise<void> {
+  const current = await getDeletedPostIdsAsync();
   ids.forEach((id) => {
     if (id) current.add(id);
   });
-  writeJsonFile(DELETED_POSTS_FILE, Array.from(current));
+  memoryDeletedIds = current;
+  const list = Array.from(current);
+  writeJsonFile(DELETED_POSTS_FILE, list);
+
+  if (isFirebaseConfigured()) {
+    try {
+      await setDoc(
+        doc(firestoreDb, 'settings', 'deleted_posts'),
+        {
+          ids: list,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+    } catch (e) {
+      console.error('Firestore recordDeletedPostIds error:', e);
+    }
+  }
 }
 
-function unrecordDeletedPostId(id: string): void {
-  const current = getDeletedPostIds();
+async function unrecordDeletedPostId(id: string): Promise<void> {
+  const current = await getDeletedPostIdsAsync();
   if (current.has(id)) {
     current.delete(id);
-    writeJsonFile(DELETED_POSTS_FILE, Array.from(current));
+    memoryDeletedIds = current;
+    const list = Array.from(current);
+    writeJsonFile(DELETED_POSTS_FILE, list);
+
+    if (isFirebaseConfigured()) {
+      try {
+        await setDoc(
+          doc(firestoreDb, 'settings', 'deleted_posts'),
+          {
+            ids: list,
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        );
+      } catch (e) {
+        console.error('Firestore unrecordDeletedPostId error:', e);
+      }
+    }
   }
 }
 
@@ -115,7 +173,7 @@ let memorySearchQueries: SearchQueryItem[] | null = null;
 export const ServerStorage = {
   // Posts
   getAllPosts: async (includeDrafts = true): Promise<PromptPost[]> => {
-    const deletedIds = getDeletedPostIds();
+    const deletedIds = await getDeletedPostIdsAsync();
     const now = Date.now();
     if (memoryPosts && memoryPosts.length > 0 && (now - memoryPostsTimestamp < POSTS_CACHE_TTL)) {
       const valid = memoryPosts.filter((p) => !deletedIds.has(p.id));
@@ -323,7 +381,7 @@ export const ServerStorage = {
     }
 
     // Update memory and local cache
-    unrecordDeletedPostId(savedPost.id);
+    await unrecordDeletedPostId(savedPost.id);
     const currentList = memoryPosts && memoryPosts.length > 0
       ? [...memoryPosts]
       : readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
@@ -381,7 +439,7 @@ export const ServerStorage = {
     if (cleanIds.length === 0) return;
     const idSet = new Set(cleanIds);
 
-    recordDeletedPostIds(cleanIds);
+    await recordDeletedPostIds(cleanIds);
 
     // 1. Remove from local file / memory
     try {
