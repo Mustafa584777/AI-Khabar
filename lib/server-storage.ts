@@ -25,6 +25,7 @@ const SEARCH_QUERIES_FILE = path.join(DATA_DIR, 'search_queries.json');
 const SUBSCRIPTIONS_FILE = path.join(DATA_DIR, 'subscriptions.json');
 const USER_PROFILES_FILE = path.join(DATA_DIR, 'users.json');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
+const DELETED_POSTS_FILE = path.join(DATA_DIR, 'deleted_posts.json');
 
 const DEFAULT_TAGS = [
   'Portrait', '35mm', 'Cinematic', 'Street Photography', 'Fashion',
@@ -64,6 +65,27 @@ function writeJsonFile<T>(filePath: string, data: T): void {
   }
 }
 
+function getDeletedPostIds(): Set<string> {
+  const list = readJsonFile<string[]>(DELETED_POSTS_FILE, []);
+  return new Set(Array.isArray(list) ? list : []);
+}
+
+function recordDeletedPostIds(ids: string[]): void {
+  const current = getDeletedPostIds();
+  ids.forEach((id) => {
+    if (id) current.add(id);
+  });
+  writeJsonFile(DELETED_POSTS_FILE, Array.from(current));
+}
+
+function unrecordDeletedPostId(id: string): void {
+  const current = getDeletedPostIds();
+  if (current.has(id)) {
+    current.delete(id);
+    writeJsonFile(DELETED_POSTS_FILE, Array.from(current));
+  }
+}
+
 // Helper to remove any undefined fields before sending to Firestore
 function cleanForFirestore<T = any>(obj: any): T {
   if (obj === null || obj === undefined) return null as any;
@@ -93,9 +115,11 @@ let memorySearchQueries: SearchQueryItem[] | null = null;
 export const ServerStorage = {
   // Posts
   getAllPosts: async (includeDrafts = true): Promise<PromptPost[]> => {
+    const deletedIds = getDeletedPostIds();
     const now = Date.now();
     if (memoryPosts && memoryPosts.length > 0 && (now - memoryPostsTimestamp < POSTS_CACHE_TTL)) {
-      return includeDrafts ? memoryPosts : memoryPosts.filter((p) => p.status === 'published');
+      const valid = memoryPosts.filter((p) => !deletedIds.has(p.id));
+      return includeDrafts ? valid : valid.filter((p) => p.status === 'published');
     }
 
     let localPosts: PromptPost[] = [];
@@ -132,10 +156,10 @@ export const ServerStorage = {
     // Merge remotePosts and localPosts by ID to ensure NO prompt is ever lost
     const postMap = new Map<string, PromptPost>();
     for (const p of localPosts) {
-      if (p.id) postMap.set(p.id, p);
+      if (p.id && !deletedIds.has(p.id)) postMap.set(p.id, p);
     }
     for (const p of remotePosts) {
-      if (p.id) {
+      if (p.id && !deletedIds.has(p.id)) {
         const existing = postMap.get(p.id);
         if (
           !existing ||
@@ -299,6 +323,7 @@ export const ServerStorage = {
     }
 
     // Update memory and local cache
+    unrecordDeletedPostId(savedPost.id);
     const currentList = memoryPosts && memoryPosts.length > 0
       ? [...memoryPosts]
       : readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
@@ -347,25 +372,45 @@ export const ServerStorage = {
   },
 
   deletePost: async (id: string, token?: string): Promise<void> => {
+    return ServerStorage.deletePosts([id], token);
+  },
+
+  deletePosts: async (ids: string[], token?: string): Promise<void> => {
+    if (!Array.isArray(ids) || ids.length === 0) return;
+    const cleanIds = ids.filter(Boolean);
+    if (cleanIds.length === 0) return;
+    const idSet = new Set(cleanIds);
+
+    recordDeletedPostIds(cleanIds);
+
     // 1. Remove from local file / memory
     try {
       const rawPosts = memoryPosts && memoryPosts.length > 0
         ? [...memoryPosts]
         : readJsonFile<PromptPost[]>(POSTS_FILE, []);
-      const filteredLocal = rawPosts.filter((p) => p.id !== id);
+      const filteredLocal = rawPosts.filter((p) => !idSet.has(p.id));
       memoryPosts = filteredLocal;
       memoryPostsTimestamp = Date.now();
       writeJsonFile(POSTS_FILE, filteredLocal);
     } catch (e) {
-      console.error('Local deletePost error:', e);
+      console.error('Local deletePosts error:', e);
     }
 
     // 2. Remove from Firebase Firestore
     if (isFirebaseConfigured()) {
       try {
-        await deleteDoc(doc(firestoreDb, 'posts', id));
+        const batch = writeBatch(firestoreDb);
+        let batchCount = 0;
+        for (const id of cleanIds) {
+          batch.delete(doc(firestoreDb, 'posts', id));
+          batchCount++;
+          if (batchCount >= 450) break;
+        }
+        if (batchCount > 0) {
+          await batch.commit();
+        }
       } catch (err) {
-        console.error('Firestore deletePost error:', err);
+        console.error('Firestore deletePosts error:', err);
       }
     }
   },

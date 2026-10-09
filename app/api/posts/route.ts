@@ -88,14 +88,39 @@ export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
-    if (!id) {
-      return NextResponse.json({ error: 'Post ID is required' }, { status: 400 });
+    const idsParam = searchParams.get('ids');
+
+    let idsToDelete: string[] = [];
+    if (id) {
+      idsToDelete.push(id);
+    }
+    if (idsParam) {
+      idsParam.split(',').map((s) => s.trim()).filter(Boolean).forEach((i) => {
+        if (!idsToDelete.includes(i)) idsToDelete.push(i);
+      });
+    }
+
+    if (idsToDelete.length === 0) {
+      try {
+        const body = await req.json();
+        if (Array.isArray(body.ids)) {
+          body.ids.filter(Boolean).forEach((i: string) => {
+            if (!idsToDelete.includes(i)) idsToDelete.push(i);
+          });
+        } else if (body.id) {
+          idsToDelete.push(body.id);
+        }
+      } catch {}
+    }
+
+    if (idsToDelete.length === 0) {
+      return NextResponse.json({ error: 'Post ID or IDs are required' }, { status: 400 });
     }
 
     const authHeader = req.headers.get('Authorization');
     const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : undefined;
 
-    await ServerStorage.deletePost(id, token);
+    await ServerStorage.deletePosts(idsToDelete, token);
     const allPosts = await ServerStorage.getAllPosts(true);
 
     try {
@@ -104,7 +129,7 @@ export async function DELETE(req: NextRequest) {
     } catch {}
 
     return NextResponse.json(
-      { success: true, posts: allPosts },
+      { success: true, posts: allPosts, deletedIds: idsToDelete },
       {
         headers: {
           'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',

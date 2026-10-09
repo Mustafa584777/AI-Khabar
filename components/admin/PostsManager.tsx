@@ -22,6 +22,7 @@ export const PostsManager = () => {
     posts,
     categories,
     deletePost,
+    deletePosts,
     togglePublishStatus,
     togglePremiumStatus,
     setAdminSubView,
@@ -92,10 +93,9 @@ export const PostsManager = () => {
   };
 
   const handleBulkDelete = () => {
-    if (confirm(`Are you sure you want to delete ${selectedIds.length} prompts?`)) {
-      selectedIds.forEach((id) => deletePost(id));
-      setSelectedIds([]);
-    }
+    if (selectedIds.length === 0) return;
+    deletePosts(selectedIds);
+    setSelectedIds([]);
   };
 
   return (
@@ -341,9 +341,7 @@ export const PostsManager = () => {
                               <span className="text-neutral-300">|</span>
                               <button
                                 onClick={() => {
-                                  if (confirm(`Delete prompt "${post.title}"?`)) {
-                                    deletePost(post.id);
-                                  }
+                                  deletePost(post.id);
                                 }}
                                 className="text-red-600 dark:text-red-400 font-medium hover:underline"
                               >
@@ -411,9 +409,7 @@ export const PostsManager = () => {
                           </button>
                           <button
                             onClick={() => {
-                              if (confirm(`Delete prompt "${post.title}"?`)) {
-                                deletePost(post.id);
-                              }
+                              deletePost(post.id);
                             }}
                             className="p-1.5 rounded-lg text-neutral-400 hover:text-red-600 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                             title="Delete"

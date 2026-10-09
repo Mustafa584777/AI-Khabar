@@ -119,6 +119,7 @@ interface AppContextType {
   refreshData: () => void;
   savePost: (post: PromptPost) => Promise<PromptPost>;
   deletePost: (id: string) => Promise<boolean>;
+  deletePosts: (ids: string[]) => Promise<boolean>;
   togglePublishStatus: (id: string) => void;
   togglePremiumStatus: (id: string) => Promise<void>;
   copyPromptToClipboard: (text: string, postId?: string) => void;
@@ -2374,49 +2375,61 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const deletePost = async (id: string): Promise<boolean> => {
+  const deletePosts = async (ids: string[]): Promise<boolean> => {
+    if (!ids || ids.length === 0) return true;
     isSavingRef.current = true;
-    setPosts((prev) => prev.filter((p) => p.id !== id));
-    setBookmarkedIds((prev) => {
-      if (prev.includes(id)) {
-        const updated = prev.filter((item) => item !== id);
-        if (typeof window !== 'undefined') {
-          try {
-            localStorage.setItem('promptcms_user_bookmarks', JSON.stringify(updated));
-          } catch (e) {
-            console.error(e);
-          }
-        }
-        if (userAccount && userAccount.isLoggedIn) {
-          void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
-            bookmarkedIds: updated,
-          });
-        }
-        return updated;
-      }
-      return prev;
+    const idSet = new Set(ids);
+
+    // 1. Instant optimistic update in memory & local storage
+    setPosts((prev) => {
+      const updated = prev.filter((p) => !idSet.has(p.id));
+      StorageService.saveCachedPosts(updated);
+      return updated;
     });
 
+    setBookmarkedIds((prev) => {
+      const updated = prev.filter((item) => !idSet.has(item));
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('promptcms_user_bookmarks', JSON.stringify(updated));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      if (userAccount && userAccount.isLoggedIn) {
+        void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
+          bookmarkedIds: updated,
+        });
+      }
+      return updated;
+    });
+
+    showToast(`${ids.length} prompt${ids.length > 1 ? 's' : ''} removed`);
+
     try {
-      const res = await fetch(`/api/posts?id=${encodeURIComponent(id)}`, {
+      const res = await fetch('/api/posts', {
         method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
       });
       const data = await res.json();
       if (data.success && Array.isArray(data.posts)) {
         setPosts(data.posts);
         StorageService.saveCachedPosts(data.posts);
       }
-      showToast('Prompt removed from server');
       return true;
     } catch (err) {
-      console.error('Failed to delete post on server:', err);
-      showToast('Failed to delete post on server');
+      console.error('Failed to delete posts on server:', err);
       return false;
     } finally {
       setTimeout(() => {
         isSavingRef.current = false;
-      }, 1500);
+      }, 1000);
     }
+  };
+
+  const deletePost = async (id: string): Promise<boolean> => {
+    return deletePosts([id]);
   };
 
   const togglePublishStatus = async (id: string) => {
@@ -2772,6 +2785,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         refreshData,
         savePost,
         deletePost,
+        deletePosts,
         togglePublishStatus,
         togglePremiumStatus,
         copyPromptToClipboard,
