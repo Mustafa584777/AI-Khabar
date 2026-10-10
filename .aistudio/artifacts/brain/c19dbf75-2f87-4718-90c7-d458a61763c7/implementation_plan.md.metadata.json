@@ -1,0 +1,6 @@
+{
+  "summary":  "Implementation plan to fix prompt flickering, temporary disappearance, and stale cache overrides by ensuring instant synchronization and persistent local/remote prompt state.",
+  "updatedAt":  "2026-10-10T01:56:58.626655922Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

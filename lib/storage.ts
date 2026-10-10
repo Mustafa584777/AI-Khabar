@@ -19,19 +19,29 @@ export const StorageService = {
         const deletedList: string[] = deletedRaw ? JSON.parse(deletedRaw) : [];
         const deletedSet = new Set(deletedList);
 
-        const savedTime = localStorage.getItem('promptcms_cached_posts_time');
-        const now = Date.now();
-        const TWELVE_HOURS = 12 * 60 * 60 * 1000;
-        if (savedTime && now - parseInt(savedTime, 10) < TWELVE_HOURS) {
-          const saved = localStorage.getItem(STORAGE_KEY_CACHED_POSTS);
-          if (saved) {
-            const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              return parsed.filter((p: PromptPost) => !deletedSet.has(p.id));
+        const saved = localStorage.getItem(STORAGE_KEY_CACHED_POSTS);
+        const postMap = new Map<string, PromptPost>();
+
+        if (Array.isArray(INITIAL_POSTS)) {
+          for (const p of INITIAL_POSTS) {
+            if (p && p.id && !deletedSet.has(p.id)) {
+              postMap.set(p.id, p);
             }
           }
         }
-        return (INITIAL_POSTS || []).filter((p: PromptPost) => !deletedSet.has(p.id));
+
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            for (const p of parsed) {
+              if (p && p.id && !deletedSet.has(p.id)) {
+                postMap.set(p.id, p);
+              }
+            }
+          }
+        }
+
+        return Array.from(postMap.values());
       } catch (e) {
         console.error('Error reading cached posts:', e);
       }
