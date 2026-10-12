@@ -423,6 +423,9 @@ export const ServerStorage = {
 
     let finalList: PromptPost[] = [];
 
+    firestoreQuotaExhaustedUntil = 0;
+    memoryPostsLastFetched = Date.now();
+
     if (mode === 'replace') {
       finalList = cleanIncoming;
       memoryPosts = cleanIncoming;
