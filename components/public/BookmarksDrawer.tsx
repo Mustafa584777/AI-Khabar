@@ -155,7 +155,7 @@ export const BookmarksDrawer = () => {
                 No saved prompts yet
               </h4>
               <p className="text-xs text-neutral-500 max-w-xs mx-auto">
-                Click the &ldquo;Save&rdquo; button on any photo prompt card to collect your favorite prompts here.
+                Click the “Save” button on any photo prompt card to collect your favorite prompts here.
               </p>
             </div>
           )}

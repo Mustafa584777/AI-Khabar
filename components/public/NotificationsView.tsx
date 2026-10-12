@@ -57,9 +57,17 @@ export const NotificationsView: React.FC = () => {
   };
 
   useEffect(() => {
-    // If cached notifications exist, load silently in background without showing loader skeleton
-    loadNotifications(notifications.length > 0);
-    NotificationService.syncWithServer().then(() => loadNotifications(true));
+    // If we already have cached notifications, use them and do NOT refetch or force server sync on every open!
+    if (notifications.length > 0) {
+      setIsLoading(false);
+    } else {
+      loadNotifications(false);
+      NotificationService.syncWithServer().then(() => loadNotifications(true));
+    }
+
+    const prefs = NotificationService.getPreferences();
+    setUserInterests(prefs.selectedInterests || []);
+    setBrowserPushPermission(NotificationService.getBrowserPermissionStatus());
 
     // Listen for live push notifications across tabs
     const handleNewNotif = () => {
@@ -67,14 +75,8 @@ export const NotificationsView: React.FC = () => {
     };
     window.addEventListener('promptcms_new_notification', handleNewNotif);
 
-    // Periodic sync every 15 seconds for real-time delivery in background
-    const interval = setInterval(() => {
-      NotificationService.syncWithServer().then(() => loadNotifications(true));
-    }, 15000);
-
     return () => {
       window.removeEventListener('promptcms_new_notification', handleNewNotif);
-      clearInterval(interval);
     };
   }, []);
 

@@ -298,7 +298,7 @@ export const PromptEditorTool = () => {
               <div className="h-64 flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl text-neutral-400 space-y-3">
                 <Cpu className="w-10 h-10 stroke-[1.5] text-neutral-300 dark:text-neutral-700" />
                 <p className="text-sm">
-                  Provide your prompt and changes on the left and click <span className="font-bold text-neutral-600 dark:text-neutral-300">&ldquo;Edit Prompt with AI&rdquo;</span> to view the edited result here.
+                  Provide your prompt and changes on the left and click <span className="font-bold text-neutral-600 dark:text-neutral-300">“Edit Prompt with AI”</span> to view the edited result here.
                 </p>
               </div>
             )}

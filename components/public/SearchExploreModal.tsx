@@ -370,7 +370,7 @@ export const SearchExploreModal = () => {
                     <div className="flex items-center gap-2">
                       <Sparkles className="w-3.5 h-3.5 text-[#E60023] shrink-0" />
                       <span>
-                        Showing visual results for <strong className="text-[#E60023]">&ldquo;{modalAiResult.correctedQuery}&rdquo;</strong> (understood from &ldquo;{localInput}&rdquo;)
+                        Showing visual results for <strong className="text-[#E60023]">“{modalAiResult.correctedQuery}”</strong> (understood from “{localInput}”)
                       </span>
                     </div>
                     <button
@@ -392,7 +392,7 @@ export const SearchExploreModal = () => {
                     <Search className="w-6 h-6" />
                   </div>
                   <p className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
-                    No prompts matching &ldquo;{localInput}&rdquo;
+                    No prompts matching “{localInput}”
                   </p>
                   {!isAiSearchEnabled ? (
                     <div className="space-y-2 max-w-sm mx-auto">
