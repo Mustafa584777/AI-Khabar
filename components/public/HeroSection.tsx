@@ -9,6 +9,8 @@ import {
   Sparkles,
   TrendingUp,
   Flame,
+  Star,
+  Heart,
   Copy,
   Clock,
   Check,
@@ -41,7 +43,6 @@ export const HeroSection = () => {
     showToast,
     userAccount,
     openAuthModal,
-    performAiSearch,
   } = useApp();
 
   const [isSortOpen, setIsSortOpen] = useState(false);
@@ -58,23 +59,6 @@ export const HeroSection = () => {
   const popularTags = useMemo(() => {
     return getDynamicPopularTags(posts, 7);
   }, [posts]);
-
-  // Filter Most Viewed Categories with at least 5 prompts
-  const validMostViewedCategories = useMemo(() => {
-    const published = posts.filter((p) => p.status === 'published');
-    return categories
-      .map((cat) => {
-        const catPosts = published.filter(
-          (p) => p.category.toLowerCase() === cat.name.toLowerCase()
-        );
-        return {
-          ...cat,
-          postCount: catPosts.length,
-          previewPosts: catPosts.slice(0, 4),
-        };
-      })
-      .filter((cat) => cat.postCount >= 5);
-  }, [categories, posts]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -95,6 +79,18 @@ export const HeroSection = () => {
       label: 'Newest First',
       icon: Clock,
       desc: 'Recently published prompts',
+    },
+    {
+      id: 'most-popular' as const,
+      label: 'Most Popular',
+      icon: Star,
+      desc: 'Most viewed prompts',
+    },
+    {
+      id: 'most-liked' as const,
+      label: 'Most Liked',
+      icon: Heart,
+      desc: 'Highest community likes',
     },
     {
       id: 'most-copied' as const,
@@ -131,13 +127,8 @@ export const HeroSection = () => {
       {/* Action Bar: Search & Sort Dropdown */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 animate-fade-in [animation-delay:300ms]">
         {/* Search Bar */}
-        <div
-          className={`flex-1 relative group transition-all ${
-            isSearchOpen ? 'z-40' : 'z-20'
-          }`}
-          ref={searchContainerRef}
-        >
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-neutral-400 group-focus-within:text-[#E60023] transition-colors z-30">
+        <div className="flex-1 relative group" ref={searchContainerRef}>
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-neutral-400 group-focus-within:text-[#E60023] transition-colors">
             <Search className="w-5 h-5" />
           </div>
           <input
@@ -148,44 +139,11 @@ export const HeroSection = () => {
               setSearchQuery(e.target.value);
               setIsSearchOpen(true);
             }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                const q = searchQuery.trim();
-                if (q) {
-                  recordSearchQuery(q);
-                  setIsSearchOpen(false);
-                  if (isAiSearchEnabled && userAccount?.isLoggedIn) {
-                    if (!isProUser && aiSearchRemaining <= 0) {
-                      showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
-                      setIsProCheckoutModalOpen(true);
-                    } else {
-                      void performAiSearch(q, true);
-                    }
-                  }
-                }
-              }
-            }}
             placeholder="Search prompts for aesthetics, cameras, or subjects..."
-            className="w-full relative z-20 pl-12 pr-44 sm:pr-48 py-3.5 bg-[#efefef] dark:bg-neutral-800 border-0 rounded-full text-sm font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]/40 placeholder:text-neutral-500 transition-all shadow-sm"
+            className="w-full pl-12 pr-28 sm:pr-32 py-3.5 bg-[#efefef] dark:bg-neutral-800 border-0 rounded-full text-sm font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023]/40 placeholder:text-neutral-500 transition-all shadow-sm"
             id="hero-search-input"
           />
-          
-          {/* Red Clear Text Button before AI Search button with increased right margin */}
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setSearchQuery('');
-              }}
-              className="absolute right-32 sm:right-36 top-1/2 -translate-y-1/2 text-xs font-bold text-[#E60023] hover:underline bg-transparent border-none p-1 cursor-pointer transition-colors z-30"
-              title="Clear text"
-            >
-              Clear
-            </button>
-          )}
-
-          {/* AI Search Toggle Button Inside Hero Search Box (No red button background) */}
+          {/* AI Search Toggle Button Inside Hero Search Box */}
           <button
             type="button"
             onClick={(e) => {
@@ -203,7 +161,11 @@ export const HeroSection = () => {
               }
               setIsAiSearchEnabled(!isAiSearchEnabled);
             }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1.5 rounded-full text-[10px] font-extrabold flex items-center gap-1.5 transition-all z-30 bg-neutral-200 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200 hover:bg-neutral-300 dark:hover:bg-neutral-600 shadow-xs cursor-pointer"
+            className={`absolute right-3 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-full text-[10px] font-extrabold flex items-center gap-1 transition-all z-10 ${
+              isAiSearchEnabled && userAccount?.isLoggedIn && (isProUser || aiSearchRemaining > 0)
+                ? 'bg-gradient-to-r from-[#E60023] to-rose-600 text-white shadow-sm'
+                : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300'
+            }`}
             title={
               !userAccount?.isLoggedIn
                 ? 'Log in to enable AI Search'
@@ -212,23 +174,13 @@ export const HeroSection = () => {
                 : 'AI Search Disabled (Click to enable)'
             }
           >
-            <div
-              className={`w-5 h-3 rounded-full transition-colors flex items-center px-0.5 ${
-                isAiSearchEnabled && userAccount?.isLoggedIn && (isProUser || aiSearchRemaining > 0)
-                  ? 'bg-[#E60023] justify-end'
-                  : 'bg-neutral-400 dark:bg-neutral-500 justify-start'
-              }`}
-            >
-              <div className="w-2 h-2 rounded-full bg-white shadow-xs" />
-            </div>
-            <span>AI Search</span>
+            <Sparkles className="w-3 h-3" />
+            <span>AI {isAiSearchEnabled && userAccount?.isLoggedIn && (isProUser || aiSearchRemaining > 0) ? 'ON' : 'OFF'}</span>
           </button>
 
-          {/* Search Suggestions & Most Viewed Categories Overlay (Anchored directly below input, expands to bottom nav with scroll) */}
+          {/* Search Suggestions & Most Viewed Categories Overlay (Matching Screenshot) */}
           {isSearchOpen && (
-            <div
-              className="absolute top-full inset-x-0 mt-2 bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-neutral-800 p-4 sm:p-5 z-40 text-left overflow-y-auto max-h-[calc(100dvh-200px)] sm:max-h-[520px] space-y-6 animate-fade-in"
-            >
+            <div className="absolute top-full left-0 right-0 mt-3 bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-neutral-800 p-5 z-50 text-left max-h-[500px] overflow-y-auto space-y-6 animate-fade-in">
               {/* Most Searched Queries (Real User Search Queries) */}
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
@@ -266,14 +218,6 @@ export const HeroSection = () => {
                         recordSearchQuery(query);
                         setSearchQuery(query);
                         setIsSearchOpen(false);
-                        if (isAiSearchEnabled && userAccount?.isLoggedIn) {
-                          if (!isProUser && aiSearchRemaining <= 0) {
-                            showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
-                            setIsProCheckoutModalOpen(true);
-                          } else {
-                            void performAiSearch(query, true);
-                          }
-                        }
                       }}
                       className="px-3.5 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-[#E60023] hover:text-white text-neutral-700 dark:text-neutral-300 text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs hover:shadow-xs"
                     >
@@ -284,78 +228,78 @@ export const HeroSection = () => {
                 </div>
               </div>
 
-              {/* Most Viewed Categories with Image Previews (Excluding categories with < 5 prompts) */}
-              {validMostViewedCategories.length > 0 && (
-                <div className="space-y-5 pt-3 border-t border-neutral-100 dark:border-neutral-800">
-                  <span className="text-xs font-black text-neutral-400 uppercase tracking-wider block">
-                    Most Viewed Categories
-                  </span>
-                  
-                  {validMostViewedCategories.map((cat) => {
-                    const catPosts = cat.previewPosts;
+              {/* Most Viewed Categories with Image Previews (Screenshot layout) */}
+              <div className="space-y-5 pt-3 border-t border-neutral-100 dark:border-neutral-800">
+                <span className="text-xs font-black text-neutral-400 uppercase tracking-wider block">
+                  Most Viewed Categories
+                </span>
+                
+                {categories.map((cat) => {
+                  const catPosts = posts.filter(
+                    (p) => p.category.toLowerCase() === cat.name.toLowerCase()
+                  ).slice(0, 4);
 
-                    return (
-                      <div key={cat.id} className="space-y-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedCategory(cat.name);
-                            setSearchQuery('');
-                            setIsSearchOpen(false);
-                          }}
-                          className="flex items-center gap-1 text-sm font-black text-neutral-900 dark:text-white hover:text-[#E60023] transition-colors group"
-                        >
-                          <span>{cat.name}</span>
-                          <ChevronDown className="w-4 h-4 -rotate-90 group-hover:translate-x-1 transition-transform" />
-                        </button>
+                  return (
+                    <div key={cat.id} className="space-y-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedCategory(cat.name);
+                          setSearchQuery('');
+                          setIsSearchOpen(false);
+                        }}
+                        className="flex items-center gap-1 text-sm font-black text-neutral-900 dark:text-white hover:text-[#E60023] transition-colors group"
+                      >
+                        <span>{cat.name}</span>
+                        <ChevronDown className="w-4 h-4 -rotate-90 group-hover:translate-x-1 transition-transform" />
+                      </button>
 
-                        {/* 4 Image Thumbnails Row */}
-                        <div className="grid grid-cols-4 gap-2 sm:gap-3">
-                          {catPosts.length > 0 ? (
-                            catPosts.map((post) => (
-                              <div
-                                key={post.id}
-                                onClick={() => {
-                                  setSelectedPost(post);
-                                  if (typeof window !== 'undefined') {
-                                    window.history.pushState({ postId: post.id }, '', `/${getPromptSlug(post)}`);
-                                  }
-                                  setIsSearchOpen(false);
-                                }}
-                                className="relative aspect-square rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 cursor-pointer group shadow-xs hover:shadow-md transition-all"
-                              >
-                                <Image
-                                  src={getOptimizedImageUrl(post.imageUrl, 200)}
-                                  alt={post.title}
-                                  fill
-                                  sizes="80px"
-                                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                                  referrerPolicy="no-referrer"
-                                  loading="lazy"
-                                />
-                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-                                  <span className="text-[10px] font-bold text-white truncate">
-                                    {post.title}
-                                  </span>
-                                </div>
+                      {/* 4 Image Thumbnails Row */}
+                      <div className="grid grid-cols-4 gap-2 sm:gap-3">
+                        {catPosts.length > 0 ? (
+                          catPosts.map((post) => (
+                            <div
+                              key={post.id}
+                              onClick={() => {
+                                setSelectedPost(post);
+                                if (typeof window !== 'undefined') {
+                                  window.history.pushState({ postId: post.id }, '', `/${getPromptSlug(post)}`);
+                                }
+                                setIsSearchOpen(false);
+                              }}
+                              className="relative aspect-square rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 cursor-pointer group shadow-xs hover:shadow-md transition-all"
+                            >
+                              <Image
+                                src={getOptimizedImageUrl(post.imageUrl, 200)}
+                                alt={post.title}
+                                fill
+                                sizes="80px"
+                                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                referrerPolicy="no-referrer"
+                                loading="lazy"
+                              />
+                              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                                <span className="text-[10px] font-bold text-white truncate">
+                                  {post.title}
+                                </span>
                               </div>
-                            ))
-                          ) : (
-                            [1, 2, 3, 4].map((i) => (
-                              <div
-                                key={i}
-                                className="aspect-square rounded-2xl bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-[10px] text-neutral-400 font-bold"
-                              >
-                                Preview
-                              </div>
-                            ))
-                          )}
-                        </div>
+                            </div>
+                          ))
+                        ) : (
+                          [1, 2, 3, 4].map((i) => (
+                            <div
+                              key={i}
+                              className="aspect-square rounded-2xl bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-[10px] text-neutral-400 font-bold"
+                            >
+                              Preview
+                            </div>
+                          ))
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
@@ -461,15 +405,6 @@ export const HeroSection = () => {
             onClick={() => {
               setSearchQuery(tag);
               setSelectedCategory('all');
-              recordSearchQuery(tag);
-              if (isAiSearchEnabled && userAccount?.isLoggedIn) {
-                if (!isProUser && aiSearchRemaining <= 0) {
-                  showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
-                  setIsProCheckoutModalOpen(true);
-                } else {
-                  void performAiSearch(tag, true);
-                }
-              }
             }}
             className={`px-4 py-1.5 rounded-full border text-[11px] font-bold transition-all shadow-xs ${
               searchQuery.toLowerCase() === tag.toLowerCase()

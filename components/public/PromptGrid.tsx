@@ -1,15 +1,14 @@
 'use client';
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { PromptCard } from './PromptCard';
 import { SearchX, Filter, Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { PromptPost } from '@/types/prompt';
 import { PersonalizationEngine } from '@/lib/personalization';
 
-const INITIAL_BATCH_SIZE = 10;
-const SCROLL_BATCH_SIZE = 10;
+const INITIAL_BATCH_SIZE = 12;
+const SCROLL_BATCH_SIZE = 12;
 
 export const PromptGrid = () => {
   const {
@@ -51,7 +50,7 @@ export const PromptGrid = () => {
   const filteredPosts = useMemo(() => {
     let list = posts.filter((p) => p.status === 'published');
 
-    if (selectedCategory && selectedCategory !== 'all' && selectedCategory !== 'latest') {
+    if (selectedCategory && selectedCategory !== 'all') {
       list = list.filter(
         (p) => p.category.toLowerCase() === selectedCategory.toLowerCase()
       );
@@ -115,15 +114,27 @@ export const PromptGrid = () => {
         });
       }
     } else {
-      if (selectedCategory === 'latest' || selectedSort === 'newest') {
-        // "Latest Prompts" filter or "Newest" sort selected: Always prioritize newest published posts first
+      // Deterministic Stable Sort: Never shuffle or change on user click/bookmark events
+      if (selectedSort === 'trending') {
         list = [...list].sort((a, b) => {
-          const timeB = new Date(b.publishedAt || b.createdAt || 0).getTime();
-          const timeA = new Date(a.publishedAt || a.createdAt || 0).getTime();
-          if (timeB !== timeA && !isNaN(timeB) && !isNaN(timeA)) return timeB - timeA;
-          return (b.createdAt || '').localeCompare(a.createdAt || '') || b.id.localeCompare(a.id);
+          const metricB = (b.copiesCount || 0) * 3 + (b.likesCount || 0) * 2 + (b.viewsCount || 0);
+          const metricA = (a.copiesCount || 0) * 3 + (a.likesCount || 0) * 2 + (a.viewsCount || 0);
+          if (metricB !== metricA) return metricB - metricA;
+          return (b.createdAt || '').localeCompare(a.createdAt || '') || a.id.localeCompare(b.id);
         });
-      } else if (selectedSort === 'most-copied' || selectedSort === 'most-popular' || selectedSort === 'most-liked') {
+      } else if (selectedSort === 'most-popular') {
+        list = [...list].sort((a, b) => {
+          const diff = (b.viewsCount || 0) - (a.viewsCount || 0);
+          if (diff !== 0) return diff;
+          return (b.createdAt || '').localeCompare(a.createdAt || '') || a.id.localeCompare(b.id);
+        });
+      } else if (selectedSort === 'most-liked') {
+        list = [...list].sort((a, b) => {
+          const diff = (b.likesCount || 0) - (a.likesCount || 0);
+          if (diff !== 0) return diff;
+          return (b.createdAt || '').localeCompare(a.createdAt || '') || a.id.localeCompare(b.id);
+        });
+      } else if (selectedSort === 'most-copied') {
         list = [...list].sort((a, b) => {
           const diff = (b.copiesCount || 0) - (a.copiesCount || 0);
           if (diff !== 0) return diff;
@@ -246,11 +257,9 @@ export const PromptGrid = () => {
       {searchQuery.trim() && (
         <div className="mb-6 p-4 sm:p-5 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
           <div className="flex items-start sm:items-center gap-3.5">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#E60023] via-rose-500 to-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-red-500/20 relative overflow-hidden">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#E60023] via-rose-500 to-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-red-500/20">
               {isAiSearching ? (
-                <div className="w-7 h-7 rounded-full overflow-hidden animate-spin flex items-center justify-center bg-white/20 p-0.5">
-                  <Image src="/logo.png" alt="Logo" width={28} height={28} className="w-full h-full object-cover rounded-full" referrerPolicy="no-referrer" />
-                </div>
+                <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <Sparkles className="w-5 h-5" />
               )}
@@ -259,7 +268,7 @@ export const PromptGrid = () => {
             <div className="space-y-0.5">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[11px] font-black uppercase tracking-wider text-[#E60023] dark:text-red-400">
-                  AI Visual Search
+                  Gemini AI Visual Search
                 </span>
                 {aiSearchResults?.isAiPowered && (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/70 dark:border-blue-800">

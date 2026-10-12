@@ -13,6 +13,7 @@ import { BackupRestoreView } from './BackupRestoreView';
 import { SearchHistoryManager } from './SearchHistoryManager';
 import { UsersManager } from './UsersManager';
 import { PushNotificationsManager } from './PushNotificationsManager';
+import { RequestedPromptsManager } from './RequestedPromptsManager';
 import { X } from 'lucide-react';
 
 export const AdminLayout = () => {

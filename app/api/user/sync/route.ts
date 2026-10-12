@@ -207,7 +207,15 @@ export async function POST(req: NextRequest) {
         best.toolCredits = Number(best.toolCredits);
       }
 
-      // Free users get 5 credits on account creation; once consumed to 0 it must strictly remain 0
+      // If user is on free tier, has 0 unlocked prompts, 0 ai history, and has 0 credits (e.g. from previous bug), heal them to 5:
+      if (
+        best.toolCredits === 0 &&
+        (!best.unlockedPromptIds || best.unlockedPromptIds.length === 0) &&
+        (!best.aiHistory || best.aiHistory.length === 0) &&
+        best.planTier === 'free'
+      ) {
+        best.toolCredits = 5;
+      }
 
       const submittedRequestsCount = Array.isArray(best.promptRequests) ? best.promptRequests.length : 0;
       if (best.planTier !== 'free') {

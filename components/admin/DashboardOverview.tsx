@@ -30,10 +30,13 @@ export const DashboardOverview = () => {
     setSelectedPost,
     togglePublishStatus,
     showToast,
+    promptRequests,
   } = useApp();
 
   const [quickTitle, setQuickTitle] = useState('');
   const [quickPrompt, setQuickPrompt] = useState('');
+
+  const pendingRequestsCount = promptRequests.filter((r) => r.status === 'pending').length;
 
   const publishedCount = posts.filter((p) => p.status === 'published').length;
   const draftCount = posts.filter((p) => p.status === 'draft').length;
@@ -121,8 +124,6 @@ export const DashboardOverview = () => {
           </button>
         </div>
       </div>
-
-
 
       {/* KPI Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">

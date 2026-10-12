@@ -324,7 +324,7 @@ export const UsersManager = () => {
               </h1>
             </div>
             <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 max-w-2xl">
-              Live user accounts, subscription tiers, and tool credit balances fetched directly from Supabase & Razorpay.
+              Live user accounts, subscription tiers, and tool credit balances fetched directly from Firebase Firestore & Razorpay.
             </p>
             {lastSyncedTime && (
               <div className="flex items-center gap-2 pt-1 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
@@ -340,7 +340,7 @@ export const UsersManager = () => {
               onClick={() => handleSyncUsers(false)}
               disabled={isLoading}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all disabled:opacity-50"
-              id="admin-sync-supabase-users-btn"
+              id="admin-refresh-users-btn"
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
               <span>{isLoading ? 'Refreshing...' : 'Refresh Users Data'}</span>

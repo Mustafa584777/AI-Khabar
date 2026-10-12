@@ -99,7 +99,6 @@ export const UserSyncService = {
       const savedExpires = localStorage.getItem('auraprompt_plan_expires_at') || acc?.planExpiresAt;
       const savedStarted = localStorage.getItem('auraprompt_plan_started_at') || acc?.planStartedAt;
       const savedCredits = localStorage.getItem('auraprompt_tool_credits');
-      const savedSearches = localStorage.getItem('auraprompt_ai_search_remaining');
 
       if (isPaid && payload.planTier === undefined) {
         payload.planTier = savedTier;
@@ -114,12 +113,8 @@ export const UserSyncService = {
         payload.planStartedAt = savedStarted;
       }
       if (savedCredits !== null && payload.toolCredits === undefined) {
-        const parsed = parseInt(savedCredits, 10);
-        if (!isNaN(parsed)) payload.toolCredits = parsed;
-      }
-      if (savedSearches !== null && payload.aiSearchRemaining === undefined) {
-        const parsed = parseInt(savedSearches, 10);
-        if (!isNaN(parsed)) payload.aiSearchRemaining = parsed;
+        const parsedCredits = parseInt(savedCredits, 10);
+        if (!isNaN(parsedCredits)) payload.toolCredits = parsedCredits;
       }
     }
 
@@ -376,7 +371,17 @@ export const UserSyncService = {
       resolvedCredits = resolvedTier !== 'free' ? planCfg.credits : 5;
     }
 
-    // Strictly preserve consumed balance - never auto-heal 0 credits back to 5!
+    // Auto-heal new free users whose accounts had 0 credits due to earlier signup bug:
+    if (
+      resolvedCredits === 0 &&
+      (!remote.unlockedPromptIds || remote.unlockedPromptIds.length === 0) &&
+      (!remote.aiHistory || remote.aiHistory.length === 0) &&
+      (!localUnlocked || localUnlocked.length === 0) &&
+      resolvedTier === 'free'
+    ) {
+      resolvedCredits = 5;
+    }
+
     let resolvedRequests: number;
     if (remote.promptRequestsRemaining !== undefined && remote.promptRequestsRemaining !== null) {
       resolvedRequests = Number(remote.promptRequestsRemaining);
@@ -513,7 +518,9 @@ export const UserSyncService = {
       void UserSyncService.pushUserData(user.id, user.email, {
         planTier: resolvedTier,
         isProUser: resolvedIsPro,
+        toolCredits: resolvedCredits,
         promptRequestsRemaining: resolvedRequests,
+        aiSearchRemaining: resolvedAiSearches,
         bookmarkedIds: mergedBookmarks,
         likedIds: mergedLikes,
         unlockedPromptIds: mergedUnlocked,
