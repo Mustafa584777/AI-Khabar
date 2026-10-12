@@ -57,12 +57,12 @@ export const UserAuthModal = () => {
   // Listen for callback messages from /auth/callback popup
   React.useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {
-      if (event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
+      if (event.data?.type === 'AUTH_SUCCESS' || event.data?.type === 'FIREBASE_AUTH_SUCCESS' || event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
         const session = event.data.session;
         const u = event.data.user || session?.user;
         if (u) {
-          const name = u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split('@')[0] || 'Creator';
-          const avatar = u.user_metadata?.avatar_url || u.user_metadata?.picture || defaultAvatar;
+          const name = u.user_metadata?.full_name || u.user_metadata?.name || u.displayName || u.email?.split('@')[0] || 'Creator';
+          const avatar = u.user_metadata?.avatar_url || u.user_metadata?.picture || u.photoURL || defaultAvatar;
 
           if (typeof window !== 'undefined') {
             localStorage.setItem('auraprompt_signup_modal_already_shown', 'true');
@@ -79,14 +79,14 @@ export const UserAuthModal = () => {
             }
           }
 
-          await loginUser(u.email || '', '', name, avatar, u.id);
+          await loginUser(u.email || '', '', name, avatar, u.id || u.uid);
           setIsFirstLoginModalOpen(false);
           showToast(`Welcome ${name}! Signed in via Google.`);
           setIsLoading(false);
           setIsUserAuthModalOpen(false);
           checkAndRedirectStudio();
         }
-      } else if (event.data?.type === 'SUPABASE_AUTH_FAILED') {
+      } else if (event.data?.type === 'AUTH_FAILED' || event.data?.type === 'FIREBASE_AUTH_FAILED' || event.data?.type === 'SUPABASE_AUTH_FAILED') {
         setErrorMessage(event.data.error || 'Google sign-in could not be completed.');
         showToast(event.data.error || 'Google sign-in could not be completed.');
         setIsLoading(false);
@@ -183,7 +183,7 @@ export const UserAuthModal = () => {
         const userName = fullName.trim() || cleanEmail.split('@')[0];
         const userHandle = '@' + userName.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-        // 1. Create auto-confirmed account on Supabase via API route
+        // 1. Create auto-confirmed account via API route
         const signupRes = await fetch('/api/auth/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -472,7 +472,7 @@ export const UserAuthModal = () => {
 
           <div className="flex items-center justify-center gap-1.5 text-[11px] text-neutral-400 pt-1">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-            <span>Secure Supabase Authentication • 100% Free Forever</span>
+            <span>Secure Cloud Authentication • 100% Free Forever</span>
           </div>
         </div>
       </div>

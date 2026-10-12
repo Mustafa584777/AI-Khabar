@@ -511,7 +511,7 @@ export const RequestedPromptsManager = () => {
                   User&apos;s Requested Idea ({activeFulfillRequest.category} / {activeFulfillRequest.aiTool || 'Any Engine'}):
                 </span>
                 <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs font-medium text-neutral-700 dark:text-neutral-300">
-                  “{activeFulfillRequest.requestText}”
+                  &ldquo;{activeFulfillRequest.requestText}&rdquo;
                 </div>
               </div>
 

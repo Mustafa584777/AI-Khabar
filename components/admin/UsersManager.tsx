@@ -49,7 +49,7 @@ export const UsersManager = () => {
 
   // Delete User handler
   const handleDeleteUser = async (userId: string, email: string) => {
-    if (!confirm(`Are you sure you want to delete user "${email}"? This will permanently remove them from Supabase auth and database along with all their data.`)) {
+    if (!confirm(`Are you sure you want to delete user "${email}"? This will permanently remove them from cloud database along with all their data.`)) {
       return;
     }
 
@@ -66,7 +66,7 @@ export const UsersManager = () => {
 
       const data = await res.json();
       if (res.ok && data.success) {
-        showToast(`User ${email} deleted successfully from Supabase!`);
+        showToast(`User ${email} deleted successfully!`);
         await handleSyncUsers(false);
       } else {
         throw new Error(data.error || 'Failed to delete user');
@@ -97,7 +97,7 @@ export const UsersManager = () => {
         const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         setLastSyncedTime(timeStr);
         if (!isAuto) {
-          showToast(`Successfully refreshed ${data.users.length} registered users from Supabase!`);
+          showToast(`Successfully refreshed ${data.users.length} registered users!`);
         }
       } else {
         throw new Error(data.error || 'Failed to parse users data');
@@ -105,7 +105,7 @@ export const UsersManager = () => {
     } catch (err: any) {
       console.error('Error syncing users:', err);
       if (!isAuto) {
-        showToast(err?.message || 'Could not sync users from Supabase. Check database connection.');
+        showToast(err?.message || 'Could not sync users. Check database connection.');
       }
     } finally {
       setIsLoading(false);
@@ -136,7 +136,7 @@ export const UsersManager = () => {
   // Export All Users Data as JSON Backup (Dashboard data only)
   const handleExportUsers = () => {
     if (users.length === 0) {
-      showToast('No user records loaded. Click "Sync Users from Supabase" first before exporting.');
+      showToast('No user records loaded. Click "Sync Users" first before exporting.');
       return;
     }
 
@@ -228,7 +228,7 @@ export const UsersManager = () => {
     e.target.value = '';
   };
 
-  // Confirm Restore to Supabase
+  // Confirm Restore to Database
   const confirmRestore = async () => {
     if (!previewBackupData || !Array.isArray(previewBackupData.users)) return;
 
@@ -256,7 +256,7 @@ export const UsersManager = () => {
       }
     } catch (err: any) {
       console.error('Restore error:', err);
-      showToast(err?.message || 'Failed to restore users to Supabase.');
+      showToast(err?.message || 'Failed to restore users to database.');
     } finally {
       setIsRestoring(false);
     }
@@ -637,7 +637,7 @@ export const UsersManager = () => {
                         <button
                           onClick={() => handleDeleteUser(u.id, u.email)}
                           className="px-2.5 py-1 rounded-lg bg-red-50 dark:bg-red-950/60 hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-400 text-[11px] font-bold transition-colors inline-flex items-center gap-1"
-                          title="Permanently delete user from Supabase and database"
+                          title="Permanently delete user from database"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                           <span>Delete</span>
@@ -656,7 +656,7 @@ export const UsersManager = () => {
               Showing {filteredUsers.length} of {totalUsersCount} user accounts
             </span>
             <span className="font-mono text-[11px] text-neutral-400">
-              Fetched from Supabase Database
+              Fetched from Cloud Database
             </span>
           </div>
         </div>
@@ -674,7 +674,7 @@ export const UsersManager = () => {
                 Confirm User Accounts Restore
               </h3>
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                You are about to restore user records from your backup file into the Supabase database.
+                You are about to restore user records from your backup file into the cloud database.
               </p>
             </div>
 

@@ -80,16 +80,48 @@ function cleanForFirestore<T = any>(obj: any): T {
   return obj;
 }
 
-// In-memory runtime cache
+// In-memory runtime cache with smart synchronization
 let memoryPosts: PromptPost[] | null = null;
+let lastPostsFetchTime: number = 0;
+let lastKnownRemoteTimestamp: number = 0;
+const POSTS_SYNC_INTERVAL_MS = 60 * 1000; // 60 seconds interval between remote sync checks
+const PENDING_SYNC_FILE = path.join(DATA_DIR, 'pending_sync.json');
+
 let memoryCategories: Category[] | null = null;
 let memorySettings: SiteSettings | null = null;
 let memoryTags: string[] | null = null;
 let memorySearchQueries: SearchQueryItem[] | null = null;
 
+// Helper to flush offline/pending queue when Firestore is available
+async function flushPendingPostsSync(): Promise<void> {
+  if (!isFirebaseConfigured()) return;
+  try {
+    const pending = readJsonFile<PromptPost[]>(PENDING_SYNC_FILE, []);
+    if (!pending || pending.length === 0) return;
+    const batch = writeBatch(firestoreDb);
+    for (const p of pending) {
+      if (p.id) {
+        batch.set(doc(firestoreDb, 'posts', p.id), cleanForFirestore(p));
+      }
+    }
+    await batch.commit();
+    writeJsonFile(PENDING_SYNC_FILE, []);
+    console.log(`[ServerStorage] Successfully flushed ${pending.length} pending posts to Firestore.`);
+  } catch (err: any) {
+    // transient offline or quota
+  }
+}
+
 export const ServerStorage = {
   // Posts
   getAllPosts: async (includeDrafts = true): Promise<PromptPost[]> => {
+    const now = Date.now();
+    // 1. Fast path: return in-memory cache if fresh (within 60s cooldown)
+    if (memoryPosts && memoryPosts.length > 0 && now - lastPostsFetchTime < POSTS_SYNC_INTERVAL_MS) {
+      return includeDrafts ? memoryPosts : memoryPosts.filter((p) => p.status === 'published');
+    }
+
+    // 2. Read local baseline from disk
     let localPosts: PromptPost[] = [];
     try {
       const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
@@ -101,23 +133,63 @@ export const ServerStorage = {
       localPosts = INITIAL_POSTS || [];
     }
 
+    // Try flushing any pending posts in the background
+    void flushPendingPostsSync();
+
     let remotePosts: PromptPost[] = [];
+    let shouldFetchAllRemote = false;
+
     if (isFirebaseConfigured()) {
       try {
-        const snap = await getDocs(collection(firestoreDb, 'posts'));
-        if (!snap.empty) {
-          snap.forEach((d) => {
-            const data = d.data() as PromptPost;
-            if (data && data.id) {
-              remotePosts.push({
-                ...data,
-                tags: cleanTagsArray(data.tags || []),
-              });
-            }
-          });
+        // Step A: Read lightweight fingerprint document (1 read instead of 268 reads)
+        const stateSnap = await getDoc(doc(firestoreDb, '_system', 'sync_state'));
+        if (stateSnap.exists()) {
+          const stateData = stateSnap.data() as { postsUpdatedAt?: number; postCount?: number };
+          const remoteUpdatedAt = Number(stateData.postsUpdatedAt) || 0;
+          const remoteCount = Number(stateData.postCount) || 0;
+
+          // If local memory or disk already has all posts and remote hasn't changed, skip full collection read!
+          const currentList = memoryPosts && memoryPosts.length >= localPosts.length ? memoryPosts : localPosts;
+          if (
+            currentList.length > 0 &&
+            remoteUpdatedAt > 0 &&
+            remoteUpdatedAt <= lastKnownRemoteTimestamp &&
+            currentList.length >= remoteCount
+          ) {
+            lastPostsFetchTime = now;
+            memoryPosts = currentList;
+            return includeDrafts ? currentList : currentList.filter((p) => p.status === 'published');
+          }
+
+          lastKnownRemoteTimestamp = Math.max(lastKnownRemoteTimestamp, remoteUpdatedAt);
+          shouldFetchAllRemote = true;
+        } else {
+          // Sync state not yet initialized in Firestore
+          shouldFetchAllRemote = true;
         }
-      } catch (err) {
-        console.warn('Firestore getAllPosts fallback:', err);
+      } catch (err: any) {
+        // Quota exceeded, network timeout, or offline
+        console.warn('[ServerStorage] Firestore sync check notice (serving local data):', err?.message);
+        shouldFetchAllRemote = false;
+      }
+
+      if (shouldFetchAllRemote) {
+        try {
+          const snap = await getDocs(collection(firestoreDb, 'posts'));
+          if (!snap.empty) {
+            snap.forEach((d) => {
+              const data = d.data() as PromptPost;
+              if (data && data.id) {
+                remotePosts.push({
+                  ...data,
+                  tags: cleanTagsArray(data.tags || []),
+                });
+              }
+            });
+          }
+        } catch (err: any) {
+          console.warn('[ServerStorage] Firestore getAllPosts fallback to local storage:', err?.message);
+        }
       }
     }
 
@@ -145,29 +217,43 @@ export const ServerStorage = {
       return timeB - timeA;
     });
 
-    memoryPosts = merged;
-    writeJsonFile(POSTS_FILE, merged);
+    // Safeguard: Never overwrite local storage with a smaller dataset
+    if (merged.length >= localPosts.length && merged.length > 0) {
+      memoryPosts = merged;
+      writeJsonFile(POSTS_FILE, merged);
+    } else if (localPosts.length > 0) {
+      memoryPosts = localPosts;
+    } else {
+      memoryPosts = merged;
+    }
 
-    // If Firestore was completely empty but we have local posts, seed to Firestore
-    if (isFirebaseConfigured() && remotePosts.length === 0 && merged.length > 0) {
+    lastPostsFetchTime = now;
+
+    // Seed or update Firestore sync state if needed
+    if (isFirebaseConfigured() && merged.length > 0) {
       void (async () => {
         try {
-          const chunkSize = 250;
-          for (let i = 0; i < merged.length; i += chunkSize) {
-            const chunk = merged.slice(i, i + chunkSize);
-            const batch = writeBatch(firestoreDb);
-            for (const p of chunk) {
-              batch.set(doc(firestoreDb, 'posts', p.id), cleanForFirestore(p));
+          if (remotePosts.length === 0 && localPosts.length > 0) {
+            const chunkSize = 250;
+            for (let i = 0; i < merged.length; i += chunkSize) {
+              const chunk = merged.slice(i, i + chunkSize);
+              const batch = writeBatch(firestoreDb);
+              for (const p of chunk) {
+                batch.set(doc(firestoreDb, 'posts', p.id), cleanForFirestore(p));
+              }
+              await batch.commit();
             }
-            await batch.commit();
           }
-        } catch (e) {
-          console.warn('Auto-seed Firestore posts background notice:', e);
-        }
+          await setDoc(
+            doc(firestoreDb, '_system', 'sync_state'),
+            { postsUpdatedAt: Date.now(), postCount: merged.length },
+            { merge: true }
+          );
+        } catch {}
       })();
     }
 
-    return includeDrafts ? merged : merged.filter((p) => p.status === 'published');
+    return includeDrafts ? memoryPosts : memoryPosts.filter((p) => p.status === 'published');
   },
 
   getPostBySlug: async (slug: string): Promise<PromptPost | undefined> => {
@@ -303,8 +389,28 @@ export const ServerStorage = {
     if (isFirebaseConfigured()) {
       try {
         await setDoc(doc(firestoreDb, 'posts', savedPost.id), cleanForFirestore(savedPost));
-      } catch (fErr) {
+        await setDoc(
+          doc(firestoreDb, '_system', 'sync_state'),
+          { postsUpdatedAt: Date.now(), postCount: (memoryPosts?.length || 0) + 1 },
+          { merge: true }
+        );
+        lastKnownRemoteTimestamp = Date.now();
+      } catch (fErr: any) {
         console.error('Firestore savePost error:', fErr);
+        // Persist to pending sync queue so it will retry automatically when connection/quota restores
+        try {
+          const pending = readJsonFile<PromptPost[]>(PENDING_SYNC_FILE, []);
+          const existingIdx = pending.findIndex((p) => p.id === savedPost.id);
+          if (existingIdx >= 0) {
+            pending[existingIdx] = savedPost;
+          } else {
+            pending.push(savedPost);
+          }
+          writeJsonFile(PENDING_SYNC_FILE, pending);
+          console.warn(`[ServerStorage] Post ${savedPost.id} added to pending_sync queue for automatic recovery.`);
+        } catch (queueErr) {
+          console.error('Failed to queue pending sync:', queueErr);
+        }
       }
     }
 
@@ -318,6 +424,7 @@ export const ServerStorage = {
     }
     memoryPosts = currentList;
     writeJsonFile(POSTS_FILE, currentList);
+    lastPostsFetchTime = Date.now();
 
     // Auto-create category if needed
     if (savedPost.category && savedPost.category.trim()) {
@@ -360,6 +467,7 @@ export const ServerStorage = {
       const filteredLocal = rawPosts.filter((p) => p.id !== id);
       memoryPosts = filteredLocal;
       writeJsonFile(POSTS_FILE, filteredLocal);
+      lastPostsFetchTime = Date.now();
     } catch (e) {
       console.error('Local deletePost error:', e);
     }
@@ -368,6 +476,12 @@ export const ServerStorage = {
     if (isFirebaseConfigured()) {
       try {
         await deleteDoc(doc(firestoreDb, 'posts', id));
+        await setDoc(
+          doc(firestoreDb, '_system', 'sync_state'),
+          { postsUpdatedAt: Date.now(), postCount: memoryPosts?.length || 0 },
+          { merge: true }
+        );
+        lastKnownRemoteTimestamp = Date.now();
       } catch (err) {
         console.error('Firestore deletePost error:', err);
       }
@@ -459,6 +573,13 @@ export const ServerStorage = {
           }
           await batch.commit();
         }
+        await setDoc(
+          doc(firestoreDb, '_system', 'sync_state'),
+          { postsUpdatedAt: Date.now(), postCount: finalList.length },
+          { merge: true }
+        );
+        lastKnownRemoteTimestamp = Date.now();
+        lastPostsFetchTime = Date.now();
       } catch (err) {
         console.error('Firestore batch restorePosts error:', err);
       }

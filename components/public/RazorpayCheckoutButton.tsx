@@ -88,6 +88,8 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
           if (creditsToAdd && creditsToAdd > 0) {
             addToolCredits(creditsToAdd);
             showToast(`Payment Verified! Added ${creditsToAdd} Credits to your account 🎉`);
+          } else if (verifyData?.isQueued) {
+            upgradePlan(planTier, verifyData);
           } else {
             const isQueued = Boolean(verifyData?.isQueued);
             upgradePlan(planTier, verifyData?.userSyncData, isQueued, billingCycle);

@@ -289,15 +289,15 @@ export const PromptGrid = () => {
                   <div className="flex flex-wrap items-baseline gap-1.5">
                     <span>Showing results for</span>
                     <span className="text-[#E60023] font-extrabold">
-                      “{aiSearchResults.correctedQuery}”
+                      &ldquo;{aiSearchResults.correctedQuery}&rdquo;
                     </span>
                     <span className="text-xs text-neutral-500 dark:text-neutral-400 font-normal">
-                      (interpreted from “{searchQuery}”)
+                      (interpreted from &ldquo;{searchQuery}&rdquo;)
                     </span>
                   </div>
                 ) : (
                   <span>
-                    Results for “{searchQuery}” ({filteredPosts.length} prompts)
+                    Results for &ldquo;{searchQuery}&rdquo; ({filteredPosts.length} prompts)
                   </span>
                 )}
               </div>

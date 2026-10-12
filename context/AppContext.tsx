@@ -648,7 +648,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem('auraprompt_plan_expires_at', planExpiresAt);
     }
 
-    // Persist SaaS Plan upgrade immediately to Supabase cloud
+    // Persist SaaS Plan upgrade immediately to cloud database
     const currentAcc = userAccount || StorageService.getUserAccount();
     if (currentAcc && (currentAcc.email || currentAcc.id)) {
       void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, {
@@ -911,7 +911,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     StorageService.saveUserAccount(account);
     setUserAccount(account);
 
-    // Reconcile and load all cloud data strictly for this specific account from Supabase
+    // Reconcile and load all cloud data strictly for this specific account from cloud database
     try {
       const synced = await UserSyncService.reconcileOnLogin(account);
       setBookmarkedIds(synced.bookmarkedIds || []);
@@ -2204,7 +2204,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const handleAuthMessage = (event: MessageEvent) => {
       if (typeof window !== 'undefined' && event.origin === window.location.origin) {
-        if (event.data?.type === 'FIREBASE_AUTH_SUCCESS' || event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
+        if (event.data?.type === 'FIREBASE_AUTH_SUCCESS' || event.data?.type === 'AUTH_SUCCESS' || event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
           const acc = StorageService.getUserAccount();
           if (acc && acc.isLoggedIn) {
             void UserSyncService.reconcileOnLogin(acc).then(applySynced);
@@ -2284,7 +2284,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setTasteProfile(updated);
     showToast('Feed taste profile updated!');
 
-    // Persist to Supabase database for logged-in user
+    // Persist to cloud database for logged-in user
     if (userAccount && userAccount.isLoggedIn) {
       void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
         tasteProfile: updated,
@@ -2532,7 +2532,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setTasteProfile(updatedProfile);
     }
 
-    // Push updated likes and taste profile to Supabase cloud
+    // Push updated likes and taste profile to cloud database
     if (userAccount && userAccount.isLoggedIn) {
       void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
         likedIds: updatedLikes,
@@ -2576,7 +2576,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setTasteProfile(updatedProfile);
     }
 
-    // Push updated bookmarks and taste profile to Supabase cloud
+    // Push updated bookmarks and taste profile to cloud database
     void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, {
       bookmarkedIds: updatedBookmarks,
       tasteProfile: updatedProfile,
