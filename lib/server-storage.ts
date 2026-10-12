@@ -84,25 +84,16 @@ function cleanForFirestore<T = any>(obj: any): T {
 let memoryPosts: PromptPost[] | null = null;
 let memoryPostsLastFetched = 0;
 let firestoreQuotaExhaustedUntil = 0;
-const POSTS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache to prevent quota exhaustion
-
 let memoryCategories: Category[] | null = null;
 let memorySettings: SiteSettings | null = null;
 let memoryTags: string[] | null = null;
 let memorySearchQueries: SearchQueryItem[] | null = null;
 
+const POSTS_CACHE_TTL = 0; // Disable memory cache in serverless to ensure disk is always authoritative
+
 export const ServerStorage = {
   // Posts
   getAllPosts: async (includeDrafts = true): Promise<PromptPost[]> => {
-    // 1. Fast path: return in-memory cache if fresh
-    if (
-      memoryPosts &&
-      memoryPosts.length > 0 &&
-      Date.now() - memoryPostsLastFetched < POSTS_CACHE_TTL
-    ) {
-      return includeDrafts ? memoryPosts : memoryPosts.filter((p) => p.status === 'published');
-    }
-
     let localPosts: PromptPost[] = [];
     try {
       const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
@@ -115,8 +106,8 @@ export const ServerStorage = {
     }
 
     let remotePosts: PromptPost[] = [];
-    // Only query Firestore if configured and not cooling down from quota exhaustion
-    if (isFirebaseConfigured() && Date.now() > firestoreQuotaExhaustedUntil) {
+    // Only query Firestore if configured, quota not exhausted, and localPosts doesn't already have more than initial posts
+    if (isFirebaseConfigured() && Date.now() > firestoreQuotaExhaustedUntil && localPosts.length <= 250) {
       try {
         const snap = await getDocs(collection(firestoreDb, 'posts'));
         if (!snap.empty) {
@@ -132,27 +123,24 @@ export const ServerStorage = {
         }
       } catch (err: any) {
         if (err?.code === 'resource-exhausted' || err?.message?.includes('Quota')) {
-          firestoreQuotaExhaustedUntil = Date.now() + 15 * 60 * 1000;
-          console.warn('Firestore daily free tier quota reached. Serving seamlessly from cache/local storage.');
+          firestoreQuotaExhaustedUntil = Date.now() + 24 * 60 * 60 * 1000; // 24 hours cooldown
+          console.warn('Firestore daily free tier quota reached. Serving exclusively from local disk.');
         } else {
           console.warn('Firestore getAllPosts fallback:', err);
         }
       }
     }
 
-    // Merge remotePosts and localPosts by ID to ensure NO prompt is ever lost
+    // If localPosts has more or equal posts than remotePosts, localPosts is master
     const postMap = new Map<string, PromptPost>();
     for (const p of localPosts) {
       if (p.id) postMap.set(p.id, p);
     }
-    for (const p of remotePosts) {
-      if (p.id) {
-        const existing = postMap.get(p.id);
-        if (
-          !existing ||
-          new Date(p.updatedAt || p.createdAt || 0).getTime() >=
-            new Date(existing.updatedAt || existing.createdAt || 0).getTime()
-        ) {
+
+    // Only merge remotePosts if localPosts is small or remote has additional unique items
+    if (remotePosts.length > 0 && remotePosts.length > localPosts.length) {
+      for (const p of remotePosts) {
+        if (p.id && !postMap.has(p.id)) {
           postMap.set(p.id, p);
         }
       }
