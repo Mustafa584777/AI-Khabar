@@ -15,16 +15,27 @@ export const ToolFilterBar = () => {
     setSelectedCategory,
     setSelectedSort,
     categories,
+    posts,
     tasteProfile,
   } = useApp();
 
   const isMounted = useIsMounted();
 
+  // Filter out categories with fewer than 5 prompts
+  const categoriesWithMinPrompts = useMemo(() => {
+    return categories.filter((cat) => {
+      const count = posts.filter(
+        (p) => p.category && p.category.toLowerCase() === cat.name.toLowerCase()
+      ).length;
+      return count >= 5;
+    });
+  }, [categories, posts]);
+
   // Dynamically reorder categories based on user's active AI engagement affinities after client mount
   const personalizedCategories = useMemo(() => {
-    if (!isMounted) return categories;
-    return PersonalizationEngine.getPersonalizedCategoryOrder(categories, tasteProfile);
-  }, [categories, tasteProfile, isMounted]);
+    if (!isMounted) return categoriesWithMinPrompts;
+    return PersonalizationEngine.getPersonalizedCategoryOrder(categoriesWithMinPrompts, tasteProfile);
+  }, [categoriesWithMinPrompts, tasteProfile, isMounted]);
 
   return (
     <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-3 pb-2">

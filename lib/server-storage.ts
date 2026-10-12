@@ -674,7 +674,9 @@ export const ServerStorage = {
   deleteCategory: async (id: string): Promise<boolean> => {
     // 1. Local
     const current = await ServerStorage.getAllCategories();
-    const filtered = current.filter((c) => c.id !== id);
+    const filtered = current.filter(
+      (c) => c.id !== id && c.name?.toLowerCase() !== id.toLowerCase() && c.slug !== id
+    );
     memoryCategories = filtered;
     writeJsonFile(CATEGORIES_FILE, filtered);
 
@@ -682,6 +684,17 @@ export const ServerStorage = {
     if (isFirebaseConfigured()) {
       try {
         await deleteDoc(doc(firestoreDb, 'categories', id));
+        const snap = await getDocs(collection(firestoreDb, 'categories'));
+        for (const d of snap.docs) {
+          const data = d.data() as Category;
+          if (
+            data.id === id ||
+            data.slug === id ||
+            data.name?.toLowerCase() === id.toLowerCase()
+          ) {
+            await deleteDoc(doc(firestoreDb, 'categories', d.id));
+          }
+        }
       } catch (err) {
         console.error('Firestore deleteCategory error:', err);
       }

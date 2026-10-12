@@ -40,7 +40,8 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Category ID is required' }, { status: 400 });
     }
     const deleted = await ServerStorage.deleteCategory(id);
-    return NextResponse.json({ success: deleted });
+    const categories = await ServerStorage.getAllCategories();
+    return NextResponse.json({ success: deleted, categories });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
