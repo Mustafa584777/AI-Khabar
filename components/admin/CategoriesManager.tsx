@@ -119,8 +119,10 @@ export const CategoriesManager = () => {
       showToast('Cannot delete the last category.');
       return;
     }
-    deleteCategory(id);
-    showToast(`Deleted category "${catName}"`);
+    if (confirm(`Delete category "${catName}"?`)) {
+      deleteCategory(id);
+      showToast(`Deleted category "${catName}"`);
+    }
   };
 
   const handleAddTag = (e: React.FormEvent) => {
@@ -135,8 +137,9 @@ export const CategoriesManager = () => {
   };
 
   const handleDeleteTag = (tagName: string) => {
-    deleteTag(tagName);
-    showToast(`Deleted tag #${tagName}`);
+    if (confirm(`Delete tag #${tagName}? This will remove it from all associated prompts.`)) {
+      deleteTag(tagName);
+    }
   };
 
   return (

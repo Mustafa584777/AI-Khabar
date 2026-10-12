@@ -25,7 +25,6 @@ const SEARCH_QUERIES_FILE = path.join(DATA_DIR, 'search_queries.json');
 const SUBSCRIPTIONS_FILE = path.join(DATA_DIR, 'subscriptions.json');
 const USER_PROFILES_FILE = path.join(DATA_DIR, 'users.json');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
-const DELETED_POSTS_FILE = path.join(DATA_DIR, 'deleted_posts.json');
 
 const DEFAULT_TAGS = [
   'Portrait', '35mm', 'Cinematic', 'Street Photography', 'Fashion',
@@ -65,58 +64,6 @@ function writeJsonFile<T>(filePath: string, data: T): void {
   }
 }
 
-let memoryDeletedIds: Set<string> | null = null;
-
-function getDeletedPostIds(): Set<string> {
-  if (memoryDeletedIds) return memoryDeletedIds;
-  const localList = readJsonFile<string[]>(DELETED_POSTS_FILE, []);
-  const set = new Set<string>(Array.isArray(localList) ? localList : []);
-  memoryDeletedIds = set;
-  return set;
-}
-
-function recordDeletedPostIds(ids: string[]): void {
-  const current = getDeletedPostIds();
-  ids.forEach((id) => {
-    if (id) current.add(id);
-  });
-  memoryDeletedIds = current;
-  const list = Array.from(current);
-  writeJsonFile(DELETED_POSTS_FILE, list);
-
-  if (isFirebaseConfigured()) {
-    setDoc(
-      doc(firestoreDb, 'settings', 'deleted_posts'),
-      {
-        ids: list,
-        updatedAt: new Date().toISOString(),
-      },
-      { merge: true }
-    ).catch((e) => console.error('Firestore recordDeletedPostIds error:', e));
-  }
-}
-
-function unrecordDeletedPostId(id: string): void {
-  const current = getDeletedPostIds();
-  if (current.has(id)) {
-    current.delete(id);
-    memoryDeletedIds = current;
-    const list = Array.from(current);
-    writeJsonFile(DELETED_POSTS_FILE, list);
-
-    if (isFirebaseConfigured()) {
-      setDoc(
-        doc(firestoreDb, 'settings', 'deleted_posts'),
-        {
-          ids: list,
-          updatedAt: new Date().toISOString(),
-        },
-        { merge: true }
-      ).catch((e) => console.error('Firestore unrecordDeletedPostId error:', e));
-    }
-  }
-}
-
 // Helper to remove any undefined fields before sending to Firestore
 function cleanForFirestore<T = any>(obj: any): T {
   if (obj === null || obj === undefined) return null as any;
@@ -133,11 +80,8 @@ function cleanForFirestore<T = any>(obj: any): T {
   return obj;
 }
 
-// In-memory runtime cache with 24-hour TTL
+// In-memory runtime cache
 let memoryPosts: PromptPost[] | null = null;
-let memoryPostsTimestamp = 0;
-const POSTS_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
-
 let memoryCategories: Category[] | null = null;
 let memorySettings: SiteSettings | null = null;
 let memoryTags: string[] | null = null;
@@ -146,13 +90,6 @@ let memorySearchQueries: SearchQueryItem[] | null = null;
 export const ServerStorage = {
   // Posts
   getAllPosts: async (includeDrafts = true): Promise<PromptPost[]> => {
-    const deletedIds = getDeletedPostIds();
-    const now = Date.now();
-    if (memoryPosts && memoryPosts.length > 0 && (now - memoryPostsTimestamp < POSTS_CACHE_TTL)) {
-      const valid = memoryPosts.filter((p) => !deletedIds.has(p.id));
-      return includeDrafts ? valid : valid.filter((p) => p.status === 'published');
-    }
-
     let localPosts: PromptPost[] = [];
     try {
       const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
@@ -187,10 +124,10 @@ export const ServerStorage = {
     // Merge remotePosts and localPosts by ID to ensure NO prompt is ever lost
     const postMap = new Map<string, PromptPost>();
     for (const p of localPosts) {
-      if (p.id && !deletedIds.has(p.id)) postMap.set(p.id, p);
+      if (p.id) postMap.set(p.id, p);
     }
     for (const p of remotePosts) {
-      if (p.id && !deletedIds.has(p.id)) {
+      if (p.id) {
         const existing = postMap.get(p.id);
         if (
           !existing ||
@@ -209,8 +146,26 @@ export const ServerStorage = {
     });
 
     memoryPosts = merged;
-    memoryPostsTimestamp = Date.now();
     writeJsonFile(POSTS_FILE, merged);
+
+    // If Firestore was completely empty but we have local posts, seed to Firestore
+    if (isFirebaseConfigured() && remotePosts.length === 0 && merged.length > 0) {
+      void (async () => {
+        try {
+          const chunkSize = 250;
+          for (let i = 0; i < merged.length; i += chunkSize) {
+            const chunk = merged.slice(i, i + chunkSize);
+            const batch = writeBatch(firestoreDb);
+            for (const p of chunk) {
+              batch.set(doc(firestoreDb, 'posts', p.id), cleanForFirestore(p));
+            }
+            await batch.commit();
+          }
+        } catch (e) {
+          console.warn('Auto-seed Firestore posts background notice:', e);
+        }
+      })();
+    }
 
     return includeDrafts ? merged : merged.filter((p) => p.status === 'published');
   },
@@ -344,11 +299,17 @@ export const ServerStorage = {
       }
     }
 
-    // Update memory and local cache immediately
-    unrecordDeletedPostId(savedPost.id);
-    const currentList = memoryPosts && memoryPosts.length > 0
-      ? [...memoryPosts]
-      : readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
+    // Save to Firebase Firestore
+    if (isFirebaseConfigured()) {
+      try {
+        await setDoc(doc(firestoreDb, 'posts', savedPost.id), cleanForFirestore(savedPost));
+      } catch (fErr) {
+        console.error('Firestore savePost error:', fErr);
+      }
+    }
+
+    // Update local cache
+    const currentList = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
     const index = currentList.findIndex((p) => p.id === id);
     if (index >= 0) {
       currentList[index] = savedPost;
@@ -356,14 +317,7 @@ export const ServerStorage = {
       currentList.unshift(savedPost);
     }
     memoryPosts = currentList;
-    memoryPostsTimestamp = Date.now();
     writeJsonFile(POSTS_FILE, currentList);
-
-    // Save to Firebase Firestore in background (non-blocking)
-    if (isFirebaseConfigured()) {
-      setDoc(doc(firestoreDb, 'posts', savedPost.id), cleanForFirestore(savedPost))
-        .catch((fErr) => console.error('Firestore background savePost error:', fErr));
-    }
 
     // Auto-create category if needed
     if (savedPost.category && savedPost.category.trim()) {
@@ -400,45 +354,22 @@ export const ServerStorage = {
   },
 
   deletePost: async (id: string, token?: string): Promise<void> => {
-    return ServerStorage.deletePosts([id], token);
-  },
-
-  deletePosts: async (ids: string[], token?: string): Promise<void> => {
-    if (!Array.isArray(ids) || ids.length === 0) return;
-    const cleanIds = ids.filter(Boolean);
-    if (cleanIds.length === 0) return;
-    const idSet = new Set(cleanIds);
-
-    await recordDeletedPostIds(cleanIds);
-
     // 1. Remove from local file / memory
     try {
-      const rawPosts = memoryPosts && memoryPosts.length > 0
-        ? [...memoryPosts]
-        : readJsonFile<PromptPost[]>(POSTS_FILE, []);
-      const filteredLocal = rawPosts.filter((p) => !idSet.has(p.id));
+      const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, []);
+      const filteredLocal = rawPosts.filter((p) => p.id !== id);
       memoryPosts = filteredLocal;
-      memoryPostsTimestamp = Date.now();
       writeJsonFile(POSTS_FILE, filteredLocal);
     } catch (e) {
-      console.error('Local deletePosts error:', e);
+      console.error('Local deletePost error:', e);
     }
 
     // 2. Remove from Firebase Firestore
     if (isFirebaseConfigured()) {
       try {
-        const batch = writeBatch(firestoreDb);
-        let batchCount = 0;
-        for (const id of cleanIds) {
-          batch.delete(doc(firestoreDb, 'posts', id));
-          batchCount++;
-          if (batchCount >= 450) break;
-        }
-        if (batchCount > 0) {
-          await batch.commit();
-        }
+        await deleteDoc(doc(firestoreDb, 'posts', id));
       } catch (err) {
-        console.error('Firestore deletePosts error:', err);
+        console.error('Firestore deletePost error:', err);
       }
     }
   },
@@ -537,23 +468,19 @@ export const ServerStorage = {
   },
 
   incrementViews: async (id: string, token?: string): Promise<void> => {
-    // Views tracking removed to eliminate writes and reads
-    return;
+    const post = await ServerStorage.getPostById(id);
+    if (post) {
+      post.viewsCount = (post.viewsCount || 0) + 1;
+      await ServerStorage.savePost(post, token);
+    }
   },
 
   incrementCopies: async (id: string, token?: string): Promise<void> => {
-    if (memoryPosts) {
-      const p = memoryPosts.find((x) => x.id === id);
-      if (p) p.copiesCount = (p.copiesCount || 0) + 1;
+    const post = await ServerStorage.getPostById(id);
+    if (post) {
+      post.copiesCount = (post.copiesCount || 0) + 1;
+      await ServerStorage.savePost(post, token);
     }
-    try {
-      const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, []);
-      const p = rawPosts.find((x) => x.id === id);
-      if (p) {
-        p.copiesCount = (p.copiesCount || 0) + 1;
-        writeJsonFile(POSTS_FILE, rawPosts);
-      }
-    } catch {}
   },
 
   incrementCopyCount: async (id: string, token?: string): Promise<void> => {
@@ -561,21 +488,19 @@ export const ServerStorage = {
   },
 
   incrementViewCount: async (id: string, token?: string): Promise<void> => {
-    // Views tracking removed to eliminate writes and reads
-    return;
+    return await ServerStorage.incrementViews(id, token);
   },
 
   toggleLike: async (id: string, token?: string): Promise<void> => {
-    // Likes system removed
-    return;
+    const post = await ServerStorage.getPostById(id);
+    if (post) {
+      post.likesCount = (post.likesCount || 0) + 1;
+      await ServerStorage.savePost(post, token);
+    }
   },
 
   // Categories
   getAllCategories: async (): Promise<Category[]> => {
-    if (memoryCategories && memoryCategories.length > 0) {
-      return memoryCategories;
-    }
-
     const initial = INITIAL_CATEGORIES.map((c, i) => ({ ...c, sortOrder: i }));
     let localCats: Category[] = [];
     try {
@@ -612,6 +537,21 @@ export const ServerStorage = {
     const merged = Array.from(catMap.values()).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
     memoryCategories = merged;
     writeJsonFile(CATEGORIES_FILE, merged);
+
+    // If remote was empty but local has categories, auto-seed to Firestore
+    if (isFirebaseConfigured() && remoteCats.length === 0 && merged.length > 0) {
+      void (async () => {
+        try {
+          const batch = writeBatch(firestoreDb);
+          for (const c of merged) {
+            batch.set(doc(firestoreDb, 'categories', c.id), cleanForFirestore(c));
+          }
+          await batch.commit();
+        } catch (e) {
+          console.warn('Auto-seed Firestore categories notice:', e);
+        }
+      })();
+    }
 
     return merged;
   },
@@ -871,6 +811,14 @@ export const ServerStorage = {
 
     memorySearchQueries = updated;
     writeJsonFile(SEARCH_QUERIES_FILE, updated);
+
+    if (isFirebaseConfigured()) {
+      try {
+        await setDoc(doc(firestoreDb, 'settings', 'search_queries'), { queries: updated, updatedAt: now });
+      } catch (err) {
+        console.error('Firestore recordSearchQuery error:', err);
+      }
+    }
   },
 
   clearAllSearchQueries: async (): Promise<void> => {
@@ -1229,8 +1177,10 @@ export const ServerStorage = {
     // 2. Firebase Firestore
     if (isFirebaseConfigured()) {
       try {
-        const primaryKey = cleanKey || docKey;
-        await setDoc(doc(firestoreDb, 'users', primaryKey), cleanForFirestore(payload));
+        await setDoc(doc(firestoreDb, 'users', docKey), cleanForFirestore(payload));
+        if (cleanKey && cleanKey !== docKey) {
+          await setDoc(doc(firestoreDb, 'users', cleanKey), cleanForFirestore(payload));
+        }
       } catch (err) {
         console.error('Firestore saveUserProfile error:', err);
       }
