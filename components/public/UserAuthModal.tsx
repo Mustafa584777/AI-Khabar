@@ -11,7 +11,8 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendEmailVerification,
-  updateProfile
+  updateProfile,
+  signOut
 } from 'firebase/auth';
 import {
   X,
@@ -48,6 +49,40 @@ export const UserAuthModal = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [forgotSuccess, setForgotSuccess] = useState(false);
+  const [isUnverified, setIsUnverified] = useState(false);
+
+  const handleResendVerification = async () => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      showToast('Please enter your email address first.');
+      return;
+    }
+    if (!password) {
+      showToast('Please enter your password to resend verification email.');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
+      const u = userCredential.user;
+      await sendEmailVerification(u);
+      await signOut(auth).catch(() => {});
+      const resendMsg = 'Verification email resent successfully! Please check your inbox.';
+      setErrorMessage(resendMsg);
+      showToast(resendMsg);
+      setIsUnverified(false);
+    } catch (err: any) {
+      console.error('Resend verification error:', err);
+      let msg = err.message || 'Failed to resend verification email.';
+      if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        msg = 'Please enter your correct password to resend the verification email.';
+      }
+      setErrorMessage(msg);
+      showToast(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const defaultAvatar = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80';
 
@@ -159,31 +194,31 @@ export const UserAuthModal = () => {
           console.warn('Verification email error:', err);
         }
 
-        await signupUser(userName, userHandle, cleanEmail, password, defaultAvatar, u.uid);
-        showToast(`Welcome ${userName}! Verification email sent. 5 Free Credits added 🎉`);
-        setErrorMessage('Account created successfully! Verification email sent to your inbox.');
+        // Immediately sign out unverified user so they must verify before login
+        await signOut(auth).catch(() => {});
+
+        const msg = 'Account created successfully! A verification email has been sent to your inbox. Please verify your email before signing in.';
+        setErrorMessage(msg);
+        showToast(msg);
         setIsLoading(false);
-        setIsUserAuthModalOpen(false);
-
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('auraprompt_first_login_claimed', 'true');
-          localStorage.setItem('auraprompt_signup_bonus_claimed', 'true');
-          localStorage.setItem('auraprompt_signup_modal_already_shown', 'true');
-          localStorage.setItem('auraprompt_signup_modal_shown', 'true');
-          localStorage.setItem(`auraprompt_signup_bonus_claimed_${cleanEmail}`, 'true');
-          localStorage.setItem(`auraprompt_signup_modal_shown_${cleanEmail}`, 'true');
-          localStorage.setItem(`auraprompt_signup_modal_already_shown_${cleanEmail}`, 'true');
-          if (!localStorage.getItem('auraprompt_tool_credits')) {
-            localStorage.setItem('auraprompt_tool_credits', '5');
-          }
-        }
-
-        setIsFirstLoginModalOpen(false);
-        checkAndRedirectStudio();
+        setMode('login');
+        setIsUnverified(true);
+        return;
       } else {
         // Mode: LOGIN
         const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
         const u = userCredential.user;
+
+        if (!u.emailVerified) {
+          await signOut(auth).catch(() => {});
+          const notVerifiedMsg = 'Your email address is not verified. Please check your inbox for the verification link to sign in.';
+          setErrorMessage(notVerifiedMsg);
+          showToast(notVerifiedMsg);
+          setIsUnverified(true);
+          setIsLoading(false);
+          return;
+        }
+
         const userName = u.displayName || cleanEmail.split('@')[0];
         const userAvatar = u.photoURL || defaultAvatar;
 
@@ -203,6 +238,7 @@ export const UserAuthModal = () => {
         setIsUserAuthModalOpen(false);
         setEmail('');
         setPassword('');
+        setIsUnverified(false);
         checkAndRedirectStudio();
       }
     } catch (err: any) {
@@ -276,8 +312,19 @@ export const UserAuthModal = () => {
           {errorMessage && (
             <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl flex items-start gap-2.5 text-xs text-red-700 dark:text-red-300">
               <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-red-600 dark:text-red-400" />
-              <div className="flex-1">
+              <div className="flex-1 space-y-2">
                 <span>{errorMessage}</span>
+                {isUnverified && (
+                  <button
+                    type="button"
+                    onClick={handleResendVerification}
+                    disabled={isLoading}
+                    className="w-full py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                    <span>Resend Verification Email</span>
+                  </button>
+                )}
               </div>
             </div>
           )}

@@ -2155,6 +2155,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     // Check Firebase Auth Session
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        if (!firebaseUser.emailVerified) {
+          try {
+            await firebaseSignOut(auth);
+          } catch {}
+          setUserAccount(null);
+          StorageService.clearAllUserData();
+          return;
+        }
         const existing = StorageService.getUserAccount();
         const emailPrefix = firebaseUser.email ? firebaseUser.email.split('@')[0] : 'Creator';
         const account: UserAccount = {
