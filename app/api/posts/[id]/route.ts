@@ -55,10 +55,6 @@ export async function PATCH(
 
     if (body.action === 'copy') {
       await ServerStorage.incrementCopyCount(targetId, token);
-    } else if (body.action === 'view') {
-      await ServerStorage.incrementViewCount(targetId, token);
-    } else if (body.action === 'like') {
-      await ServerStorage.toggleLike(targetId, token);
     }
 
     const updated = await ServerStorage.getPostById(targetId);

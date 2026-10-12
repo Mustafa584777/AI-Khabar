@@ -15,13 +15,33 @@ export const StorageService = {
   getCachedPosts: (): PromptPost[] => {
     if (typeof window !== 'undefined') {
       try {
+        const deletedRaw = localStorage.getItem('promptcms_deleted_ids');
+        const deletedList: string[] = deletedRaw ? JSON.parse(deletedRaw) : [];
+        const deletedSet = new Set(deletedList);
+
         const saved = localStorage.getItem(STORAGE_KEY_CACHED_POSTS);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed;
+        const postMap = new Map<string, PromptPost>();
+
+        if (Array.isArray(INITIAL_POSTS)) {
+          for (const p of INITIAL_POSTS) {
+            if (p && p.id && !deletedSet.has(p.id)) {
+              postMap.set(p.id, p);
+            }
           }
         }
+
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            for (const p of parsed) {
+              if (p && p.id && !deletedSet.has(p.id)) {
+                postMap.set(p.id, p);
+              }
+            }
+          }
+        }
+
+        return Array.from(postMap.values());
       } catch (e) {
         console.error('Error reading cached posts:', e);
       }
@@ -33,6 +53,7 @@ export const StorageService = {
     if (typeof window !== 'undefined' && Array.isArray(posts)) {
       try {
         localStorage.setItem(STORAGE_KEY_CACHED_POSTS, JSON.stringify(posts));
+        localStorage.setItem('promptcms_cached_posts_time', String(Date.now()));
       } catch (e) {
         console.error('Error saving cached posts:', e);
       }

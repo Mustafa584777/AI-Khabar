@@ -22,6 +22,7 @@ export const PostsManager = () => {
     posts,
     categories,
     deletePost,
+    deletePosts,
     togglePublishStatus,
     togglePremiumStatus,
     setAdminSubView,
@@ -92,10 +93,9 @@ export const PostsManager = () => {
   };
 
   const handleBulkDelete = () => {
-    if (confirm(`Are you sure you want to delete ${selectedIds.length} prompts?`)) {
-      selectedIds.forEach((id) => deletePost(id));
-      setSelectedIds([]);
-    }
+    if (selectedIds.length === 0) return;
+    deletePosts(selectedIds);
+    setSelectedIds([]);
   };
 
   return (
@@ -173,20 +173,23 @@ export const PostsManager = () => {
                 {selectedIds.length} Selected:
               </span>
               <button
+                type="button"
                 onClick={handleBulkPublish}
-                className="px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 text-xs font-semibold hover:bg-emerald-100"
+                className="px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 text-xs font-semibold hover:bg-emerald-100 cursor-pointer"
               >
                 Publish
               </button>
               <button
+                type="button"
                 onClick={handleBulkDraft}
-                className="px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 text-xs font-semibold hover:bg-amber-100"
+                className="px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 text-xs font-semibold hover:bg-amber-100 cursor-pointer"
               >
                 Set to Draft
               </button>
               <button
+                type="button"
                 onClick={handleBulkDelete}
-                className="px-2.5 py-1.5 rounded-lg bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300 border border-red-200 text-xs font-semibold hover:bg-red-100"
+                className="px-2.5 py-1.5 rounded-lg bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300 border border-red-200 text-xs font-semibold hover:bg-red-100 cursor-pointer"
               >
                 Delete
               </button>
@@ -318,34 +321,38 @@ export const PostsManager = () => {
                             </p>
 
                             {/* Row Action Links */}
-                            <div className="flex items-center gap-2 pt-1 opacity-0 group-hover:opacity-100 transition-opacity text-[11px]">
+                            <div className="flex items-center gap-2 pt-1 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-[11px]">
                               <button
-                                onClick={() => {
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   setEditingPostId(post.id);
                                   setAdminSubView('edit-post');
                                 }}
-                                className="text-blue-600 dark:text-blue-400 font-bold hover:underline"
+                                className="text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer"
                               >
                                 Edit
                               </button>
                               <span className="text-neutral-300">|</span>
                               <button
-                                onClick={() => {
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   setSelectedPost(post);
                                   setCurrentView('public');
                                 }}
-                                className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline"
+                                className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline cursor-pointer"
                               >
                                 View Live
                               </button>
                               <span className="text-neutral-300">|</span>
                               <button
-                                onClick={() => {
-                                  if (confirm(`Delete prompt "${post.title}"?`)) {
-                                    deletePost(post.id);
-                                  }
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deletePost(post.id);
                                 }}
-                                className="text-red-600 dark:text-red-400 font-medium hover:underline"
+                                className="text-red-600 dark:text-red-400 font-medium hover:underline cursor-pointer"
                               >
                                 Trash
                               </button>
@@ -400,22 +407,24 @@ export const PostsManager = () => {
                       <td className="py-4 pr-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
-                            onClick={() => {
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setEditingPostId(post.id);
                               setAdminSubView('edit-post');
                             }}
-                            className="p-1.5 rounded-lg text-neutral-400 hover:text-blue-600 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                            className="p-1.5 rounded-lg text-neutral-400 hover:text-blue-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer"
                             title="Edit"
                           >
                             <Edit className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={() => {
-                              if (confirm(`Delete prompt "${post.title}"?`)) {
-                                deletePost(post.id);
-                              }
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deletePost(post.id);
                             }}
-                            className="p-1.5 rounded-lg text-neutral-400 hover:text-red-600 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                            className="p-1.5 rounded-lg text-neutral-400 hover:text-red-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer"
                             title="Delete"
                           >
                             <Trash2 className="w-3.5 h-3.5" />

@@ -25,6 +25,7 @@ const SEARCH_QUERIES_FILE = path.join(DATA_DIR, 'search_queries.json');
 const SUBSCRIPTIONS_FILE = path.join(DATA_DIR, 'subscriptions.json');
 const USER_PROFILES_FILE = path.join(DATA_DIR, 'users.json');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
+const DELETED_POSTS_FILE = path.join(DATA_DIR, 'deleted_posts.json');
 
 const DEFAULT_TAGS = [
   'Portrait', '35mm', 'Cinematic', 'Street Photography', 'Fashion',
@@ -64,6 +65,58 @@ function writeJsonFile<T>(filePath: string, data: T): void {
   }
 }
 
+let memoryDeletedIds: Set<string> | null = null;
+
+function getDeletedPostIds(): Set<string> {
+  if (memoryDeletedIds) return memoryDeletedIds;
+  const localList = readJsonFile<string[]>(DELETED_POSTS_FILE, []);
+  const set = new Set<string>(Array.isArray(localList) ? localList : []);
+  memoryDeletedIds = set;
+  return set;
+}
+
+function recordDeletedPostIds(ids: string[]): void {
+  const current = getDeletedPostIds();
+  ids.forEach((id) => {
+    if (id) current.add(id);
+  });
+  memoryDeletedIds = current;
+  const list = Array.from(current);
+  writeJsonFile(DELETED_POSTS_FILE, list);
+
+  if (isFirebaseConfigured()) {
+    setDoc(
+      doc(firestoreDb, 'settings', 'deleted_posts'),
+      {
+        ids: list,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    ).catch((e) => console.error('Firestore recordDeletedPostIds error:', e));
+  }
+}
+
+function unrecordDeletedPostId(id: string): void {
+  const current = getDeletedPostIds();
+  if (current.has(id)) {
+    current.delete(id);
+    memoryDeletedIds = current;
+    const list = Array.from(current);
+    writeJsonFile(DELETED_POSTS_FILE, list);
+
+    if (isFirebaseConfigured()) {
+      setDoc(
+        doc(firestoreDb, 'settings', 'deleted_posts'),
+        {
+          ids: list,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      ).catch((e) => console.error('Firestore unrecordDeletedPostId error:', e));
+    }
+  }
+}
+
 // Helper to remove any undefined fields before sending to Firestore
 function cleanForFirestore<T = any>(obj: any): T {
   if (obj === null || obj === undefined) return null as any;
@@ -80,48 +133,42 @@ function cleanForFirestore<T = any>(obj: any): T {
   return obj;
 }
 
-// In-memory runtime cache with smart synchronization
+// In-memory runtime cache with 24-hour TTL
 let memoryPosts: PromptPost[] | null = null;
-let lastPostsFetchTime: number = 0;
-let lastKnownRemoteTimestamp: number = 0;
-const POSTS_SYNC_INTERVAL_MS = 60 * 1000; // 60 seconds interval between remote sync checks
-const PENDING_SYNC_FILE = path.join(DATA_DIR, 'pending_sync.json');
+let memoryPostsTimestamp = 0;
+const POSTS_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 let memoryCategories: Category[] | null = null;
 let memorySettings: SiteSettings | null = null;
 let memoryTags: string[] | null = null;
 let memorySearchQueries: SearchQueryItem[] | null = null;
 
-// Helper to flush offline/pending queue when Firestore is available
-async function flushPendingPostsSync(): Promise<void> {
-  if (!isFirebaseConfigured()) return;
-  try {
-    const pending = readJsonFile<PromptPost[]>(PENDING_SYNC_FILE, []);
-    if (!pending || pending.length === 0) return;
-    const batch = writeBatch(firestoreDb);
-    for (const p of pending) {
-      if (p.id) {
-        batch.set(doc(firestoreDb, 'posts', p.id), cleanForFirestore(p));
-      }
-    }
-    await batch.commit();
-    writeJsonFile(PENDING_SYNC_FILE, []);
-    console.log(`[ServerStorage] Successfully flushed ${pending.length} pending posts to Firestore.`);
-  } catch (err: any) {
-    // transient offline or quota
-  }
-}
-
 export const ServerStorage = {
   // Posts
   getAllPosts: async (includeDrafts = true): Promise<PromptPost[]> => {
-    const now = Date.now();
-    // 1. Fast path: return in-memory cache if fresh (within 60s cooldown)
-    if (memoryPosts && memoryPosts.length > 0 && now - lastPostsFetchTime < POSTS_SYNC_INTERVAL_MS) {
-      return includeDrafts ? memoryPosts : memoryPosts.filter((p) => p.status === 'published');
+    const deletedIds = getDeletedPostIds();
+    if (isFirebaseConfigured()) {
+      try {
+        const delSnap = await getDoc(doc(firestoreDb, 'settings', 'deleted_posts'));
+        if (delSnap.exists()) {
+          const delData = delSnap.data();
+          if (delData && Array.isArray(delData.ids)) {
+            delData.ids.forEach((id: string) => deletedIds.add(id));
+            memoryDeletedIds = deletedIds;
+            writeJsonFile(DELETED_POSTS_FILE, Array.from(deletedIds));
+          }
+        }
+      } catch (err) {
+        console.warn('Firestore getDeletedPostIds fetch warning:', err);
+      }
     }
 
-    // 2. Read local baseline from disk
+    const now = Date.now();
+    if (memoryPosts && memoryPosts.length > 0 && (now - memoryPostsTimestamp < POSTS_CACHE_TTL)) {
+      const valid = memoryPosts.filter((p) => !deletedIds.has(p.id));
+      return includeDrafts ? valid : valid.filter((p) => p.status === 'published');
+    }
+
     let localPosts: PromptPost[] = [];
     try {
       const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
@@ -133,73 +180,33 @@ export const ServerStorage = {
       localPosts = INITIAL_POSTS || [];
     }
 
-    // Try flushing any pending posts in the background
-    void flushPendingPostsSync();
-
     let remotePosts: PromptPost[] = [];
-    let shouldFetchAllRemote = false;
-
     if (isFirebaseConfigured()) {
       try {
-        // Step A: Read lightweight fingerprint document (1 read instead of 268 reads)
-        const stateSnap = await getDoc(doc(firestoreDb, '_system', 'sync_state'));
-        if (stateSnap.exists()) {
-          const stateData = stateSnap.data() as { postsUpdatedAt?: number; postCount?: number };
-          const remoteUpdatedAt = Number(stateData.postsUpdatedAt) || 0;
-          const remoteCount = Number(stateData.postCount) || 0;
-
-          // If local memory or disk already has all posts and remote hasn't changed, skip full collection read!
-          const currentList = memoryPosts && memoryPosts.length >= localPosts.length ? memoryPosts : localPosts;
-          if (
-            currentList.length > 0 &&
-            remoteUpdatedAt > 0 &&
-            remoteUpdatedAt <= lastKnownRemoteTimestamp &&
-            currentList.length >= remoteCount
-          ) {
-            lastPostsFetchTime = now;
-            memoryPosts = currentList;
-            return includeDrafts ? currentList : currentList.filter((p) => p.status === 'published');
-          }
-
-          lastKnownRemoteTimestamp = Math.max(lastKnownRemoteTimestamp, remoteUpdatedAt);
-          shouldFetchAllRemote = true;
-        } else {
-          // Sync state not yet initialized in Firestore
-          shouldFetchAllRemote = true;
+        const snap = await getDocs(collection(firestoreDb, 'posts'));
+        if (!snap.empty) {
+          snap.forEach((d) => {
+            const data = d.data() as PromptPost;
+            if (data && data.id) {
+              remotePosts.push({
+                ...data,
+                tags: cleanTagsArray(data.tags || []),
+              });
+            }
+          });
         }
-      } catch (err: any) {
-        // Quota exceeded, network timeout, or offline
-        console.warn('[ServerStorage] Firestore sync check notice (serving local data):', err?.message);
-        shouldFetchAllRemote = false;
-      }
-
-      if (shouldFetchAllRemote) {
-        try {
-          const snap = await getDocs(collection(firestoreDb, 'posts'));
-          if (!snap.empty) {
-            snap.forEach((d) => {
-              const data = d.data() as PromptPost;
-              if (data && data.id) {
-                remotePosts.push({
-                  ...data,
-                  tags: cleanTagsArray(data.tags || []),
-                });
-              }
-            });
-          }
-        } catch (err: any) {
-          console.warn('[ServerStorage] Firestore getAllPosts fallback to local storage:', err?.message);
-        }
+      } catch (err) {
+        console.warn('Firestore getAllPosts fallback:', err);
       }
     }
 
     // Merge remotePosts and localPosts by ID to ensure NO prompt is ever lost
     const postMap = new Map<string, PromptPost>();
     for (const p of localPosts) {
-      if (p.id) postMap.set(p.id, p);
+      if (p.id && !deletedIds.has(p.id)) postMap.set(p.id, p);
     }
     for (const p of remotePosts) {
-      if (p.id) {
+      if (p.id && !deletedIds.has(p.id)) {
         const existing = postMap.get(p.id);
         if (
           !existing ||
@@ -217,43 +224,11 @@ export const ServerStorage = {
       return timeB - timeA;
     });
 
-    // Safeguard: Never overwrite local storage with a smaller dataset
-    if (merged.length >= localPosts.length && merged.length > 0) {
-      memoryPosts = merged;
-      writeJsonFile(POSTS_FILE, merged);
-    } else if (localPosts.length > 0) {
-      memoryPosts = localPosts;
-    } else {
-      memoryPosts = merged;
-    }
+    memoryPosts = merged;
+    memoryPostsTimestamp = Date.now();
+    writeJsonFile(POSTS_FILE, merged);
 
-    lastPostsFetchTime = now;
-
-    // Seed or update Firestore sync state if needed
-    if (isFirebaseConfigured() && merged.length > 0) {
-      void (async () => {
-        try {
-          if (remotePosts.length === 0 && localPosts.length > 0) {
-            const chunkSize = 250;
-            for (let i = 0; i < merged.length; i += chunkSize) {
-              const chunk = merged.slice(i, i + chunkSize);
-              const batch = writeBatch(firestoreDb);
-              for (const p of chunk) {
-                batch.set(doc(firestoreDb, 'posts', p.id), cleanForFirestore(p));
-              }
-              await batch.commit();
-            }
-          }
-          await setDoc(
-            doc(firestoreDb, '_system', 'sync_state'),
-            { postsUpdatedAt: Date.now(), postCount: merged.length },
-            { merge: true }
-          );
-        } catch {}
-      })();
-    }
-
-    return includeDrafts ? memoryPosts : memoryPosts.filter((p) => p.status === 'published');
+    return includeDrafts ? merged : merged.filter((p) => p.status === 'published');
   },
 
   getPostBySlug: async (slug: string): Promise<PromptPost | undefined> => {
@@ -385,37 +360,11 @@ export const ServerStorage = {
       }
     }
 
-    // Save to Firebase Firestore
-    if (isFirebaseConfigured()) {
-      try {
-        await setDoc(doc(firestoreDb, 'posts', savedPost.id), cleanForFirestore(savedPost));
-        await setDoc(
-          doc(firestoreDb, '_system', 'sync_state'),
-          { postsUpdatedAt: Date.now(), postCount: (memoryPosts?.length || 0) + 1 },
-          { merge: true }
-        );
-        lastKnownRemoteTimestamp = Date.now();
-      } catch (fErr: any) {
-        console.error('Firestore savePost error:', fErr);
-        // Persist to pending sync queue so it will retry automatically when connection/quota restores
-        try {
-          const pending = readJsonFile<PromptPost[]>(PENDING_SYNC_FILE, []);
-          const existingIdx = pending.findIndex((p) => p.id === savedPost.id);
-          if (existingIdx >= 0) {
-            pending[existingIdx] = savedPost;
-          } else {
-            pending.push(savedPost);
-          }
-          writeJsonFile(PENDING_SYNC_FILE, pending);
-          console.warn(`[ServerStorage] Post ${savedPost.id} added to pending_sync queue for automatic recovery.`);
-        } catch (queueErr) {
-          console.error('Failed to queue pending sync:', queueErr);
-        }
-      }
-    }
-
-    // Update local cache
-    const currentList = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
+    // Update memory and local cache immediately
+    unrecordDeletedPostId(savedPost.id);
+    const currentList = memoryPosts && memoryPosts.length > 0
+      ? [...memoryPosts]
+      : readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
     const index = currentList.findIndex((p) => p.id === id);
     if (index >= 0) {
       currentList[index] = savedPost;
@@ -423,8 +372,14 @@ export const ServerStorage = {
       currentList.unshift(savedPost);
     }
     memoryPosts = currentList;
+    memoryPostsTimestamp = Date.now();
     writeJsonFile(POSTS_FILE, currentList);
-    lastPostsFetchTime = Date.now();
+
+    // Save to Firebase Firestore in background (non-blocking)
+    if (isFirebaseConfigured()) {
+      setDoc(doc(firestoreDb, 'posts', savedPost.id), cleanForFirestore(savedPost))
+        .catch((fErr) => console.error('Firestore background savePost error:', fErr));
+    }
 
     // Auto-create category if needed
     if (savedPost.category && savedPost.category.trim()) {
@@ -461,29 +416,45 @@ export const ServerStorage = {
   },
 
   deletePost: async (id: string, token?: string): Promise<void> => {
+    return ServerStorage.deletePosts([id], token);
+  },
+
+  deletePosts: async (ids: string[], token?: string): Promise<void> => {
+    if (!Array.isArray(ids) || ids.length === 0) return;
+    const cleanIds = ids.filter(Boolean);
+    if (cleanIds.length === 0) return;
+    const idSet = new Set(cleanIds);
+
+    await recordDeletedPostIds(cleanIds);
+
     // 1. Remove from local file / memory
     try {
-      const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, []);
-      const filteredLocal = rawPosts.filter((p) => p.id !== id);
+      const rawPosts = memoryPosts && memoryPosts.length > 0
+        ? [...memoryPosts]
+        : readJsonFile<PromptPost[]>(POSTS_FILE, []);
+      const filteredLocal = rawPosts.filter((p) => !idSet.has(p.id));
       memoryPosts = filteredLocal;
+      memoryPostsTimestamp = Date.now();
       writeJsonFile(POSTS_FILE, filteredLocal);
-      lastPostsFetchTime = Date.now();
     } catch (e) {
-      console.error('Local deletePost error:', e);
+      console.error('Local deletePosts error:', e);
     }
 
     // 2. Remove from Firebase Firestore
     if (isFirebaseConfigured()) {
       try {
-        await deleteDoc(doc(firestoreDb, 'posts', id));
-        await setDoc(
-          doc(firestoreDb, '_system', 'sync_state'),
-          { postsUpdatedAt: Date.now(), postCount: memoryPosts?.length || 0 },
-          { merge: true }
-        );
-        lastKnownRemoteTimestamp = Date.now();
+        const batch = writeBatch(firestoreDb);
+        let batchCount = 0;
+        for (const id of cleanIds) {
+          batch.delete(doc(firestoreDb, 'posts', id));
+          batchCount++;
+          if (batchCount >= 450) break;
+        }
+        if (batchCount > 0) {
+          await batch.commit();
+        }
       } catch (err) {
-        console.error('Firestore deletePost error:', err);
+        console.error('Firestore deletePosts error:', err);
       }
     }
   },
@@ -573,13 +544,6 @@ export const ServerStorage = {
           }
           await batch.commit();
         }
-        await setDoc(
-          doc(firestoreDb, '_system', 'sync_state'),
-          { postsUpdatedAt: Date.now(), postCount: finalList.length },
-          { merge: true }
-        );
-        lastKnownRemoteTimestamp = Date.now();
-        lastPostsFetchTime = Date.now();
       } catch (err) {
         console.error('Firestore batch restorePosts error:', err);
       }
@@ -589,19 +553,23 @@ export const ServerStorage = {
   },
 
   incrementViews: async (id: string, token?: string): Promise<void> => {
-    const post = await ServerStorage.getPostById(id);
-    if (post) {
-      post.viewsCount = (post.viewsCount || 0) + 1;
-      await ServerStorage.savePost(post, token);
-    }
+    // Views tracking removed to eliminate writes and reads
+    return;
   },
 
   incrementCopies: async (id: string, token?: string): Promise<void> => {
-    const post = await ServerStorage.getPostById(id);
-    if (post) {
-      post.copiesCount = (post.copiesCount || 0) + 1;
-      await ServerStorage.savePost(post, token);
+    if (memoryPosts) {
+      const p = memoryPosts.find((x) => x.id === id);
+      if (p) p.copiesCount = (p.copiesCount || 0) + 1;
     }
+    try {
+      const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, []);
+      const p = rawPosts.find((x) => x.id === id);
+      if (p) {
+        p.copiesCount = (p.copiesCount || 0) + 1;
+        writeJsonFile(POSTS_FILE, rawPosts);
+      }
+    } catch {}
   },
 
   incrementCopyCount: async (id: string, token?: string): Promise<void> => {
@@ -609,19 +577,21 @@ export const ServerStorage = {
   },
 
   incrementViewCount: async (id: string, token?: string): Promise<void> => {
-    return await ServerStorage.incrementViews(id, token);
+    // Views tracking removed to eliminate writes and reads
+    return;
   },
 
   toggleLike: async (id: string, token?: string): Promise<void> => {
-    const post = await ServerStorage.getPostById(id);
-    if (post) {
-      post.likesCount = (post.likesCount || 0) + 1;
-      await ServerStorage.savePost(post, token);
-    }
+    // Likes system removed
+    return;
   },
 
   // Categories
   getAllCategories: async (): Promise<Category[]> => {
+    if (memoryCategories && memoryCategories.length > 0) {
+      return memoryCategories;
+    }
+
     const initial = INITIAL_CATEGORIES.map((c, i) => ({ ...c, sortOrder: i }));
     let localCats: Category[] = [];
     try {
@@ -658,21 +628,6 @@ export const ServerStorage = {
     const merged = Array.from(catMap.values()).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
     memoryCategories = merged;
     writeJsonFile(CATEGORIES_FILE, merged);
-
-    // If remote was empty but local has categories, auto-seed to Firestore
-    if (isFirebaseConfigured() && remoteCats.length === 0 && merged.length > 0) {
-      void (async () => {
-        try {
-          const batch = writeBatch(firestoreDb);
-          for (const c of merged) {
-            batch.set(doc(firestoreDb, 'categories', c.id), cleanForFirestore(c));
-          }
-          await batch.commit();
-        } catch (e) {
-          console.warn('Auto-seed Firestore categories notice:', e);
-        }
-      })();
-    }
 
     return merged;
   },
@@ -932,14 +887,6 @@ export const ServerStorage = {
 
     memorySearchQueries = updated;
     writeJsonFile(SEARCH_QUERIES_FILE, updated);
-
-    if (isFirebaseConfigured()) {
-      try {
-        await setDoc(doc(firestoreDb, 'settings', 'search_queries'), { queries: updated, updatedAt: now });
-      } catch (err) {
-        console.error('Firestore recordSearchQuery error:', err);
-      }
-    }
   },
 
   clearAllSearchQueries: async (): Promise<void> => {
@@ -1298,10 +1245,8 @@ export const ServerStorage = {
     // 2. Firebase Firestore
     if (isFirebaseConfigured()) {
       try {
-        await setDoc(doc(firestoreDb, 'users', docKey), cleanForFirestore(payload));
-        if (cleanKey && cleanKey !== docKey) {
-          await setDoc(doc(firestoreDb, 'users', cleanKey), cleanForFirestore(payload));
-        }
+        const primaryKey = cleanKey || docKey;
+        await setDoc(doc(firestoreDb, 'users', primaryKey), cleanForFirestore(payload));
       } catch (err) {
         console.error('Firestore saveUserProfile error:', err);
       }

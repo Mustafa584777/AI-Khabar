@@ -744,7 +744,24 @@ export const PostEditor = () => {
 
     setIsSavingPost(true);
     try {
-      const saved = await savePost(postPayload);
+      let finalImageUrl = postPayload.imageUrl;
+      if (finalImageUrl && finalImageUrl.startsWith('data:image/')) {
+        try {
+          const upRes = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: finalImageUrl, folder: 'prompts', publicId: postPayload.slug }),
+          });
+          const upJson = await upRes.json();
+          if (upJson.success && upJson.url) {
+            finalImageUrl = upJson.url;
+          }
+        } catch (e) {
+          console.warn('Image pre-upload notice:', e);
+        }
+      }
+
+      const saved = await savePost({ ...postPayload, imageUrl: finalImageUrl });
       setEditingPostId(null);
       setAdminSubView('posts');
     } catch (err: any) {

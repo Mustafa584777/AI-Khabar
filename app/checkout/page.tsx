@@ -177,10 +177,6 @@ export default function CheckoutPage() {
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   {(planTier || 'Pro').toUpperCase()} Plan {planExpiresAt ? `(Expires ${formatExpiryDateWithHour(planExpiresAt)})` : ''}
                 </span>
-                <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700">•</span>
-                <span className="text-neutral-500">
-                  {promptRequestsRemaining} Prompt Requests Left
-                </span>
               </>
             )}
             {queuedPlan && (
@@ -543,7 +539,7 @@ export default function CheckoutPage() {
                   description={
                     billingCycle === 'monthly'
                       ? 'Monthly VIP - 600 Credits, 500 AI Searches'
-                      : 'Yearly VIP - 7200 Credits, 6000 AI Searches, 4800 Saves upfront'
+                      : 'Yearly VIP - 7200 Credits, 6000 AI Searches, 12 Requests, 4800 Saves upfront'
                   }
                   buttonText={billingCycle === 'monthly' ? 'Get VIP for ₹199' : 'Get VIP Yearly for ₹1,990'}
                   variant="secondary"
@@ -704,6 +700,7 @@ export default function CheckoutPage() {
                   </td>
                   <td className="py-3.5 px-4 text-center font-bold text-amber-600 dark:text-amber-400">Unlimited</td>
                 </tr>
+
                 <tr>
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">
                     {billingCycle === 'monthly' ? 'Saves & History Limit' : 'Total Combined Saves'}

@@ -28,8 +28,8 @@ interface AppContextType {
   // Navigation & Views
   currentView: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications';
   setCurrentView: (view: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications') => void;
-  adminSubView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications' | 'requested-prompts';
-  setAdminSubView: (subView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications' | 'requested-prompts') => void;
+  adminSubView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications';
+  setAdminSubView: (subView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications') => void;
   editingPostId: string | null;
   setEditingPostId: (id: string | null) => void;
   selectedPost: PromptPost | null;
@@ -119,6 +119,7 @@ interface AppContextType {
   refreshData: () => void;
   savePost: (post: PromptPost) => Promise<PromptPost>;
   deletePost: (id: string) => Promise<boolean>;
+  deletePosts: (ids: string[]) => Promise<boolean>;
   togglePublishStatus: (id: string) => void;
   togglePremiumStatus: (id: string) => Promise<void>;
   copyPromptToClipboard: (text: string, postId?: string) => void;
@@ -203,7 +204,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [pathname]);
 
   const [adminSubView, setAdminSubView] = useState<
-    'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications' | 'requested-prompts'
+    'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications'
   >('dashboard');
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [selectedPost, setSelectedPostState] = useState<PromptPost | null>(null);
@@ -403,31 +404,28 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       openAuthModal('Please sign in or create a free account to use credits.');
       return false;
     }
-    let success = false;
-    setToolCreditsState((prev) => {
-      let currentCredits = prev;
-      if (typeof window !== 'undefined') {
-        const saved = localStorage.getItem('auraprompt_tool_credits');
-        if (saved !== null) {
-          const parsed = parseInt(saved, 10);
-          if (!isNaN(parsed)) currentCredits = parsed;
-        }
+    let current = toolCredits;
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('auraprompt_tool_credits');
+      if (saved !== null) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed)) current = Math.min(current, parsed);
       }
-      if (currentCredits >= amount) {
-        const next = currentCredits - amount;
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('auraprompt_tool_credits', next.toString());
-        }
-        success = true;
-        if (acc && acc.id) {
-          void UserSyncService.pushUserData(acc.id, acc.email, { toolCredits: next });
-        }
-        return next;
-      }
-      return prev;
-    });
-    return success;
-  }, [userAccount, openAuthModal]);
+    }
+    if (current < amount) {
+      return false;
+    }
+    const next = Math.max(0, current - amount);
+    setToolCreditsState(next);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auraprompt_tool_credits', next.toString());
+    }
+    setUserAccount((prev) => (prev ? { ...prev, toolCredits: next } : prev));
+    if (acc && acc.id) {
+      void UserSyncService.pushUserData(acc.id, acc.email, { toolCredits: next });
+    }
+    return true;
+  }, [userAccount, toolCredits, openAuthModal]);
 
   const useToolCredit = deductToolCredit;
 
@@ -504,7 +502,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const saved = localStorage.getItem('auraprompt_tool_credits');
         if (saved !== null) {
           const parsed = parseInt(saved, 10);
-          if (!isNaN(parsed)) currentCredits = Math.max(toolCredits, parsed);
+          if (!isNaN(parsed)) currentCredits = Math.min(toolCredits, parsed);
         }
       }
 
@@ -520,6 +518,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_tool_credits', nextCredits.toString());
       }
+      setUserAccount((prev) => (prev ? { ...prev, toolCredits: nextCredits } : prev));
 
       const nextUnlocked = Array.from(new Set([...existingUnlocked, promptId]));
       setUnlockedPromptIds(nextUnlocked);
@@ -648,7 +647,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem('auraprompt_plan_expires_at', planExpiresAt);
     }
 
-    // Persist SaaS Plan upgrade immediately to cloud database
+    // Persist SaaS Plan upgrade immediately to Supabase cloud
     const currentAcc = userAccount || StorageService.getUserAccount();
     if (currentAcc && (currentAcc.email || currentAcc.id)) {
       void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, {
@@ -689,20 +688,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Prompt Requests State
   const [promptRequests, setPromptRequests] = useState<PromptRequestItem[]>([]);
 
-  const refreshPromptRequests = async (userEmail?: string) => {
-    try {
-      const url = userEmail ? `/api/prompt-requests?email=${encodeURIComponent(userEmail)}` : '/api/prompt-requests';
-      const res = await fetch(url);
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success && Array.isArray(json.requests)) {
-          setPromptRequests(json.requests);
-          StorageService.setPromptRequests(json.requests);
-        }
-      }
-    } catch (e) {
-      console.warn('Notice loading prompt requests from API:', e);
-    }
+  const refreshPromptRequests = async (_userEmail?: string) => {
+    // Feature completely removed
+    setPromptRequests([]);
   };
 
   const addPromptRequest = async (requestText: string, category?: string, aiTool?: string): Promise<boolean> => {
@@ -911,7 +899,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     StorageService.saveUserAccount(account);
     setUserAccount(account);
 
-    // Reconcile and load all cloud data strictly for this specific account from cloud database
+    // Reconcile and load all cloud data strictly for this specific account from Supabase
     try {
       const synced = await UserSyncService.reconcileOnLogin(account);
       setBookmarkedIds(synced.bookmarkedIds || []);
@@ -958,15 +946,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         resolvedCredits = resolvedTier === 'free' ? 5 : (cycleCfg.credits || 5);
       }
 
-      // Automatically grant 5 credits to any new account on free tier that hasn't consumed credits
-      if (
-        resolvedCredits === 0 &&
-        (!synced.unlockedPromptIds || synced.unlockedPromptIds.length === 0) &&
-        (!synced.aiHistory || synced.aiHistory.length === 0) &&
-        resolvedTier === 'free'
-      ) {
-        resolvedCredits = 5;
-      }
+      // Consumed credits must strictly remain intact and never reset back to 5
 
       setToolCreditsState(resolvedCredits);
       if (typeof window !== 'undefined') {
@@ -1279,10 +1259,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (typeof window !== 'undefined') localStorage.setItem('auraprompt_pro_member', String(synced.isProUser));
       }
       if (synced.toolCredits !== undefined) {
-        let cr = Number(synced.toolCredits);
-        if (cr === 0 && (!synced.unlockedPromptIds || synced.unlockedPromptIds.length === 0) && (!synced.aiHistory || synced.aiHistory.length === 0) && (!synced.planTier || synced.planTier === 'free')) {
-          cr = 5;
-        }
+        const cr = Number(synced.toolCredits);
         setToolCreditsState(cr);
         if (typeof window !== 'undefined') localStorage.setItem('auraprompt_tool_credits', String(cr));
       }
@@ -1401,9 +1378,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const queuedToPromote = synced.queuedPlan || queuedPlan;
         
         let resolvedCredits = synced.toolCredits !== undefined ? Number(synced.toolCredits) : Number(localStorage.getItem('auraprompt_tool_credits') || 5);
-        if (resolvedCredits === 0 && (!synced.unlockedPromptIds || synced.unlockedPromptIds.length === 0) && (!synced.aiHistory || synced.aiHistory.length === 0) && finalTier === 'free') {
-          resolvedCredits = 5;
-        }
         let resolvedReqs = synced.promptRequestsRemaining !== undefined ? Number(synced.promptRequestsRemaining) : 0;
         let resolvedAiSearchCount = synced.aiSearchRemaining !== undefined ? Number(synced.aiSearchRemaining) : (finalTier !== 'free' ? 200 : 5);
         let resolvedSavesLimitCount = 10;
@@ -1600,29 +1574,37 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [popularSearchQueries, setPopularSearchQueries] = useState<string[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const cached = localStorage.getItem('auraprompt_popular_queries_cache');
-        const cachedTime = localStorage.getItem('auraprompt_popular_queries_time');
-        const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
-        if (cached && cachedTime && (Date.now() - Number(cachedTime) < THREE_DAYS_MS)) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed)) return parsed;
+        const savedTime = localStorage.getItem('auraprompt_popular_queries_time');
+        const savedQueries = localStorage.getItem('auraprompt_popular_queries');
+        const THREE_DAYS = 3 * 24 * 60 * 60 * 1000;
+        const now = Date.now();
+        if (savedTime && savedQueries && now - parseInt(savedTime, 10) < THREE_DAYS) {
+          const parsed = JSON.parse(savedQueries);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
         }
       } catch {}
     }
-    return [];
-  });
-  const [selectedCategory, setSelectedCategoryState] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('selectedCategory') || 'all';
+    const realQueries: string[] = [];
+    const sourcePosts = INITIAL_POSTS || [];
+    sourcePosts.forEach((p) => {
+      if (p.title) realQueries.push(p.title);
+      if (Array.isArray(p.tags)) p.tags.forEach((t) => realQueries.push(t));
+      if (p.category) realQueries.push(p.category);
+    });
+    const uniqueReal = Array.from(new Set(realQueries)).slice(0, 8);
+    if (typeof window !== 'undefined' && uniqueReal.length > 0) {
+      try {
+        localStorage.setItem('auraprompt_popular_queries', JSON.stringify(uniqueReal));
+        localStorage.setItem('auraprompt_popular_queries_time', String(Date.now()));
+      } catch {}
     }
-    return 'all';
+    return uniqueReal.length > 0 ? uniqueReal : ['Portrait photography', 'Cinematic lighting', 'Cyberpunk portrait', 'Vintage film'];
   });
+  const [selectedCategory, setSelectedCategoryState] = useState<string>('');
 
   const setSelectedCategory = (cat: string) => {
-    setSelectedCategoryState(cat);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('selectedCategory', cat);
-    }
+    const clean = cat === 'all' || cat === 'none' ? '' : cat;
+    setSelectedCategoryState(clean);
   };
   const [selectedTool, setSelectedTool] = useState<string>('all');
   const [selectedSort, setSelectedSort] = useState<
@@ -1691,8 +1673,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const aiSearchDeductedRef = useRef<Set<string>>(new Set());
+  const aiSearchRemainingRef = useRef<number>(aiSearchRemaining);
+  useEffect(() => {
+    aiSearchRemainingRef.current = aiSearchRemaining;
+  }, [aiSearchRemaining]);
 
-  const performAiSearch = useCallback(async (query: string, deductQuota: boolean = true): Promise<AiSearchResult | null> => {
+  const performAiSearch = useCallback(async (query: string, deductQuota: boolean = false): Promise<AiSearchResult | null> => {
     // STRICT REQUIREMENT: Only logged-in users are permitted to access and run AI search
     const acc = userAccount || (typeof window !== 'undefined' ? StorageService.getUserAccount() : null);
     if (!acc || !acc.isLoggedIn) {
@@ -1708,22 +1694,58 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return null;
     }
 
-    const cacheKey = clean.toLowerCase();
-    if (aiSearchCacheRef.current.has(cacheKey)) {
-      const cached = aiSearchCacheRef.current.get(cacheKey)!;
-      setAiSearchResults(cached);
-      return cached;
-    }
-
     const planCfg = PLAN_CONFIGS[planTier] || PLAN_CONFIGS.free;
+    const currentRemaining = aiSearchRemainingRef.current;
 
-    if (!planCfg.unlimitedSearches && aiSearchRemaining <= 0) {
+    if (!planCfg.unlimitedSearches && currentRemaining <= 0) {
       showToast(`You have used all of your AI search quota (${planCfg.aiSearchQuota} searches). Please upgrade your plan to unlock more searches!`);
       setIsProCheckoutModalOpen(true);
       setIsAiSearchEnabled(false);
       setAiSearchResults(null);
       setIsAiSearching(false);
       return null;
+    }
+
+    const cacheKey = clean.toLowerCase();
+
+    let shouldDeduct = false;
+    if (!planCfg.unlimitedSearches && deductQuota) {
+      if (!aiSearchDeductedRef.current.has(cacheKey)) {
+        aiSearchDeductedRef.current.add(cacheKey);
+        shouldDeduct = true;
+      }
+    }
+
+    // Helper to safely deduct exactly 1 search point on completed search
+    const deductOnePoint = () => {
+      if (shouldDeduct) {
+        setAiSearchRemainingState((prev) => {
+          const next = Math.max(0, prev - 1);
+          aiSearchRemainingRef.current = next;
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('auraprompt_ai_search_remaining', next.toString());
+          }
+          if (acc && acc.id && acc.isLoggedIn) {
+            void UserSyncService.pushUserData(acc.id, acc.email, {
+              aiSearchRemaining: next,
+            });
+          }
+          if (next === 0) {
+            setIsAiSearchEnabledState(false);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('auraprompt_ai_search_enabled', 'false');
+            }
+          }
+          return next;
+        });
+      }
+    };
+
+    if (aiSearchCacheRef.current.has(cacheKey)) {
+      const cached = aiSearchCacheRef.current.get(cacheKey)!;
+      setAiSearchResults(cached);
+      deductOnePoint();
+      return cached;
     }
 
     setIsAiSearching(true);
@@ -1746,33 +1768,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           };
           aiSearchCacheRef.current.set(cacheKey, result);
           setAiSearchResults(result);
-
-          // Deduct quota only once per unique query when successfully completed and deductQuota is true
-          if (!planCfg.unlimitedSearches && deductQuota && !aiSearchDeductedRef.current.has(cacheKey)) {
-            aiSearchDeductedRef.current.add(cacheKey);
-            setAiSearchRemainingState((prev) => {
-              const next = Math.max(0, prev - 1);
-              if (typeof window !== 'undefined') {
-                localStorage.setItem('auraprompt_ai_search_remaining', next.toString());
-              }
-              if (acc && acc.isLoggedIn) {
-                void UserSyncService.pushUserData(acc.id, acc.email, {
-                  aiSearchRemaining: next,
-                  planTier: planTier,
-                  isProUser: isProUser,
-                  planExpiresAt: planExpiresAt || undefined,
-                });
-              }
-              if (next === 0) {
-                setIsAiSearchEnabledState(false);
-                if (typeof window !== 'undefined') {
-                  localStorage.setItem('auraprompt_ai_search_enabled', 'false');
-                }
-              }
-              return next;
-            });
-          }
-
+          deductOnePoint();
           setIsAiSearching(false);
           return result;
         }
@@ -1783,14 +1779,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setIsAiSearching(false);
     }
     return null;
-  }, [isAiSearchEnabled, planTier, aiSearchRemaining, showToast, setIsProCheckoutModalOpen, setIsAiSearchEnabled, userAccount]);
+  }, [isAiSearchEnabled, planTier, showToast, setIsProCheckoutModalOpen, setIsAiSearchEnabled, userAccount]);
 
   const clearAiSearch = useCallback(() => {
     setAiSearchResults(null);
     setIsAiSearching(false);
   }, []);
 
-  // Whenever searchQuery updates, trigger performAiSearch if enabled and user is logged in (debounced 300ms)
+  // Whenever searchQuery updates, trigger performAiSearch for live preview without deducting quota
   useEffect(() => {
     const q = searchQuery.trim();
     const acc = userAccount || (typeof window !== 'undefined' ? StorageService.getUserAccount() : null);
@@ -1799,30 +1795,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     const timer = setTimeout(() => {
-      void performAiSearch(q);
-    }, 300);
+      void performAiSearch(q, false);
+    }, 350);
     return () => clearTimeout(timer);
   }, [searchQuery, isAiSearchEnabled, userAccount, performAiSearch]);
 
   const fetchSearchQueries = async () => {
     try {
-      if (typeof window !== 'undefined') {
-        const cachedTime = localStorage.getItem('auraprompt_popular_queries_time');
-        const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
-        if (cachedTime && (Date.now() - Number(cachedTime) < THREE_DAYS_MS)) {
-          return; // Skip DB call if within 3 days
-        }
-      }
       const res = await fetch('/api/search-queries');
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.queries) && data.queries.length > 0) {
-          const queries = data.queries.map((q: any) => q.query);
-          setPopularSearchQueries(queries);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('auraprompt_popular_queries_cache', JSON.stringify(queries));
-            localStorage.setItem('auraprompt_popular_queries_time', String(Date.now()));
-          }
+          setPopularSearchQueries(data.queries.map((q: any) => q.query));
         }
       }
     } catch (e) {
@@ -1835,12 +1819,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const trimmed = queryText.trim();
     setPopularSearchQueries((prev) => {
       const filtered = prev.filter((q) => q.toLowerCase() !== trimmed.toLowerCase());
-      const updated = [trimmed, ...filtered].slice(0, 12);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('auraprompt_popular_queries_cache', JSON.stringify(updated));
-        localStorage.setItem('auraprompt_popular_queries_time', String(Date.now()));
-      }
-      return updated;
+      return [trimmed, ...filtered].slice(0, 12);
     });
     try {
       fetch('/api/search-queries', {
@@ -1870,8 +1849,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           if (res.ok && !isSavingRef.current) {
             const data = await res.json();
             if (data.success && Array.isArray(data.posts)) {
-              setPosts(data.posts);
-              StorageService.saveCachedPosts(data.posts);
+              let deletedSet = new Set<string>();
+              if (typeof window !== 'undefined') {
+                try {
+                  const rawDel = localStorage.getItem('promptcms_deleted_ids');
+                  if (rawDel) {
+                    const parsed = JSON.parse(rawDel);
+                    if (Array.isArray(parsed)) deletedSet = new Set(parsed);
+                  }
+                } catch {}
+              }
+              const cleanList = data.posts.filter((p: PromptPost) => !deletedSet.has(p.id));
+              setPosts(cleanList);
+              StorageService.saveCachedPosts(cleanList);
             }
           }
         })
@@ -1934,6 +1924,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // 1. Read cached localStorage data immediately on client mount
     try {
+      localStorage.removeItem('selectedCategory');
       if (localStorage.getItem('promptcms_auth') === 'true') {
         setIsAuthenticated(true);
         setCurrentUser({
@@ -2119,9 +2110,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
       // Tool credits: respect consumed balance
       let resolvedCredits = synced.toolCredits !== undefined ? Number(synced.toolCredits) : Number(localStorage.getItem('auraprompt_tool_credits') || 5);
-      if (resolvedCredits === 0 && (!synced.unlockedPromptIds || synced.unlockedPromptIds.length === 0) && (!synced.aiHistory || synced.aiHistory.length === 0) && finalTier === 'free') {
-        resolvedCredits = 5;
-      }
       setToolCreditsState(resolvedCredits);
       if (typeof window !== 'undefined') {
         localStorage.setItem('auraprompt_tool_credits', String(resolvedCredits));
@@ -2204,7 +2192,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const handleAuthMessage = (event: MessageEvent) => {
       if (typeof window !== 'undefined' && event.origin === window.location.origin) {
-        if (event.data?.type === 'FIREBASE_AUTH_SUCCESS' || event.data?.type === 'AUTH_SUCCESS' || event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
+        if (event.data?.type === 'FIREBASE_AUTH_SUCCESS' || event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
           const acc = StorageService.getUserAccount();
           if (acc && acc.isLoggedIn) {
             void UserSyncService.reconcileOnLogin(acc).then(applySynced);
@@ -2284,7 +2272,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setTasteProfile(updated);
     showToast('Feed taste profile updated!');
 
-    // Persist to cloud database for logged-in user
+    // Persist to Supabase database for logged-in user
     if (userAccount && userAccount.isLoggedIn) {
       void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
         tasteProfile: updated,
@@ -2305,9 +2293,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const recordPromptClick = (post: PromptPost) => {
     const updated = PersonalizationEngine.recordView(post);
     setTasteProfile(updated);
-    if (userAccount && userAccount.isLoggedIn) {
-      debounceSyncTasteProfile(userAccount.id, userAccount.email, updated);
-    }
   };
 
   const handleSelectPostWithTracking = (post: PromptPost | null) => {
@@ -2315,9 +2300,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (post) {
       const updated = PersonalizationEngine.recordView(post);
       setTasteProfile(updated);
-      if (userAccount && userAccount.isLoggedIn) {
-        debounceSyncTasteProfile(userAccount.id, userAccount.email, updated);
-      }
     }
   };
 
@@ -2347,6 +2329,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const savePost = async (post: PromptPost): Promise<PromptPost> => {
     isSavingRef.current = true;
+
+    // Unrecord from deleted IDs list if re-saving
+    if (typeof window !== 'undefined') {
+      try {
+        const rawDel = localStorage.getItem('promptcms_deleted_ids');
+        if (rawDel) {
+          const list: string[] = JSON.parse(rawDel);
+          const filtered = list.filter((id) => id !== post.id);
+          localStorage.setItem('promptcms_deleted_ids', JSON.stringify(filtered));
+        }
+      } catch {}
+    }
 
     // Immediate optimistic local update
     setPosts((prev) => {
@@ -2392,49 +2386,75 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const deletePost = async (id: string): Promise<boolean> => {
+  const deletePosts = async (ids: string[]): Promise<boolean> => {
+    if (!ids || ids.length === 0) return true;
     isSavingRef.current = true;
-    setPosts((prev) => prev.filter((p) => p.id !== id));
-    setBookmarkedIds((prev) => {
-      if (prev.includes(id)) {
-        const updated = prev.filter((item) => item !== id);
-        if (typeof window !== 'undefined') {
-          try {
-            localStorage.setItem('promptcms_user_bookmarks', JSON.stringify(updated));
-          } catch (e) {
-            console.error(e);
-          }
-        }
-        if (userAccount && userAccount.isLoggedIn) {
-          void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
-            bookmarkedIds: updated,
-          });
-        }
-        return updated;
-      }
-      return prev;
+    const idSet = new Set(ids);
+
+    // Save deleted IDs to localStorage permanently
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('promptcms_deleted_ids');
+        const list: string[] = raw ? JSON.parse(raw) : [];
+        ids.forEach((id) => {
+          if (!list.includes(id)) list.push(id);
+        });
+        localStorage.setItem('promptcms_deleted_ids', JSON.stringify(list));
+      } catch {}
+    }
+
+    // 1. Instant optimistic update in memory & local storage
+    setPosts((prev) => {
+      const updated = prev.filter((p) => !idSet.has(p.id));
+      StorageService.saveCachedPosts(updated);
+      return updated;
     });
 
+    setBookmarkedIds((prev) => {
+      const updated = prev.filter((item) => !idSet.has(item));
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('promptcms_user_bookmarks', JSON.stringify(updated));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      if (userAccount && userAccount.isLoggedIn) {
+        void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
+          bookmarkedIds: updated,
+        });
+      }
+      return updated;
+    });
+
+    showToast(`${ids.length} prompt${ids.length > 1 ? 's' : ''} removed`);
+
     try {
-      const res = await fetch(`/api/posts?id=${encodeURIComponent(id)}`, {
+      const res = await fetch('/api/posts', {
         method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
       });
       const data = await res.json();
       if (data.success && Array.isArray(data.posts)) {
-        setPosts(data.posts);
-        StorageService.saveCachedPosts(data.posts);
+        // Guarantee deleted IDs are NEVER reintroduced from server response
+        const remaining = data.posts.filter((p: PromptPost) => !idSet.has(p.id));
+        setPosts(remaining);
+        StorageService.saveCachedPosts(remaining);
       }
-      showToast('Prompt removed from server');
       return true;
     } catch (err) {
-      console.error('Failed to delete post on server:', err);
-      showToast('Failed to delete post on server');
+      console.error('Failed to delete posts on server:', err);
       return false;
     } finally {
       setTimeout(() => {
         isSavingRef.current = false;
-      }, 1500);
+      }, 1000);
     }
+  };
+
+  const deletePost = async (id: string): Promise<boolean> => {
+    return deletePosts([id]);
   };
 
   const togglePublishStatus = async (id: string) => {
@@ -2476,26 +2496,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       }
     }
     navigator.clipboard.writeText(text);
-    if (postId) {
-      fetch(`/api/posts/${encodeURIComponent(postId)}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'copy' }),
-      }).catch(() => {});
-      setPosts((prev) =>
-        prev.map((p) => (p.id === postId ? { ...p, copiesCount: (p.copiesCount || 0) + 1 } : p))
-      );
-      const post = posts.find((p) => p.id === postId);
-      if (post) {
-        const updated = PersonalizationEngine.recordCopy(post);
-        setTasteProfile(updated);
-        if (userAccount && userAccount.isLoggedIn) {
-          void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
-            tasteProfile: updated,
-          });
-        }
-      }
-    }
     try {
       confetti({
         particleCount: 40,
@@ -2510,35 +2510,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const toggleLike = (id: string) => {
-    const isNowLiked = StorageService.toggleLikeLocal(id);
-    const updatedLikes = StorageService.getLikedIds();
-    setLikedIds(updatedLikes);
-    fetch(`/api/posts/${encodeURIComponent(id)}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'like' }),
-    }).catch(() => {});
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === id
-          ? { ...p, likesCount: Math.max(0, (p.likesCount || 0) + (isNowLiked ? 1 : -1)) }
-          : p
-      )
-    );
-    const post = posts.find((p) => p.id === id);
-    let updatedProfile = tasteProfile;
-    if (post) {
-      updatedProfile = PersonalizationEngine.recordLike(post, isNowLiked);
-      setTasteProfile(updatedProfile);
-    }
-
-    // Push updated likes and taste profile to cloud database
-    if (userAccount && userAccount.isLoggedIn) {
-      void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
-        likedIds: updatedLikes,
-        tasteProfile: updatedProfile,
-      });
-    }
+    // Likes system disabled to avoid unnecessary writes and reads
   };
 
   const toggleBookmark = (id: string) => {
@@ -2576,7 +2548,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setTasteProfile(updatedProfile);
     }
 
-    // Push updated bookmarks and taste profile to cloud database
+    // Push updated bookmarks and taste profile to Supabase cloud
     void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, {
       bookmarkedIds: updatedBookmarks,
       tasteProfile: updatedProfile,
@@ -2838,6 +2810,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         refreshData,
         savePost,
         deletePost,
+        deletePosts,
         togglePublishStatus,
         togglePremiumStatus,
         copyPromptToClipboard,

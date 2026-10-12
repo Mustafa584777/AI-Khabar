@@ -209,7 +209,7 @@ export interface RegisteredUserRecord {
   aiHistory?: any[];
   joinedDate: string;
   lastSyncedAt?: string;
-  source: 'firebase' | 'cloud_sync' | 'local_store' | 'razorpay' | 'razorpay_verified' | 'supabase_auth' | 'supabase_sync';
+  source: 'supabase_auth' | 'supabase_sync' | 'local_store' | 'razorpay' | 'razorpay_verified' | 'firebase';
   paymentAmount?: number;
   paymentId?: string;
   paymentDate?: string;
