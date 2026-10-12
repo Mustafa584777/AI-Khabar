@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Subscription registered successfully in Supabase',
+      message: 'Subscription registered successfully in Firestore',
       subscriber: sub,
       subscribers,
       count,

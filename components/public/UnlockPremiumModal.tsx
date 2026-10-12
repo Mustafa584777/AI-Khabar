@@ -347,6 +347,10 @@ export const UnlockPremiumModal: React.FC = () => {
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                       <span><strong>100 AI Searches</strong></span>
                     </li>
+                    <li className="flex items-center gap-1.5 text-neutral-400">
+                      <span className="w-3.5 text-center font-bold">✕</span>
+                      <span>0 Prompt Requests</span>
+                    </li>
                     <li className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                       <span className="font-bold text-emerald-600 dark:text-emerald-400">100 saves</span>
@@ -391,6 +395,10 @@ export const UnlockPremiumModal: React.FC = () => {
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                       <span><strong>200 AI Searches</strong></span>
                     </li>
+                    <li className="flex items-center gap-1.5 text-neutral-400">
+                      <span className="w-3.5 text-center font-bold">✕</span>
+                      <span>0 Prompt Requests</span>
+                    </li>
                     <li className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                       <span className="font-bold text-[#E60023]">200 saves</span>
@@ -431,6 +439,10 @@ export const UnlockPremiumModal: React.FC = () => {
                     <li className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                       <span><strong>500 AI Searches</strong></span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                      <span><strong>{modalBillingCycle === 'yearly' ? '12 Prompt Requests' : '1 Prompt Request'}</strong></span>
                     </li>
                     <li className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
@@ -475,6 +487,10 @@ export const UnlockPremiumModal: React.FC = () => {
                     <li className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                       <span className="font-bold text-amber-300">Unlimited AI Search</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span><strong>{modalBillingCycle === 'yearly' ? '36 Prompt Requests' : '3 Prompt Requests'}</strong></span>
                     </li>
                     <li className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />

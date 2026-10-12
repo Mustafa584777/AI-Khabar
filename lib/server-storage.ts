@@ -82,6 +82,10 @@ function cleanForFirestore<T = any>(obj: any): T {
 
 // In-memory runtime cache
 let memoryPosts: PromptPost[] | null = null;
+let memoryPostsLastFetched = 0;
+let firestoreQuotaExhaustedUntil = 0;
+const POSTS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache to prevent quota exhaustion
+
 let memoryCategories: Category[] | null = null;
 let memorySettings: SiteSettings | null = null;
 let memoryTags: string[] | null = null;
@@ -90,6 +94,15 @@ let memorySearchQueries: SearchQueryItem[] | null = null;
 export const ServerStorage = {
   // Posts
   getAllPosts: async (includeDrafts = true): Promise<PromptPost[]> => {
+    // 1. Fast path: return in-memory cache if fresh
+    if (
+      memoryPosts &&
+      memoryPosts.length > 0 &&
+      Date.now() - memoryPostsLastFetched < POSTS_CACHE_TTL
+    ) {
+      return includeDrafts ? memoryPosts : memoryPosts.filter((p) => p.status === 'published');
+    }
+
     let localPosts: PromptPost[] = [];
     try {
       const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
@@ -102,7 +115,8 @@ export const ServerStorage = {
     }
 
     let remotePosts: PromptPost[] = [];
-    if (isFirebaseConfigured()) {
+    // Only query Firestore if configured and not cooling down from quota exhaustion
+    if (isFirebaseConfigured() && Date.now() > firestoreQuotaExhaustedUntil) {
       try {
         const snap = await getDocs(collection(firestoreDb, 'posts'));
         if (!snap.empty) {
@@ -116,8 +130,13 @@ export const ServerStorage = {
             }
           });
         }
-      } catch (err) {
-        console.warn('Firestore getAllPosts fallback:', err);
+      } catch (err: any) {
+        if (err?.code === 'resource-exhausted' || err?.message?.includes('Quota')) {
+          firestoreQuotaExhaustedUntil = Date.now() + 15 * 60 * 1000;
+          console.warn('Firestore daily free tier quota reached. Serving seamlessly from cache/local storage.');
+        } else {
+          console.warn('Firestore getAllPosts fallback:', err);
+        }
       }
     }
 
@@ -146,26 +165,8 @@ export const ServerStorage = {
     });
 
     memoryPosts = merged;
+    memoryPostsLastFetched = Date.now();
     writeJsonFile(POSTS_FILE, merged);
-
-    // If Firestore was completely empty but we have local posts, seed to Firestore
-    if (isFirebaseConfigured() && remotePosts.length === 0 && merged.length > 0) {
-      void (async () => {
-        try {
-          const chunkSize = 250;
-          for (let i = 0; i < merged.length; i += chunkSize) {
-            const chunk = merged.slice(i, i + chunkSize);
-            const batch = writeBatch(firestoreDb);
-            for (const p of chunk) {
-              batch.set(doc(firestoreDb, 'posts', p.id), cleanForFirestore(p));
-            }
-            await batch.commit();
-          }
-        } catch (e) {
-          console.warn('Auto-seed Firestore posts background notice:', e);
-        }
-      })();
-    }
 
     return includeDrafts ? merged : merged.filter((p) => p.status === 'published');
   },
@@ -303,8 +304,19 @@ export const ServerStorage = {
     if (isFirebaseConfigured()) {
       try {
         await setDoc(doc(firestoreDb, 'posts', savedPost.id), cleanForFirestore(savedPost));
-      } catch (fErr) {
-        console.error('Firestore savePost error:', fErr);
+      } catch (fErr: any) {
+        console.error('Firestore savePost error:', fErr?.message || fErr);
+        if (fErr?.code === 'resource-exhausted' || fErr?.message?.includes('Quota')) {
+          firestoreQuotaExhaustedUntil = Date.now() + 15 * 60 * 1000;
+        } else {
+          // Retry once on network blip
+          try {
+            await new Promise((r) => setTimeout(r, 500));
+            await setDoc(doc(firestoreDb, 'posts', savedPost.id), cleanForFirestore(savedPost));
+          } catch (retryErr) {
+            console.error('Firestore savePost retry error:', retryErr);
+          }
+        }
       }
     }
 
@@ -317,6 +329,7 @@ export const ServerStorage = {
       currentList.unshift(savedPost);
     }
     memoryPosts = currentList;
+    memoryPostsLastFetched = Date.now();
     writeJsonFile(POSTS_FILE, currentList);
 
     // Auto-create category if needed
@@ -359,6 +372,7 @@ export const ServerStorage = {
       const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, []);
       const filteredLocal = rawPosts.filter((p) => p.id !== id);
       memoryPosts = filteredLocal;
+      memoryPostsLastFetched = Date.now();
       writeJsonFile(POSTS_FILE, filteredLocal);
     } catch (e) {
       console.error('Local deletePost error:', e);
@@ -858,6 +872,52 @@ export const ServerStorage = {
         console.error('Firestore restoreSearchQueries error:', err);
       }
     }
+  },
+
+  getPopularSearchQueriesCached: async (): Promise<string[]> => {
+    const CACHE_FILE = path.join(DATA_DIR, 'popular_queries_cache.json');
+    const THREE_DAYS = 3 * 24 * 60 * 60 * 1000;
+
+    try {
+      if (fs.existsSync(CACHE_FILE)) {
+        const raw = fs.readFileSync(CACHE_FILE, 'utf-8');
+        const data = JSON.parse(raw);
+        if (data && Array.isArray(data.queries) && data.updatedAt && (Date.now() - data.updatedAt < THREE_DAYS)) {
+          return data.queries;
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading popular queries cache:', e);
+    }
+
+    // Refresh cache from actual search history and posts
+    let realQueries: string[] = [];
+    try {
+      const searches = await ServerStorage.getSearchQueries(30);
+      realQueries = searches.map((s) => s.query.trim()).filter((q) => q.length > 0);
+    } catch {}
+
+    if (realQueries.length < 5) {
+      try {
+        const posts = await ServerStorage.getAllPosts(false);
+        const titles = posts.map((p) => p.title).slice(0, 10);
+        realQueries = Array.from(new Set([...realQueries, ...titles]));
+      } catch {}
+    }
+
+    // Deduplicate and take top 8
+    const uniqueQueries = Array.from(new Set(realQueries)).slice(0, 8);
+
+    try {
+      writeJsonFile(CACHE_FILE, {
+        queries: uniqueQueries,
+        updatedAt: Date.now(),
+      });
+    } catch (e) {
+      console.warn('Error writing popular queries cache:', e);
+    }
+
+    return uniqueQueries;
   },
 
   // Subscriptions & Memberships

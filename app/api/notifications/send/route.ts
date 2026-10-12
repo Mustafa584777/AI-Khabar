@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
       success: true,
       notification: newNotification,
       totalSent,
-      message: 'Push notification queued and saved in Supabase successfully!',
+      message: 'Push notification queued and saved in Firestore successfully!',
     });
   } catch (error: any) {
     return NextResponse.json(

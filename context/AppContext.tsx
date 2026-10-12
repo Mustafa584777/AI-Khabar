@@ -64,14 +64,9 @@ interface AppContextType {
   logoutUser: () => void;
   awardPoints: (amount: number, type: 'like' | 'save' | 'generation' | 'share' | 'referral') => void;
 
-  // Persistent Reference Photo & Prompt Requests
+  // Persistent Reference Photo
   persistentRefImage: string | null;
   setPersistentRefImage: (url: string | null) => void;
-  promptRequests: PromptRequestItem[];
-  addPromptRequest: (requestText: string, category?: string, aiTool?: string) => Promise<boolean>;
-  fulfillPromptRequest: (requestId: string, fulfilledPrompt: string, adminNotes?: string, aiTool?: string) => Promise<boolean>;
-  deletePromptRequest: (requestId: string) => Promise<boolean>;
-  refreshPromptRequests: (userEmail?: string) => Promise<void>;
 
   // AI Studio History (Image to Prompt & Prompt to Image)
   aiHistory: AIHistoryItem[];
@@ -157,7 +152,6 @@ interface AppContextType {
   deductToolCredit: (amount?: number) => boolean;
   useToolCredit: (amount?: number) => boolean;
   addToolCredits: (amount: number) => void;
-  promptRequestsRemaining: number;
   upgradePlan: (tier: 'starter' | 'pro' | 'vip' | 'ultra', serverData?: any, isQueued?: boolean, cycle?: 'monthly' | 'yearly') => void;
 
   // Prompt Unlocking with Credits / Subscription
@@ -648,7 +642,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem('auraprompt_plan_expires_at', planExpiresAt);
     }
 
-    // Persist SaaS Plan upgrade immediately to Supabase cloud
+    // Persist SaaS Plan upgrade immediately to Firestore cloud
     const currentAcc = userAccount || StorageService.getUserAccount();
     if (currentAcc && (currentAcc.email || currentAcc.id)) {
       void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, {
@@ -911,7 +905,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     StorageService.saveUserAccount(account);
     setUserAccount(account);
 
-    // Reconcile and load all cloud data strictly for this specific account from Supabase
+    // Reconcile and load all cloud data strictly for this specific account from Firestore
     try {
       const synced = await UserSyncService.reconcileOnLogin(account);
       setBookmarkedIds(synced.bookmarkedIds || []);
@@ -1597,20 +1591,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSearchModalOpen, setIsSearchModalOpen] = useState<boolean>(false);
   const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState<boolean>(false);
-  const [popularSearchQueries, setPopularSearchQueries] = useState<string[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('auraprompt_popular_queries_cache');
-        const cachedTime = localStorage.getItem('auraprompt_popular_queries_time');
-        const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
-        if (cached && cachedTime && (Date.now() - Number(cachedTime) < THREE_DAYS_MS)) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed)) return parsed;
+  const [popularSearchQueries, setPopularSearchQueries] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch('/api/search-queries/popular')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && Array.isArray(data.queries) && data.queries.length > 0) {
+          setPopularSearchQueries(data.queries);
         }
-      } catch {}
-    }
-    return [];
-  });
+      })
+      .catch((err) => {
+        console.warn('Failed to load popular queries:', err);
+      });
+  }, []);
   const [selectedCategory, setSelectedCategoryState] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('selectedCategory') || 'all';
@@ -1806,23 +1800,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchSearchQueries = async () => {
     try {
-      if (typeof window !== 'undefined') {
-        const cachedTime = localStorage.getItem('auraprompt_popular_queries_time');
-        const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
-        if (cachedTime && (Date.now() - Number(cachedTime) < THREE_DAYS_MS)) {
-          return; // Skip DB call if within 3 days
-        }
-      }
       const res = await fetch('/api/search-queries');
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.queries) && data.queries.length > 0) {
-          const queries = data.queries.map((q: any) => q.query);
-          setPopularSearchQueries(queries);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('auraprompt_popular_queries_cache', JSON.stringify(queries));
-            localStorage.setItem('auraprompt_popular_queries_time', String(Date.now()));
-          }
+          setPopularSearchQueries(data.queries.map((q: any) => q.query));
         }
       }
     } catch (e) {
@@ -1835,12 +1817,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const trimmed = queryText.trim();
     setPopularSearchQueries((prev) => {
       const filtered = prev.filter((q) => q.toLowerCase() !== trimmed.toLowerCase());
-      const updated = [trimmed, ...filtered].slice(0, 12);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('auraprompt_popular_queries_cache', JSON.stringify(updated));
-        localStorage.setItem('auraprompt_popular_queries_time', String(Date.now()));
-      }
-      return updated;
+      return [trimmed, ...filtered].slice(0, 12);
     });
     try {
       fetch('/api/search-queries', {
@@ -1863,9 +1840,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const syncFromRemote = React.useCallback(async () => {
     if (isSavingRef.current) return;
     try {
-      // Fetch posts independently and quickly for fast initial render with cache busting
-      const postsUrl = `/api/posts?all=true&_t=${Date.now()}`;
-      const fetchPosts = fetch(postsUrl, { cache: 'no-store' })
+      // Fetch posts (include drafts only for authenticated administrators)
+      const isAdminSession = typeof window !== 'undefined' && localStorage.getItem('promptcms_auth') === 'true';
+      const postsUrl = isAdminSession ? `/api/posts?all=true&_t=${Date.now()}` : '/api/posts';
+      const fetchPosts = fetch(postsUrl)
         .then(async (res) => {
           if (res.ok && !isSavingRef.current) {
             const data = await res.json();
@@ -2204,7 +2182,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const handleAuthMessage = (event: MessageEvent) => {
       if (typeof window !== 'undefined' && event.origin === window.location.origin) {
-        if (event.data?.type === 'FIREBASE_AUTH_SUCCESS' || event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
+        if (event.data?.type === 'FIREBASE_AUTH_SUCCESS' || event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
           const acc = StorageService.getUserAccount();
           if (acc && acc.isLoggedIn) {
             void UserSyncService.reconcileOnLogin(acc).then(applySynced);
@@ -2284,7 +2262,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setTasteProfile(updated);
     showToast('Feed taste profile updated!');
 
-    // Persist to Supabase database for logged-in user
+    // Persist to Firestore database for logged-in user
     if (userAccount && userAccount.isLoggedIn) {
       void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
         tasteProfile: updated,
@@ -2532,7 +2510,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setTasteProfile(updatedProfile);
     }
 
-    // Push updated likes and taste profile to Supabase cloud
+    // Push updated likes and taste profile to Firestore cloud
     if (userAccount && userAccount.isLoggedIn) {
       void UserSyncService.pushUserData(userAccount.id, userAccount.email, {
         likedIds: updatedLikes,
@@ -2576,7 +2554,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setTasteProfile(updatedProfile);
     }
 
-    // Push updated bookmarks and taste profile to Supabase cloud
+    // Push updated bookmarks and taste profile to Firestore cloud
     void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, {
       bookmarkedIds: updatedBookmarks,
       tasteProfile: updatedProfile,
@@ -2794,11 +2772,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         awardPoints,
         persistentRefImage,
         setPersistentRefImage,
-        promptRequests,
-        addPromptRequest,
-        fulfillPromptRequest,
-        deletePromptRequest,
-        refreshPromptRequests,
         aiHistory,
         saveAiHistoryItem,
         deleteAiHistoryItem,
@@ -2867,7 +2840,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         deductToolCredit,
         useToolCredit,
         addToolCredits,
-        promptRequestsRemaining,
         upgradePlan,
         unlockedPromptIds,
         isPromptUnlocked,

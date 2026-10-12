@@ -43,7 +43,7 @@ const TIER_WEIGHT: Record<PlanTier, number> = {
 
 export const UserSyncService = {
   /**
-   * Pull user data from Supabase cloud storage (database)
+   * Pull user data from Firebase Firestore cloud storage (database)
    */
   pullUserData: async (userId?: string, email?: string): Promise<UserSyncData | null> => {
     if (!userId && !email) return null;
@@ -68,7 +68,7 @@ export const UserSyncService = {
   },
 
   /**
-   * Push user state changes directly to Supabase cloud storage (database).
+   * Push user state changes directly to Firebase Firestore cloud storage (database).
    * Automatically safeguards and includes active paid subscription from localStorage if not specified.
    */
   pushUserData: async (
@@ -137,7 +137,7 @@ export const UserSyncService = {
   },
 
   /**
-   * Specifically sync bookmarks to Supabase database
+   * Specifically sync bookmarks to Firestore database
    */
   syncBookmarks: async (
     userId?: string,
@@ -148,7 +148,7 @@ export const UserSyncService = {
   },
 
   /**
-   * Specifically sync taste profile to Supabase database
+   * Specifically sync taste profile to Firestore database
    */
   syncTasteProfile: async (
     userId?: string,
@@ -551,7 +551,7 @@ export const UserSyncService = {
 
   /**
    * Server-side session validator that forces re-fetch of user profile,
-   * subscription status, and credit balance from Supabase directly.
+   * subscription status, and credit balance from Firestore directly.
    */
   validateSession: async (userId?: string, email?: string): Promise<UserSyncData | null> => {
     if (!userId && !email) return null;

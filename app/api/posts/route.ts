@@ -35,11 +35,15 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    const cacheHeader = includeDrafts
+      ? 'private, no-cache, no-store, must-revalidate'
+      : 'public, s-maxage=30, stale-while-revalidate=120';
+
     return NextResponse.json(
       { success: true, posts },
       {
         headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+          'Cache-Control': cacheHeader,
         },
       }
     );

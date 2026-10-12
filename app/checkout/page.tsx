@@ -132,14 +132,10 @@ const FAQS = [
     question: 'What is AI Search and how does it work?',
     answer: 'AI Search allows you to search across thousands of curated visual prompts using natural conversational queries. Paid plans include generous AI Search quotas ranging from 100 searches up to unlimited in Studio 499.',
   },
-  {
-    question: 'How do prompt requests work for custom creations?',
-    answer: 'Depending on your plan tier (Starter, Pro, VIP, Studio 499), you receive custom prompt generation requests where our system crafts hyper-optimized prompts for your exact creative vision.',
-  },
 ];
 
 export default function CheckoutPage() {
-  const { isProUser, planTier, toolCredits, promptRequestsRemaining, planExpiresAt, queuedPlan } = useApp();
+  const { isProUser, planTier, toolCredits, planExpiresAt, queuedPlan } = useApp();
   const [billingView, setBillingView] = useState<'credits' | 'subscription'>('subscription');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
@@ -177,10 +173,7 @@ export default function CheckoutPage() {
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   {(planTier || 'Pro').toUpperCase()} Plan {planExpiresAt ? `(Expires ${formatExpiryDateWithHour(planExpiresAt)})` : ''}
                 </span>
-                <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700">•</span>
-                <span className="text-neutral-500">
-                  {promptRequestsRemaining} Prompt Requests Left
-                </span>
+
               </>
             )}
             {queuedPlan && (
@@ -526,6 +519,7 @@ export default function CheckoutPage() {
                         <strong>{billingCycle === 'yearly' ? '6,000 AI Searches' : '500 AI Searches'}</strong> {billingCycle === 'yearly' ? '/ year' : '/ mo'}
                       </span>
                     </li>
+
                     <li className="flex items-center gap-2">
                       <span className="text-purple-500 font-bold">✓</span>
                       <span className="font-bold text-purple-600 dark:text-purple-400">
@@ -543,7 +537,7 @@ export default function CheckoutPage() {
                   description={
                     billingCycle === 'monthly'
                       ? 'Monthly VIP - 600 Credits, 500 AI Searches'
-                      : 'Yearly VIP - 7200 Credits, 6000 AI Searches, 4800 Saves upfront'
+                      : 'Yearly VIP - 7200 Credits, 6000 AI Searches, 12 Requests, 4800 Saves upfront'
                   }
                   buttonText={billingCycle === 'monthly' ? 'Get VIP for ₹199' : 'Get VIP Yearly for ₹1,990'}
                   variant="secondary"
@@ -593,6 +587,7 @@ export default function CheckoutPage() {
                       <span className="text-amber-400 font-bold">✓</span>
                       <span className="font-bold text-amber-300">Unlimited AI Search</span>
                     </li>
+
                     <li className="flex items-center gap-2">
                       <span className="text-amber-400 font-bold">✓</span>
                       <span className="font-bold text-amber-400">Unlimited saves & history</span>
@@ -608,7 +603,7 @@ export default function CheckoutPage() {
                   description={
                     billingCycle === 'monthly'
                       ? 'Studio 499 - 1500 Credits, Unlimited AI Search'
-                      : 'Yearly Studio 499 - 18000 Credits, Unlimited AI Searches, Unlimited Saves upfront'
+                      : 'Yearly Studio 499 - 18000 Credits, Unlimited AI Searches, 36 Requests, Unlimited Saves upfront'
                   }
                   buttonText={billingCycle === 'monthly' ? 'Get Studio for ₹499' : 'Get Studio Yearly for ₹4,990'}
                   variant="dark"
@@ -704,6 +699,7 @@ export default function CheckoutPage() {
                   </td>
                   <td className="py-3.5 px-4 text-center font-bold text-amber-600 dark:text-amber-400">Unlimited</td>
                 </tr>
+
                 <tr>
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">
                     {billingCycle === 'monthly' ? 'Saves & History Limit' : 'Total Combined Saves'}

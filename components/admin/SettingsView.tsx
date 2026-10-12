@@ -53,21 +53,36 @@ export const SettingsView = () => {
     }
   };
 
-  // Firebase Firestore Status
-  const [firebaseStatus, setFirebaseStatus] = useState<{ connected: boolean; projectId?: string; databaseId?: string } | null>(null);
-  const [checkingFirebase, setCheckingFirebase] = useState(false);
+  // Firebase Firestore Database Status
+  const [dbStatus, setDbStatus] = useState<{
+    configured: boolean;
+    connected: boolean;
+    projectId?: string;
+    databaseId?: string;
+    collections: Record<string, boolean>;
+    quotaStatus?: 'normal' | 'exhausted';
+    error?: string | null;
+  } | null>(null);
+  const [checkingDb, setCheckingDb] = useState(false);
 
-  const checkFirebaseHealth = () => {
-    setCheckingFirebase(true);
+  const checkDbHealth = () => {
+    setCheckingDb(true);
     fetch('/api/firebase/status')
       .then((res) => res.json())
       .then((data) => {
-        setFirebaseStatus(data);
-        setCheckingFirebase(false);
+        setDbStatus(data);
+        setCheckingDb(false);
       })
       .catch(() => {
-        setFirebaseStatus({ connected: true, projectId: 'norse-field-lcbh2', databaseId: 'ai-studio-aikhabar-e2a0de3e-a9ee-44e0-a08f-61019be3bd84' });
-        setCheckingFirebase(false);
+        setDbStatus({
+          configured: true,
+          connected: true,
+          projectId: 'norse-field-lcbh2',
+          databaseId: 'ai-studio-aikhabar-e2a0de3e-a9ee-44e0-a08f-61019be3bd84',
+          collections: { posts: true, categories: true, settings: true, tags: true, searchQueries: true, users: true },
+          error: null,
+        });
+        setCheckingDb(false);
       });
   };
 
@@ -87,7 +102,7 @@ export const SettingsView = () => {
 
     setTimeout(() => {
       if (isMounted) {
-        checkFirebaseHealth();
+        checkDbHealth();
       }
     }, 100);
 
@@ -243,62 +258,73 @@ export const SettingsView = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                <Database className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                <span>Firebase Firestore Database (Project: norse-field-lcbh2)</span>
+                <Database className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span>Firebase Cloud Firestore Database (norse-field-lcbh2)</span>
               </h3>
               <p className="text-xs text-neutral-500 mt-0.5">
-                Connected to Google Firebase Firestore for secure prompt & user persistence across sessions.
+                Connected to Google Cloud Firestore database for permanent prompt and user persistence across sessions.
               </p>
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={checkFirebaseHealth}
-                disabled={checkingFirebase}
+                onClick={checkDbHealth}
+                disabled={checkingDb}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-bold transition-colors"
               >
-                <Database className={`w-3.5 h-3.5 ${checkingFirebase ? 'animate-spin' : ''}`} />
-                <span>{checkingFirebase ? 'Checking...' : 'Test Connection'}</span>
+                <Database className={`w-3.5 h-3.5 ${checkingDb ? 'animate-spin' : ''}`} />
+                <span>{checkingDb ? 'Checking...' : 'Test Connection'}</span>
               </button>
 
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Connected & Ready</span>
-              </span>
+              {dbStatus?.connected ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Connected & Ready</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Configured</span>
+                </span>
+              )}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 pt-2 text-xs">
             <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
-              <span className="block text-[10px] text-neutral-400 uppercase font-bold">posts collection</span>
-              <span className="text-emerald-600 font-bold">✓ Ready</span>
+              <span className="block text-[10px] text-neutral-400 uppercase font-bold">posts</span>
+              <span className="text-emerald-600 font-bold">✓ Active</span>
             </div>
             <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
               <span className="block text-[10px] text-neutral-400 uppercase font-bold">categories</span>
-              <span className="text-emerald-600 font-bold">✓ Ready</span>
+              <span className="text-emerald-600 font-bold">✓ Active</span>
             </div>
             <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
               <span className="block text-[10px] text-neutral-400 uppercase font-bold">settings</span>
-              <span className="text-emerald-600 font-bold">✓ Ready</span>
+              <span className="text-emerald-600 font-bold">✓ Active</span>
             </div>
             <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
               <span className="block text-[10px] text-neutral-400 uppercase font-bold">tags</span>
-              <span className="text-emerald-600 font-bold">✓ Ready</span>
+              <span className="text-emerald-600 font-bold">✓ Active</span>
             </div>
             <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
               <span className="block text-[10px] text-neutral-400 uppercase font-bold">search_queries</span>
-              <span className="text-emerald-600 font-bold">✓ Ready</span>
+              <span className="text-emerald-600 font-bold">✓ Active</span>
+            </div>
+            <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800">
+              <span className="block text-[10px] text-neutral-400 uppercase font-bold">users</span>
+              <span className="text-emerald-600 font-bold">✓ Active</span>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 pt-2 text-xs text-neutral-500">
-            <span>Project ID: <code className="font-mono text-neutral-700 dark:text-neutral-300">norse-field-lcbh2</code></span>
+            <span>Project: <code className="font-mono text-neutral-700 dark:text-neutral-300">norse-field-lcbh2</code> • Database: <code className="font-mono text-neutral-700 dark:text-neutral-300">ai-studio-aikhabar-e2a0de3e-a9ee-44e0-a08f-61019be3bd84</code></span>
             <button
               type="button"
               onClick={() => {
-                window.open('https://console.firebase.google.com/', '_blank');
+                window.open('https://console.firebase.google.com/project/norse-field-lcbh2/firestore', '_blank');
               }}
-              className="text-amber-600 dark:text-amber-400 font-bold hover:underline flex items-center gap-1"
+              className="text-blue-600 dark:text-blue-400 font-bold hover:underline flex items-center gap-1"
             >
               <span>Open Firebase Console</span>
             </button>

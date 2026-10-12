@@ -159,7 +159,7 @@ export function isAuthorizedAdmin(req: NextRequest): boolean {
   // Check Authorization header or x-admin-token or cookie
   const authHeader = req.headers.get('authorization') || '';
   const adminToken = req.headers.get('x-admin-key') || req.headers.get('x-admin-token') || '';
-  const configuredSecret = process.env.ADMIN_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const configuredSecret = process.env.ADMIN_SECRET_KEY;
 
   if (configuredSecret && adminToken === configuredSecret) {
     return true;

@@ -57,7 +57,7 @@ export const UserAuthModal = () => {
   // Listen for callback messages from /auth/callback popup
   React.useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {
-      if (event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
+      if (event.data?.type === 'FIREBASE_AUTH_SUCCESS' || event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
         const session = event.data.session;
         const u = event.data.user || session?.user;
         if (u) {
@@ -86,7 +86,7 @@ export const UserAuthModal = () => {
           setIsUserAuthModalOpen(false);
           checkAndRedirectStudio();
         }
-      } else if (event.data?.type === 'SUPABASE_AUTH_FAILED') {
+      } else if (event.data?.type === 'FIREBASE_AUTH_FAILED' || event.data?.type === 'GOOGLE_AUTH_FAILED') {
         setErrorMessage(event.data.error || 'Google sign-in could not be completed.');
         showToast(event.data.error || 'Google sign-in could not be completed.');
         setIsLoading(false);
@@ -183,7 +183,7 @@ export const UserAuthModal = () => {
         const userName = fullName.trim() || cleanEmail.split('@')[0];
         const userHandle = '@' + userName.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-        // 1. Create auto-confirmed account on Supabase via API route
+        // 1. Create auto-confirmed account via API route
         const signupRes = await fetch('/api/auth/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -472,7 +472,7 @@ export const UserAuthModal = () => {
 
           <div className="flex items-center justify-center gap-1.5 text-[11px] text-neutral-400 pt-1">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-            <span>Secure Supabase Authentication • 100% Free Forever</span>
+            <span>Secure Cloud Authentication • 100% Free Forever</span>
           </div>
         </div>
       </div>
