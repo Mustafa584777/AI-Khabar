@@ -1709,7 +1709,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const cacheKey = clean.toLowerCase();
 
     let shouldDeduct = false;
-    if (!planCfg.unlimitedSearches && deductQuota) {
+    if (!planCfg.unlimitedSearches) {
       if (!aiSearchDeductedRef.current.has(cacheKey)) {
         aiSearchDeductedRef.current.add(cacheKey);
         shouldDeduct = true;
