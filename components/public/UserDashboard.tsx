@@ -62,11 +62,14 @@ export const UserDashboard = () => {
     showToast,
     persistentRefImage,
     setPersistentRefImage,
+    promptRequests,
+    addPromptRequest,
     awardPoints,
     isProUser,
     setIsProCheckoutModalOpen,
     planTier,
     toolCredits,
+    promptRequestsRemaining,
     syncUserCloudData,
     isSyncingUserData,
     unlockedPromptIds,
@@ -103,7 +106,57 @@ export const UserDashboard = () => {
     }
   }, [userAccount?.isLoggedIn, openAuthModal]);
 
+  // Request a prompt form state
+  const [requestText, setRequestText] = useState('');
+  const [requestCategory, setRequestCategory] = useState('Photorealistic');
+  const [requestAiTool, setRequestAiTool] = useState('Gemini');
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
+  const [copiedRequestId, setCopiedRequestId] = useState<string | null>(null);
   const [isCreditsInfoOpen, setIsCreditsInfoOpen] = useState(false);
+
+  const handleRequestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!requestText.trim()) {
+      showToast('Please describe the prompt you want our experts to craft');
+      return;
+    }
+    setIsSubmittingRequest(true);
+    try {
+      const success = await addPromptRequest(requestText, requestCategory, requestAiTool);
+      if (success) {
+        setRequestText('');
+      }
+    } finally {
+      setIsSubmittingRequest(false);
+    }
+  };
+
+  const handleCopyFulfilledPrompt = (promptText: string, reqId: string) => {
+    navigator.clipboard.writeText(promptText);
+    setCopiedRequestId(reqId);
+    showToast('Prompt copied to clipboard!');
+    setTimeout(() => setCopiedRequestId(null), 2500);
+  };
+
+  // Filter requests belonging specifically to this logged in user
+  const userRequests = promptRequests.filter((r) => {
+    if (!userAccount) return false;
+    const cleanUserEmail = userAccount.email?.trim().toLowerCase();
+    const cleanReqEmail = r.userEmail?.trim().toLowerCase();
+    const emailMatch = cleanUserEmail && cleanReqEmail && cleanUserEmail === cleanReqEmail;
+    const idMatch = userAccount.id && r.userId === userAccount.id;
+    return Boolean(emailMatch || idMatch);
+  });
+
+  const maxPlanRequests = isPaid ? (currentPlanConfig.promptRequests || 0) : 0;
+  const userSubmittedRequestsCount = userRequests.length;
+  // Accurate, non-overwritten available prompt requests for the user:
+  // If user has paid plan, remaining should not be zero unless user actually consumed/submitted requests
+  const effectivePromptRequestsRemaining = isPaid
+    ? (promptRequestsRemaining > 0
+        ? Math.min(promptRequestsRemaining, maxPlanRequests)
+        : Math.max(0, maxPlanRequests - userSubmittedRequestsCount))
+    : 0;
 
   // Filtered saved posts
   const savedPosts = posts.filter((p) => bookmarkedIds.includes(p.id));
@@ -297,7 +350,7 @@ export const UserDashboard = () => {
                     onClick={() => void syncUserCloudData()}
                     disabled={isSyncingUserData}
                     className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-[11px] font-medium transition-colors disabled:opacity-50"
-                    title="Synchronize bookmarks and taste profile with Firebase cloud"
+                    title="Synchronize bookmarks and taste profile with Supabase cloud"
                   >
                     <Cloud className="w-3 h-3 text-emerald-500" />
                     <RefreshCw className={`w-3 h-3 ${isSyncingUserData ? 'animate-spin text-[#E60023]' : ''}`} />
@@ -318,7 +371,7 @@ export const UserDashboard = () => {
           </div>
 
           {/* Quick Metrics */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 border-t md:border-t-0 md:border-l border-neutral-100 dark:border-neutral-800 pt-4 md:pt-0 md:pl-6">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 border-t md:border-t-0 md:border-l border-neutral-100 dark:border-neutral-800 pt-4 md:pt-0 md:pl-6">
             <div className="text-center md:text-left relative">
               <div className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400 flex items-center justify-center md:justify-start gap-1">
                 <span>{toolCredits}</span>
@@ -355,6 +408,7 @@ export const UserDashboard = () => {
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">AI Search Quota</div>
             </div>
+
           </div>
         </div>
 
@@ -571,6 +625,8 @@ export const UserDashboard = () => {
             <History className="w-4 h-4" />
             <span>AI Studio History ({aiHistory.length})</span>
           </button>
+
+
 
           {/* Temporarily hidden: AI Taste Preferences tab */}
           {false && (
@@ -1049,6 +1105,8 @@ export const UserDashboard = () => {
             </div>
           </div>
         )}
+
+
       </div>
     </main>
   );

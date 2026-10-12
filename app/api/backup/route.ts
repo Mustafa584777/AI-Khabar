@@ -43,20 +43,19 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const payload = body.data && typeof body.data === 'object' ? body.data : body;
     let rawList: any[] = [];
 
-    if (Array.isArray(payload)) {
-      rawList = payload;
-    } else if (payload && typeof payload === 'object') {
-      if (Array.isArray(payload.posts)) rawList = payload.posts;
-      else if (Array.isArray(payload.prompts)) rawList = payload.prompts;
-      else if (Array.isArray(payload.items)) rawList = payload.items;
-      else if (Array.isArray(payload.cards)) rawList = payload.cards;
-      else if (Array.isArray(payload.records)) rawList = payload.records;
-      else if (Array.isArray(payload.data)) rawList = payload.data;
+    if (Array.isArray(body)) {
+      rawList = body;
+    } else if (body && typeof body === 'object') {
+      if (Array.isArray(body.posts)) rawList = body.posts;
+      else if (Array.isArray(body.prompts)) rawList = body.prompts;
+      else if (Array.isArray(body.data)) rawList = body.data;
+      else if (Array.isArray(body.items)) rawList = body.items;
+      else if (Array.isArray(body.cards)) rawList = body.cards;
+      else if (Array.isArray(body.records)) rawList = body.records;
       else {
-        rawList = Object.values(payload).filter(
+        rawList = Object.values(body).filter(
           (v: any) => v && typeof v === 'object' && (v.prompt || v.promptText || v.title)
         );
       }

@@ -11,11 +11,8 @@ import {
   Bookmark,
   Sparkles,
   Share2,
-  Calendar,
-  Eye,
   HelpCircle,
   ArrowLeft,
-  Heart,
   Layers,
   ChevronRight,
   ChevronLeft,
@@ -170,8 +167,6 @@ export const PromptDetailModal = () => {
     setSelectedPost,
     copyPromptToClipboard,
     toggleBookmark,
-    toggleLike,
-    likedIds,
     bookmarkedIds,
     posts,
     setPosts,
@@ -351,9 +346,8 @@ export const PromptDetailModal = () => {
     };
   }, [selectedPost]);
 
-  const isLiked = selectedPost ? likedIds?.includes(selectedPost.id) : false;
   const currentPost = posts.find((p) => p.id === selectedPost?.id) || selectedPost;
-  const currentLikesCount = currentPost?.likesCount ?? selectedPost?.likesCount ?? 0;
+  const copiesCount = currentPost?.copiesCount ?? selectedPost?.copiesCount ?? 0;
 
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
@@ -472,11 +466,6 @@ export const PromptDetailModal = () => {
     };
   }, [setSelectedPost, showFullImageModal, selectedPost, handleGoBack]);
 
-  const handleLike = () => {
-    if (!selectedPost) return;
-    toggleLike(selectedPost.id);
-  };
-
   const handleGenerateImage = () => {
     if (!selectedPost) return;
     const isUnlocked = isPromptUnlocked(selectedPost.id, selectedPost.isPremium);
@@ -551,25 +540,6 @@ export const PromptDetailModal = () => {
       setIsDownloadingImage(false);
     }
   };
-
-  // Track genuine view count (1 view per unique user session per prompt)
-  useEffect(() => {
-    if (selectedPost?.id) {
-      const postId = selectedPost.id;
-      const sessionKey = `auraprompt_viewed_${postId}`;
-      if (typeof window !== 'undefined' && !sessionStorage.getItem(sessionKey)) {
-        sessionStorage.setItem(sessionKey, '1');
-        fetch(`/api/posts/${encodeURIComponent(postId)}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'view' }),
-        }).catch(() => {});
-        setPosts((prev) =>
-          prev.map((p) => (p.id === postId ? { ...p, viewsCount: (p.viewsCount || 0) + 1 } : p))
-        );
-      }
-    }
-  }, [selectedPost?.id, setPosts]);
 
   // Reset scroll and manage body scroll lock
   useEffect(() => {
@@ -1187,29 +1157,13 @@ export const PromptDetailModal = () => {
                     </span>
                   </div>
 
-                  {/* Action Icons: Like, Copy, Generate Image */}
+                  {/* Action Icons: Copy, Decode */}
                   <div className="flex items-center gap-1.5 sm:gap-2">
-                    {/* Like Button */}
-                    <button
-                      type="button"
-                      onClick={handleLike}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 border ${
-                        isLiked
-                          ? 'bg-red-50 dark:bg-red-950/40 text-[#E60023] border-red-200 dark:border-red-900/60 shadow-xs'
-                          : 'bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700 hover:text-[#E60023] hover:border-red-200'
-                      }`}
-                      title={isLiked ? 'Liked' : 'Like this prompt'}
-                      aria-label="Like Prompt"
-                    >
-                      <Heart className={`w-4 h-4 ${isLiked ? 'fill-current text-[#E60023]' : ''}`} />
-                      <span>{currentLikesCount}</span>
-                    </button>
-
                     {/* Copy Button */}
                     <button
                       type="button"
                       onClick={handleCopyMasterPrompt}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 shadow-xs border ${
+                      className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 shadow-xs border ${
                         copiedPrompt
                           ? 'bg-emerald-600 text-white border-emerald-600'
                           : 'bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-700'
@@ -1250,28 +1204,6 @@ export const PromptDetailModal = () => {
                   <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-neutral-900 dark:text-white leading-tight tracking-tight">
                     {selectedPost.title}
                   </h1>
-
-                  {/* Metadata Stats - Genuine Counts */}
-                  <div className="flex flex-wrap items-center gap-4 text-xs text-neutral-500 dark:text-neutral-400 mt-3 pt-2 border-t border-neutral-100 dark:border-neutral-800">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5" />
-                      <span>
-                        {new Date(selectedPost.createdAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
-                      </span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>{selectedPost.viewsCount || 0} views</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>{selectedPost.copiesCount || 0} copies</span>
-                    </span>
-                  </div>
                 </div>
 
                 {/* Master Copyable Prompt Box */}
