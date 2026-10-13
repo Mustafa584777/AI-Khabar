@@ -310,18 +310,38 @@ export const UserAuthModal = () => {
         <div className="p-6 space-y-4">
           {/* Error Banner */}
           {errorMessage && (
-            <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl flex items-start gap-2.5 text-xs text-red-700 dark:text-red-300">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-red-600 dark:text-red-400" />
-              <div className="flex-1 space-y-2">
-                <span>{errorMessage}</span>
+            <div className={`p-4 rounded-2xl border flex items-start gap-3.5 text-xs transition-all shadow-sm ${
+              isUnverified
+                ? 'bg-gradient-to-br from-amber-500/10 via-orange-500/15 to-red-500/10 dark:from-amber-950/50 dark:via-orange-950/40 dark:to-red-950/40 border-amber-500/30 dark:border-amber-500/40 text-amber-900 dark:text-amber-200'
+                : 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-300'
+            }`}>
+              {isUnverified ? (
+                <div className="w-9 h-9 rounded-xl bg-amber-500/20 dark:bg-amber-500/30 flex items-center justify-center flex-shrink-0 text-amber-600 dark:text-amber-400 mt-0.5 shadow-xs border border-amber-500/30">
+                  <Mail className="w-5 h-5" />
+                </div>
+              ) : (
+                <div className="w-8 h-8 rounded-xl bg-red-500/20 flex items-center justify-center flex-shrink-0 text-red-600 dark:text-red-400 mt-0.5">
+                  <AlertCircle className="w-4 h-4" />
+                </div>
+              )}
+              <div className="flex-1 space-y-2.5">
+                <div>
+                  {isUnverified && (
+                    <h4 className="font-bold text-sm text-amber-950 dark:text-amber-100 mb-1 flex items-center gap-1.5">
+                      <span>Verification Required</span>
+                      <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    </h4>
+                  )}
+                  <p className="leading-relaxed text-xs opacity-90">{errorMessage}</p>
+                </div>
                 {isUnverified && (
                   <button
                     type="button"
                     onClick={handleResendVerification}
                     disabled={isLoading}
-                    className="w-full py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-xs shadow-md shadow-amber-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 active:scale-[0.98]"
                   >
-                    {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
                     <span>Resend Verification Email</span>
                   </button>
                 )}

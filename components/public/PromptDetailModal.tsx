@@ -1065,12 +1065,18 @@ export const PromptDetailModal = () => {
                       </div>
                     </div>
                   ) : (
-                    /* Single Image Display: Flexible natural height so entire image shows completely without rigid aspect-ratio or cropping */
-                    <div className="relative w-full flex items-center justify-center p-2 sm:p-4 bg-neutral-950/80 dark:bg-neutral-950 min-h-[300px] group/single">
+                    /* Single Image Display: Determined by first image natural aspect ratio without left/right pillarbox spaces */
+                    <div
+                      style={{
+                        aspectRatio: firstImageRatio || detectedRatio,
+                        maxHeight: '82vh',
+                      }}
+                      className="relative w-full overflow-hidden bg-neutral-950 select-none group/single flex items-center justify-center"
+                    >
                       <img
                         src={getOptimizedImageUrl(allImages[0] || selectedPost.imageUrl, 1200)}
                         alt={selectedPost.imageAlt || selectedPost.title}
-                        className="max-w-full max-h-[82vh] w-auto h-auto object-contain rounded-xl sm:rounded-2xl shadow-xl block mx-auto select-none pointer-events-none transition-all duration-300"
+                        className="w-full h-full object-cover object-top block select-none pointer-events-none"
                         referrerPolicy="no-referrer"
                       />
 
