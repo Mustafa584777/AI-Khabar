@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { NotificationService } from '@/lib/notifications';
 import Link from 'next/link';
-import { PWAInstallButton } from './PWAInstallButton';
 
 export const Header = () => {
   const router = useRouter();
@@ -196,9 +195,6 @@ export const Header = () => {
               </span>
             )}
           </button>
-
-          {/* PWA Install Button */}
-          <PWAInstallButton />
 
           {/* Razorpay Pro Upgrade Button -> Navigates to /pricing */}
           <Link
