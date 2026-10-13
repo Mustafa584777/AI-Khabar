@@ -147,22 +147,6 @@ export const ServerStorage = {
   // Posts
   getAllPosts: async (includeDrafts = true): Promise<PromptPost[]> => {
     const deletedIds = getDeletedPostIds();
-    if (isFirebaseConfigured()) {
-      try {
-        const delSnap = await getDoc(doc(firestoreDb, 'settings', 'deleted_posts'));
-        if (delSnap.exists()) {
-          const delData = delSnap.data();
-          if (delData && Array.isArray(delData.ids)) {
-            delData.ids.forEach((id: string) => deletedIds.add(id));
-            memoryDeletedIds = deletedIds;
-            writeJsonFile(DELETED_POSTS_FILE, Array.from(deletedIds));
-          }
-        }
-      } catch (err) {
-        console.warn('Firestore getDeletedPostIds fetch warning:', err);
-      }
-    }
-
     const now = Date.now();
     if (memoryPosts && memoryPosts.length > 0 && (now - memoryPostsTimestamp < POSTS_CACHE_TTL)) {
       const valid = memoryPosts.filter((p) => !deletedIds.has(p.id));
@@ -180,56 +164,9 @@ export const ServerStorage = {
       localPosts = INITIAL_POSTS || [];
     }
 
-    let remotePosts: PromptPost[] = [];
-    let fetchedFromFirestoreCollection = false;
-
-    if (isFirebaseConfigured()) {
-      try {
-        // Read cached posts from Firestore settings/posts_cache (1 read instead of N reads)
-        const cacheSnap = await getDoc(doc(firestoreDb, 'settings', 'posts_cache'));
-        if (cacheSnap.exists()) {
-          const cacheData = cacheSnap.data();
-          if (cacheData && Array.isArray(cacheData.posts) && cacheData.updatedAt && (now - cacheData.updatedAt < POSTS_CACHE_TTL)) {
-            remotePosts = cacheData.posts;
-          }
-        }
-
-        if (remotePosts.length === 0) {
-          const snap = await getDocs(collection(firestoreDb, 'posts'));
-          if (!snap.empty) {
-            snap.forEach((d) => {
-              const data = d.data() as PromptPost;
-              if (data && data.id) {
-                remotePosts.push({
-                  ...data,
-                  tags: cleanTagsArray(data.tags || []),
-                });
-              }
-            });
-          }
-          fetchedFromFirestoreCollection = true;
-        }
-      } catch (err) {
-        console.warn('Firestore getAllPosts fallback:', err);
-      }
-    }
-
-    // Merge remotePosts and localPosts by ID to ensure NO prompt is ever lost
     const postMap = new Map<string, PromptPost>();
     for (const p of localPosts) {
       if (p.id && !deletedIds.has(p.id)) postMap.set(p.id, p);
-    }
-    for (const p of remotePosts) {
-      if (p.id && !deletedIds.has(p.id)) {
-        const existing = postMap.get(p.id);
-        if (
-          !existing ||
-          new Date(p.updatedAt || p.createdAt || 0).getTime() >=
-            new Date(existing.updatedAt || existing.createdAt || 0).getTime()
-        ) {
-          postMap.set(p.id, p);
-        }
-      }
     }
 
     const merged = Array.from(postMap.values()).sort((a, b) => {
@@ -241,13 +178,6 @@ export const ServerStorage = {
     memoryPosts = merged;
     memoryPostsTimestamp = Date.now();
     writeJsonFile(POSTS_FILE, merged);
-
-    if (isFirebaseConfigured() && fetchedFromFirestoreCollection) {
-      setDoc(doc(firestoreDb, 'settings', 'posts_cache'), {
-        posts: merged,
-        updatedAt: Date.now(),
-      }).catch(() => {});
-    }
 
     return includeDrafts ? merged : merged.filter((p) => p.status === 'published');
   },

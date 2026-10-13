@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import { Poppins } from 'next/font/google';
 import ReactDOM from 'react-dom';
@@ -16,11 +16,24 @@ const poppins = Poppins({
   adjustFontFallback: true,
 });
 
+export const viewport: Viewport = {
+  themeColor: '#0a0a0a',
+  width: 'device-width',
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
   title: 'Trending Copy Paste Photo Prompts',
   description: 'Explore trending copy paste photo prompts for Midjourney, ChatGPT, Flux, Claude and Gemini. Instant copy, high-res previews, and creative AI prompt settings.',
+  manifest: '/manifest.ts',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'PromptApp',
+  },
   icons: {
     icon: '/favicon.ico',
+    apple: '/logo.png',
   },
   verification: {
     google: 'uh9o8y5P0cVpFtJIJXovv8RSzxSxcRkOYLK6ZthiZDg',
