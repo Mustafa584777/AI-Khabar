@@ -1842,8 +1842,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const syncFromRemote = React.useCallback(async () => {
     if (isSavingRef.current) return;
     try {
-      // Fetch posts independently and quickly for fast initial render with cache busting
-      const postsUrl = `/api/posts?all=true&_t=${Date.now()}`;
+      const postsUrl = `/api/posts?all=true`;
       const fetchPosts = fetch(postsUrl, { cache: 'no-store' })
         .then(async (res) => {
           if (res.ok && !isSavingRef.current) {

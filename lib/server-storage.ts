@@ -181,19 +181,33 @@ export const ServerStorage = {
     }
 
     let remotePosts: PromptPost[] = [];
+    let fetchedFromFirestoreCollection = false;
+
     if (isFirebaseConfigured()) {
       try {
-        const snap = await getDocs(collection(firestoreDb, 'posts'));
-        if (!snap.empty) {
-          snap.forEach((d) => {
-            const data = d.data() as PromptPost;
-            if (data && data.id) {
-              remotePosts.push({
-                ...data,
-                tags: cleanTagsArray(data.tags || []),
-              });
-            }
-          });
+        // Read cached posts from Firestore settings/posts_cache (1 read instead of N reads)
+        const cacheSnap = await getDoc(doc(firestoreDb, 'settings', 'posts_cache'));
+        if (cacheSnap.exists()) {
+          const cacheData = cacheSnap.data();
+          if (cacheData && Array.isArray(cacheData.posts) && cacheData.updatedAt && (now - cacheData.updatedAt < POSTS_CACHE_TTL)) {
+            remotePosts = cacheData.posts;
+          }
+        }
+
+        if (remotePosts.length === 0) {
+          const snap = await getDocs(collection(firestoreDb, 'posts'));
+          if (!snap.empty) {
+            snap.forEach((d) => {
+              const data = d.data() as PromptPost;
+              if (data && data.id) {
+                remotePosts.push({
+                  ...data,
+                  tags: cleanTagsArray(data.tags || []),
+                });
+              }
+            });
+          }
+          fetchedFromFirestoreCollection = true;
         }
       } catch (err) {
         console.warn('Firestore getAllPosts fallback:', err);
@@ -227,6 +241,13 @@ export const ServerStorage = {
     memoryPosts = merged;
     memoryPostsTimestamp = Date.now();
     writeJsonFile(POSTS_FILE, merged);
+
+    if (isFirebaseConfigured() && fetchedFromFirestoreCollection) {
+      setDoc(doc(firestoreDb, 'settings', 'posts_cache'), {
+        posts: merged,
+        updatedAt: Date.now(),
+      }).catch(() => {});
+    }
 
     return includeDrafts ? merged : merged.filter((p) => p.status === 'published');
   },
@@ -379,6 +400,10 @@ export const ServerStorage = {
     if (isFirebaseConfigured()) {
       setDoc(doc(firestoreDb, 'posts', savedPost.id), cleanForFirestore(savedPost))
         .catch((fErr) => console.error('Firestore background savePost error:', fErr));
+      setDoc(doc(firestoreDb, 'settings', 'posts_cache'), {
+        posts: currentList,
+        updatedAt: Date.now(),
+      }).catch(() => {});
     }
 
     // Auto-create category if needed
@@ -453,6 +478,10 @@ export const ServerStorage = {
         if (batchCount > 0) {
           await batch.commit();
         }
+        setDoc(doc(firestoreDb, 'settings', 'posts_cache'), {
+          posts: memoryPosts,
+          updatedAt: Date.now(),
+        }).catch(() => {});
       } catch (err) {
         console.error('Firestore deletePosts error:', err);
       }
