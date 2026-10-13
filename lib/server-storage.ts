@@ -148,10 +148,6 @@ export const ServerStorage = {
   getAllPosts: async (includeDrafts = true): Promise<PromptPost[]> => {
     const deletedIds = getDeletedPostIds();
     const now = Date.now();
-    if (memoryPosts && memoryPosts.length > 0 && (now - memoryPostsTimestamp < POSTS_CACHE_TTL)) {
-      const valid = memoryPosts.filter((p) => !deletedIds.has(p.id));
-      return includeDrafts ? valid : valid.filter((p) => p.status === 'published');
-    }
 
     let localPosts: PromptPost[] = [];
     try {
@@ -164,9 +160,61 @@ export const ServerStorage = {
       localPosts = INITIAL_POSTS || [];
     }
 
+    let remotePosts: PromptPost[] = [];
+    if (isFirebaseConfigured()) {
+      try {
+        const cacheSnap = await getDoc(doc(firestoreDb, 'settings', 'posts_cache'));
+        if (cacheSnap.exists()) {
+          const cacheData = cacheSnap.data();
+          if (cacheData && Array.isArray(cacheData.posts) && cacheData.updatedAt && (now - cacheData.updatedAt < POSTS_CACHE_TTL)) {
+            remotePosts = cacheData.posts as PromptPost[];
+          }
+        }
+        if (remotePosts.length === 0) {
+          const snap = await getDocs(collection(firestoreDb, 'posts'));
+          if (!snap.empty) {
+            snap.forEach((d) => {
+              const data = d.data() as PromptPost;
+              if (data && data.id) {
+                remotePosts.push({
+                  ...data,
+                  tags: cleanTagsArray(data.tags || []),
+                });
+              }
+            });
+          }
+          if (remotePosts.length > 0) {
+            setDoc(doc(firestoreDb, 'settings', 'posts_cache'), {
+              posts: remotePosts.map(cleanForFirestore),
+              updatedAt: Date.now(),
+            }).catch(() => {});
+          }
+        }
+      } catch (err) {
+        console.warn('Firestore getAllPosts cache fallback:', err);
+      }
+    }
+
+    // Merge local and remote posts, deduplicating strictly by ID and normalized imageUrl
     const postMap = new Map<string, PromptPost>();
-    for (const p of localPosts) {
-      if (p.id && !deletedIds.has(p.id)) postMap.set(p.id, p);
+    const seenImageUrls = new Set<string>();
+
+    const allCombined = [...localPosts, ...remotePosts];
+    // Sort so newer posts come first
+    allCombined.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+    for (const p of allCombined) {
+      if (p.id && !deletedIds.has(p.id)) {
+        const imgKey = p.imageUrl ? p.imageUrl.split('?')[0].trim().toLowerCase() : '';
+        // If we already saw this image URL from a newer post, skip this duplicate
+        if (imgKey && seenImageUrls.has(imgKey)) {
+          continue;
+        }
+        if (imgKey) {
+          seenImageUrls.add(imgKey);
+        }
+        postMap.set(p.id, p);
+      }
     }
 
     const merged = Array.from(postMap.values()).sort((a, b) => {
@@ -209,7 +257,16 @@ export const ServerStorage = {
     const now = new Date().toISOString();
     const id = post.id || `prompt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
     const posts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
-    const existing = posts.find((p) => p.id === id);
+    let existing = posts.find((p) => p.id === id);
+
+    // Prevent saving the exact same image URL twice as a separate prompt
+    const normalizedNewImg = post.imageUrl ? post.imageUrl.split('?')[0].trim().toLowerCase() : '';
+    if (normalizedNewImg && !existing) {
+      const duplicateByImage = posts.find((p) => p.imageUrl && p.imageUrl.split('?')[0].trim().toLowerCase() === normalizedNewImg);
+      if (duplicateByImage) {
+        existing = duplicateByImage;
+      }
+    }
 
     const isPremium = Boolean(
       post.isPremium !== undefined
@@ -243,7 +300,7 @@ export const ServerStorage = {
     const savedPost: PromptPost = {
       ...existing,
       ...post,
-      id,
+      id: existing?.id || id,
       title: safeTitle,
       slug: autoSlug,
       promptText: post.promptText || existing?.promptText || '',
@@ -263,7 +320,7 @@ export const ServerStorage = {
         avatar: '/logo.png',
         role: 'Author',
       },
-      createdAt: post.createdAt || existing?.createdAt || now,
+      createdAt: existing?.createdAt || post.createdAt || now,
       updatedAt: now,
       publishedAt: post.status === 'published' ? post.publishedAt || existing?.publishedAt || now : undefined,
       viewsCount: defaultViews,
@@ -313,10 +370,22 @@ export const ServerStorage = {
 
     // Update memory and local cache immediately
     unrecordDeletedPostId(savedPost.id);
-    const currentList = memoryPosts && memoryPosts.length > 0
+    let currentList = memoryPosts && memoryPosts.length > 0
       ? [...memoryPosts]
       : readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
-    const index = currentList.findIndex((p) => p.id === id);
+
+    const imgKey = savedPost.imageUrl ? savedPost.imageUrl.split('?')[0].trim().toLowerCase() : '';
+    if (imgKey && !post.id) {
+      const existingByImage = currentList.find(
+        (p) => p.imageUrl && p.imageUrl.split('?')[0].trim().toLowerCase() === imgKey && p.id !== savedPost.id
+      );
+      if (existingByImage) {
+        savedPost.id = existingByImage.id;
+        savedPost.createdAt = existingByImage.createdAt || savedPost.createdAt;
+      }
+    }
+
+    const index = currentList.findIndex((p) => p.id === savedPost.id);
     if (index >= 0) {
       currentList[index] = savedPost;
     } else {
@@ -330,10 +399,10 @@ export const ServerStorage = {
     if (isFirebaseConfigured()) {
       setDoc(doc(firestoreDb, 'posts', savedPost.id), cleanForFirestore(savedPost))
         .catch((fErr) => console.error('Firestore background savePost error:', fErr));
-      setDoc(doc(firestoreDb, 'settings', 'posts_cache'), {
+      setDoc(doc(firestoreDb, 'settings', 'posts_cache'), cleanForFirestore({
         posts: currentList,
         updatedAt: Date.now(),
-      }).catch(() => {});
+      })).catch(() => {});
     }
 
     // Auto-create category if needed
