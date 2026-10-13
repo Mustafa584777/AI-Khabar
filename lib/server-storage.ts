@@ -148,6 +148,10 @@ export const ServerStorage = {
   getAllPosts: async (includeDrafts = true): Promise<PromptPost[]> => {
     const deletedIds = getDeletedPostIds();
     const now = Date.now();
+    if (memoryPosts && memoryPosts.length > 0 && (now - memoryPostsTimestamp < POSTS_CACHE_TTL)) {
+      const valid = memoryPosts.filter((p) => !deletedIds.has(p.id));
+      return includeDrafts ? valid : valid.filter((p) => p.status === 'published');
+    }
 
     let localPosts: PromptPost[] = [];
     try {
@@ -160,53 +164,15 @@ export const ServerStorage = {
       localPosts = INITIAL_POSTS || [];
     }
 
-    let remotePosts: PromptPost[] = [];
-    if (isFirebaseConfigured()) {
-      try {
-        const cacheSnap = await getDoc(doc(firestoreDb, 'settings', 'posts_cache'));
-        if (cacheSnap.exists()) {
-          const cacheData = cacheSnap.data();
-          if (cacheData && Array.isArray(cacheData.posts) && cacheData.updatedAt && (now - cacheData.updatedAt < POSTS_CACHE_TTL)) {
-            remotePosts = cacheData.posts as PromptPost[];
-          }
-        }
-        if (remotePosts.length === 0) {
-          const snap = await getDocs(collection(firestoreDb, 'posts'));
-          if (!snap.empty) {
-            snap.forEach((d) => {
-              const data = d.data() as PromptPost;
-              if (data && data.id) {
-                remotePosts.push({
-                  ...data,
-                  tags: cleanTagsArray(data.tags || []),
-                });
-              }
-            });
-          }
-          if (remotePosts.length > 0) {
-            setDoc(doc(firestoreDb, 'settings', 'posts_cache'), {
-              posts: remotePosts.map(cleanForFirestore),
-              updatedAt: Date.now(),
-            }).catch(() => {});
-          }
-        }
-      } catch (err) {
-        console.warn('Firestore getAllPosts cache fallback:', err);
-      }
-    }
-
-    // Merge local and remote posts, deduplicating strictly by ID and normalized imageUrl
+    // Merge local posts, deduplicating strictly by ID and normalized imageUrl
     const postMap = new Map<string, PromptPost>();
     const seenImageUrls = new Set<string>();
 
-    const allCombined = [...localPosts, ...remotePosts];
-    // Sort so newer posts come first
-    allCombined.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    localPosts.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
-    for (const p of allCombined) {
+    for (const p of localPosts) {
       if (p.id && !deletedIds.has(p.id)) {
         const imgKey = p.imageUrl ? p.imageUrl.split('?')[0].trim().toLowerCase() : '';
-        // If we already saw this image URL from a newer post, skip this duplicate
         if (imgKey && seenImageUrls.has(imgKey)) {
           continue;
         }
