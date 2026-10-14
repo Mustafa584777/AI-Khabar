@@ -149,6 +149,11 @@ export const ServerStorage = {
     const deletedIds = getDeletedPostIds();
     const now = Date.now();
 
+    // If memory cache is fresh (< 24h), use it instantly
+    if (memoryPosts && memoryPosts.length > 0 && (now - memoryPostsTimestamp < POSTS_CACHE_TTL)) {
+      return includeDrafts ? memoryPosts : memoryPosts.filter((p) => p.status === 'published');
+    }
+
     let localPosts: PromptPost[] = [];
     try {
       const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
@@ -161,12 +166,13 @@ export const ServerStorage = {
     }
 
     let remotePosts: PromptPost[] = [];
+    // Sync from Firestore at most once per 24 hours to ensure latest posts are present without high read volume
     if (isFirebaseConfigured()) {
       try {
         const cacheSnap = await getDoc(doc(firestoreDb, 'settings', 'posts_cache'));
         if (cacheSnap.exists()) {
           const cacheData = cacheSnap.data();
-          if (cacheData && Array.isArray(cacheData.posts) && cacheData.updatedAt && (now - cacheData.updatedAt < POSTS_CACHE_TTL)) {
+          if (cacheData && Array.isArray(cacheData.posts)) {
             remotePosts = cacheData.posts as PromptPost[];
           }
         }
@@ -183,30 +189,22 @@ export const ServerStorage = {
               }
             });
           }
-          if (remotePosts.length > 0) {
-            setDoc(doc(firestoreDb, 'settings', 'posts_cache'), {
-              posts: remotePosts.map(cleanForFirestore),
-              updatedAt: Date.now(),
-            }).catch(() => {});
-          }
         }
       } catch (err) {
-        console.warn('Firestore getAllPosts cache fallback:', err);
+        console.warn('Firestore periodic sync notice:', err);
       }
     }
 
-    // Merge local and remote posts, deduplicating strictly by ID and normalized imageUrl
+    // Merge localPosts, remotePosts, and INITIAL_POSTS, deduplicating strictly by ID and normalized imageUrl
     const postMap = new Map<string, PromptPost>();
     const seenImageUrls = new Set<string>();
 
-    const allCombined = [...localPosts, ...remotePosts];
-    // Sort so newer posts come first
+    const allCombined = [...localPosts, ...remotePosts, ...(INITIAL_POSTS || [])];
     allCombined.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
     for (const p of allCombined) {
       if (p.id && !deletedIds.has(p.id)) {
         const imgKey = p.imageUrl ? p.imageUrl.split('?')[0].trim().toLowerCase() : '';
-        // If we already saw this image URL from a newer post, skip this duplicate
         if (imgKey && seenImageUrls.has(imgKey)) {
           continue;
         }
