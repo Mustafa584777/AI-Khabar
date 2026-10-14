@@ -143,9 +143,48 @@ let memorySettings: SiteSettings | null = null;
 let memoryTags: string[] | null = null;
 let memorySearchQueries: SearchQueryItem[] | null = null;
 
+let hasTriedOneTimeSync = false;
+async function syncFirestoreToLocalOnce() {
+  if (hasTriedOneTimeSync || !isFirebaseConfigured()) return;
+  hasTriedOneTimeSync = true;
+  const syncFlagFile = path.join(DATA_DIR, '.posts_synced_v2.flag');
+  if (fs.existsSync(syncFlagFile)) return;
+
+  try {
+    const snap = await getDocs(collection(firestoreDb, 'posts'));
+    if (!snap.empty) {
+      const remote: PromptPost[] = [];
+      snap.forEach((d) => {
+        const data = d.data() as PromptPost;
+        if (data && data.id) {
+          remote.push({
+            ...data,
+            tags: cleanTagsArray(data.tags || []),
+          });
+        }
+      });
+      if (remote.length > 0) {
+        const local = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
+        const map = new Map<string, PromptPost>();
+        [...local, ...remote, ...(INITIAL_POSTS || [])].forEach((p) => {
+          if (p && p.id) map.set(p.id, p);
+        });
+        const combined = Array.from(map.values()).sort(
+          (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+        );
+        writeJsonFile(POSTS_FILE, combined);
+        fs.writeFileSync(syncFlagFile, new Date().toISOString(), 'utf-8');
+      }
+    }
+  } catch (e) {
+    console.warn('One-time Firestore to local sync notice:', e);
+  }
+}
+
 export const ServerStorage = {
   // Posts
   getAllPosts: async (includeDrafts = true): Promise<PromptPost[]> => {
+    await syncFirestoreToLocalOnce();
     const deletedIds = getDeletedPostIds();
 
     let localPosts: PromptPost[] = [];
