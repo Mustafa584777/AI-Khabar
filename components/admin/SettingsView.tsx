@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
-import { Settings, Save, RotateCcw, Download, Database, Cloud, CheckCircle2, AlertCircle, X, Sparkles } from 'lucide-react';
+import { Settings, Save, RotateCcw, Download, Database, Cloud, CheckCircle2, AlertCircle, X, Sparkles, RefreshCw } from 'lucide-react';
 
 export const SettingsView = () => {
   const { settings, saveSettings, posts, categories, tags, restorePromptCards, refreshData, showToast, setAdminSubView } = useApp();
@@ -18,6 +18,25 @@ export const SettingsView = () => {
   );
   const [popularTags, setPopularTags] = useState<string[]>(settings.popularTags || []);
   const [newTag, setNewTag] = useState('');
+  const [isSyncingPosts, setIsSyncingPosts] = useState(false);
+
+  const handleSyncFirestoreToPostsJson = async () => {
+    setIsSyncingPosts(true);
+    try {
+      const res = await fetch('/api/admin/sync-posts-json', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message || `Success! Synced ${data.count} prompts to posts.json!`);
+        void refreshData();
+      } else {
+        showToast(`Sync failed: ${data.error || 'Unknown error'}`);
+      }
+    } catch (err: any) {
+      showToast(`Error syncing posts: ${err.message}`);
+    } finally {
+      setIsSyncingPosts(false);
+    }
+  };
 
   // Cloudinary Settings
   const [cloudinaryCloudName, setCloudinaryCloudName] = useState(settings.cloudinaryCloudName || '');
@@ -495,6 +514,40 @@ export const SettingsView = () => {
       </form>
 
 
+
+      {/* Database to posts.json Sync & Migration Card */}
+      <div className="bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-blue-500/10 dark:from-emerald-950/30 dark:via-neutral-900 dark:to-blue-950/30 p-6 rounded-3xl border border-emerald-500/30 dark:border-emerald-700/40 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-600/20">
+              <Database className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                <span>Sync & Merge Database Prompts to posts.json</span>
+              </h3>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 leading-relaxed">
+                Pulls all latest posts from Firebase Firestore, removes duplicates, and permanently saves them to local <code className="px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-800 text-emerald-600 dark:text-emerald-400 font-mono text-[11px]">data/posts.json</code> so they always load instantly on the homepage with 0 Firestore reads.
+              </p>
+            </div>
+          </div>
+          <span className="self-start sm:self-auto text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-3 py-1 rounded-full border border-emerald-300 dark:border-emerald-800 uppercase tracking-wide">
+            1-Click Sync
+          </span>
+        </div>
+
+        <div className="pt-2 flex items-center gap-3">
+          <button
+            type="button"
+            disabled={isSyncingPosts}
+            onClick={handleSyncFirestoreToPostsJson}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold shadow-md shadow-emerald-600/30 transition-all transform active:scale-95 cursor-pointer"
+          >
+            <RefreshCw className={`w-4 h-4 ${isSyncingPosts ? 'animate-spin' : ''}`} />
+            <span>{isSyncingPosts ? 'Syncing & Merging...' : 'Sync Firebase Database to posts.json'}</span>
+          </button>
+        </div>
+      </div>
 
       {/* Database Tools & Backup */}
       <div className="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">

@@ -21,27 +21,36 @@ export const StorageService = {
 
         const saved = localStorage.getItem(STORAGE_KEY_CACHED_POSTS);
         const postMap = new Map<string, PromptPost>();
+        const seenImageUrls = new Set<string>();
 
+        const all: PromptPost[] = [];
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) all.push(...parsed);
+          } catch {}
+        }
         if (Array.isArray(INITIAL_POSTS)) {
-          for (const p of INITIAL_POSTS) {
-            if (p && p.id && !deletedSet.has(p.id)) {
+          all.push(...INITIAL_POSTS);
+        }
+
+        all.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+        for (const p of all) {
+          if (p && p.id && !deletedSet.has(p.id)) {
+            const imgKey = p.imageUrl ? p.imageUrl.split('?')[0].trim().toLowerCase() : '';
+            if (imgKey && seenImageUrls.has(imgKey)) continue;
+            if (imgKey) seenImageUrls.add(imgKey);
+            if (!postMap.has(p.id)) {
               postMap.set(p.id, p);
             }
           }
         }
 
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) {
-            for (const p of parsed) {
-              if (p && p.id && !deletedSet.has(p.id)) {
-                postMap.set(p.id, p);
-              }
-            }
-          }
-        }
-
-        return Array.from(postMap.values());
+        const sorted = Array.from(postMap.values()).sort(
+          (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+        );
+        return sorted;
       } catch (e) {
         console.error('Error reading cached posts:', e);
       }

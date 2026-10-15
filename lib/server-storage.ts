@@ -182,9 +182,72 @@ async function syncFirestoreToLocalOnce() {
 }
 
 export const ServerStorage = {
+  syncDatabaseToLocalPosts: async (): Promise<{ count: number; posts: PromptPost[] }> => {
+    let remotePosts: PromptPost[] = [];
+    if (isFirebaseConfigured()) {
+      try {
+        const cacheSnap = await getDoc(doc(firestoreDb, 'settings', 'posts_cache'));
+        if (cacheSnap.exists()) {
+          const d = cacheSnap.data();
+          if (Array.isArray(d?.posts)) {
+            d.posts.forEach((p) => {
+              if (p && p.id) remotePosts.push(p);
+            });
+          }
+        }
+      } catch (e) {
+        console.error('Error reading posts_cache during manual sync:', e);
+      }
+
+      try {
+        const snap = await getDocs(collection(firestoreDb, 'posts'));
+        snap.forEach((d) => {
+          const p = d.data() as PromptPost;
+          if (p && p.id) remotePosts.push(p);
+        });
+      } catch (e) {
+        console.error('Error reading posts collection during manual sync:', e);
+      }
+    }
+
+    const localPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
+    const deletedIds = getDeletedPostIds();
+    const postMap = new Map<string, PromptPost>();
+    const seenImageUrls = new Set<string>();
+
+    const all = [...remotePosts, ...localPosts, ...(INITIAL_POSTS || [])];
+    all.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+    for (const p of all) {
+      if (!p.id || deletedIds.has(p.id)) continue;
+      const imgKey = p.imageUrl ? p.imageUrl.split('?')[0].trim().toLowerCase() : '';
+      if (imgKey && seenImageUrls.has(imgKey)) continue;
+      if (imgKey) seenImageUrls.add(imgKey);
+      if (!postMap.has(p.id)) {
+        postMap.set(p.id, {
+          ...p,
+          tags: cleanTagsArray(p.tags || []),
+        });
+      }
+    }
+
+    const merged = Array.from(postMap.values()).sort(
+      (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    );
+
+    memoryPosts = merged;
+    memoryPostsTimestamp = Date.now();
+    writeJsonFile(POSTS_FILE, merged);
+
+    return { count: merged.length, posts: merged };
+  },
+
   // Posts
   getAllPosts: async (includeDrafts = true): Promise<PromptPost[]> => {
-    await syncFirestoreToLocalOnce();
+    if (memoryPosts && memoryPosts.length > 0) {
+      return includeDrafts ? memoryPosts : memoryPosts.filter((p) => p.status === 'published');
+    }
+
     const deletedIds = getDeletedPostIds();
 
     let localPosts: PromptPost[] = [];
@@ -396,14 +459,17 @@ export const ServerStorage = {
     memoryPostsTimestamp = Date.now();
     writeJsonFile(POSTS_FILE, currentList);
 
-    // Save to Firebase Firestore in background (non-blocking)
+    // Save to Firebase Firestore (awaited to guarantee persistence without being aborted)
     if (isFirebaseConfigured()) {
-      setDoc(doc(firestoreDb, 'posts', savedPost.id), cleanForFirestore(savedPost))
-        .catch((fErr) => console.error('Firestore background savePost error:', fErr));
-      setDoc(doc(firestoreDb, 'settings', 'posts_cache'), cleanForFirestore({
-        posts: currentList,
-        updatedAt: Date.now(),
-      })).catch(() => {});
+      try {
+        await setDoc(doc(firestoreDb, 'posts', savedPost.id), cleanForFirestore(savedPost));
+        await setDoc(doc(firestoreDb, 'settings', 'posts_cache'), cleanForFirestore({
+          posts: currentList,
+          updatedAt: Date.now(),
+        }));
+      } catch (fErr) {
+        console.error('Firestore savePost error:', fErr);
+      }
     }
 
     // Auto-create category if needed
