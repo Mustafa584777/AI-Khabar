@@ -194,54 +194,11 @@ export const ServerStorage = {
 
   // Posts
   getAllPosts: async (includeDrafts = true): Promise<PromptPost[]> => {
-    if (memoryPosts && memoryPosts.length > 0) {
-      return includeDrafts ? memoryPosts : memoryPosts.filter((p) => p.status === 'published');
+    if (!memoryPosts || memoryPosts.length === 0) {
+      await ServerStorage.syncDatabaseToLocalPosts();
     }
-
-    const deletedIds = getDeletedPostIds();
-
-    let localPosts: PromptPost[] = [];
-    try {
-      const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
-      localPosts = rawPosts.map((p) => ({
-        ...p,
-        tags: cleanTagsArray(p.tags || []),
-      }));
-    } catch {
-      localPosts = INITIAL_POSTS || [];
-    }
-
-    // Merge localPosts and INITIAL_POSTS, deduplicating strictly by ID and normalized imageUrl
-    const postMap = new Map<string, PromptPost>();
-    const seenImageUrls = new Set<string>();
-
-    const allCombined = [...localPosts, ...(INITIAL_POSTS || [])];
-    allCombined.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-
-    for (const p of allCombined) {
-      if (p.id && !deletedIds.has(p.id)) {
-        const imgKey = p.imageUrl ? p.imageUrl.split('?')[0].trim().toLowerCase() : '';
-        if (imgKey && seenImageUrls.has(imgKey)) {
-          continue;
-        }
-        if (imgKey) {
-          seenImageUrls.add(imgKey);
-        }
-        postMap.set(p.id, p);
-      }
-    }
-
-    const merged = Array.from(postMap.values()).sort((a, b) => {
-      const timeA = new Date(a.createdAt || 0).getTime();
-      const timeB = new Date(b.createdAt || 0).getTime();
-      return timeB - timeA;
-    });
-
-    memoryPosts = merged;
-    memoryPostsTimestamp = Date.now();
-    writeJsonFile(POSTS_FILE, merged);
-
-    return includeDrafts ? merged : merged.filter((p) => p.status === 'published');
+    const posts = memoryPosts || readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
+    return includeDrafts ? posts : posts.filter((p) => p.status === 'published');
   },
 
   getPostBySlug: async (slug: string): Promise<PromptPost | undefined> => {
