@@ -2,10 +2,8 @@ import { Category, PromptPost, SiteSettings, SearchQueryItem, PlanTier } from '@
 import { INITIAL_CATEGORIES, INITIAL_SETTINGS, INITIAL_POSTS } from './initial-data';
 import { db as firestoreDb, isFirebaseConfigured } from './firebase';
 import {
-  collection,
   doc,
   getDoc,
-  getDocs,
   setDoc,
   deleteDoc,
   writeBatch,
@@ -143,44 +141,6 @@ let memorySettings: SiteSettings | null = null;
 let memoryTags: string[] | null = null;
 let memorySearchQueries: SearchQueryItem[] | null = null;
 
-let hasTriedOneTimeSync = false;
-async function syncFirestoreToLocalOnce() {
-  if (hasTriedOneTimeSync || !isFirebaseConfigured()) return;
-  hasTriedOneTimeSync = true;
-  const syncFlagFile = path.join(DATA_DIR, '.posts_synced_v2.flag');
-  if (fs.existsSync(syncFlagFile)) return;
-
-  try {
-    const snap = await getDocs(collection(firestoreDb, 'posts'));
-    if (!snap.empty) {
-      const remote: PromptPost[] = [];
-      snap.forEach((d) => {
-        const data = d.data() as PromptPost;
-        if (data && data.id) {
-          remote.push({
-            ...data,
-            tags: cleanTagsArray(data.tags || []),
-          });
-        }
-      });
-      if (remote.length > 0) {
-        const local = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
-        const map = new Map<string, PromptPost>();
-        [...local, ...remote, ...(INITIAL_POSTS || [])].forEach((p) => {
-          if (p && p.id) map.set(p.id, p);
-        });
-        const combined = Array.from(map.values()).sort(
-          (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-        );
-        writeJsonFile(POSTS_FILE, combined);
-        fs.writeFileSync(syncFlagFile, new Date().toISOString(), 'utf-8');
-      }
-    }
-  } catch (e) {
-    console.warn('One-time Firestore to local sync notice:', e);
-  }
-}
-
 export const ServerStorage = {
   syncDatabaseToLocalPosts: async (): Promise<{ count: number; posts: PromptPost[] }> => {
     let remotePosts: PromptPost[] = [];
@@ -197,16 +157,6 @@ export const ServerStorage = {
         }
       } catch (e) {
         console.error('Error reading posts_cache during manual sync:', e);
-      }
-
-      try {
-        const snap = await getDocs(collection(firestoreDb, 'posts'));
-        snap.forEach((d) => {
-          const p = d.data() as PromptPost;
-          if (p && p.id) remotePosts.push(p);
-        });
-      } catch (e) {
-        console.error('Error reading posts collection during manual sync:', e);
       }
     }
 
@@ -594,18 +544,13 @@ export const ServerStorage = {
       memoryPosts = cleanIncoming;
       writeJsonFile(POSTS_FILE, cleanIncoming);
 
-      // If replacing in Firestore, delete old docs
+      // If replacing in Firestore, update posts_cache doc directly (0 reads)
       if (isFirebaseConfigured()) {
         try {
-          const snap = await getDocs(collection(firestoreDb, 'posts'));
-          const batch = writeBatch(firestoreDb);
-          let count = 0;
-          for (const d of snap.docs) {
-            batch.delete(d.ref);
-            count++;
-            if (count >= 400) break;
-          }
-          if (count > 0) await batch.commit();
+          await setDoc(doc(firestoreDb, 'settings', 'posts_cache'), cleanForFirestore({
+            posts: cleanIncoming,
+            updatedAt: Date.now(),
+          }));
         } catch (e) {
           console.warn('Firestore clear posts notice:', e);
         }
@@ -695,29 +640,12 @@ export const ServerStorage = {
       localCats = initial;
     }
 
-    let remoteCats: Category[] = [];
-    if (isFirebaseConfigured()) {
-      try {
-        const snap = await getDocs(collection(firestoreDb, 'categories'));
-        if (!snap.empty) {
-          snap.forEach((d) => {
-            const data = d.data() as Category;
-            if (data && data.name) {
-              remoteCats.push(data);
-            }
-          });
-        }
-      } catch (err) {
-        console.warn('Firestore getAllCategories notice:', err);
-      }
-    }
-
     const catMap = new Map<string, Category>();
     for (const c of localCats) {
       if (c.name) catMap.set(c.name.toLowerCase(), c);
     }
-    for (const c of remoteCats) {
-      if (c.name) catMap.set(c.name.toLowerCase(), c);
+    for (const c of initial) {
+      if (c.name && !catMap.has(c.name.toLowerCase())) catMap.set(c.name.toLowerCase(), c);
     }
 
     const merged = Array.from(catMap.values()).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
@@ -779,17 +707,6 @@ export const ServerStorage = {
     if (isFirebaseConfigured()) {
       try {
         await deleteDoc(doc(firestoreDb, 'categories', id));
-        const snap = await getDocs(collection(firestoreDb, 'categories'));
-        for (const d of snap.docs) {
-          const data = d.data() as Category;
-          if (
-            data.id === id ||
-            data.slug === id ||
-            data.name?.toLowerCase() === id.toLowerCase()
-          ) {
-            await deleteDoc(doc(firestoreDb, 'categories', d.id));
-          }
-        }
       } catch (err) {
         console.error('Firestore deleteCategory error:', err);
       }
