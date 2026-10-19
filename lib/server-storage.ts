@@ -7,6 +7,8 @@ import {
   setDoc,
   deleteDoc,
   writeBatch,
+  collection,
+  getDocs,
 } from 'firebase/firestore';
 import { cleanTagsArray, canonicalizeTag } from './tag-utils';
 import { uploadImageToCloudinary } from './cloudinary-server';
@@ -158,6 +160,18 @@ export const ServerStorage = {
       } catch (e) {
         console.error('Error reading posts_cache during manual sync:', e);
       }
+
+      try {
+        const postsSnap = await getDocs(collection(firestoreDb, 'posts'));
+        postsSnap.forEach((docSnap) => {
+          const data = docSnap.data() as PromptPost;
+          if (data && data.id) {
+            remotePosts.push(data);
+          }
+        });
+      } catch (e) {
+        console.error('Error reading posts collection during sync:', e);
+      }
     }
 
     const localPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
@@ -194,7 +208,7 @@ export const ServerStorage = {
 
   // Posts
   getAllPosts: async (includeDrafts = true): Promise<PromptPost[]> => {
-    if (!memoryPosts || memoryPosts.length === 0) {
+    if (!memoryPosts || memoryPosts.length === 0 || Date.now() - memoryPostsTimestamp > 10000) {
       await ServerStorage.syncDatabaseToLocalPosts();
     }
     const posts = memoryPosts || readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
