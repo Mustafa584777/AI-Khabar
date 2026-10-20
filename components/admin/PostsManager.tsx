@@ -26,6 +26,7 @@ export const PostsManager = () => {
     deletePosts,
     togglePublishStatus,
     togglePremiumStatus,
+    toggleNoIndexStatus,
     setAdminSubView,
     setEditingPostId,
     setCurrentView,
@@ -348,6 +349,21 @@ export const PostsManager = () => {
                               >
                                 <Crown className={`w-2.5 h-2.5 ${post.isPremium ? 'fill-white' : ''}`} />
                                 <span>{post.isPremium ? 'PRO' : 'FREE'}</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleNoIndexStatus(post.id);
+                                }}
+                                title={post.isNoIndex ? 'Currently NoIndex (Excluded from sitemap). Click to make Indexable' : 'Currently Indexable. Click to set NoIndex'}
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase shrink-0 transition-all cursor-pointer ${
+                                  post.isNoIndex
+                                    ? 'bg-red-600 hover:bg-red-700 text-white shadow-xs'
+                                    : 'bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-500 dark:text-neutral-400'
+                                }`}
+                              >
+                                <span>{post.isNoIndex ? 'NOINDEX' : 'INDEX'}</span>
                               </button>
                             </div>
                             <p className="text-[11px] text-neutral-400 font-mono truncate">

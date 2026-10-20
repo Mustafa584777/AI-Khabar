@@ -67,15 +67,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   // 2. Dynamic Prompts (Strictly https://zeenaprompt.com/[slug] - NO 'prompt' word, NO images)
-  const promptUrls: MetadataRoute.Sitemap = posts.map((post) => {
-    const slug = getPromptSlug(post);
-    return {
-      url: `${baseUrl}/${slug}`,
-      lastModified: new Date(post.updatedAt || post.publishedAt || post.createdAt || new Date()),
-      changeFrequency: 'weekly',
-      priority: 0.9,
-    };
-  });
+  const promptUrls: MetadataRoute.Sitemap = posts
+    .filter((post) => !post.isNoIndex)
+    .map((post) => {
+      const slug = getPromptSlug(post);
+      return {
+        url: `${baseUrl}/${slug}`,
+        lastModified: new Date(post.updatedAt || post.publishedAt || post.createdAt || new Date()),
+        changeFrequency: 'weekly',
+        priority: 0.9,
+      };
+    });
 
   return [...corePages, ...promptUrls];
 }

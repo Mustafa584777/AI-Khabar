@@ -122,6 +122,7 @@ interface AppContextType {
   deletePosts: (ids: string[]) => Promise<boolean>;
   togglePublishStatus: (id: string) => void;
   togglePremiumStatus: (id: string) => Promise<void>;
+  toggleNoIndexStatus: (id: string) => Promise<void>;
   copyPromptToClipboard: (text: string, postId?: string) => void;
   toggleLike: (id: string) => void;
   toggleBookmark: (id: string) => void;
@@ -2489,6 +2490,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     showToast(newIsPremium ? 'Prompt upgraded to PRO Premium' : 'Prompt changed to Free');
   };
 
+  const toggleNoIndexStatus = async (id: string) => {
+    const post = posts.find((p) => p.id === id);
+    if (!post) return;
+    const newIsNoIndex = !post.isNoIndex;
+    const updated: PromptPost = {
+      ...post,
+      isNoIndex: newIsNoIndex,
+    };
+    await savePost(updated);
+    showToast(newIsNoIndex ? 'Prompt marked as NoIndex (excluded from sitemap)' : 'Prompt marked as Indexable');
+  };
+
   const copyPromptToClipboard = (text: string, postId?: string) => {
     if (postId) {
       const post = posts.find((p) => p.id === postId);
@@ -2820,6 +2833,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         deletePosts,
         togglePublishStatus,
         togglePremiumStatus,
+        toggleNoIndexStatus,
         copyPromptToClipboard,
         toggleLike,
         toggleBookmark,

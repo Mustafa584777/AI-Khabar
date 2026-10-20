@@ -83,12 +83,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description: cleanDesc,
       images: post.imageUrl ? [post.imageUrl] : undefined,
     },
-    robots: {
-      index: true,
-      follow: true,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
+    robots: post.isNoIndex
+      ? {
+          index: false,
+          follow: false,
+          'max-image-preview': 'large',
+          'max-snippet': -1,
+        }
+      : {
+          index: true,
+          follow: true,
+          'max-image-preview': 'large',
+          'max-snippet': -1,
+        },
   };
 }
 

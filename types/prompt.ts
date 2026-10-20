@@ -77,6 +77,7 @@ export interface PromptPost {
   isFeatured?: boolean;
   isTrending?: boolean;
   isPremium?: boolean;
+  isNoIndex?: boolean;
   viewsCount: number;
   copiesCount: number;
   likesCount: number;

@@ -118,6 +118,9 @@ export const PostEditor = () => {
   const [isPremium, setIsPremium] = useState<boolean>(
     () => Boolean(existingPost?.isPremium || existingPost?.parameters?.isPremium)
   );
+  const [isNoIndex, setIsNoIndex] = useState<boolean>(
+    () => Boolean(existingPost?.isNoIndex)
+  );
 
   useEffect(() => {
     // Only load from existingPost if switching to a DIFFERENT post or switching between create/edit modes
@@ -134,6 +137,7 @@ export const PostEditor = () => {
         setAdditionalImages(Array.isArray(existingPost.additionalImages) ? existingPost.additionalImages : []);
         setStatus(existingPost.status === 'draft' ? 'draft' : 'published');
         setIsPremium(Boolean(existingPost.isPremium || existingPost.parameters?.isPremium));
+        setIsNoIndex(Boolean(existingPost.isNoIndex));
         if (existingPost.articleContent) setArticleContent(existingPost.articleContent);
         if (Array.isArray(existingPost.tags) && existingPost.tags.length > 0) {
           setTags(existingPost.tags);
@@ -155,6 +159,7 @@ export const PostEditor = () => {
       setAdditionalImages([]);
       setStatus('published');
       setIsPremium(false);
+      setIsNoIndex(false);
       setArticleContent('## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.');
       setTags(['AI Prompt', 'Photorealistic', 'Masterpiece']);
       setMetaTitle('');
@@ -717,6 +722,7 @@ export const PostEditor = () => {
       tags: cleanTagsArray(tags.length > 0 ? tags : [chosenCat || 'AI Prompt']),
       status: publishStatus,
       isPremium: Boolean(isPremium),
+      isNoIndex: Boolean(isNoIndex),
       parameters: {
         ...(existingPost?.parameters || {}),
         isPremium: Boolean(isPremium),
@@ -1438,6 +1444,55 @@ export const PostEditor = () => {
             ) : (
               <p className="text-[11px] text-neutral-500">
                 Standard prompt: public and free to copy for everyone.
+              </p>
+            )}
+          </div>
+
+          {/* NoIndex & Sitemap Exclude Card */}
+          <div className="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-red-300/80 dark:border-red-900/60 shadow-sm space-y-4 bg-gradient-to-br from-red-500/5 via-transparent to-transparent">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-red-500/10 text-red-600 dark:text-red-400 flex items-center justify-center border border-red-500/20">
+                  <FileText className="w-5 h-5 text-red-500" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                    <span>NoIndex & Sitemap Exclude</span>
+                    {isNoIndex ? (
+                      <span className="px-2 py-0.5 rounded-full bg-red-600 text-white text-[9px] font-black tracking-wider uppercase">
+                        NOINDEX
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500 text-[9px] font-semibold">
+                        INDEXABLE
+                      </span>
+                    )}
+                  </h3>
+                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    Exclude this URL from search engine indexation & sitemap
+                  </p>
+                </div>
+              </div>
+
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="toggle-is-noindex-prompt"
+                  checked={isNoIndex}
+                  onChange={(e) => setIsNoIndex(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer dark:bg-neutral-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+              </label>
+            </div>
+
+            {isNoIndex ? (
+              <div className="text-[11px] leading-relaxed text-red-800 dark:text-red-300 bg-red-100/70 dark:bg-red-950/40 p-3 rounded-2xl border border-red-300/60 dark:border-red-800/60">
+                🚫 <strong>NoIndex Enabled:</strong> This prompt page will output `noindex, nofollow` robots meta tags and will be automatically removed from `sitemap.xml`. Search engines will not index or crawl this URL.
+              </div>
+            ) : (
+              <p className="text-[11px] text-neutral-500">
+                Indexable: Search engines can index and include this page in the sitemap.
               </p>
             )}
           </div>
