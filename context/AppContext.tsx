@@ -178,7 +178,17 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export const AppProvider = ({ children }: { children: ReactNode }) => {
+export const AppProvider = ({
+  children,
+  initialPosts,
+  initialCategories,
+  initialSettings,
+}: {
+  children: ReactNode;
+  initialPosts?: PromptPost[];
+  initialCategories?: Category[];
+  initialSettings?: SiteSettings;
+}) => {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -1177,12 +1187,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Data: Fast Cached + Server-Side Driven (SSR-safe initial states)
-  const [posts, setPosts] = useState<PromptPost[]>(INITIAL_POSTS);
+  const [posts, setPosts] = useState<PromptPost[]>(() => initialPosts || INITIAL_POSTS);
   useEffect(() => {
     postsRef.current = posts;
   }, [posts]);
   const [isLoadingPosts, setIsLoadingPosts] = useState<boolean>(false);
-  const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
+  const [categories, setCategories] = useState<Category[]>(() => initialCategories || INITIAL_CATEGORIES);
   const [tags, setTags] = useState<string[]>([
     'Portrait',
     '35mm',
@@ -1211,7 +1221,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
     return Array.from(set);
   }, [tags, posts]);
-  const [settings, setSettings] = useState<SiteSettings>(INITIAL_SETTINGS);
+  const [settings, setSettings] = useState<SiteSettings>(() => initialSettings || INITIAL_SETTINGS);
   const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([]);
   const lastBookmarkToggleTimeRef = useRef<number>(0);
   const [likedIds, setLikedIds] = useState<string[]>([]);

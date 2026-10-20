@@ -1,124 +1,56 @@
-'use client';
+import { ServerStorage } from '@/lib/server-storage';
+import { HomeClientWrapper } from '@/components/public/HomeClientWrapper';
+import { getPromptSlug } from '@/lib/utils';
 
-import React from 'react';
-import dynamic from 'next/dynamic';
-import { AppProvider, useApp } from '@/context/AppContext';
-import { Header } from '@/components/public/Header';
-import { HeroSection } from '@/components/public/HeroSection';
-import { ToolFilterBar } from '@/components/public/ToolFilterBar';
-import { PromptGrid } from '@/components/public/PromptGrid';
-import { Footer } from '@/components/public/Footer';
-import { SEOContentSection } from '@/components/public/SEOContentSection';
-import { ToastNotification } from '@/components/public/ToastNotification';
-import { BottomNav } from '@/components/public/BottomNav';
-import { Sparkles } from 'lucide-react';
+export const revalidate = 60;
 
-const PromptDetailModal = dynamic(() => import('@/components/public/PromptDetailModal').then((m) => m.PromptDetailModal), { ssr: false });
-const BookmarksDrawer = dynamic(() => import('@/components/public/BookmarksDrawer').then((m) => m.BookmarksDrawer), { ssr: false });
-const TasteProfileModal = dynamic(() => import('@/components/public/TasteProfileModal').then((m) => m.TasteProfileModal), { ssr: false });
-const UserDashboard = dynamic(() => import('@/components/public/UserDashboard').then((m) => m.UserDashboard), { ssr: false });
-const AIStudioTool = dynamic(() => import('@/components/public/AIStudioTool').then((m) => m.AIStudioTool), { ssr: false });
-const UserAuthModal = dynamic(() => import('@/components/public/UserAuthModal').then((m) => m.UserAuthModal), { ssr: false });
-const NotificationsView = dynamic(() => import('@/components/public/NotificationsView').then((m) => m.NotificationsView), { ssr: false });
-const AdminLayout = dynamic(() => import('@/components/admin/AdminLayout').then((m) => m.AdminLayout), { ssr: false });
-const AdminLoginModal = dynamic(() => import('@/components/admin/AdminLoginModal').then((m) => m.AdminLoginModal), { ssr: false });
-const SearchExploreModal = dynamic(() => import('@/components/public/SearchExploreModal').then((m) => m.SearchExploreModal), { ssr: false });
-const RazorpayCheckoutModal = dynamic(() => import('@/components/public/RazorpayCheckoutModal').then((m) => m.RazorpayCheckoutModal), { ssr: false });
-const UnlockPremiumModal = dynamic(() => import('@/components/public/UnlockPremiumModal').then((m) => m.UnlockPremiumModal), { ssr: false });
-
-function GlobalInteractiveModals() {
-  const {
-    selectedPost,
-    isBookmarksDrawerOpen,
-    isTasteModalOpen,
-    isUserAuthModalOpen,
-    showLoginModal,
-    isSearchModalOpen,
-    isProCheckoutModalOpen,
-    isUnlockPremiumModalOpen,
-    toastMessage,
-  } = useApp();
+export default async function Page() {
+  const posts = await ServerStorage.getAllPosts(false);
+  const categories = await ServerStorage.getAllCategories();
+  const settings = await ServerStorage.getSettings();
 
   return (
     <>
-      {isSearchModalOpen && <SearchExploreModal />}
-      {selectedPost && <PromptDetailModal />}
-      {isBookmarksDrawerOpen && <BookmarksDrawer />}
-      {isTasteModalOpen && <TasteProfileModal />}
-      {isUserAuthModalOpen && <UserAuthModal />}
-      {showLoginModal && <AdminLoginModal />}
-      {toastMessage && <ToastNotification />}
-      {isProCheckoutModalOpen && <RazorpayCheckoutModal />}
-      {isUnlockPremiumModalOpen && <UnlockPremiumModal />}
+      {/* Semantic Crawl-Friendly HTML for Search Engine Crawlers (100% pure HTML, zero JS dependency) */}
+      <div className="sr-only" aria-hidden="false">
+        <h1>{settings?.heroHeadline || 'Trending Copy Paste AI Photo Prompts'}</h1>
+        <p>{settings?.heroSubheadline || settings?.siteTagline || 'Discover and copy high-converting Midjourney, ChatGPT, Flux, and Stable Diffusion photo prompts.'}</p>
+        
+        <h2>Categories</h2>
+        <ul>
+          {categories.map((cat) => (
+            <li key={cat.id}>
+              <a href={`/?category=${cat.slug}`}>{cat.name}</a>
+            </li>
+          ))}
+        </ul>
+
+        <h2>Latest AI Photo Prompts</h2>
+        <ul>
+          {posts.map((post) => {
+            const slug = getPromptSlug(post);
+            return (
+              <li key={post.id}>
+                <article>
+                  <h3>
+                    <a href={`/${slug}`}>{post.title}</a>
+                  </h3>
+                  <p>{post.promptText}</p>
+                  <div>Category: {post.category}</div>
+                  <div>AI Tool: {post.aiTool}</div>
+                  {post.tags && <div>Tags: {post.tags.join(', ')}</div>}
+                </article>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+
+      <HomeClientWrapper
+        initialPosts={posts}
+        initialCategories={categories}
+        initialSettings={settings}
+      />
     </>
-  );
-}
-
-function MainApp() {
-  const { currentView, showLoginModal, toastMessage } = useApp();
-
-  if (currentView === 'admin') {
-    return (
-      <>
-        <AdminLayout />
-        {showLoginModal && <AdminLoginModal />}
-        {toastMessage && <ToastNotification />}
-      </>
-    );
-  }
-
-  if (currentView === 'notifications' || currentView === 'for-you') {
-    return (
-      <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col pb-20 sm:pb-8">
-        <Header />
-        <NotificationsView />
-        <BottomNav />
-        <GlobalInteractiveModals />
-      </div>
-    );
-  }
-
-  if (currentView === 'user-dashboard') {
-    return (
-      <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col">
-        <UserDashboard />
-        <BottomNav />
-        <GlobalInteractiveModals />
-      </div>
-    );
-  }
-
-  if (currentView === 'studio-tool') {
-    return (
-      <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col">
-        <Header />
-        <AIStudioTool />
-        <BottomNav />
-        <GlobalInteractiveModals />
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col pb-20 sm:pb-8">
-      <Header />
-      <HeroSection />
-      <ToolFilterBar />
-      <PromptGrid />
-      <SEOContentSection />
-      <Footer />
-
-      {/* Mobile Bottom Navigation */}
-      <BottomNav />
-
-      {/* Global Modals & Overlays (Only mounted when opened for optimal performance) */}
-      <GlobalInteractiveModals />
-    </div>
-  );
-}
-
-export default function Page() {
-  return (
-    <MainApp />
   );
 }
