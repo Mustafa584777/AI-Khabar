@@ -950,6 +950,42 @@ export const PromptDetailModal = () => {
               onContextMenu={(e) => e.preventDefault()}
               className="lg:col-span-7 bg-neutral-100 dark:bg-neutral-900 flex flex-col justify-start items-center p-0 relative select-none overflow-hidden"
             >
+              {/* Affiliate Product Hotspot Badges in Detail Modal */}
+              {selectedPost.affiliateProducts && selectedPost.affiliateProducts.length > 0 && (
+                <div className="absolute bottom-4 left-4 z-30 flex flex-wrap gap-2 pointer-events-auto">
+                  {selectedPost.affiliateProducts.map((item) => {
+                    const getIconEmoji = (type: string) => {
+                      switch (type) {
+                        case 'tshirt': return '👕';
+                        case 'pant': return '👖';
+                        case 'glasses': return '🕶️';
+                        case 'shoes': return '👟';
+                        case 'saree': return '🥻';
+                        case 'dress': return '👗';
+                        case 'jacket': return '🧥';
+                        case 'hat': return '👒';
+                        default: return '🛍️';
+                      }
+                    };
+                    return (
+                      <a
+                        key={item.id}
+                        href={item.amazonUrl}
+                        target="_blank"
+                        rel="noopener noreferrer sponsored"
+                        onClick={(e) => e.stopPropagation()}
+                        title={`Shop ${item.label} on Amazon`}
+                        className="px-3.5 py-1.5 rounded-full bg-black/90 hover:bg-[#FF9900] text-white text-xs font-black backdrop-blur-md flex items-center gap-1.5 transition-colors shadow-2xl border border-white/30"
+                      >
+                        <span>{getIconEmoji(item.type)}</span>
+                        <span>{item.label}</span>
+                        <span className="text-[10px] text-orange-200 underline ml-1">Buy on Amazon →</span>
+                      </a>
+                    );
+                  })}
+                </div>
+              )}
+
               {allImages.length > 0 ? (
                 <div
                   onContextMenu={(e) => e.preventDefault()}

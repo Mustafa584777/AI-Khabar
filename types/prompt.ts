@@ -45,12 +45,11 @@ export interface Author {
   email?: string;
 }
 
-export interface SEOMeta {
-  metaTitle: string;
-  metaDescription: string;
-  focusKeyword: string;
-  canonicalUrl?: string;
-  ogImage?: string;
+export interface AffiliateProduct {
+  id: string;
+  type: 'tshirt' | 'pant' | 'glasses' | 'shoes' | 'saree' | 'dress' | 'jacket' | 'hat' | 'accessories' | 'other';
+  label: string;
+  amazonUrl: string;
 }
 
 export interface PromptPost {
@@ -78,6 +77,7 @@ export interface PromptPost {
   isTrending?: boolean;
   isPremium?: boolean;
   isNoIndex?: boolean;
+  affiliateProducts?: AffiliateProduct[];
   viewsCount: number;
   copiesCount: number;
   likesCount: number;

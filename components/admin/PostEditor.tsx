@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
-import { PromptPost, Category } from '@/types/prompt';
+import { PromptPost, Category, AffiliateProduct } from '@/types/prompt';
 import {
   Save,
   Globe,
@@ -28,6 +28,7 @@ import {
   Bell,
   Layers,
   Trash2,
+  ShoppingBag,
 } from 'lucide-react';
 import Image from 'next/image';
 import { cleanTagsArray, canonicalizeTag, slugify } from '@/lib/utils';
@@ -121,6 +122,9 @@ export const PostEditor = () => {
   const [isNoIndex, setIsNoIndex] = useState<boolean>(
     () => Boolean(existingPost?.isNoIndex)
   );
+  const [affiliateProducts, setAffiliateProducts] = useState<AffiliateProduct[]>(
+    () => Array.isArray(existingPost?.affiliateProducts) ? existingPost.affiliateProducts : []
+  );
 
   useEffect(() => {
     // Only load from existingPost if switching to a DIFFERENT post or switching between create/edit modes
@@ -138,6 +142,7 @@ export const PostEditor = () => {
         setStatus(existingPost.status === 'draft' ? 'draft' : 'published');
         setIsPremium(Boolean(existingPost.isPremium || existingPost.parameters?.isPremium));
         setIsNoIndex(Boolean(existingPost.isNoIndex));
+        setAffiliateProducts(Array.isArray(existingPost.affiliateProducts) ? existingPost.affiliateProducts : []);
         if (existingPost.articleContent) setArticleContent(existingPost.articleContent);
         if (Array.isArray(existingPost.tags) && existingPost.tags.length > 0) {
           setTags(existingPost.tags);
@@ -160,6 +165,7 @@ export const PostEditor = () => {
       setStatus('published');
       setIsPremium(false);
       setIsNoIndex(false);
+      setAffiliateProducts([]);
       setArticleContent('## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.');
       setTags(['AI Prompt', 'Photorealistic', 'Masterpiece']);
       setMetaTitle('');
@@ -723,6 +729,7 @@ export const PostEditor = () => {
       status: publishStatus,
       isPremium: Boolean(isPremium),
       isNoIndex: Boolean(isNoIndex),
+      affiliateProducts: affiliateProducts.filter((p) => p.amazonUrl.trim() && p.label.trim()),
       parameters: {
         ...(existingPost?.parameters || {}),
         isPremium: Boolean(isPremium),
@@ -1495,6 +1502,118 @@ export const PostEditor = () => {
                 Indexable: Search engines can index and include this page in the sitemap.
               </p>
             )}
+          </div>
+
+          {/* Affiliate Products / Shopping Hotspots Card */}
+          <div className="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-orange-300/80 dark:border-orange-900/60 shadow-sm space-y-4 bg-gradient-to-br from-orange-500/5 via-transparent to-transparent">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center border border-orange-500/20">
+                  <ShoppingBag className="w-5 h-5 text-orange-500" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                    <span>Affiliate Products / Attire</span>
+                    <span className="px-2 py-0.5 rounded-full bg-orange-500 text-white text-[9px] font-black tracking-wider uppercase">
+                      AMAZON
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    Add product badges & Amazon affiliate links for items in this prompt image
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setAffiliateProducts([
+                    ...affiliateProducts,
+                    {
+                      id: `aff-${Date.now()}`,
+                      type: 'saree',
+                      label: '',
+                      amazonUrl: '',
+                    },
+                  ]);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold shadow-sm flex items-center gap-1 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Product</span>
+              </button>
+            </div>
+
+            <div className="space-y-3 pt-2">
+              {affiliateProducts.length === 0 ? (
+                <div className="text-center py-4 bg-neutral-50 dark:bg-neutral-950 rounded-2xl border border-neutral-200 dark:border-neutral-800 text-neutral-400 text-xs">
+                  No affiliate products added yet. Click &quot;Add Product&quot; to attach T-shirts, Saree, Glasses, Shoes, etc.
+                </div>
+              ) : (
+                affiliateProducts.map((prod, idx) => (
+                  <div key={prod.id || idx} className="p-3.5 bg-neutral-50 dark:bg-neutral-950 rounded-2xl border border-neutral-200 dark:border-neutral-800 space-y-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-1">
+                        <select
+                          value={prod.type}
+                          onChange={(e) => {
+                            const updated = [...affiliateProducts];
+                            updated[idx].type = e.target.value as any;
+                            setAffiliateProducts(updated);
+                          }}
+                          className="px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 font-bold text-neutral-800 dark:text-neutral-200"
+                        >
+                          <option value="saree">🥻 Saree</option>
+                          <option value="tshirt">👕 T-Shirt</option>
+                          <option value="pant">👖 Pants</option>
+                          <option value="dress">👗 Dress</option>
+                          <option value="glasses">🕶️ Glasses</option>
+                          <option value="shoes">👟 Shoes</option>
+                          <option value="jacket">🧥 Jacket</option>
+                          <option value="hat">👒 Hat</option>
+                          <option value="accessories">💍 Accessories</option>
+                          <option value="other">🛍️ Other</option>
+                        </select>
+                        <input
+                          type="text"
+                          value={prod.label}
+                          onChange={(e) => {
+                            const updated = [...affiliateProducts];
+                            updated[idx].label = e.target.value;
+                            setAffiliateProducts(updated);
+                          }}
+                          placeholder="Product Name (e.g. Silk Saree)"
+                          className="flex-1 px-3 py-1.5 text-xs rounded-xl bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAffiliateProducts(affiliateProducts.filter((_, i) => i !== idx));
+                        }}
+                        className="p-1.5 rounded-xl bg-red-100 dark:bg-red-950/60 text-red-600 hover:bg-red-200 transition-colors"
+                        title="Remove product"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div>
+                      <input
+                        type="url"
+                        value={prod.amazonUrl}
+                        onChange={(e) => {
+                          const updated = [...affiliateProducts];
+                          updated[idx].amazonUrl = e.target.value;
+                          setAffiliateProducts(updated);
+                        }}
+                        placeholder="Amazon Affiliate Link (https://amzn.to/...)"
+                        className="w-full px-3 py-1.5 text-xs rounded-xl bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-mono"
+                      />
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
 
           {/* Category & AI Taxonomy Manager */}
