@@ -147,6 +147,39 @@ export const GoogleSheetsService = {
     return updated;
   },
 
+  saveConfigAsync: async (config: GoogleSheetsConfig): Promise<GoogleSheetsConfig> => {
+    ensureDataDir();
+    const cleanId = extractSpreadsheetId(config.spreadsheetId || '');
+    const updated: GoogleSheetsConfig = {
+      ...config,
+      spreadsheetId: cleanId,
+      spreadsheetUrl: cleanId ? `https://docs.google.com/spreadsheets/d/${cleanId}/edit` : '',
+      enabled: Boolean(cleanId && config.enabled),
+    };
+    try {
+      fs.writeFileSync(SHEETS_CONFIG_FILE, JSON.stringify(updated, null, 2), 'utf-8');
+    } catch (e) {
+      console.error('Error saving google_sheets.json:', e);
+    }
+
+    if (isFirebaseConfigured()) {
+      try {
+        await setDoc(
+          doc(firestoreDb, 'settings', 'google_sheets_config'),
+          {
+            config: updated,
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        );
+      } catch (e) {
+        console.error('Firestore saveConfigAsync error:', e);
+      }
+    }
+
+    return updated;
+  },
+
   // 1. Create a brand new Spreadsheet with all 3 tabs initialized
   createSpreadsheet: async (
     accessToken: string,

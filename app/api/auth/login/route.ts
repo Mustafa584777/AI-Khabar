@@ -26,6 +26,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Incorrect password.' }, { status: 401 });
     }
 
+    if (userProfile.emailVerified === false) {
+      return NextResponse.json({
+        success: false,
+        needsVerification: true,
+        email: cleanEmail,
+        error: 'Please verify your email address before signing in. Enter your verification code.',
+      }, { status: 403 });
+    }
+
     return NextResponse.json({
       success: true,
       user: {

@@ -27,6 +27,7 @@ import Image from 'next/image';
 import JSZip from 'jszip';
 import { UsersManager } from './UsersManager';
 import { AllWebsiteBackupManager } from './AllWebsiteBackupManager';
+import { GoogleSheetsSyncManager } from './GoogleSheetsSyncManager';
 
 interface ParsedBackupData {
   version?: string;
@@ -43,7 +44,7 @@ interface ParsedBackupData {
 export const BackupRestoreView = () => {
   const { posts, categories, tags, settings, restorePromptCards, showToast, refreshData, setAdminSubView } = useApp();
 
-  const [backupDomain, setBackupDomain] = useState<'all' | 'prompts' | 'users'>('all');
+  const [backupDomain, setBackupDomain] = useState<'all' | 'prompts' | 'users' | 'sheets'>('all');
   const [isExportingZip, setIsExportingZip] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [restoreMode, setRestoreMode] = useState<'merge' | 'replace'>('merge');
@@ -535,15 +536,15 @@ Open Admin Panel -> Backup & Restore -> Upload this .zip file or prompts.json.`
         </button>
         <button
           type="button"
-          onClick={() => setBackupDomain('users')}
+          onClick={() => setBackupDomain('sheets')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            backupDomain === 'users'
-              ? 'bg-white dark:bg-neutral-800 text-blue-600 dark:text-blue-400 shadow-xs'
+            backupDomain === 'sheets'
+              ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 font-extrabold'
               : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
           }`}
         >
-          <Users className="w-4 h-4" />
-          <span>Registered Users Only (JSON)</span>
+          <FileSpreadsheet className="w-4 h-4 text-emerald-300" />
+          <span>Google Sheets Sync & Migration</span>
         </button>
         <button
           type="button"
@@ -561,6 +562,10 @@ Open Admin Panel -> Backup & Restore -> Upload this .zip file or prompts.json.`
       ) : backupDomain === 'users' ? (
         <div className="animate-fade-in">
           <UsersManager />
+        </div>
+      ) : backupDomain === 'sheets' ? (
+        <div className="animate-fade-in">
+          <GoogleSheetsSyncManager />
         </div>
       ) : (
         <>

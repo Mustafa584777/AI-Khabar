@@ -273,7 +273,7 @@ export const DashboardOverview = () => {
                         {post.title}
                       </h4>
                       <p className="text-[11px] text-neutral-400">
-                        {post.category} • {post.copiesCount || 0} copies
+                        {post.category}
                       </p>
                     </div>
                   </div>
