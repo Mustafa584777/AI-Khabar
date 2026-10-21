@@ -2,6 +2,8 @@ import { PromptPost, SearchQueryItem, GoogleSheetsConfig } from '@/types/prompt'
 import { PushNotificationItem } from '@/types/notification';
 import fs from 'fs';
 import path from 'path';
+import { db as firestoreDb, isFirebaseConfigured } from './firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const SHEETS_CONFIG_FILE = path.join(DATA_DIR, 'google_sheets.json');
@@ -78,7 +80,10 @@ export const GoogleSheetsService = {
       ensureDataDir();
       if (fs.existsSync(SHEETS_CONFIG_FILE)) {
         const raw = fs.readFileSync(SHEETS_CONFIG_FILE, 'utf-8');
-        return JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.spreadsheetId) {
+          return parsed;
+        }
       }
     } catch (e) {
       console.warn('Error reading google_sheets.json:', e);
@@ -108,6 +113,18 @@ export const GoogleSheetsService = {
     } catch (e) {
       console.error('Error saving google_sheets.json:', e);
     }
+
+    if (isFirebaseConfigured()) {
+      setDoc(
+        doc(firestoreDb, 'settings', 'google_sheets_config'),
+        {
+          config: updated,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      ).catch((e) => console.error('Firestore saveConfig error:', e));
+    }
+
     return updated;
   },
 
