@@ -99,6 +99,25 @@ export const GoogleSheetsService = {
     };
   },
 
+  getConfigAsync: async (): Promise<GoogleSheetsConfig> => {
+    if (isFirebaseConfigured()) {
+      try {
+        const snap = await getDoc(doc(firestoreDb, 'settings', 'google_sheets_config'));
+        if (snap.exists() && snap.data()?.config) {
+          const remoteCfg = snap.data().config as GoogleSheetsConfig;
+          if (remoteCfg && remoteCfg.spreadsheetId) {
+            ensureDataDir();
+            fs.writeFileSync(SHEETS_CONFIG_FILE, JSON.stringify(remoteCfg, null, 2), 'utf-8');
+            return remoteCfg;
+          }
+        }
+      } catch (e) {
+        console.warn('Firestore getConfigAsync fallback:', e);
+      }
+    }
+    return GoogleSheetsService.getConfig();
+  },
+
   saveConfig: (config: GoogleSheetsConfig): GoogleSheetsConfig => {
     ensureDataDir();
     const cleanId = extractSpreadsheetId(config.spreadsheetId || '');
@@ -343,7 +362,7 @@ export const GoogleSheetsService = {
       }
 
       // Update config stats
-      const conf = GoogleSheetsService.getConfig();
+      const conf = await GoogleSheetsService.getConfig();
       conf.lastSyncedAt = new Date().toISOString();
       conf.promptsCount = posts.length;
       GoogleSheetsService.saveConfig(conf);

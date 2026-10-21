@@ -8,7 +8,7 @@ export const revalidate = 0;
 
 export async function GET() {
   try {
-    const config = GoogleSheetsService.getConfig();
+    const config = await GoogleSheetsService.getConfigAsync();
     return NextResponse.json({
       success: true,
       config,
