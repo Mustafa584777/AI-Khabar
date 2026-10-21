@@ -13,6 +13,7 @@ import {
 import { cleanTagsArray, canonicalizeTag } from './tag-utils';
 import { uploadImageToCloudinary } from './cloudinary-server';
 import { PLAN_CONFIGS } from './plans';
+import { GoogleSheetsService } from './google-sheets';
 import fs from 'fs';
 import path from 'path';
 
@@ -207,9 +208,27 @@ export const ServerStorage = {
   },
 
   // Posts
-  getAllPosts: async (includeDrafts = true): Promise<PromptPost[]> => {
+  getAllPosts: async (includeDrafts = true, token?: string, forceRefresh = false): Promise<PromptPost[]> => {
+    try {
+      const sheetsConf = GoogleSheetsService.getConfig();
+      if (sheetsConf.enabled && sheetsConf.spreadsheetId) {
+        const isExpired = !memoryPosts || memoryPosts.length === 0 || Date.now() - memoryPostsTimestamp > 60000 || forceRefresh;
+        if (isExpired) {
+          const sheetPosts = await GoogleSheetsService.fetchPromptsFromSheet(sheetsConf.spreadsheetId, token);
+          if (sheetPosts.length > 0) {
+            memoryPosts = sheetPosts;
+            memoryPostsTimestamp = Date.now();
+            writeJsonFile(POSTS_FILE, sheetPosts);
+          }
+        }
+      }
+    } catch (sheetErr) {
+      console.warn('Google Sheets getAllPosts read notice:', sheetErr);
+    }
+
     if (!memoryPosts || memoryPosts.length === 0) {
       memoryPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
+      memoryPostsTimestamp = Date.now();
     }
     const posts = memoryPosts || readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
     return includeDrafts ? posts : posts.filter((p) => p.status === 'published');
@@ -393,6 +412,18 @@ export const ServerStorage = {
       }
     }
 
+    // Sync to Google Sheets if configured
+    try {
+      const sheetsConf = GoogleSheetsService.getConfig();
+      if (sheetsConf.enabled && sheetsConf.spreadsheetId) {
+        void GoogleSheetsService.syncPromptsToSheet(sheetsConf.spreadsheetId, currentList, token).catch((e) =>
+          console.warn('Google Sheets savePost background sync notice:', e)
+        );
+      }
+    } catch (sheetErr) {
+      // ignore
+    }
+
     // Auto-create category if needed
     if (savedPost.category && savedPost.category.trim()) {
       try {
@@ -475,7 +506,7 @@ export const ServerStorage = {
     }
   },
 
-  restorePosts: async (incomingPosts: PromptPost[], mode: 'replace' | 'merge'): Promise<PromptPost[]> => {
+  restorePosts: async (incomingPosts: PromptPost[], mode: 'replace' | 'merge', token?: string): Promise<PromptPost[]> => {
     const now = new Date().toISOString();
 
     // Clean and validate incoming posts
@@ -558,6 +589,18 @@ export const ServerStorage = {
       } catch (err) {
         console.error('Firestore batch restorePosts error:', err);
       }
+    }
+
+    // Sync to Google Sheets if configured (guarantees restored prompts are preserved on Google Sheets)
+    try {
+      const sheetsConf = GoogleSheetsService.getConfig();
+      if (sheetsConf.enabled && sheetsConf.spreadsheetId) {
+        void GoogleSheetsService.syncPromptsToSheet(sheetsConf.spreadsheetId, finalList, token).catch((e) =>
+          console.warn('Google Sheets restorePosts background sync notice:', e)
+        );
+      }
+    } catch (sheetErr) {
+      // ignore
     }
 
     return finalList;
@@ -883,6 +926,18 @@ export const ServerStorage = {
 
     memorySearchQueries = updated;
     writeJsonFile(SEARCH_QUERIES_FILE, updated);
+
+    // Sync to Google Sheets if configured
+    try {
+      const sheetsConf = GoogleSheetsService.getConfig();
+      if (sheetsConf.enabled && sheetsConf.spreadsheetId) {
+        void GoogleSheetsService.syncSearchHistoryToSheet(sheetsConf.spreadsheetId, updated).catch((e) =>
+          console.warn('Google Sheets recordSearchQuery sync notice:', e)
+        );
+      }
+    } catch {
+      // ignore
+    }
   },
 
   clearAllSearchQueries: async (): Promise<void> => {
@@ -921,6 +976,18 @@ export const ServerStorage = {
       } catch (err) {
         console.error('Firestore restoreSearchQueries error:', err);
       }
+    }
+
+    // Sync to Google Sheets if configured
+    try {
+      const sheetsConf = GoogleSheetsService.getConfig();
+      if (sheetsConf.enabled && sheetsConf.spreadsheetId) {
+        void GoogleSheetsService.syncSearchHistoryToSheet(sheetsConf.spreadsheetId, cleanList).catch((e) =>
+          console.warn('Google Sheets restoreSearchQueries background sync notice:', e)
+        );
+      }
+    } catch (sheetErr) {
+      // ignore
     }
   },
 

@@ -3,6 +3,7 @@ import path from 'path';
 import { PushNotificationItem, PushSubscriber } from '@/types/notification';
 import { db as firestoreDb, isFirebaseConfigured } from './firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { GoogleSheetsService } from './google-sheets';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const SUBSCRIBERS_FILE = path.join(DATA_DIR, 'subscribers.json');
@@ -132,7 +133,22 @@ export const NotificationServerStore = {
   },
 
   // NOTIFICATIONS
-  getNotifications: async (): Promise<PushNotificationItem[]> => {
+  getNotifications: async (token?: string): Promise<PushNotificationItem[]> => {
+    // 1. If Google Sheets is configured, try loading from Google Sheet
+    try {
+      const sheetsConf = GoogleSheetsService.getConfig();
+      if (sheetsConf.enabled && sheetsConf.spreadsheetId) {
+        const sheetItems = await GoogleSheetsService.fetchNotificationsFromSheet(sheetsConf.spreadsheetId, token);
+        if (sheetItems.length > 0) {
+          writeJson(NOTIFICATIONS_FILE, sheetItems);
+          return sheetItems;
+        }
+      }
+    } catch (sheetErr) {
+      console.warn('Google Sheets getNotifications notice:', sheetErr);
+    }
+
+    // 2. Fallback to Firebase Firestore
     if (isFirebaseConfigured()) {
       try {
         const snap = await getDoc(doc(firestoreDb, 'settings', NOTIF_SETTINGS_ID));
@@ -146,7 +162,7 @@ export const NotificationServerStore = {
     return readJson<PushNotificationItem[]>(NOTIFICATIONS_FILE, []);
   },
 
-  saveNotifications: async (items: PushNotificationItem[]): Promise<void> => {
+  saveNotifications: async (items: PushNotificationItem[], token?: string): Promise<void> => {
     writeJson(NOTIFICATIONS_FILE, items);
     if (isFirebaseConfigured()) {
       try {
@@ -154,6 +170,18 @@ export const NotificationServerStore = {
       } catch (e) {
         console.error('Failed to save notifications to Firestore:', e);
       }
+    }
+
+    // Sync to Google Sheets if configured
+    try {
+      const sheetsConf = GoogleSheetsService.getConfig();
+      if (sheetsConf.enabled && sheetsConf.spreadsheetId) {
+        void GoogleSheetsService.syncNotificationsToSheet(sheetsConf.spreadsheetId, items, token).catch((e) =>
+          console.warn('Google Sheets saveNotifications background sync notice:', e)
+        );
+      }
+    } catch (sheetErr) {
+      // ignore
     }
   },
 

@@ -152,8 +152,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const authHeader = req.headers.get('authorization') || '';
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim() || body.accessToken || undefined;
     const mode = body.mode === 'replace' ? 'replace' : 'merge';
-    const updatedPosts = await ServerStorage.restorePosts(incomingPosts, mode);
+    const updatedPosts = await ServerStorage.restorePosts(incomingPosts, mode, token);
 
     // If incoming categories were also supplied, save them
     if (Array.isArray(body.categories) && body.categories.length > 0) {

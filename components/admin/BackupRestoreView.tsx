@@ -21,6 +21,7 @@ import {
   Check,
   Package,
   Users,
+  FileSpreadsheet,
 } from 'lucide-react';
 import Image from 'next/image';
 import JSZip from 'jszip';
@@ -40,7 +41,7 @@ interface ParsedBackupData {
 }
 
 export const BackupRestoreView = () => {
-  const { posts, categories, tags, settings, restorePromptCards, showToast, refreshData } = useApp();
+  const { posts, categories, tags, settings, restorePromptCards, showToast, refreshData, setAdminSubView } = useApp();
 
   const [backupDomain, setBackupDomain] = useState<'all' | 'prompts' | 'users'>('all');
   const [isExportingZip, setIsExportingZip] = useState(false);
@@ -544,6 +545,15 @@ Open Admin Panel -> Backup & Restore -> Upload this .zip file or prompts.json.`
           <Users className="w-4 h-4" />
           <span>Registered Users Only (JSON)</span>
         </button>
+        <button
+          type="button"
+          onClick={() => setAdminSubView('google-sheets')}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100/50 dark:hover:bg-emerald-950/50 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800"
+          title="Manage Google Sheets Database"
+        >
+          <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          <span>Google Sheets CMS Database</span>
+        </button>
       </div>
 
       {backupDomain === 'all' ? (
@@ -819,6 +829,12 @@ Open Admin Panel -> Backup & Restore -> Upload this .zip file or prompts.json.`
                       </p>
                     )}
                   </div>
+                </div>
+
+                {/* Google Sheets Sync Assurance */}
+                <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-2.5 text-xs text-emerald-800 dark:text-emerald-300">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Google Sheets Sync: All {parsedBackup.totalPrompts} restored prompts will be synchronized directly to your connected Google Sheet.</span>
                 </div>
 
                 {/* Execute Restore Button */}

@@ -21,6 +21,7 @@ import {
   Users,
   Bell,
   MessageSquare,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 export const AdminSidebar = () => {
@@ -85,6 +86,11 @@ export const AdminSidebar = () => {
       id: 'search-history',
       label: 'User Search History',
       icon: Search,
+    },
+    {
+      id: 'google-sheets',
+      label: 'Google Sheets CMS',
+      icon: FileSpreadsheet,
     },
     {
       id: 'backup-restore',
