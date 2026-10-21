@@ -208,8 +208,8 @@ export const ServerStorage = {
 
   // Posts
   getAllPosts: async (includeDrafts = true): Promise<PromptPost[]> => {
-    if (!memoryPosts || memoryPosts.length === 0 || Date.now() - memoryPostsTimestamp > 10000) {
-      await ServerStorage.syncDatabaseToLocalPosts();
+    if (!memoryPosts || memoryPosts.length === 0) {
+      memoryPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
     }
     const posts = memoryPosts || readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
     return includeDrafts ? posts : posts.filter((p) => p.status === 'published');

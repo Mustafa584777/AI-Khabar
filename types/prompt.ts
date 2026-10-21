@@ -52,6 +52,12 @@ export interface AffiliateProduct {
   amazonUrl: string;
 }
 
+export interface SEOMeta {
+  metaTitle?: string;
+  metaDescription?: string;
+  focusKeyword?: string;
+}
+
 export interface PromptPost {
   id: string;
   title: string;
