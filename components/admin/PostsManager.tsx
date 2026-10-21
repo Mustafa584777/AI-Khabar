@@ -284,7 +284,9 @@ export const PostsManager = () => {
                 </th>
                 <th className="py-4 pr-3">Prompt Title & Slug</th>
                 <th className="py-4 px-3">Category</th>
+                <th className="py-4 px-3 text-center">Copies / Views</th>
                 <th className="py-4 px-3">Status</th>
+                <th className="py-4 px-3">Date</th>
                 <th className="py-4 pr-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -413,7 +415,14 @@ export const PostsManager = () => {
                         {post.category}
                       </td>
 
-
+                      <td className="py-4 px-3 text-center">
+                        <span className="font-mono font-bold text-neutral-800 dark:text-neutral-200">
+                          {post.copiesCount || 0}
+                        </span>
+                        <span className="text-neutral-400 text-[10px] block">
+                          {post.viewsCount || 0} views
+                        </span>
+                      </td>
 
                       <td className="py-4 px-3">
                         <button
@@ -438,7 +447,12 @@ export const PostsManager = () => {
                         </button>
                       </td>
 
-
+                      <td className="py-4 px-3 text-neutral-400 font-mono text-[11px]">
+                        {new Date(post.createdAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </td>
 
                       <td className="py-4 pr-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">

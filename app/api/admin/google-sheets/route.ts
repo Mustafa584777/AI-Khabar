@@ -2,14 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GoogleSheetsService, extractSpreadsheetId } from '@/lib/google-sheets';
 import { ServerStorage } from '@/lib/server-storage';
 import { NotificationServerStore } from '@/lib/notification-storage';
-import fs from 'fs';
-import path from 'path';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-
-const DATA_DIR = path.join(process.cwd(), 'data');
-const POSTS_FILE = path.join(DATA_DIR, 'posts.json');
 
 export async function GET() {
   try {
@@ -34,7 +29,7 @@ export async function POST(req: NextRequest) {
     // 1. SAVE CONFIG
     if (action === 'save-config') {
       const cleanId = extractSpreadsheetId(body.spreadsheetId || '');
-      const updated = await GoogleSheetsService.saveConfigAsync({
+      const updated = GoogleSheetsService.saveConfig({
         spreadsheetId: cleanId,
         spreadsheetUrl: cleanId ? `https://docs.google.com/spreadsheets/d/${cleanId}/edit` : '',
         enabled: Boolean(body.enabled && cleanId),
@@ -42,47 +37,10 @@ export async function POST(req: NextRequest) {
       });
       return NextResponse.json({
         success: true,
-        message: 'Google Sheets configuration saved and persisted permanently.',
+        message: 'Google Sheets configuration updated.',
         config: updated,
       });
     }
-
-    // Gather all posts reliably from file and storage
-    const getComprehensivePosts = async () => {
-      let posts: any[] = [];
-      try {
-        if (fs.existsSync(POSTS_FILE)) {
-          const raw = fs.readFileSync(POSTS_FILE, 'utf-8');
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) posts = parsed;
-        }
-      } catch {}
-      const storagePosts = await ServerStorage.getAllPosts(true);
-      const map = new Map<string, any>();
-      for (const p of posts) if (p?.id) map.set(p.id, p);
-      for (const p of storagePosts) if (p?.id) map.set(p.id, p);
-      return Array.from(map.values());
-    };
-
-    // Gather all notifications reliably
-    const getComprehensiveNotifications = async () => {
-      let notifs = await NotificationServerStore.getNotifications();
-      if (!Array.isArray(notifs) || notifs.length === 0) {
-        notifs = [
-          {
-            id: 'notif_default_1',
-            title: 'Welcome to AI Khabar Prompts',
-            subtitle: 'Explore 260+ Curated AI Prompts',
-            body: 'Discover state-of-the-art Midjourney, Stable Diffusion, and DALL-E 3 prompts synced instantly via Google Sheets.',
-            category: 'all',
-            imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe',
-            url: '/create',
-            sentAt: new Date().toISOString(),
-          },
-        ];
-      }
-      return notifs;
-    };
 
     // 2. CREATE NEW SPREADSHEET
     if (action === 'create-sheet') {
@@ -99,10 +57,11 @@ export async function POST(req: NextRequest) {
       const title = body.title || 'AI-Khabar CMS Database';
       const result = await GoogleSheetsService.createSpreadsheet(accessToken, title);
 
+      // Now auto-populate with existing data
       const [allPosts, allNotifications, allSearchQueries] = await Promise.all([
-        getComprehensivePosts(),
-        getComprehensiveNotifications(),
-        ServerStorage.getSearchQueries(200),
+        ServerStorage.getAllPosts(true),
+        NotificationServerStore.getNotifications(),
+        ServerStorage.getSearchQueries(100),
       ]);
 
       const counts = await GoogleSheetsService.exportAllToGoogleSheet(
@@ -115,7 +74,7 @@ export async function POST(req: NextRequest) {
         accessToken
       );
 
-      const newConfig = await GoogleSheetsService.getConfigAsync();
+      const newConfig = GoogleSheetsService.getConfig();
 
       return NextResponse.json({
         success: true,
@@ -127,7 +86,7 @@ export async function POST(req: NextRequest) {
 
     // 3. MIGRATE ALL TO GOOGLE SHEET
     if (action === 'migrate-all') {
-      const config = await GoogleSheetsService.getConfigAsync();
+      const config = GoogleSheetsService.getConfig();
       const targetId = extractSpreadsheetId(body.spreadsheetId || config.spreadsheetId);
 
       if (!targetId) {
@@ -141,9 +100,9 @@ export async function POST(req: NextRequest) {
       }
 
       const [allPosts, allNotifications, allSearchQueries] = await Promise.all([
-        getComprehensivePosts(),
-        getComprehensiveNotifications(),
-        ServerStorage.getSearchQueries(200),
+        ServerStorage.getAllPosts(true),
+        NotificationServerStore.getNotifications(),
+        ServerStorage.getSearchQueries(100),
       ]);
 
       const counts = await GoogleSheetsService.exportAllToGoogleSheet(
@@ -165,7 +124,7 @@ export async function POST(req: NextRequest) {
 
     // 4. IMPORT / SYNC FROM GOOGLE SHEET
     if (action === 'import-all') {
-      const config = await GoogleSheetsService.getConfigAsync();
+      const config = GoogleSheetsService.getConfig();
       const targetId = extractSpreadsheetId(body.spreadsheetId || config.spreadsheetId);
 
       if (!targetId) {
@@ -195,11 +154,12 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      // Restore into ServerStorage and NotificationServerStore
       if (sheetPosts.length > 0) {
-        await ServerStorage.restorePosts(sheetPosts, 'merge', accessToken);
+        await ServerStorage.restorePosts(sheetPosts, 'merge');
       }
       if (sheetNotifications.length > 0) {
-        await NotificationServerStore.saveNotifications(sheetNotifications, accessToken);
+        await NotificationServerStore.saveNotifications(sheetNotifications);
       }
       if (sheetQueries.length > 0) {
         await ServerStorage.restoreSearchQueries(sheetQueries);

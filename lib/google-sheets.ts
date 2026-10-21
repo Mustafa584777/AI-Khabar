@@ -147,39 +147,6 @@ export const GoogleSheetsService = {
     return updated;
   },
 
-  saveConfigAsync: async (config: GoogleSheetsConfig): Promise<GoogleSheetsConfig> => {
-    ensureDataDir();
-    const cleanId = extractSpreadsheetId(config.spreadsheetId || '');
-    const updated: GoogleSheetsConfig = {
-      ...config,
-      spreadsheetId: cleanId,
-      spreadsheetUrl: cleanId ? `https://docs.google.com/spreadsheets/d/${cleanId}/edit` : '',
-      enabled: Boolean(cleanId && config.enabled),
-    };
-    try {
-      fs.writeFileSync(SHEETS_CONFIG_FILE, JSON.stringify(updated, null, 2), 'utf-8');
-    } catch (e) {
-      console.error('Error saving google_sheets.json:', e);
-    }
-
-    if (isFirebaseConfigured()) {
-      try {
-        await setDoc(
-          doc(firestoreDb, 'settings', 'google_sheets_config'),
-          {
-            config: updated,
-            updatedAt: new Date().toISOString(),
-          },
-          { merge: true }
-        );
-      } catch (e) {
-        console.error('Firestore saveConfigAsync error:', e);
-      }
-    }
-
-    return updated;
-  },
-
   // 1. Create a brand new Spreadsheet with all 3 tabs initialized
   createSpreadsheet: async (
     accessToken: string,
@@ -360,7 +327,7 @@ export const GoogleSheetsService = {
         ]),
       ];
 
-      // 1. Clear old data from Prompts sheet
+       // 1. Clear old data from Prompts sheet
       await fetch(
         `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${PROMPTS_TAB}!A:Q:clear`,
         {
@@ -372,9 +339,9 @@ export const GoogleSheetsService = {
         }
       );
 
-      // 2. Put rows
-      const updateRes = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${PROMPTS_TAB}!A1:Q${rows.length}?valueInputOption=USER_ENTERED`,
+      // 2. Write headers first
+      await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${PROMPTS_TAB}!A1:Q1?valueInputOption=USER_ENTERED`,
         {
           method: 'PUT',
           headers: {
@@ -382,16 +349,37 @@ export const GoogleSheetsService = {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            range: `${PROMPTS_TAB}!A1:Q${rows.length}`,
+            range: `${PROMPTS_TAB}!A1:Q1`,
             majorDimension: 'ROWS',
-            values: rows,
+            values: [PROMPTS_HEADERS],
           }),
         }
       );
 
-      if (!updateRes.ok) {
-        const errText = await updateRes.text();
-        throw new Error(`Google Sheets Prompts update error: ${updateRes.status} ${errText}`);
+      // 3. Append remaining rows in chunks of 150 to avoid request payload size limits
+      const dataRows = rows.slice(1);
+      const chunkSize = 150;
+      for (let i = 0; i < dataRows.length; i += chunkSize) {
+        const chunk = dataRows.slice(i, i + chunkSize);
+        const appendRes = await fetch(
+          `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${PROMPTS_TAB}!A:Q:append?valueInputOption=USER_ENTERED`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              range: `${PROMPTS_TAB}!A:Q`,
+              majorDimension: 'ROWS',
+              values: chunk,
+            }),
+          }
+        );
+        if (!appendRes.ok) {
+          const errText = await appendRes.text();
+          console.warn(`Chunk append warning at index ${i}:`, errText);
+        }
       }
 
       // Update config stats

@@ -34,7 +34,6 @@ export async function POST(req: NextRequest) {
     }
 
     const userId = `u_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
     const initialPayload = {
       userId,
@@ -44,8 +43,6 @@ export async function POST(req: NextRequest) {
       username: cleanUsername,
       avatar: cleanAvatar,
       passwordHash: password,
-      emailVerified: false,
-      verificationCode,
       points: 10,
       planTier: 'free',
       isProUser: false,
@@ -78,33 +75,17 @@ export async function POST(req: NextRequest) {
     // Save user record directly to Firebase Firestore & local storage
     await ServerStorage.saveUserProfile(cleanEmail, userId, initialPayload);
 
-    // Optional: send verification email via Resend if RESEND_API_KEY is configured
-    if (process.env.RESEND_API_KEY) {
-      try {
-        await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-          },
-          body: JSON.stringify({
-            from: 'Trending Gemini Prompts <onboarding@resend.dev>',
-            to: [cleanEmail],
-            subject: 'Verify your email address - PromptCMS',
-            html: `<div style="font-family:sans-serif;padding:20px;max-width:600px;margin:auto;border:1px solid #e5e7eb;border-radius:12px;"><h2>Welcome to PromptCMS!</h2><p>Your 6-digit email verification code is:</p><h1 style="background:#f3f4f6;padding:12px 24px;border-radius:8px;letter-spacing:4px;display:inline-block;color:#e60023;">${verificationCode}</h1><p>Enter this code in the app to verify your account and start generating amazing prompts.</p></div>`,
-          }),
-        });
-      } catch (emailErr) {
-        console.warn('Resend verification email notice:', emailErr);
-      }
-    }
-
     return NextResponse.json({
       success: true,
-      needsVerification: true,
-      email: cleanEmail,
-      devVerificationCode: verificationCode,
-      message: 'Account created! Please enter your 6-digit verification code.',
+      message: 'Account created successfully!',
+      user: {
+        id: userId,
+        email: cleanEmail,
+        name: cleanName,
+        username: cleanUsername,
+        avatar: cleanAvatar,
+        points: 10,
+      },
     });
   } catch (err: any) {
     console.error('Signup route error:', err);
