@@ -26,7 +26,6 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import JSZip from 'jszip';
-import { getGoogleAccessToken } from '@/lib/google-auth';
 
 interface LiveSummaryStats {
   prompts: number;
@@ -542,17 +541,12 @@ Go to Admin Panel -> Backup & Restore -> All Website Data -> Upload this .zip ar
 
     try {
       setRestoreProgressText('Syncing prompts, registered users, and categories into database...');
-      const token = getGoogleAccessToken();
       const res = await fetch('/api/admin/backup-all', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mode: restoreMode,
           data: parsedBackup.payload,
-          accessToken: token,
         }),
       });
 

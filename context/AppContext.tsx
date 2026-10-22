@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import confetti from 'canvas-confetti';
-import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem, AiSearchResult, PlanTier, PromptRequestItem, QueuedPlan, AdminSubView } from '@/types/prompt';
+import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem, AiSearchResult, PlanTier, PromptRequestItem, QueuedPlan } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
@@ -23,14 +23,13 @@ import {
   getPlanFeaturesForCycle,
   BillingCycle,
 } from '@/lib/plans';
-import { getGoogleAccessToken } from '@/lib/google-auth';
 
 interface AppContextType {
   // Navigation & Views
   currentView: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications';
   setCurrentView: (view: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications') => void;
-  adminSubView: AdminSubView;
-  setAdminSubView: (subView: AdminSubView) => void;
+  adminSubView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications';
+  setAdminSubView: (subView: 'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications') => void;
   editingPostId: string | null;
   setEditingPostId: (id: string | null) => void;
   selectedPost: PromptPost | null;
@@ -215,7 +214,9 @@ export const AppProvider = ({
     }
   }, [pathname]);
 
-  const [adminSubView, setAdminSubView] = useState<AdminSubView>('posts');
+  const [adminSubView, setAdminSubView] = useState<
+    'dashboard' | 'posts' | 'new-post' | 'edit-post' | 'categories' | 'ai-generator' | 'settings' | 'backup-restore' | 'search-history' | 'users' | 'notifications'
+  >('dashboard');
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [selectedPost, setSelectedPostState] = useState<PromptPost | null>(null);
 
@@ -2594,13 +2595,9 @@ export const AppProvider = ({
   ): Promise<{ success: boolean; count: number }> => {
     isSavingRef.current = true;
     try {
-      const gToken = getGoogleAccessToken();
       const res = await fetch('/api/backup', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(gToken ? { Authorization: `Bearer ${gToken}` } : {}),
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           posts: incomingPosts,
           mode,

@@ -391,8 +391,6 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.json();
-    const authHeader = req.headers.get('authorization') || '';
-    const token = authHeader.replace(/^Bearer\s+/i, '').trim() || rawBody.accessToken || undefined;
     const mode: 'merge' | 'replace' = rawBody.mode === 'replace' ? 'replace' : 'merge';
     const payload = rawBody.data && typeof rawBody.data === 'object' ? rawBody.data : rawBody;
 
@@ -418,7 +416,7 @@ export async function POST(req: NextRequest) {
     if (rawPostsList.length > 0) {
       const normalizedPosts = normalizeIncomingPosts(rawPostsList);
       if (normalizedPosts.length > 0) {
-        await ServerStorage.restorePosts(normalizedPosts, mode, token);
+        await ServerStorage.restorePosts(normalizedPosts, mode);
         restoredSummary.restoredPrompts = normalizedPosts.length;
       }
     }

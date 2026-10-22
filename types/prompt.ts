@@ -128,33 +128,7 @@ export interface SiteSettings {
   cloudinaryApiKey?: string;
   cloudinaryApiSecret?: string;
   cloudinaryUploadPreset?: string;
-  googleSheetsConfig?: GoogleSheetsConfig;
 }
-
-export interface GoogleSheetsConfig {
-  spreadsheetId: string;
-  spreadsheetUrl?: string;
-  enabled: boolean;
-  autoSync: boolean;
-  lastSyncedAt?: string;
-  promptsCount?: number;
-  notificationsCount?: number;
-  searchQueriesCount?: number;
-}
-
-export type AdminSubView =
-  | 'dashboard'
-  | 'posts'
-  | 'new-post'
-  | 'edit-post'
-  | 'categories'
-  | 'ai-generator'
-  | 'settings'
-  | 'backup-restore'
-  | 'search-history'
-  | 'users'
-  | 'notifications'
-  | 'google-sheets';
 
 export interface AdminUser {
   id: string;

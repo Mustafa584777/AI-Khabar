@@ -21,7 +21,6 @@ import {
   Users,
   Bell,
   MessageSquare,
-  FileSpreadsheet,
 } from 'lucide-react';
 
 export const AdminSidebar = () => {
@@ -47,10 +46,25 @@ export const AdminSidebar = () => {
 
   const navItems: NavItem[] = [
     {
+      id: 'dashboard',
+      label: 'Dashboard',
+      icon: LayoutDashboard,
+      badge: null,
+    },
+    {
       id: 'posts',
       label: 'All Prompts / Articles',
       icon: FileText,
       badge: posts.length,
+    },
+    {
+      id: 'new-post',
+      label: 'Add New Prompt',
+      icon: PlusCircle,
+      action: () => {
+        setEditingPostId(null);
+        setAdminSubView('new-post');
+      },
     },
     {
       id: 'categories',
@@ -71,11 +85,6 @@ export const AdminSidebar = () => {
       id: 'search-history',
       label: 'User Search History',
       icon: Search,
-    },
-    {
-      id: 'google-sheets',
-      label: 'Google Sheets CMS',
-      icon: FileSpreadsheet,
     },
     {
       id: 'backup-restore',
