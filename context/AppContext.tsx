@@ -2389,6 +2389,24 @@ export const AppProvider = ({
             ? 'Prompt published live to server & homepage!'
             : 'Prompt saved as draft on server'
         );
+
+        // Automatically download latest posts.json
+        if (typeof window !== 'undefined') {
+          try {
+            const blob = new Blob([JSON.stringify(data.posts, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'posts.json';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+          } catch (e) {
+            console.error('Error auto-downloading posts.json:', e);
+          }
+        }
+
         return savedPost;
       } else {
         throw new Error(data.error || 'Failed to save post to server');

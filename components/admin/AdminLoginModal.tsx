@@ -17,7 +17,7 @@ export const AdminLoginModal = () => {
     const ok = login(email, password);
     if (ok) {
       setError('');
-      setAdminSubView('dashboard');
+      setAdminSubView('posts');
       setCurrentView('admin');
     } else {
       setError('Invalid credentials. You can use the Demo Admin button below.');
@@ -28,7 +28,7 @@ export const AdminLoginModal = () => {
     setEmail('admin@trendinggeminiprompts.com');
     setPassword('admin123');
     login('admin@trendinggeminiprompts.com', 'admin123');
-    setAdminSubView('dashboard');
+    setAdminSubView('posts');
     setCurrentView('admin');
   };
 

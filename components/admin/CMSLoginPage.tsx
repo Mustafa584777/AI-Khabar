@@ -43,7 +43,7 @@ export const CMSLoginPage = () => {
       const success = login(username, password);
       if (success) {
         setError(null);
-        setAdminSubView('dashboard');
+        setAdminSubView('posts');
         setCurrentView('admin');
       } else {
         setError('Error: The password or email you entered is incorrect. (Default: admin@trendinggeminiprompts.com / admin123)');
@@ -58,7 +58,7 @@ export const CMSLoginPage = () => {
     setError(null);
     const success = login('admin@trendinggeminiprompts.com', 'admin123');
     if (success) {
-      setAdminSubView('dashboard');
+      setAdminSubView('posts');
       setCurrentView('admin');
     }
   };

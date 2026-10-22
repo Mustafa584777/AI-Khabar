@@ -14,7 +14,6 @@ import {
   Clock,
   Sparkles,
   Crown,
-  RefreshCw,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -39,25 +38,6 @@ export const PostsManager = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [search, setSearch] = useState<string>('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [isSyncing, setIsSyncing] = useState(false);
-
-  const handleSyncToPostsJson = async () => {
-    setIsSyncing(true);
-    try {
-      const res = await fetch('/api/admin/sync-posts-json', { method: 'POST' });
-      const data = await res.json();
-      if (data.success) {
-        showToast(data.message || `Success! Merged ${data.count} prompts into posts.json!`);
-        void refreshData();
-      } else {
-        showToast(`Sync failed: ${data.error || 'Unknown error'}`);
-      }
-    } catch (err: any) {
-      showToast(`Error: ${err.message}`);
-    } finally {
-      setIsSyncing(false);
-    }
-  };
 
   const publishedCount = posts.filter((p) => p.status === 'published').length;
   const draftCount = posts.filter((p) => p.status === 'draft').length;
@@ -137,17 +117,6 @@ export const PostsManager = () => {
         </div>
 
         <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            disabled={isSyncing}
-            onClick={handleSyncToPostsJson}
-            title="Fetch all new prompts from Firebase database and merge into local posts.json"
-            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-            <span>{isSyncing ? 'Migrating...' : 'Migrate DB to posts.json'}</span>
-          </button>
-
           <button
             onClick={() => {
               setEditingPostId(null);
