@@ -215,7 +215,7 @@ export const AppProvider = ({
     }
   }, [pathname]);
 
-  const [adminSubView, setAdminSubView] = useState<AdminSubView>('dashboard');
+  const [adminSubView, setAdminSubView] = useState<AdminSubView>('posts');
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [selectedPost, setSelectedPostState] = useState<PromptPost | null>(null);
 

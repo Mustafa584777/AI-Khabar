@@ -47,25 +47,10 @@ export const AdminSidebar = () => {
 
   const navItems: NavItem[] = [
     {
-      id: 'dashboard',
-      label: 'Dashboard',
-      icon: LayoutDashboard,
-      badge: null,
-    },
-    {
       id: 'posts',
       label: 'All Prompts / Articles',
       icon: FileText,
       badge: posts.length,
-    },
-    {
-      id: 'new-post',
-      label: 'Add New Prompt',
-      icon: PlusCircle,
-      action: () => {
-        setEditingPostId(null);
-        setAdminSubView('new-post');
-      },
     },
     {
       id: 'categories',
