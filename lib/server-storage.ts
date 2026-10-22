@@ -220,65 +220,17 @@ export const ServerStorage = {
     } catch (sheetErr) {
       console.warn('Google Sheets getAllPosts read error:', sheetErr);
     }
-
-    if (!memoryPosts || memoryPosts.length === 0 || forceRefresh) {
-      memoryPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
-      memoryPostsTimestamp = Date.now();
-    }
-    const posts = memoryPosts || readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
-    return includeDrafts ? posts : posts.filter((p) => p.status === 'published');
+    return [];
   },
 
   getAllAvailablePosts: async (): Promise<PromptPost[]> => {
-    let remotePosts: PromptPost[] = [];
-    if (isFirebaseConfigured()) {
-      try {
-        const cacheSnap = await getDoc(doc(firestoreDb, 'settings', 'posts_cache'));
-        if (cacheSnap.exists()) {
-          const d = cacheSnap.data();
-          if (Array.isArray(d?.posts)) {
-            d.posts.forEach((p) => {
-              if (p && p.id) remotePosts.push(p);
-            });
-          }
-        }
-      } catch (e) {}
-
-      try {
-        const postsSnap = await getDocs(collection(firestoreDb, 'posts'));
-        postsSnap.forEach((docSnap) => {
-          const data = docSnap.data() as PromptPost;
-          if (data && data.id) {
-            remotePosts.push(data);
-          }
-        });
-      } catch (e) {}
-    }
-
-    const localPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
-    const deletedIds = getDeletedPostIds();
-    const postMap = new Map<string, PromptPost>();
-    const seenImageUrls = new Set<string>();
-
-    const all = [...remotePosts, ...localPosts, ...(INITIAL_POSTS || [])];
-    all.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-
-    for (const p of all) {
-      if (!p.id || deletedIds.has(p.id)) continue;
-      const imgKey = p.imageUrl ? p.imageUrl.split('?')[0].trim().toLowerCase() : '';
-      if (imgKey && seenImageUrls.has(imgKey)) continue;
-      if (imgKey) seenImageUrls.add(imgKey);
-      if (!postMap.has(p.id)) {
-        postMap.set(p.id, {
-          ...p,
-          tags: cleanTagsArray(p.tags || []),
-        });
+    try {
+      const sheetsConf = await GoogleSheetsService.getConfigAsync();
+      if (sheetsConf.enabled && sheetsConf.spreadsheetId) {
+        return await GoogleSheetsService.fetchPromptsFromSheet(sheetsConf.spreadsheetId);
       }
-    }
-
-    return Array.from(postMap.values()).sort(
-      (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-    );
+    } catch (e) {}
+    return [];
   },
 
   getPostBySlug: async (slug: string): Promise<PromptPost | undefined> => {
