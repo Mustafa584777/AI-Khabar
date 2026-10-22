@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { AdminSidebar } from './AdminSidebar';
 import { AdminHeader } from './AdminHeader';
-import { DashboardOverview } from './DashboardOverview';
 import { PostsManager } from './PostsManager';
 import { PostEditor } from './PostEditor';
 import { CategoriesManager } from './CategoriesManager';
@@ -40,8 +39,6 @@ export const AdminLayout = () => {
 
   const renderCurrentSubView = () => {
     switch (adminSubView) {
-      case 'dashboard':
-        return <DashboardOverview />;
       case 'posts':
         return <PostsManager />;
       case 'new-post':
@@ -60,7 +57,7 @@ export const AdminLayout = () => {
       case 'settings':
         return <SettingsView key={settings.siteName + (settings.popularTags?.join(',') || '')} />;
       default:
-        return <DashboardOverview />;
+        return <PostsManager />;
     }
   };
 
