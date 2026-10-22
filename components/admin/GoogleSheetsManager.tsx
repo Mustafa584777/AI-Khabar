@@ -50,9 +50,26 @@ export const GoogleSheetsManager: React.FC = () => {
       const res = await fetch('/api/admin/google-sheets');
       if (res.ok) {
         const json = await res.json();
-        if (json.config) {
+        if (json.config && json.config.spreadsheetId) {
           setConfig(json.config);
-          setInputSpreadsheet(json.config.spreadsheetId || '');
+          setInputSpreadsheet(json.config.spreadsheetId);
+          localStorage.setItem('ai_khabar_spreadsheet_id', json.config.spreadsheetId);
+        } else {
+          const localId = localStorage.getItem('ai_khabar_spreadsheet_id');
+          if (localId) {
+            setInputSpreadsheet(localId);
+            await fetch('/api/admin/google-sheets', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'save-config', spreadsheetId: localId, enabled: true }),
+            });
+            setConfig({
+              spreadsheetId: localId,
+              spreadsheetUrl: `https://docs.google.com/spreadsheets/d/${localId}/edit`,
+              enabled: true,
+              autoSync: true,
+            });
+          }
         }
       }
     } catch (e) {
@@ -86,6 +103,10 @@ export const GoogleSheetsManager: React.FC = () => {
     try {
       setIsLoading(true);
       const token = getGoogleAccessToken();
+      const cleanInput = inputSpreadsheet.trim();
+      if (cleanInput) {
+        localStorage.setItem('ai_khabar_spreadsheet_id', cleanInput);
+      }
       const res = await fetch('/api/admin/google-sheets', {
         method: 'POST',
         headers: {
@@ -94,8 +115,8 @@ export const GoogleSheetsManager: React.FC = () => {
         },
         body: JSON.stringify({
           action: 'save-config',
-          spreadsheetId: inputSpreadsheet,
-          enabled: enabledState !== undefined ? enabledState : config.enabled,
+          spreadsheetId: cleanInput,
+          enabled: enabledState !== undefined ? enabledState : true,
           autoSync: config.autoSync,
         }),
       });
@@ -103,6 +124,9 @@ export const GoogleSheetsManager: React.FC = () => {
       const json = await res.json();
       if (json.success && json.config) {
         setConfig(json.config);
+        if (json.config.spreadsheetId) {
+          localStorage.setItem('ai_khabar_spreadsheet_id', json.config.spreadsheetId);
+        }
         showToast(json.message || 'Google Sheets configuration saved!');
       } else {
         throw new Error(json.error || 'Failed to save configuration');
@@ -152,6 +176,9 @@ export const GoogleSheetsManager: React.FC = () => {
       if (json.success) {
         setConfig(json.config);
         setInputSpreadsheet(json.config.spreadsheetId || '');
+        if (json.config.spreadsheetId) {
+          localStorage.setItem('ai_khabar_spreadsheet_id', json.config.spreadsheetId);
+        }
         setLastActionMessage(json.message);
         showToast('Google Sheet created and populated successfully!');
       } else {

@@ -57,12 +57,25 @@ export async function POST(req: NextRequest) {
       const title = body.title || 'AI-Khabar CMS Database';
       const result = await GoogleSheetsService.createSpreadsheet(accessToken, title);
 
-      // Now auto-populate with existing data
-      const [allPosts, allNotifications, allSearchQueries] = await Promise.all([
-        ServerStorage.getAllPosts(true),
-        NotificationServerStore.getNotifications(),
-        ServerStorage.getSearchQueries(100),
-      ]);
+      // Now auto-populate with all existing data
+      const allPosts = await ServerStorage.getAllPosts(true);
+      let allNotifications = await NotificationServerStore.getNotifications();
+      if (!allNotifications || allNotifications.length === 0) {
+        allNotifications = [
+          {
+            id: 'notif_welcome',
+            title: 'Welcome to AI Khabar CMS',
+            subtitle: 'Google Sheets Database Active',
+            body: 'Your AI prompts, notification cards, and search history are successfully synced with Google Sheets.',
+            category: 'all',
+            imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe',
+            url: '/',
+            sentAt: new Date().toISOString(),
+          },
+        ];
+        await NotificationServerStore.saveNotifications(allNotifications);
+      }
+      const allSearchQueries = await ServerStorage.getSearchQueries(100);
 
       const counts = await GoogleSheetsService.exportAllToGoogleSheet(
         result.spreadsheetId,
@@ -99,11 +112,24 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const [allPosts, allNotifications, allSearchQueries] = await Promise.all([
-        ServerStorage.getAllPosts(true),
-        NotificationServerStore.getNotifications(),
-        ServerStorage.getSearchQueries(100),
-      ]);
+      const allPosts = await ServerStorage.getAllPosts(true);
+      let allNotifications = await NotificationServerStore.getNotifications();
+      if (!allNotifications || allNotifications.length === 0) {
+        allNotifications = [
+          {
+            id: 'notif_welcome',
+            title: 'Welcome to AI Khabar CMS',
+            subtitle: 'Google Sheets Database Active',
+            body: 'Your AI prompts, notification cards, and search history are successfully synced with Google Sheets.',
+            category: 'all',
+            imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe',
+            url: '/',
+            sentAt: new Date().toISOString(),
+          },
+        ];
+        await NotificationServerStore.saveNotifications(allNotifications);
+      }
+      const allSearchQueries = await ServerStorage.getSearchQueries(100);
 
       const counts = await GoogleSheetsService.exportAllToGoogleSheet(
         targetId,

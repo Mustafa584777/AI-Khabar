@@ -82,7 +82,11 @@ export const GoogleSheetsService = {
         const raw = fs.readFileSync(SHEETS_CONFIG_FILE, 'utf-8');
         const parsed = JSON.parse(raw);
         if (parsed && parsed.spreadsheetId) {
-          return parsed;
+          return {
+            ...parsed,
+            enabled: true,
+            spreadsheetUrl: parsed.spreadsheetUrl || `https://docs.google.com/spreadsheets/d/${parsed.spreadsheetId}/edit`,
+          };
         }
       }
     } catch (e) {
@@ -107,8 +111,13 @@ export const GoogleSheetsService = {
           const remoteCfg = snap.data().config as GoogleSheetsConfig;
           if (remoteCfg && remoteCfg.spreadsheetId) {
             ensureDataDir();
-            fs.writeFileSync(SHEETS_CONFIG_FILE, JSON.stringify(remoteCfg, null, 2), 'utf-8');
-            return remoteCfg;
+            const normalized = {
+              ...remoteCfg,
+              enabled: true,
+              spreadsheetUrl: remoteCfg.spreadsheetUrl || `https://docs.google.com/spreadsheets/d/${remoteCfg.spreadsheetId}/edit`,
+            };
+            fs.writeFileSync(SHEETS_CONFIG_FILE, JSON.stringify(normalized, null, 2), 'utf-8');
+            return normalized;
           }
         }
       } catch (e) {
@@ -125,7 +134,7 @@ export const GoogleSheetsService = {
       ...config,
       spreadsheetId: cleanId,
       spreadsheetUrl: cleanId ? `https://docs.google.com/spreadsheets/d/${cleanId}/edit` : '',
-      enabled: Boolean(cleanId && config.enabled),
+      enabled: Boolean(cleanId),
     };
     try {
       fs.writeFileSync(SHEETS_CONFIG_FILE, JSON.stringify(updated, null, 2), 'utf-8');

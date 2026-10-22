@@ -215,10 +215,20 @@ export const ServerStorage = {
         const isExpired = !memoryPosts || memoryPosts.length === 0 || Date.now() - memoryPostsTimestamp > 60000 || forceRefresh;
         if (isExpired) {
           const sheetPosts = await GoogleSheetsService.fetchPromptsFromSheet(sheetsConf.spreadsheetId, token);
-          if (sheetPosts.length > 0) {
-            memoryPosts = sheetPosts;
+          const localPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
+          const map = new Map<string, PromptPost>();
+          for (const p of [...localPosts, ...(INITIAL_POSTS || []), ...sheetPosts]) {
+            if (p && p.id && !map.has(p.id)) {
+              map.set(p.id, p);
+            }
+          }
+          const merged = Array.from(map.values()).sort(
+            (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+          );
+          if (merged.length > 0) {
+            memoryPosts = merged;
             memoryPostsTimestamp = Date.now();
-            writeJsonFile(POSTS_FILE, sheetPosts);
+            writeJsonFile(POSTS_FILE, merged);
           }
         }
       }
