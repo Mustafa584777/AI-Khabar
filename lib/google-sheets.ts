@@ -74,7 +74,38 @@ export function extractSpreadsheetId(input: string): string {
   return trimmed;
 }
 
+function parseCSV(text: string): string[][] {
+  const lines = text.split(/\r?\n/);
+  const result: string[][] = [];
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    const row: string[] = [];
+    let inQuotes = false;
+    let currentField = '';
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          currentField += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        row.push(currentField);
+        currentField = '';
+      } else {
+        currentField += char;
+      }
+    }
+    row.push(currentField);
+    result.push(row);
+  }
+  return result;
+}
+
 let memoryConfig: GoogleSheetsConfig | null = null;
+const DEFAULT_SHEET_ID = '1oj3lfwENM53hHUmAhmKOh2bHGoJVkih5wHN7FX_jCds';
 
 export const GoogleSheetsService = {
   getConfig: (): GoogleSheetsConfig => {
@@ -100,7 +131,7 @@ export const GoogleSheetsService = {
       console.warn('Error reading google_sheets.json:', e);
     }
 
-    const envId = process.env.GOOGLE_SPREADSHEET_ID || '';
+    const envId = process.env.GOOGLE_SPREADSHEET_ID || DEFAULT_SHEET_ID;
     if (envId) {
       memoryConfig = {
         spreadsheetId: envId,
@@ -108,15 +139,18 @@ export const GoogleSheetsService = {
         enabled: true,
         autoSync: false,
       };
+      try {
+        ensureDataDir();
+        fs.writeFileSync(SHEETS_CONFIG_FILE, JSON.stringify(memoryConfig, null, 2), 'utf-8');
+      } catch {}
       return memoryConfig as GoogleSheetsConfig;
     }
 
     return {
-      spreadsheetId: '',
-      spreadsheetUrl: '',
-      enabled: false,
+      spreadsheetId: DEFAULT_SHEET_ID,
+      spreadsheetUrl: `https://docs.google.com/spreadsheets/d/${DEFAULT_SHEET_ID}/edit`,
+      enabled: true,
       autoSync: false,
-      lastSyncedAt: undefined,
     };
   },
 
@@ -475,6 +509,25 @@ export const GoogleSheetsService = {
         }
       } catch (gvizErr) {
         // ignore
+      }
+    }
+
+    // Attempt 3: Public CSV export fallback
+    if (rows.length === 0) {
+      try {
+        const csvUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=csv&sheet=${encodeURIComponent(
+          PROMPTS_TAB
+        )}`;
+        const csvRes = await fetch(csvUrl, { cache: 'no-store' });
+        if (csvRes.ok) {
+          const text = await csvRes.text();
+          const parsedRows = parseCSV(text);
+          if (parsedRows.length > 1) {
+            rows = parsedRows.slice(1);
+          }
+        }
+      } catch (csvErr) {
+        console.warn('Google Sheets CSV export read notice:', csvErr);
       }
     }
 
