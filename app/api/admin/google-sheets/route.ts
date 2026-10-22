@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       const result = await GoogleSheetsService.createSpreadsheet(accessToken, title);
 
       // Now auto-populate with all existing data
-      const allPosts = await ServerStorage.getAllPosts(true);
+      const allPosts = await ServerStorage.getAllAvailablePosts();
       let allNotifications = await NotificationServerStore.getNotifications();
       if (!allNotifications || allNotifications.length === 0) {
         allNotifications = [
@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const allPosts = await ServerStorage.getAllPosts(true);
+      const allPosts = await ServerStorage.getAllAvailablePosts();
       let allNotifications = await NotificationServerStore.getNotifications();
       if (!allNotifications || allNotifications.length === 0) {
         allNotifications = [

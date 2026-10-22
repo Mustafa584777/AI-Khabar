@@ -74,19 +74,26 @@ export function extractSpreadsheetId(input: string): string {
   return trimmed;
 }
 
+let memoryConfig: GoogleSheetsConfig | null = null;
+
 export const GoogleSheetsService = {
   getConfig: (): GoogleSheetsConfig => {
+    const currentConfig = memoryConfig;
+    if (currentConfig && currentConfig.spreadsheetId) {
+      return currentConfig;
+    }
     try {
       ensureDataDir();
       if (fs.existsSync(SHEETS_CONFIG_FILE)) {
         const raw = fs.readFileSync(SHEETS_CONFIG_FILE, 'utf-8');
         const parsed = JSON.parse(raw);
         if (parsed && parsed.spreadsheetId) {
-          return {
+          memoryConfig = {
             ...parsed,
             enabled: true,
             spreadsheetUrl: parsed.spreadsheetUrl || `https://docs.google.com/spreadsheets/d/${parsed.spreadsheetId}/edit`,
           };
+          return memoryConfig as GoogleSheetsConfig;
         }
       }
     } catch (e) {
@@ -94,16 +101,30 @@ export const GoogleSheetsService = {
     }
 
     const envId = process.env.GOOGLE_SPREADSHEET_ID || '';
+    if (envId) {
+      memoryConfig = {
+        spreadsheetId: envId,
+        spreadsheetUrl: `https://docs.google.com/spreadsheets/d/${envId}/edit`,
+        enabled: true,
+        autoSync: false,
+      };
+      return memoryConfig as GoogleSheetsConfig;
+    }
+
     return {
-      spreadsheetId: envId,
-      spreadsheetUrl: envId ? `https://docs.google.com/spreadsheets/d/${envId}/edit` : '',
-      enabled: Boolean(envId),
+      spreadsheetId: '',
+      spreadsheetUrl: '',
+      enabled: false,
       autoSync: false,
       lastSyncedAt: undefined,
     };
   },
 
   getConfigAsync: async (): Promise<GoogleSheetsConfig> => {
+    const currentConfig = memoryConfig;
+    if (currentConfig && currentConfig.spreadsheetId) {
+      return currentConfig;
+    }
     if (isFirebaseConfigured()) {
       try {
         const snap = await getDoc(doc(firestoreDb, 'settings', 'google_sheets_config'));
@@ -116,6 +137,7 @@ export const GoogleSheetsService = {
               enabled: true,
               spreadsheetUrl: remoteCfg.spreadsheetUrl || `https://docs.google.com/spreadsheets/d/${remoteCfg.spreadsheetId}/edit`,
             };
+            memoryConfig = normalized;
             fs.writeFileSync(SHEETS_CONFIG_FILE, JSON.stringify(normalized, null, 2), 'utf-8');
             return normalized;
           }
@@ -136,6 +158,7 @@ export const GoogleSheetsService = {
       spreadsheetUrl: cleanId ? `https://docs.google.com/spreadsheets/d/${cleanId}/edit` : '',
       enabled: Boolean(cleanId),
     };
+    memoryConfig = updated;
     try {
       fs.writeFileSync(SHEETS_CONFIG_FILE, JSON.stringify(updated, null, 2), 'utf-8');
     } catch (e) {

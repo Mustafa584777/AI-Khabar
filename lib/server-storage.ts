@@ -210,38 +210,75 @@ export const ServerStorage = {
   // Posts
   getAllPosts: async (includeDrafts = true, token?: string, forceRefresh = false): Promise<PromptPost[]> => {
     try {
-      const sheetsConf = GoogleSheetsService.getConfig();
+      const sheetsConf = await GoogleSheetsService.getConfigAsync();
       if (sheetsConf.enabled && sheetsConf.spreadsheetId) {
-        const isExpired = !memoryPosts || memoryPosts.length === 0 || Date.now() - memoryPostsTimestamp > 60000 || forceRefresh;
-        if (isExpired) {
-          const sheetPosts = await GoogleSheetsService.fetchPromptsFromSheet(sheetsConf.spreadsheetId, token);
-          const localPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
-          const map = new Map<string, PromptPost>();
-          for (const p of [...localPosts, ...(INITIAL_POSTS || []), ...sheetPosts]) {
-            if (p && p.id && !map.has(p.id)) {
-              map.set(p.id, p);
-            }
-          }
-          const merged = Array.from(map.values()).sort(
-            (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-          );
-          if (merged.length > 0) {
-            memoryPosts = merged;
-            memoryPostsTimestamp = Date.now();
-            writeJsonFile(POSTS_FILE, merged);
-          }
-        }
+        const sheetPosts = await GoogleSheetsService.fetchPromptsFromSheet(sheetsConf.spreadsheetId, token);
+        memoryPosts = sheetPosts;
+        memoryPostsTimestamp = Date.now();
+        return includeDrafts ? sheetPosts : sheetPosts.filter((p) => p.status === 'published');
       }
     } catch (sheetErr) {
-      console.warn('Google Sheets getAllPosts read notice:', sheetErr);
+      console.warn('Google Sheets getAllPosts read error:', sheetErr);
     }
 
-    if (!memoryPosts || memoryPosts.length === 0) {
+    if (!memoryPosts || memoryPosts.length === 0 || forceRefresh) {
       memoryPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
       memoryPostsTimestamp = Date.now();
     }
     const posts = memoryPosts || readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
     return includeDrafts ? posts : posts.filter((p) => p.status === 'published');
+  },
+
+  getAllAvailablePosts: async (): Promise<PromptPost[]> => {
+    let remotePosts: PromptPost[] = [];
+    if (isFirebaseConfigured()) {
+      try {
+        const cacheSnap = await getDoc(doc(firestoreDb, 'settings', 'posts_cache'));
+        if (cacheSnap.exists()) {
+          const d = cacheSnap.data();
+          if (Array.isArray(d?.posts)) {
+            d.posts.forEach((p) => {
+              if (p && p.id) remotePosts.push(p);
+            });
+          }
+        }
+      } catch (e) {}
+
+      try {
+        const postsSnap = await getDocs(collection(firestoreDb, 'posts'));
+        postsSnap.forEach((docSnap) => {
+          const data = docSnap.data() as PromptPost;
+          if (data && data.id) {
+            remotePosts.push(data);
+          }
+        });
+      } catch (e) {}
+    }
+
+    const localPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
+    const deletedIds = getDeletedPostIds();
+    const postMap = new Map<string, PromptPost>();
+    const seenImageUrls = new Set<string>();
+
+    const all = [...remotePosts, ...localPosts, ...(INITIAL_POSTS || [])];
+    all.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+    for (const p of all) {
+      if (!p.id || deletedIds.has(p.id)) continue;
+      const imgKey = p.imageUrl ? p.imageUrl.split('?')[0].trim().toLowerCase() : '';
+      if (imgKey && seenImageUrls.has(imgKey)) continue;
+      if (imgKey) seenImageUrls.add(imgKey);
+      if (!postMap.has(p.id)) {
+        postMap.set(p.id, {
+          ...p,
+          tags: cleanTagsArray(p.tags || []),
+        });
+      }
+    }
+
+    return Array.from(postMap.values()).sort(
+      (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    );
   },
 
   getPostBySlug: async (slug: string): Promise<PromptPost | undefined> => {
