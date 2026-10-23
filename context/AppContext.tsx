@@ -1870,8 +1870,34 @@ export const AppProvider = ({
                 } catch {}
               }
               const cleanList = data.posts.filter((p: PromptPost) => !deletedSet.has(p.id));
-              setPosts(cleanList);
-              StorageService.saveCachedPosts(cleanList);
+              
+              // MERGE with local cache / current posts to ensure newly added/edited posts never disappear!
+              const localCached = StorageService.getCachedPosts() || [];
+              const postMap = new Map<string, PromptPost>();
+              cleanList.forEach((p: PromptPost) => postMap.set(p.id, p));
+              localCached.forEach((p: PromptPost) => {
+                if (!deletedSet.has(p.id)) {
+                  const existing = postMap.get(p.id);
+                  if (!existing || new Date(p.updatedAt || p.createdAt || 0).getTime() >= new Date(existing.updatedAt || existing.createdAt || 0).getTime()) {
+                    postMap.set(p.id, p);
+                  }
+                }
+              });
+              postsRef.current.forEach((p: PromptPost) => {
+                if (!deletedSet.has(p.id)) {
+                  const existing = postMap.get(p.id);
+                  if (!existing || new Date(p.updatedAt || p.createdAt || 0).getTime() >= new Date(existing.updatedAt || existing.createdAt || 0).getTime()) {
+                    postMap.set(p.id, p);
+                  }
+                }
+              });
+
+              const mergedList = Array.from(postMap.values()).sort(
+                (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+              );
+
+              setPosts(mergedList);
+              StorageService.saveCachedPosts(mergedList);
             }
           }
         })

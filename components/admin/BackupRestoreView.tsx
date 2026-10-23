@@ -146,6 +146,25 @@ export const BackupRestoreView = () => {
       .filter((p): p is PromptPost => p !== null && p.title.length > 0 && p.promptText.length > 0);
   };
 
+  // 0. Download standalone posts.json
+  const handleDownloadPostsJson = () => {
+    try {
+      const blob = new Blob([JSON.stringify(posts, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'posts.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast(`Successfully downloaded posts.json with ${posts.length} prompts!`);
+    } catch (e) {
+      console.error('Error downloading posts.json:', e);
+      showToast('Failed to download posts.json');
+    }
+  };
+
   // 1. Export as ZIP Package
   const handleDownloadZipBackup = async () => {
     try {
@@ -646,6 +665,17 @@ Open Admin Panel -> Backup & Restore -> Upload this .zip file or prompts.json.`
                     <span>Download Complete Backup Archive (.zip)</span>
                   </>
                 )}
+              </button>
+
+              {/* Direct Download posts.json Button */}
+              <button
+                onClick={handleDownloadPostsJson}
+                disabled={posts.length === 0}
+                className="w-full py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/30 flex items-center justify-center gap-2 transition-all transform active:scale-98"
+                id="download-posts-json-btn"
+              >
+                <Download className="w-4 h-4" />
+                <span>Download Latest posts.json</span>
               </button>
             </div>
           </div>
