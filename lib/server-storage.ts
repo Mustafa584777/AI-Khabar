@@ -227,10 +227,7 @@ export const ServerStorage = {
       }
     }
 
-    if (!memoryPosts || memoryPosts.length === 0) {
-      memoryPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
-    }
-    const posts = memoryPosts || readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
+    const posts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
     return includeDrafts ? posts : posts.filter((p) => p.status === 'published');
   },
 
@@ -397,7 +394,6 @@ export const ServerStorage = {
     }
     memoryPosts = currentList;
     memoryPostsTimestamp = Date.now();
-    writeJsonFile(POSTS_FILE, currentList);
 
     // Save to Firebase Firestore (awaited to guarantee persistence without being aborted)
     if (isFirebaseConfigured()) {
@@ -458,20 +454,7 @@ export const ServerStorage = {
 
     await recordDeletedPostIds(cleanIds);
 
-    // 1. Remove from local file / memory
-    try {
-      const rawPosts = memoryPosts && memoryPosts.length > 0
-        ? [...memoryPosts]
-        : readJsonFile<PromptPost[]>(POSTS_FILE, []);
-      const filteredLocal = rawPosts.filter((p) => !idSet.has(p.id));
-      memoryPosts = filteredLocal;
-      memoryPostsTimestamp = Date.now();
-      writeJsonFile(POSTS_FILE, filteredLocal);
-    } catch (e) {
-      console.error('Local deletePosts error:', e);
-    }
-
-    // 2. Remove from Firebase Firestore
+    // 1. Remove from Firebase Firestore
     if (isFirebaseConfigured()) {
       try {
         const batch = writeBatch(firestoreDb);
@@ -532,7 +515,6 @@ export const ServerStorage = {
     if (mode === 'replace') {
       finalList = cleanIncoming;
       memoryPosts = cleanIncoming;
-      writeJsonFile(POSTS_FILE, cleanIncoming);
 
       // If replacing in Firestore, update posts_cache doc directly (0 reads)
       if (isFirebaseConfigured()) {
@@ -559,7 +541,6 @@ export const ServerStorage = {
         (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
       );
       memoryPosts = finalList;
-      writeJsonFile(POSTS_FILE, finalList);
     }
 
     // Batch write to Firebase Firestore
