@@ -146,10 +146,23 @@ export const BackupRestoreView = () => {
       .filter((p): p is PromptPost => p !== null && p.title.length > 0 && p.promptText.length > 0);
   };
 
-  // 0. Download standalone posts.json
-  const handleDownloadPostsJson = () => {
+  // 0. Download standalone posts.json from Firebase latest state
+  const handleDownloadPostsJson = async () => {
     try {
-      const blob = new Blob([JSON.stringify(posts, null, 2)], { type: 'application/json' });
+      let currentPosts = posts;
+      try {
+        const res = await fetch('/api/posts?all=true&source=firebase', { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.posts) && data.posts.length > 0) {
+            currentPosts = data.posts;
+          }
+        }
+      } catch (err) {
+        console.warn('Fallback to local posts for posts.json download:', err);
+      }
+
+      const blob = new Blob([JSON.stringify(currentPosts, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -158,7 +171,7 @@ export const BackupRestoreView = () => {
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-      showToast(`Successfully downloaded posts.json with ${posts.length} prompts!`);
+      showToast(`Successfully downloaded latest posts.json from Firebase with ${currentPosts.length} prompts!`);
     } catch (e) {
       console.error('Error downloading posts.json:', e);
       showToast('Failed to download posts.json');

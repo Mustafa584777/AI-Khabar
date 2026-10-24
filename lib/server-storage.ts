@@ -406,6 +406,7 @@ export const ServerStorage = {
     }
     memoryPosts = currentList;
     memoryPostsTimestamp = Date.now();
+    writeJsonFile(POSTS_FILE, currentList);
 
     // Save to Firebase Firestore (awaited to guarantee persistence without being aborted)
     if (isFirebaseConfigured()) {
@@ -466,6 +467,11 @@ export const ServerStorage = {
 
     await recordDeletedPostIds(cleanIds);
 
+    const currentPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
+    const filteredPosts = currentPosts.filter((p) => !idSet.has(p.id));
+    memoryPosts = filteredPosts;
+    writeJsonFile(POSTS_FILE, filteredPosts);
+
     // 1. Remove from Firebase Firestore
     if (isFirebaseConfigured()) {
       try {
@@ -480,7 +486,7 @@ export const ServerStorage = {
           await batch.commit();
         }
         setDoc(doc(firestoreDb, 'settings', 'posts_cache'), {
-          posts: memoryPosts,
+          posts: filteredPosts,
           updatedAt: Date.now(),
         }).catch(() => {});
       } catch (err) {
