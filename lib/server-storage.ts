@@ -207,7 +207,26 @@ export const ServerStorage = {
   },
 
   // Posts
-  getAllPosts: async (includeDrafts = true): Promise<PromptPost[]> => {
+  getAllPosts: async (includeDrafts = true, fromFirebase = false): Promise<PromptPost[]> => {
+    if (fromFirebase && isFirebaseConfigured()) {
+      try {
+        const postsSnap = await getDocs(collection(firestoreDb, 'posts'));
+        const firebasePosts: PromptPost[] = [];
+        postsSnap.forEach((docSnap) => {
+          const data = docSnap.data() as PromptPost;
+          if (data && data.id) {
+            firebasePosts.push(data);
+          }
+        });
+        if (firebasePosts.length > 0) {
+          firebasePosts.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+          return includeDrafts ? firebasePosts : firebasePosts.filter((p) => p.status === 'published');
+        }
+      } catch (e) {
+        console.error('Error fetching posts from Firebase for admin:', e);
+      }
+    }
+
     if (!memoryPosts || memoryPosts.length === 0) {
       memoryPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
     }

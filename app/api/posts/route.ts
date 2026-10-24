@@ -9,11 +9,12 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const includeDrafts = searchParams.get('all') === 'true';
+    const fromFirebase = searchParams.get('source') === 'firebase' || searchParams.get('admin') === 'true';
     const category = searchParams.get('category');
     const tool = searchParams.get('tool');
     const search = searchParams.get('search');
 
-    let posts = await ServerStorage.getAllPosts(includeDrafts);
+    let posts = await ServerStorage.getAllPosts(includeDrafts, fromFirebase);
 
     if (category && category !== 'all') {
       posts = posts.filter(

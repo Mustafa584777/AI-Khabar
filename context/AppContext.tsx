@@ -1853,7 +1853,8 @@ export const AppProvider = ({
   const syncFromRemote = React.useCallback(async () => {
     if (isSavingRef.current) return;
     try {
-      const postsUrl = `/api/posts?all=true`;
+      const isAdminView = currentView === 'admin' || (typeof window !== 'undefined' && window.location.pathname.includes('admin'));
+      const postsUrl = isAdminView ? `/api/posts?all=true&source=firebase` : `/api/posts?all=true`;
       const fetchPosts = fetch(postsUrl, { cache: 'no-store' })
         .then(async (res) => {
           if (res.ok && !isSavingRef.current) {
