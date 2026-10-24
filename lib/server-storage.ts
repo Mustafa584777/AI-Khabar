@@ -144,6 +144,38 @@ let memoryTags: string[] | null = null;
 let memorySearchQueries: SearchQueryItem[] | null = null;
 
 export const ServerStorage = {
+  deduplicatePosts: (posts: PromptPost[]): PromptPost[] => {
+    const deletedIds = getDeletedPostIds();
+    const map = new Map<string, PromptPost>();
+    const seenSlugs = new Set<string>();
+    const seenImageUrls = new Set<string>();
+
+    const sorted = [...posts].sort(
+      (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    );
+
+    for (const p of sorted) {
+      if (!p || !p.id || deletedIds.has(p.id)) continue;
+      const slugKey = (p.slug || '').toLowerCase().trim();
+      const imgKey = p.imageUrl ? p.imageUrl.split('?')[0].trim().toLowerCase() : '';
+
+      if (slugKey && seenSlugs.has(slugKey)) continue;
+      if (imgKey && seenImageUrls.has(imgKey)) continue;
+      if (map.has(p.id)) continue;
+
+      if (slugKey) seenSlugs.add(slugKey);
+      if (imgKey) seenImageUrls.add(imgKey);
+      map.set(p.id, {
+        ...p,
+        tags: cleanTagsArray(p.tags || []),
+      });
+    }
+
+    return Array.from(map.values()).sort(
+      (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    );
+  },
+
   syncDatabaseToLocalPosts: async (): Promise<{ count: number; posts: PromptPost[] }> => {
     let remotePosts: PromptPost[] = [];
     if (isFirebaseConfigured()) {
@@ -175,29 +207,8 @@ export const ServerStorage = {
     }
 
     const localPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
-    const deletedIds = getDeletedPostIds();
-    const postMap = new Map<string, PromptPost>();
-    const seenImageUrls = new Set<string>();
-
     const all = [...remotePosts, ...localPosts, ...(INITIAL_POSTS || [])];
-    all.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-
-    for (const p of all) {
-      if (!p.id || deletedIds.has(p.id)) continue;
-      const imgKey = p.imageUrl ? p.imageUrl.split('?')[0].trim().toLowerCase() : '';
-      if (imgKey && seenImageUrls.has(imgKey)) continue;
-      if (imgKey) seenImageUrls.add(imgKey);
-      if (!postMap.has(p.id)) {
-        postMap.set(p.id, {
-          ...p,
-          tags: cleanTagsArray(p.tags || []),
-        });
-      }
-    }
-
-    const merged = Array.from(postMap.values()).sort(
-      (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-    );
+    const merged = ServerStorage.deduplicatePosts(all);
 
     memoryPosts = merged;
     memoryPostsTimestamp = Date.now();
@@ -219,8 +230,8 @@ export const ServerStorage = {
           }
         });
         if (firebasePosts.length > 0) {
-          firebasePosts.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-          return includeDrafts ? firebasePosts : firebasePosts.filter((p) => p.status === 'published');
+          const cleaned = ServerStorage.deduplicatePosts(firebasePosts);
+          return includeDrafts ? cleaned : cleaned.filter((p) => p.status === 'published');
         }
       } catch (e) {
         console.error('Error fetching posts from Firebase for admin:', e);
@@ -228,7 +239,8 @@ export const ServerStorage = {
     }
 
     const posts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
-    return includeDrafts ? posts : posts.filter((p) => p.status === 'published');
+    const cleaned = ServerStorage.deduplicatePosts(posts);
+    return includeDrafts ? cleaned : cleaned.filter((p) => p.status === 'published');
   },
 
   getPostBySlug: async (slug: string): Promise<PromptPost | undefined> => {
