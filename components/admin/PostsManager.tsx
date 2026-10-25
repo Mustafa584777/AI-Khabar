@@ -14,6 +14,7 @@ import {
   Clock,
   Sparkles,
   Crown,
+  Download,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -33,6 +34,37 @@ export const PostsManager = () => {
     showToast,
     refreshData,
   } = useApp();
+
+  const handleDownloadPostsJson = async () => {
+    try {
+      let currentPosts = posts;
+      try {
+        const res = await fetch('/api/posts?all=true&source=firebase', { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.posts)) {
+            currentPosts = data.posts;
+          }
+        }
+      } catch (e) {
+        console.warn('Error fetching from firebase for download:', e);
+      }
+
+      const blob = new Blob([JSON.stringify(currentPosts, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'posts.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast(`Successfully downloaded latest posts.json from Firebase with ${currentPosts.length} prompts!`);
+    } catch (e) {
+      console.error('Error downloading posts.json:', e);
+      showToast('Failed to download posts.json');
+    }
+  };
 
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -117,6 +149,15 @@ export const PostsManager = () => {
         </div>
 
         <div className="flex items-center gap-2.5">
+          <button
+            onClick={handleDownloadPostsJson}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/30 transition-colors cursor-pointer"
+            id="btn-download-posts-json"
+          >
+            <Download className="w-4 h-4" />
+            <span>Download posts.json</span>
+          </button>
+
           <button
             onClick={() => {
               setEditingPostId(null);

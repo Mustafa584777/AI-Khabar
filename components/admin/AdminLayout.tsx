@@ -8,7 +8,6 @@ import { PostsManager } from './PostsManager';
 import { PostEditor } from './PostEditor';
 import { CategoriesManager } from './CategoriesManager';
 import { SettingsView } from './SettingsView';
-import { BackupRestoreView } from './BackupRestoreView';
 import { SearchHistoryManager } from './SearchHistoryManager';
 import { UsersManager } from './UsersManager';
 import { PushNotificationsManager } from './PushNotificationsManager';
@@ -52,8 +51,6 @@ export const AdminLayout = () => {
         return <SearchHistoryManager />;
       case 'users':
         return <UsersManager />;
-      case 'backup-restore':
-        return <BackupRestoreView />;
       case 'settings':
         return <SettingsView key={settings.siteName + (settings.popularTags?.join(',') || '')} />;
       default:

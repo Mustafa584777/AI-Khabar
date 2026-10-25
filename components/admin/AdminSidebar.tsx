@@ -70,11 +70,6 @@ export const AdminSidebar = () => {
       icon: Search,
     },
     {
-      id: 'backup-restore',
-      label: 'Backup & Restore',
-      icon: Database,
-    },
-    {
       id: 'settings',
       label: 'Site Settings',
       icon: Settings,
