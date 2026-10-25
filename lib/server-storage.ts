@@ -217,7 +217,6 @@ export const ServerStorage = {
     return { count: merged.length, posts: merged };
   },
 
-  // Posts
   getAllPosts: async (includeDrafts = true, fromFirebase = false): Promise<PromptPost[]> => {
     if (fromFirebase && isFirebaseConfigured()) {
       try {
@@ -231,6 +230,8 @@ export const ServerStorage = {
         });
         if (firebasePosts.length > 0) {
           const cleaned = ServerStorage.deduplicatePosts(firebasePosts);
+          writeJsonFile(POSTS_FILE, cleaned);
+          memoryPosts = cleaned;
           return includeDrafts ? cleaned : cleaned.filter((p) => p.status === 'published');
         }
       } catch (e) {

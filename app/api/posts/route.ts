@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const includeDrafts = searchParams.get('all') === 'true';
-    const fromFirebase = searchParams.get('source') === 'firebase' || searchParams.get('admin') === 'true';
+    const fromFirebase = searchParams.get('source') === 'firebase' || searchParams.get('admin') === 'true' || includeDrafts;
     const category = searchParams.get('category');
     const tool = searchParams.get('tool');
     const search = searchParams.get('search');
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
     const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : undefined;
 
     const saved = await ServerStorage.savePost(body, token);
-    const allPosts = await ServerStorage.getAllPosts(true);
+    const allPosts = await ServerStorage.getAllPosts(true, true);
 
     try {
       revalidatePath('/');
@@ -122,7 +122,7 @@ export async function DELETE(req: NextRequest) {
     const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : undefined;
 
     await ServerStorage.deletePosts(idsToDelete, token);
-    const allPosts = await ServerStorage.getAllPosts(true);
+    const allPosts = await ServerStorage.getAllPosts(true, true);
 
     try {
       revalidatePath('/');

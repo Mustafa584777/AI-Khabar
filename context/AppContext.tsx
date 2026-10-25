@@ -199,7 +199,7 @@ export const AppProvider = ({
       if (path.includes('dashboard')) return 'user-dashboard';
       if (path.includes('create') || path.includes('studio')) return 'studio-tool';
       if (path.includes('notifications')) return 'notifications';
-      if (path.includes('admin')) return 'admin';
+      if (path.includes('admin') || path.includes('cms-login')) return 'admin';
     }
     return 'public';
   });
@@ -209,7 +209,7 @@ export const AppProvider = ({
       if (pathname.includes('dashboard')) setCurrentViewState('user-dashboard');
       else if (pathname.includes('create') || pathname.includes('studio')) setCurrentViewState('studio-tool');
       else if (pathname.includes('notifications')) setCurrentViewState('notifications');
-      else if (pathname.includes('admin')) setCurrentViewState('admin');
+      else if (pathname.includes('admin') || pathname.includes('cms-login')) setCurrentViewState('admin');
       else setCurrentViewState('public');
     }
   }, [pathname]);
@@ -1853,8 +1853,8 @@ export const AppProvider = ({
   const syncFromRemote = React.useCallback(async () => {
     if (isSavingRef.current) return;
     try {
-      const isAdminView = currentView === 'admin' || (typeof window !== 'undefined' && window.location.pathname.includes('admin'));
-      const postsUrl = isAdminView ? `/api/posts?all=true&source=firebase` : `/api/posts?all=true`;
+      const isAdminView = currentView === 'admin' || isAuthenticated || (typeof window !== 'undefined' && (window.location.pathname.includes('admin') || window.location.pathname.includes('cms-login')));
+      const postsUrl = isAdminView ? `/api/posts?all=true&source=firebase` : `/api/posts`;
       const fetchPosts = fetch(postsUrl, { cache: 'no-store' })
         .then(async (res) => {
           if (res.ok && !isSavingRef.current) {
@@ -1871,34 +1871,8 @@ export const AppProvider = ({
                 } catch {}
               }
               const cleanList = data.posts.filter((p: PromptPost) => !deletedSet.has(p.id));
-              
-              // MERGE with local cache / current posts to ensure newly added/edited posts never disappear!
-              const localCached = StorageService.getCachedPosts() || [];
-              const postMap = new Map<string, PromptPost>();
-              cleanList.forEach((p: PromptPost) => postMap.set(p.id, p));
-              localCached.forEach((p: PromptPost) => {
-                if (!deletedSet.has(p.id)) {
-                  const existing = postMap.get(p.id);
-                  if (!existing || new Date(p.updatedAt || p.createdAt || 0).getTime() >= new Date(existing.updatedAt || existing.createdAt || 0).getTime()) {
-                    postMap.set(p.id, p);
-                  }
-                }
-              });
-              postsRef.current.forEach((p: PromptPost) => {
-                if (!deletedSet.has(p.id)) {
-                  const existing = postMap.get(p.id);
-                  if (!existing || new Date(p.updatedAt || p.createdAt || 0).getTime() >= new Date(existing.updatedAt || existing.createdAt || 0).getTime()) {
-                    postMap.set(p.id, p);
-                  }
-                }
-              });
-
-              const mergedList = Array.from(postMap.values()).sort(
-                (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-              );
-
-              setPosts(mergedList);
-              StorageService.saveCachedPosts(mergedList);
+              setPosts(cleanList);
+              StorageService.saveCachedPosts(cleanList);
             }
           }
         })
@@ -2416,23 +2390,6 @@ export const AppProvider = ({
             ? 'Prompt published live to server & homepage!'
             : 'Prompt saved as draft on server'
         );
-
-        // Automatically download latest posts.json
-        if (typeof window !== 'undefined') {
-          try {
-            const blob = new Blob([JSON.stringify(data.posts, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'posts.json';
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
-          } catch (e) {
-            console.error('Error auto-downloading posts.json:', e);
-          }
-        }
 
         return savedPost;
       } else {
