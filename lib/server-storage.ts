@@ -13,6 +13,7 @@ import {
 import { cleanTagsArray, canonicalizeTag } from './tag-utils';
 import { uploadImageToCloudinary } from './cloudinary-server';
 import { PLAN_CONFIGS } from './plans';
+import { getPromptSlug } from './utils';
 import fs from 'fs';
 import path from 'path';
 
@@ -156,17 +157,18 @@ export const ServerStorage = {
 
     for (const p of sorted) {
       if (!p || !p.id || deletedIds.has(p.id)) continue;
-      const slugKey = (p.slug || '').toLowerCase().trim();
+      const canonicalSlug = getPromptSlug(p);
       const imgKey = p.imageUrl ? p.imageUrl.split('?')[0].trim().toLowerCase() : '';
 
-      if (slugKey && seenSlugs.has(slugKey)) continue;
+      if (canonicalSlug && seenSlugs.has(canonicalSlug)) continue;
       if (imgKey && seenImageUrls.has(imgKey)) continue;
       if (map.has(p.id)) continue;
 
-      if (slugKey) seenSlugs.add(slugKey);
+      if (canonicalSlug) seenSlugs.add(canonicalSlug);
       if (imgKey) seenImageUrls.add(imgKey);
       map.set(p.id, {
         ...p,
+        slug: canonicalSlug,
         tags: cleanTagsArray(p.tags || []),
       });
     }
@@ -179,20 +181,6 @@ export const ServerStorage = {
   syncDatabaseToLocalPosts: async (): Promise<{ count: number; posts: PromptPost[] }> => {
     let remotePosts: PromptPost[] = [];
     if (isFirebaseConfigured()) {
-      try {
-        const cacheSnap = await getDoc(doc(firestoreDb, 'settings', 'posts_cache'));
-        if (cacheSnap.exists()) {
-          const d = cacheSnap.data();
-          if (Array.isArray(d?.posts)) {
-            d.posts.forEach((p) => {
-              if (p && p.id) remotePosts.push(p);
-            });
-          }
-        }
-      } catch (e) {
-        console.error('Error reading posts_cache during manual sync:', e);
-      }
-
       try {
         const postsSnap = await getDocs(collection(firestoreDb, 'posts'));
         postsSnap.forEach((docSnap) => {
@@ -207,7 +195,7 @@ export const ServerStorage = {
     }
 
     const localPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
-    const all = [...remotePosts, ...localPosts, ...(INITIAL_POSTS || [])];
+    const all = remotePosts.length > 0 ? remotePosts : localPosts;
     const merged = ServerStorage.deduplicatePosts(all);
 
     memoryPosts = merged;
@@ -269,9 +257,16 @@ export const ServerStorage = {
 
   savePost: async (post: PromptPost, token?: string): Promise<PromptPost> => {
     const now = new Date().toISOString();
-    const id = post.id || `prompt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    const safeTitle = post.title?.trim() || 'Untitled Prompt';
+    const computedSlug = getPromptSlug({ ...post, title: safeTitle });
+
     const posts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
-    let existing = posts.find((p) => p.id === id);
+    let existing = (post.id ? posts.find((p) => p.id === post.id) : undefined);
+
+    // Prevent saving a duplicate with the same slug or same title
+    if (!existing && computedSlug) {
+      existing = posts.find((p) => getPromptSlug(p) === computedSlug || (p.slug && p.slug.toLowerCase().trim() === computedSlug));
+    }
 
     // Prevent saving the exact same image URL twice as a separate prompt
     const normalizedNewImg = post.imageUrl ? post.imageUrl.split('?')[0].trim().toLowerCase() : '';
@@ -281,6 +276,9 @@ export const ServerStorage = {
         existing = duplicateByImage;
       }
     }
+
+    const id = existing?.id || post.id || `prompt-${Date.now()}`;
+    const autoSlug = computedSlug || existing?.slug || post.slug || `prompt-${Date.now()}`;
 
     const isPremium = Boolean(
       post.isPremium !== undefined
@@ -301,20 +299,10 @@ export const ServerStorage = {
     const defaultLikes =
       post.likesCount !== undefined ? post.likesCount : (existing?.likesCount ?? Math.floor(Math.random() * 15) + 1);
 
-    const safeTitle = post.title?.trim() || existing?.title || 'Untitled Prompt';
-    const autoSlug =
-      post.slug ||
-      existing?.slug ||
-      safeTitle
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)+/g, '') ||
-      `prompt-${Date.now()}`;
-
     const savedPost: PromptPost = {
       ...existing,
       ...post,
-      id: existing?.id || id,
+      id,
       title: safeTitle,
       slug: autoSlug,
       promptText: post.promptText || existing?.promptText || '',
@@ -382,41 +370,27 @@ export const ServerStorage = {
       }
     }
 
-    // Update memory and local cache immediately
+    // Update memory and local cache immediately with strict deduplication
     unrecordDeletedPostId(savedPost.id);
     let currentList = memoryPosts && memoryPosts.length > 0
       ? [...memoryPosts]
       : readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
 
-    const imgKey = savedPost.imageUrl ? savedPost.imageUrl.split('?')[0].trim().toLowerCase() : '';
-    if (imgKey && !post.id) {
-      const existingByImage = currentList.find(
-        (p) => p.imageUrl && p.imageUrl.split('?')[0].trim().toLowerCase() === imgKey && p.id !== savedPost.id
-      );
-      if (existingByImage) {
-        savedPost.id = existingByImage.id;
-        savedPost.createdAt = existingByImage.createdAt || savedPost.createdAt;
-      }
-    }
-
-    const index = currentList.findIndex((p) => p.id === savedPost.id);
+    const index = currentList.findIndex((p) => p.id === savedPost.id || getPromptSlug(p) === autoSlug);
     if (index >= 0) {
       currentList[index] = savedPost;
     } else {
       currentList.unshift(savedPost);
     }
-    memoryPosts = currentList;
+    const cleanMerged = ServerStorage.deduplicatePosts(currentList);
+    memoryPosts = cleanMerged;
     memoryPostsTimestamp = Date.now();
-    writeJsonFile(POSTS_FILE, currentList);
+    writeJsonFile(POSTS_FILE, cleanMerged);
 
     // Save to Firebase Firestore (awaited to guarantee persistence without being aborted)
     if (isFirebaseConfigured()) {
       try {
         await setDoc(doc(firestoreDb, 'posts', savedPost.id), cleanForFirestore(savedPost));
-        await setDoc(doc(firestoreDb, 'settings', 'posts_cache'), cleanForFirestore({
-          posts: currentList,
-          updatedAt: Date.now(),
-        }));
       } catch (fErr) {
         console.error('Firestore savePost error:', fErr);
       }
@@ -486,10 +460,6 @@ export const ServerStorage = {
         if (batchCount > 0) {
           await batch.commit();
         }
-        setDoc(doc(firestoreDb, 'settings', 'posts_cache'), {
-          posts: filteredPosts,
-          updatedAt: Date.now(),
-        }).catch(() => {});
       } catch (err) {
         console.error('Firestore deletePosts error:', err);
       }

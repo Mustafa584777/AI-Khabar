@@ -17,6 +17,7 @@ import {
   Download,
 } from 'lucide-react';
 import Image from 'next/image';
+import { getPromptSlug } from '@/lib/utils';
 
 export const PostsManager = () => {
   const {
@@ -37,20 +38,38 @@ export const PostsManager = () => {
 
   const handleDownloadPostsJson = async () => {
     try {
-      let currentPosts = posts;
+      let rawList = posts;
       try {
         const res = await fetch('/api/posts?all=true&source=firebase', { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
-          if (data.success && Array.isArray(data.posts)) {
-            currentPosts = data.posts;
+          if (data.success && Array.isArray(data.posts) && data.posts.length > 0) {
+            rawList = data.posts;
           }
         }
       } catch (e) {
         console.warn('Error fetching from firebase for download:', e);
       }
 
-      const blob = new Blob([JSON.stringify(currentPosts, null, 2)], { type: 'application/json' });
+      // Strict client-side deduplication safeguard before generating posts.json download
+      const seenIds = new Set<string>();
+      const seenSlugs = new Set<string>();
+      const cleanPostsToDownload: PromptPost[] = [];
+
+      for (const p of rawList) {
+        if (!p || !p.id) continue;
+        const slug = getPromptSlug(p);
+        if (!seenIds.has(p.id) && !seenSlugs.has(slug)) {
+          seenIds.add(p.id);
+          seenSlugs.add(slug);
+          cleanPostsToDownload.push({
+            ...p,
+            slug,
+          });
+        }
+      }
+
+      const blob = new Blob([JSON.stringify(cleanPostsToDownload, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -59,7 +78,7 @@ export const PostsManager = () => {
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-      showToast(`Successfully downloaded latest posts.json from Firebase with ${currentPosts.length} prompts!`);
+      showToast(`Downloaded latest posts.json with ${cleanPostsToDownload.length} prompts (0 duplicates)!`);
     } catch (e) {
       console.error('Error downloading posts.json:', e);
       showToast('Failed to download posts.json');

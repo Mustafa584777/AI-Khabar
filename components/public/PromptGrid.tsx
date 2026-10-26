@@ -7,6 +7,7 @@ import { PromptCard } from './PromptCard';
 import { SearchX, Filter, Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { PromptPost } from '@/types/prompt';
 import { PersonalizationEngine } from '@/lib/personalization';
+import { getPromptSlug } from '@/lib/utils';
 
 const INITIAL_BATCH_SIZE = 10;
 const SCROLL_BATCH_SIZE = 10;
@@ -140,13 +141,17 @@ export const PromptGrid = () => {
       }
     }
 
-    // Deduplication by post ID
+    // Strict deduplication by post ID AND canonical slug to prevent any duplicate prompts from ever showing
     const seenIds = new Set<string>();
+    const seenSlugs = new Set<string>();
     const uniqueList: PromptPost[] = [];
 
     for (const item of list) {
-      if (!seenIds.has(item.id)) {
+      if (!item || !item.id) continue;
+      const slug = getPromptSlug(item);
+      if (!seenIds.has(item.id) && !seenSlugs.has(slug)) {
         seenIds.add(item.id);
+        seenSlugs.add(slug);
         uniqueList.push(item);
       }
     }

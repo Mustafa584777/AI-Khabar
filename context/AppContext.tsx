@@ -23,6 +23,7 @@ import {
   getPlanFeaturesForCycle,
   BillingCycle,
 } from '@/lib/plans';
+import { getPromptSlug } from '@/lib/utils';
 
 interface AppContextType {
   // Navigation & Views
@@ -1870,7 +1871,20 @@ export const AppProvider = ({
                   }
                 } catch {}
               }
-              const cleanList = data.posts.filter((p: PromptPost) => !deletedSet.has(p.id));
+              const seenSlugs = new Set<string>();
+              const seenIds = new Set<string>();
+              const cleanList: PromptPost[] = [];
+
+              for (const p of data.posts) {
+                if (!p || !p.id || deletedSet.has(p.id)) continue;
+                const slug = getPromptSlug(p);
+                if (!seenIds.has(p.id) && !seenSlugs.has(slug)) {
+                  seenIds.add(p.id);
+                  seenSlugs.add(slug);
+                  cleanList.push({ ...p, slug });
+                }
+              }
+
               setPosts(cleanList);
               StorageService.saveCachedPosts(cleanList);
             }
@@ -2361,15 +2375,16 @@ export const AppProvider = ({
       } catch {}
     }
 
-    // Immediate optimistic local update
+    // Immediate optimistic local update with deduplication
+    const postSlug = getPromptSlug(post);
     setPosts((prev) => {
-      const idx = prev.findIndex((p) => p.id === post.id);
+      const idx = prev.findIndex((p) => p.id === post.id || (postSlug && getPromptSlug(p) === postSlug));
       if (idx >= 0) {
         const updated = [...prev];
-        updated[idx] = post;
+        updated[idx] = { ...updated[idx], ...post, slug: postSlug };
         return updated;
       }
-      return [post, ...prev];
+      return [{ ...post, slug: postSlug }, ...prev];
     });
 
     try {
@@ -2382,8 +2397,20 @@ export const AppProvider = ({
 
       const data = await res.json();
       if (data.success && Array.isArray(data.posts)) {
-        setPosts(data.posts);
-        StorageService.saveCachedPosts(data.posts);
+        const seenSlugs = new Set<string>();
+        const seenIds = new Set<string>();
+        const cleanPosts: PromptPost[] = [];
+        for (const p of data.posts) {
+          if (!p || !p.id) continue;
+          const slug = getPromptSlug(p);
+          if (!seenIds.has(p.id) && !seenSlugs.has(slug)) {
+            seenIds.add(p.id);
+            seenSlugs.add(slug);
+            cleanPosts.push({ ...p, slug });
+          }
+        }
+        setPosts(cleanPosts);
+        StorageService.saveCachedPosts(cleanPosts);
         const savedPost = data.post || post;
         showToast(
           savedPost.status === 'published'

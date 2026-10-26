@@ -5,9 +5,27 @@ import { getPromptSlug } from '@/lib/utils';
 export const revalidate = 60;
 
 export default async function Page() {
-  const posts = await ServerStorage.getAllPosts(false);
+  const rawPosts = await ServerStorage.getAllPosts(false);
   const categories = await ServerStorage.getAllCategories();
   const settings = await ServerStorage.getSettings();
+
+  // Strict deduplication to guarantee no prompt is ever rendered twice on homepage
+  const seenSlugs = new Set<string>();
+  const seenIds = new Set<string>();
+  const posts: typeof rawPosts = [];
+
+  for (const post of rawPosts) {
+    if (!post || !post.id) continue;
+    const slug = getPromptSlug(post);
+    if (!seenIds.has(post.id) && !seenSlugs.has(slug)) {
+      seenIds.add(post.id);
+      seenSlugs.add(slug);
+      posts.push({
+        ...post,
+        slug,
+      });
+    }
+  }
 
   return (
     <>

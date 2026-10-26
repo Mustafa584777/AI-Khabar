@@ -1,5 +1,6 @@
 import { Category, PromptPost, SiteSettings, UserAccount, AIHistoryItem, PromptRequestItem } from '@/types/prompt';
 import { INITIAL_CATEGORIES, INITIAL_SETTINGS, INITIAL_POSTS } from './initial-data';
+import { getPromptSlug } from './utils';
 
 const STORAGE_KEY_BOOKMARKS = 'promptcms_user_bookmarks';
 const STORAGE_KEY_LIKES = 'promptcms_user_likes';
@@ -21,16 +22,17 @@ export const StorageService = {
 
         const saved = localStorage.getItem(STORAGE_KEY_CACHED_POSTS);
         const postMap = new Map<string, PromptPost>();
+        const seenSlugs = new Set<string>();
         const seenImageUrls = new Set<string>();
 
         const all: PromptPost[] = [];
         if (saved) {
           try {
             const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed)) all.push(...parsed);
+            if (Array.isArray(parsed) && parsed.length > 0) all.push(...parsed);
           } catch {}
         }
-        if (Array.isArray(INITIAL_POSTS)) {
+        if (all.length === 0 && Array.isArray(INITIAL_POSTS)) {
           all.push(...INITIAL_POSTS);
         }
 
@@ -38,12 +40,18 @@ export const StorageService = {
 
         for (const p of all) {
           if (p && p.id && !deletedSet.has(p.id)) {
+            const slug = getPromptSlug(p);
+            if (slug && seenSlugs.has(slug)) continue;
             const imgKey = p.imageUrl ? p.imageUrl.split('?')[0].trim().toLowerCase() : '';
             if (imgKey && seenImageUrls.has(imgKey)) continue;
+            if (postMap.has(p.id)) continue;
+
+            if (slug) seenSlugs.add(slug);
             if (imgKey) seenImageUrls.add(imgKey);
-            if (!postMap.has(p.id)) {
-              postMap.set(p.id, p);
-            }
+            postMap.set(p.id, {
+              ...p,
+              slug,
+            });
           }
         }
 
