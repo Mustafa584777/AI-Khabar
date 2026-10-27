@@ -51,11 +51,6 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  ReactDOM.preconnect('https://res.cloudinary.com', { crossOrigin: 'anonymous' });
-  if (typeof (ReactDOM as any).prefetchDNS === 'function') {
-    (ReactDOM as any).prefetchDNS('https://res.cloudinary.com');
-  }
-
   return (
     <html lang="en" className="dark">
       <body className={`${poppins.variable} ${poppins.className} font-sans antialiased selection:bg-[#E60023] selection:text-white`} suppressHydrationWarning>
