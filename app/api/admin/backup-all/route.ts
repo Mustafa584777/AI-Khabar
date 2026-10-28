@@ -83,7 +83,7 @@ async function fetchAllRegisteredUsers(): Promise<RegisteredUserRecord[]> {
 
         const rawCredits = typeof syncData.toolCredits === 'number' ? syncData.toolCredits : 5;
         const explicitTier: PlanTier =
-          syncData.planTier && ['starter', 'pro', 'vip', 'ultra', 'free'].includes(syncData.planTier)
+          syncData.planTier && ['starter', 'pro', 'vip', 'free'].includes(syncData.planTier)
             ? syncData.planTier
             : 'free';
 

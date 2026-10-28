@@ -141,8 +141,8 @@ export async function POST(req: NextRequest) {
           userSyncData: updatedSyncData,
         });
       } else {
-        // Membership Plan Subscription (starter, pro, vip, ultra)
-        const validTiers: PlanTier[] = ['starter', 'pro', 'vip', 'ultra'];
+        // Membership Plan Subscription (starter, pro, vip)
+        const validTiers: PlanTier[] = ['starter', 'pro', 'vip'];
         const resolvedTier: PlanTier = validTiers.includes(planTier as PlanTier)
           ? (planTier as PlanTier)
           : 'pro';
@@ -151,7 +151,7 @@ export async function POST(req: NextRequest) {
         // Check if user currently has an active, unexpired paid plan
         const currentTier = (existingSub?.planTier || existingProfile.planTier) as PlanTier;
         const currentExpiresAt = existingSub?.planExpiresAt || existingProfile.planExpiresAt;
-        const isCurrentPaid = ['starter', 'pro', 'vip', 'ultra'].includes(currentTier);
+        const isCurrentPaid = ['starter', 'pro', 'vip'].includes(currentTier);
         const isCurrentActive = Boolean(
           isCurrentPaid &&
           currentExpiresAt &&

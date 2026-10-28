@@ -88,10 +88,10 @@ export const UserDashboard = () => {
 
   // Strict paid tier resolution for Dashboard display
   const isPaid = Boolean(
-    (isProUser || (planTier && ['starter', 'pro', 'vip', 'ultra'].includes(planTier))) &&
+    (isProUser || (planTier && ['starter', 'pro', 'vip'].includes(planTier))) &&
     (!planExpiresAt || new Date(planExpiresAt).getTime() > Date.now())
   );
-  const effectivePlanTier: PlanTier = isPaid ? (['starter', 'pro', 'vip', 'ultra'].includes(planTier) ? planTier : 'pro') : 'free';
+  const effectivePlanTier: PlanTier = isPaid ? (['starter', 'pro', 'vip'].includes(planTier) ? planTier : 'pro') : 'free';
   const isYearlyPlan = Boolean(
     userAccount?.billingCycle === 'yearly' ||
     (typeof window !== 'undefined' && localStorage.getItem('auraprompt_billing_cycle') === 'yearly') ||

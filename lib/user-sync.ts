@@ -38,7 +38,6 @@ const TIER_WEIGHT: Record<PlanTier, number> = {
   starter: 1,
   pro: 2,
   vip: 3,
-  ultra: 4,
 };
 
 export const UserSyncService = {
@@ -89,12 +88,12 @@ export const UserSyncService = {
       } catch {}
 
       if (!savedTier || savedTier === 'free') {
-        if (acc?.planTier && ['starter', 'pro', 'vip', 'ultra'].includes(acc.planTier)) {
+        if (acc?.planTier && ['starter', 'pro', 'vip'].includes(acc.planTier)) {
           savedTier = acc.planTier;
         }
       }
 
-      const isPaid = savedTier && ['starter', 'pro', 'vip', 'ultra'].includes(savedTier);
+      const isPaid = savedTier && ['starter', 'pro', 'vip'].includes(savedTier);
       const isProMember = localStorage.getItem('auraprompt_pro_member') === 'true' || isPaid || Boolean(acc?.isProUser);
       const savedExpires = localStorage.getItem('auraprompt_plan_expires_at') || acc?.planExpiresAt;
       const savedStarted = localStorage.getItem('auraprompt_plan_started_at') || acc?.planStartedAt;
@@ -205,9 +204,9 @@ export const UserSyncService = {
     if (typeof window !== 'undefined') {
       try {
         const savedTier = localStorage.getItem('auraprompt_plan_tier') as PlanTier;
-        if (['starter', 'pro', 'vip', 'ultra', 'free'].includes(savedTier)) {
+        if (['starter', 'pro', 'vip', 'free'].includes(savedTier)) {
           localTier = savedTier;
-        } else if ((user as any).planTier && ['starter', 'pro', 'vip', 'ultra'].includes((user as any).planTier)) {
+        } else if ((user as any).planTier && ['starter', 'pro', 'vip'].includes((user as any).planTier)) {
           localTier = (user as any).planTier;
         }
 
@@ -342,7 +341,7 @@ export const UserSyncService = {
 
     // 3. Remote account exists: Non-destructively reconcile remote with local
     // Evaluate remote plan and expiration
-    let remoteTier: PlanTier = (remote.planTier && ['starter', 'pro', 'vip', 'ultra', 'free'].includes(remote.planTier))
+    let remoteTier: PlanTier = (remote.planTier && ['starter', 'pro', 'vip', 'free'].includes(remote.planTier))
       ? remote.planTier
       : (remote.isProUser ? 'pro' : 'free');
     const isRemoteExpired = remote.planExpiresAt && new Date(remote.planExpiresAt).getTime() < Date.now();
@@ -351,7 +350,7 @@ export const UserSyncService = {
     }
 
     // Resolved tier: Highest unexpired tier between remote and local
-    const TIER_WEIGHT_LOCAL: Record<PlanTier, number> = { free: 0, starter: 1, pro: 2, vip: 3, ultra: 4 };
+    const TIER_WEIGHT_LOCAL: Record<PlanTier, number> = { free: 0, starter: 1, pro: 2, vip: 3 };
     let resolvedTier: PlanTier = remoteTier;
     if (TIER_WEIGHT_LOCAL[effectiveLocalTier] > TIER_WEIGHT_LOCAL[remoteTier]) {
       resolvedTier = effectiveLocalTier;

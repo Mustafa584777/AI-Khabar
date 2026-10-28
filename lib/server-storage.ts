@@ -1105,7 +1105,7 @@ export const ServerStorage = {
       return timeB - timeA;
     });
 
-    const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3, ultra: 4 };
+    const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3 };
 
     let highestTier = hasActiveSub ? sub.planTier : 'free';
     let highestStartedAt = hasActiveSub ? sub.planStartedAt : undefined;

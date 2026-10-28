@@ -161,7 +161,7 @@ interface AppContextType {
   useToolCredit: (amount?: number) => boolean;
   addToolCredits: (amount: number) => void;
   promptRequestsRemaining: number;
-  upgradePlan: (tier: 'starter' | 'pro' | 'vip' | 'ultra', serverData?: any, isQueued?: boolean, cycle?: 'monthly' | 'yearly') => void;
+  upgradePlan: (tier: 'starter' | 'pro' | 'vip', serverData?: any, isQueued?: boolean, cycle?: 'monthly' | 'yearly') => void;
 
   // Prompt Unlocking with Credits / Subscription
   unlockedPromptIds: string[];
@@ -174,7 +174,7 @@ interface AppContextType {
   setIsFirstLoginModalOpen: (open: boolean) => void;
   lockedPromptContext: PromptPost | null;
   setLockedPromptContext: (post: PromptPost | null) => void;
-  applyPlan: (planTier: 'starter' | 'pro' | 'vip' | 'ultra') => void;
+  applyPlan: (planTier: 'starter' | 'pro' | 'vip') => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -298,7 +298,7 @@ export const AppProvider = ({
       const acc = StorageService.getUserAccount();
       const savedPro = localStorage.getItem('auraprompt_pro_member');
       const savedTier = localStorage.getItem('auraprompt_plan_tier') as PlanTier;
-      const isPaidTier = savedTier && ['starter', 'pro', 'vip', 'ultra'].includes(savedTier);
+      const isPaidTier = savedTier && ['starter', 'pro', 'vip'].includes(savedTier);
       const isAccPaid = acc && ((acc.planTier && acc.planTier !== 'free') || acc.isProUser || acc.isPremium);
       if (savedPro === 'true' || isPaidTier || isAccPaid) {
         return true;
@@ -317,9 +317,9 @@ export const AppProvider = ({
   const [planTier, setPlanTierState] = useState<PlanTier>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('auraprompt_plan_tier') as PlanTier;
-      if (['starter', 'pro', 'vip', 'ultra'].includes(saved)) return saved;
+      if (['starter', 'pro', 'vip'].includes(saved)) return saved;
       const acc = StorageService.getUserAccount();
-      if (acc?.planTier && ['starter', 'pro', 'vip', 'ultra'].includes(acc.planTier)) return acc.planTier;
+      if (acc?.planTier && ['starter', 'pro', 'vip'].includes(acc.planTier)) return acc.planTier;
       if (acc?.membershipPlan && ['starter', 'pro', 'vip'].includes(acc.membershipPlan)) return acc.membershipPlan;
     }
     return 'free';
@@ -393,7 +393,6 @@ export const AppProvider = ({
         if (tier === 'starter') return 1;
         if (tier === 'pro') return 2;
         if (tier === 'vip') return 3;
-        if (tier === 'ultra') return 5;
         return 2;
       }
     }
@@ -574,7 +573,7 @@ export const AppProvider = ({
         planTier: tier,
         isProUser: true,
         isPremium: true,
-        membershipPlan: tier === 'ultra' ? 'vip' : tier,
+        membershipPlan: tier,
         billingCycle: resolvedCycle,
         savesLimit: finalSavesLimit,
         toolCredits: finalCredits,
@@ -1281,12 +1280,12 @@ export const AppProvider = ({
         // A paid plan must NEVER be converted to free tier unless it has explicitly expired!
         const localTier = (localStorage.getItem('auraprompt_plan_tier') as PlanTier) || currentAcc.planTier || 'free';
         const localExpires = localStorage.getItem('auraprompt_plan_expires_at') || currentAcc.planExpiresAt;
-        const isLocalActive = ['starter', 'pro', 'vip', 'ultra'].includes(localTier) && (!localExpires || new Date(localExpires).getTime() > Date.now());
+        const isLocalActive = ['starter', 'pro', 'vip'].includes(localTier) && (!localExpires || new Date(localExpires).getTime() > Date.now());
 
-        const syncedTier = (synced.planTier && ['starter', 'pro', 'vip', 'ultra'].includes(synced.planTier)) ? synced.planTier : 'free';
+        const syncedTier = (synced.planTier && ['starter', 'pro', 'vip'].includes(synced.planTier)) ? synced.planTier : 'free';
         const isSyncedActive = syncedTier !== 'free' && (!synced.planExpiresAt || new Date(synced.planExpiresAt).getTime() > Date.now());
 
-        const TIER_RANK: Record<PlanTier, number> = { free: 0, starter: 1, pro: 2, vip: 3, ultra: 4 };
+        const TIER_RANK: Record<PlanTier, number> = { free: 0, starter: 1, pro: 2, vip: 3 };
         let finalTier: PlanTier = 'free';
         if (isSyncedActive && isLocalActive) {
           finalTier = (TIER_RANK[syncedTier] >= TIER_RANK[localTier]) ? syncedTier : localTier;
@@ -1590,9 +1589,9 @@ export const AppProvider = ({
       const savedTier = localStorage.getItem('auraprompt_plan_tier') as PlanTier;
       const acc = StorageService.getUserAccount();
       const isProMember = localStorage.getItem('auraprompt_pro_member') === 'true' || acc?.isProUser === true;
-      const effectiveTier: PlanTier = (savedTier && ['starter', 'pro', 'vip', 'ultra'].includes(savedTier))
+      const effectiveTier: PlanTier = (savedTier && ['starter', 'pro', 'vip'].includes(savedTier))
         ? savedTier
-        : (acc?.planTier && ['starter', 'pro', 'vip', 'ultra'].includes(acc.planTier))
+        : (acc?.planTier && ['starter', 'pro', 'vip'].includes(acc.planTier))
           ? acc.planTier
           : (isProMember ? 'pro' : 'free');
 
@@ -1783,7 +1782,7 @@ export const AppProvider = ({
     }
   };
 
-  const applyPlan = useCallback((tier: 'starter' | 'pro' | 'vip' | 'ultra') => {
+  const applyPlan = useCallback((tier: 'starter' | 'pro' | 'vip') => {
     upgradePlan(tier);
     showToast(`Success! You have unlocked the ${tier.toUpperCase()} plan.`);
   }, [upgradePlan, showToast]);
@@ -1917,7 +1916,7 @@ export const AppProvider = ({
 
         const localTier = (localStorage.getItem('auraprompt_plan_tier') as PlanTier) || 'free';
         const localExpires = localStorage.getItem('auraprompt_plan_expires_at');
-        const isLocalActive = ['starter', 'pro', 'vip', 'ultra'].includes(localTier) && (!localExpires || new Date(localExpires).getTime() > Date.now());
+        const isLocalActive = ['starter', 'pro', 'vip'].includes(localTier) && (!localExpires || new Date(localExpires).getTime() > Date.now());
         if (isLocalActive) {
           setPlanTierState(localTier);
           setIsProUserState(true);
@@ -2004,19 +2003,19 @@ export const AppProvider = ({
 
       // Strict Plan Tier Resolution:
       // A paid plan must NEVER be converted to free tier unless it has explicitly expired!
-      const validTiers: PlanTier[] = ['starter', 'pro', 'vip', 'ultra', 'free'];
+      const validTiers: PlanTier[] = ['starter', 'pro', 'vip', 'free'];
       const acc = StorageService.getUserAccount();
       const rawLocal = typeof window !== 'undefined' ? localStorage.getItem('auraprompt_plan_tier') : null;
       const localTier: PlanTier = (rawLocal && validTiers.includes(rawLocal as PlanTier))
         ? (rawLocal as PlanTier)
         : (acc?.planTier && validTiers.includes(acc.planTier) ? acc.planTier : 'free');
       const localExpires = localStorage.getItem('auraprompt_plan_expires_at') || acc?.planExpiresAt;
-      const isLocalActive = ['starter', 'pro', 'vip', 'ultra'].includes(localTier) && (!localExpires || new Date(localExpires).getTime() > Date.now());
+      const isLocalActive = ['starter', 'pro', 'vip'].includes(localTier) && (!localExpires || new Date(localExpires).getTime() > Date.now());
 
       const syncedTier: PlanTier = (synced.planTier && validTiers.includes(synced.planTier)) ? (synced.planTier as PlanTier) : 'free';
       const isSyncedActive = syncedTier !== 'free' && (!synced.planExpiresAt || new Date(synced.planExpiresAt).getTime() > Date.now());
 
-      const TIER_RANK: Record<PlanTier, number> = { free: 0, starter: 1, pro: 2, vip: 3, ultra: 4 };
+      const TIER_RANK: Record<PlanTier, number> = { free: 0, starter: 1, pro: 2, vip: 3 };
       let finalTier: PlanTier = 'free';
       if (isSyncedActive && isLocalActive) {
         finalTier = (TIER_RANK[syncedTier] >= TIER_RANK[localTier]) ? syncedTier : localTier;

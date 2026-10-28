@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
       try {
         const snap = await getDocs(collection(firestoreDb, 'users'));
         if (!snap.empty) {
-          const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3, ultra: 4 };
+          const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3 };
 
           for (const d of snap.docs) {
             const syncData = d.data() as any;
@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
 
             const rawCredits = typeof syncData.toolCredits === 'number' ? syncData.toolCredits : 5;
             const explicitTier: PlanTier =
-              syncData.planTier && ['starter', 'pro', 'vip', 'ultra', 'free'].includes(syncData.planTier)
+              syncData.planTier && ['starter', 'pro', 'vip', 'free'].includes(syncData.planTier)
                 ? syncData.planTier
                 : 'free';
 

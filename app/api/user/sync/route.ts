@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
         return timeB - timeA;
       });
 
-      const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3, ultra: 4 };
+      const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3 };
 
       // Determine highest active unexpired plan tier
       let highestTier: PlanTier = hasActiveSub ? (activeSub.planTier as PlanTier) : 'free';
@@ -339,7 +339,7 @@ export async function POST(req: NextRequest) {
       );
 
       // Safe Plan Tier resolution (vip > pro > starter > free)
-      const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3, ultra: 4 };
+      const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, vip: 3 };
       const currentTier: PlanTier = (existingData.planTier && existingData.planTier in PLAN_CONFIGS && existingData.planTier !== 'free')
         ? (existingData.planTier as PlanTier)
         : 'free';
