@@ -89,7 +89,8 @@ export const UserAuthModal = () => {
   const checkAndRedirectStudio = React.useCallback(() => {
     if (typeof window !== 'undefined') {
       const hasPreload = sessionStorage.getItem('promptcms_studio_preload') || sessionStorage.getItem('auraprompt_studio_preload');
-      if (hasPreload) {
+      const hasImagePreload = sessionStorage.getItem('promptcms_studio_image_preload') || sessionStorage.getItem('auraprompt_studio_image_preload');
+      if (hasPreload || hasImagePreload) {
         router.push('/create');
         return true;
       }

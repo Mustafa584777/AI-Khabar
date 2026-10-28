@@ -15,7 +15,7 @@ import {
   Sliders,
 } from 'lucide-react';
 import { getPromptSlug, getDynamicPopularTags, getOptimizedImageUrl } from '@/lib/utils';
-import { GeminiPromptBox } from './GeminiPromptBox';
+import { ImageToPromptBox } from './ImageToPromptBox';
 
 export const HeroSection = () => {
   const {
@@ -125,8 +125,8 @@ export const HeroSection = () => {
           'Explore 1,000+ curated photo prompts for Gemini and ChatGPT. Copy with 1 click.'}
       </p>
 
-      {/* Gemini AI Prompt Generator Box (Replacing AI Inspire Me Button) */}
-      <GeminiPromptBox />
+      {/* AI Image to Prompt Box */}
+      <ImageToPromptBox />
 
       {/* Action Bar: Search & Sort Dropdown */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 animate-fade-in [animation-delay:300ms]">

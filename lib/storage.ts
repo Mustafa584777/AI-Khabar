@@ -276,8 +276,7 @@ export const StorageService = {
             name: 'Administrator',
             email: validEmail,
             role: 'Administrator',
-            avatar:
-              'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(validEmail.split('@')[0])}&background=0284c7&color=ffffff&size=128&bold=true`,
           })
         );
       }

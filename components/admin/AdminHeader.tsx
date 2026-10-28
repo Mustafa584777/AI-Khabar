@@ -15,6 +15,7 @@ import {
   Trash2,
   RefreshCw,
 } from 'lucide-react';
+import { getEmailAvatarUrl } from '@/lib/utils';
 
 export const AdminHeader = ({ onToggleSidebar }: { onToggleSidebar?: () => void }) => {
   const {
@@ -126,8 +127,19 @@ export const AdminHeader = ({ onToggleSidebar }: { onToggleSidebar?: () => void 
         </button>
 
         {/* User Profile */}
-        <div className="flex items-center gap-2 pl-2 border-l border-neutral-200 dark:border-neutral-850">
-          <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200 hidden md:inline">
+        <div className="flex items-center gap-2.5 pl-2 border-l border-neutral-200 dark:border-neutral-800">
+          <div className="w-7 h-7 rounded-full overflow-hidden border border-neutral-300 dark:border-neutral-700 shrink-0 bg-neutral-200 dark:bg-neutral-800">
+            <img
+              src={
+                currentUser?.avatar && !currentUser.avatar.includes('unsplash.com')
+                  ? currentUser.avatar
+                  : getEmailAvatarUrl(currentUser?.email || settings?.adminEmail, currentUser?.name)
+              }
+              alt={currentUser?.name || 'Admin'}
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200 hidden md:inline max-w-[130px] truncate" title={currentUser?.email}>
             {currentUser?.name || 'Admin'}
           </span>
           <button

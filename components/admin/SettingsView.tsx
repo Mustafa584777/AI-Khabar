@@ -536,7 +536,7 @@ export const SettingsView = () => {
           </span>
         </div>
 
-        <div className="pt-2 flex items-center gap-3">
+        <div className="pt-2 flex flex-wrap items-center gap-3">
           <button
             type="button"
             disabled={isSyncingPosts}
@@ -545,6 +545,32 @@ export const SettingsView = () => {
           >
             <RefreshCw className={`w-4 h-4 ${isSyncingPosts ? 'animate-spin' : ''}`} />
             <span>{isSyncingPosts ? 'Syncing & Merging...' : 'Sync Firebase Database to posts.json'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                const res = await fetch('/api/posts?all=true');
+                const data = await res.json();
+                if (data.success && data.posts) {
+                  const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data.posts, null, 2));
+                  const downloadAnchor = document.createElement('a');
+                  downloadAnchor.setAttribute('href', dataStr);
+                  downloadAnchor.setAttribute('download', 'posts.json');
+                  document.body.appendChild(downloadAnchor);
+                  downloadAnchor.click();
+                  downloadAnchor.remove();
+                  alert('Downloaded posts.json successfully! Upload or replace data/posts.json in your GitHub repository to make it permanent with 0 Firestore reads.');
+                }
+              } catch (err: any) {
+                alert(`Failed to download posts.json: ${err.message}`);
+              }
+            }}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/30 transition-all transform active:scale-95 cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            <span>Download posts.json for GitHub</span>
           </button>
         </div>
       </div>

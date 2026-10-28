@@ -1,0 +1,9 @@
+[build.environment]
+  NETLIFY_FEEDBACK_DISABLED = "true"
+  NETLIFY_DRAWER_DISABLED = "true"
+  NETLIFY_BADGE_DISABLED = "true"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Netlify-Drawer = "disabled"

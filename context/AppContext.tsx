@@ -1890,13 +1890,16 @@ export const AppProvider = ({
       localStorage.removeItem('selectedCategory');
       if (localStorage.getItem('promptcms_auth') === 'true') {
         setIsAuthenticated(true);
-        setCurrentUser({
-          id: 'admin-1',
-          name: 'Administrator',
-          email: 'admin@trendinggeminiprompts.com',
-          role: 'Administrator',
-          avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
-        });
+        const storedAdmin = StorageService.getCurrentUser();
+        setCurrentUser(
+          storedAdmin || {
+            id: 'admin-1',
+            name: 'Administrator',
+            email: 'admin@trendinggeminiprompts.com',
+            role: 'Administrator',
+            avatar: 'https://ui-avatars.com/api/?name=admin&background=0284c7&color=ffffff&size=128&bold=true',
+          }
+        );
       }
       const acc = StorageService.getUserAccount();
       if (acc && acc.isLoggedIn) {

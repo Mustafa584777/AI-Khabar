@@ -20,6 +20,7 @@ import {
   Bell,
   MessageSquare,
 } from 'lucide-react';
+import { getEmailAvatarUrl } from '@/lib/utils';
 
 export const AdminSidebar = () => {
   const {
@@ -164,14 +165,29 @@ export const AdminSidebar = () => {
           <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
         </Link>
 
-        <div className="pt-2 flex items-center justify-between px-2">
-          <div className="text-xs">
-            <p className="font-bold text-white leading-none">{currentUser?.name || 'Administrator'}</p>
-            <p className="text-[10px] text-neutral-500 mt-0.5">{currentUser?.email || 'admin@trendinggeminiprompts.com'}</p>
+        <div className="pt-2 flex items-center justify-between px-2 gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-neutral-700 bg-neutral-800">
+              <img
+                src={
+                  currentUser?.avatar && !currentUser.avatar.includes('unsplash.com')
+                    ? currentUser.avatar
+                    : getEmailAvatarUrl(currentUser?.email, currentUser?.name)
+                }
+                alt={currentUser?.name || 'Administrator'}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="text-xs min-w-0">
+              <p className="font-bold text-white leading-none truncate">{currentUser?.name || 'Administrator'}</p>
+              <p className="text-[10px] text-neutral-400 mt-1 truncate" title={currentUser?.email || 'admin@trendinggeminiprompts.com'}>
+                {currentUser?.email || 'admin@trendinggeminiprompts.com'}
+              </p>
+            </div>
           </div>
           <button
             onClick={logout}
-            className="p-1.5 rounded-lg text-neutral-400 hover:text-red-400 hover:bg-neutral-800 transition-colors"
+            className="p-1.5 rounded-lg text-neutral-400 hover:text-red-400 hover:bg-neutral-800 transition-colors shrink-0"
             title="Log out"
           >
             <LogOut className="w-4 h-4" />

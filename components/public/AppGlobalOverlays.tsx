@@ -4,6 +4,7 @@ import React from 'react';
 import { NotificationsModal } from './NotificationsModal';
 import { PageLoadingOverlay } from './PageLoadingOverlay';
 import { OfflineIndicator } from './OfflineIndicator';
+import { NetlifyBadgeRemover } from './NetlifyBadgeRemover';
 
 export const AppGlobalOverlays = () => {
   return (
@@ -11,6 +12,7 @@ export const AppGlobalOverlays = () => {
       <NotificationsModal />
       <PageLoadingOverlay />
       <OfflineIndicator />
+      <NetlifyBadgeRemover />
     </>
   );
 };

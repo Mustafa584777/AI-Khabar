@@ -32,3 +32,28 @@ html {
 .animate-shimmer {
   animation: shimmer 1.6s infinite ease-in-out;
 }
+
+/* Suppress & hide Netlify badge, drawer, and feedback popups */
+[data-netlify-drawer],
+[data-netlify-badge],
+[data-netlify-feedback],
+netlify-drawer,
+#netlify-badge,
+.netlify-badge,
+[class*="netlify-drawer"],
+[class*="netlify-feedback"],
+[id*="netlify-drawer"],
+iframe[src*="netlify"],
+div:has(> a[href*="netlify.com"]),
+a[href*="netlify.com"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  left: -99999px !important;
+  top: -99999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  z-index: -99999 !important;
+}

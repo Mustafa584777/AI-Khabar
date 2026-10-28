@@ -127,5 +127,12 @@ export function ensureAspectRatio34(text: string): string {
   return clean ? `${clean}, aspect ratio 3:4` : 'aspect ratio 3:4';
 }
 
+export function getEmailAvatarUrl(email?: string, name?: string): string {
+  const cleanEmail = (email || '').trim().toLowerCase();
+  const seed = name && name !== 'Administrator' && name !== 'Admin' ? name : (cleanEmail.split('@')[0] || 'Admin');
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(seed)}&background=0284c7&color=ffffff&size=128&bold=true`;
+}
+
 export * from './tag-utils';
+
 

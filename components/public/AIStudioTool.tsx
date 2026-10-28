@@ -340,6 +340,19 @@ export const AIStudioTool = () => {
     }
   };
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const shouldAutoExtract = sessionStorage.getItem('promptcms_auto_extract');
+      if (shouldAutoExtract === 'true' && uploadedImage && userAccount?.isLoggedIn) {
+        sessionStorage.removeItem('promptcms_auto_extract');
+        const timer = setTimeout(() => {
+          void handleExtractPrompt();
+        }, 350);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [uploadedImage, userAccount?.isLoggedIn]);
+
   const getBreakdownAsPrompt = () => {
     if (!extractedData) return '';
     const a = extractedData.analysis || {};
