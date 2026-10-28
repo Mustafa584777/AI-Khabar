@@ -11,14 +11,13 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  Coins,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useApp } from '@/context/AppContext';
 import { startRazorpayCheckout } from '@/lib/razorpay';
 
 interface PlanOption {
-  id: 'starter' | 'pro' | 'vip' | 'ultra';
+  id: 'starter' | 'pro' | 'vip';
   name: string;
   amountPaise: number;
   displayPrice: string;
@@ -35,7 +34,7 @@ const SUBSCRIPTION_PLANS: PlanOption[] = [
     amountPaise: 4900,
     displayPrice: '₹49',
     period: '/ month',
-    features: ['Unlock all premium prompts', '100 prompt tools credits', '100 AI Searches', '100 saves & history'],
+    features: ['Unlock all premium prompts', '100 prompt tool credits', '100 AI Searches', 'Unlimited saves & history'],
     icon: <Sparkles className="w-5 h-5 text-amber-500" />,
   },
   {
@@ -45,7 +44,7 @@ const SUBSCRIPTION_PLANS: PlanOption[] = [
     displayPrice: '₹99',
     period: '/ month',
     badge: 'Most Popular',
-    features: ['Unlock all premium prompts', '250 prompt tools credits', '200 AI Searches', '200 saves & history'],
+    features: ['Unlock all premium prompts', '250 prompt tool credits', '200 AI Searches', 'Unlimited saves & history'],
     icon: <Zap className="w-5 h-5 text-[#E60023]" />,
   },
   {
@@ -55,77 +54,8 @@ const SUBSCRIPTION_PLANS: PlanOption[] = [
     displayPrice: '₹199',
     period: '/ month',
     badge: 'Best Value',
-    features: ['Unlock all premium prompts', '600 prompt tools credits', '500 AI Searches', '400 saves & history'],
+    features: ['Unlock all premium prompts', '600 prompt tool credits', '500 AI Searches', 'Unlimited saves & history'],
     icon: <Crown className="w-5 h-5 text-purple-500" />,
-  },
-  {
-    id: 'ultra',
-    name: 'Studio 499',
-    amountPaise: 49900,
-    displayPrice: '₹499',
-    period: '/ month',
-    badge: 'Ultimate Studio',
-    features: ['Unlock all premium prompts', '1,500 credits / mo', 'Unlimited AI Search', 'Unlimited saves & history'],
-    icon: <Crown className="w-5 h-5 text-amber-500" />,
-  },
-];
-
-interface CreditPackOption {
-  id: string;
-  name: string;
-  credits: number;
-  amountPaise: number;
-  displayPrice: string;
-  badge?: string;
-  rateText: string;
-  features: string[];
-  icon: React.ReactNode;
-}
-
-const CREDIT_PACK_OPTIONS: CreditPackOption[] = [
-  {
-    id: 'pack-120',
-    name: '120 Credits',
-    credits: 120,
-    amountPaise: 4900,
-    displayPrice: '₹49',
-    rateText: '₹0.41/cr',
-    badge: undefined,
-    features: ['Unlock 120 prompts', 'Up to 60 image runs', 'Never expires'],
-    icon: <Coins className="w-5 h-5 text-amber-500" />,
-  },
-  {
-    id: 'pack-250',
-    name: '250 Credits',
-    credits: 250,
-    amountPaise: 9900,
-    displayPrice: '₹99',
-    rateText: '₹0.40/cr',
-    badge: 'Popular',
-    features: ['Unlock 250 prompts', 'Up to 125 image runs', 'Never expires'],
-    icon: <Zap className="w-5 h-5 text-[#E60023]" />,
-  },
-  {
-    id: 'pack-550',
-    name: '550 Credits',
-    credits: 550,
-    amountPaise: 19900,
-    displayPrice: '₹199',
-    rateText: '₹0.36/cr',
-    badge: 'Best Value',
-    features: ['Unlock 550 prompts', 'Up to 275 image runs', 'Never expires'],
-    icon: <Crown className="w-5 h-5 text-purple-500" />,
-  },
-  {
-    id: 'pack-1500',
-    name: '1,500 Credits',
-    credits: 1500,
-    amountPaise: 49900,
-    displayPrice: '₹499',
-    rateText: '₹0.33/cr',
-    badge: 'Studio Choice',
-    features: ['Unlock 1,500 prompts', 'Up to 750 image runs', 'Never expires'],
-    icon: <Sparkles className="w-5 h-5 text-amber-500" />,
   },
 ];
 
@@ -135,22 +65,18 @@ export const RazorpayCheckoutModal: React.FC = () => {
     setIsProCheckoutModalOpen,
     setIsProUser,
     upgradePlan,
-    addToolCredits,
     toolCredits,
     userAccount,
     showToast,
     openAuthModal,
   } = useApp();
 
-  const [checkoutType, setCheckoutType] = useState<'credits' | 'subscription'>('credits');
-  const [selectedCreditPackId, setSelectedCreditPackId] = useState<string>('pack-250');
-  const [selectedPlanId, setSelectedPlanId] = useState<'starter' | 'pro' | 'vip' | 'ultra'>('pro');
+  const [selectedPlanId, setSelectedPlanId] = useState<'starter' | 'pro' | 'vip'>('pro');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [paymentResult, setPaymentResult] = useState<{
     success: boolean;
     orderId?: string;
     paymentId?: string;
-    creditsAdded?: number;
     message?: string;
   } | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -168,19 +94,11 @@ export const RazorpayCheckoutModal: React.FC = () => {
   if (!isProCheckoutModalOpen) return null;
 
   const getEffectiveAmountPaise = (): number => {
-    if (checkoutType === 'credits') {
-      const pack = CREDIT_PACK_OPTIONS.find((p) => p.id === selectedCreditPackId);
-      return pack ? pack.amountPaise : 9900;
-    }
     const plan = SUBSCRIPTION_PLANS.find((p) => p.id === selectedPlanId);
-    return plan ? plan.amountPaise : 19900;
+    return plan ? plan.amountPaise : 9900;
   };
 
   const getEffectiveTitle = (): string => {
-    if (checkoutType === 'credits') {
-      const pack = CREDIT_PACK_OPTIONS.find((p) => p.id === selectedCreditPackId);
-      return pack ? `${pack.name} Pack` : 'Credits Pack';
-    }
     const plan = SUBSCRIPTION_PLANS.find((p) => p.id === selectedPlanId);
     return plan ? `${plan.name} Membership` : 'Pro Membership';
   };
@@ -190,7 +108,7 @@ export const RazorpayCheckoutModal: React.FC = () => {
 
     if (!userAccount || !userAccount.isLoggedIn) {
       setIsProCheckoutModalOpen(false);
-      openAuthModal('Please sign in or create an account first so your subscription plan and credits are safely saved to your account.');
+      openAuthModal('Please sign in or create an account first so your subscription plan is safely saved.');
       return;
     }
 
@@ -203,8 +121,6 @@ export const RazorpayCheckoutModal: React.FC = () => {
 
     setIsProcessing(true);
     const itemTitle = getEffectiveTitle();
-    const isCreditPack = checkoutType === 'credits';
-    const selectedPack = isCreditPack ? CREDIT_PACK_OPTIONS.find((p) => p.id === selectedCreditPackId) : null;
 
     try {
       await startRazorpayCheckout({
@@ -219,41 +135,28 @@ export const RazorpayCheckoutModal: React.FC = () => {
         },
         notes: {
           item: itemTitle,
-          type: checkoutType,
-          tier_or_pack: isCreditPack ? selectedCreditPackId : selectedPlanId,
+          type: 'subscription',
+          tier: selectedPlanId,
           userEmail: userAccount.email,
           userId: userAccount.id,
         },
         themeColor: '#E60023',
         onSuccess: (data) => {
           setIsProcessing(false);
-
-          if (isCreditPack && selectedPack) {
-            addToolCredits(selectedPack.credits);
-            showToast(`Added ${selectedPack.credits} Credits to your balance! 🎉`);
-            setPaymentResult({
-              success: true,
-              orderId: data.order_id,
-              paymentId: data.payment_id,
-              creditsAdded: selectedPack.credits,
-              message: `Successfully added ${selectedPack.credits} Credits to your account.`,
-            });
+          const isQueued = Boolean(data?.isQueued);
+          upgradePlan(selectedPlanId, data.userSyncData, isQueued);
+          if (isQueued) {
+            showToast(data?.message || `Your new ${(selectedPlanId || 'pro').toUpperCase()} plan is queued and will activate once your current plan ends!`);
           } else {
-            const isQueued = Boolean(data?.isQueued);
-            upgradePlan(selectedPlanId, data.userSyncData, isQueued);
-            if (isQueued) {
-              showToast(data?.message || `Your new ${(selectedPlanId || 'pro').toUpperCase()} plan is queued and will activate once your current plan ends!`);
-            } else {
-              setIsProUser(true);
-              showToast(`Payment verified! Upgraded to ${(selectedPlanId || 'pro').toUpperCase()} Plan 🎉`);
-            }
-            setPaymentResult({
-              success: true,
-              orderId: data.order_id,
-              paymentId: data.payment_id,
-              message: data.message || `Successfully processed ${(selectedPlanId || 'pro').toUpperCase()} plan.`,
-            });
+            setIsProUser(true);
+            showToast(`Payment verified! Upgraded to ${(selectedPlanId || 'pro').toUpperCase()} Plan 🎉`);
           }
+          setPaymentResult({
+            success: true,
+            orderId: data.order_id,
+            paymentId: data.payment_id,
+            message: data.message || `Successfully processed ${(selectedPlanId || 'pro').toUpperCase()} plan.`,
+          });
 
           try {
             confetti({
@@ -320,35 +223,6 @@ export const RazorpayCheckoutModal: React.FC = () => {
           </button>
         </div>
 
-        {/* Tab Toggle */}
-        <div className="flex p-1 rounded-full bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
-          <button
-            type="button"
-            onClick={() => setCheckoutType('credits')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-full text-xs font-bold transition-all ${
-              checkoutType === 'credits'
-                ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm'
-                : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
-            }`}
-          >
-            <Coins className="w-3.5 h-3.5 text-amber-500" />
-            <span>Credits Packs</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setCheckoutType('subscription')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-full text-xs font-bold transition-all ${
-              checkoutType === 'subscription'
-                ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm'
-                : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
-            }`}
-          >
-            <Crown className="w-3.5 h-3.5 text-purple-500" />
-            <span>Monthly Plans</span>
-          </button>
-        </div>
-
         {/* Success Screen */}
         {paymentResult && paymentResult.success ? (
           <div className="p-6 rounded-3xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 text-center space-y-4 animate-scale-up">
@@ -403,112 +277,60 @@ export const RazorpayCheckoutModal: React.FC = () => {
             )}
 
             {/* Selection Grid */}
-            {checkoutType === 'credits' ? (
-              <div className="space-y-2.5">
-                <div className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-                  Select Credits Top-Up Pack:
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  {CREDIT_PACK_OPTIONS.map((pack) => {
-                    const isSelected = selectedCreditPackId === pack.id;
-                    return (
-                      <div
-                        key={pack.id}
-                        onClick={() => setSelectedCreditPackId(pack.id)}
-                        className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between space-y-2 relative ${
-                          isSelected
-                            ? 'border-[#E60023] bg-red-50/40 dark:bg-red-950/20 shadow-xs'
-                            : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700'
-                        }`}
-                      >
-                        {pack.badge && (
-                          <span className="absolute -top-2 right-2 px-2 py-0.5 rounded-full bg-[#E60023] text-white text-[9px] font-black uppercase">
-                            {pack.badge}
-                          </span>
-                        )}
-
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            {pack.icon}
-                            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                              {pack.rateText}
-                            </span>
-                          </div>
-                          <h4 className="text-xs font-bold text-neutral-900 dark:text-white">
-                            {pack.name}
-                          </h4>
-                          <span className="text-base font-black text-neutral-900 dark:text-white block">
-                            {pack.displayPrice}
-                          </span>
-                        </div>
-
-                        <ul className="space-y-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-                          {pack.features.map((f, i) => (
-                            <li key={i}>• {f}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    );
-                  })}
-                </div>
+            <div className="space-y-2.5">
+              <div className="text-xs font-bold uppercase tracking-wider text-neutral-400">
+                Select Subscription Plan:
               </div>
-            ) : (
-              <div className="space-y-2.5">
-                <div className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-                  Select Monthly Plan:
-                </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  {SUBSCRIPTION_PLANS.map((plan) => {
-                    const isSelected = selectedPlanId === plan.id;
-                    return (
-                      <div
-                        key={plan.id}
-                        onClick={() => setSelectedPlanId(plan.id)}
-                        className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between space-y-2 relative ${
-                          isSelected
-                            ? 'border-[#E60023] bg-red-50/40 dark:bg-red-950/20 shadow-xs'
-                            : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700'
-                        }`}
-                      >
-                        {plan.badge && (
-                          <span className="absolute -top-2 right-2 px-2 py-0.5 rounded-full bg-[#E60023] text-white text-[9px] font-black uppercase">
-                            {plan.badge}
-                          </span>
-                        )}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                {SUBSCRIPTION_PLANS.map((plan) => {
+                  const isSelected = selectedPlanId === plan.id;
+                  return (
+                    <div
+                      key={plan.id}
+                      onClick={() => setSelectedPlanId(plan.id)}
+                      className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between space-y-2 relative ${
+                        isSelected
+                          ? 'border-[#E60023] bg-red-50/40 dark:bg-red-950/20 shadow-xs'
+                          : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700'
+                      }`}
+                    >
+                      {plan.badge && (
+                        <span className="absolute -top-2 right-2 px-2 py-0.5 rounded-full bg-[#E60023] text-white text-[9px] font-black uppercase">
+                          {plan.badge}
+                        </span>
+                      )}
 
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            {plan.icon}
-                          </div>
-                          <h4 className="text-xs font-bold text-neutral-900 dark:text-white">
-                            {plan.name}
-                          </h4>
-                          <span className="text-base font-black text-neutral-900 dark:text-white block">
-                            {plan.displayPrice}
-                            <span className="text-[10px] font-normal text-neutral-400"> /mo</span>
-                          </span>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          {plan.icon}
                         </div>
-
-                        <ul className="space-y-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-                          {plan.features.map((f, i) => (
-                            <li key={i}>• {f}</li>
-                          ))}
-                        </ul>
+                        <h4 className="text-xs font-bold text-neutral-900 dark:text-white">
+                          {plan.name}
+                        </h4>
+                        <span className="text-base font-black text-neutral-900 dark:text-white block">
+                          {plan.displayPrice}
+                          <span className="text-[10px] font-normal text-neutral-400"> /mo</span>
+                        </span>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
 
-            {/* How credits work quick note */}
+                      <ul className="space-y-1 text-[10px] text-neutral-500 dark:text-neutral-400">
+                        {plan.features.map((f, i) => (
+                          <li key={i}>• {f}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Security note */}
             <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex items-center justify-between text-xs">
               <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
                 <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
                 <span className="text-[11px]">
-                  <strong>1 Credit</strong> = Unlock Prompt • <strong>2 Credits</strong> = Image to Prompt
+                  Instant access to all premium prompts & unlimited saves
                 </span>
               </div>
               <span className="text-[10px] font-bold text-neutral-400">UPI / Cards</span>

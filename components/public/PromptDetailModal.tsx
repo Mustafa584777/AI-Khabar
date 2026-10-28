@@ -470,25 +470,8 @@ export const PromptDetailModal = () => {
     if (!selectedPost) return;
     const isUnlocked = isPromptUnlocked(selectedPost.id, selectedPost.isPremium);
     if (!isUnlocked) {
-      if (toolCredits >= 1) {
-        const res = unlockPromptWithCredit(selectedPost.id);
-        if (!res.success) {
-          setIsUnlockModalOpen(true);
-          return;
-        }
-        try {
-          confetti({
-            particleCount: 60,
-            spread: 50,
-            origin: { y: 0.6 },
-            colors: ['#FFD700', '#FFA500', '#E60023'],
-          });
-        } catch {}
-        showToast('Prompt unlocked! 1 credit used 🎉');
-      } else {
-        setIsUnlockModalOpen(true);
-        return;
-      }
+      setIsUnlockModalOpen(true);
+      return;
     }
     if (typeof window !== 'undefined') {
       sessionStorage.setItem('auraprompt_studio_preload', selectedPost.promptText);
@@ -700,49 +683,11 @@ export const PromptDetailModal = () => {
   const isPromptGated = Boolean(selectedPost.isPremium && !isUnlocked);
 
   const handleUnlockWithOneCredit = () => {
-    if (!selectedPost) return;
-    if (toolCredits >= 1) {
-      const res = unlockPromptWithCredit(selectedPost.id);
-      if (res.success) {
-        try {
-          confetti({
-            particleCount: 80,
-            spread: 60,
-            origin: { y: 0.6 },
-            colors: ['#FFD700', '#FFA500', '#E60023'],
-          });
-        } catch {}
-        showToast('Prompt unlocked! 1 credit used 🎉');
-      } else {
-        showToast(res.message);
-        setIsUnlockModalOpen(true);
-      }
-    } else {
-      showToast(`You need 1 credit to unlock this prompt (Balance: ${toolCredits}). Top up credits or subscribe!`);
-      setIsUnlockModalOpen(true);
-    }
+    setIsUnlockModalOpen(true);
   };
 
   const handleCopyMasterPrompt = () => {
     if (isPromptGated) {
-      if (toolCredits >= 1) {
-        const res = unlockPromptWithCredit(selectedPost.id);
-        if (res.success) {
-          copyPromptToClipboard(selectedPost.promptText, selectedPost.id);
-          setCopiedPrompt(true);
-          setTimeout(() => setCopiedPrompt(false), 2000);
-          try {
-            confetti({
-              particleCount: 80,
-              spread: 60,
-              origin: { y: 0.6 },
-              colors: ['#FFD700', '#FFA500', '#E60023'],
-            });
-          } catch {}
-          showToast('Prompt unlocked and copied! 1 credit used 🎉');
-          return;
-        }
-      }
       setIsUnlockModalOpen(true);
       return;
     }
@@ -775,24 +720,6 @@ export const PromptDetailModal = () => {
     e.stopPropagation();
     const isPinUnlocked = isPromptUnlocked(pin.id, pin.isPremium);
     if (!isPinUnlocked) {
-      if (toolCredits >= 1) {
-        const res = unlockPromptWithCredit(pin.id);
-        if (res.success) {
-          copyPromptToClipboard(pin.promptText, pin.id);
-          setCopiedPinId(pin.id);
-          setTimeout(() => setCopiedPinId(null), 2000);
-          try {
-            confetti({
-              particleCount: 60,
-              spread: 50,
-              origin: { y: 0.6 },
-              colors: ['#FFD700', '#FFA500', '#E60023'],
-            });
-          } catch {}
-          showToast('Prompt unlocked and copied! 1 credit used 🎉');
-          return;
-        }
-      }
       setIsUnlockModalOpen(true);
       return;
     }
@@ -1429,25 +1356,8 @@ export const PromptDetailModal = () => {
                       e.stopPropagation();
                       const isPinUnlocked = isPromptUnlocked(p.id, p.isPremium);
                       if (!isPinUnlocked) {
-                        if (toolCredits >= 1) {
-                          const res = unlockPromptWithCredit(p.id);
-                          if (!res.success) {
-                            setIsUnlockModalOpen(true);
-                            return;
-                          }
-                          try {
-                            confetti({
-                              particleCount: 60,
-                              spread: 50,
-                              origin: { y: 0.6 },
-                              colors: ['#FFD700', '#FFA500', '#E60023'],
-                            });
-                          } catch {}
-                          showToast('Prompt unlocked! 1 credit used 🎉');
-                        } else {
-                          setIsUnlockModalOpen(true);
-                          return;
-                        }
+                        setIsUnlockModalOpen(true);
+                        return;
                       }
                       if (typeof window !== 'undefined') {
                         sessionStorage.setItem('auraprompt_studio_preload', p.promptText);

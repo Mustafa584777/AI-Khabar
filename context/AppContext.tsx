@@ -472,86 +472,25 @@ export const AppProvider = ({
   });
 
   const isPromptUnlocked = useCallback(
-    (promptId: string, isPremium?: boolean): boolean => {
+    (_promptId: string, isPremium?: boolean): boolean => {
       if (!isPremium) return true;
       if (isProUser) return true;
-      if (unlockedPromptIds.includes(promptId)) return true;
-      if (typeof window !== 'undefined') {
-        try {
-          const saved = localStorage.getItem('auraprompt_unlocked_prompts');
-          if (saved) {
-            const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed) && parsed.includes(promptId)) return true;
-          }
-        } catch {}
-      }
       return false;
     },
-    [isProUser, unlockedPromptIds]
+    [isProUser]
   );
 
   const unlockPromptWithCredit = useCallback(
-    (promptId: string): { success: boolean; message: string } => {
-      if (isProUser) {
-        return { success: true, message: 'Included with Pro Membership!' };
-      }
-      let existingUnlocked = [...unlockedPromptIds];
-      if (typeof window !== 'undefined') {
-        try {
-          const saved = localStorage.getItem('auraprompt_unlocked_prompts');
-          if (saved) {
-            const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed)) existingUnlocked = Array.from(new Set([...existingUnlocked, ...parsed]));
-          }
-        } catch {}
-      }
-      if (existingUnlocked.includes(promptId)) {
-        return { success: true, message: 'Prompt is already unlocked!' };
-      }
-
-      let currentCredits = toolCredits;
-      if (typeof window !== 'undefined') {
-        const saved = localStorage.getItem('auraprompt_tool_credits');
-        if (saved !== null) {
-          const parsed = parseInt(saved, 10);
-          if (!isNaN(parsed)) currentCredits = Math.min(toolCredits, parsed);
-        }
-      }
-
-      if (currentCredits < 1) {
-        return {
-          success: false,
-          message: 'Insufficient credits. 1 credit is required to unlock this premium prompt.',
-        };
-      }
-
-      const nextCredits = Math.max(0, currentCredits - 1);
-      setToolCreditsState(nextCredits);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('auraprompt_tool_credits', nextCredits.toString());
-      }
-      setUserAccount((prev) => (prev ? { ...prev, toolCredits: nextCredits } : prev));
-
-      const nextUnlocked = Array.from(new Set([...existingUnlocked, promptId]));
-      setUnlockedPromptIds(nextUnlocked);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('auraprompt_unlocked_prompts', JSON.stringify(nextUnlocked));
-      }
-
-      const currentAcc = userAccount || StorageService.getUserAccount();
-      if (currentAcc && currentAcc.isLoggedIn) {
-        void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, {
-          unlockedPromptIds: nextUnlocked,
-          toolCredits: nextCredits,
-        });
-      }
-
-      return { success: true, message: 'Prompt unlocked successfully! 1 credit used.' };
+    (_promptId: string): { success: boolean; message: string } => {
+      return {
+        success: false,
+        message: 'Premium prompts can now only be unlocked via a paid subscription plan.',
+      };
     },
-    [isProUser, unlockedPromptIds, toolCredits, userAccount]
+    []
   );
 
-  const upgradePlan = useCallback((tier: 'starter' | 'pro' | 'vip' | 'ultra', serverData?: any, isQueued?: boolean, cycle?: 'monthly' | 'yearly') => {
+  const upgradePlan = useCallback((tier: 'starter' | 'pro' | 'vip', serverData?: any, isQueued?: boolean, cycle?: 'monthly' | 'yearly') => {
     const resolvedCycle: BillingCycle = cycle || serverData?.billingCycle || (
       serverData?.planExpiresAt && serverData?.planStartedAt &&
       (new Date(serverData.planExpiresAt).getTime() - new Date(serverData.planStartedAt).getTime()) > 60 * 24 * 60 * 60 * 1000
