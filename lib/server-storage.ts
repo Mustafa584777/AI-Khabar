@@ -36,35 +36,33 @@ const DEFAULT_TAGS = [
 
 function ensureDataDir() {
   try {
-    if (typeof fs === 'undefined' || !fs.existsSync) return;
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
   } catch (err) {
-    // Read-only filesystem on edge/Cloudflare
+    console.error('Failed to create data directory:', err);
   }
 }
 
 function readJsonFile<T>(filePath: string, fallback: T): T {
   try {
-    if (typeof fs === 'undefined' || !fs.existsSync || !fs.readFileSync) return fallback;
+    ensureDataDir();
     if (fs.existsSync(filePath)) {
       const raw = fs.readFileSync(filePath, 'utf-8');
       return JSON.parse(raw);
     }
   } catch (err) {
-    // Read failed, return fallback
+    console.error(`Error reading ${filePath}:`, err);
   }
   return fallback;
 }
 
 function writeJsonFile<T>(filePath: string, data: T): void {
   try {
-    if (typeof fs === 'undefined' || !fs.writeFileSync) return;
     ensureDataDir();
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
   } catch (err) {
-    // Write failed (read-only filesystem on edge)
+    console.error(`Error writing ${filePath}:`, err);
   }
 }
 
@@ -208,32 +206,29 @@ export const ServerStorage = {
   },
 
   getAllPosts: async (includeDrafts = true, fromFirebase = false): Promise<PromptPost[]> => {
-    let firebasePosts: PromptPost[] = [];
-    if (isFirebaseConfigured()) {
+    if (fromFirebase && isFirebaseConfigured()) {
       try {
         const postsSnap = await getDocs(collection(firestoreDb, 'posts'));
+        const firebasePosts: PromptPost[] = [];
         postsSnap.forEach((docSnap) => {
           const data = docSnap.data() as PromptPost;
           if (data && data.id) {
             firebasePosts.push(data);
           }
         });
+        if (firebasePosts.length > 0) {
+          const cleaned = ServerStorage.deduplicatePosts(firebasePosts);
+          writeJsonFile(POSTS_FILE, cleaned);
+          memoryPosts = cleaned;
+          return includeDrafts ? cleaned : cleaned.filter((p) => p.status === 'published');
+        }
       } catch (e) {
-        console.warn('Error fetching posts from Firebase:', e);
+        console.error('Error fetching posts from Firebase for admin:', e);
       }
     }
 
-    if (firebasePosts.length > 0) {
-      const cleaned = ServerStorage.deduplicatePosts(firebasePosts);
-      try {
-        writeJsonFile(POSTS_FILE, cleaned);
-      } catch {}
-      memoryPosts = cleaned;
-      return includeDrafts ? cleaned : cleaned.filter((p) => p.status === 'published');
-    }
-
     const posts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
-    const cleaned = ServerStorage.deduplicatePosts(posts.length > 0 ? posts : (INITIAL_POSTS || []));
+    const cleaned = ServerStorage.deduplicatePosts(posts);
     return includeDrafts ? cleaned : cleaned.filter((p) => p.status === 'published');
   },
 

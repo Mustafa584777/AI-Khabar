@@ -1,16 +1,16 @@
 {
-  "name": "ai-khabar",
+  "name": "ai-studio-applet",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "next build",
-    "pages:build": "npx @cloudflare/next-on-pages",
+    "build": "next build --webpack",
     "start": "next start -p 3000",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
     "@google/genai": "latest",
+    "@supabase/supabase-js": "^2.39.8",
     "autoprefixer": "^10.6.1",
     "canvas-confetti": "^1.9.4",
     "cloudinary": "^2.11.0",
@@ -27,7 +27,6 @@
     "tailwind-merge": "^2.2.1"
   },
   "devDependencies": {
-    "@cloudflare/next-on-pages": "^1.13.16",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^20",
@@ -35,7 +34,6 @@
     "@types/react-dom": "^19",
     "postcss": "^8",
     "tailwindcss": "^4.0.0",
-    "typescript": "^5",
-    "wrangler": "^4.153.0"
+    "typescript": "^5"
   }
 }
