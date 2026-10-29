@@ -29,6 +29,7 @@ import {
   AlertCircle,
   Loader2,
 } from 'lucide-react';
+import { getEmailAvatarUrl } from '@/lib/utils';
 
 export const UserAuthModal = () => {
   const router = useRouter();
@@ -84,8 +85,6 @@ export const UserAuthModal = () => {
     }
   };
 
-  const defaultAvatar = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80';
-
   const checkAndRedirectStudio = React.useCallback(() => {
     if (typeof window !== 'undefined') {
       const hasPreload = sessionStorage.getItem('promptcms_studio_preload') || sessionStorage.getItem('auraprompt_studio_preload');
@@ -110,7 +109,7 @@ export const UserAuthModal = () => {
       const u = result.user;
       if (u) {
         const name = u.displayName || u.email?.split('@')[0] || 'Creator';
-        const avatar = u.photoURL || defaultAvatar;
+        const avatar = u.photoURL || getEmailAvatarUrl(u.email || '', name);
 
         if (typeof window !== 'undefined') {
           localStorage.setItem('auraprompt_signup_modal_already_shown', 'true');
@@ -221,7 +220,7 @@ export const UserAuthModal = () => {
         }
 
         const userName = u.displayName || cleanEmail.split('@')[0];
-        const userAvatar = u.photoURL || defaultAvatar;
+        const userAvatar = u.photoURL || getEmailAvatarUrl(cleanEmail, userName);
 
         setIsFirstLoginModalOpen(false);
         if (typeof window !== 'undefined') {

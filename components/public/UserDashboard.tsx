@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { PromptPost, AIHistoryItem, PlanTier } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
-import { getPromptSlug, getOptimizedImageUrl } from '@/lib/utils';
+import { getPromptSlug, getOptimizedImageUrl, getEmailAvatarUrl } from '@/lib/utils';
 import {
   User,
   Bookmark,
@@ -76,6 +76,7 @@ export const UserDashboard = () => {
     planExpiresAt,
     planStartedAt,
     queuedPlan,
+    setQueuedPlan,
     aiSearchRemaining,
   } = useApp();
 
@@ -98,6 +99,29 @@ export const UserDashboard = () => {
     (planExpiresAt && planStartedAt && (new Date(planExpiresAt).getTime() - new Date(planStartedAt).getTime()) > 60 * 24 * 60 * 60 * 1000)
   );
   const currentPlanConfig = getPlanFeaturesForCycle(effectivePlanTier, isYearlyPlan ? 'yearly' : 'monthly');
+
+  // Verify that queued plan is genuinely upcoming in future (start date has not arrived yet)
+  const isQueuedPlanUpcoming = Boolean(
+    queuedPlan &&
+    queuedPlan.scheduledStartAt &&
+    new Date(queuedPlan.scheduledStartAt).getTime() > Date.now() &&
+    (!planExpiresAt || new Date(queuedPlan.scheduledStartAt).getTime() >= new Date(planExpiresAt).getTime() - 120000)
+  );
+
+  // Auto-clean stale or already-promoted queued plan so no ghost banner lingers
+  React.useEffect(() => {
+    if (queuedPlan && !isQueuedPlanUpcoming) {
+      if (typeof setQueuedPlan === 'function') {
+        setQueuedPlan(null);
+      }
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('auraprompt_queued_plan');
+      }
+      if (userAccount?.id || userAccount?.email) {
+        void syncUserCloudData();
+      }
+    }
+  }, [queuedPlan, isQueuedPlanUpcoming, setQueuedPlan, userAccount?.id, userAccount?.email, syncUserCloudData]);
 
   // Automatically prompt auth modal if unauthenticated
   React.useEffect(() => {
@@ -299,19 +323,21 @@ export const UserDashboard = () => {
         {/* Profile Card */}
         <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4 sm:gap-5">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-[#E60023] to-amber-500 text-white flex items-center justify-center font-black text-2xl sm:text-3xl shadow-lg shadow-red-500/20 shrink-0 overflow-hidden relative">
-              {userAccount?.avatar ? (
-                <Image
-                  src={userAccount.avatar}
-                  alt={userAccount.name || 'User'}
-                  fill
-                  sizes="80px"
-                  className="object-cover"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <User className="w-8 h-8 sm:w-10 sm:h-10" />
-              )}
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-neutral-900 border-2 border-neutral-700/60 shadow-lg shadow-black/20 shrink-0 overflow-hidden relative">
+              <img
+                src={
+                  userAccount?.avatar && !userAccount.avatar.includes('unsplash.com')
+                    ? userAccount.avatar
+                    : getEmailAvatarUrl(userAccount?.email, userAccount?.name)
+                }
+                alt={userAccount?.name || 'User Profile'}
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  const fallbackSeed = userAccount?.name || userAccount?.email?.split('@')[0] || 'User';
+                  (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackSeed)}&background=0284c7&color=ffffff&size=128&bold=true&length=2`;
+                }}
+              />
             </div>
 
             <div className="space-y-1">
@@ -519,7 +545,7 @@ export const UserDashboard = () => {
                     <p>Plan Subscription Expires On: {expiryDisplay}</p>
                   </div>
                 )}
-                {queuedPlan && (
+                {isQueuedPlanUpcoming && queuedPlan && (
                   <div className="mt-3 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs space-y-1.5 animate-in fade-in duration-300">
                     <div className="flex items-center gap-2 font-black text-amber-400">
                       <Clock className="w-4 h-4 text-amber-400 shrink-0" />

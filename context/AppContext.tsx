@@ -23,7 +23,7 @@ import {
   getPlanFeaturesForCycle,
   BillingCycle,
 } from '@/lib/plans';
-import { getPromptSlug } from '@/lib/utils';
+import { getPromptSlug, getEmailAvatarUrl } from '@/lib/utils';
 
 interface AppContextType {
   // Navigation & Views
@@ -156,6 +156,7 @@ interface AppContextType {
   planExpiresAt: string | null;
   planStartedAt: string | null;
   queuedPlan: QueuedPlan | null;
+  setQueuedPlan: (plan: QueuedPlan | null) => void;
   toolCredits: number;
   deductToolCredit: (amount?: number) => boolean;
   useToolCredit: (amount?: number) => boolean;
@@ -835,7 +836,7 @@ export const AppProvider = ({
       email: cleanEmail,
       joinedDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
       isLoggedIn: true,
-      avatar: avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
+      avatar: (avatar && !avatar.includes('unsplash.com')) ? avatar : getEmailAvatarUrl(cleanEmail, username || cleanEmail.split('@')[0]),
       points: 10,
       toolCredits: localCr !== null ? localCr : 5,
       requestsMade: 0,
@@ -969,7 +970,7 @@ export const AppProvider = ({
       email: cleanEmail,
       joinedDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
       isLoggedIn: true,
-      avatar: avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
+      avatar: (avatar && !avatar.includes('unsplash.com')) ? avatar : getEmailAvatarUrl(cleanEmail, name || cleanEmail.split('@')[0]),
       points: 10,
       toolCredits: 5,
       requestsMade: 0,
@@ -1313,12 +1314,18 @@ export const AppProvider = ({
           setPlanStartedAtState(finalStarted);
         }
 
-        // Queued Plan handling
+        // Queued Plan handling: only accept if scheduled start is actually in the future
+        const isQpValid = Boolean(
+          synced.queuedPlan &&
+          synced.queuedPlan.scheduledStartAt &&
+          new Date(synced.queuedPlan.scheduledStartAt).getTime() > Date.now()
+        );
         if (synced.queuedPlan !== undefined) {
-          setQueuedPlan(synced.queuedPlan);
-          if (synced.queuedPlan) {
+          if (isQpValid) {
+            setQueuedPlan(synced.queuedPlan);
             localStorage.setItem('auraprompt_queued_plan', JSON.stringify(synced.queuedPlan));
           } else {
+            setQueuedPlan(null);
             localStorage.removeItem('auraprompt_queued_plan');
           }
         }
@@ -1405,7 +1412,7 @@ export const AppProvider = ({
             toolCredits: resolvedCredits,
             planExpiresAt: finalExpires || prev.planExpiresAt,
             planStartedAt: finalStarted || prev.planStartedAt,
-            queuedPlan: synced.queuedPlan || prev.queuedPlan || null,
+            queuedPlan: isQpValid ? (synced.queuedPlan || null) : null,
           };
           StorageService.saveUserAccount(updated);
           return updated;
@@ -1432,6 +1439,23 @@ export const AppProvider = ({
   // Active Plan Expiration Monitor (Rule 4, 5, 7): Checks every 30 seconds
   useEffect(() => {
     const checkExpiration = () => {
+      // Clean up stale queued plan if start date has passed while active plan is still active
+      if (queuedPlan && queuedPlan.scheduledStartAt && new Date(queuedPlan.scheduledStartAt).getTime() <= Date.now()) {
+        const activeExp = planExpiresAt ? new Date(planExpiresAt).getTime() : 0;
+        if (activeExp > Date.now()) {
+          setQueuedPlan(null);
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('auraprompt_queued_plan');
+          }
+          const currentAcc = userAccount || StorageService.getUserAccount();
+          if (currentAcc && (currentAcc.email || currentAcc.id)) {
+            void UserSyncService.pushUserData(currentAcc.id, currentAcc.email, {
+              queuedPlan: null,
+            });
+          }
+        }
+      }
+
       if (planTier !== 'free' && planExpiresAt) {
         const expTime = new Date(planExpiresAt).getTime();
         if (!isNaN(expTime) && expTime <= Date.now()) {
@@ -2048,13 +2072,23 @@ export const AppProvider = ({
         setPlanStartedAtState(finalStarted);
       }
 
-      // Queued Plan handling
+      // Queued Plan handling: only accept if scheduled start is actually in the future
+      const isQpUpcoming = Boolean(
+        synced.queuedPlan &&
+        synced.queuedPlan.scheduledStartAt &&
+        new Date(synced.queuedPlan.scheduledStartAt).getTime() > Date.now()
+      );
       if (synced.queuedPlan !== undefined) {
-        setQueuedPlan(synced.queuedPlan);
-        if (synced.queuedPlan && typeof window !== 'undefined') {
-          localStorage.setItem('auraprompt_queued_plan', JSON.stringify(synced.queuedPlan));
-        } else if (typeof window !== 'undefined') {
-          localStorage.removeItem('auraprompt_queued_plan');
+        if (isQpUpcoming) {
+          setQueuedPlan(synced.queuedPlan);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('auraprompt_queued_plan', JSON.stringify(synced.queuedPlan));
+          }
+        } else {
+          setQueuedPlan(null);
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('auraprompt_queued_plan');
+          }
         }
       }
 
@@ -2111,7 +2145,7 @@ export const AppProvider = ({
           toolCredits: resolvedCredits,
           planExpiresAt: finalExpires || prev.planExpiresAt,
           planStartedAt: finalStarted || prev.planStartedAt,
-          queuedPlan: synced.queuedPlan || prev.queuedPlan || null,
+          queuedPlan: isQpUpcoming ? (synced.queuedPlan || null) : null,
         };
         StorageService.saveUserAccount(updated);
         return updated;
@@ -2138,8 +2172,8 @@ export const AppProvider = ({
           email: firebaseUser.email || existing?.email || '',
           avatar:
             firebaseUser.photoURL ||
-            existing?.avatar ||
-            'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80',
+            (existing?.avatar && !existing.avatar.includes('unsplash.com') ? existing.avatar : null) ||
+            getEmailAvatarUrl(firebaseUser.email || existing?.email || '', firebaseUser.displayName || existing?.name || emailPrefix),
           isLoggedIn: true,
           joinedDate: existing?.joinedDate || 'Recently',
           points: existing?.points ?? 10,
@@ -2837,6 +2871,7 @@ export const AppProvider = ({
         planExpiresAt,
         planStartedAt,
         queuedPlan,
+        setQueuedPlan,
         toolCredits,
         deductToolCredit,
         useToolCredit,

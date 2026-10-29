@@ -451,6 +451,14 @@ export const UserSyncService = {
       resolvedPlanExpiresAt && new Date(resolvedPlanExpiresAt).getTime() <= Date.now()
     );
 
+    // If current plan is active and queued plan's scheduled start date is already in the past, clear stale queue
+    if (!isPlanCurrentlyExpired && activeQueuedPlan && activeQueuedPlan.scheduledStartAt) {
+      if (new Date(activeQueuedPlan.scheduledStartAt).getTime() <= Date.now()) {
+        activeQueuedPlan = null;
+        if (typeof window !== 'undefined') localStorage.removeItem('auraprompt_queued_plan');
+      }
+    }
+
     if (isPlanCurrentlyExpired) {
       if (activeQueuedPlan) {
         // Automatically activate queued plan!

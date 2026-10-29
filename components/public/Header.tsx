@@ -16,6 +16,7 @@ import {
 import { NotificationService } from '@/lib/notifications';
 import Link from 'next/link';
 import { PWAInstallButton } from './PWAInstallButton';
+import { getEmailAvatarUrl } from '@/lib/utils';
 
 export const Header = () => {
   const router = useRouter();
@@ -227,18 +228,20 @@ export const Header = () => {
               title="My Creative Dashboard"
               id="header-user-dashboard-btn"
             >
-              {userAccount.avatar ? (
-                <Image
-                  src={userAccount.avatar}
-                  alt={userAccount.name || 'User'}
-                  width={18}
-                  height={18}
-                  className="w-4 h-4 rounded-full object-cover border border-emerald-500/50"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <User className="w-4 h-4" />
-              )}
+              <img
+                src={
+                  userAccount.avatar && !userAccount.avatar.includes('unsplash.com')
+                    ? userAccount.avatar
+                    : getEmailAvatarUrl(userAccount.email, userAccount.name)
+                }
+                alt={userAccount.name || 'User Profile'}
+                className="w-4 h-4 rounded-full object-cover border border-emerald-500/50"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  const fallbackSeed = userAccount.name || userAccount.email?.split('@')[0] || 'User';
+                  (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackSeed)}&background=0284c7&color=ffffff&size=128&bold=true&length=2`;
+                }}
+              />
               <span className="hidden md:inline">
                 {userAccount.name ? userAccount.name.split(' ')[0] : 'Dashboard'}
               </span>

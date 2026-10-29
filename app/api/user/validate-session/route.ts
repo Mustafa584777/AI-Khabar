@@ -69,13 +69,21 @@ export async function POST(req: NextRequest) {
           isProUser: true,
           planStartedAt: qp.scheduledStartAt || new Date().toISOString(),
           planExpiresAt: qp.scheduledExpiresAt,
-          credits: qp.credits || qpCfg.credits,
+          // Rule 2: Credits never overwrite or refresh; add queued plan credits
+          credits: (Number(activeSub.credits) || 0) + (qp.credits || qpCfg.credits),
           promptRequests: qp.promptRequests || qpCfg.promptRequests,
           aiSearchQuota: qp.aiSearchQuota || qpCfg.aiSearchQuota,
           queuedPlan: null,
         };
         void ServerStorage.saveUserSubscription(activeSub);
       }
+    } else if (activeSub && activeSub.queuedPlan && new Date(activeSub.queuedPlan.scheduledStartAt || 0).getTime() <= Date.now()) {
+      // Active plan is currently active and queuedPlan's scheduled start date has already passed: clear stale queue
+      activeSub = {
+        ...activeSub,
+        queuedPlan: null,
+      };
+      void ServerStorage.saveUserSubscription(activeSub);
     }
 
     const hasActiveSub = Boolean(
@@ -233,7 +241,13 @@ export async function POST(req: NextRequest) {
         unlockedPromptIds: cloned.unlockedPromptIds || [],
         planStartedAt: cloned.planStartedAt,
         planExpiresAt: cloned.planExpiresAt,
-        queuedPlan: cloned.queuedPlan || null,
+        queuedPlan: (() => {
+          if (!cloned.queuedPlan) return null;
+          if (cloned.queuedPlan.scheduledStartAt && new Date(cloned.queuedPlan.scheduledStartAt).getTime() <= Date.now()) {
+            return null;
+          }
+          return cloned.queuedPlan;
+        })(),
       },
     });
   } catch (err: any) {

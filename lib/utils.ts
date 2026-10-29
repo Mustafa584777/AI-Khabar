@@ -129,8 +129,17 @@ export function ensureAspectRatio34(text: string): string {
 
 export function getEmailAvatarUrl(email?: string, name?: string): string {
   const cleanEmail = (email || '').trim().toLowerCase();
-  const seed = name && name !== 'Administrator' && name !== 'Admin' ? name : (cleanEmail.split('@')[0] || 'Admin');
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(seed)}&background=0284c7&color=ffffff&size=128&bold=true`;
+  const seed = name && name !== 'Administrator' && name !== 'Admin' && name !== 'User' && name !== 'Creator'
+    ? name
+    : (cleanEmail.split('@')[0] || 'User');
+  
+  if (cleanEmail && cleanEmail.includes('@')) {
+    // unavatar.io checks Google profile photo, Gravatar, and falls back to styled initials
+    const fallback = encodeURIComponent(`https://ui-avatars.com/api/?name=${encodeURIComponent(seed)}&background=0284c7&color=ffffff&size=128&bold=true&length=2`);
+    return `https://unavatar.io/${encodeURIComponent(cleanEmail)}?fallback=${fallback}`;
+  }
+
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(seed)}&background=0284c7&color=ffffff&size=128&bold=true&length=2`;
 }
 
 export * from './tag-utils';

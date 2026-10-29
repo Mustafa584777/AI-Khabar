@@ -934,7 +934,8 @@ export const ServerStorage = {
               sub.isProUser = true;
               sub.planStartedAt = qp.scheduledStartAt || new Date().toISOString();
               sub.planExpiresAt = qp.scheduledExpiresAt;
-              sub.credits = qp.credits || qpCfg.credits;
+              // Accumulate credits: never overwrite or refresh existing balance
+              sub.credits = (Number(sub.credits) || 0) + (qp.credits || qpCfg.credits);
               sub.promptRequests = qp.promptRequests || qpCfg.promptRequests;
               sub.aiSearchQuota = qp.aiSearchQuota || qpCfg.aiSearchQuota;
               sub.queuedPlan = null;
@@ -942,6 +943,10 @@ export const ServerStorage = {
             } else {
               sub.status = 'expired';
             }
+          } else if (sub && sub.queuedPlan && new Date(sub.queuedPlan.scheduledStartAt || 0).getTime() <= Date.now()) {
+            // Active plan is running and queuedPlan's scheduled start date has already arrived/passed: clear stale queue
+            sub.queuedPlan = null;
+            void ServerStorage.saveUserSubscription(sub);
           }
           return sub;
         }
@@ -963,7 +968,8 @@ export const ServerStorage = {
           localSub.isProUser = true;
           localSub.planStartedAt = qp.scheduledStartAt || new Date().toISOString();
           localSub.planExpiresAt = qp.scheduledExpiresAt;
-          localSub.credits = qp.credits || qpCfg.credits;
+          // Accumulate credits: never overwrite or refresh existing balance
+          localSub.credits = (Number(localSub.credits) || 0) + (qp.credits || qpCfg.credits);
           localSub.promptRequests = qp.promptRequests || qpCfg.promptRequests;
           localSub.aiSearchQuota = qp.aiSearchQuota || qpCfg.aiSearchQuota;
           localSub.queuedPlan = null;
@@ -971,6 +977,10 @@ export const ServerStorage = {
         } else {
           localSub.status = 'expired';
         }
+      } else if (localSub.queuedPlan && new Date(localSub.queuedPlan.scheduledStartAt || 0).getTime() <= Date.now()) {
+        // Active plan is running and queuedPlan's scheduled start date has already arrived/passed: clear stale queue
+        localSub.queuedPlan = null;
+        void ServerStorage.saveUserSubscription(localSub);
       }
       return localSub;
     }
@@ -1164,9 +1174,13 @@ export const ServerStorage = {
       best.isProUser = true;
       best.planStartedAt = qp.scheduledStartAt || new Date().toISOString();
       best.planExpiresAt = qp.scheduledExpiresAt;
-      best.toolCredits = qp.credits || qpCfg.credits;
+      // Rule 2: Credits never expire or overwrite; add queued plan credits to existing balance
+      best.toolCredits = (Number(best.toolCredits) || 0) + (qp.credits || qpCfg.credits);
       best.promptRequestsRemaining = qp.promptRequests || qpCfg.promptRequests;
       best.aiSearchRemaining = qpCfg.unlimitedSearches ? 999999 : (qp.aiSearchQuota || qpCfg.aiSearchQuota);
+      best.queuedPlan = null;
+    } else if (best.queuedPlan && new Date(best.queuedPlan.scheduledStartAt || 0).getTime() <= Date.now()) {
+      // The scheduled plan has already arrived or plan was already activated; clear stale queue
       best.queuedPlan = null;
     }
 

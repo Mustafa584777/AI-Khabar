@@ -65,13 +65,21 @@ export async function POST(req: NextRequest) {
           isProUser: true,
           planStartedAt: qp.scheduledStartAt || new Date().toISOString(),
           planExpiresAt: qp.scheduledExpiresAt,
-          credits: qp.credits || qpCfg.credits,
+          // Rule 2: Credits never overwrite or refresh; add queued plan credits
+          credits: (Number(activeSub.credits) || 0) + (qp.credits || qpCfg.credits),
           promptRequests: qp.promptRequests || qpCfg.promptRequests,
           aiSearchQuota: qp.aiSearchQuota || qpCfg.aiSearchQuota,
           queuedPlan: null,
         };
         void ServerStorage.saveUserSubscription(activeSub);
       }
+    } else if (activeSub && activeSub.queuedPlan && new Date(activeSub.queuedPlan.scheduledStartAt || 0).getTime() <= Date.now()) {
+      // Active plan is currently active and queuedPlan's scheduled start date has already passed: clear stale queue
+      activeSub = {
+        ...activeSub,
+        queuedPlan: null,
+      };
+      void ServerStorage.saveUserSubscription(activeSub);
     }
 
     const hasActiveSub = Boolean(
@@ -192,6 +200,9 @@ export async function POST(req: NextRequest) {
         best.aiSearchRemaining = 5; // Rule 7: ai searches 5/5 per set ho jayegi
         best.savesLimit = 10; // Rule 7: saves limit free tier ke 10 saves tak reset ho jayegi
         // best.toolCredits stays intact!
+      } else if (best.queuedPlan && new Date(best.queuedPlan.scheduledStartAt || 0).getTime() <= Date.now()) {
+        // Active plan is running and queuedPlan's scheduled start date has already passed: clear stale queue
+        best.queuedPlan = null;
       }
 
       const isYearly = Boolean(
@@ -277,6 +288,8 @@ export async function POST(req: NextRequest) {
               cloned.aiSearchRemaining = 5;
               cloned.savesLimit = 10;
             }
+          } else if (cloned.queuedPlan && new Date(cloned.queuedPlan.scheduledStartAt || 0).getTime() <= Date.now()) {
+            cloned.queuedPlan = null;
           }
         }
 
@@ -534,7 +547,14 @@ export async function POST(req: NextRequest) {
         tasteProfile: mergedTasteProfile !== undefined ? mergedTasteProfile : existingData.tasteProfile,
         planStartedAt: data.planStartedAt || existingData.planStartedAt,
         planExpiresAt: resolvedPlanExpiresAt,
-        queuedPlan: data.queuedPlan !== undefined ? data.queuedPlan : (existingData.queuedPlan || activeSub?.queuedPlan || null),
+        queuedPlan: (() => {
+          const rawQp = data.queuedPlan !== undefined ? data.queuedPlan : (existingData.queuedPlan || activeSub?.queuedPlan || null);
+          if (!rawQp) return null;
+          if (rawQp.scheduledStartAt && new Date(rawQp.scheduledStartAt).getTime() <= Date.now()) {
+            return null; // Start date has arrived/passed; not an upcoming plan
+          }
+          return rawQp;
+        })(),
         updatedAt: new Date().toISOString(),
       };
 
