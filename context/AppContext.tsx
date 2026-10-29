@@ -7,7 +7,7 @@ import confetti from 'canvas-confetti';
 import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem, AiSearchResult, PlanTier, PromptRequestItem, QueuedPlan } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
 import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut as firebaseSignOut, getRedirectResult } from 'firebase/auth';
 import { UserSyncService } from '@/lib/user-sync';
 import { INITIAL_POSTS, INITIAL_CATEGORIES, INITIAL_SETTINGS } from '@/lib/initial-data';
 import {
@@ -2184,17 +2184,29 @@ export const AppProvider = ({
       });
     };
 
+    // Handle Google Redirect Result on page mount (e.g., mobile logins)
+    if (typeof window !== 'undefined') {
+      getRedirectResult(auth)
+        .then(async (result) => {
+          if (result && result.user) {
+            const u = result.user;
+            const emailPrefix = u.email ? u.email.split('@')[0] : 'Creator';
+            const name = u.displayName || emailPrefix;
+            const avatar = u.photoURL || getEmailAvatarUrl(u.email || '', name);
+            await loginUser(u.email || '', '', name, avatar, u.uid);
+            showToast(`Welcome ${name}! Signed in via Google.`);
+          }
+        })
+        .catch((err: any) => {
+          if (err && err.code !== 'auth/credential-already-in-use') {
+            console.warn('Firebase getRedirectResult notice:', err);
+          }
+        });
+    }
+
     // Check Firebase Auth Session
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        if (!firebaseUser.emailVerified) {
-          try {
-            await firebaseSignOut(auth);
-          } catch {}
-          setUserAccount(null);
-          StorageService.clearAllUserData();
-          return;
-        }
         const existing = StorageService.getUserAccount();
         const emailPrefix = firebaseUser.email ? firebaseUser.email.split('@')[0] : 'Creator';
         const account: UserAccount = {
@@ -2223,12 +2235,17 @@ export const AppProvider = ({
         const synced = await UserSyncService.reconcileOnLogin(account);
         applySynced(synced);
       } else {
-        // Firebase user signed out / unauthenticated: ensure guest state and clean session
-        setUserAccount(null);
-        setIsProUserState(false);
-        setPlanTierState('free');
-        setUnlockedPromptIds([]);
-        StorageService.clearAllUserData();
+        // Only clear if a logged-in user was active
+        setUserAccount((prev) => {
+          if (prev) {
+            setIsProUserState(false);
+            setPlanTierState('free');
+            setUnlockedPromptIds([]);
+            StorageService.clearAllUserData();
+            return null;
+          }
+          return null;
+        });
       }
     });
 

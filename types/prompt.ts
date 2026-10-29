@@ -289,19 +289,6 @@ export interface AiSearchResult {
   isAiPowered: boolean;
 }
 
-export interface GoogleSheetsConfig {
-  spreadsheetId: string;
-  spreadsheetUrl: string;
-  enabled: boolean;
-  autoSync: boolean;
-  linkedEmail?: string;
-  lastSyncedAt?: string;
-  autoMigrated?: boolean;
-  promptsCount?: number;
-  notificationsCount?: number;
-  searchQueriesCount?: number;
-}
-
 export type { UserTasteProfile, GenderVibe } from '@/lib/personalization';
 
 
