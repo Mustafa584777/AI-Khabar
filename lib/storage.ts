@@ -344,12 +344,24 @@ export const StorageService = {
         'auraprompt_plan_started_at',
         'auraprompt_plan_expires_at',
         'auraprompt_queued_plan',
+        'auraprompt_billing_cycle',
+        'auraprompt_saves_limit',
+        'auraprompt_ai_search_remaining',
+        'auraprompt_ai_search_enabled',
       ];
       userKeys.forEach((k) => {
         try {
           localStorage.removeItem(k);
         } catch {}
       });
+
+      // Explicitly reset critical security keys to locked/free guest defaults
+      try {
+        localStorage.setItem('auraprompt_pro_member', 'false');
+        localStorage.setItem('auraprompt_plan_tier', 'free');
+        localStorage.setItem('auraprompt_unlocked_prompts', '[]');
+        localStorage.setItem('auraprompt_tool_credits', '0');
+      } catch {}
 
       // Clear dynamic user-scoped keys from localStorage
       try {
@@ -359,7 +371,9 @@ export const StorageService = {
             key &&
             (key.startsWith('auraprompt_last_credit_date_') ||
               key.startsWith('auraprompt_user_') ||
-              key.startsWith('user_sync_'))
+              key.startsWith('user_sync_') ||
+              key.startsWith('auraprompt_signup_modal_') ||
+              key.startsWith('auraprompt_signup_bonus_'))
           ) {
             localStorage.removeItem(key);
           }

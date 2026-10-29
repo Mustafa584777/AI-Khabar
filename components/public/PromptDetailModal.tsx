@@ -189,7 +189,6 @@ export const PromptDetailModal = () => {
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [showFullImageModal, setShowFullImageModal] = useState<boolean>(false);
   const [isDownloadingImage, setIsDownloadingImage] = useState<boolean>(false);
-  const [isUnlockModalOpen, setIsUnlockModalOpen] = useState<boolean>(false);
   const [historyStack, setHistoryStack] = useState<PromptPost[]>(() => (selectedPost ? [selectedPost] : []));
 
   // Gather all images for this prompt strictly for this post
@@ -470,7 +469,8 @@ export const PromptDetailModal = () => {
     if (!selectedPost) return;
     const isUnlocked = isPromptUnlocked(selectedPost.id, selectedPost.isPremium);
     if (!isUnlocked) {
-      setIsUnlockModalOpen(true);
+      setSelectedPost(null);
+      router.push('/pricing');
       return;
     }
     if (typeof window !== 'undefined') {
@@ -682,13 +682,14 @@ export const PromptDetailModal = () => {
   const isUnlocked = isPromptUnlocked(selectedPost.id, selectedPost.isPremium);
   const isPromptGated = Boolean(selectedPost.isPremium && !isUnlocked);
 
-  const handleUnlockWithOneCredit = () => {
-    setIsUnlockModalOpen(true);
+  const handleUpgradeToPremium = () => {
+    setSelectedPost(null);
+    router.push('/pricing');
   };
 
   const handleCopyMasterPrompt = () => {
     if (isPromptGated) {
-      setIsUnlockModalOpen(true);
+      handleUpgradeToPremium();
       return;
     }
     copyPromptToClipboard(selectedPost.promptText, selectedPost.id);
@@ -720,7 +721,7 @@ export const PromptDetailModal = () => {
     e.stopPropagation();
     const isPinUnlocked = isPromptUnlocked(pin.id, pin.isPremium);
     if (!isPinUnlocked) {
-      setIsUnlockModalOpen(true);
+      handleUpgradeToPremium();
       return;
     }
     copyPromptToClipboard(pin.promptText, pin.id);
@@ -768,7 +769,7 @@ export const PromptDetailModal = () => {
   const handleDeconstructImage = () => {
     if (!selectedPost) return;
     if (isPromptGated) {
-      setIsUnlockModalOpen(true);
+      handleUpgradeToPremium();
       return;
     }
     if (typeof window !== 'undefined') {
@@ -1214,30 +1215,23 @@ export const PromptDetailModal = () => {
                           <h3 className="text-base sm:text-lg font-black text-white flex items-center justify-center gap-2 flex-wrap">
                             <span>Premium Prompt Locked</span>
                             <span className="px-2 py-0.5 rounded-full bg-amber-500 text-black text-[10px] font-black uppercase tracking-wider">
-                              1 Credit
+                              PRO
                             </span>
                           </h3>
                           <p className="text-xs sm:text-sm text-neutral-300 max-w-sm mx-auto leading-relaxed font-sans">
-                            Unlock this prompt permanently with <strong className="text-white">1 credit</strong> (Balance: <strong className="text-amber-400">{toolCredits} Credits</strong>), or subscribe for unlimited access.
+                            Subscribe to Premium to reveal this prompt text, copy instantly, and unlock all PRO prompts.
                           </p>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2 sm:gap-2.5 w-full pt-1">
+                        <div className="flex items-center justify-center w-full pt-1">
                           <button
                             type="button"
-                            onClick={handleUnlockWithOneCredit}
-                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition-all active:scale-95 font-sans cursor-pointer text-center"
+                            onClick={handleUpgradeToPremium}
+                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition-all active:scale-95 font-sans cursor-pointer text-center"
                           >
-                            <Coins className="w-4 h-4 fill-black shrink-0" />
-                            <span>{toolCredits >= 1 ? `Unlock for 1 Credit (${toolCredits} Left)` : 'Unlock for 1 Credit'}</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setIsUnlockModalOpen(true)}
-                            className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs sm:text-sm font-bold border border-neutral-700 transition-colors font-sans cursor-pointer text-center"
-                          >
-                            <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                            <span>Get Credits / Pro</span>
+                            <Crown className="w-4 h-4 fill-black shrink-0" />
+                            <span>Upgrade to Premium</span>
+                            <ArrowRight className="w-4 h-4 shrink-0" />
                           </button>
                         </div>
                       </div>
@@ -1356,7 +1350,7 @@ export const PromptDetailModal = () => {
                       e.stopPropagation();
                       const isPinUnlocked = isPromptUnlocked(p.id, p.isPremium);
                       if (!isPinUnlocked) {
-                        setIsUnlockModalOpen(true);
+                        handleUpgradeToPremium();
                         return;
                       }
                       if (typeof window !== 'undefined') {
@@ -1524,97 +1518,6 @@ export const PromptDetailModal = () => {
         </div>
       )}
 
-      {/* Unlock Premium Prompts Popup Modal */}
-      {isUnlockModalOpen && (
-        <div
-          onClick={() => setIsUnlockModalOpen(false)}
-          className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
-          id="unlock-premium-prompt-modal"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-md bg-white dark:bg-neutral-900 rounded-[32px] border border-amber-300 dark:border-amber-700/60 shadow-2xl p-6 sm:p-8 space-y-6 text-center animate-scale-in"
-          >
-            {/* Close */}
-            <button
-              type="button"
-              onClick={() => setIsUnlockModalOpen(false)}
-              className="absolute top-4 right-4 p-2 rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-white transition-colors cursor-pointer"
-              title="Close"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {/* Crown Icon */}
-            <div className="w-16 h-16 rounded-3xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto border border-amber-500/30 shadow-inner">
-              <Crown className="w-8 h-8 fill-amber-500" />
-            </div>
-
-            {/* Header Text */}
-            <div className="space-y-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-black uppercase tracking-wider">
-                PRO MEMBERSHIP REQUIRED
-              </span>
-              <h3 className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white tracking-tight">
-                Unlock Premium Prompts
-              </h3>
-              <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                This prompt is exclusive to Pro members. Upgrade to any plan to reveal prompt text, copy instantly, and receive AI tools credits.
-              </p>
-            </div>
-
-            {/* 3 Plans Quick Comparison */}
-            <div className="grid grid-cols-3 gap-2 text-left pt-1">
-              <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-700 text-center">
-                <div className="text-[10px] font-bold text-neutral-500 uppercase">Starter</div>
-                <div className="text-base font-black text-neutral-900 dark:text-white">₹49</div>
-                <div className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold mt-0.5">10 Credits</div>
-                <div className="text-[9px] text-neutral-400">1 Request</div>
-              </div>
-              <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-400 dark:border-amber-600 text-center relative shadow-sm">
-                <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full bg-amber-500 text-[8px] font-black text-white uppercase">
-                  Popular
-                </span>
-                <div className="text-[10px] font-bold text-amber-700 dark:text-amber-300 uppercase">Pro</div>
-                <div className="text-base font-black text-neutral-900 dark:text-white">₹199</div>
-                <div className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold mt-0.5">50 Credits</div>
-                <div className="text-[9px] text-neutral-400">3 Requests</div>
-              </div>
-              <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-700 text-center">
-                <div className="text-[10px] font-bold text-neutral-500 uppercase">VIP</div>
-                <div className="text-base font-black text-neutral-900 dark:text-white">₹499</div>
-                <div className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold mt-0.5">200 Credits</div>
-                <div className="text-[9px] text-neutral-400">10 Requests</div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="space-y-3 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsUnlockModalOpen(false);
-                  closeModal();
-                  router.push('/pricing');
-                }}
-                className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-black text-sm shadow-lg shadow-amber-500/30 flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer font-sans"
-              >
-                <Crown className="w-4 h-4 fill-black" />
-                <span>View Pricing & Unlock (From ₹49/mo)</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsUnlockModalOpen(false)}
-                className="text-xs font-semibold text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 cursor-pointer"
-              >
-                Maybe Later
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

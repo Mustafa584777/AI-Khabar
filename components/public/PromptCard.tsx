@@ -298,52 +298,73 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
           </div>
         ) : null}
 
-        {/* Dark Semi-Transparent Overlay with White Popup Action Buttons */}
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto flex items-center justify-center gap-2.5 z-10 px-2">
-          {userAccount?.isLoggedIn && (
-            <button
-              type="button"
-              onClick={handleBookmark}
-              className={`w-10 h-10 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl flex items-center justify-center transition-all duration-300 ease-out transform scale-75 group-hover:scale-100 hover:scale-110 active:scale-95 ${
-                isBookmarked ? 'ring-2 ring-[#E60023] text-[#E60023]' : 'text-neutral-900'
-              }`}
-              title={isBookmarked ? 'Saved (Click to remove)' : 'Save prompt'}
-              aria-label="Save prompt"
-            >
-              {isBookmarked ? (
-                <Bookmark className="w-4 h-4 fill-[#E60023] text-[#E60023]" />
-              ) : (
-                <Bookmark className="w-4 h-4 text-neutral-800" />
+        {/* Dark Semi-Transparent Overlay with White Action Buttons */}
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto flex items-center justify-center gap-2 z-10 px-3">
+          {post.isPremium && !isUnlocked ? (
+            <div className="flex flex-col items-center justify-center gap-2 w-full px-2 text-center pointer-events-auto">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  router.push('/pricing');
+                }}
+                className="flex items-center justify-center gap-1.5 w-full max-w-[175px] py-2 px-3 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs shadow-lg transition-transform hover:scale-105 active:scale-95"
+                title="Upgrade to Premium"
+                aria-label="Upgrade to Premium"
+              >
+                <Crown className="w-3.5 h-3.5 fill-black text-black shrink-0" />
+                <span>Upgrade to Premium</span>
+              </button>
+            </div>
+          ) : (
+            <>
+              {userAccount?.isLoggedIn && (
+                <button
+                  type="button"
+                  onClick={handleBookmark}
+                  className={`w-10 h-10 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl flex items-center justify-center transition-all duration-300 ease-out transform scale-75 group-hover:scale-100 hover:scale-110 active:scale-95 ${
+                    isBookmarked ? 'ring-2 ring-[#E60023] text-[#E60023]' : 'text-neutral-900'
+                  }`}
+                  title={isBookmarked ? 'Saved (Click to remove)' : 'Save prompt'}
+                  aria-label="Save prompt"
+                >
+                  {isBookmarked ? (
+                    <Bookmark className="w-4 h-4 fill-[#E60023] text-[#E60023]" />
+                  ) : (
+                    <Bookmark className="w-4 h-4 text-neutral-800" />
+                  )}
+                </button>
               )}
-            </button>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  copyPromptToClipboard(post.promptText, post.id);
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl transition-all duration-300 ease-out transform scale-75 group-hover:scale-100 hover:scale-110 active:scale-95 text-xs font-bold"
+                title="Copy prompt"
+                aria-label="Copy prompt"
+              >
+                <Copy className="w-3.5 h-3.5 text-neutral-800" />
+                <span>Copy</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDeconstructImagePrompt}
+                data-action="decode-prompt"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl transition-all duration-300 ease-out transform scale-75 group-hover:scale-100 hover:scale-110 active:scale-95 text-xs font-bold"
+                title="Decode"
+                aria-label="Decode"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                <span>Decode</span>
+              </button>
+            </>
           )}
-
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              copyPromptToClipboard(post.promptText, post.id);
-            }}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl transition-all duration-300 ease-out transform scale-75 group-hover:scale-100 hover:scale-110 active:scale-95 text-xs font-bold"
-            title="Copy prompt"
-            aria-label="Copy prompt"
-          >
-            <Copy className="w-3.5 h-3.5 text-neutral-800" />
-            <span>Copy</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleDeconstructImagePrompt}
-            data-action="decode-prompt"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl transition-all duration-300 ease-out transform scale-75 group-hover:scale-100 hover:scale-110 active:scale-95 text-xs font-bold"
-            title="Decode"
-            aria-label="Decode"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-            <span>Decode</span>
-          </button>
         </div>
 
         {/* Multi-Image Pinterest Slider Controls on Card */}

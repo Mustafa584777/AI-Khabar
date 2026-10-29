@@ -297,11 +297,16 @@ export const AppProvider = ({
   const [isProUser, setIsProUserState] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const acc = StorageService.getUserAccount();
+      if (!acc || !acc.isLoggedIn) {
+        return false;
+      }
       const savedPro = localStorage.getItem('auraprompt_pro_member');
-      const savedTier = localStorage.getItem('auraprompt_plan_tier') as PlanTier;
+      const savedTier = (localStorage.getItem('auraprompt_plan_tier') as PlanTier) || acc.planTier;
       const isPaidTier = savedTier && ['starter', 'pro', 'vip'].includes(savedTier);
-      const isAccPaid = acc && ((acc.planTier && acc.planTier !== 'free') || acc.isProUser || acc.isPremium);
-      if (savedPro === 'true' || isPaidTier || isAccPaid) {
+      const isAccPaid = Boolean((acc.planTier && acc.planTier !== 'free') || acc.isProUser || acc.isPremium);
+      const expires = localStorage.getItem('auraprompt_plan_expires_at') || acc.planExpiresAt;
+      const isExpired = Boolean(expires && new Date(expires).getTime() <= Date.now());
+      if (!isExpired && (savedPro === 'true' || isPaidTier || isAccPaid)) {
         return true;
       }
     }
@@ -317,9 +322,12 @@ export const AppProvider = ({
 
   const [planTier, setPlanTierState] = useState<PlanTier>(() => {
     if (typeof window !== 'undefined') {
+      const acc = StorageService.getUserAccount();
+      if (!acc || !acc.isLoggedIn) {
+        return 'free';
+      }
       const saved = localStorage.getItem('auraprompt_plan_tier') as PlanTier;
       if (['starter', 'pro', 'vip'].includes(saved)) return saved;
-      const acc = StorageService.getUserAccount();
       if (acc?.planTier && ['starter', 'pro', 'vip'].includes(acc.planTier)) return acc.planTier;
       if (acc?.membershipPlan && ['starter', 'pro', 'vip'].includes(acc.membershipPlan)) return acc.membershipPlan;
     }
@@ -460,9 +468,13 @@ export const AppProvider = ({
   const [isFirstLoginModalOpen, setIsFirstLoginModalOpen] = useState<boolean>(false);
   const [lockedPromptContext, setLockedPromptContext] = useState<PromptPost | null>(null);
 
-  // Unlocked Prompts (Unlocked via 1 credit per prompt or subscription)
+  // Unlocked Prompts (Unlocked via subscription or explicit user unlock)
   const [unlockedPromptIds, setUnlockedPromptIds] = useState<string[]>(() => {
     if (typeof window !== 'undefined') {
+      const acc = StorageService.getUserAccount();
+      if (!acc || !acc.isLoggedIn) {
+        return [];
+      }
       try {
         const saved = localStorage.getItem('auraprompt_unlocked_prompts');
         if (saved) return JSON.parse(saved);
@@ -472,12 +484,33 @@ export const AppProvider = ({
   });
 
   const isPromptUnlocked = useCallback(
-    (_promptId: string, isPremium?: boolean): boolean => {
+    (promptId: string, isPremium?: boolean): boolean => {
+      // Free non-premium prompts are always unlocked
       if (!isPremium) return true;
-      if (isProUser) return true;
+
+      // CRITICAL: If no active user session, ALL premium prompts are 100% LOCKED!
+      if (!userAccount || !userAccount.isLoggedIn) {
+        return false;
+      }
+
+      // Check active subscription status
+      const effectiveTier = planTier || userAccount.planTier;
+      const isPaidTier = ['starter', 'pro', 'vip'].includes(effectiveTier);
+      const expires = planExpiresAt || userAccount.planExpiresAt;
+      const isExpired = Boolean(expires && new Date(expires).getTime() <= Date.now());
+
+      if ((isProUser || isPaidTier || userAccount.isProUser) && !isExpired) {
+        return true;
+      }
+
+      // Check if unlocked specifically by this user account
+      if (unlockedPromptIds && unlockedPromptIds.includes(promptId)) {
+        return true;
+      }
+
       return false;
     },
-    [isProUser]
+    [userAccount, isProUser, planTier, planExpiresAt, unlockedPromptIds]
   );
 
   const unlockPromptWithCredit = useCallback(
@@ -1066,11 +1099,16 @@ export const AppProvider = ({
     setTasteProfile(INITIAL_TASTE_PROFILE);
     setIsAiSearchEnabledState(false);
     setAiSearchResults(null);
+    setSelectedPostState(null);
     if (typeof window !== 'undefined') {
       localStorage.setItem('auraprompt_ai_search_enabled', 'false');
+      localStorage.setItem('auraprompt_pro_member', 'false');
+      localStorage.setItem('auraprompt_plan_tier', 'free');
+      localStorage.setItem('auraprompt_unlocked_prompts', '[]');
+      localStorage.setItem('auraprompt_tool_credits', '0');
     }
 
-    showToast('Signed out successfully. Session cache cleared.');
+    showToast('Signed out successfully. All premium prompts locked.');
   };
 
   const saveAiHistoryItem = (item: AIHistoryItem) => {
@@ -1934,20 +1972,14 @@ export const AppProvider = ({
         setLikedIds(StorageService.getLikedIds());
         setTasteProfile(PersonalizationEngine.getProfile());
       } else {
-        // Visitor / Guest without explicit logged-in session: restore any guest bookmarks, likes, and local active plan
+        // Visitor / Guest without explicit logged-in session: strictly reset to free, locked state
         setUserAccount(null);
-        const guestBookmarks = StorageService.getBookmarkedIds();
-        if (guestBookmarks && guestBookmarks.length > 0) setBookmarkedIds(guestBookmarks);
-        const guestLikes = StorageService.getLikedIds();
-        if (guestLikes && guestLikes.length > 0) setLikedIds(guestLikes);
-
-        const localTier = (localStorage.getItem('auraprompt_plan_tier') as PlanTier) || 'free';
-        const localExpires = localStorage.getItem('auraprompt_plan_expires_at');
-        const isLocalActive = ['starter', 'pro', 'vip'].includes(localTier) && (!localExpires || new Date(localExpires).getTime() > Date.now());
-        if (isLocalActive) {
-          setPlanTierState(localTier);
-          setIsProUserState(true);
-        }
+        setPlanTierState('free');
+        setIsProUserState(false);
+        setUnlockedPromptIds([]);
+        setToolCreditsState(0);
+        setPromptRequestsRemainingState(0);
+        StorageService.clearAllUserData();
       }
 
       const refImg = StorageService.getPersistentRefImage();
@@ -2191,10 +2223,12 @@ export const AppProvider = ({
         const synced = await UserSyncService.reconcileOnLogin(account);
         applySynced(synced);
       } else {
-        const acc = StorageService.getUserAccount();
-        if (acc && acc.isLoggedIn) {
-          UserSyncService.reconcileOnLogin(acc).then(applySynced);
-        }
+        // Firebase user signed out / unauthenticated: ensure guest state and clean session
+        setUserAccount(null);
+        setIsProUserState(false);
+        setPlanTierState('free');
+        setUnlockedPromptIds([]);
+        StorageService.clearAllUserData();
       }
     });
 
@@ -2522,9 +2556,8 @@ export const AppProvider = ({
       if (post && post.isPremium) {
         const unlocked = isPromptUnlocked(postId, post.isPremium);
         if (!unlocked) {
-          setLockedPromptContext(post);
-          setIsUnlockPremiumModalOpen(true);
-          showToast('🔒 Access Denied: Premium prompt requires 1 credit or Pro subscription to copy/access!');
+          showToast('🔒 Premium prompt locked. Upgrade to Pro to copy.');
+          router.push('/pricing');
           return;
         }
       }
