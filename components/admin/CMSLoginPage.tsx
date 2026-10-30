@@ -21,13 +21,12 @@ import { AdminLayout } from './AdminLayout';
 
 export const CMSLoginPage = () => {
   const { isAuthenticated, login, logout, currentUser, setCurrentView, setAdminSubView } = useApp();
-  const [username, setUsername] = useState('admin@trendinggeminiprompts.com');
-  const [password, setPassword] = useState('admin123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showLostPasswordNotice, setShowLostPasswordNotice] = useState(false);
 
   // If already authenticated, show the CMS Admin Dashboard
   if (isAuthenticated) {
@@ -46,21 +45,10 @@ export const CMSLoginPage = () => {
         setAdminSubView('posts');
         setCurrentView('admin');
       } else {
-        setError('Error: The password or email you entered is incorrect. (Default: admin@trendinggeminiprompts.com / admin123)');
+        setError('Error: The password or email you entered is incorrect.');
       }
       setIsSubmitting(false);
     }, 300);
-  };
-
-  const handleFillDemo = () => {
-    setUsername('admin@trendinggeminiprompts.com');
-    setPassword('admin123');
-    setError(null);
-    const success = login('admin@trendinggeminiprompts.com', 'admin123');
-    if (success) {
-      setAdminSubView('posts');
-      setCurrentView('admin');
-    }
   };
 
   return (
@@ -106,19 +94,6 @@ export const CMSLoginPage = () => {
                 Authentication Notice:
               </strong>
               {error}
-            </div>
-          </div>
-        )}
-
-        {/* Lost Password Modal / Notice */}
-        {showLostPasswordNotice && (
-          <div className="w-full mb-4 p-3 bg-blue-50 dark:bg-blue-950/60 border-l-4 border-blue-500 shadow-sm text-xs text-neutral-800 dark:text-neutral-200 flex items-start gap-2 rounded-r-md">
-            <HelpCircle className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-            <div className="leading-snug">
-              <strong className="font-semibold text-blue-600 dark:text-blue-400 block mb-0.5">
-                Password Recovery:
-              </strong>
-              For local demo instances, use <code className="px-1 py-0.5 bg-blue-100 dark:bg-blue-900 rounded font-mono text-[11px]">admin@trendinggeminiprompts.com</code> and <code className="px-1 py-0.5 bg-blue-100 dark:bg-blue-900 rounded font-mono text-[11px]">admin123</code> or click Quick Demo Log In below.
             </div>
           </div>
         )}
@@ -214,25 +189,10 @@ export const CMSLoginPage = () => {
               </button>
             </div>
           </form>
-
-          {/* Quick Demo One-Click Fill */}
-          <div className="mt-4 pt-4 border-t border-neutral-100 dark:border-neutral-800/80">
-            <button
-              type="button"
-              onClick={handleFillDemo}
-              className="w-full py-2 px-3 rounded bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors flex items-center justify-center gap-2 border border-neutral-200 dark:border-neutral-700"
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-              <span>⚡ One-Click Demo Admin Login</span>
-            </button>
-            <p className="text-[10px] text-center text-neutral-400 dark:text-neutral-500 mt-1.5">
-              Default: admin@trendinggeminiprompts.com / admin123
-            </p>
-          </div>
         </div>
 
         {/* Footer Sub-Links */}
-        <div className="w-full mt-4 flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400 px-1">
+        <div className="w-full mt-4 flex items-center justify-center text-xs text-neutral-600 dark:text-neutral-400 px-1">
           <Link
             href="/"
             className="flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
@@ -240,14 +200,6 @@ export const CMSLoginPage = () => {
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>← Go to Trending Gemini Prompts Directory</span>
           </Link>
-          
-          <button
-            type="button"
-            onClick={() => setShowLostPasswordNotice(!showLostPasswordNotice)}
-            className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-          >
-            Lost your password?
-          </button>
         </div>
 
         {/* Privacy Note */}

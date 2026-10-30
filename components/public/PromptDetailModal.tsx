@@ -878,9 +878,9 @@ export const PromptDetailModal = () => {
               onContextMenu={(e) => e.preventDefault()}
               className="lg:col-span-7 bg-neutral-100 dark:bg-neutral-900 flex flex-col justify-start items-center p-0 relative select-none overflow-hidden"
             >
-              {/* Affiliate Product Hotspot Badges in Detail Modal */}
+              {/* Affiliate Product Hotspot Badges - Left Side Vertically over image */}
               {selectedPost.affiliateProducts && selectedPost.affiliateProducts.length > 0 && (
-                <div className="absolute bottom-4 left-4 z-30 flex flex-wrap gap-2 pointer-events-auto">
+                <div className={`absolute ${selectedPost.isPremium ? 'top-16' : 'top-4'} left-4 z-30 flex flex-col gap-2 pointer-events-auto`}>
                   {selectedPost.affiliateProducts.map((item) => {
                     const getIconEmoji = (type: string) => {
                       switch (type) {
@@ -903,11 +903,9 @@ export const PromptDetailModal = () => {
                         rel="noopener noreferrer sponsored"
                         onClick={(e) => e.stopPropagation()}
                         title={`Shop ${item.label} on Amazon`}
-                        className="px-3.5 py-1.5 rounded-full bg-black/90 hover:bg-[#FF9900] text-white text-xs font-black backdrop-blur-md flex items-center gap-1.5 transition-colors shadow-2xl border border-white/30"
+                        className="w-10 h-10 rounded-full bg-black/90 hover:bg-[#FF9900] text-white flex items-center justify-center text-sm font-black backdrop-blur-md transition-transform hover:scale-110 shadow-2xl border border-white/30 cursor-pointer"
                       >
                         <span>{getIconEmoji(item.type)}</span>
-                        <span>{item.label}</span>
-                        <span className="text-[10px] text-orange-200 underline ml-1">Buy on Amazon →</span>
                       </a>
                     );
                   })}
