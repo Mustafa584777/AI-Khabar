@@ -24,6 +24,12 @@ import {
   Coins,
   Edit3,
   Wand2,
+  Shirt,
+  Glasses,
+  ShoppingBag,
+  Tag,
+  Scissors,
+  Footprints,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import Image from 'next/image';
@@ -882,17 +888,23 @@ export const PromptDetailModal = () => {
               {selectedPost.affiliateProducts && selectedPost.affiliateProducts.length > 0 && (
                 <div className={`absolute ${selectedPost.isPremium ? 'top-16' : 'top-4'} left-4 z-30 flex flex-col gap-2 pointer-events-auto`}>
                   {selectedPost.affiliateProducts.map((item) => {
-                    const getIconEmoji = (type: string) => {
+                    const getAffiliateIcon = (type: string) => {
                       switch (type) {
-                        case 'tshirt': return '👕';
-                        case 'pant': return '👖';
-                        case 'glasses': return '🕶️';
-                        case 'shoes': return '👟';
-                        case 'saree': return '🥻';
-                        case 'dress': return '👗';
-                        case 'jacket': return '🧥';
-                        case 'hat': return '👒';
-                        default: return '🛍️';
+                        case 'tshirt':
+                        case 'saree':
+                        case 'dress':
+                        case 'jacket':
+                          return <Shirt className="w-4 h-4 text-white" />;
+                        case 'pant':
+                          return <Scissors className="w-4 h-4 text-white" />;
+                        case 'glasses':
+                          return <Glasses className="w-4 h-4 text-white" />;
+                        case 'shoes':
+                          return <Footprints className="w-4 h-4 text-white" />;
+                        case 'hat':
+                          return <Tag className="w-4 h-4 text-white" />;
+                        default:
+                          return <ShoppingBag className="w-4 h-4 text-white" />;
                       }
                     };
                     return (
@@ -903,9 +915,9 @@ export const PromptDetailModal = () => {
                         rel="noopener noreferrer sponsored"
                         onClick={(e) => e.stopPropagation()}
                         title={`Shop ${item.label} on Amazon`}
-                        className="w-10 h-10 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white flex items-center justify-center text-sm font-black backdrop-blur-md transition-transform hover:scale-110 shadow-2xl border border-white/30 cursor-pointer"
+                        className="w-10 h-10 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white flex items-center justify-center backdrop-blur-md transition-transform hover:scale-110 shadow-2xl border border-white/30 cursor-pointer"
                       >
-                        <span>{getIconEmoji(item.type)}</span>
+                        {getAffiliateIcon(item.type)}
                       </a>
                     );
                   })}
@@ -1125,8 +1137,36 @@ export const PromptDetailModal = () => {
                     </span>
                   </div>
 
-                  {/* Action Icons: Copy, Decode */}
+                  {/* Action Icons: Preferred AI, Copy, Decode */}
                   <div className="flex items-center gap-1.5 sm:gap-2">
+                    {selectedPost.preferredAi && (
+                      <a
+                        href={selectedPost.preferredAi === 'ChatGPT' ? 'https://chatgpt.com' : 'https://gemini.google.com'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={`Open in ${selectedPost.preferredAi}`}
+                        aria-label={`Open in ${selectedPost.preferredAi}`}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-bold transition-all border border-neutral-200 dark:border-neutral-700 shadow-xs"
+                      >
+                        <span className="text-[10px] font-semibold text-neutral-500 dark:text-neutral-400 lowercase tracking-tight">preferred in</span>
+                        {selectedPost.preferredAi === 'ChatGPT' ? (
+                          <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-extrabold">
+                            <svg className="w-3.5 h-3.5 fill-current shrink-0" viewBox="0 0 24 24">
+                              <path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.9807 5.9807 0 0 0 .5157 4.9108 6.0512 6.0512 0 0 0 6.5098 2.9 6.0512 6.0512 0 0 0 4.2875 1.7856 5.9847 5.9847 0 0 0 3.9977-2.9 6.0462 6.0462 0 0 0-.7427-7.0966zm-7.979 9.3872a4.3418 4.3418 0 0 1-2.9105-1.1042l.1423-.083 3.6336-2.0984a1.0558 1.0558 0 0 0 .5286-.9106V9.1171l1.5307.8841a.3496.3496 0 0 1 .1743.3032v4.845a4.3544 4.3544 0 0 1-3.0991 4.148zm-8.4975-2.9155a4.3418 4.3418 0 0 1-.5778-3.0782l.1423.082 3.6336 2.0984a1.0588 1.0588 0 0 0 1.0572 0l4.208-2.4295v1.7682a.3546.3546 0 0 1-.1794.3073l-4.195 2.4225a4.3594 4.3594 0 0 1-5.099-.1707zM4.9085 7.6432a4.3418 4.3418 0 0 1 2.4573-2.0162v4.1969a1.0558 1.0558 0 0 0 .5286.9106l4.208 2.4295-1.5307.8841a.3496.3496 0 0 1-.3486 0L6.027 12.6247a4.3594 4.3594 0 0 1-1.1185-4.9815zm13.1492 4.1969-4.208-2.4295 1.5307-.8841a.3496.3496 0 0 1 .3486 0l4.195 2.4225a4.3594 4.3594 0 0 1-.6507 7.854v-4.1969a1.0588 1.0588 0 0 0-.5286-.906zm-8.156-4.5976 1.5307-.8841a.3546.3546 0 0 1 .3486 0l4.195 2.4225a4.3594 4.3594 0 0 1 1.767 3.5358V8.349a1.0558 1.0558 0 0 0-.5286-.9106L8.0336 5.0089v4.2341zM6.92 6.9455a4.3594 4.3594 0 0 1 5.9221-1.5794l-.1423.082L9.0662 7.5465a1.0588 1.0588 0 0 0-.5286.906v4.8501L7.0069 12.418a.3496.3496 0 0 1-.1743-.3032V7.2699z"/>
+                            </svg>
+                            <span>ChatGPT</span>
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400 font-extrabold">
+                            <svg className="w-3.5 h-3.5 fill-current shrink-0" viewBox="0 0 24 24">
+                              <path d="M12 24C12 17.3726 17.3726 12 24 12C17.3726 12 12 6.62742 12 0C12 6.62742 6.62742 12 0 12C6.62742 12 12 17.3726 12 24Z"/>
+                            </svg>
+                            <span>Gemini</span>
+                          </span>
+                        )}
+                      </a>
+                    )}
+
                     {/* Copy Button */}
                     <button
                       type="button"

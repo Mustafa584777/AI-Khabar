@@ -125,6 +125,9 @@ export const PostEditor = () => {
   const [affiliateProducts, setAffiliateProducts] = useState<AffiliateProduct[]>(
     () => Array.isArray(existingPost?.affiliateProducts) ? existingPost.affiliateProducts : []
   );
+  const [preferredAi, setPreferredAi] = useState<'ChatGPT' | 'Gemini' | ''>(
+    () => (existingPost?.preferredAi === 'ChatGPT' || existingPost?.preferredAi === 'Gemini') ? existingPost.preferredAi : ''
+  );
 
   useEffect(() => {
     // Only load from existingPost if switching to a DIFFERENT post or switching between create/edit modes
@@ -142,6 +145,7 @@ export const PostEditor = () => {
         setStatus(existingPost.status === 'draft' ? 'draft' : 'published');
         setIsPremium(Boolean(existingPost.isPremium || existingPost.parameters?.isPremium));
         setIsNoIndex(Boolean(existingPost.isNoIndex));
+        setPreferredAi((existingPost.preferredAi === 'ChatGPT' || existingPost.preferredAi === 'Gemini') ? existingPost.preferredAi : '');
         setAffiliateProducts(Array.isArray(existingPost.affiliateProducts) ? existingPost.affiliateProducts : []);
         if (existingPost.articleContent) setArticleContent(existingPost.articleContent);
         if (Array.isArray(existingPost.tags) && existingPost.tags.length > 0) {
@@ -165,6 +169,7 @@ export const PostEditor = () => {
       setStatus('published');
       setIsPremium(false);
       setIsNoIndex(false);
+      setPreferredAi('');
       setAffiliateProducts([]);
       setArticleContent('## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.');
       setTags(['AI Prompt', 'Photorealistic', 'Masterpiece']);
@@ -729,6 +734,7 @@ export const PostEditor = () => {
       status: publishStatus,
       isPremium: Boolean(isPremium),
       isNoIndex: Boolean(isNoIndex),
+      preferredAi: preferredAi || undefined,
       affiliateProducts: affiliateProducts.filter((p) => p.amazonUrl.trim() && p.label.trim()),
       parameters: {
         ...(existingPost?.parameters || {}),
@@ -1453,6 +1459,70 @@ export const PostEditor = () => {
                 Standard prompt: public and free to copy for everyone.
               </p>
             )}
+          </div>
+
+          {/* Preferred In / Preferred AI Card */}
+          <div className="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-500/20">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                    <span>Preferred In AI</span>
+                    {preferredAi ? (
+                      <span className="px-2 py-0.5 rounded-full bg-purple-600 text-white text-[9px] font-black tracking-wider uppercase">
+                        {preferredAi}
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500 text-[9px] font-semibold">
+                        NONE
+                      </span>
+                    )}
+                  </h3>
+                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    Select preferred AI tool button to show on opened prompt card
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setPreferredAi('')}
+                className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all ${
+                  preferredAi === ''
+                    ? 'bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900'
+                    : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-200'
+                }`}
+              >
+                None
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreferredAi('ChatGPT')}
+                className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 ${
+                  preferredAi === 'ChatGPT'
+                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                    : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-200'
+                }`}
+              >
+                <span>ChatGPT</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreferredAi('Gemini')}
+                className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 ${
+                  preferredAi === 'Gemini'
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                    : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-200'
+                }`}
+              >
+                <span>Gemini</span>
+              </button>
+            </div>
           </div>
 
           {/* NoIndex & Sitemap Exclude Card */}

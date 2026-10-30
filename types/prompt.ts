@@ -83,6 +83,7 @@ export interface PromptPost {
   isTrending?: boolean;
   isPremium?: boolean;
   isNoIndex?: boolean;
+  preferredAi?: 'ChatGPT' | 'Gemini' | '';
   affiliateProducts?: AffiliateProduct[];
   viewsCount: number;
   copiesCount: number;
