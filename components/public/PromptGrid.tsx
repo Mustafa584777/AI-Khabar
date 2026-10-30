@@ -9,8 +9,21 @@ import { PromptPost } from '@/types/prompt';
 import { PersonalizationEngine } from '@/lib/personalization';
 import { getPromptSlug } from '@/lib/utils';
 
-const INITIAL_BATCH_SIZE = 10;
-const SCROLL_BATCH_SIZE = 10;
+const getInitialBatchSize = () => {
+  if (typeof window === 'undefined') return 20;
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  let cols = 4;
+  if (width >= 1280) cols = 5;
+  else if (width >= 1024) cols = 4;
+  else if (width >= 640) cols = 3;
+  else cols = 2;
+
+  const rows = Math.max(3, Math.ceil(height / 260) + 1);
+  return cols * rows;
+};
+
+const SCROLL_BATCH_SIZE = 12;
 
 export const PromptGrid = () => {
   const {
@@ -38,14 +51,14 @@ export const PromptGrid = () => {
   } = useApp();
 
   const currentFilterKey = `${searchQuery}_${selectedCategory}_${selectedTool}_${selectedSort}_${tasteProfile.genderVibe}`;
-  const [displayedCount, setDisplayedCount] = useState<number>(INITIAL_BATCH_SIZE);
+  const [displayedCount, setDisplayedCount] = useState<number>(getInitialBatchSize);
   const [prevFilterKey, setPrevFilterKey] = useState<string>(currentFilterKey);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
 
   // Reset pagination if filter key changed during render
   if (currentFilterKey !== prevFilterKey) {
     setPrevFilterKey(currentFilterKey);
-    setDisplayedCount(INITIAL_BATCH_SIZE);
+    setDisplayedCount(getInitialBatchSize());
   }
 
   // Filter only published posts for the public directory and strictly deduplicate with deterministic ordering
