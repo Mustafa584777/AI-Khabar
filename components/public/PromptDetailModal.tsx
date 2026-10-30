@@ -903,7 +903,7 @@ export const PromptDetailModal = () => {
                         rel="noopener noreferrer sponsored"
                         onClick={(e) => e.stopPropagation()}
                         title={`Shop ${item.label} on Amazon`}
-                        className="w-10 h-10 rounded-full bg-black/90 hover:bg-[#FF9900] text-white flex items-center justify-center text-sm font-black backdrop-blur-md transition-transform hover:scale-110 shadow-2xl border border-white/30 cursor-pointer"
+                        className="w-10 h-10 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white flex items-center justify-center text-sm font-black backdrop-blur-md transition-transform hover:scale-110 shadow-2xl border border-white/30 cursor-pointer"
                       >
                         <span>{getIconEmoji(item.type)}</span>
                       </a>

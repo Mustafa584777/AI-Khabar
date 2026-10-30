@@ -214,40 +214,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
           </div>
         )}
 
-        {/* Affiliate Product Hotspot Badges - Left Side Vertically over image */}
-        {Array.isArray(post.affiliateProducts) && post.affiliateProducts.length > 0 && (
-          <div className={`absolute ${post.isPremium ? 'top-12' : 'top-2.5'} left-2.5 z-25 flex flex-col gap-1.5 pointer-events-auto`}>
-            {post.affiliateProducts.map((item) => {
-              if (!item.amazonUrl) return null;
-              const getIconEmoji = (type: string) => {
-                switch (type) {
-                  case 'tshirt': return '👕';
-                  case 'pant': return '👖';
-                  case 'glasses': return '🕶️';
-                  case 'shoes': return '👟';
-                  case 'saree': return '🥻';
-                  case 'dress': return '👗';
-                  case 'jacket': return '🧥';
-                  case 'hat': return '👒';
-                  default: return '🛍️';
-                }
-              };
-              return (
-                <a
-                  key={item.id || item.amazonUrl}
-                  href={item.amazonUrl}
-                  target="_blank"
-                  rel="noopener noreferrer sponsored"
-                  onClick={(e) => e.stopPropagation()}
-                  title={`Shop ${item.label || item.type} on Amazon`}
-                  className="w-8 h-8 rounded-full bg-black/85 hover:bg-[#FF9900] text-white flex items-center justify-center text-xs shadow-lg backdrop-blur-md border border-white/30 transition-transform hover:scale-110 cursor-pointer"
-                >
-                  <span>{getIconEmoji(item.type)}</span>
-                </a>
-              );
-            })}
-          </div>
-        )}
+
 
         {/* Full-Height Shimmer Skeleton Placeholder removed */}
 
