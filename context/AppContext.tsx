@@ -1951,17 +1951,25 @@ export const AppProvider = ({
     try {
       localStorage.removeItem('selectedCategory');
       if (localStorage.getItem('promptcms_auth') === 'true') {
-        setIsAuthenticated(true);
-        const storedAdmin = StorageService.getCurrentUser();
-        setCurrentUser(
-          storedAdmin || {
-            id: 'admin-1',
-            name: 'Administrator',
-            email: 'admin@trendinggeminiprompts.com',
-            role: 'Administrator',
-            avatar: 'https://ui-avatars.com/api/?name=admin&background=0284c7&color=ffffff&size=128&bold=true',
-          }
-        );
+        const authTime = localStorage.getItem('promptcms_auth_time');
+        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+        if (authTime && Date.now() - parseInt(authTime, 10) > TWENTY_FOUR_HOURS) {
+          StorageService.logoutAdmin();
+          setIsAuthenticated(false);
+          setCurrentUser(null);
+        } else {
+          setIsAuthenticated(true);
+          const storedAdmin = StorageService.getCurrentUser();
+          setCurrentUser(
+            storedAdmin || {
+              id: 'admin-1',
+              name: 'Administrator',
+              email: 'admin@trendinggeminiprompts.com',
+              role: 'Administrator',
+              avatar: 'https://ui-avatars.com/api/?name=admin&background=0284c7&color=ffffff&size=128&bold=true',
+            }
+          );
+        }
       }
       const acc = StorageService.getUserAccount();
       if (acc && acc.isLoggedIn) {

@@ -118,7 +118,6 @@ export const CMSLoginPage = () => {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full px-3 py-2 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 rounded text-sm text-neutral-900 dark:text-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
-                  placeholder="admin@trendinggeminiprompts.com"
                 />
               </div>
             </div>
@@ -142,7 +141,6 @@ export const CMSLoginPage = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-3 pr-10 py-2 bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 rounded text-sm text-neutral-900 dark:text-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
-                  placeholder="••••••••"
                 />
                 <button
                   type="button"

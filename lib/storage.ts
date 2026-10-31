@@ -269,6 +269,7 @@ export const StorageService = {
     ) {
       if (typeof window !== 'undefined') {
         localStorage.setItem('promptcms_auth', 'true');
+        localStorage.setItem('promptcms_auth_time', String(Date.now()));
         localStorage.setItem(
           'promptcms_user',
           JSON.stringify({
@@ -300,6 +301,7 @@ export const StorageService = {
   logoutAdmin: () => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('promptcms_auth');
+      localStorage.removeItem('promptcms_auth_time');
       localStorage.removeItem('promptcms_user');
     }
   },
