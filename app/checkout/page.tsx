@@ -496,10 +496,10 @@ export default function CheckoutPage() {
                 </tr>
                 <tr>
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Premium Prompts</td>
-                  <td className="py-3.5 px-4 text-center font-medium"><span className="text-red-500 font-bold text-base">❌</span></td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 dark:text-emerald-400 font-bold"><span className="text-emerald-500 font-bold text-base">✔️</span></td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 dark:text-emerald-400 font-bold"><span className="text-emerald-500 font-bold text-base">✔️</span></td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 dark:text-emerald-400 font-bold"><span className="text-emerald-500 font-bold text-base">✔️</span></td>
+                  <td className="py-3.5 px-4 text-center font-medium"><X className="w-4 h-4 text-red-500 inline-block" /></td>
+                  <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400"><Check className="w-4 h-4 text-emerald-500 inline-block" /></td>
+                  <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400"><Check className="w-4 h-4 text-emerald-500 inline-block" /></td>
+                  <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400"><Check className="w-4 h-4 text-emerald-500 inline-block" /></td>
                 </tr>
               </tbody>
             </table>
