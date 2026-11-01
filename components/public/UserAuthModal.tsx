@@ -13,6 +13,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   updateProfile,
+  sendEmailVerification,
 } from 'firebase/auth';
 import {
   X,
@@ -247,6 +248,30 @@ export const UserAuthModal = () => {
     }
   };
 
+  // Helper to validate email format and reject fake/disposable/gibberish emails
+  const isValidEmail = (emailStr: string): boolean => {
+    const clean = emailStr.trim().toLowerCase();
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(clean)) return false;
+
+    const parts = clean.split('@');
+    if (parts.length !== 2) return false;
+    const [username, domain] = parts;
+    if (!username || !domain) return false;
+
+    const blockedDomains = [
+      'asdf.com', 'test.com', 'fake.com', 'dummy.com', 'example.com',
+      'abc.com', 'xyz.com', 'tempmail.com', 'mailinator.com',
+      '10minutemail.com', 'trashmail.com', 'temp-mail.org',
+      'guerrillamail.com', 'sharklasers.com', 'dispostable.com'
+    ];
+    if (blockedDomains.includes(domain)) return false;
+    if (username.length < 3 || /^(.)\1+$/.test(username)) return false;
+    if (username === domain.split('.')[0]) return false;
+
+    return true;
+  };
+
   // 4. Email/Password Submit (Login or Signup)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -256,6 +281,10 @@ export const UserAuthModal = () => {
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail || !cleanEmail.includes('@')) {
       showToast('Please enter a valid email address');
+      return;
+    }
+    if (mode === 'signup' && !isValidEmail(cleanEmail)) {
+      showToast('Please enter a valid, real email address. Temporary, test, or fake emails are not allowed.');
       return;
     }
     if (!password || password.length < 6) {
@@ -274,14 +303,21 @@ export const UserAuthModal = () => {
         const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
         const u = userCredential.user;
 
-        // 2. Update display name
+        // 2. Send email verification
+        try {
+          await sendEmailVerification(u);
+        } catch (err) {
+          console.warn('Failed to send verification email:', err);
+        }
+
+        // 3. Update display name
         if (fullName) {
           await updateProfile(u, { displayName: fullName }).catch(() => {});
         }
 
         const userAvatar = getEmailAvatarUrl(cleanEmail, userName);
 
-        // 3. Initialize user account in app & storage
+        // 4. Initialize user account in app & storage
         if (typeof window !== 'undefined') {
           localStorage.setItem('auraprompt_signup_modal_already_shown', 'true');
           localStorage.setItem('auraprompt_first_login_claimed', 'true');
@@ -295,7 +331,7 @@ export const UserAuthModal = () => {
         await signupUser(userName, userHandle, cleanEmail, password, userAvatar, u.uid);
         setIsFirstLoginModalOpen(false);
 
-        showToast(`Welcome ${userName}! Your account has been created with 5 free credits.`);
+        showToast(`Welcome ${userName}! Verification email sent to ${cleanEmail}. Please check your inbox.`);
         setIsLoading(false);
         setIsUserAuthModalOpen(false);
         setEmail('');

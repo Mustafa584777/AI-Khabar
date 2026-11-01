@@ -218,30 +218,27 @@ export default function CheckoutPage() {
                   {billingCycle === 'monthly' ? '₹25' : '₹245'}
                 </span>
                 {billingCycle === 'monthly' && (
-                  <span className="text-sm text-neutral-400 line-through font-bold">
+                  <span className="text-sm text-red-500 line-through font-bold">
                     ₹50
                   </span>
                 )}
-                <span className="text-xs text-neutral-400">
-                  {billingCycle === 'monthly' ? '/ month' : '/ year'}
-                </span>
               </div>
 
               <ul className="space-y-2.5 text-xs text-neutral-600 dark:text-neutral-300">
                 <li className="flex items-center gap-2">
                   <span className="text-emerald-500 font-bold">✓</span>
-                  <span className="font-bold text-neutral-900 dark:text-white">Unlock all premium prompts</span>
+                  <span className="font-bold text-neutral-900 dark:text-white">Premium Prompts</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-emerald-500 font-bold">✓</span>
                   <span>
-                    <strong>{billingCycle === 'yearly' ? '1,200' : '100'}</strong> prompt tool credits {billingCycle === 'yearly' ? 'upfront' : '/ mo'}
+                    <strong>{billingCycle === 'yearly' ? '1,200' : '100'}</strong> prompt tool credits {billingCycle === 'yearly' ? 'upfront' : ''}
                   </span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-emerald-500 font-bold">✓</span>
                   <span>
-                    <strong>{billingCycle === 'yearly' ? '1,200 AI Searches' : '100 AI Searches'}</strong> {billingCycle === 'yearly' ? '/ year' : '/ mo'}
+                    <strong>{billingCycle === 'yearly' ? '1,200 AI Searches' : '100 AI Searches'}</strong>
                   </span>
                 </li>
                 <li className="flex items-center gap-2">
@@ -292,30 +289,27 @@ export default function CheckoutPage() {
                   {billingCycle === 'monthly' ? '₹50' : '₹495'}
                 </span>
                 {billingCycle === 'monthly' && (
-                  <span className="text-sm text-neutral-400 line-through font-bold">
+                  <span className="text-sm text-red-500 line-through font-bold">
                     ₹100
                   </span>
                 )}
-                <span className="text-xs text-neutral-400">
-                  {billingCycle === 'monthly' ? '/ month' : '/ year'}
-                </span>
               </div>
 
               <ul className="space-y-2.5 text-xs text-neutral-600 dark:text-neutral-300">
                 <li className="flex items-center gap-2">
                   <span className="text-[#E60023] font-bold">✓</span>
-                  <span className="font-bold text-neutral-900 dark:text-white">Unlock all premium prompts</span>
+                  <span className="font-bold text-neutral-900 dark:text-white">Premium Prompts</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-[#E60023] font-bold">✓</span>
                   <span>
-                    <strong>{billingCycle === 'yearly' ? '3,000' : '250'}</strong> prompt tool credits {billingCycle === 'yearly' ? 'upfront' : '/ mo'}
+                    <strong>{billingCycle === 'yearly' ? '3,000' : '250'}</strong> prompt tool credits {billingCycle === 'yearly' ? 'upfront' : ''}
                   </span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-[#E60023] font-bold">✓</span>
                   <span>
-                    <strong>{billingCycle === 'yearly' ? '2,400 AI Searches' : '200 AI Searches'}</strong> {billingCycle === 'yearly' ? '/ year' : '/ mo'}
+                    <strong>{billingCycle === 'yearly' ? '2,400 AI Searches' : '200 AI Searches'}</strong>
                   </span>
                 </li>
                 <li className="flex items-center gap-2">
@@ -363,30 +357,27 @@ export default function CheckoutPage() {
                   {billingCycle === 'monthly' ? '₹100' : '₹995'}
                 </span>
                 {billingCycle === 'monthly' && (
-                  <span className="text-sm text-neutral-400 line-through font-bold">
+                  <span className="text-sm text-red-500 line-through font-bold">
                     ₹200
                   </span>
                 )}
-                <span className="text-xs text-neutral-400">
-                  {billingCycle === 'monthly' ? '/ month' : '/ year'}
-                </span>
               </div>
 
               <ul className="space-y-2.5 text-xs text-neutral-600 dark:text-neutral-300">
                 <li className="flex items-center gap-2">
                   <span className="text-purple-500 font-bold">✓</span>
-                  <span className="font-bold text-neutral-900 dark:text-white">Unlock all premium prompts</span>
+                  <span className="font-bold text-neutral-900 dark:text-white">Premium Prompts</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-purple-500 font-bold">✓</span>
                   <span>
-                    <strong>{billingCycle === 'yearly' ? '7,200' : '600'}</strong> prompt tool credits {billingCycle === 'yearly' ? 'upfront' : '/ mo'}
+                    <strong>{billingCycle === 'yearly' ? '7,200' : '600'}</strong> prompt tool credits {billingCycle === 'yearly' ? 'upfront' : ''}
                   </span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-purple-500 font-bold">✓</span>
                   <span>
-                    <strong>{billingCycle === 'yearly' ? '6,000 AI Searches' : '500 AI Searches'}</strong> {billingCycle === 'yearly' ? '/ year' : '/ mo'}
+                    <strong>{billingCycle === 'yearly' ? '6,000 AI Searches' : '500 AI Searches'}</strong>
                   </span>
                 </li>
                 <li className="flex items-center gap-2">
@@ -444,41 +435,41 @@ export default function CheckoutPage() {
                   <td className="py-3.5 px-4 text-center font-black text-neutral-900 dark:text-white">
                     {billingCycle === 'monthly' ? (
                       <span className="inline-flex items-center gap-1.5">
-                        <span>₹25 / mo</span>
-                        <span className="text-neutral-400 line-through text-xs font-normal">₹50</span>
+                        <span>₹25</span>
+                        <span className="text-red-500 line-through text-xs font-normal">₹50</span>
                       </span>
-                    ) : '₹245 / year'}
+                    ) : '₹245'}
                   </td>
                   <td className="py-3.5 px-4 text-center font-black text-[#E60023]">
                     {billingCycle === 'monthly' ? (
                       <span className="inline-flex items-center gap-1.5">
-                        <span>₹50 / mo</span>
-                        <span className="text-neutral-400 line-through text-xs font-normal">₹100</span>
+                        <span>₹50</span>
+                        <span className="text-red-500 line-through text-xs font-normal">₹100</span>
                       </span>
-                    ) : '₹495 / year'}
+                    ) : '₹495'}
                   </td>
                   <td className="py-3.5 px-4 text-center font-black text-purple-600 dark:text-purple-400">
                     {billingCycle === 'monthly' ? (
                       <span className="inline-flex items-center gap-1.5">
-                        <span>₹100 / mo</span>
-                        <span className="text-neutral-400 line-through text-xs font-normal">₹200</span>
+                        <span>₹100</span>
+                        <span className="text-red-500 line-through text-xs font-normal">₹200</span>
                       </span>
-                    ) : '₹995 / year'}
+                    ) : '₹995'}
                   </td>
                 </tr>
                 <tr>
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">
-                    {billingCycle === 'monthly' ? 'Monthly Tool Credits' : 'Total Combined Credits'}
+                    {billingCycle === 'monthly' ? 'Tool Credits' : 'Total Combined Credits'}
                   </td>
                   <td className="py-3.5 px-4 text-center font-medium">5 Lifetime</td>
                   <td className="py-3.5 px-4 text-center font-bold text-neutral-900 dark:text-white">
-                    {billingCycle === 'monthly' ? '100 / mo' : '1,200 upfront'}
+                    {billingCycle === 'monthly' ? '100' : '1,200 upfront'}
                   </td>
                   <td className="py-3.5 px-4 text-center font-bold text-neutral-900 dark:text-white">
-                    {billingCycle === 'monthly' ? '250 / mo' : '3,000 upfront'}
+                    {billingCycle === 'monthly' ? '250' : '3,000 upfront'}
                   </td>
                   <td className="py-3.5 px-4 text-center font-bold text-neutral-900 dark:text-white">
-                    {billingCycle === 'monthly' ? '600 / mo' : '7,200 upfront'}
+                    {billingCycle === 'monthly' ? '600' : '7,200 upfront'}
                   </td>
                 </tr>
                 <tr>
@@ -487,13 +478,13 @@ export default function CheckoutPage() {
                   </td>
                   <td className="py-3.5 px-4 text-center font-medium">5 lifetime</td>
                   <td className="py-3.5 px-4 text-center font-bold">
-                    {billingCycle === 'monthly' ? '100 / mo' : '1,200 / yr'}
+                    {billingCycle === 'monthly' ? '100' : '1,200'}
                   </td>
                   <td className="py-3.5 px-4 text-center font-bold">
-                    {billingCycle === 'monthly' ? '200 / mo' : '2,400 / yr'}
+                    {billingCycle === 'monthly' ? '200' : '2,400'}
                   </td>
                   <td className="py-3.5 px-4 text-center font-bold">
-                    {billingCycle === 'monthly' ? '500 / mo' : '6,000 / yr'}
+                    {billingCycle === 'monthly' ? '500' : '6,000'}
                   </td>
                 </tr>
                 <tr>
@@ -504,11 +495,11 @@ export default function CheckoutPage() {
                   <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400">Unlimited</td>
                 </tr>
                 <tr>
-                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Unlock All Premium Prompts</td>
-                  <td className="py-3.5 px-4 text-center font-medium">Paid Sub Only</td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 dark:text-emerald-400 font-bold"><Check className="w-4 h-4 mx-auto inline mr-1" /> All Unlocked</td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 dark:text-emerald-400 font-bold"><Check className="w-4 h-4 mx-auto inline mr-1" /> All Unlocked</td>
-                  <td className="py-3.5 px-4 text-center text-emerald-600 dark:text-emerald-400 font-bold"><Check className="w-4 h-4 mx-auto inline mr-1" /> All Unlocked</td>
+                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Premium Prompts</td>
+                  <td className="py-3.5 px-4 text-center font-medium"><span className="text-red-500 font-bold text-base">❌</span></td>
+                  <td className="py-3.5 px-4 text-center text-emerald-600 dark:text-emerald-400 font-bold"><span className="text-emerald-500 font-bold text-base">✔️</span></td>
+                  <td className="py-3.5 px-4 text-center text-emerald-600 dark:text-emerald-400 font-bold"><span className="text-emerald-500 font-bold text-base">✔️</span></td>
+                  <td className="py-3.5 px-4 text-center text-emerald-600 dark:text-emerald-400 font-bold"><span className="text-emerald-500 font-bold text-base">✔️</span></td>
                 </tr>
               </tbody>
             </table>
