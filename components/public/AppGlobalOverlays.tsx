@@ -5,6 +5,8 @@ import { NotificationsModal } from './NotificationsModal';
 import { PageLoadingOverlay } from './PageLoadingOverlay';
 import { OfflineIndicator } from './OfflineIndicator';
 import { NetlifyBadgeRemover } from './NetlifyBadgeRemover';
+import { UserAuthModal } from './UserAuthModal';
+import { UnlockPremiumModal } from './UnlockPremiumModal';
 
 export const AppGlobalOverlays = () => {
   return (
@@ -13,6 +15,8 @@ export const AppGlobalOverlays = () => {
       <PageLoadingOverlay />
       <OfflineIndicator />
       <NetlifyBadgeRemover />
+      <UserAuthModal />
+      <UnlockPremiumModal />
     </>
   );
 };
