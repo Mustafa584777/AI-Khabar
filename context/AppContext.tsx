@@ -1618,11 +1618,23 @@ export const AppProvider = ({
     }
     return uniqueReal.length > 0 ? uniqueReal : ['Portrait photography', 'Cinematic lighting', 'Cyberpunk portrait', 'Vintage film'];
   });
-  const [selectedCategory, setSelectedCategoryState] = useState<string>('');
+  const [selectedCategory, setSelectedCategoryState] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('auraprompt_selected_category') || '';
+    }
+    return '';
+  });
 
   const setSelectedCategory = (cat: string) => {
     const clean = cat === 'all' || cat === 'none' ? '' : cat;
     setSelectedCategoryState(clean);
+    if (typeof window !== 'undefined') {
+      if (clean) {
+        localStorage.setItem('auraprompt_selected_category', clean);
+      } else {
+        localStorage.removeItem('auraprompt_selected_category');
+      }
+    }
   };
   const [selectedTool, setSelectedTool] = useState<string>('all');
   const [selectedSort, setSelectedSort] = useState<

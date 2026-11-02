@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import {
   Sparkles,
@@ -15,6 +16,7 @@ import {
 } from 'lucide-react';
 
 export const Footer = () => {
+  const router = useRouter();
   const { categories, setSelectedCategory, setCurrentView } = useApp();
 
   return (
@@ -77,7 +79,7 @@ export const Footer = () => {
                       onClick={() => {
                         setSelectedCategory(cat.name);
                         setCurrentView('public');
-                        window.location.href = '/';
+                        router.push('/');
                       }}
                       className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium text-left"
                     >
