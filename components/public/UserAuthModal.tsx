@@ -14,6 +14,8 @@ import {
   signInWithEmailAndPassword,
   updateProfile,
   sendEmailVerification,
+  signOut as firebaseSignOut,
+  applyActionCode,
 } from 'firebase/auth';
 import {
   X,
@@ -31,6 +33,9 @@ import {
   Loader2,
   ExternalLink,
   Smartphone,
+  RefreshCw,
+  Clock,
+  MailCheck,
 } from 'lucide-react';
 import { getEmailAvatarUrl } from '@/lib/utils';
 
@@ -46,7 +51,7 @@ export const UserAuthModal = () => {
     setIsFirstLoginModalOpen,
   } = useApp();
 
-  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot' | 'verify'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -55,6 +60,15 @@ export const UserAuthModal = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showRedirectOption, setShowRedirectOption] = useState(false);
   const [forgotSuccess, setForgotSuccess] = useState(false);
+
+  // Email verification enforcement states
+  const [verificationEmail, setVerificationEmail] = useState('');
+  const [verificationName, setVerificationName] = useState('');
+  const [verificationPassword, setVerificationPassword] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [isCheckingVerification, setIsCheckingVerification] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [verificationNotice, setVerificationNotice] = useState<string | null>(null);
 
   // Helper to format Firebase error codes into clean human-friendly messages
   const formatFirebaseAuthError = (err: any): string => {
@@ -153,6 +167,40 @@ export const UserAuthModal = () => {
     };
   }, [loginUser, setIsFirstLoginModalOpen, setIsUserAuthModalOpen, showToast, checkAndRedirectStudio]);
 
+  // Cooldown timer for resend verification email
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  // Listen for email verification action codes in URL (e.g. from Firebase verification links)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const actionCode = urlParams.get('oobCode');
+    const actionType = urlParams.get('mode');
+
+    if (actionType === 'verifyEmail' && actionCode) {
+      applyActionCode(auth, actionCode)
+        .then(async () => {
+          showToast('🎉 Email successfully verified! Please sign in with your account.');
+          if (auth.currentUser) {
+            try {
+              await auth.currentUser.reload();
+            } catch {}
+          }
+          setMode('login');
+          setIsUserAuthModalOpen(true);
+        })
+        .catch((err) => {
+          console.warn('Apply action code notice:', err);
+        });
+    }
+  }, [showToast, setIsUserAuthModalOpen]);
+
   if (!isUserAuthModalOpen) return null;
 
   // 1. Google Sign-In with Popup
@@ -248,6 +296,137 @@ export const UserAuthModal = () => {
     }
   };
 
+  // Helper to safely send verification email with ActionCodeSettings and fallback to default
+  const sendVerificationEmailSafely = async (user: any): Promise<{ success: boolean; error?: string }> => {
+    if (!user) return { success: false, error: 'User session not active.' };
+    try {
+      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://zeenaprompt.com';
+      await sendEmailVerification(user, {
+        url: `${origin}/?verified=true`,
+        handleCodeInApp: false,
+      });
+      return { success: true };
+    } catch (actionErr: any) {
+      console.warn('ActionCodeSettings sendEmailVerification failed, trying default sendEmailVerification:', actionErr);
+      try {
+        await sendEmailVerification(user);
+        return { success: true };
+      } catch (fallbackErr: any) {
+        console.error('sendEmailVerification completely failed:', fallbackErr);
+        return { success: false, error: formatFirebaseAuthError(fallbackErr) };
+      }
+    }
+  };
+
+  // Check verification status from Firebase Auth
+  const handleCheckVerification = async () => {
+    setIsCheckingVerification(true);
+    setErrorMessage(null);
+    try {
+      let targetUser = auth.currentUser;
+      if (!targetUser && verificationEmail && verificationPassword) {
+        try {
+          const cred = await signInWithEmailAndPassword(auth, verificationEmail, verificationPassword);
+          targetUser = cred.user;
+        } catch (err: any) {
+          console.warn('Sign-in during verification check:', err);
+        }
+      }
+
+      if (!targetUser) {
+        setErrorMessage('Session expired. Please switch to Sign In and enter your credentials.');
+        setIsCheckingVerification(false);
+        return;
+      }
+
+      await targetUser.reload();
+      const refreshedUser = auth.currentUser || targetUser;
+
+      if (refreshedUser.emailVerified) {
+        const cleanE = (refreshedUser.email || verificationEmail).trim().toLowerCase();
+        const userName = refreshedUser.displayName || verificationName || cleanE.split('@')[0] || 'Creator';
+        const userHandle = '@' + userName.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const userAvatar = refreshedUser.photoURL || getEmailAvatarUrl(cleanE, userName);
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('auraprompt_signup_modal_already_shown', 'true');
+          localStorage.setItem('auraprompt_first_login_claimed', 'true');
+          localStorage.setItem('auraprompt_signup_bonus_claimed', 'true');
+          localStorage.setItem('auraprompt_tool_credits', '5');
+          localStorage.setItem(`auraprompt_signup_modal_already_shown_${cleanE}`, 'true');
+          localStorage.setItem(`auraprompt_signup_bonus_claimed_${cleanE}`, 'true');
+          localStorage.setItem(`auraprompt_signup_modal_shown_${cleanE}`, 'true');
+        }
+
+        await signupUser(userName, userHandle, cleanE, '', userAvatar, refreshedUser.uid);
+        setIsFirstLoginModalOpen(false);
+        showToast(`🎉 Email verified successfully! Welcome ${userName}!`);
+        setIsUserAuthModalOpen(false);
+        setMode('login');
+        setEmail('');
+        setPassword('');
+        setVerificationEmail('');
+        setVerificationPassword('');
+        setVerificationNotice(null);
+        checkAndRedirectStudio();
+        return;
+      }
+
+      setErrorMessage(`Email not verified yet. Please check your inbox (and Spam/Junk folder) at ${verificationEmail || refreshedUser.email} and click the link.`);
+    } catch (err: any) {
+      console.error('Check verification error:', err);
+      setErrorMessage(formatFirebaseAuthError(err));
+    } finally {
+      setIsCheckingVerification(false);
+    }
+  };
+
+  // Resend verification email with active feedback
+  const handleResendVerification = async () => {
+    if (resendCooldown > 0 || isResending) return;
+    setIsResending(true);
+    setErrorMessage(null);
+    try {
+      let targetUser = auth.currentUser;
+      if (!targetUser && verificationEmail && verificationPassword) {
+        const cred = await signInWithEmailAndPassword(auth, verificationEmail, verificationPassword);
+        targetUser = cred.user;
+      }
+
+      if (!targetUser) {
+        setErrorMessage('Please sign in first to resend the verification email.');
+        setIsResending(false);
+        return;
+      }
+
+      const res = await sendVerificationEmailSafely(targetUser);
+      if (res.success) {
+        setResendCooldown(60);
+        setVerificationNotice(`New verification link sent to ${verificationEmail || targetUser.email}! Please check your Inbox and Spam/Junk folder.`);
+        showToast('Verification email resent! Check inbox and spam.');
+      } else {
+        setErrorMessage(res.error || 'Failed to resend verification email.');
+      }
+    } catch (err: any) {
+      console.error('Resend error:', err);
+      setErrorMessage(formatFirebaseAuthError(err));
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  // Cancel / Use different email
+  const handleCancelVerification = async () => {
+    try {
+      await firebaseSignOut(auth);
+    } catch {}
+    setMode('signup');
+    setErrorMessage(null);
+    setVerificationNotice(null);
+    setVerificationEmail('');
+    setVerificationPassword('');
+  };
+
   // Helper to validate email format and reject fake/disposable/gibberish emails
   const isValidEmail = (emailStr: string): boolean => {
     const clean = emailStr.trim().toLowerCase();
@@ -263,7 +442,9 @@ export const UserAuthModal = () => {
       'asdf.com', 'test.com', 'fake.com', 'dummy.com', 'example.com',
       'abc.com', 'xyz.com', 'tempmail.com', 'mailinator.com',
       '10minutemail.com', 'trashmail.com', 'temp-mail.org',
-      'guerrillamail.com', 'sharklasers.com', 'dispostable.com'
+      'guerrillamail.com', 'sharklasers.com', 'dispostable.com',
+      'yopmail.com', 'getairmail.com', 'mohmal.com', 'mytemp.email',
+      'crazymailing.com', 'fakemailgenerator.com', 'burnermail.io'
     ];
     if (blockedDomains.includes(domain)) return false;
     if (username.length < 3 || /^(.)\1+$/.test(username)) return false;
@@ -303,45 +484,54 @@ export const UserAuthModal = () => {
         const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
         const u = userCredential.user;
 
-        // 2. Send email verification
-        try {
-          await sendEmailVerification(u);
-        } catch (err) {
-          console.warn('Failed to send verification email:', err);
+        // 2. Update display name
+        if (fullName.trim()) {
+          await updateProfile(u, { displayName: fullName.trim() }).catch(() => {});
         }
 
-        // 3. Update display name
-        if (fullName) {
-          await updateProfile(u, { displayName: fullName }).catch(() => {});
-        }
+        // 3. Send email verification
+        const sendRes = await sendVerificationEmailSafely(u);
 
-        const userAvatar = getEmailAvatarUrl(cleanEmail, userName);
-
-        // 4. Initialize user account in app & storage
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('auraprompt_signup_modal_already_shown', 'true');
-          localStorage.setItem('auraprompt_first_login_claimed', 'true');
-          localStorage.setItem('auraprompt_signup_bonus_claimed', 'true');
-          localStorage.setItem('auraprompt_tool_credits', '5');
-          localStorage.setItem(`auraprompt_signup_modal_already_shown_${cleanEmail}`, 'true');
-          localStorage.setItem(`auraprompt_signup_bonus_claimed_${cleanEmail}`, 'true');
-          localStorage.setItem(`auraprompt_signup_modal_shown_${cleanEmail}`, 'true');
-        }
-
-        await signupUser(userName, userHandle, cleanEmail, password, userAvatar, u.uid);
-        setIsFirstLoginModalOpen(false);
-
-        showToast(`Welcome ${userName}! Verification email sent to ${cleanEmail}. Please check your inbox.`);
+        // 4. Set state and move to verify screen (DO NOT log in or grant privileges yet!)
+        setVerificationEmail(cleanEmail);
+        setVerificationName(userName);
+        setVerificationPassword(password);
+        setResendCooldown(60);
+        setMode('verify');
         setIsLoading(false);
-        setIsUserAuthModalOpen(false);
-        setEmail('');
-        setPassword('');
-        checkAndRedirectStudio();
+
+        if (sendRes.success) {
+          setVerificationNotice(`A verification email has been sent to ${cleanEmail}. Please check your Inbox and Spam/Junk folder.`);
+          showToast(`Verification email sent to ${cleanEmail}! Please verify before continuing.`);
+        } else {
+          setErrorMessage(sendRes.error || 'Failed to send verification email automatically. Click "Resend Verification Email" below.');
+        }
+        return;
       } else {
         // Mode: LOGIN
         const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
         const u = userCredential.user;
 
+        const isGoogle = u.providerData.some((p) => p.providerId === 'google.com');
+        const isVerified = Boolean(u.emailVerified || isGoogle);
+
+        if (!isVerified) {
+          // Attempt to send a fresh verification email so the user can easily verify
+          void sendVerificationEmailSafely(u);
+
+          setVerificationEmail(cleanEmail);
+          setVerificationName(u.displayName || cleanEmail.split('@')[0]);
+          setVerificationPassword(password);
+          setResendCooldown(60);
+          setMode('verify');
+          setErrorMessage(null);
+          setVerificationNotice(`Your account (${cleanEmail}) is not verified yet. We have sent a verification email to your inbox.`);
+          showToast(`Please verify your email address (${cleanEmail}) to sign in.`);
+          setIsLoading(false);
+          return;
+        }
+
+        // User is verified!
         const userName = u.displayName || cleanEmail.split('@')[0];
         const userAvatar = u.photoURL || getEmailAvatarUrl(cleanEmail, userName);
 
@@ -397,10 +587,18 @@ export const UserAuthModal = () => {
           </div>
 
           <h3 className="text-xl font-bold tracking-tight">
-            {mode === 'signup' ? 'Create Free Creator Account' : mode === 'login' ? 'Welcome Back' : 'Reset Password'}
+            {mode === 'verify'
+              ? 'Verify Your Email Address'
+              : mode === 'signup'
+              ? 'Create Free Creator Account'
+              : mode === 'login'
+              ? 'Welcome Back'
+              : 'Reset Password'}
           </h3>
           <p className="text-xs text-neutral-400 mt-1">
-            {mode === 'forgot'
+            {mode === 'verify'
+              ? 'A confirmation link has been dispatched to activate your account.'
+              : mode === 'forgot'
               ? 'Enter your account email to receive secure password reset instructions.'
               : authModalMessage ||
                 'Access your saved bookmarks, prompt generation history, and points across all devices & incognito tabs.'}
@@ -463,7 +661,99 @@ export const UserAuthModal = () => {
             </div>
           )}
 
-          {mode === 'forgot' ? (
+          {mode === 'verify' ? (
+            <div className="space-y-4">
+              {/* Notice Banner */}
+              {verificationNotice && (
+                <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 text-emerald-800 dark:text-emerald-300 text-xs flex items-start gap-2.5 shadow-sm">
+                  <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                  <span className="leading-relaxed font-medium">{verificationNotice}</span>
+                </div>
+              )}
+
+              {/* Email Address Highlight Card */}
+              <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-800/80 border border-neutral-200 dark:border-neutral-700/80 flex items-center gap-3.5 shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
+                  <MailCheck className="w-5 h-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400 font-semibold uppercase tracking-wider">
+                    Verification link sent to
+                  </p>
+                  <p className="text-sm font-bold text-neutral-900 dark:text-white truncate">
+                    {verificationEmail || email}
+                  </p>
+                </div>
+              </div>
+
+              {/* Spam Guidance Box */}
+              <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-amber-900 dark:text-amber-200 text-xs space-y-1.5">
+                <div className="flex items-center gap-1.5 font-bold text-amber-800 dark:text-amber-300">
+                  <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <span>Important: Check Spam / Junk / Promotions Folder</span>
+                </div>
+                <p className="text-[11px] leading-relaxed text-neutral-600 dark:text-neutral-300">
+                  Verification emails often land in your <strong>Spam</strong> or <strong>Promotions</strong> folder. Please open that email, click the confirmation link, and then tap the button below.
+                </p>
+              </div>
+
+              {/* Primary Action Button: Check verification status */}
+              <button
+                type="button"
+                onClick={handleCheckVerification}
+                disabled={isCheckingVerification}
+                className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-bold text-sm shadow-lg shadow-red-500/25 transition-all flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-70 cursor-pointer"
+              >
+                {isCheckingVerification ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Verifying Status with Firebase...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4" />
+                    <span>I&apos;ve Verified My Email — Continue</span>
+                  </>
+                )}
+              </button>
+
+              {/* Resend button with active cooldown */}
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                disabled={resendCooldown > 0 || isResending}
+                className="w-full py-2.5 px-4 rounded-xl border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-200 font-semibold text-xs transition-colors flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+              >
+                {isResending ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Resending Email...</span>
+                  </>
+                ) : resendCooldown > 0 ? (
+                  <>
+                    <Clock className="w-3.5 h-3.5 text-neutral-400" />
+                    <span>Resend verification email in {resendCooldown}s</span>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 text-red-500" />
+                    <span>Resend Verification Email</span>
+                  </>
+                )}
+              </button>
+
+              {/* Change email or back to sign in */}
+              <div className="pt-2 text-center text-xs text-neutral-500">
+                <button
+                  type="button"
+                  onClick={handleCancelVerification}
+                  className="text-red-600 dark:text-red-400 font-bold hover:underline cursor-pointer"
+                >
+                  ← Change email address or log in
+                </button>
+              </div>
+            </div>
+          ) : mode === 'forgot' ? (
             forgotSuccess ? (
               <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 rounded-2xl text-center space-y-3">
                 <CheckCircle className="w-10 h-10 text-emerald-600 dark:text-emerald-400 mx-auto" />
@@ -671,7 +961,7 @@ export const UserAuthModal = () => {
                     </>
                   ) : (
                     <>
-                      <span>{mode === 'signup' ? 'Create Account & Get 5 Credits' : 'Sign In'}</span>
+                      <span>{mode === 'signup' ? 'Create Account & Verify Email' : 'Sign In'}</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}

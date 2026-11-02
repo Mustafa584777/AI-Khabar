@@ -148,6 +148,7 @@ export interface UserAccount {
   avatar?: string;
   joinedDate: string;
   isLoggedIn: boolean;
+  emailVerified?: boolean;
   points: number;
   requestsMade: number;
   likesCountForPoints: number;

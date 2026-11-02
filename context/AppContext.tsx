@@ -282,7 +282,11 @@ export const AppProvider = ({
 
   // End-User Account State (For saving history, sync pins & taste profile)
   const [userAccount, setUserAccount] = useState<UserAccount | null>(() => {
-    return StorageService.getUserAccount();
+    const acc = StorageService.getUserAccount();
+    if (acc && acc.isLoggedIn && acc.emailVerified !== false) {
+      return acc;
+    }
+    return null;
   });
   const [isUserAuthModalOpen, setIsUserAuthModalOpen] = useState<boolean>(false);
   const [authModalMessage, setAuthModalMessage] = useState<string | null>(null);
@@ -869,6 +873,7 @@ export const AppProvider = ({
       email: cleanEmail,
       joinedDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
       isLoggedIn: true,
+      emailVerified: true,
       avatar: (avatar && !avatar.includes('unsplash.com')) ? avatar : getEmailAvatarUrl(cleanEmail, username || cleanEmail.split('@')[0]),
       points: 10,
       toolCredits: localCr !== null ? localCr : 5,
@@ -1003,6 +1008,7 @@ export const AppProvider = ({
       email: cleanEmail,
       joinedDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
       isLoggedIn: true,
+      emailVerified: true,
       avatar: (avatar && !avatar.includes('unsplash.com')) ? avatar : getEmailAvatarUrl(cleanEmail, name || cleanEmail.split('@')[0]),
       points: 10,
       toolCredits: 5,
@@ -1972,7 +1978,7 @@ export const AppProvider = ({
         }
       }
       const acc = StorageService.getUserAccount();
-      if (acc && acc.isLoggedIn) {
+      if (acc && acc.isLoggedIn && acc.emailVerified !== false) {
         setUserAccount(acc);
         const hist = StorageService.getAiHistory(acc.id);
         if (hist && hist.length > 0) setAiHistory(hist);
@@ -2215,6 +2221,16 @@ export const AppProvider = ({
     // Check Firebase Auth Session
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        const isGoogle = firebaseUser.providerData.some((p) => p.providerId === 'google.com');
+        const isVerified = Boolean(firebaseUser.emailVerified || isGoogle);
+
+        if (!isVerified) {
+          console.info('Unverified Firebase user detected; access restricted until email is verified:', firebaseUser.email);
+          setUserAccount(null);
+          StorageService.clearAllUserData();
+          return;
+        }
+
         const existing = StorageService.getUserAccount();
         const emailPrefix = firebaseUser.email ? firebaseUser.email.split('@')[0] : 'Creator';
         const account: UserAccount = {
@@ -2227,6 +2243,7 @@ export const AppProvider = ({
             (existing?.avatar && !existing.avatar.includes('unsplash.com') ? existing.avatar : null) ||
             getEmailAvatarUrl(firebaseUser.email || existing?.email || '', firebaseUser.displayName || existing?.name || emailPrefix),
           isLoggedIn: true,
+          emailVerified: true,
           joinedDate: existing?.joinedDate || 'Recently',
           points: existing?.points ?? 10,
           requestsMade: existing?.requestsMade || 0,
