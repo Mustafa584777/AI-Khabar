@@ -9,7 +9,7 @@ import { useApp } from '@/context/AppContext';
 export const Footer = () => {
   const router = useRouter();
   const pathname = usePathname();
-  const { categories, setSelectedCategory, setSelectedSort, setSearchQuery } = useApp();
+  const { categories, posts, setSelectedCategory, setSelectedSort, setSearchQuery } = useApp();
 
   const handleCategoryClick = (catName: string) => {
     setSelectedCategory(catName);
@@ -86,18 +86,25 @@ export const Footer = () => {
                 Top Categories
               </h5>
               <ul className="space-y-1.5">
-                {categories.map((cat) => (
-                  <li key={cat.id}>
-                    <button
-                      type="button"
-                      onClick={() => handleCategoryClick(cat.name)}
-                      className="group flex items-center justify-center sm:justify-start gap-2 w-full text-left py-1.5 px-2.5 -mx-2 rounded-xl hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 hover:text-[#E60023] dark:hover:text-white transition-all text-xs font-semibold cursor-pointer active:scale-95 text-neutral-600 dark:text-neutral-400"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-neutral-300 dark:bg-neutral-700 group-hover:bg-[#E60023] transition-colors shrink-0" />
-                      <span>{cat.name}</span>
-                    </button>
-                  </li>
-                ))}
+                {categories
+                  .filter((cat) => {
+                    const count = posts.filter(
+                      (p) => p.status === 'published' && p.category && p.category.toLowerCase() === cat.name.toLowerCase()
+                    ).length;
+                    return count >= 5;
+                  })
+                  .map((cat) => (
+                    <li key={cat.id}>
+                      <button
+                        type="button"
+                        onClick={() => handleCategoryClick(cat.name)}
+                        className="group flex items-center justify-center sm:justify-start gap-2 w-full text-left py-1.5 px-2.5 -mx-2 rounded-xl hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 hover:text-[#E60023] dark:hover:text-white transition-all text-xs font-semibold cursor-pointer active:scale-95 text-neutral-600 dark:text-neutral-400"
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-neutral-300 dark:bg-neutral-700 group-hover:bg-[#E60023] transition-colors shrink-0" />
+                        <span>{cat.name}</span>
+                      </button>
+                    </li>
+                  ))}
               </ul>
             </div>
 
