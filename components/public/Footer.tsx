@@ -79,7 +79,7 @@ export const Footer = () => {
                       onClick={() => {
                         setSelectedCategory(cat.name);
                         setCurrentView('public');
-                        router.push('/');
+                        router.push(`/?category=${encodeURIComponent(cat.name)}`);
                       }}
                       className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium text-left"
                     >

@@ -1636,6 +1636,17 @@ export const AppProvider = ({
       }
     }
   };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const catParam = params.get('category');
+      if (catParam) {
+        const decoded = decodeURIComponent(catParam);
+        setSelectedCategory(decoded);
+      }
+    }
+  }, []);
   const [selectedTool, setSelectedTool] = useState<string>('all');
   const [selectedSort, setSelectedSort] = useState<
     'trending' | 'most-popular' | 'most-liked' | 'most-copied' | 'newest'
