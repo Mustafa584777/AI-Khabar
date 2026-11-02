@@ -43,6 +43,18 @@ export const Header = () => {
 
   const [unreadNotifs, setUnreadNotifs] = React.useState(0);
 
+  // Eagerly prefetch all 5 primary routes for instant client-cached navigation
+  React.useEffect(() => {
+    try {
+      router.prefetch('/');
+      router.prefetch('/create');
+      router.prefetch('/notifications');
+      router.prefetch('/dashboard');
+      router.prefetch('/pricing');
+      router.prefetch('/prompt-editor');
+    } catch {}
+  }, [router]);
+
   React.useEffect(() => {
     const update = () => {
       const list = NotificationService.getNotifications();
@@ -54,19 +66,12 @@ export const Header = () => {
   }, []);
 
   const handleHomeClick = () => {
-    setCurrentView('public');
     setSelectedCategory('all');
     setSelectedSort('newest');
     setSearchQuery('');
-    if (pathname !== '/') {
-      router.push('/');
-    } else {
+    if (pathname === '/') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  };
-
-  const handleNotificationsClick = () => {
-    router.push('/notifications');
   };
 
   const handleBookmarksClick = () => {
@@ -82,9 +87,11 @@ export const Header = () => {
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3 sm:gap-4">
         {/* Left: Brand Icon & Navigation Pills */}
         <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-          <button
+          <Link
+            href="/"
+            prefetch={true}
             onClick={handleHomeClick}
-            className="flex items-center group focus:outline-none p-1 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            className="flex items-center group focus:outline-none p-1 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
             id="brand-logo-btn"
             title="Trending Copy Paste Photo Prompts"
           >
@@ -98,25 +105,28 @@ export const Header = () => {
                 priority
               />
             </div>
-          </button>
+          </Link>
 
           {/* Desktop Navigation Tabs */}
           <nav className="flex items-center gap-1.5 sm:gap-2">
-            <button
+            <Link
+              href="/"
+              prefetch={true}
               onClick={handleHomeClick}
-              className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 ${
-                currentView === 'public' && selectedCategory === 'all'
+              className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer ${
+                pathname === '/' && selectedCategory === 'all'
                   ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 shadow-sm'
                   : 'text-neutral-700 dark:text-neutral-300 hover:bg-[#efefef] dark:hover:bg-neutral-800'
               }`}
             >
               Home
-            </button>
+            </Link>
 
             {/* Create / AI Studio Route Link */}
             <Link
               href="/create"
-              className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 flex items-center gap-1.5 ${
+              prefetch={true}
+              className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
                 pathname === '/create'
                   ? 'bg-[#E60023] text-white shadow-sm'
                   : 'text-neutral-700 dark:text-neutral-300 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-[#E60023]'
@@ -131,7 +141,8 @@ export const Header = () => {
             {/* Prompt Editor Route Link */}
             <Link
               href="/prompt-editor"
-              className={`hidden lg:flex px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 items-center gap-1.5 ${
+              prefetch={true}
+              className={`hidden lg:flex px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 items-center gap-1.5 cursor-pointer ${
                 pathname === '/prompt-editor'
                   ? 'bg-[#E60023] text-white shadow-sm'
                   : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
@@ -150,7 +161,7 @@ export const Header = () => {
           <button
             type="button"
             onClick={() => setIsSearchModalOpen(true)}
-            className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-[#f0f0f0] dark:bg-neutral-800 hover:bg-[#e4e4e4] dark:hover:bg-neutral-700 text-neutral-500 dark:text-neutral-400 text-xs font-medium transition-all group"
+            className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-[#f0f0f0] dark:bg-neutral-800 hover:bg-[#e4e4e4] dark:hover:bg-neutral-700 text-neutral-500 dark:text-neutral-400 text-xs font-medium transition-all group cursor-pointer"
             id="header-search-trigger-btn"
             title="Search prompts, categories, and tags"
           >
@@ -163,10 +174,11 @@ export const Header = () => {
 
         {/* Right: Saved, Account & Admin Actions */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Notifications Button (Hidden on Mobile, use BottomNav instead) */}
-          <button
-            onClick={handleNotificationsClick}
-            className={`hidden sm:flex relative items-center justify-center p-2 rounded-full transition-colors ${
+          {/* Notifications Button (Next.js Link with prefetch) */}
+          <Link
+            href="/notifications"
+            prefetch={true}
+            className={`hidden sm:flex relative items-center justify-center p-2 rounded-full transition-colors cursor-pointer ${
               pathname === '/notifications'
                 ? 'bg-[#E60023] text-white shadow-xs'
                 : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
@@ -180,7 +192,7 @@ export const Header = () => {
                 {unreadNotifs > 9 ? '9+' : unreadNotifs}
               </span>
             )}
-          </button>
+          </Link>
 
           {/* Saved Prompts */}
           <button

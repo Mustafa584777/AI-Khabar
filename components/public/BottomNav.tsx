@@ -6,6 +6,8 @@ import { Home, Search, Plus, User, Bell } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { NotificationService } from '@/lib/notifications';
 
+import Link from 'next/link';
+
 interface BottomNavProps {
   onSearchClick?: () => void;
 }
@@ -19,18 +21,22 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
     setSelectedCategory,
     setSelectedSort,
     setSearchQuery,
-    isAuthenticated,
-    currentView,
-    setCurrentView,
-    setIsTasteModalOpen,
-    setIsSearchModalOpen,
-    setIsNotificationsModalOpen,
-    isNotificationsModalOpen,
     userAccount,
-    openAuthModal,
+    setIsSearchModalOpen,
   } = useApp();
 
   const [unreadNotifs, setUnreadNotifs] = useState(0);
+
+  // Eagerly prefetch all 5 primary routes so returning to any page is 100% instantaneous from client cache
+  useEffect(() => {
+    try {
+      router.prefetch('/');
+      router.prefetch('/create');
+      router.prefetch('/notifications');
+      router.prefetch('/dashboard');
+      router.prefetch('/pricing');
+    } catch {}
+  }, [router]);
 
   useEffect(() => {
     const updateUnread = () => {
@@ -43,12 +49,10 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
   }, []);
 
   const handleHomeClick = () => {
-    setCurrentView('public');
     setSelectedCategory('all');
+    setSelectedSort('newest');
     setSearchQuery('');
-    if (pathname !== '/') {
-      router.push('/');
-    } else {
+    if (pathname === '/') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -61,42 +65,33 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
     }
   };
 
-  const handleNotificationsClick = () => {
-    router.push('/notifications');
-  };
-
-  const handleCreateStudioClick = () => {
-    router.push('/create');
-  };
-
-  const handleAccountClick = () => {
-    router.push('/dashboard');
-  };
-
   return (
     <nav
       aria-label="Mobile navigation"
       className="fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-2xl border-t border-neutral-200/70 dark:border-neutral-800/70 py-1.5 px-4 flex sm:hidden items-center justify-around shadow-2xl transition-all"
     >
-      {/* 1. Home Button */}
-      <button
+      {/* 1. Home Button (Next.js Link with Prefetch) */}
+      <Link
+        href="/"
+        prefetch={true}
         onClick={handleHomeClick}
-        className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 ${
-          pathname === '/' && currentView === 'public' && selectedCategory === 'all'
+        className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 cursor-pointer ${
+          pathname === '/' && selectedCategory === 'all'
             ? 'text-[#E60023] scale-105 font-bold'
             : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
         }`}
         title="Home Feed"
         id="bottom-nav-home"
       >
-        <Home className={`w-6 h-6 ${pathname === '/' && currentView === 'public' && selectedCategory === 'all' ? 'fill-current' : ''}`} />
+        <Home className={`w-6 h-6 ${pathname === '/' && selectedCategory === 'all' ? 'fill-current' : ''}`} />
         <span className="text-[10px] mt-0.5 font-medium">Home</span>
-      </button>
+      </Link>
 
       {/* 2. Explore & Categories Button */}
       <button
+        type="button"
         onClick={handleSearchClick}
-        className="flex flex-col items-center justify-center p-2 rounded-2xl text-neutral-500 hover:text-[#E60023] dark:hover:text-white transition-all duration-200"
+        className="flex flex-col items-center justify-center p-2 rounded-2xl text-neutral-500 hover:text-[#E60023] dark:hover:text-white transition-all duration-200 cursor-pointer"
         title="Explore Categories"
         id="bottom-nav-explore"
       >
@@ -104,10 +99,11 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
         <span className="text-[10px] mt-0.5 font-medium">Explore</span>
       </button>
 
-      {/* 3. Create (+) Button (Prominent Center/Action) */}
-      <button
-        onClick={handleCreateStudioClick}
-        className={`flex flex-col items-center justify-center p-1.5 transition-all duration-200 ${
+      {/* 3. Create (+) Button (Next.js Link with Prefetch) */}
+      <Link
+        href="/create"
+        prefetch={true}
+        className={`flex flex-col items-center justify-center p-1.5 transition-all duration-200 cursor-pointer ${
           pathname === '/create' ? 'scale-110' : 'hover:scale-105'
         }`}
         title="Create - Image to Prompt & Text to Image"
@@ -125,13 +121,14 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
         <span className={`text-[10px] mt-0.5 font-black ${pathname === '/create' ? 'text-[#E60023]' : 'text-neutral-600 dark:text-neutral-400'}`}>
           Create
         </span>
-      </button>
+      </Link>
 
-      {/* 4. Notifications Tab (Replacing For You) */}
-      <button
-        onClick={handleNotificationsClick}
+      {/* 4. Notifications Tab (Next.js Link with Prefetch) */}
+      <Link
+        href="/notifications"
+        prefetch={true}
         id="bottom-nav-notifications"
-        className={`relative flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 ${
+        className={`relative flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 cursor-pointer ${
           pathname === '/notifications'
             ? 'text-[#E60023] scale-105 font-bold'
             : 'text-neutral-500 hover:text-[#E60023] dark:hover:text-white'
@@ -147,12 +144,13 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
           )}
         </div>
         <span className="text-[10px] mt-0.5 font-medium">Updates</span>
-      </button>
+      </Link>
 
-      {/* 5. Account / Profile Button */}
-      <button
-        onClick={handleAccountClick}
-        className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 ${
+      {/* 5. Account / Profile Button (Next.js Link with Prefetch) */}
+      <Link
+        href="/dashboard"
+        prefetch={true}
+        className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 cursor-pointer ${
           pathname === '/dashboard'
             ? 'text-[#E60023] font-bold'
             : 'text-neutral-500 hover:text-[#E60023] dark:hover:text-white'
@@ -164,7 +162,7 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
         <span className="text-[10px] mt-0.5 font-medium">
           {userAccount?.isLoggedIn ? 'Dashboard' : 'Sign In'}
         </span>
-      </button>
+      </Link>
     </nav>
   );
 };

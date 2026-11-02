@@ -131,6 +131,12 @@ export const SearchExploreModal = () => {
     setSearchQuery('');
     setCurrentView('public');
     setIsSearchModalOpen(false);
+    setTimeout(() => {
+      const el = document.getElementById('categories-filter-bar') || document.getElementById('prompts-grid-section');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
   };
 
   // Calculate Most Viewed Categories with their top visual image (excluding categories with < 5 prompts)

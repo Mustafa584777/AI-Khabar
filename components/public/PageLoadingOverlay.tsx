@@ -1,178 +1,107 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { Sparkles, AlertTriangle } from 'lucide-react';
 
 const LoadingOverlayInner = () => {
   const pathname = usePathname();
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [loadingText, setLoadingText] = useState<string>('Loading Page & Studio...');
+  const [isNavigating, setIsNavigating] = useState<boolean>(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showSlowWarning, setShowSlowWarning] = useState<boolean>(false);
-  const [pendingTarget, setPendingTarget] = useState<string | null>(null);
+  const currentPathRef = useRef(pathname);
+  const failsafeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const slowTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Clear session visited flags on page reload (F5 / browser refresh)
+  // Instantly clear any loading state as soon as pathname changes (0ms delay, no blocking)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const navEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
-        if (navEntries.length > 0 && navEntries[0].type === 'reload') {
-          sessionStorage.removeItem('visited_route_/create');
-          sessionStorage.removeItem('visited_route_/dashboard');
-          sessionStorage.removeItem('visited_route_/notifications');
-          sessionStorage.removeItem('visited_route_/pricing');
-          sessionStorage.removeItem('visited_route_/prompt-editor');
-          sessionStorage.removeItem('visited_route_/');
-        }
-      } catch {
-        // ignore
-      }
+    if (pathname !== currentPathRef.current) {
+      currentPathRef.current = pathname;
+      setIsNavigating(false);
+      setActionLoading(null);
+      setShowSlowWarning(false);
+      if (failsafeTimerRef.current) clearTimeout(failsafeTimerRef.current);
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
     }
-  }, []);
+  }, [pathname]);
 
-  // Monitor route changes to dismiss loading overlay once user has successfully landed on target page
-  useEffect(() => {
-    if (!pendingTarget) return;
-
-    if (pathname === pendingTarget) {
-      // User has landed on target page! Ensure minimum aesthetic loading time (800ms) then dismiss
-      const timer = setTimeout(() => {
-        setIsLoading(false);
-        try {
-          sessionStorage.setItem(`visited_route_${pendingTarget}`, 'true');
-        } catch {
-          // ignore
-        }
-        setPendingTarget(null);
-      }, 800);
-
-      return () => clearTimeout(timer);
-    }
-  }, [pathname, pendingTarget]);
-
-  // Click listener for navigation and action buttons (Decode, Edit, Generate new version)
+  // Click listener for explicit heavy actions (Decode, Generate version) or route navigation
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       const target = (e.target as HTMLElement).closest('a, button');
       if (!target) return;
 
       const actionAttr = target.getAttribute('data-action') || '';
-      const titleAttr = (target.getAttribute('title') || '').toLowerCase();
       const text = (target.textContent || '').trim().toLowerCase();
       const href = (target.getAttribute('href') || '').trim();
-      const id = (target.getAttribute('id') || '').trim();
 
-      let targetPath = '';
-      let customLoadingText = 'Loading Studio & Prompts...';
-
-      // Check for action buttons (Decode, Edit, Generate new version)
-      if (
-        actionAttr === 'decode-prompt' ||
-        titleAttr.includes('edit') ||
-        titleAttr.includes('generate new version') ||
-        text === 'decode' ||
-        text === 'edit' ||
-        text === 'generate new version'
-      ) {
-        targetPath = '/create';
-        if (actionAttr === 'decode-prompt' || text === 'decode') {
-          customLoadingText = 'Opening Image-to-Prompt & Studio...';
-        } else if (titleAttr.includes('edit') || text === 'edit') {
-          customLoadingText = 'Loading Prompt Editor...';
-        } else {
-          customLoadingText = 'Opening Prompt Generator...';
-        }
+      // Only trigger action indicator for explicit studio decode/generator actions
+      if (actionAttr === 'decode-prompt' || text === 'decode') {
+        setActionLoading('Opening Image-to-Prompt Studio...');
+      } else if (actionAttr === 'generate-version' || text === 'generate new version') {
+        setActionLoading('Opening Prompt Generator...');
+      } else if (href && href.startsWith('/') && href !== pathname && !href.startsWith('#')) {
+        // Standard route change: show sleek non-blocking top progress bar
+        setIsNavigating(true);
       } else {
-        // STRICT EXCLUSION for other prompt cards/pins unless action matched
-        if (
-          target.closest('[id^="prompt-pin-"]') ||
-          target.closest('[id^="masonry-pin-"]') ||
-          (target.closest('article') && !actionAttr)
-        ) {
-          return;
-        }
-
-        if (href === '/create' || id === 'header-create-tool-btn' || id === 'bottom-nav-create-tool') {
-          targetPath = '/create';
-        } else if (href === '/dashboard' || id === 'header-account-btn' || id === 'bottom-nav-account') {
-          targetPath = '/dashboard';
-        } else if (href === '/notifications' || id === 'header-notifications-btn' || id === 'bottom-nav-notifications') {
-          targetPath = '/notifications';
-        } else if (href === '/pricing') {
-          targetPath = '/pricing';
-        } else if (href === '/' || id === 'brand-logo-btn' || id === 'bottom-nav-home' || text === 'home') {
-          targetPath = '/';
-        }
+        return;
       }
 
-      if (!targetPath) return;
+      // Strict Failsafe: Automatically dismiss after 350ms maximum, guaranteed!
+      // This ensures NO loading skeleton or overlay can EVER get stuck on screen!
+      if (failsafeTimerRef.current) clearTimeout(failsafeTimerRef.current);
+      failsafeTimerRef.current = setTimeout(() => {
+        setIsNavigating(false);
+        setActionLoading(null);
+      }, 350);
 
-      // If already on this path, do not trigger loading overlay
-      if (pathname === targetPath && !actionAttr) return;
-
-      const visitKey = `visited_route_${targetPath}`;
-      try {
-        if (sessionStorage.getItem(visitKey)) {
-          return; // Already loaded this session, do not trigger again
-        }
-      } catch {
-        // ignore
-      }
-
-      setLoadingText(customLoadingText);
-      setPendingTarget(targetPath);
-      setIsLoading(true);
-      setShowSlowWarning(false);
-
-      let slowCheck: NodeJS.Timeout | null = null;
-      let hideSlowCheck: NodeJS.Timeout | null = null;
-      try {
-        slowCheck = setTimeout(() => {
-          setShowSlowWarning(true);
-          hideSlowCheck = setTimeout(() => {
-            setShowSlowWarning(false);
-          }, 3000);
-        }, 2000);
-      } catch {
-        // ignore
-      }
-
-      // Cleanup slow warning on unmount or landing
-      const cleanupSlow = () => {
-        if (slowCheck) clearTimeout(slowCheck);
-        if (hideSlowCheck) clearTimeout(hideSlowCheck);
-      };
-      // Store cleanup ref if needed or handled by effect
+      // Slow connection warning only if navigation stalls for over 4 seconds
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+      slowTimerRef.current = setTimeout(() => {
+        setShowSlowWarning(true);
+        setTimeout(() => setShowSlowWarning(false), 3000);
+      }, 4000);
     };
 
     window.addEventListener('click', handleClick);
-    return () => window.removeEventListener('click', handleClick);
+    return () => {
+      window.removeEventListener('click', handleClick);
+      if (failsafeTimerRef.current) clearTimeout(failsafeTimerRef.current);
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+    };
   }, [pathname]);
-
-  if (!isLoading && !showSlowWarning) return null;
 
   return (
     <>
-      {isLoading && (
+      {/* Sleek, Non-Blocking Top Progress Bar (Like YouTube / GitHub) */}
+      {(isNavigating || actionLoading) && (
         <div
-          className="fixed inset-0 z-50 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-md flex flex-col items-center justify-center p-4 transition-all duration-200"
-          id="global-page-loading-overlay"
+          id="global-page-progress-bar"
+          className="fixed top-0 left-0 right-0 z-50 h-[3px] bg-neutral-200/40 dark:bg-neutral-800/40 pointer-events-none overflow-hidden"
         >
-          <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-950/60 text-[#E60023] flex items-center justify-center shadow-lg animate-pulse mb-4">
-            <Sparkles className="w-8 h-8 animate-spin" />
-          </div>
-          <h3 className="text-base sm:text-lg font-black text-neutral-900 dark:text-white mb-2 text-center px-4">
-            {loadingText}
-          </h3>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-6 text-center">
-            Optimizing for your connection, please wait...
-          </p>
-          <div className="w-56 h-2 rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden shadow-inner">
-            <div className="w-full h-full bg-[#E60023] animate-[indeterminate_1.2s_infinite_linear]" />
-          </div>
+          <div className="h-full bg-gradient-to-r from-[#E60023] via-rose-500 to-amber-500 animate-[indeterminate_0.6s_infinite_linear] shadow-sm shadow-red-500/50" />
         </div>
       )}
 
+      {/* Brief Action Loader for Heavy Decode/Generate Studio Actions - Never blocks clicks (pointer-events-none) */}
+      {actionLoading && (
+        <div
+          className="fixed inset-0 z-50 bg-white/70 dark:bg-neutral-950/70 backdrop-blur-xs flex flex-col items-center justify-center p-4 transition-all duration-150 pointer-events-none"
+          id="global-action-loading-overlay"
+        >
+          <div className="w-14 h-14 rounded-full bg-red-50 dark:bg-red-950/60 text-[#E60023] flex items-center justify-center shadow-lg animate-pulse mb-3">
+            <Sparkles className="w-7 h-7 animate-spin" />
+          </div>
+          <h3 className="text-sm sm:text-base font-black text-neutral-900 dark:text-white mb-1 text-center px-4">
+            {actionLoading}
+          </h3>
+          <p className="text-[11px] text-neutral-500 dark:text-neutral-400 text-center">
+            Loading studio tools...
+          </p>
+        </div>
+      )}
+
+      {/* Slow internet alert */}
       {showSlowWarning && (
         <div
           id="slow-internet-alert"

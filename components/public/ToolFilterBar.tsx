@@ -38,7 +38,7 @@ export const ToolFilterBar = () => {
   }, [categoriesWithMinPrompts, tasteProfile, isMounted]);
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-3 pb-2">
+    <div id="categories-filter-bar" className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-3 pb-2 scroll-mt-20">
       <div className="flex items-center gap-2">
         {/* Style Pill Tabs Slider */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1.5 no-scrollbar flex-1 scroll-smooth">

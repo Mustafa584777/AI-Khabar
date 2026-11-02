@@ -1639,14 +1639,27 @@ export const AppProvider = ({
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const catParam = params.get('category');
-      if (catParam) {
-        const decoded = decodeURIComponent(catParam);
-        setSelectedCategory(decoded);
-      }
+      const syncCategoryFromUrl = () => {
+        const params = new URLSearchParams(window.location.search);
+        const catParam = params.get('category');
+        if (catParam) {
+          const decoded = decodeURIComponent(catParam);
+          setSelectedCategory(decoded);
+          // Scroll up to category filter bar if landing on homepage
+          setTimeout(() => {
+            const el = document.getElementById('categories-filter-bar') || document.getElementById('prompts-grid-section');
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }, 150);
+        }
+      };
+
+      syncCategoryFromUrl();
+      window.addEventListener('popstate', syncCategoryFromUrl);
+      return () => window.removeEventListener('popstate', syncCategoryFromUrl);
     }
-  }, []);
+  }, [pathname]);
   const [selectedTool, setSelectedTool] = useState<string>('all');
   const [selectedSort, setSelectedSort] = useState<
     'trending' | 'most-popular' | 'most-liked' | 'most-copied' | 'newest'

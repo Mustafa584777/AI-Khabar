@@ -3,21 +3,34 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
-import {
-  Sparkles,
-  MessageCircle,
-  HelpCircle,
-  Coins,
-  ShieldCheck,
-  FileText,
-  ExternalLink,
-} from 'lucide-react';
 
 export const Footer = () => {
   const router = useRouter();
-  const { categories, setSelectedCategory, setCurrentView } = useApp();
+  const pathname = usePathname();
+  const { categories, setSelectedCategory, setSelectedSort, setSearchQuery } = useApp();
+
+  const handleCategoryClick = (catName: string) => {
+    setSelectedCategory(catName);
+    setSelectedSort('newest');
+    setSearchQuery('');
+
+    if (pathname === '/') {
+      // Smoothly scroll up from footer to categories filter bar / prompt grid
+      const el = document.getElementById('categories-filter-bar') || document.getElementById('prompts-grid-section');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 380, behavior: 'smooth' });
+      }
+      try {
+        window.history.pushState(null, '', `/?category=${encodeURIComponent(catName)}`);
+      } catch {}
+    } else {
+      router.push(`/?category=${encodeURIComponent(catName)}`);
+    }
+  };
 
   return (
     <footer className="mt-20 border-t border-neutral-200/80 dark:border-neutral-800/80 bg-neutral-50 dark:bg-neutral-950 text-neutral-600 dark:text-neutral-400 text-xs pb-24 sm:pb-12">
@@ -72,18 +85,16 @@ export const Footer = () => {
               <h5 className="font-bold text-xs text-neutral-900 dark:text-white uppercase tracking-wider">
                 Top Categories
               </h5>
-              <ul className="space-y-2">
+              <ul className="space-y-1.5">
                 {categories.map((cat) => (
                   <li key={cat.id}>
                     <button
-                      onClick={() => {
-                        setSelectedCategory(cat.name);
-                        setCurrentView('public');
-                        router.push(`/?category=${encodeURIComponent(cat.name)}`);
-                      }}
-                      className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium text-left"
+                      type="button"
+                      onClick={() => handleCategoryClick(cat.name)}
+                      className="group flex items-center justify-center sm:justify-start gap-2 w-full text-left py-1.5 px-2.5 -mx-2 rounded-xl hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 hover:text-[#E60023] dark:hover:text-white transition-all text-xs font-semibold cursor-pointer active:scale-95 text-neutral-600 dark:text-neutral-400"
                     >
-                      {cat.name}
+                      <span className="w-1.5 h-1.5 rounded-full bg-neutral-300 dark:bg-neutral-700 group-hover:bg-[#E60023] transition-colors shrink-0" />
+                      <span>{cat.name}</span>
                     </button>
                   </li>
                 ))}
