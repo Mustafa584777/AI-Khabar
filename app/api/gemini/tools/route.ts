@@ -94,25 +94,25 @@ function generateLocalIdeaToPrompt(
   lighting?: string,
   colorGrading?: string,
   gender?: string,
-  aspectRatio = '16:9',
+  aspectRatio = '3:4',
   customInstructions?: string
 ) {
-  const cleanIdea = (idea || 'Cinematic visual composition').trim();
+  const cleanIdea = (idea || 'Realistic visual composition').trim();
   const genderClause = gender && gender !== 'Any / None' && gender !== 'Not Applicable' ? `${gender} subject, ` : '';
-  const lightClause = lighting || 'dramatic volumetric cinematic lighting with subtle atmospheric haze';
-  const colorClause = colorGrading || 'delicate cinematic teal and warm orange film color grading';
+  const lightClause = lighting && lighting !== 'Natural Daylight (Realistic Smartphone Photograph)' ? lighting : 'soft natural daylight, realistic smartphone photograph styling';
+  const colorClause = colorGrading || 'natural realistic color grading';
   const customClause = customInstructions ? `, ${customInstructions}` : '';
 
-  const promptText = `Award-winning hyperrealistic photograph of ${genderClause}${cleanIdea}. Masterfully composed with ${lightClause}, rich textural micro-details, ${colorClause}. Shot on Hasselblad H6D-100c with 85mm f/1.4 lens, shallow depth of field, delicate bokeh, crisp focus on intricate details, 8k resolution, photorealistic realism, cinematic atmosphere${customClause} --ar ${aspectRatio} --style raw --v 6.1 --s 250`;
+  const promptText = `Realistic smartphone photograph of ${genderClause}${cleanIdea}. Captured in ${lightClause}, natural skin micro-textures, authentic environment, crisp details, ${colorClause}${customClause} --ar ${aspectRatio} --style raw --v 6.1`;
 
   return {
     title: cleanIdea.length > 40 ? `${cleanIdea.slice(0, 37)}...` : cleanIdea,
     promptText,
     negativePrompt: 'low quality, blurry, pixelated, distorted proportions, extra limbs, bad anatomy, flat lighting, watermark, oversaturated, amateur snapshot',
     aspectRatio,
-    camera: 'Hasselblad H6D-100c, 85mm f/1.4 lens, 1/250s, ISO 64',
-    lighting: lighting || 'Cinematic Volumetric Rays',
-    colorPalette: colorGrading || 'Cinematic Teal & Orange',
+    camera: 'Smartphone camera with high-resolution sensor and natural portrait optics',
+    lighting: lighting || 'Natural Daylight',
+    colorPalette: colorGrading || 'Natural Color Palette',
     composition: 'Rule of thirds, centered focal subject, environmental depth',
     tags: [
       gender && gender !== 'Any / None' ? gender : null,
@@ -154,10 +154,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Please provide an idea or short description.' }, { status: 400 });
       }
 
-      const chosenLighting = lighting || 'Cinematic Golden Hour';
-      const chosenColor = colorGrading || 'Cinematic Teal & Orange';
+      const chosenLighting = lighting || 'Natural Daylight (Realistic Smartphone Photograph)';
+      const chosenColor = colorGrading || 'Natural Color Palette';
       const chosenGender = gender || 'Any / None';
-      const chosenRatio = aspectRatio || '16:9';
+      const chosenRatio = aspectRatio || '3:4';
 
       if (!apiKey) {
         const fallback = generateLocalIdeaToPrompt(

@@ -83,7 +83,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description: cleanDesc,
       images: post.imageUrl ? [post.imageUrl] : undefined,
     },
-    robots: post.isNoIndex
+    robots: Boolean(
+      post.isNoIndex ||
+      (post as any).isNoIndex === 'true' ||
+      post.parameters?.isNoIndex === true ||
+      post.parameters?.isNoIndex === 'true' ||
+      (post as any).seo?.noIndex ||
+      (post as any).seo?.isNoIndex
+    )
       ? {
           index: false,
           follow: false,

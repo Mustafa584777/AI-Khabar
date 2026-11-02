@@ -7,13 +7,32 @@ export const OfflineIndicator: React.FC = () => {
   const [isOnline, setIsOnline] = useState(
     typeof navigator !== 'undefined' ? navigator.onLine : true
   );
+  const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
+    const handleOnline = () => {
+      setIsOnline(true);
+      setShowBanner(false);
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      setShowBanner(true);
+      const timer = setTimeout(() => {
+        setShowBanner(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    };
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+
+    if (!navigator.onLine) {
+      setShowBanner(true);
+      const timer = setTimeout(() => {
+        setShowBanner(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
 
     return () => {
       window.removeEventListener('online', handleOnline);
@@ -21,7 +40,7 @@ export const OfflineIndicator: React.FC = () => {
     };
   }, []);
 
-  if (isOnline) return null;
+  if (isOnline || !showBanner) return null;
 
   return (
     <div className="fixed bottom-4 left-4 z-50 flex items-center gap-2 rounded-xl bg-amber-600 text-white px-4 py-2 text-xs font-bold shadow-xl animate-bounce">

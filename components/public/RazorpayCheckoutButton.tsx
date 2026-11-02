@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { CreditCard, Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { startRazorpayCheckout } from '@/lib/razorpay';
@@ -43,6 +44,7 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
   onSuccess,
   onFailure,
 }) => {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const { showToast, setIsProUser, upgradePlan, addToolCredits, userAccount, openAuthModal } = useApp();
@@ -85,25 +87,36 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
           setIsLoading(false);
           setIsSuccess(true);
 
+          let congratsMsg = '';
+
           if (creditsToAdd && creditsToAdd > 0) {
             addToolCredits(creditsToAdd);
-            showToast(`Payment Verified! Added ${creditsToAdd} Credits to your account 🎉`);
+            congratsMsg = `🎉 Congratulations! Added ${creditsToAdd} Credits to your account successfully!`;
+            showToast(congratsMsg);
           } else {
             const isQueued = Boolean(verifyData?.isQueued);
             upgradePlan(planTier, verifyData?.userSyncData, isQueued, billingCycle);
             if (isQueued) {
-              showToast(verifyData?.message || `Your new ${planTier.toUpperCase()} plan is queued and will activate once your current plan ends!`);
+              congratsMsg = verifyData?.message || `🎉 Congratulations! Your ${planTier.toUpperCase()} plan is queued and will activate once your current plan ends!`;
+              showToast(congratsMsg);
             } else {
               setIsProUser(true);
               const cycleText = billingCycle === 'yearly' ? 'Yearly' : 'Monthly';
-              showToast(`Payment Verified! Upgraded to ${planTier.toUpperCase()} (${cycleText}) Plan 🎉`);
+              congratsMsg = `🎉 Congratulations! Your ${planTier.toUpperCase()} (${cycleText}) plan has been activated successfully! All premium prompts are unlocked.`;
+              showToast(congratsMsg);
             }
+          }
+
+          if (typeof window !== 'undefined' && congratsMsg) {
+            try {
+              sessionStorage.setItem('plan_congrats_message', congratsMsg);
+            } catch {}
           }
 
           try {
             confetti({
-              particleCount: 100,
-              spread: 70,
+              particleCount: 120,
+              spread: 75,
               origin: { y: 0.6 },
               colors: ['#E60023', '#FFD700', '#00C853', '#2979FF'],
             });
@@ -114,6 +127,11 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
           if (onSuccess) {
             onSuccess(verifyData);
           }
+
+          // Automatically redirect user to creator dashboard with congratulations message
+          setTimeout(() => {
+            router.push('/dashboard');
+          }, 600);
 
           setTimeout(() => setIsSuccess(false), 5000);
         },

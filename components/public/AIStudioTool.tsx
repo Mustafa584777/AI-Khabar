@@ -164,7 +164,7 @@ export const AIStudioTool = () => {
     }
     return '';
   });
-  const [selectedLighting, setSelectedLighting] = useState<string>('Cinematic Golden Hour');
+  const [selectedLighting, setSelectedLighting] = useState<string>('Natural Daylight (Realistic Smartphone Photograph)');
   const [selectedColor, setSelectedColor] = useState<string>('Cinematic Teal & Orange');
   const [selectedGender, setSelectedGender] = useState<string>('Any / None');
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<string>('3:4');
@@ -1048,11 +1048,12 @@ export const AIStudioTool = () => {
                         onChange={(e) => setSelectedAspectRatio(e.target.value)}
                         className="w-full text-xs px-3 py-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#E60023] transition-all"
                       >
+                        <option value="3:4">3:4 (Portrait)</option>
                         <option value="16:9">16:9 (Cinema)</option>
                         <option value="9:16">9:16 (Phone)</option>
                         <option value="1:1">1:1 (Square)</option>
                         <option value="4:3">4:3 (Classic)</option>
-                        <option value="2:3">2:3 (Portrait)</option>
+                        <option value="2:3">2:3 (Portrait Tall)</option>
                       </select>
                     </div>
 

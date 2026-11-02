@@ -37,7 +37,9 @@ import {
   MessageSquarePlus,
   ExternalLink,
   Coins,
+  X,
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { RazorpayCheckoutButton } from './RazorpayCheckoutButton';
@@ -84,6 +86,27 @@ export const UserDashboard = () => {
   const [historyFilter, setHistoryFilter] = useState<'all' | 'image_to_prompt' | 'idea_to_prompt'>('all');
   const [historySearch, setHistorySearch] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [congratulationsBanner, setCongratulationsBanner] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const msg = sessionStorage.getItem('plan_congrats_message');
+        if (msg) {
+          setCongratulationsBanner(msg);
+          sessionStorage.removeItem('plan_congrats_message');
+          try {
+            confetti({
+              particleCount: 150,
+              spread: 80,
+              origin: { y: 0.5 },
+              colors: ['#E60023', '#FFD700', '#00C853', '#7C4DFF'],
+            });
+          } catch {}
+        }
+      } catch {}
+    }
+  }, []);
 
   const expiryDisplay = planExpiresAt ? formatExpiryDateWithHour(planExpiresAt) : 'Active';
 
@@ -320,6 +343,33 @@ export const UserDashboard = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
+        {/* Congratulations Banner for recent plan purchase */}
+        {congratulationsBanner && (
+          <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 text-white shadow-xl shadow-emerald-600/20 flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0 text-2xl shadow-inner">
+                🎉
+              </div>
+              <div className="space-y-0.5">
+                <h3 className="text-base sm:text-lg font-black tracking-tight text-white">
+                  Congratulations & Welcome to Your Upgraded Dashboard!
+                </h3>
+                <p className="text-xs sm:text-sm text-emerald-100 font-medium">
+                  {congratulationsBanner}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setCongratulationsBanner(null)}
+              className="p-2 rounded-full hover:bg-white/20 text-white/80 hover:text-white transition-colors shrink-0"
+              title="Dismiss"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        )}
+
         {/* Profile Card */}
         <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4 sm:gap-5">
@@ -455,13 +505,9 @@ export const UserDashboard = () => {
                 </button>
               </div>
               <p className="text-xs text-neutral-600 dark:text-neutral-300">
-                Tool credits power AI generations, extractions, and prompt unlock utility across the platform:
+                Tool credits power AI generations, extractions, and prompt editing tools across the platform:
               </p>
               <div className="space-y-2 text-xs font-medium">
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
-                  <span className="text-neutral-700 dark:text-neutral-300">Unlock Premium Prompt</span>
-                  <strong className="text-amber-600 dark:text-amber-400">1 Credit</strong>
-                </div>
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
                   <span className="text-neutral-700 dark:text-neutral-300">AI Prompt Generator</span>
                   <strong className="text-amber-600 dark:text-amber-400">1 Credit</strong>

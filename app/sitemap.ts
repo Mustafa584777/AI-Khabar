@@ -2,16 +2,22 @@ import { MetadataRoute } from 'next';
 import { ServerStorage } from '@/lib/server-storage';
 import { getPromptSlug } from '@/lib/utils';
 
-export const revalidate = 86400;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://zeenaprompt.com';
 
   let posts: any[] = [];
   try {
-    posts = await ServerStorage.getAllPosts(false);
+    // Attempt fetching latest deduplicated posts
+    posts = await ServerStorage.getAllPosts(false, true);
   } catch (err) {
-    console.error('Error loading posts for dynamic sitemap:', err);
+    try {
+      posts = await ServerStorage.getAllPosts(false, false);
+    } catch (e2) {
+      console.error('Error loading posts for dynamic sitemap:', e2);
+    }
   }
 
   // 1. Homepage & Essential Pages (Create, About, Contact, Privacy Policy, Disclaimer, Terms)
@@ -67,8 +73,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   // 2. Dynamic Prompts (Strictly https://zeenaprompt.com/[slug] - NO 'prompt' word, NO images)
+  // Ensure that any prompt/article marked as noIndex in admin panel is automatically excluded from sitemap.xml
   const promptUrls: MetadataRoute.Sitemap = posts
-    .filter((post) => !post.isNoIndex)
+    .filter((post) => {
+      if (!post || !post.title) return false;
+      if (post.status !== 'published') return false;
+      const isNoIndex = Boolean(
+        post.isNoIndex ||
+        (post as any).isNoIndex === 'true' ||
+        post.parameters?.isNoIndex === true ||
+        post.parameters?.isNoIndex === 'true' ||
+        (post as any).seo?.noIndex ||
+        (post as any).seo?.isNoIndex
+      );
+      return !isNoIndex;
+    })
     .map((post) => {
       const slug = getPromptSlug(post);
       return {

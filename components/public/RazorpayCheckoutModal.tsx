@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   X,
   ShieldCheck,
@@ -21,6 +22,7 @@ interface PlanOption {
   name: string;
   amountPaise: number;
   displayPrice: string;
+  originalPrice?: string;
   period: string;
   badge?: string;
   features: string[];
@@ -31,35 +33,39 @@ const SUBSCRIPTION_PLANS: PlanOption[] = [
   {
     id: 'starter',
     name: 'Starter',
-    amountPaise: 4900,
-    displayPrice: '₹49',
-    period: '/ month',
-    features: ['Unlock all premium prompts', '100 prompt tool credits', '100 AI Searches', 'Unlimited saves & history'],
+    amountPaise: 2500,
+    displayPrice: '₹25',
+    originalPrice: '₹50',
+    period: '',
+    features: ['Premium Prompts', '100 prompt tool credits', '100 AI Searches', 'Unlimited saves & history'],
     icon: <Sparkles className="w-5 h-5 text-amber-500" />,
   },
   {
     id: 'pro',
     name: 'Pro',
-    amountPaise: 9900,
-    displayPrice: '₹99',
-    period: '/ month',
+    amountPaise: 5000,
+    displayPrice: '₹50',
+    originalPrice: '₹100',
+    period: '',
     badge: 'Most Popular',
-    features: ['Unlock all premium prompts', '250 prompt tool credits', '200 AI Searches', 'Unlimited saves & history'],
+    features: ['Premium Prompts', '250 prompt tool credits', '200 AI Searches', 'Unlimited saves & history'],
     icon: <Zap className="w-5 h-5 text-[#E60023]" />,
   },
   {
     id: 'vip',
     name: 'VIP',
-    amountPaise: 19900,
-    displayPrice: '₹199',
-    period: '/ month',
+    amountPaise: 10000,
+    displayPrice: '₹100',
+    originalPrice: '₹200',
+    period: '',
     badge: 'Best Value',
-    features: ['Unlock all premium prompts', '600 prompt tool credits', '500 AI Searches', 'Unlimited saves & history'],
+    features: ['Premium Prompts', '600 prompt tool credits', '500 AI Searches', 'Unlimited saves & history'],
     icon: <Crown className="w-5 h-5 text-purple-500" />,
   },
 ];
 
 export const RazorpayCheckoutModal: React.FC = () => {
+  const router = useRouter();
   const {
     isProCheckoutModalOpen,
     setIsProCheckoutModalOpen,
@@ -145,17 +151,24 @@ export const RazorpayCheckoutModal: React.FC = () => {
           setIsProcessing(false);
           const isQueued = Boolean(data?.isQueued);
           upgradePlan(selectedPlanId, data.userSyncData, isQueued);
-          if (isQueued) {
-            showToast(data?.message || `Your new ${(selectedPlanId || 'pro').toUpperCase()} plan is queued and will activate once your current plan ends!`);
-          } else {
-            setIsProUser(true);
-            showToast(`Payment verified! Upgraded to ${(selectedPlanId || 'pro').toUpperCase()} Plan 🎉`);
+          const targetTier = (selectedPlanId || 'pro').toUpperCase();
+          const congratsMsg = isQueued
+            ? (data?.message || `🎉 Congratulations! Your ${targetTier} plan is queued and will activate once your current plan ends!`)
+            : `🎉 Congratulations! Your ${targetTier} plan has been activated successfully! All premium prompts are unlocked.`;
+
+          showToast(congratsMsg);
+
+          if (typeof window !== 'undefined') {
+            try {
+              sessionStorage.setItem('plan_congrats_message', congratsMsg);
+            } catch {}
           }
+
           setPaymentResult({
             success: true,
             orderId: data.order_id,
             paymentId: data.payment_id,
-            message: data.message || `Successfully processed ${(selectedPlanId || 'pro').toUpperCase()} plan.`,
+            message: data.message || `Successfully processed ${targetTier} plan.`,
           });
 
           try {
@@ -166,6 +179,12 @@ export const RazorpayCheckoutModal: React.FC = () => {
               colors: ['#E60023', '#FFD700', '#00C853', '#7C4DFF'],
             });
           } catch {}
+
+          // Automatically redirect to Creator Dashboard after short delay
+          setTimeout(() => {
+            setIsProCheckoutModalOpen(false);
+            router.push('/dashboard');
+          }, 800);
         },
         onFailure: (err) => {
           setIsProcessing(false);
@@ -308,10 +327,16 @@ export const RazorpayCheckoutModal: React.FC = () => {
                         <h4 className="text-xs font-bold text-neutral-900 dark:text-white">
                           {plan.name}
                         </h4>
-                        <span className="text-base font-black text-neutral-900 dark:text-white block">
-                          {plan.displayPrice}
-                          <span className="text-[10px] font-normal text-neutral-400"> /mo</span>
-                        </span>
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-base font-black text-neutral-900 dark:text-white">
+                            {plan.displayPrice}
+                          </span>
+                          {plan.originalPrice && (
+                            <span className="text-xs text-red-500 line-through font-bold">
+                              {plan.originalPrice}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       <ul className="space-y-1 text-[10px] text-neutral-500 dark:text-neutral-400">
