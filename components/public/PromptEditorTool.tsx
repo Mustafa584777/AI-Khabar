@@ -12,8 +12,6 @@ import {
   ArrowRight,
   Cpu,
   Edit3,
-  AlertCircle,
-  X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -34,7 +32,6 @@ export const PromptEditorTool = () => {
   }, []);
   const [changeInstructions, setChangeInstructions] = useState<string>('');
   const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [editorError, setEditorError] = useState<string | null>(null);
   const [resultData, setResultData] = useState<{
     enhancedPrompt: string;
     negativePrompt: string;
@@ -73,7 +70,6 @@ export const PromptEditorTool = () => {
     }
 
     setIsEditing(true);
-    setEditorError(null);
     try {
       const res = await fetch('/api/prompts/edit', {
         method: 'POST',
@@ -81,9 +77,8 @@ export const PromptEditorTool = () => {
         body: JSON.stringify({ promptText: inputPrompt, changeInstructions }),
       });
       const data = await res.json();
-      if (res.ok && data.success && !data.fallback) {
+      if (data.success) {
         deductToolCredit(1);
-        setEditorError(null);
         setResultData({
           enhancedPrompt: data.enhancedPrompt,
           negativePrompt: data.negativePrompt,
@@ -105,16 +100,11 @@ export const PromptEditorTool = () => {
           createdAt: Date.now(),
         });
       } else {
-        const errorMsg = data?.error || 'This tool is currently in high demand, please try again.';
-        setResultData(null);
-        setEditorError(errorMsg);
-        showToast(errorMsg, 'error');
+        showToast(data.error || 'Failed to edit prompt', 'error');
       }
     } catch (err) {
       console.error(err);
-      setResultData(null);
-      setEditorError('This tool is currently in high demand, please try again.');
-      showToast('This tool is currently in high demand, please try again.', 'error');
+      showToast('Network error while editing prompt', 'error');
     } finally {
       setIsEditing(false);
     }
@@ -256,30 +246,6 @@ export const PromptEditorTool = () => {
                 </span>
               )}
             </div>
-
-            {editorError && (
-              <div className="p-4 sm:p-5 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 flex items-start gap-3.5 shadow-sm animate-in fade-in duration-200">
-                <div className="w-8 h-8 rounded-xl bg-red-100 dark:bg-red-900/50 flex items-center justify-center shrink-0 text-red-600 dark:text-red-400">
-                  <AlertCircle className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-bold text-red-800 dark:text-red-300">
-                    {editorError}
-                  </h4>
-                  <p className="text-xs text-red-600/90 dark:text-red-400/90 mt-0.5 font-medium">
-                    Zero credits were deducted from your balance.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setEditorError(null)}
-                  className="p-1 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/60 text-red-500 transition-colors"
-                  title="Dismiss"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            )}
 
             {resultData ? (
               <div className="space-y-6">

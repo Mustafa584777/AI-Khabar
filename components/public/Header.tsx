@@ -12,7 +12,6 @@ import {
   Search,
   Crown,
   Bell,
-  Home,
 } from 'lucide-react';
 import { NotificationService } from '@/lib/notifications';
 import Link from 'next/link';
@@ -66,12 +65,11 @@ export const Header = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const handleHomeClick = (e?: React.MouseEvent) => {
-    setSelectedCategory('');
+  const handleHomeClick = () => {
+    setSelectedCategory('all');
     setSelectedSort('newest');
     setSearchQuery('');
     if (pathname === '/') {
-      e?.preventDefault?.();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -115,14 +113,13 @@ export const Header = () => {
               href="/"
               prefetch={true}
               onClick={handleHomeClick}
-              className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
-                pathname === '/'
-                  ? 'bg-red-50 text-[#E60023] dark:bg-red-950/40 dark:text-red-400 border border-red-200/90 dark:border-red-900/50 shadow-xs'
+              className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer ${
+                pathname === '/' && selectedCategory === 'all'
+                  ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 shadow-sm'
                   : 'text-neutral-700 dark:text-neutral-300 hover:bg-[#efefef] dark:hover:bg-neutral-800'
               }`}
             >
-              <Home className={`w-4 h-4 ${pathname === '/' ? 'text-[#E60023] fill-[#E60023]' : 'text-neutral-500 dark:text-neutral-400'}`} />
-              <span>Home</span>
+              Home
             </Link>
 
             {/* Create / AI Studio Route Link */}

@@ -4,21 +4,11 @@ import { NextRequest, NextResponse } from 'next/server';
 // Prioritized model fallback sequence: if one model fails or is unavailable, switch to the next
 const CANDIDATE_MODELS = [
   'gemini-2.5-flash',
-  'gemini-2.0-flash',
+  'gemini-3.7-flash',
+  'gemini-3.1-flash-lite',
+  'gemini-flash-latest',
   'gemini-2.5-pro',
 ];
-
-function parseJsonSafe(rawText: string) {
-  try {
-    return JSON.parse(rawText);
-  } catch {
-    const match = rawText.match(/\{[\s\S]*\}/);
-    if (match) {
-      return JSON.parse(match[0]);
-    }
-    throw new Error('Could not parse JSON response from Gemini');
-  }
-}
 
 // Reusable executor that tries candidate models in sequence
 async function generateWithModelFallback(ai: GoogleGenAI, payload: any) {
@@ -35,23 +25,8 @@ async function generateWithModelFallback(ai: GoogleGenAI, payload: any) {
         return { response: res, modelUsed: model };
       }
     } catch (err: any) {
-      console.warn(`[Gemini Switcher] Model "${model}" with strict config failed: ${err?.message || err}. Retrying without schema...`);
-      try {
-        const res2 = await ai.models.generateContent({
-          contents: payload.contents,
-          model,
-          config: {
-            systemInstruction: payload.config?.systemInstruction,
-            responseMimeType: 'application/json',
-          },
-        });
-        if (res2 && res2.text) {
-          return { response: res2, modelUsed: model };
-        }
-      } catch (err2: any) {
-        console.warn(`[Gemini Switcher] Model "${model}" fallback attempt also failed: ${err2?.message || err2}`);
-        lastError = err2;
-      }
+      console.warn(`[Gemini Switcher] Model "${model}" failed: ${err?.message || err}. Switching to next candidate...`);
+      lastError = err;
     }
   }
 
@@ -148,6 +123,7 @@ export async function POST(req: NextRequest) {
         ? categories.join(', ')
         : 'Photorealistic & Portraits, Anime & Manga, 3D Art & CGI, Sci-Fi & Cyberpunk, Landscapes & Nature, Architecture & Interiors, Fashion & Apparel, Logos & Graphic Design, Fantasy & Mythological, Vehicles & Automotive';
 
+      // If API key is not present, return high-quality heuristic generation
       if (!apiKey) {
         const fallbackData = generateFallbackPost(topic || 'Featured Photo Prompt', tool, category, isImageMode);
         return NextResponse.json({ success: true, data: fallbackData, fallback: true });
@@ -280,14 +256,12 @@ Task:
           config: jsonSchemaConfig,
         });
 
-        const parsedData = parseJsonSafe(response.text || '{}');
+        const parsedData = JSON.parse(response.text || '{}');
         return NextResponse.json({ success: true, data: parsedData, modelUsed });
       } catch (geminiError: any) {
-        console.warn('Gemini generate_full_post error:', geminiError?.message || geminiError);
-        return NextResponse.json(
-          { success: false, error: 'This tool is currently in high demand, please try again.' },
-          { status: 503 }
-        );
+        console.warn('Gemini models error, applying smart local fallback:', geminiError?.message);
+        const fallbackData = generateFallbackPost(topic || 'Featured Photo Prompt', tool, category, isImageMode);
+        return NextResponse.json({ success: true, data: fallbackData, fallback: true });
       }
     }
 
