@@ -25,6 +25,30 @@ const getInitialBatchSize = () => {
 
 const SCROLL_BATCH_SIZE = 12;
 
+function PromptSkeletonGrid({ columnCount }: { columnCount: number }) {
+  return (
+    <div className="flex gap-3 sm:gap-4 items-start w-full animate-pulse">
+      {Array.from({ length: columnCount }).map((_, colIdx) => (
+        <div key={colIdx} className="flex-1 flex flex-col gap-3 sm:gap-4 min-w-0">
+          {Array.from({ length: 3 }).map((_, cardIdx) => (
+            <div
+              key={cardIdx}
+              className="w-full rounded-2xl bg-neutral-200 dark:bg-neutral-800/80 overflow-hidden flex flex-col shadow-sm"
+              style={{ height: cardIdx % 2 === 0 ? '260px' : '320px' }}
+            >
+              <div className="w-full flex-1 bg-neutral-300 dark:bg-neutral-700/60" />
+              <div className="p-3.5 space-y-2 bg-white/60 dark:bg-neutral-900/60">
+                <div className="w-4/5 h-4 bg-neutral-300 dark:bg-neutral-700 rounded" />
+                <div className="w-2/5 h-3 bg-neutral-300 dark:bg-neutral-700 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export const PromptGrid = () => {
   const {
     posts,
@@ -54,6 +78,25 @@ export const PromptGrid = () => {
   const [displayedCount, setDisplayedCount] = useState<number>(getInitialBatchSize);
   const [prevFilterKey, setPrevFilterKey] = useState<string>(currentFilterKey);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
+  const [isGridLoading, setIsGridLoading] = useState<boolean>(true);
+
+  // Trigger skeleton loading state whenever filters change or on initial reload
+  useEffect(() => {
+    setIsGridLoading(true);
+    const timer = setTimeout(() => {
+      setIsGridLoading(false);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [selectedCategory, selectedTool, searchQuery, selectedSort]);
+
+  // Randomized posts for default homepage view (re-randomized on every page reload / mount)
+  const [randomizedPosts, setRandomizedPosts] = useState<PromptPost[]>([]);
+
+  useEffect(() => {
+    const published = posts.filter((p) => p.status === 'published');
+    const shuffled = [...published].sort(() => Math.random() - 0.5);
+    setRandomizedPosts(shuffled);
+  }, [posts]);
 
   // Reset pagination if filter key changed during render
   if (currentFilterKey !== prevFilterKey) {
@@ -63,7 +106,8 @@ export const PromptGrid = () => {
 
   // Filter only published posts for the public directory and strictly deduplicate with deterministic ordering
   const filteredPosts = useMemo(() => {
-    let list = posts.filter((p) => p.status === 'published');
+    const isDefaultHome = (!selectedCategory || selectedCategory === 'all') && !searchQuery.trim() && selectedTool === 'all';
+    let list = isDefaultHome && randomizedPosts.length > 0 ? [...randomizedPosts] : posts.filter((p) => p.status === 'published');
 
     if (selectedCategory && selectedCategory !== 'all' && selectedCategory !== 'latest') {
       list = list.filter(
@@ -344,7 +388,9 @@ export const PromptGrid = () => {
       )}
 
       {/* Visual Prompt Grid */}
-      {filteredPosts.length > 0 ? (
+      {isGridLoading || isLoadingPosts ? (
+        <PromptSkeletonGrid columnCount={columnCount} />
+      ) : filteredPosts.length > 0 ? (
         <>
           <div className="flex gap-3 sm:gap-4 items-start w-full" id="vertical-masonry-feed">
             {columns.map((colPosts, colIdx) => (
@@ -377,10 +423,6 @@ export const PromptGrid = () => {
             </div>
           )}
         </>
-      ) : isLoadingPosts ? (
-        <div className="flex items-center justify-center py-20 text-neutral-400 text-sm font-medium">
-          Loading prompts...
-        </div>
       ) : (
         <div className="text-center py-16 px-4 bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 max-w-lg mx-auto shadow-sm">
           {totalPublishedCount === 0 ? (
