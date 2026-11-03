@@ -284,10 +284,8 @@ Task:
         return NextResponse.json({ success: true, data: parsedData, modelUsed });
       } catch (geminiError: any) {
         console.warn('Gemini generate_full_post error:', geminiError?.message || geminiError);
-        return NextResponse.json(
-          { success: false, error: 'This tool is currently in high demand, please try again.' },
-          { status: 503 }
-        );
+        const fallbackData = generateFallbackPost(topic || 'Featured Photo Prompt', tool, category, isImageMode);
+        return NextResponse.json({ success: true, data: fallbackData, fallback: true, modelUsed: 'local-heuristic' });
       }
     }
 
