@@ -13,10 +13,15 @@ import { ToastNotification } from '@/components/public/ToastNotification';
 import { BottomNav } from '@/components/public/BottomNav';
 import { PromptPost, Category, SiteSettings } from '@/types/prompt';
 
+import { DashboardSkeleton } from '@/components/public/DashboardSkeleton';
+
 const PromptDetailModal = dynamic(() => import('@/components/public/PromptDetailModal').then((m) => m.PromptDetailModal), { ssr: false });
 const BookmarksDrawer = dynamic(() => import('@/components/public/BookmarksDrawer').then((m) => m.BookmarksDrawer), { ssr: false });
 const TasteProfileModal = dynamic(() => import('@/components/public/TasteProfileModal').then((m) => m.TasteProfileModal), { ssr: false });
-const UserDashboard = dynamic(() => import('@/components/public/UserDashboard').then((m) => m.UserDashboard), { ssr: false });
+const UserDashboard = dynamic(() => import('@/components/public/UserDashboard').then((m) => m.UserDashboard), {
+  ssr: false,
+  loading: () => <DashboardSkeleton />,
+});
 const AIStudioTool = dynamic(() => import('@/components/public/AIStudioTool').then((m) => m.AIStudioTool), { ssr: false });
 const UserAuthModal = dynamic(() => import('@/components/public/UserAuthModal').then((m) => m.UserAuthModal), { ssr: false });
 const NotificationsView = dynamic(() => import('@/components/public/NotificationsView').then((m) => m.NotificationsView), { ssr: false });

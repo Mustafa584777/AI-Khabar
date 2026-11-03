@@ -1620,7 +1620,9 @@ export const AppProvider = ({
   });
   const [selectedCategory, setSelectedCategoryState] = useState<string>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('auraprompt_selected_category') || '';
+      const params = new URLSearchParams(window.location.search);
+      const catParam = params.get('category');
+      if (catParam) return decodeURIComponent(catParam);
     }
     return '';
   });
@@ -1644,7 +1646,7 @@ export const AppProvider = ({
         const catParam = params.get('category');
         if (catParam) {
           const decoded = decodeURIComponent(catParam);
-          setSelectedCategory(decoded);
+          setSelectedCategoryState(decoded);
           // Scroll up to category filter bar if landing on homepage
           setTimeout(() => {
             const el = document.getElementById('categories-filter-bar') || document.getElementById('prompts-grid-section');
@@ -1652,6 +1654,10 @@ export const AppProvider = ({
               el.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
           }, 150);
+        } else {
+          // No category in URL: default to empty string so homepage shows fresh random prompts
+          setSelectedCategoryState('');
+          localStorage.removeItem('auraprompt_selected_category');
         }
       };
 

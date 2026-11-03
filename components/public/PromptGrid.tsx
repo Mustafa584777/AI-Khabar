@@ -4,6 +4,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { PromptCard } from './PromptCard';
+import { PromptGridSkeleton } from './PromptCardSkeleton';
 import { SearchX, Filter, Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { PromptPost } from '@/types/prompt';
 import { PersonalizationEngine } from '@/lib/personalization';
@@ -24,30 +25,6 @@ const getInitialBatchSize = () => {
 };
 
 const SCROLL_BATCH_SIZE = 12;
-
-function PromptSkeletonGrid({ columnCount }: { columnCount: number }) {
-  return (
-    <div className="flex gap-3 sm:gap-4 items-start w-full animate-pulse">
-      {Array.from({ length: columnCount }).map((_, colIdx) => (
-        <div key={colIdx} className="flex-1 flex flex-col gap-3 sm:gap-4 min-w-0">
-          {Array.from({ length: 3 }).map((_, cardIdx) => (
-            <div
-              key={cardIdx}
-              className="w-full rounded-2xl bg-neutral-200 dark:bg-neutral-800/80 overflow-hidden flex flex-col shadow-sm"
-              style={{ height: cardIdx % 2 === 0 ? '260px' : '320px' }}
-            >
-              <div className="w-full flex-1 bg-neutral-300 dark:bg-neutral-700/60" />
-              <div className="p-3.5 space-y-2 bg-white/60 dark:bg-neutral-900/60">
-                <div className="w-4/5 h-4 bg-neutral-300 dark:bg-neutral-700 rounded" />
-                <div className="w-2/5 h-3 bg-neutral-300 dark:bg-neutral-700 rounded" />
-              </div>
-            </div>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
 
 export const PromptGrid = () => {
   const {
@@ -74,29 +51,33 @@ export const PromptGrid = () => {
     openAuthModal,
   } = useApp();
 
+  // Mount state & fresh random shuffle map on each load/reload
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+  const [randomOrderMap, setRandomOrderMap] = useState<Map<string, number> | null>(null);
+  const shuffleInitializedRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    if (!shuffleInitializedRef.current && posts.length > 0) {
+      shuffleInitializedRef.current = true;
+      const map = new Map<string, number>();
+      const indices = posts.map((_, i) => i);
+      // Fisher-Yates random shuffle
+      for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+      }
+      posts.forEach((p, idx) => {
+        map.set(p.id, indices[idx]);
+      });
+      setRandomOrderMap(map);
+    }
+  }, [posts]);
+
   const currentFilterKey = `${searchQuery}_${selectedCategory}_${selectedTool}_${selectedSort}_${tasteProfile.genderVibe}`;
   const [displayedCount, setDisplayedCount] = useState<number>(getInitialBatchSize);
   const [prevFilterKey, setPrevFilterKey] = useState<string>(currentFilterKey);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
-  const [isGridLoading, setIsGridLoading] = useState<boolean>(true);
-
-  // Trigger skeleton loading state whenever filters change or on initial reload
-  useEffect(() => {
-    setIsGridLoading(true);
-    const timer = setTimeout(() => {
-      setIsGridLoading(false);
-    }, 350);
-    return () => clearTimeout(timer);
-  }, [selectedCategory, selectedTool, searchQuery, selectedSort]);
-
-  // Randomized posts for default homepage view (re-randomized on every page reload / mount)
-  const [randomizedPosts, setRandomizedPosts] = useState<PromptPost[]>([]);
-
-  useEffect(() => {
-    const published = posts.filter((p) => p.status === 'published');
-    const shuffled = [...published].sort(() => Math.random() - 0.5);
-    setRandomizedPosts(shuffled);
-  }, [posts]);
 
   // Reset pagination if filter key changed during render
   if (currentFilterKey !== prevFilterKey) {
@@ -106,8 +87,7 @@ export const PromptGrid = () => {
 
   // Filter only published posts for the public directory and strictly deduplicate with deterministic ordering
   const filteredPosts = useMemo(() => {
-    const isDefaultHome = (!selectedCategory || selectedCategory === 'all') && !searchQuery.trim() && selectedTool === 'all';
-    let list = isDefaultHome && randomizedPosts.length > 0 ? [...randomizedPosts] : posts.filter((p) => p.status === 'published');
+    let list = posts.filter((p) => p.status === 'published');
 
     if (selectedCategory && selectedCategory !== 'all' && selectedCategory !== 'latest') {
       list = list.filter(
@@ -173,8 +153,22 @@ export const PromptGrid = () => {
         });
       }
     } else {
-      if (selectedCategory === 'latest' || selectedSort === 'newest') {
-        // "Latest Prompts" filter or "Newest" sort selected: Always prioritize newest published posts first
+      const isRandomMode =
+        !searchQuery.trim() &&
+        selectedCategory !== 'latest' &&
+        (!selectedCategory || selectedCategory === 'all') &&
+        (selectedTool === 'all' || !selectedTool) &&
+        selectedSort === 'newest';
+
+      if (isRandomMode && randomOrderMap && randomOrderMap.size > 0) {
+        // Default homepage view: Random prompts on initial load & reload until Latest or category is clicked
+        list = [...list].sort((a, b) => {
+          const rankA = randomOrderMap.get(a.id) ?? 999999;
+          const rankB = randomOrderMap.get(b.id) ?? 999999;
+          return rankA - rankB;
+        });
+      } else if (selectedCategory === 'latest' || selectedSort === 'newest') {
+        // "Latest Prompts" filter button clicked or 'newest' sort selected: Always prioritize newest published posts first
         list = [...list].sort((a, b) => {
           const timeB = new Date(b.publishedAt || b.createdAt || 0).getTime();
           const timeA = new Date(a.publishedAt || a.createdAt || 0).getTime();
@@ -188,7 +182,7 @@ export const PromptGrid = () => {
           return (b.createdAt || '').localeCompare(a.createdAt || '') || a.id.localeCompare(b.id);
         });
       } else {
-        // Default / 'newest': Always prioritize newest/latest posts first
+        // Fallback newest
         list = [...list].sort((a, b) => {
           const timeB = new Date(b.publishedAt || b.createdAt || 0).getTime();
           const timeA = new Date(a.publishedAt || a.createdAt || 0).getTime();
@@ -214,7 +208,7 @@ export const PromptGrid = () => {
     }
 
     return uniqueList;
-  }, [posts, selectedCategory, selectedTool, searchQuery, selectedSort, aiSearchResults]);
+  }, [posts, selectedCategory, selectedTool, searchQuery, selectedSort, aiSearchResults, randomOrderMap]);
 
   // Infinite Scroll Observer
   useEffect(() => {
@@ -387,12 +381,12 @@ export const PromptGrid = () => {
         </div>
       )}
 
-      {/* Visual Prompt Grid */}
-      {isGridLoading || isLoadingPosts ? (
-        <PromptSkeletonGrid columnCount={columnCount} />
+      {/* Visual Prompt Grid or Loading Skeleton */}
+      {!isMounted || isLoadingPosts || (!randomOrderMap && !searchQuery.trim() && selectedCategory !== 'latest' && (!selectedCategory || selectedCategory === 'all')) ? (
+        <PromptGridSkeleton />
       ) : filteredPosts.length > 0 ? (
         <>
-          <div className="flex gap-3 sm:gap-4 items-start w-full" id="vertical-masonry-feed">
+          <div className="flex gap-3 sm:gap-4 items-start w-full animate-fade-in" id="vertical-masonry-feed">
             {columns.map((colPosts, colIdx) => (
               <div key={colIdx} className="flex-1 flex flex-col gap-3 sm:gap-4 min-w-0">
                 {colPosts.map((post, postIdx) => (

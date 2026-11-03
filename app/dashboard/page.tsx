@@ -7,7 +7,12 @@ import { Footer } from '@/components/public/Footer';
 import { BottomNav } from '@/components/public/BottomNav';
 import { ToastNotification } from '@/components/public/ToastNotification';
 
-const UserDashboard = dynamic(() => import('@/components/public/UserDashboard').then((m) => m.UserDashboard), { ssr: false });
+import { DashboardSkeleton } from '@/components/public/DashboardSkeleton';
+
+const UserDashboard = dynamic(() => import('@/components/public/UserDashboard').then((m) => m.UserDashboard), {
+  ssr: false,
+  loading: () => <DashboardSkeleton />,
+});
 const PromptDetailModal = dynamic(() => import('@/components/public/PromptDetailModal').then((m) => m.PromptDetailModal), { ssr: false });
 const BookmarksDrawer = dynamic(() => import('@/components/public/BookmarksDrawer').then((m) => m.BookmarksDrawer), { ssr: false });
 const TasteProfileModal = dynamic(() => import('@/components/public/TasteProfileModal').then((m) => m.TasteProfileModal), { ssr: false });
