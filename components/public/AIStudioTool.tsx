@@ -19,6 +19,7 @@ import {
   X,
   Wand2,
   Edit3,
+  AlertCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -130,6 +131,7 @@ export const AIStudioTool = () => {
   const [customInstructions, setCustomInstructions] = useState<string>('');
   const [isExtractingPrompt, setIsExtractingPrompt] = useState<boolean>(false);
   const [extractedData, setExtractedData] = useState<ExtractedPromptData | null>(null);
+  const [extractionError, setExtractionError] = useState<string | null>(null);
   const [isSavedExtracted, setIsSavedExtracted] = useState<boolean>(false);
   const [isOutOfCreditsModalOpen, setIsOutOfCreditsModalOpen] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -170,6 +172,7 @@ export const AIStudioTool = () => {
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<string>('3:4');
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState<boolean>(false);
   const [generatedPromptData, setGeneratedPromptData] = useState<any | null>(null);
+  const [generationError, setGenerationError] = useState<string | null>(null);
   const [isSavedGenerated, setIsSavedGenerated] = useState<boolean>(false);
 
   const handleGeneratePrompt = async () => {
@@ -192,6 +195,7 @@ export const AIStudioTool = () => {
 
     setIsGeneratingPrompt(true);
     setGeneratedPromptData(null);
+    setGenerationError(null);
     setIsSavedGenerated(false);
 
     try {
@@ -209,16 +213,23 @@ export const AIStudioTool = () => {
       });
 
       const json = await res.json();
-      if (json.success && json.data) {
+      if (res.ok && json.success && json.data && !json.fallback) {
         deductToolCredit(IDEA_TO_PROMPT_COST);
         setGeneratedPromptData(json.data);
+        setGenerationError(null);
         showToast(`Detailed prompt generated! 1 credit used (${Math.max(0, toolCredits - IDEA_TO_PROMPT_COST)} left)`);
       } else {
-        showToast(json.error || 'Failed to generate prompt from idea');
+        const errorMsg = json.error || 'This tool is currently in high demand, please try again.';
+        setGeneratedPromptData(null);
+        setGenerationError(errorMsg);
+        showToast(errorMsg, 'error');
       }
     } catch (err) {
       console.error('Prompt generation error:', err);
-      showToast('An error occurred during prompt generation');
+      const errorMsg = 'This tool is currently in high demand, please try again.';
+      setGeneratedPromptData(null);
+      setGenerationError(errorMsg);
+      showToast(errorMsg, 'error');
     } finally {
       setIsGeneratingPrompt(false);
     }
@@ -302,6 +313,7 @@ export const AIStudioTool = () => {
 
     setIsExtractingPrompt(true);
     setExtractedData(null);
+    setExtractionError(null);
     setIsSavedExtracted(false);
 
     try {
@@ -316,7 +328,7 @@ export const AIStudioTool = () => {
       });
 
       const json = await res.json();
-      if (json.success && json.data) {
+      if (res.ok && json.success && json.data && !json.fallback) {
         const rawPrompt = json.data.promptText || json.data.prompt || '';
         const finalPrompt = ensureAspectRatio34(rawPrompt);
         const preparedData: ExtractedPromptData = {
@@ -328,13 +340,20 @@ export const AIStudioTool = () => {
         };
         deductToolCredit(IMAGE_TO_PROMPT_COST);
         setExtractedData(preparedData);
+        setExtractionError(null);
         showToast(`Prompt reverse-engineered! 2 credits used (${Math.max(0, toolCredits - IMAGE_TO_PROMPT_COST)} left)`);
       } else {
-        showToast(json.error || 'Failed to extract prompt from image');
+        const errorMsg = json.error || 'This tool is currently in high demand, please try again.';
+        setExtractedData(null);
+        setExtractionError(errorMsg);
+        showToast(errorMsg, 'error');
       }
     } catch (err) {
       console.error('Extraction error:', err);
-      showToast('An error occurred during prompt extraction');
+      const errorMsg = 'This tool is currently in high demand, please try again.';
+      setExtractedData(null);
+      setExtractionError(errorMsg);
+      showToast(errorMsg, 'error');
     } finally {
       setIsExtractingPrompt(false);
     }
@@ -974,6 +993,31 @@ export const AIStudioTool = () => {
                     </div>
                   </div>
                 </div>
+              ) : extractionError ? (
+                <div className="p-8 sm:p-12 rounded-3xl bg-amber-500/10 dark:bg-amber-500/15 border-2 border-amber-500/40 text-center space-y-4 animate-in fade-in duration-300">
+                  <div className="w-16 h-16 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto">
+                    <AlertCircle className="w-8 h-8" />
+                  </div>
+                  <div className="space-y-1.5 max-w-md mx-auto">
+                    <h3 className="text-lg font-black text-amber-800 dark:text-amber-200">
+                      High Demand Notice
+                    </h3>
+                    <p className="text-xs sm:text-sm text-amber-700 dark:text-amber-300 font-medium">
+                      {extractionError}
+                    </p>
+                    <p className="text-xs text-amber-600/90 dark:text-amber-400/90 font-semibold pt-1">
+                      Your credits were not deducted. Please click Try Again in a few moments.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleExtractPrompt}
+                    className="px-5 py-2.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-md transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Try Again</span>
+                  </button>
+                </div>
               ) : (
                 <div className="p-10 sm:p-16 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-center space-y-4">
                   <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-950/50 text-[#E60023] flex items-center justify-center mx-auto">
@@ -1235,6 +1279,31 @@ export const AIStudioTool = () => {
                       </div>
                     </div>
                   </div>
+                </div>
+              ) : generationError ? (
+                <div className="p-8 sm:p-12 rounded-3xl bg-amber-500/10 dark:bg-amber-500/15 border-2 border-amber-500/40 text-center space-y-4 animate-in fade-in duration-300">
+                  <div className="w-16 h-16 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto">
+                    <AlertCircle className="w-8 h-8" />
+                  </div>
+                  <div className="space-y-1.5 max-w-md mx-auto">
+                    <h3 className="text-lg font-black text-amber-800 dark:text-amber-200">
+                      High Demand Notice
+                    </h3>
+                    <p className="text-xs sm:text-sm text-amber-700 dark:text-amber-300 font-medium">
+                      {generationError}
+                    </p>
+                    <p className="text-xs text-amber-600/90 dark:text-amber-400/90 font-semibold pt-1">
+                      Your credits were not deducted. Please click Try Again in a few moments.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleGeneratePrompt}
+                    className="px-5 py-2.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-md transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Try Again</span>
+                  </button>
                 </div>
               ) : (
                 <div className="p-10 sm:p-16 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-center space-y-4">

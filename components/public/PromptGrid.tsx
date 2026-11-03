@@ -24,7 +24,7 @@ const getInitialBatchSize = () => {
   return cols * rows;
 };
 
-const SCROLL_BATCH_SIZE = 12;
+const SCROLL_BATCH_SIZE = 16;
 
 export const PromptGrid = () => {
   const {
@@ -210,26 +210,56 @@ export const PromptGrid = () => {
     return uniqueList;
   }, [posts, selectedCategory, selectedTool, searchQuery, selectedSort, aiSearchResults, randomOrderMap]);
 
-  // Infinite Scroll Observer
+  const hasMore = displayedCount < filteredPosts.length;
+
+  // Infinite Scroll: Seamless auto-loading of new prompts as user scrolls
   useEffect(() => {
+    if (!hasMore) return;
+
+    let isThrottled = false;
+    const loadMore = () => {
+      if (isThrottled) return;
+      isThrottled = true;
+      setDisplayedCount((prev) => Math.min(prev + SCROLL_BATCH_SIZE, filteredPosts.length));
+      setTimeout(() => {
+        isThrottled = false;
+      }, 120);
+    };
+
     const sentinel = bottomSentinelRef.current;
-    if (!sentinel) return;
+    let observer: IntersectionObserver | null = null;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setDisplayedCount((prev) => Math.min(prev + SCROLL_BATCH_SIZE, filteredPosts.length));
-        }
-      },
-      { rootMargin: '250px' }
-    );
+    if (sentinel && typeof IntersectionObserver !== 'undefined') {
+      observer = new IntersectionObserver(
+        (entries) => {
+          if (entries[0] && entries[0].isIntersecting) {
+            loadMore();
+          }
+        },
+        { rootMargin: '600px 0px 600px 0px', threshold: 0 }
+      );
+      observer.observe(sentinel);
+    }
 
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [filteredPosts.length]);
+    const handleScroll = () => {
+      if (isThrottled) return;
+      const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      if (scrollY + windowHeight >= documentHeight - 700) {
+        loadMore();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      if (observer) observer.disconnect();
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [hasMore, displayedCount, filteredPosts.length]);
 
   const visiblePosts = filteredPosts.slice(0, displayedCount);
-  const hasMore = displayedCount < filteredPosts.length;
 
   const [columnCount, setColumnCount] = useState<number>(() => {
     if (typeof window !== 'undefined') {

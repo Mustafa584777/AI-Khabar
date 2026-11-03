@@ -77,12 +77,10 @@ export async function POST(req: NextRequest) {
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
-    const localResult = generateLocalPromptEdit(promptText, changeInstructions);
-    return NextResponse.json({
-      success: true,
-      ...localResult,
-      fallback: true,
-    });
+    return NextResponse.json(
+      { success: false, error: 'This tool is currently in high demand, please try again.' },
+      { status: 503 }
+    );
   }
 
   try {
@@ -171,12 +169,10 @@ Return ONLY valid JSON matching this schema:
 
     throw lastError || new Error('All candidate models failed');
   } catch (err: any) {
-    console.warn('Gemini prompt edit error, applying local engine:', err?.message || err);
-    const localResult = generateLocalPromptEdit(promptText, changeInstructions);
-    return NextResponse.json({
-      success: true,
-      ...localResult,
-      fallback: true,
-    });
+    console.warn('Gemini prompt edit error:', err?.message || err);
+    return NextResponse.json(
+      { success: false, error: 'This tool is currently in high demand, please try again.' },
+      { status: 503 }
+    );
   }
 }

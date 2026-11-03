@@ -224,6 +224,7 @@ export const AppProvider = ({
 
   const setCurrentView = useCallback((view: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications') => {
     setSelectedPostState(null);
+    setCurrentViewState(view);
     if (view === 'public' || view === 'for-you') {
       router.push('/');
     } else if (view === 'user-dashboard') {

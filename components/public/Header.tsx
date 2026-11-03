@@ -12,6 +12,7 @@ import {
   Search,
   Crown,
   Bell,
+  Home,
 } from 'lucide-react';
 import { NotificationService } from '@/lib/notifications';
 import Link from 'next/link';
@@ -34,6 +35,7 @@ export const Header = () => {
     setIsSearchModalOpen,
     setIsNotificationsModalOpen,
     isNotificationsModalOpen,
+    setSelectedPost,
     isProUser,
     planTier,
     setIsProCheckoutModalOpen,
@@ -65,12 +67,21 @@ export const Header = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const handleHomeClick = () => {
+  const isHomeActive = pathname === '/' && currentView === 'public';
+
+  const handleHomeClick = (e?: React.MouseEvent) => {
+    setCurrentView('public');
     setSelectedCategory('all');
     setSelectedSort('newest');
     setSearchQuery('');
+    setSelectedPost(null);
+    setIsBookmarksDrawerOpen(false);
+    setIsSearchModalOpen(false);
+    setIsNotificationsModalOpen(false);
     if (pathname === '/') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    } else {
+      router.push('/');
     }
   };
 
@@ -113,13 +124,16 @@ export const Header = () => {
               href="/"
               prefetch={true}
               onClick={handleHomeClick}
-              className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer ${
-                pathname === '/' && selectedCategory === 'all'
-                  ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 shadow-sm'
-                  : 'text-neutral-700 dark:text-neutral-300 hover:bg-[#efefef] dark:hover:bg-neutral-800'
+              className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+                isHomeActive
+                  ? 'bg-red-50 text-[#E60023] dark:bg-red-950/60 dark:text-red-400 font-extrabold border border-red-200/80 dark:border-red-900/60 shadow-xs'
+                  : 'text-neutral-700 dark:text-neutral-300 hover:bg-[#efefef] dark:hover:bg-neutral-800 border border-transparent'
               }`}
+              id="header-home-btn"
+              title="Home Feed"
             >
-              Home
+              <Home className={`w-4 h-4 ${isHomeActive ? 'text-[#E60023] dark:text-red-400 fill-current' : 'text-neutral-500 dark:text-neutral-400'}`} />
+              <span>Home</span>
             </Link>
 
             {/* Create / AI Studio Route Link */}

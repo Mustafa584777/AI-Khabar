@@ -506,7 +506,7 @@ export const UsersManager = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-850/50 text-[11px] uppercase tracking-wider font-bold text-neutral-500">
+                  <tr className="border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/50 text-[11px] uppercase tracking-wider font-bold text-neutral-500">
                     <th className="py-3.5 px-4 sm:px-6">User / Name</th>
                     <th className="py-3.5 px-4">Email / Gmail</th>
                     <th className="py-3.5 px-4">Plan Tier</th>
@@ -651,7 +651,7 @@ export const UsersManager = () => {
           )}
 
           {/* Table Footer with Summary Stats */}
-          <div className="p-4 bg-neutral-50/50 dark:bg-neutral-850/50 border-t border-neutral-200 dark:border-neutral-800 flex items-center justify-between text-xs text-neutral-500">
+          <div className="p-4 bg-neutral-50/50 dark:bg-neutral-900/50 border-t border-neutral-200 dark:border-neutral-800 flex items-center justify-between text-xs text-neutral-500">
             <span>
               Showing {filteredUsers.length} of {totalUsersCount} user accounts
             </span>

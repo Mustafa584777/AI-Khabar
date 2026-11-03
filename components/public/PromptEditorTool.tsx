@@ -77,7 +77,7 @@ export const PromptEditorTool = () => {
         body: JSON.stringify({ promptText: inputPrompt, changeInstructions }),
       });
       const data = await res.json();
-      if (data.success) {
+      if (res.ok && data.success && !data.fallback) {
         deductToolCredit(1);
         setResultData({
           enhancedPrompt: data.enhancedPrompt,
@@ -100,11 +100,11 @@ export const PromptEditorTool = () => {
           createdAt: Date.now(),
         });
       } else {
-        showToast(data.error || 'Failed to edit prompt', 'error');
+        showToast(data.error || 'This tool is currently in high demand, please try again.', 'error');
       }
     } catch (err) {
       console.error(err);
-      showToast('Network error while editing prompt', 'error');
+      showToast('This tool is currently in high demand, please try again.', 'error');
     } finally {
       setIsEditing(false);
     }
