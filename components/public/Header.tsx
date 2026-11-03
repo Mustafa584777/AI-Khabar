@@ -35,7 +35,6 @@ export const Header = () => {
     setIsSearchModalOpen,
     setIsNotificationsModalOpen,
     isNotificationsModalOpen,
-    setSelectedPost,
     isProUser,
     planTier,
     setIsProCheckoutModalOpen,
@@ -67,21 +66,13 @@ export const Header = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const isHomeActive = pathname === '/' && currentView === 'public';
-
   const handleHomeClick = (e?: React.MouseEvent) => {
-    setCurrentView('public');
-    setSelectedCategory('all');
+    setSelectedCategory('');
     setSelectedSort('newest');
     setSearchQuery('');
-    setSelectedPost(null);
-    setIsBookmarksDrawerOpen(false);
-    setIsSearchModalOpen(false);
-    setIsNotificationsModalOpen(false);
     if (pathname === '/') {
-      window.scrollTo({ top: 0, behavior: 'instant' });
-    } else {
-      router.push('/');
+      e?.preventDefault?.();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -125,14 +116,12 @@ export const Header = () => {
               prefetch={true}
               onClick={handleHomeClick}
               className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
-                isHomeActive
-                  ? 'bg-red-50 text-[#E60023] dark:bg-red-950/60 dark:text-red-400 font-extrabold border border-red-200/80 dark:border-red-900/60 shadow-xs'
-                  : 'text-neutral-700 dark:text-neutral-300 hover:bg-[#efefef] dark:hover:bg-neutral-800 border border-transparent'
+                pathname === '/'
+                  ? 'bg-red-50 text-[#E60023] dark:bg-red-950/40 dark:text-red-400 border border-red-200/90 dark:border-red-900/50 shadow-xs'
+                  : 'text-neutral-700 dark:text-neutral-300 hover:bg-[#efefef] dark:hover:bg-neutral-800'
               }`}
-              id="header-home-btn"
-              title="Home Feed"
             >
-              <Home className={`w-4 h-4 ${isHomeActive ? 'text-[#E60023] dark:text-red-400 fill-current' : 'text-neutral-500 dark:text-neutral-400'}`} />
+              <Home className={`w-4 h-4 ${pathname === '/' ? 'text-[#E60023] fill-[#E60023]' : 'text-neutral-500 dark:text-neutral-400'}`} />
               <span>Home</span>
             </Link>
 

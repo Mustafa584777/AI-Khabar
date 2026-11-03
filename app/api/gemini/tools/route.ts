@@ -28,7 +28,9 @@ async function generateWithModel(ai: GoogleGenAI, preferredModel: string | undef
   const candidateModels = [
     preferredModel && preferredModel !== 'imagen-3.0-generate-002' ? preferredModel : 'gemini-2.5-flash',
     'gemini-2.5-flash',
-    'gemini-2.0-flash',
+    'gemini-3.7-flash',
+    'gemini-3.1-flash-lite',
+    'gemini-flash-latest',
     'gemini-2.5-pro',
   ];
 
@@ -181,7 +183,7 @@ OUTPUT MUST BE VALID JSON ONLY matching this schema:
     // =========================================================================
     if (action === 'image_to_prompt') {
       if (!image) {
-        return NextResponse.json({ error: 'Image data is required' }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'Image data is required' }, { status: 400 });
       }
 
       if (!apiKey) {
@@ -216,7 +218,7 @@ OUTPUT MUST BE VALID JSON ONLY matching this schema:
 
       if (!base64Data) {
         return NextResponse.json(
-          { success: false, error: 'Could not process the uploaded photo. Please upload a clear JPG, PNG, or WEBP photo.' },
+          { success: false, error: 'Invalid or unsupported image format. Please upload a clear photo.' },
           { status: 400 }
         );
       }
@@ -314,7 +316,7 @@ Return the final response strictly conforming to the required JSON schema.`;
       }
     }
 
-    return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+    return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
   } catch (error: any) {
     console.error('AI Studio Tools Error:', error);
     return NextResponse.json(

@@ -17,15 +17,10 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
   const pathname = usePathname();
   
   const {
-    currentView,
-    setCurrentView,
     selectedCategory,
     setSelectedCategory,
     setSelectedSort,
     setSearchQuery,
-    setSelectedPost,
-    setIsBookmarksDrawerOpen,
-    setIsNotificationsModalOpen,
     userAccount,
     setIsSearchModalOpen,
   } = useApp();
@@ -53,21 +48,13 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
     return () => clearInterval(interval);
   }, []);
 
-  const isHomeActive = pathname === '/' && currentView === 'public';
-
   const handleHomeClick = (e?: React.MouseEvent) => {
-    setCurrentView('public');
-    setSelectedCategory('all');
+    setSelectedCategory('');
     setSelectedSort('newest');
     setSearchQuery('');
-    setSelectedPost?.(null);
-    setIsBookmarksDrawerOpen?.(false);
-    setIsSearchModalOpen(false);
-    setIsNotificationsModalOpen?.(false);
     if (pathname === '/') {
-      window.scrollTo({ top: 0, behavior: 'instant' });
-    } else {
-      router.push('/');
+      e?.preventDefault?.();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -90,15 +77,15 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
         prefetch={true}
         onClick={handleHomeClick}
         className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 cursor-pointer ${
-          isHomeActive
+          pathname === '/'
             ? 'text-[#E60023] scale-105 font-bold'
             : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
         }`}
         title="Home Feed"
         id="bottom-nav-home"
       >
-        <Home className={`w-6 h-6 ${isHomeActive ? 'text-[#E60023] fill-[#E60023]' : ''}`} />
-        <span className={`text-[10px] mt-0.5 ${isHomeActive ? 'font-bold text-[#E60023]' : 'font-medium'}`}>Home</span>
+        <Home className={`w-6 h-6 ${pathname === '/' ? 'text-[#E60023] fill-[#E60023]' : ''}`} />
+        <span className={`text-[10px] mt-0.5 ${pathname === '/' ? 'text-[#E60023] font-bold' : 'font-medium'}`}>Home</span>
       </Link>
 
       {/* 2. Explore & Categories Button */}

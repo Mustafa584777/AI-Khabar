@@ -92,7 +92,7 @@ export const DashboardOverview = () => {
   return (
     <div className="p-6 sm:p-8 space-y-8 max-w-7xl mx-auto">
       {/* Welcome Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-gradient-to-r from-neutral-900 to-neutral-950 dark:from-neutral-900 dark:to-neutral-950 p-6 rounded-3xl text-white shadow-xl">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-gradient-to-r from-neutral-900 to-neutral-850 dark:from-neutral-900 dark:to-neutral-950 p-6 rounded-3xl text-white shadow-xl">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight mb-1">
             Trending Gemini Prompts CMS Dashboard
