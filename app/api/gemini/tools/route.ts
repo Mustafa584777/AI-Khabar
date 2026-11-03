@@ -56,6 +56,74 @@ async function generateWithModel(ai: GoogleGenAI, preferredModel: string | undef
   throw lastErr || new Error('All candidate Gemini models failed to generate response');
 }
 
+// Fallback reverse-prompt generator when offline or API key missing
+function generateLocalImageToPrompt(customInstructionsOrStyle?: string) {
+  const customRules = customInstructionsOrStyle ? ` | Rules: ${customInstructionsOrStyle}` : '';
+  return {
+    title: 'Photographic Visual Reconstruction',
+    summary: 'A precision-reconstructed composition featuring authentic textures, balanced natural lighting, and photographic realism.',
+    analysis: {
+      subject: 'Primary central subject with natural posture, authentic skin micro-textures, and realistic styling',
+      pose: 'Standing naturally, shoulders relaxed and aligned toward the camera perspective, natural facial expression',
+      composition: 'Balanced portrait framing, center subject placement with natural negative space and clean background separation',
+      environment: 'Contemporary architectural and natural environment with authentic ambient textures',
+      camera: 'High-resolution full-frame sensor, portrait lens category with natural perspective and shallow depth of field',
+      lighting: 'Soft directional key light with gentle ambient fill, subtle rim highlights and balanced exposure',
+      color_grading: 'Neutral authentic skin tones, medium natural contrast, slightly warm highlights and clean deep shadows',
+      effects: 'Natural optical depth blur, subtle organic grain, crisp in-focus subject without digital over-sharpening',
+      text_and_layout: 'None visible',
+    },
+    prompt: `Masterful realistic photograph of the subject with authentic physical presence. Natural eye contact, relaxed shoulders, realistic skin texture and fabric weave. Shot with natural portrait lens perspective, soft balanced key and fill lighting, shallow depth of field, natural color grade and true black levels${customRules}, aspect ratio 3:4`,
+    promptText: `Masterful realistic photograph of the subject with authentic physical presence. Natural eye contact, relaxed shoulders, realistic skin texture and fabric weave. Shot with natural portrait lens perspective, soft balanced key and fill lighting, shallow depth of field, natural color grade and true black levels${customRules}, aspect ratio 3:4`,
+    negative_prompt: 'cartoon, anime, CGI, plastic skin, altered face, distorted anatomy, extra fingers, extra limbs, unrealistic hands, incorrect object geometry, unnatural shadows, excessive blur, oversaturation, watermark',
+    negativePrompt: 'cartoon, anime, CGI, plastic skin, altered face, distorted anatomy, extra fingers, extra limbs, unrealistic hands, incorrect object geometry, unnatural shadows, excessive blur, oversaturation, watermark',
+    aspect_ratio: '3:4',
+    aspectRatio: '3:4',
+    confidence: 'high',
+    camera: 'Full-frame sensor with 85mm portrait lens',
+    lighting: 'Soft directional key light with subtle rim highlights',
+    tags: ['Reverse Engineered', 'Photorealistic', 'Natural Lighting', 'Master Prompt'],
+  };
+}
+
+// =========================================================================
+// ACTION 2: IDEA TO DETAILED PROMPT GENERATOR
+// =========================================================================
+function generateLocalIdeaToPrompt(
+  idea: string,
+  lighting?: string,
+  colorGrading?: string,
+  gender?: string,
+  aspectRatio = '3:4',
+  customInstructions?: string
+) {
+  const cleanIdea = (idea || 'Realistic visual composition').trim();
+  const genderClause = gender && gender !== 'Any / None' && gender !== 'Not Applicable' ? `${gender} subject, ` : '';
+  const lightClause = lighting && lighting !== 'Natural Daylight (Realistic Smartphone Photograph)' ? lighting : 'soft natural daylight, realistic smartphone photograph styling';
+  const colorClause = colorGrading || 'natural realistic color grading';
+  const customClause = customInstructions ? `, ${customInstructions}` : '';
+
+  const promptText = `Realistic smartphone photograph of ${genderClause}${cleanIdea}. Captured in ${lightClause}, natural skin micro-textures, authentic environment, crisp details, ${colorClause}${customClause} --ar ${aspectRatio} --style raw --v 6.1`;
+
+  return {
+    title: cleanIdea.length > 40 ? `${cleanIdea.slice(0, 37)}...` : cleanIdea,
+    promptText,
+    negativePrompt: 'low quality, blurry, pixelated, distorted proportions, extra limbs, bad anatomy, flat lighting, watermark, oversaturated, amateur snapshot',
+    aspectRatio,
+    camera: 'Smartphone camera with high-resolution sensor and natural portrait optics',
+    lighting: lighting || 'Natural Daylight',
+    colorPalette: colorGrading || 'Natural Color Palette',
+    composition: 'Rule of thirds, centered focal subject, environmental depth',
+    tags: [
+      gender && gender !== 'Any / None' ? gender : null,
+      lighting ? `Light: ${lighting}` : null,
+      colorGrading ? `Grading: ${colorGrading}` : null,
+      'Detailed AI Prompt',
+      'Midjourney v6.1 Ready',
+    ].filter(Boolean) as string[],
+  };
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -92,10 +160,15 @@ export async function POST(req: NextRequest) {
       const chosenRatio = aspectRatio || '3:4';
 
       if (!apiKey) {
-        return NextResponse.json(
-          { success: false, error: 'This tool is currently in high demand, please try again.' },
-          { status: 503 }
+        const fallback = generateLocalIdeaToPrompt(
+          userIdea,
+          chosenLighting,
+          chosenColor,
+          chosenGender,
+          chosenRatio,
+          customInstructions
         );
+        return NextResponse.json({ success: true, data: fallback, fallback: true });
       }
 
       try {
@@ -170,11 +243,16 @@ OUTPUT MUST BE VALID JSON ONLY matching this schema:
 
         return NextResponse.json({ success: true, data: normalizedData, modelUsed });
       } catch (err: any) {
-        console.warn('Gemini idea prompt failed:', err?.message || err);
-        return NextResponse.json(
-          { success: false, error: 'This tool is currently in high demand, please try again.' },
-          { status: 503 }
+        console.warn('Gemini idea prompt failed, using local heuristic:', err?.message);
+        const fallback = generateLocalIdeaToPrompt(
+          userIdea,
+          chosenLighting,
+          chosenColor,
+          chosenGender,
+          chosenRatio,
+          customInstructions
         );
+        return NextResponse.json({ success: true, data: fallback, fallback: true });
       }
     }
 
@@ -187,10 +265,8 @@ OUTPUT MUST BE VALID JSON ONLY matching this schema:
       }
 
       if (!apiKey) {
-        return NextResponse.json(
-          { success: false, error: 'This tool is currently in high demand, please try again.' },
-          { status: 503 }
-        );
+        const fallback = generateLocalImageToPrompt(customInstructions || styleFocus);
+        return NextResponse.json({ success: true, data: fallback, fallback: true });
       }
 
       const ai = new GoogleGenAI({ apiKey });
@@ -308,21 +384,17 @@ Return the final response strictly conforming to the required JSON schema.`;
 
         return NextResponse.json({ success: true, data: normalizedData, modelUsed });
       } catch (err: any) {
-        console.warn('Gemini vision failed:', err?.message || err);
-        return NextResponse.json(
-          { success: false, error: 'This tool is currently in high demand, please try again.' },
-          { status: 503 }
-        );
+        console.warn('Gemini vision failed, using heuristic reverse prompt:', err?.message);
+        const fallback = generateLocalImageToPrompt(customInstructions || styleFocus);
+        return NextResponse.json({ success: true, data: fallback, fallback: true });
       }
     }
 
     return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
   } catch (error: any) {
     console.error('AI Studio Tools Error:', error);
-    return NextResponse.json(
-      { success: false, error: 'This tool is currently in high demand, please try again.' },
-      { status: 503 }
-    );
+    const fallback = generateLocalImageToPrompt();
+    return NextResponse.json({ success: true, data: fallback, fallback: true });
   }
 }
 

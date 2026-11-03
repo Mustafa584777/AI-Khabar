@@ -149,10 +149,8 @@ export async function POST(req: NextRequest) {
         : 'Photorealistic & Portraits, Anime & Manga, 3D Art & CGI, Sci-Fi & Cyberpunk, Landscapes & Nature, Architecture & Interiors, Fashion & Apparel, Logos & Graphic Design, Fantasy & Mythological, Vehicles & Automotive';
 
       if (!apiKey) {
-        return NextResponse.json(
-          { success: false, error: 'This tool is currently in high demand, please try again.' },
-          { status: 503 }
-        );
+        const fallbackData = generateFallbackPost(topic || 'Featured Photo Prompt', tool, category, isImageMode);
+        return NextResponse.json({ success: true, data: fallbackData, fallback: true });
       }
 
       const ai = new GoogleGenAI({
