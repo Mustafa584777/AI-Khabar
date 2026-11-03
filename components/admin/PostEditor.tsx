@@ -609,7 +609,7 @@ export const PostEditor = () => {
       });
 
       const json = await res.json();
-      if (json.success && json.data) {
+      if (res.ok && json.success && json.data && !json.fallback) {
         const data = json.data;
         const newTitle = data.title || (autoFillMode === 'title' ? effectiveTopic : title);
         
