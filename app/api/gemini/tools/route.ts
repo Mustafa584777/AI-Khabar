@@ -261,7 +261,7 @@ OUTPUT MUST BE VALID JSON ONLY matching this schema:
     // =========================================================================
     if (action === 'image_to_prompt') {
       if (!image) {
-        return NextResponse.json({ error: 'Image data is required' }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'Image data is required' }, { status: 400 });
       }
 
       if (!apiKey) {
@@ -293,8 +293,10 @@ OUTPUT MUST BE VALID JSON ONLY matching this schema:
       }
 
       if (!base64Data) {
-        const fallback = generateLocalImageToPrompt(customInstructions || styleFocus);
-        return NextResponse.json({ success: true, data: fallback, fallback: true });
+        return NextResponse.json(
+          { success: false, error: 'Invalid or unsupported image format. Please upload a clear photo.' },
+          { status: 400 }
+        );
       }
 
       const promptInstruction = `Inspect this uploaded reference image with extreme technical and artistic precision.
@@ -388,23 +390,11 @@ Return the final response strictly conforming to the required JSON schema.`;
       }
     }
 
-    return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+    return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
   } catch (error: any) {
     console.error('AI Studio Tools Error:', error);
-    const errMessage = error?.message || '';
-    if (errMessage.includes('quota') || errMessage.includes('overloaded') || errMessage.includes('ResourceExhausted') || errMessage.includes('rate-limit')) {
-      const fallback = generateLocalImageToPrompt();
-      return NextResponse.json({
-        success: true,
-        data: fallback,
-        fallback: true,
-        warning: 'The model API is currently overloaded or rate-limited. Provided high-fidelity master reconstruction prompt automatically.'
-      });
-    }
-    return NextResponse.json(
-      { error: errMessage || 'Failed to process AI tool request' },
-      { status: 500 }
-    );
+    const fallback = generateLocalImageToPrompt();
+    return NextResponse.json({ success: true, data: fallback, fallback: true });
   }
 }
 

@@ -24,7 +24,7 @@ const getInitialBatchSize = () => {
   return cols * rows;
 };
 
-const SCROLL_BATCH_SIZE = 12;
+const SCROLL_BATCH_SIZE = 20;
 
 export const PromptGrid = () => {
   const {
@@ -210,23 +210,41 @@ export const PromptGrid = () => {
     return uniqueList;
   }, [posts, selectedCategory, selectedTool, searchQuery, selectedSort, aiSearchResults, randomOrderMap]);
 
-  // Infinite Scroll Observer
+  // Infinite Scroll: Dual-Layer (IntersectionObserver + Scroll Window Event)
   useEffect(() => {
+    if (!isMounted || isLoadingPosts || displayedCount >= filteredPosts.length) return;
+
     const sentinel = bottomSentinelRef.current;
-    if (!sentinel) return;
+    let observer: IntersectionObserver | null = null;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setDisplayedCount((prev) => Math.min(prev + SCROLL_BATCH_SIZE, filteredPosts.length));
-        }
-      },
-      { rootMargin: '250px' }
-    );
+    if (sentinel) {
+      observer = new IntersectionObserver(
+        (entries) => {
+          if (entries[0]?.isIntersecting) {
+            setDisplayedCount((prev) => Math.min(prev + SCROLL_BATCH_SIZE, filteredPosts.length));
+          }
+        },
+        { rootMargin: '800px 0px' }
+      );
+      observer.observe(sentinel);
+    }
 
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [filteredPosts.length]);
+    const handleWindowScroll = () => {
+      const scrollY = window.scrollY || window.pageYOffset;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      if (scrollY + windowHeight >= documentHeight - 1000) {
+        setDisplayedCount((prev) => Math.min(prev + SCROLL_BATCH_SIZE, filteredPosts.length));
+      }
+    };
+
+    window.addEventListener('scroll', handleWindowScroll, { passive: true });
+
+    return () => {
+      if (observer) observer.disconnect();
+      window.removeEventListener('scroll', handleWindowScroll);
+    };
+  }, [displayedCount, filteredPosts.length, isMounted, isLoadingPosts]);
 
   const visiblePosts = filteredPosts.slice(0, displayedCount);
   const hasMore = displayedCount < filteredPosts.length;
@@ -405,9 +423,18 @@ export const PromptGrid = () => {
 
           {/* Loading Indicator or Finished Message */}
           {hasMore ? (
-            <div className="flex items-center justify-center py-6 gap-2 text-xs text-neutral-500 font-semibold">
-              <Loader2 className="w-4 h-4 animate-spin text-[#E60023]" />
-              <span>Loading more prompts...</span>
+            <div className="flex flex-col items-center justify-center py-8 gap-2.5">
+              <div className="flex items-center justify-center gap-2 text-xs text-neutral-500 font-semibold">
+                <Loader2 className="w-4 h-4 animate-spin text-[#E60023]" />
+                <span>Loading more prompts...</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDisplayedCount((prev) => Math.min(prev + SCROLL_BATCH_SIZE, filteredPosts.length))}
+                className="text-xs font-bold text-[#E60023] hover:underline cursor-pointer bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/50 px-3.5 py-1.5 rounded-full border border-red-200 dark:border-red-900/40 transition-colors"
+              >
+                Load more prompts ({filteredPosts.length - displayedCount} remaining)
+              </button>
             </div>
           ) : (
             <div className="text-center py-12 px-4 mt-6 border-t border-neutral-200/70 dark:border-neutral-800/70 max-w-md mx-auto">

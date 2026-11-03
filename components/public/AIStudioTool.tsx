@@ -19,6 +19,7 @@ import {
   X,
   Wand2,
   Edit3,
+  AlertCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -171,6 +172,7 @@ export const AIStudioTool = () => {
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState<boolean>(false);
   const [generatedPromptData, setGeneratedPromptData] = useState<any | null>(null);
   const [isSavedGenerated, setIsSavedGenerated] = useState<boolean>(false);
+  const [toolError, setToolError] = useState<string | null>(null);
 
   const handleGeneratePrompt = async () => {
     if (!userAccount?.isLoggedIn) {
@@ -193,6 +195,7 @@ export const AIStudioTool = () => {
     setIsGeneratingPrompt(true);
     setGeneratedPromptData(null);
     setIsSavedGenerated(false);
+    setToolError(null);
 
     try {
       const res = await fetch('/api/gemini/tools', {
@@ -209,16 +212,22 @@ export const AIStudioTool = () => {
       });
 
       const json = await res.json();
-      if (json.success && json.data) {
+      if (res.ok && json.success && json.data && !json.fallback) {
         deductToolCredit(IDEA_TO_PROMPT_COST);
         setGeneratedPromptData(json.data);
+        setToolError(null);
         showToast(`Detailed prompt generated! 1 credit used (${Math.max(0, toolCredits - IDEA_TO_PROMPT_COST)} left)`);
       } else {
-        showToast(json.error || 'Failed to generate prompt from idea');
+        const errorMsg = json?.error || 'This tool is currently in high demand, please try again.';
+        setGeneratedPromptData(null);
+        setToolError(errorMsg);
+        showToast(errorMsg);
       }
     } catch (err) {
       console.error('Prompt generation error:', err);
-      showToast('An error occurred during prompt generation');
+      setGeneratedPromptData(null);
+      setToolError('This tool is currently in high demand, please try again.');
+      showToast('This tool is currently in high demand, please try again.');
     } finally {
       setIsGeneratingPrompt(false);
     }
@@ -303,6 +312,7 @@ export const AIStudioTool = () => {
     setIsExtractingPrompt(true);
     setExtractedData(null);
     setIsSavedExtracted(false);
+    setToolError(null);
 
     try {
       const res = await fetch('/api/gemini/tools', {
@@ -316,7 +326,7 @@ export const AIStudioTool = () => {
       });
 
       const json = await res.json();
-      if (json.success && json.data) {
+      if (res.ok && json.success && json.data && !json.fallback) {
         const rawPrompt = json.data.promptText || json.data.prompt || '';
         const finalPrompt = ensureAspectRatio34(rawPrompt);
         const preparedData: ExtractedPromptData = {
@@ -328,13 +338,19 @@ export const AIStudioTool = () => {
         };
         deductToolCredit(IMAGE_TO_PROMPT_COST);
         setExtractedData(preparedData);
+        setToolError(null);
         showToast(`Prompt reverse-engineered! 2 credits used (${Math.max(0, toolCredits - IMAGE_TO_PROMPT_COST)} left)`);
       } else {
-        showToast(json.error || 'Failed to extract prompt from image');
+        const errorMsg = json?.error || 'This tool is currently in high demand, please try again.';
+        setExtractedData(null);
+        setToolError(errorMsg);
+        showToast(errorMsg);
       }
     } catch (err) {
       console.error('Extraction error:', err);
-      showToast('An error occurred during prompt extraction');
+      setExtractedData(null);
+      setToolError('This tool is currently in high demand, please try again.');
+      showToast('This tool is currently in high demand, please try again.');
     } finally {
       setIsExtractingPrompt(false);
     }
@@ -779,6 +795,30 @@ export const AIStudioTool = () => {
 
             {/* Right Column: Output Extracted Prompt & Breakdown (7 cols) */}
             <div className="lg:col-span-7 space-y-6">
+              {toolError && (
+                <div className="p-4 sm:p-5 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 flex items-start gap-3.5 shadow-sm animate-in fade-in duration-200">
+                  <div className="w-8 h-8 rounded-xl bg-red-100 dark:bg-red-900/50 flex items-center justify-center shrink-0 text-red-600 dark:text-red-400">
+                    <AlertCircle className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-bold text-red-800 dark:text-red-300">
+                      {toolError}
+                    </h4>
+                    <p className="text-xs text-red-600/90 dark:text-red-400/90 mt-0.5 font-medium">
+                      Zero credits were deducted from your balance.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setToolError(null)}
+                    className="p-1 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/60 text-red-500 transition-colors"
+                    title="Dismiss"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
               {extractedData ? (
                 <div className="space-y-6 animate-in fade-in duration-300">
                   <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-neutral-900 border-2 border-red-100 dark:border-red-950/80 shadow-md space-y-4">
@@ -1098,6 +1138,30 @@ export const AIStudioTool = () => {
 
             {/* Right Column: Output Generated Prompt */}
             <div className="lg:col-span-7 space-y-6">
+              {toolError && (
+                <div className="p-4 sm:p-5 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 flex items-start gap-3.5 shadow-sm animate-in fade-in duration-200">
+                  <div className="w-8 h-8 rounded-xl bg-red-100 dark:bg-red-900/50 flex items-center justify-center shrink-0 text-red-600 dark:text-red-400">
+                    <AlertCircle className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-bold text-red-800 dark:text-red-300">
+                      {toolError}
+                    </h4>
+                    <p className="text-xs text-red-600/90 dark:text-red-400/90 mt-0.5 font-medium">
+                      Zero credits were deducted from your balance.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setToolError(null)}
+                    className="p-1 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/60 text-red-500 transition-colors"
+                    title="Dismiss"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
               {generatedPromptData ? (
                 <div className="space-y-6 animate-in fade-in duration-300">
                   <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-neutral-900 border-2 border-red-100 dark:border-red-950/80 shadow-md space-y-4">

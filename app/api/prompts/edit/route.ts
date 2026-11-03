@@ -9,52 +9,6 @@ const CANDIDATE_MODELS = [
   'gemini-2.5-pro',
 ];
 
-// High-fidelity prompt rewriter when AI API is unavailable or rate-limited
-function generateLocalPromptEdit(promptText: string, changeInstructions: string) {
-  const cleanOriginal = promptText.trim().replace(/--[a-zA-Z0-9\s.:-]+$/g, '').trim();
-  const cleanChanges = changeInstructions.trim();
-
-  // Detect aspect ratio from original prompt if present, else default to 16:9
-  let detectedRatio = '16:9';
-  const arMatch = promptText.match(/--ar\s+([0-9:]+)/i);
-  if (arMatch && arMatch[1]) {
-    detectedRatio = arMatch[1];
-  }
-
-  // Detect lighting or camera styling keywords
-  let lightingSetup = 'Cinematic volumetric key lighting with soft fill and delicate highlights';
-  const lowerChanges = cleanChanges.toLowerCase();
-  if (lowerChanges.includes('sun') || lowerChanges.includes('day') || lowerChanges.includes('golden')) {
-    lightingSetup = 'Golden hour sunlight with warm amber rim lighting and natural shadows';
-  } else if (lowerChanges.includes('neon') || lowerChanges.includes('cyber') || lowerChanges.includes('night')) {
-    lightingSetup = 'Moody neon ambient lighting, cyan and magenta accent glow, wet asphalt reflections';
-  } else if (lowerChanges.includes('studio') || lowerChanges.includes('portrait')) {
-    lightingSetup = 'Softbox studio portrait lighting with 3-point illumination and catchlights';
-  } else if (lowerChanges.includes('dark') || lowerChanges.includes('dramatic')) {
-    lightingSetup = 'Rembrandt dramatic chiaroscuro lighting with deep shadows and high contrast';
-  }
-
-  // Reconstruct modified prompt seamlessly
-  const enhancedPrompt = `${cleanOriginal}, modified with: ${cleanChanges}. Masterfully composed, captured with Hasselblad H6D-100c and 85mm f/1.4 lens, ${lightingSetup}, authentic micro-textures, photorealistic rendering, 8K ultra high resolution, award-winning art direction --ar ${detectedRatio} --style raw --v 6.1 --s 250`;
-
-  return {
-    enhancedPrompt,
-    negativePrompt: 'blurry, low quality, distorted anatomy, extra fingers, cartoonish, oversaturated, watermark, bad lighting, grainy artifacts, amateur photography',
-    improvementsMade: [
-      `Incorporated requested changes: "${cleanChanges}"`,
-      'Enhanced with Hasselblad H6D-100c 85mm f/1.4 camera optics and depth of field',
-      `Applied ${lightingSetup}`,
-      `Calibrated Midjourney v6.1 production parameters (--ar ${detectedRatio} --style raw)`,
-    ],
-    parameters: {
-      aspectRatio: detectedRatio,
-      camera: 'Hasselblad H6D-100c, 85mm f/1.4 lens',
-      lighting: lightingSetup,
-      renderEngine: 'Photorealistic Raw Engine',
-    },
-  };
-}
-
 export async function POST(req: NextRequest) {
   let promptText = '';
   let changeInstructions = '';
@@ -77,12 +31,10 @@ export async function POST(req: NextRequest) {
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
-    const localResult = generateLocalPromptEdit(promptText, changeInstructions);
-    return NextResponse.json({
-      success: true,
-      ...localResult,
-      fallback: true,
-    });
+    return NextResponse.json(
+      { success: false, error: 'This tool is currently in high demand, please try again.' },
+      { status: 503 }
+    );
   }
 
   try {
@@ -171,12 +123,13 @@ Return ONLY valid JSON matching this schema:
 
     throw lastError || new Error('All candidate models failed');
   } catch (err: any) {
-    console.warn('Gemini prompt edit error, applying local engine:', err?.message || err);
-    const localResult = generateLocalPromptEdit(promptText, changeInstructions);
-    return NextResponse.json({
-      success: true,
-      ...localResult,
-      fallback: true,
-    });
+    console.warn('Gemini prompt edit error:', err?.message || err);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'This tool is currently in high demand, please try again.',
+      },
+      { status: 503 }
+    );
   }
 }

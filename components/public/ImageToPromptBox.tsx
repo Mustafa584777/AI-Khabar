@@ -182,10 +182,10 @@ export const ImageToPromptBox = () => {
             className={`cursor-pointer rounded-2xl border-2 border-dashed transition-all p-6 sm:p-8 flex flex-col items-center justify-center text-center ${
               isDragging
                 ? 'border-[#E60023] bg-red-500/5 dark:bg-red-500/10 scale-[0.99]'
-                : 'border-neutral-300 dark:border-neutral-700 hover:border-[#E60023]/60 bg-neutral-50/70 dark:bg-neutral-850/50 hover:bg-neutral-100/60 dark:hover:bg-neutral-800/60'
+                : 'border-neutral-300 dark:border-neutral-700/80 hover:border-[#E60023]/60 bg-neutral-50/80 dark:bg-neutral-950/60 hover:bg-neutral-100/70 dark:hover:bg-neutral-800/40'
             }`}
           >
-            <div className="w-12 h-12 rounded-2xl bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 shadow-sm flex items-center justify-center text-neutral-600 dark:text-neutral-300 mb-3 group-hover:scale-105 transition-transform">
+            <div className="w-12 h-12 rounded-2xl bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700/80 shadow-sm flex items-center justify-center text-neutral-600 dark:text-neutral-300 mb-3 group-hover:scale-105 transition-transform">
               <UploadCloud className="w-6 h-6 text-[#E60023]" />
             </div>
             <p className="text-sm font-bold text-neutral-900 dark:text-white mb-1">
@@ -196,7 +196,7 @@ export const ImageToPromptBox = () => {
             </p>
           </div>
         ) : (
-          <div className="relative rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-850 p-3 sm:p-4 flex flex-col sm:flex-row items-center gap-4">
+          <div className="relative rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950/60 p-3 sm:p-4 flex flex-col sm:flex-row items-center gap-4">
             {/* Image Preview Container */}
             <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-700 shrink-0 bg-neutral-900 shadow-sm">
               <img
