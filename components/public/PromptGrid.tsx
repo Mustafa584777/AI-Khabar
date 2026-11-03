@@ -51,16 +51,11 @@ export const PromptGrid = () => {
     openAuthModal,
   } = useApp();
 
-  // Mount state & fresh random shuffle map on each load/reload
-  const [isMounted, setIsMounted] = useState<boolean>(false);
-  const [randomOrderMap, setRandomOrderMap] = useState<Map<string, number> | null>(null);
-  const shuffleInitializedRef = useRef<boolean>(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-    if (!shuffleInitializedRef.current && posts.length > 0) {
-      shuffleInitializedRef.current = true;
-      const map = new Map<string, number>();
+  // Mount state & fresh random shuffle map on initial load
+  const [isMounted, setIsMounted] = useState<boolean>(true);
+  const [randomOrderMap, setRandomOrderMap] = useState<Map<string, number>>(() => {
+    const map = new Map<string, number>();
+    if (posts && posts.length > 0) {
       const indices = posts.map((_, i) => i);
       // Fisher-Yates random shuffle
       for (let i = indices.length - 1; i > 0; i--) {
@@ -70,9 +65,14 @@ export const PromptGrid = () => {
       posts.forEach((p, idx) => {
         map.set(p.id, indices[idx]);
       });
-      setRandomOrderMap(map);
     }
-  }, [posts]);
+    return map;
+  });
+  const shuffleInitializedRef = useRef<boolean>(true);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const currentFilterKey = `${searchQuery}_${selectedCategory}_${selectedTool}_${selectedSort}_${tasteProfile.genderVibe}`;
   const [displayedCount, setDisplayedCount] = useState<number>(getInitialBatchSize);
@@ -400,7 +400,7 @@ export const PromptGrid = () => {
       )}
 
       {/* Visual Prompt Grid or Loading Skeleton */}
-      {!isMounted || isLoadingPosts || (!randomOrderMap && !searchQuery.trim() && selectedCategory !== 'latest' && (!selectedCategory || selectedCategory === 'all')) ? (
+      {isLoadingPosts && posts.length === 0 ? (
         <PromptGridSkeleton />
       ) : filteredPosts.length > 0 ? (
         <>
