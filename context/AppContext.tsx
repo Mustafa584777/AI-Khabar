@@ -224,18 +224,24 @@ export const AppProvider = ({
 
   const setCurrentView = useCallback((view: 'public' | 'admin' | 'user-dashboard' | 'studio-tool' | 'for-you' | 'notifications') => {
     setSelectedPostState(null);
-    if (view === 'public' || view === 'for-you') {
-      router.push('/');
-    } else if (view === 'user-dashboard') {
-      router.push('/dashboard');
-    } else if (view === 'studio-tool') {
-      router.push('/create');
-    } else if (view === 'notifications') {
-      router.push('/notifications');
-    } else if (view === 'admin') {
-      router.push('/admin');
+    setCurrentViewState(view);
+    if (typeof window !== 'undefined') {
+      const urlMap: Record<string, string> = {
+        'public': '/',
+        'for-you': '/',
+        'user-dashboard': '/dashboard',
+        'studio-tool': '/create',
+        'notifications': '/notifications',
+        'admin': '/admin',
+      };
+      const targetUrl = urlMap[view] || '/';
+      if (window.location.pathname !== targetUrl) {
+        try {
+          window.history.pushState({ view }, '', targetUrl);
+        } catch {}
+      }
     }
-  }, [router]);
+  }, []);
 
   const setSelectedPost = useCallback((post: PromptPost | null) => {
     setSelectedPostState(post);
@@ -256,6 +262,16 @@ export const AppProvider = ({
     const handlePopState = (event: PopStateEvent) => {
       const hash = window.location.hash;
       const state = event.state;
+
+      // Handle view state from history
+      if (typeof window !== 'undefined') {
+        const p = window.location.pathname;
+        if (p.includes('dashboard')) setCurrentViewState('user-dashboard');
+        else if (p.includes('create') || p.includes('studio')) setCurrentViewState('studio-tool');
+        else if (p.includes('notifications')) setCurrentViewState('notifications');
+        else if (p.includes('admin') || p.includes('cms-login')) setCurrentViewState('admin');
+        else if (p === '/') setCurrentViewState('public');
+      }
 
       if (hash.startsWith('#prompt=')) {
         const promptId = hash.replace('#prompt=', '');
@@ -1589,40 +1605,26 @@ export const AppProvider = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSearchModalOpen, setIsSearchModalOpen] = useState<boolean>(false);
   const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState<boolean>(false);
-  const [popularSearchQueries, setPopularSearchQueries] = useState<string[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const savedTime = localStorage.getItem('auraprompt_popular_queries_time');
-        const savedQueries = localStorage.getItem('auraprompt_popular_queries');
-        const THREE_DAYS = 3 * 24 * 60 * 60 * 1000;
-        const now = Date.now();
-        if (savedTime && savedQueries && now - parseInt(savedTime, 10) < THREE_DAYS) {
-          const parsed = JSON.parse(savedQueries);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        }
-      } catch {}
-    }
-    const realQueries: string[] = [];
-    const sourcePosts = INITIAL_POSTS || [];
-    sourcePosts.forEach((p) => {
-      if (p.title) realQueries.push(p.title);
-      if (Array.isArray(p.tags)) p.tags.forEach((t) => realQueries.push(t));
-      if (p.category) realQueries.push(p.category);
-    });
-    const uniqueReal = Array.from(new Set(realQueries)).slice(0, 8);
-    if (typeof window !== 'undefined' && uniqueReal.length > 0) {
-      try {
-        localStorage.setItem('auraprompt_popular_queries', JSON.stringify(uniqueReal));
-        localStorage.setItem('auraprompt_popular_queries_time', String(Date.now()));
-      } catch {}
-    }
-    return uniqueReal.length > 0 ? uniqueReal : ['Portrait photography', 'Cinematic lighting', 'Cyberpunk portrait', 'Vintage film'];
-  });
+  const [popularSearchQueries, setPopularSearchQueries] = useState<string[]>([
+    'Traditional Saree',
+    'Aesthetic',
+    'Sukuna',
+    'Instagram Trend',
+    'Thar',
+    'birthday',
+    'couple',
+  ]);
   const [selectedCategory, setSelectedCategoryState] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const catParam = params.get('category');
-      if (catParam) return decodeURIComponent(catParam);
+      if (catParam) {
+        const decoded = decodeURIComponent(catParam);
+        localStorage.setItem('auraprompt_selected_category', decoded);
+        return decoded;
+      }
+      const saved = localStorage.getItem('auraprompt_selected_category');
+      if (saved) return saved;
     }
     return '';
   });
@@ -1647,6 +1649,7 @@ export const AppProvider = ({
         if (catParam) {
           const decoded = decodeURIComponent(catParam);
           setSelectedCategoryState(decoded);
+          localStorage.setItem('auraprompt_selected_category', decoded);
           // Scroll up to category filter bar if landing on homepage
           setTimeout(() => {
             const el = document.getElementById('categories-filter-bar') || document.getElementById('prompts-grid-section');
@@ -1655,9 +1658,11 @@ export const AppProvider = ({
             }
           }, 150);
         } else {
-          // No category in URL: default to empty string so homepage shows fresh random prompts
-          setSelectedCategoryState('');
-          localStorage.removeItem('auraprompt_selected_category');
+          // Retain saved category from localStorage so category persists across navigation until reload or unselect
+          const saved = localStorage.getItem('auraprompt_selected_category');
+          if (saved) {
+            setSelectedCategoryState(saved);
+          }
         }
       };
 
@@ -1933,8 +1938,18 @@ export const AppProvider = ({
                 }
               }
 
-              setPosts(cleanList);
-              StorageService.saveCachedPosts(cleanList);
+              const currentPosts = postsRef.current;
+              const isDifferent =
+                currentPosts.length !== cleanList.length ||
+                (cleanList.length > 0 && currentPosts[0]?.id !== cleanList[0]?.id) ||
+                (cleanList.length > 0 && currentPosts[currentPosts.length - 1]?.id !== cleanList[cleanList.length - 1]?.id);
+
+              if (isDifferent || isAdminView) {
+                setPosts(cleanList);
+                try {
+                  StorageService.saveCachedPosts(cleanList);
+                } catch {}
+              }
             }
           }
         })
@@ -2068,10 +2083,12 @@ export const AppProvider = ({
       console.warn('Error reading local cache on mount:', e);
     }
 
-    // 2. Background sync from server API
-    void syncFromRemote();
-    const currentAcc = StorageService.getUserAccount();
-    void refreshPromptRequests(currentAcc?.email);
+    // 2. Background sync from server API (deferred by 2s so prompt cards and initial interactions are 100% immediate & unblocked)
+    const syncTimer = setTimeout(() => {
+      void syncFromRemote();
+      const currentAcc = StorageService.getUserAccount();
+      void refreshPromptRequests(currentAcc?.email);
+    }, 2000);
 
     const applySynced = (synced: any) => {
       if (!synced) return;

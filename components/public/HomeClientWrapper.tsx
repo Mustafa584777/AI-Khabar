@@ -15,7 +15,7 @@ import { PromptPost, Category, SiteSettings } from '@/types/prompt';
 
 import { DashboardSkeleton } from '@/components/public/DashboardSkeleton';
 
-const PromptDetailModal = dynamic(() => import('@/components/public/PromptDetailModal').then((m) => m.PromptDetailModal), { ssr: false });
+import { PromptDetailModal } from '@/components/public/PromptDetailModal';
 const BookmarksDrawer = dynamic(() => import('@/components/public/BookmarksDrawer').then((m) => m.BookmarksDrawer), { ssr: false });
 const TasteProfileModal = dynamic(() => import('@/components/public/TasteProfileModal').then((m) => m.TasteProfileModal), { ssr: false });
 const UserDashboard = dynamic(() => import('@/components/public/UserDashboard').then((m) => m.UserDashboard), {
@@ -46,8 +46,8 @@ function GlobalInteractiveModals() {
 
   return (
     <>
-      {isSearchModalOpen && <SearchExploreModal />}
       {selectedPost && <PromptDetailModal />}
+      {isSearchModalOpen && <SearchExploreModal />}
       {isBookmarksDrawerOpen && <BookmarksDrawer />}
       {isTasteModalOpen && <TasteProfileModal />}
       {isUserAuthModalOpen && <UserAuthModal />}
@@ -62,6 +62,20 @@ function GlobalInteractiveModals() {
 function MainApp() {
   const { currentView, showLoginModal, toastMessage } = useApp();
 
+  // KeepAlive Cache: keep views in memory once opened so navigating back is 0ms without re-fetching
+  const [cachedViews, setCachedViews] = React.useState<Set<string>>(() => new Set(['public']));
+
+  React.useEffect(() => {
+    if (currentView) {
+      setCachedViews((prev) => {
+        if (prev.has(currentView)) return prev;
+        const next = new Set(prev);
+        next.add(currentView);
+        return next;
+      });
+    }
+  }, [currentView]);
+
   if (currentView === 'admin') {
     return (
       <>
@@ -72,46 +86,60 @@ function MainApp() {
     );
   }
 
-  if (currentView === 'notifications' || currentView === 'for-you') {
-    return (
-      <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col pb-20 sm:pb-8">
-        <Header />
-        <NotificationsView />
-        <BottomNav />
-        <GlobalInteractiveModals />
-      </div>
-    );
-  }
-
-  if (currentView === 'user-dashboard') {
-    return (
-      <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col">
-        <UserDashboard />
-        <BottomNav />
-        <GlobalInteractiveModals />
-      </div>
-    );
-  }
-
-  if (currentView === 'studio-tool') {
-    return (
-      <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col">
-        <Header />
-        <AIStudioTool />
-        <BottomNav />
-        <GlobalInteractiveModals />
-      </div>
-    );
-  }
+  const isHomeActive = currentView === 'public' || currentView === 'for-you';
+  const isDashboardActive = currentView === 'user-dashboard';
+  const isStudioActive = currentView === 'studio-tool';
+  const isNotifsActive = currentView === 'notifications';
 
   return (
     <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col pb-20 sm:pb-8">
       <Header />
-      <HeroSection />
-      <ToolFilterBar />
-      <PromptGrid />
-      <SEOContentSection />
-      <Footer />
+
+      {/* 1. Public Home Feed (Always kept alive & in memory) */}
+      <main
+        id="view-public-home"
+        style={{ display: isHomeActive ? 'block' : 'none' }}
+      >
+        <HeroSection />
+        <ToolFilterBar />
+        <PromptGrid />
+        <SEOContentSection />
+        <Footer />
+      </main>
+
+      {/* 2. User Dashboard (KeepAlive cached once opened) */}
+      {cachedViews.has('user-dashboard') && (
+        <div
+          id="view-user-dashboard"
+          style={{ display: isDashboardActive ? 'block' : 'none' }}
+          className="flex-1"
+        >
+          <UserDashboard />
+        </div>
+      )}
+
+      {/* 3. AI Studio Tool / Create (KeepAlive cached once opened) */}
+      {cachedViews.has('studio-tool') && (
+        <div
+          id="view-studio-tool"
+          style={{ display: isStudioActive ? 'block' : 'none' }}
+          className="flex-1"
+        >
+          <AIStudioTool />
+        </div>
+      )}
+
+      {/* 4. Notifications / Updates View (KeepAlive cached once opened) */}
+      {cachedViews.has('notifications') && (
+        <div
+          id="view-notifications"
+          style={{ display: isNotifsActive ? 'block' : 'none' }}
+          className="flex-1"
+        >
+          <NotificationsView />
+        </div>
+      )}
+
       <BottomNav />
       <GlobalInteractiveModals />
     </div>

@@ -13,13 +13,28 @@ export default function GlobalError({
         <div className="max-w-md space-y-4">
           <h2 className="text-2xl font-bold">Something went wrong</h2>
           <p className="text-sm text-neutral-400">An unexpected system error occurred.</p>
-          <button
-            type="button"
-            onClick={() => reset()}
-            className="px-5 py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad001a] text-white font-bold text-xs cursor-pointer transition-colors"
-          >
-            Try Again
-          </button>
+          <div className="flex flex-col items-center justify-center gap-3 pt-2 w-full max-w-xs mx-auto">
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  reset();
+                } catch (e) {
+                  console.error(e);
+                }
+                window.location.reload();
+              }}
+              className="w-full px-6 py-3 rounded-full bg-[#E60023] hover:bg-[#ad001a] text-white font-bold text-sm cursor-pointer shadow-md transition-all"
+            >
+              Try Again
+            </button>
+            <a
+              href="/"
+              className="w-full inline-flex items-center justify-center px-6 py-3 rounded-full bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-sm transition-all"
+            >
+              Go to Homepage
+            </a>
+          </div>
         </div>
       </body>
     </html>

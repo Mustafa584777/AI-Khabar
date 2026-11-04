@@ -66,14 +66,30 @@ export const Header = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const handleHomeClick = (e?: React.MouseEvent) => {
-    setSelectedCategory('');
-    setSelectedSort('newest');
-    setSearchQuery('');
-    if (pathname === '/') {
-      e?.preventDefault?.();
+  const isHomeActive = currentView === 'public' || currentView === 'for-you' || (pathname === '/' && !currentView);
+  const isCreateActive = currentView === 'studio-tool' || pathname === '/create';
+
+  const handleNav = (
+    e: React.MouseEvent,
+    targetView: 'public' | 'studio-tool',
+    targetPath: string
+  ) => {
+    if (e.metaKey || e.ctrlKey || e.button === 1) return;
+    e.preventDefault();
+
+    if (pathname !== '/' && pathname !== '/create' && pathname !== '/dashboard' && pathname !== '/notifications') {
+      router.push(targetPath);
+      return;
+    }
+
+    if (targetView === 'public') {
+      setSelectedCategory('');
+      setSelectedSort('newest');
+      setSearchQuery('');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+
+    setCurrentView(targetView);
   };
 
   const handleBookmarksClick = () => {
@@ -89,10 +105,9 @@ export const Header = () => {
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3 sm:gap-4">
         {/* Left: Brand Icon & Navigation Pills */}
         <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-          <Link
+          <a
             href="/"
-            prefetch={true}
-            onClick={handleHomeClick}
+            onClick={(e) => handleNav(e, 'public', '/')}
             className="flex items-center group focus:outline-none p-1 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
             id="brand-logo-btn"
             title="Trending Copy Paste Photo Prompts"
@@ -107,30 +122,29 @@ export const Header = () => {
                 priority
               />
             </div>
-          </Link>
+          </a>
 
           {/* Desktop Navigation Tabs */}
           <nav className="flex items-center gap-1.5 sm:gap-2">
-            <Link
+            <a
               href="/"
-              prefetch={true}
-              onClick={handleHomeClick}
+              onClick={(e) => handleNav(e, 'public', '/')}
               className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
-                pathname === '/'
+                isHomeActive
                   ? 'bg-red-50 text-[#E60023] dark:bg-red-950/40 dark:text-red-400 border border-red-200/90 dark:border-red-900/50 shadow-xs'
                   : 'text-neutral-700 dark:text-neutral-300 hover:bg-[#efefef] dark:hover:bg-neutral-800'
               }`}
             >
-              <Home className={`w-4 h-4 ${pathname === '/' ? 'text-[#E60023] fill-[#E60023]' : 'text-neutral-500 dark:text-neutral-400'}`} />
+              <Home className={`w-4 h-4 ${isHomeActive ? 'text-[#E60023] fill-[#E60023]' : 'text-neutral-500 dark:text-neutral-400'}`} />
               <span>Home</span>
-            </Link>
+            </a>
 
             {/* Create / AI Studio Route Link */}
-            <Link
+            <a
               href="/create"
-              prefetch={true}
+              onClick={(e) => handleNav(e, 'studio-tool', '/create')}
               className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
-                pathname === '/create'
+                isCreateActive
                   ? 'bg-[#E60023] text-white shadow-sm'
                   : 'text-neutral-700 dark:text-neutral-300 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-[#E60023]'
               }`}
@@ -139,7 +153,7 @@ export const Header = () => {
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Create</span>
-            </Link>
+            </a>
 
             {/* Prompt Editor Route Link */}
             <Link

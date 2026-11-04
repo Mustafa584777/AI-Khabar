@@ -1,7 +1,15 @@
 @import "tailwindcss";
 
-html {
-  zoom: 67%;
+@media (min-width: 769px) {
+  html {
+    zoom: 67%;
+  }
+}
+
+@media (max-width: 768px) {
+  html {
+    zoom: 80%;
+  }
 }
 
 @layer base {

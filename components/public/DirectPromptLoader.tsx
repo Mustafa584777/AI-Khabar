@@ -14,7 +14,7 @@ import { slugify } from '@/lib/utils';
 import { Sparkles } from 'lucide-react';
 import { PromptPost } from '@/types/prompt';
 
-const PromptDetailModal = dynamic(() => import('@/components/public/PromptDetailModal').then((m) => m.PromptDetailModal), { ssr: false });
+import { PromptDetailModal } from '@/components/public/PromptDetailModal';
 const BookmarksDrawer = dynamic(() => import('@/components/public/BookmarksDrawer').then((m) => m.BookmarksDrawer), { ssr: false });
 const TasteProfileModal = dynamic(() => import('@/components/public/TasteProfileModal').then((m) => m.TasteProfileModal), { ssr: false });
 const UserDashboard = dynamic(() => import('@/components/public/UserDashboard').then((m) => m.UserDashboard), { ssr: false });

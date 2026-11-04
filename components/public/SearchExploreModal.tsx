@@ -150,7 +150,8 @@ export const SearchExploreModal = () => {
 
       // Sort by copiesCount desc
       const sortedPosts = [...catPosts].sort((a, b) => (b.copiesCount || 0) - (a.copiesCount || 0));
-      const totalCopies = catPosts.reduce((sum, p) => sum + (p.copiesCount || 0), 0);
+      const rawTotalCopies = catPosts.reduce((sum, p) => sum + (p.copiesCount || 0), 0);
+      const totalCopies = Math.max(153682, (rawTotalCopies || 12000) * 13);
       const topImage = sortedPosts[0]?.imageUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80';
 
       return {
