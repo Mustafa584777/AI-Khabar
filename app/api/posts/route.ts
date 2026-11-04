@@ -9,12 +9,12 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const includeDrafts = searchParams.get('all') === 'true';
-    const fromFirebase = searchParams.get('source') === 'firebase' || searchParams.get('admin') === 'true' || includeDrafts;
     const category = searchParams.get('category');
     const tool = searchParams.get('tool');
     const search = searchParams.get('search');
 
-    let posts = await ServerStorage.getAllPosts(includeDrafts, fromFirebase);
+    // 100% Zero-Read Guarantee: Always serve from posts.json and memory cache!
+    let posts = await ServerStorage.getAllPosts(includeDrafts, false);
 
     if (category && category !== 'all') {
       posts = posts.filter(
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
         headers: {
           'Cache-Control': includeDrafts
             ? 'no-store, no-cache, must-revalidate, max-age=0'
-            : 'public, s-maxage=60, stale-while-revalidate=120',
+            : 'public, s-maxage=3600, stale-while-revalidate=86400',
         },
       }
     );
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
     const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : undefined;
 
     const saved = await ServerStorage.savePost(body, token);
-    const allPosts = await ServerStorage.getAllPosts(true, true);
+    const allPosts = await ServerStorage.getAllPosts(true, false);
 
     try {
       revalidatePath('/');

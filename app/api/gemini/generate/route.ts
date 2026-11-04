@@ -3,9 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // Prioritized model fallback sequence: if one model fails or is unavailable, switch to the next
 const CANDIDATE_MODELS = [
+  'gemini-flash-latest',
+  'gemini-3.8-flash',
   'gemini-2.5-flash',
-  'gemini-2.0-flash',
-  'gemini-2.5-pro',
+  'gemini-3.1-flash-lite',
 ];
 
 function parseJsonSafe(rawText: string) {
@@ -176,15 +177,21 @@ Ensure the prompt includes dynamic variable placeholders like [subject], [lighti
         if (image.startsWith('data:')) {
           const match = image.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
           if (match) {
-            mimeType = match[1];
+            mimeType = (match[1] || 'image/jpeg').split(';')[0].trim();
             base64Data = match[2];
           }
         } else if (image.startsWith('http')) {
           try {
-            const imgRes = await fetch(image);
-            const arrayBuffer = await imgRes.arrayBuffer();
-            base64Data = Buffer.from(arrayBuffer).toString('base64');
-            mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
+            const imgRes = await fetch(image, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            if (imgRes.ok) {
+              const arrayBuffer = await imgRes.arrayBuffer();
+              base64Data = Buffer.from(arrayBuffer).toString('base64');
+              const rawType = imgRes.headers.get('content-type') || 'image/jpeg';
+              mimeType = rawType.split(';')[0].trim();
+            }
           } catch (fetchErr) {
             console.warn('Failed to fetch remote image for multimodal analysis:', fetchErr);
           }

@@ -93,6 +93,7 @@ export const PostEditor = () => {
   const [imageUrl, setImageUrl] = useState(
     () => existingPost?.imageUrl || ''
   );
+  const [localBase64, setLocalBase64] = useState<string>('');
   const [imageAlt, setImageAlt] = useState(
     () => existingPost?.imageAlt || (existingPost?.title || '')
   );
@@ -404,6 +405,7 @@ export const PostEditor = () => {
     try {
       const optimized = await optimizeImageFile(file);
       if (optimized) {
+        setLocalBase64(optimized);
         let finalImageUrl = optimized;
         try {
           const cleanPublicId = slug || slugify(title) || `prompt-${Date.now()}`;
@@ -601,7 +603,7 @@ export const PostEditor = () => {
           action: 'generate_full_post',
           mode: autoFillMode,
           topic: effectiveTopic || 'Photorealistic Artwork Recreation',
-          image: autoFillMode === 'image' ? imageUrl : undefined,
+          image: autoFillMode === 'image' ? (localBase64 || imageUrl) : undefined,
           tool: 'Gemini',
           category,
           categories: categories.map((c) => c.name),
@@ -609,7 +611,7 @@ export const PostEditor = () => {
       });
 
       const json = await res.json();
-      if (res.ok && json.success && json.data && !json.fallback) {
+      if (res.ok && json.success && json.data) {
         const data = json.data;
         const newTitle = data.title || (autoFillMode === 'title' ? effectiveTopic : title);
         
@@ -670,7 +672,11 @@ export const PostEditor = () => {
         }
 
         const modelNote = json.modelUsed ? ` (via ${json.modelUsed})` : '';
-        showToast(`Auto-filled prompt fields successfully${modelNote}!`);
+        if (json.fallback) {
+          showToast('Auto-filled prompt fields using smart template engine!');
+        } else {
+          showToast(`Auto-filled prompt fields successfully${modelNote}!`);
+        }
       } else {
         showToast(json.error || 'Failed to generate prompt');
       }

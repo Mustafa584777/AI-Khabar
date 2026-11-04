@@ -205,30 +205,16 @@ export const ServerStorage = {
     return { count: merged.length, posts: merged };
   },
 
-  getAllPosts: async (includeDrafts = true, fromFirebase = false): Promise<PromptPost[]> => {
-    if (fromFirebase && isFirebaseConfigured()) {
-      try {
-        const postsSnap = await getDocs(collection(firestoreDb, 'posts'));
-        const firebasePosts: PromptPost[] = [];
-        postsSnap.forEach((docSnap) => {
-          const data = docSnap.data() as PromptPost;
-          if (data && data.id) {
-            firebasePosts.push(data);
-          }
-        });
-        if (firebasePosts.length > 0) {
-          const cleaned = ServerStorage.deduplicatePosts(firebasePosts);
-          writeJsonFile(POSTS_FILE, cleaned);
-          memoryPosts = cleaned;
-          return includeDrafts ? cleaned : cleaned.filter((p) => p.status === 'published');
-        }
-      } catch (e) {
-        console.error('Error fetching posts from Firebase for admin:', e);
-      }
+  getAllPosts: async (includeDrafts = true, _fromFirebase = false): Promise<PromptPost[]> => {
+    // 100% Zero-Read Guarantee: All prompts are served from memory and local posts.json file!
+    if (memoryPosts && memoryPosts.length > 0 && Date.now() - memoryPostsTimestamp < POSTS_CACHE_TTL) {
+      return includeDrafts ? memoryPosts : memoryPosts.filter((p) => p.status === 'published');
     }
 
     const posts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
     const cleaned = ServerStorage.deduplicatePosts(posts);
+    memoryPosts = cleaned;
+    memoryPostsTimestamp = Date.now();
     return includeDrafts ? cleaned : cleaned.filter((p) => p.status === 'published');
   },
 
@@ -674,22 +660,12 @@ export const ServerStorage = {
     return true;
   },
 
-  // Site Settings
+  // Site Settings: 100% Zero-Read Guarantee
   getSettings: async (): Promise<SiteSettings> => {
-    let local = readJsonFile<SiteSettings>(SETTINGS_FILE, INITIAL_SETTINGS);
-
-    if (isFirebaseConfigured()) {
-      try {
-        const snap = await getDoc(doc(firestoreDb, 'settings', 'site_settings'));
-        if (snap.exists()) {
-          const remote = snap.data() as SiteSettings;
-          local = { ...local, ...remote };
-        }
-      } catch (err) {
-        console.warn('Firestore getSettings notice:', err);
-      }
+    if (memorySettings) {
+      return memorySettings;
     }
-
+    const local = readJsonFile<SiteSettings>(SETTINGS_FILE, INITIAL_SETTINGS);
     memorySettings = local;
     return local;
   },
@@ -717,25 +693,14 @@ export const ServerStorage = {
     return merged;
   },
 
-  // Tags
+  // Tags: 100% Zero-Read Guarantee
   getAllTags: async (): Promise<string[]> => {
-    let local = readJsonFile<string[]>(TAGS_FILE, DEFAULT_TAGS);
-
-    if (isFirebaseConfigured()) {
-      try {
-        const snap = await getDoc(doc(firestoreDb, 'settings', 'all_tags'));
-        if (snap.exists() && Array.isArray(snap.data()?.tags)) {
-          const remoteTags = snap.data()?.tags as string[];
-          local = Array.from(new Set([...local, ...remoteTags]));
-        }
-      } catch (err) {
-        console.warn('Firestore getAllTags notice:', err);
-      }
+    if (memoryTags && memoryTags.length > 0) {
+      return memoryTags;
     }
-
+    const local = readJsonFile<string[]>(TAGS_FILE, DEFAULT_TAGS);
     const clean = cleanTagsArray(local);
     memoryTags = clean;
-    writeJsonFile(TAGS_FILE, clean);
     return clean;
   },
 
@@ -817,25 +782,10 @@ export const ServerStorage = {
     return filtered;
   },
   getSearchQueries: async (limitCount = 50): Promise<SearchQueryItem[]> => {
-    let local = readJsonFile<SearchQueryItem[]>(SEARCH_QUERIES_FILE, []);
-
-    if (isFirebaseConfigured()) {
-      try {
-        const snap = await getDoc(doc(firestoreDb, 'settings', 'search_queries'));
-        if (snap.exists() && Array.isArray(snap.data()?.queries)) {
-          const remote = snap.data()?.queries as SearchQueryItem[];
-          const map = new Map<string, SearchQueryItem>();
-          for (const q of local) if (q.id) map.set(q.id, q);
-          for (const q of remote) if (q.id) map.set(q.id, q);
-          local = Array.from(map.values()).sort(
-            (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-          );
-        }
-      } catch (err) {
-        console.warn('Firestore getSearchQueries notice:', err);
-      }
+    if (memorySearchQueries && memorySearchQueries.length > 0) {
+      return memorySearchQueries.slice(0, limitCount);
     }
-
+    const local = readJsonFile<SearchQueryItem[]>(SEARCH_QUERIES_FILE, []);
     memorySearchQueries = local;
     return local.slice(0, limitCount);
   },
