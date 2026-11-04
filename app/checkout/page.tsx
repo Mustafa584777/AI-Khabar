@@ -584,7 +584,7 @@ export default function CheckoutPage() {
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm shadow-lg shadow-emerald-600/30 transition-all transform active:scale-95"
           >
-            <span>Chat on WhatsApp (+91 9045374390)</span>
+            <span>Chat on WhatsApp</span>
           </a>
         </div>
       </main>

@@ -55,6 +55,19 @@ export const PromptGrid = () => {
   const [isMounted, setIsMounted] = useState<boolean>(true);
   const [randomOrderMap, setRandomOrderMap] = useState<Map<string, number>>(() => {
     const map = new Map<string, number>();
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = sessionStorage.getItem('zeena_random_order_map');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            parsed.forEach(([id, rank]: [string, number]) => map.set(id, rank));
+            return map;
+          }
+        }
+      } catch {}
+    }
+
     if (posts && posts.length > 0) {
       const indices = posts.map((_, i) => i);
       // Fisher-Yates random shuffle
@@ -65,6 +78,12 @@ export const PromptGrid = () => {
       posts.forEach((p, idx) => {
         map.set(p.id, indices[idx]);
       });
+
+      if (typeof window !== 'undefined') {
+        try {
+          sessionStorage.setItem('zeena_random_order_map', JSON.stringify(Array.from(map.entries())));
+        } catch {}
+      }
     }
     return map;
   });
