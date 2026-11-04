@@ -205,9 +205,31 @@ export const ServerStorage = {
     return { count: merged.length, posts: merged };
   },
 
-  getAllPosts: async (includeDrafts = true, _fromFirebase = false): Promise<PromptPost[]> => {
-    // CRITICAL COST OPTIMIZATION:
-    // Strictly load prompts from in-memory cache or posts.json to guarantee ZERO Firestore read units consumed.
+  getAllPosts: async (includeDrafts = true, fromFirebase = false): Promise<PromptPost[]> => {
+    // If admin requests drafts or fromFirebase, fetch live from Firebase Firestore
+    if ((includeDrafts || fromFirebase) && isFirebaseConfigured()) {
+      try {
+        const postsSnap = await getDocs(collection(firestoreDb, 'posts'));
+        const firebasePosts: PromptPost[] = [];
+        postsSnap.forEach((docSnap) => {
+          const data = docSnap.data() as PromptPost;
+          if (data && data.id) {
+            firebasePosts.push(data);
+          }
+        });
+        if (firebasePosts.length > 0) {
+          const cleaned = ServerStorage.deduplicatePosts(firebasePosts);
+          writeJsonFile(POSTS_FILE, cleaned);
+          memoryPosts = cleaned;
+          memoryPostsTimestamp = Date.now();
+          return includeDrafts ? cleaned : cleaned.filter((p) => p.status === 'published');
+        }
+      } catch (e) {
+        console.error('Error fetching posts from Firebase for admin:', e);
+      }
+    }
+
+    // For public visitors (includeDrafts = false), load strictly from local posts.json (zero Firestore reads)
     if (memoryPosts && memoryPosts.length > 0) {
       return includeDrafts ? memoryPosts : memoryPosts.filter((p) => p.status === 'published');
     }
