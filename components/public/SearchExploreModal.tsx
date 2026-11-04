@@ -40,6 +40,7 @@ export const SearchExploreModal = () => {
     setIsAiSearchEnabled,
     aiSearchRemaining,
     isProUser,
+    planTier,
     setIsProCheckoutModalOpen,
     showToast,
     userAccount,
@@ -60,15 +61,11 @@ export const SearchExploreModal = () => {
     }
   }
 
-  // Debounced AI Search for Modal - strictly requires login and active quota
+  // Debounced AI Search for Modal - strictly requires login and active paid plan with remaining quota
   useEffect(() => {
     const q = localInput.trim();
-    if (q.length < 2 || !isAiSearchEnabled || !userAccount?.isLoggedIn) {
-      setModalAiResult(null);
-      setIsModalSearching(false);
-      return;
-    }
-    if (!isProUser && aiSearchRemaining <= 0) {
+    const isPaid = isProUser || ['starter', 'pro', 'vip'].includes(planTier) || Boolean(userAccount?.isProUser);
+    if (q.length < 2 || !isAiSearchEnabled || !userAccount?.isLoggedIn || !isPaid || aiSearchRemaining <= 0) {
       setModalAiResult(null);
       setIsModalSearching(false);
       return;
@@ -81,7 +78,7 @@ export const SearchExploreModal = () => {
       });
     }, 320);
     return () => clearTimeout(timer);
-  }, [localInput, isAiSearchEnabled, userAccount, isProUser, aiSearchRemaining, performAiSearch]);
+  }, [localInput, isAiSearchEnabled, userAccount, isProUser, planTier, aiSearchRemaining, performAiSearch]);
 
   // Handle focus and body scroll lock when modal opens
   useEffect(() => {
@@ -113,9 +110,12 @@ export const SearchExploreModal = () => {
       setSearchQuery(trimmed);
       setSelectedCategory('all');
       if (isAiSearchEnabled && userAccount?.isLoggedIn) {
-        if (!isProUser && aiSearchRemaining <= 0) {
-          showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
+        const isPaid = isProUser || ['starter', 'pro', 'vip'].includes(planTier) || Boolean(userAccount?.isProUser);
+        if (!isPaid) {
+          showToast('AI Search is an exclusive Pro feature. Upgrade to a paid plan to get 3 daily AI searches!');
           setIsProCheckoutModalOpen(true);
+        } else if (aiSearchRemaining <= 0) {
+          showToast('You have used your 3 daily AI searches for today. It will reset tomorrow!');
         } else {
           void performAiSearch(trimmed, true);
         }
@@ -294,7 +294,7 @@ export const SearchExploreModal = () => {
               </button>
             )}
 
-            {/* AI Search Toggle Button with Toggle Switch and AI Search text (No red button background) */}
+            {/* AI Search Toggle Button with Toggle Switch and AI Search text */}
             <button
               type="button"
               onClick={() => {
@@ -303,10 +303,15 @@ export const SearchExploreModal = () => {
                   openAuthModal('Please sign in or create a free account to use AI Search.');
                   return;
                 }
-                if (!isAiSearchEnabled && !isProUser && aiSearchRemaining <= 0) {
-                  showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
+                const isPaid = isProUser || ['starter', 'pro', 'vip'].includes(planTier) || Boolean(userAccount?.isProUser);
+                if (!isPaid) {
+                  showToast('AI Search is an exclusive Pro feature. Upgrade to a paid plan to get 3 daily AI searches!');
                   setIsProCheckoutModalOpen(true);
                   setIsAiSearchEnabled(false);
+                  return;
+                }
+                if (!isAiSearchEnabled && aiSearchRemaining <= 0) {
+                  showToast('You have used your 3 daily AI searches for today. It will reset tomorrow!');
                   return;
                 }
                 setIsAiSearchEnabled(!isAiSearchEnabled);
@@ -315,14 +320,14 @@ export const SearchExploreModal = () => {
               title={
                 !userAccount?.isLoggedIn
                   ? 'Log in to enable AI Search'
-                  : isAiSearchEnabled && (isProUser || aiSearchRemaining > 0)
+                  : isAiSearchEnabled && (isProUser || ['starter', 'pro', 'vip'].includes(planTier)) && aiSearchRemaining > 0
                   ? 'AI Search Enabled (Click to disable)'
                   : 'AI Search Disabled (Click to enable)'
               }
             >
               <div
                 className={`w-5 h-3 rounded-full transition-colors flex items-center px-0.5 ${
-                  isAiSearchEnabled && userAccount?.isLoggedIn && (isProUser || aiSearchRemaining > 0)
+                  isAiSearchEnabled && userAccount?.isLoggedIn && (isProUser || ['starter', 'pro', 'vip'].includes(planTier)) && aiSearchRemaining > 0
                     ? 'bg-[#E60023] justify-end'
                     : 'bg-neutral-400 dark:bg-neutral-500 justify-start'
                 }`}
@@ -422,12 +427,17 @@ export const SearchExploreModal = () => {
                             openAuthModal('Please sign in or create a free account to use AI Search.');
                             return;
                           }
-                          if (!isProUser && aiSearchRemaining <= 0) {
-                            showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
+                          const isPaid = isProUser || ['starter', 'pro', 'vip'].includes(planTier) || Boolean(userAccount?.isProUser);
+                          if (!isPaid) {
+                            showToast('AI Search is an exclusive Pro feature. Upgrade to a paid plan to get 3 daily AI searches!');
                             setIsProCheckoutModalOpen(true);
-                          } else {
-                            setIsAiSearchEnabled(true);
+                            return;
                           }
+                          if (aiSearchRemaining <= 0) {
+                            showToast('You have used your 3 daily AI searches for today. It will reset tomorrow!');
+                            return;
+                          }
+                          setIsAiSearchEnabled(true);
                         }}
                         className="px-4 py-2 rounded-full bg-[#E60023] text-white text-xs font-bold hover:bg-[#ad081b] transition-all shadow-md inline-flex items-center gap-1.5 cursor-pointer"
                       >
@@ -435,18 +445,11 @@ export const SearchExploreModal = () => {
                         <span>Enable AI Search</span>
                       </button>
                     </div>
-                  ) : aiSearchRemaining <= 0 && !isProUser ? (
+                  ) : aiSearchRemaining <= 0 ? (
                     <div className="space-y-2 max-w-sm mx-auto">
-                      <p className="text-xs text-red-600 dark:text-red-400 font-bold">
-                        You have used all of your AI search quota, please upgrade plan to unlock more limit
+                      <p className="text-xs text-amber-600 dark:text-amber-400 font-bold">
+                        You have used all 3 of your daily AI searches. Your quota will reset tomorrow!
                       </p>
-                      <button
-                        type="button"
-                        onClick={() => setIsProCheckoutModalOpen(true)}
-                        className="px-4 py-2 rounded-full bg-amber-500 text-white text-xs font-bold hover:bg-amber-600 transition-all shadow-md inline-flex items-center gap-1.5"
-                      >
-                        <span>Upgrade Plan</span>
-                      </button>
                     </div>
                   ) : (
                     <p className="text-xs text-neutral-500 max-w-sm mx-auto">

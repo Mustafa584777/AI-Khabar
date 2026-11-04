@@ -107,38 +107,32 @@ function MainApp() {
         <Footer />
       </main>
 
-      {/* 2. User Dashboard (KeepAlive cached once opened) */}
-      {cachedViews.has('user-dashboard') && (
-        <div
-          id="view-user-dashboard"
-          style={{ display: isDashboardActive ? 'block' : 'none' }}
-          className="flex-1"
-        >
-          <UserDashboard />
-        </div>
-      )}
+      {/* 2. User Dashboard (Always mounted for instant 0ms cached opening) */}
+      <div
+        id="view-user-dashboard"
+        style={{ display: isDashboardActive ? 'block' : 'none' }}
+        className="flex-1"
+      >
+        <UserDashboard />
+      </div>
 
-      {/* 3. AI Studio Tool / Create (KeepAlive cached once opened) */}
-      {cachedViews.has('studio-tool') && (
-        <div
-          id="view-studio-tool"
-          style={{ display: isStudioActive ? 'block' : 'none' }}
-          className="flex-1"
-        >
-          <AIStudioTool />
-        </div>
-      )}
+      {/* 3. AI Studio Tool / Create (Always mounted for instant 0ms cached opening) */}
+      <div
+        id="view-studio-tool"
+        style={{ display: isStudioActive ? 'block' : 'none' }}
+        className="flex-1"
+      >
+        <AIStudioTool />
+      </div>
 
-      {/* 4. Notifications / Updates View (KeepAlive cached once opened) */}
-      {cachedViews.has('notifications') && (
-        <div
-          id="view-notifications"
-          style={{ display: isNotifsActive ? 'block' : 'none' }}
-          className="flex-1"
-        >
-          <NotificationsView />
-        </div>
-      )}
+      {/* 4. Notifications / Updates View (Always mounted for instant 0ms cached opening) */}
+      <div
+        id="view-notifications"
+        style={{ display: isNotifsActive ? 'block' : 'none' }}
+        className="flex-1"
+      >
+        <NotificationsView />
+      </div>
 
       <BottomNav />
       <GlobalInteractiveModals />

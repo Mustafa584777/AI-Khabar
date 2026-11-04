@@ -37,6 +37,7 @@ export const HeroSection = () => {
     setIsAiSearchEnabled,
     aiSearchRemaining,
     isProUser,
+    planTier,
     setIsProCheckoutModalOpen,
     showToast,
     userAccount,
@@ -110,19 +111,13 @@ export const HeroSection = () => {
 
   return (
     <section className="relative w-full max-w-4xl mx-auto pt-8 pb-4 px-4 sm:px-6 text-center">
-      {/* Decorative Badge */}
-      <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#E60023]/10 text-[#E60023] text-xs font-bold mb-5 animate-fade-in">
-        <Sparkles className="w-3.5 h-3.5" />
-        <span>Curated Photo Prompt Library</span>
-      </div>
-
       <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-neutral-900 dark:text-white mb-4 animate-fade-in [animation-delay:100ms]">
         {settings.heroHeadline || 'Trending Copy Paste Photo Prompts'}
       </h1>
 
       <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto mb-6 animate-fade-in [animation-delay:200ms]">
         {settings.heroSubheadline ||
-          'Explore 1,000+ curated photo prompts for Gemini and ChatGPT. Copy with 1 click.'}
+          "Explore professionally crafted photo prompts for Gemini, and ChatGPT. Copy with 1 click. Decode any image's prompt, generate new version, create new prompt from idea or edit an existing one."}
       </p>
 
       {/* AI Image to Prompt Box */}
@@ -155,9 +150,12 @@ export const HeroSection = () => {
                   recordSearchQuery(q);
                   setIsSearchOpen(false);
                   if (isAiSearchEnabled && userAccount?.isLoggedIn) {
-                    if (!isProUser && aiSearchRemaining <= 0) {
-                      showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
+                    const isPaid = isProUser || ['starter', 'pro', 'vip'].includes(planTier) || Boolean(userAccount?.isProUser);
+                    if (!isPaid) {
+                      showToast('AI Search is an exclusive Pro feature. Upgrade to a paid plan to get 3 daily AI searches!');
                       setIsProCheckoutModalOpen(true);
+                    } else if (aiSearchRemaining <= 0) {
+                      showToast('You have used your 3 daily AI searches for today. It will reset tomorrow!');
                     } else {
                       void performAiSearch(q, true);
                     }
@@ -185,7 +183,7 @@ export const HeroSection = () => {
             </button>
           )}
 
-          {/* AI Search Toggle Button Inside Hero Search Box (No red button background) */}
+          {/* AI Search Toggle Button Inside Hero Search Box */}
           <button
             type="button"
             onClick={(e) => {
@@ -196,9 +194,14 @@ export const HeroSection = () => {
                 openAuthModal('Please sign in or create a free account to use AI Search.');
                 return;
               }
-              if (!isAiSearchEnabled && !isProUser && aiSearchRemaining <= 0) {
-                showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
+              const isPaid = isProUser || ['starter', 'pro', 'vip'].includes(planTier) || Boolean(userAccount?.isProUser);
+              if (!isPaid) {
+                showToast('AI Search is an exclusive Pro feature. Upgrade to a paid plan to get 3 daily AI searches!');
                 setIsProCheckoutModalOpen(true);
+                return;
+              }
+              if (!isAiSearchEnabled && aiSearchRemaining <= 0) {
+                showToast('You have used your 3 daily AI searches for today. It will reset tomorrow!');
                 return;
               }
               setIsAiSearchEnabled(!isAiSearchEnabled);

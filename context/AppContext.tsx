@@ -571,8 +571,13 @@ export const AppProvider = ({
     // 2. Active plan activation
     setIsProUserState(true);
     setPlanTierState(tier);
-    const allocatedAiSearch = serverData?.aiSearchRemaining ?? (planFeatures.unlimitedSearches ? 999999 : planFeatures.aiSearchQuota);
-    setAiSearchRemainingState(allocatedAiSearch);
+    const today = new Date().toISOString().slice(0, 10);
+    const allocatedAiSearch = 3;
+    setAiSearchRemainingState(3);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auraprompt_ai_search_remaining', '3');
+      localStorage.setItem('auraprompt_ai_search_date', today);
+    }
 
     const addedCredits = planFeatures.credits;
     const addedRequests = planFeatures.promptRequests;
@@ -967,19 +972,31 @@ export const AppProvider = ({
       }
 
       const isPaidTier = resolvedTier !== 'free' || synced.isProUser === true;
-      const targetQuota = cycleCfg.unlimitedSearches ? 999999 : (cycleCfg.aiSearchQuota || 5);
-      let resolvedSearches: number;
+      let resolvedSearches: number = 0;
       if (isPaidTier) {
-        const rawSearches = synced.aiSearchRemaining !== undefined ? Number(synced.aiSearchRemaining) : targetQuota;
-        // Auto-heal: If an active paid plan had searches erroneously clamped to <= 10, restore to full plan quota!
-        resolvedSearches = (!isNaN(rawSearches) && rawSearches > 10) ? Math.min(rawSearches, targetQuota) : targetQuota;
+        const today = new Date().toISOString().slice(0, 10);
+        const savedDate = typeof window !== 'undefined' ? localStorage.getItem('auraprompt_ai_search_date') : null;
+        const savedRemaining = typeof window !== 'undefined' ? localStorage.getItem('auraprompt_ai_search_remaining') : null;
+        if (savedDate !== today) {
+          resolvedSearches = 3;
+        } else if (savedRemaining !== null) {
+          resolvedSearches = Math.min(3, Math.max(0, parseInt(savedRemaining, 10) || 0));
+        } else {
+          resolvedSearches = 3;
+        }
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('auraprompt_ai_search_date', today);
+          localStorage.setItem('auraprompt_ai_search_remaining', String(resolvedSearches));
+        }
       } else {
-        resolvedSearches = synced.aiSearchRemaining !== undefined ? Math.min(Number(synced.aiSearchRemaining), 5) : 5;
+        resolvedSearches = 0;
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('auraprompt_ai_search_remaining', '0');
+          localStorage.setItem('auraprompt_ai_search_enabled', 'false');
+        }
+        setIsAiSearchEnabledState(false);
       }
       setAiSearchRemainingState(resolvedSearches);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('auraprompt_ai_search_remaining', String(resolvedSearches));
-      }
 
       setUnlockedPromptIds(synced.unlockedPromptIds || []);
       if (typeof window !== 'undefined') {
@@ -1059,14 +1076,7 @@ export const AppProvider = ({
       setPromptRequestsRemainingState(resolvedRequests);
 
       const isPaidTierAcc = resolvedTier !== 'free' || synced.isProUser === true;
-      const targetQuotaAcc = PLAN_CONFIGS[resolvedTier]?.unlimitedSearches ? 999999 : (PLAN_CONFIGS[resolvedTier]?.aiSearchQuota || 100);
-      let resolvedSearches: number;
-      if (isPaidTierAcc) {
-        const raw = synced.aiSearchRemaining !== undefined ? Number(synced.aiSearchRemaining) : targetQuotaAcc;
-        resolvedSearches = (!isNaN(raw) && raw > 10) ? Math.min(raw, targetQuotaAcc) : targetQuotaAcc;
-      } else {
-        resolvedSearches = synced.aiSearchRemaining !== undefined ? Math.min(Number(synced.aiSearchRemaining), 5) : 5;
-      }
+      const resolvedSearches = isPaidTierAcc ? 3 : 0;
       setAiSearchRemainingState(resolvedSearches);
 
       setUnlockedPromptIds(synced.unlockedPromptIds || []);
@@ -1396,7 +1406,7 @@ export const AppProvider = ({
         
         let resolvedCredits = synced.toolCredits !== undefined ? Number(synced.toolCredits) : Number(localStorage.getItem('auraprompt_tool_credits') || 5);
         let resolvedReqs = synced.promptRequestsRemaining !== undefined ? Number(synced.promptRequestsRemaining) : 0;
-        let resolvedAiSearchCount = synced.aiSearchRemaining !== undefined ? Number(synced.aiSearchRemaining) : (finalTier !== 'free' ? 200 : 5);
+        let resolvedAiSearchCount = 0;
         let resolvedSavesLimitCount = 10;
 
         if (isExpiredNow) {
@@ -1414,7 +1424,7 @@ export const AppProvider = ({
             const qpCfg = getPlanFeaturesForCycle(queuedToPromote.planTier, queuedToPromote.billingCycle || 'monthly');
             resolvedCredits = (Number(resolvedCredits) || 0) + (queuedToPromote.credits || qpCfg.credits);
             resolvedReqs = queuedToPromote.promptRequests || qpCfg.promptRequests;
-            resolvedAiSearchCount = qpCfg.unlimitedSearches ? 999999 : (queuedToPromote.aiSearchQuota || qpCfg.aiSearchQuota);
+            resolvedAiSearchCount = 3;
             resolvedSavesLimitCount = qpCfg.savesLimit;
           } else {
             // Demote to free tier without loss of any data (Rule 4 & 7)
@@ -1424,10 +1434,9 @@ export const AppProvider = ({
             setIsProUserState(false);
             localStorage.setItem('auraprompt_plan_tier', 'free');
             localStorage.setItem('auraprompt_pro_member', 'false');
-            resolvedReqs = 0; // Rule 7: prompt request 0 ho jayegi
-            resolvedAiSearchCount = 5; // Rule 7: ai searches 5/5 per set ho jayegi
-            resolvedSavesLimitCount = 10; // Rule 7: saves limit free tier ke 10 saves tak reset ho jayegi
-            // resolvedCredits stays intact!
+            resolvedReqs = 0;
+            resolvedAiSearchCount = 0;
+            resolvedSavesLimitCount = 10;
           }
         } else if (finalTier !== 'free') {
           const planCfg = getPlanFeaturesForCycle(finalTier, (synced.billingCycle as any) || 'monthly');
@@ -1436,16 +1445,23 @@ export const AppProvider = ({
           if (resolvedReqs <= 0 && userSubmittedCount < planCfg.promptRequests) {
             resolvedReqs = Math.max(0, planCfg.promptRequests - userSubmittedCount);
           }
-          // Auto-heal: If an active paid account has <= 10 AI searches remaining (from earlier clamp bug), restore to full plan quota!
-          const targetQuota = planCfg.unlimitedSearches ? 999999 : planCfg.aiSearchQuota;
-          if (resolvedAiSearchCount <= 10) {
-            resolvedAiSearchCount = targetQuota;
+          const today = new Date().toISOString().slice(0, 10);
+          const savedDate = localStorage.getItem('auraprompt_ai_search_date');
+          const savedRemaining = localStorage.getItem('auraprompt_ai_search_remaining');
+          if (savedDate !== today) {
+            resolvedAiSearchCount = 3;
+            localStorage.setItem('auraprompt_ai_search_date', today);
+            localStorage.setItem('auraprompt_ai_search_remaining', '3');
+          } else if (savedRemaining !== null) {
+            resolvedAiSearchCount = Math.min(3, Math.max(0, parseInt(savedRemaining, 10) || 0));
           } else {
-            resolvedAiSearchCount = Math.min(resolvedAiSearchCount, targetQuota);
+            resolvedAiSearchCount = 3;
+            localStorage.setItem('auraprompt_ai_search_date', today);
+            localStorage.setItem('auraprompt_ai_search_remaining', '3');
           }
         } else {
           resolvedReqs = 0;
-          resolvedAiSearchCount = Math.min(resolvedAiSearchCount, 5);
+          resolvedAiSearchCount = 0;
         }
 
         // Tool credits: respect exact consumed balance (Rule 2: unused credits never expire or overwrite)
@@ -1527,7 +1543,7 @@ export const AppProvider = ({
             const newExpires = qp.scheduledExpiresAt || calculatePlanDates(newStart, qpCfg.durationDays).planExpiresAt;
             const newCredits = (toolCredits || 0) + (qp.credits || qpCfg.credits);
             const newRequests = qp.promptRequests || qpCfg.promptRequests;
-            const newAiSearches = qpCfg.unlimitedSearches ? 999999 : (qp.aiSearchQuota || qpCfg.aiSearchQuota);
+            const newAiSearches = 3;
 
             setPlanTierState(qp.planTier);
             setIsProUserState(true);
@@ -1545,7 +1561,8 @@ export const AppProvider = ({
               localStorage.setItem('auraprompt_plan_expires_at', newExpires);
               localStorage.setItem('auraprompt_tool_credits', String(newCredits));
               localStorage.setItem('auraprompt_prompt_requests', String(newRequests));
-              localStorage.setItem('auraprompt_ai_search_remaining', String(newAiSearches));
+              localStorage.setItem('auraprompt_ai_search_remaining', '3');
+              localStorage.setItem('auraprompt_ai_search_date', new Date().toISOString().slice(0, 10));
               localStorage.setItem('auraprompt_saves_limit', String(qpCfg.savesLimit));
               localStorage.removeItem('auraprompt_queued_plan');
             }
@@ -1559,7 +1576,7 @@ export const AppProvider = ({
                 planExpiresAt: newExpires,
                 toolCredits: newCredits,
                 promptRequestsRemaining: newRequests,
-                aiSearchRemaining: newAiSearches,
+                aiSearchRemaining: 3,
                 savesLimit: qpCfg.savesLimit,
                 queuedPlan: null,
               });
@@ -1570,13 +1587,15 @@ export const AppProvider = ({
             setPlanTierState('free');
             setIsProUserState(false);
             setPromptRequestsRemainingState(0);
-            setAiSearchRemainingState(5);
+            setAiSearchRemainingState(0);
+            setIsAiSearchEnabledState(false);
 
             if (typeof window !== 'undefined') {
               localStorage.setItem('auraprompt_plan_tier', 'free');
               localStorage.setItem('auraprompt_pro_member', 'false');
               localStorage.setItem('auraprompt_prompt_requests', '0');
-              localStorage.setItem('auraprompt_ai_search_remaining', '5');
+              localStorage.setItem('auraprompt_ai_search_remaining', '0');
+              localStorage.setItem('auraprompt_ai_search_enabled', 'false');
               localStorage.setItem('auraprompt_saves_limit', '10');
             }
 
@@ -1586,7 +1605,7 @@ export const AppProvider = ({
                 planTier: 'free',
                 isProUser: false,
                 promptRequestsRemaining: 0,
-                aiSearchRemaining: 5,
+                aiSearchRemaining: 0,
                 savesLimit: 10,
               });
             }
@@ -1685,6 +1704,10 @@ export const AppProvider = ({
     if (typeof window !== 'undefined') {
       const acc = StorageService.getUserAccount();
       if (!acc || !acc.isLoggedIn) return false;
+      const isPro = localStorage.getItem('auraprompt_pro_member') === 'true' || acc.isProUser;
+      const planTier = (localStorage.getItem('auraprompt_plan_tier') as PlanTier) || acc.planTier || 'free';
+      const isPaid = isPro || ['starter', 'pro', 'vip'].includes(planTier);
+      if (!isPaid) return false;
       const saved = localStorage.getItem('auraprompt_ai_search_enabled');
       if (saved !== null) return saved === 'true';
       return true;
@@ -1710,24 +1733,29 @@ export const AppProvider = ({
           ? acc.planTier
           : (isProMember ? 'pro' : 'free');
 
-      const planCfg = PLAN_CONFIGS[effectiveTier] || PLAN_CONFIGS.free;
-      if (planCfg.unlimitedSearches) return 999999;
+      const isPaid = effectiveTier !== 'free' || isProMember;
+      if (!isPaid) return 0; // Free users get 0 AI searches
 
+      // Daily 3 searches for all paid plans
+      const today = new Date().toISOString().slice(0, 10);
+      const savedDate = localStorage.getItem('auraprompt_ai_search_date');
       const saved = localStorage.getItem('auraprompt_ai_search_remaining');
+
+      if (savedDate !== today) {
+        localStorage.setItem('auraprompt_ai_search_date', today);
+        localStorage.setItem('auraprompt_ai_search_remaining', '3');
+        return 3;
+      }
+
       if (saved !== null) {
         const parsed = parseInt(saved, 10);
         if (!isNaN(parsed) && parsed >= 0) {
-          // If on a paid plan and parsed is <= 10 (clamped by earlier bug), auto-heal to full plan quota!
-          if (effectiveTier !== 'free') {
-            if (parsed <= 10) return planCfg.aiSearchQuota;
-            return Math.min(parsed, planCfg.aiSearchQuota);
-          }
-          return Math.min(parsed, 5);
+          return Math.min(parsed, 3);
         }
       }
-      return effectiveTier !== 'free' ? planCfg.aiSearchQuota : 5;
+      return 3;
     }
-    return 5; // 5 free AI searches lifetime for free users
+    return 0; // Free user gets 0 AI searches
   });
 
   const setAiSearchRemaining = useCallback((num: number) => {
@@ -1743,10 +1771,54 @@ export const AppProvider = ({
     aiSearchRemainingRef.current = aiSearchRemaining;
   }, [aiSearchRemaining]);
 
+  // Periodic and on-focus check for daily AI search quota reset (3 searches every new calendar day)
+  useEffect(() => {
+    const checkDailyAiReset = () => {
+      const acc = userAccount || (typeof window !== 'undefined' ? StorageService.getUserAccount() : null);
+      const isPaid = isProUser || ['starter', 'pro', 'vip'].includes(planTier) || Boolean(acc?.isProUser);
+      if (!isPaid) {
+        if (aiSearchRemaining !== 0) setAiSearchRemainingState(0);
+        return;
+      }
+      const today = new Date().toISOString().slice(0, 10);
+      const savedDate = typeof window !== 'undefined' ? localStorage.getItem('auraprompt_ai_search_date') : null;
+      if (savedDate !== today) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('auraprompt_ai_search_date', today);
+          localStorage.setItem('auraprompt_ai_search_remaining', '3');
+        }
+        setAiSearchRemainingState(3);
+        aiSearchRemainingRef.current = 3;
+      }
+    };
+    checkDailyAiReset();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', checkDailyAiReset);
+    }
+    const interval = setInterval(checkDailyAiReset, 60000);
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('focus', checkDailyAiReset);
+      }
+      clearInterval(interval);
+    };
+  }, [isProUser, planTier, userAccount, aiSearchRemaining]);
+
   const performAiSearch = useCallback(async (query: string, deductQuota: boolean = false): Promise<AiSearchResult | null> => {
     // STRICT REQUIREMENT: Only logged-in users are permitted to access and run AI search
     const acc = userAccount || (typeof window !== 'undefined' ? StorageService.getUserAccount() : null);
     if (!acc || !acc.isLoggedIn) {
+      setAiSearchResults(null);
+      setIsAiSearching(false);
+      return null;
+    }
+
+    // STRICT REQUIREMENT A: AI Search is a paid feature only. Free users do NOT get access.
+    const isPaid = isProUser || ['starter', 'pro', 'vip'].includes(planTier) || Boolean(acc.isProUser);
+    if (!isPaid) {
+      showToast('AI Search is an exclusive Pro feature. Upgrade to a paid plan to get 3 daily AI searches!');
+      setIsProCheckoutModalOpen(true);
+      setIsAiSearchEnabled(false);
       setAiSearchResults(null);
       setIsAiSearching(false);
       return null;
@@ -1759,12 +1831,21 @@ export const AppProvider = ({
       return null;
     }
 
-    const planCfg = PLAN_CONFIGS[planTier] || PLAN_CONFIGS.free;
-    const currentRemaining = aiSearchRemainingRef.current;
+    // Check daily quota reset
+    const today = new Date().toISOString().slice(0, 10);
+    if (typeof window !== 'undefined') {
+      const savedDate = localStorage.getItem('auraprompt_ai_search_date');
+      if (savedDate !== today) {
+        localStorage.setItem('auraprompt_ai_search_date', today);
+        localStorage.setItem('auraprompt_ai_search_remaining', '3');
+        setAiSearchRemainingState(3);
+        aiSearchRemainingRef.current = 3;
+      }
+    }
 
-    if (!planCfg.unlimitedSearches && currentRemaining <= 0) {
-      showToast(`You have used all of your AI search quota (${planCfg.aiSearchQuota} searches). Please upgrade your plan to unlock more searches!`);
-      setIsProCheckoutModalOpen(true);
+    const currentRemaining = aiSearchRemainingRef.current;
+    if (currentRemaining <= 0) {
+      showToast('You have used your 3 daily AI searches for today. Your quota will reset tomorrow with 3 fresh AI searches!');
       setIsAiSearchEnabled(false);
       setAiSearchResults(null);
       setIsAiSearching(false);
@@ -1774,7 +1855,7 @@ export const AppProvider = ({
     const cacheKey = clean.toLowerCase();
 
     let shouldDeduct = false;
-    if (!planCfg.unlimitedSearches && deductQuota) {
+    if (deductQuota) {
       if (!aiSearchDeductedRef.current.has(cacheKey)) {
         aiSearchDeductedRef.current.add(cacheKey);
         shouldDeduct = true;
@@ -1787,7 +1868,9 @@ export const AppProvider = ({
         setAiSearchRemainingState((prev) => {
           const next = Math.max(0, prev - 1);
           aiSearchRemainingRef.current = next;
+          const currentDay = new Date().toISOString().slice(0, 10);
           if (typeof window !== 'undefined') {
+            localStorage.setItem('auraprompt_ai_search_date', currentDay);
             localStorage.setItem('auraprompt_ai_search_remaining', next.toString());
           }
           if (acc && acc.id && acc.isLoggedIn) {

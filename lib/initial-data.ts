@@ -84,7 +84,7 @@ export const INITIAL_SETTINGS: SiteSettings = {
   siteUrl: 'https://zeenaprompt.com',
   logoText: 'Zeenaprompt',
   heroHeadline: 'Trending Copy Paste Photo Prompts',
-  heroSubheadline: 'Explore curated photo prompts for Gemini, Midjourney and ChatGPT. Copy with 1 click.',
+  heroSubheadline: "Explore professionally crafted photo prompts for Gemini, and ChatGPT. Copy with 1 click. Decode any image's prompt, generate new version, create new prompt from idea or edit an existing one.",
   defaultTool: 'Gemini',
   enableAiGenerator: true,
   footerText: '© 2026 Zeenaprompt - Built for creators, designers & engineers. All prompts free to copy and commercial use.',

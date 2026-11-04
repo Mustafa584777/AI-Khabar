@@ -45,7 +45,7 @@ const FAQS = [
   },
   {
     question: 'What is AI Search and how does it work?',
-    answer: 'AI Search allows you to search across thousands of curated visual prompts using natural conversational queries. Paid plans include generous AI Search quotas ranging from 100 searches up to 500 per month.',
+    answer: 'AI Search allows you to search across thousands of curated visual prompts using natural conversational queries. All paid subscription plans include 3 AI searches every day.',
   },
   {
     question: 'Are premium prompts unlocked with subscriptions?',
@@ -123,8 +123,8 @@ export default function CheckoutPage() {
 
         {/* Hero Section */}
         <div className="text-center space-y-3 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/40 text-[#E60023] text-xs font-bold shadow-xs">
-            <ShieldCheck className="w-4 h-4" />
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 text-xs font-bold shadow-xs">
+            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>Official Razorpay Standard Web Checkout</span>
           </div>
 
@@ -161,12 +161,6 @@ export default function CheckoutPage() {
               </>
             )}
           </div>
-
-          {isProUser && (
-            <p className="text-[11px] text-amber-700 dark:text-amber-400/90 font-medium">
-              💡 <strong>Active Plan Protection:</strong> Any new plan you choose will start automatically on your expiry date at 11:59 PM.
-            </p>
-          )}
 
           {/* Monthly / Yearly Billing Toggle */}
           <div className="pt-4 flex justify-center">
@@ -237,9 +231,7 @@ export default function CheckoutPage() {
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-emerald-500 font-bold">✓</span>
-                  <span>
-                    <strong>{billingCycle === 'yearly' ? '1,200 AI Searches' : '100 AI Searches'}</strong>
-                  </span>
+                  <span className="font-bold text-neutral-900 dark:text-white">AI Search</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-emerald-500 font-bold">✓</span>
@@ -257,8 +249,8 @@ export default function CheckoutPage() {
               planName={billingCycle === 'monthly' ? 'Starter Monthly' : 'Starter Yearly'}
               description={
                 billingCycle === 'monthly'
-                  ? 'Monthly Starter - 100 Credits, 100 AI Searches, Unlimited Saves'
-                  : 'Yearly Starter - 1200 Credits, 1200 AI Searches, Unlimited Saves upfront'
+                  ? 'Monthly Starter - 100 Credits, AI Search, Unlimited Saves'
+                  : 'Yearly Starter - 1200 Credits, AI Search, Unlimited Saves upfront'
               }
               buttonText={billingCycle === 'monthly' ? 'Get Starter for ₹25' : 'Get Starter Yearly for ₹245'}
               variant="secondary"
@@ -308,9 +300,7 @@ export default function CheckoutPage() {
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-[#E60023] font-bold">✓</span>
-                  <span>
-                    <strong>{billingCycle === 'yearly' ? '2,400 AI Searches' : '200 AI Searches'}</strong>
-                  </span>
+                  <span className="font-bold text-neutral-900 dark:text-white">AI Search</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-[#E60023] font-bold">✓</span>
@@ -328,8 +318,8 @@ export default function CheckoutPage() {
               planName={billingCycle === 'monthly' ? 'Pro Monthly' : 'Pro Yearly'}
               description={
                 billingCycle === 'monthly'
-                  ? 'Monthly Pro - 250 Credits, 200 AI Searches, Unlimited Saves'
-                  : 'Yearly Pro - 3000 Credits, 2400 AI Searches, Unlimited Saves upfront'
+                  ? 'Monthly Pro - 250 Credits, AI Search, Unlimited Saves'
+                  : 'Yearly Pro - 3000 Credits, AI Search, Unlimited Saves upfront'
               }
               buttonText={billingCycle === 'monthly' ? 'Get Pro for ₹50' : 'Get Pro Yearly for ₹495'}
               variant="pill"
@@ -376,9 +366,7 @@ export default function CheckoutPage() {
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-purple-500 font-bold">✓</span>
-                  <span>
-                    <strong>{billingCycle === 'yearly' ? '6,000 AI Searches' : '500 AI Searches'}</strong>
-                  </span>
+                  <span className="font-bold text-neutral-900 dark:text-white">AI Search</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-purple-500 font-bold">✓</span>
@@ -396,8 +384,8 @@ export default function CheckoutPage() {
               planName={billingCycle === 'monthly' ? 'VIP Monthly' : 'VIP Yearly'}
               description={
                 billingCycle === 'monthly'
-                  ? 'Monthly VIP - 600 Credits, 500 AI Searches, Unlimited Saves'
-                  : 'Yearly VIP - 7200 Credits, 6000 AI Searches, Unlimited Saves upfront'
+                  ? 'Monthly VIP - 600 Credits, AI Search, Unlimited Saves'
+                  : 'Yearly VIP - 7200 Credits, AI Search, Unlimited Saves upfront'
               }
               buttonText={billingCycle === 'monthly' ? 'Get VIP for ₹100' : 'Get VIP Yearly for ₹995'}
               variant="secondary"
@@ -474,18 +462,12 @@ export default function CheckoutPage() {
                 </tr>
                 <tr>
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">
-                    {billingCycle === 'monthly' ? 'AI Search Quota' : 'Total AI Searches'}
+                    AI Search
                   </td>
-                  <td className="py-3.5 px-4 text-center font-medium">5 lifetime</td>
-                  <td className="py-3.5 px-4 text-center font-bold">
-                    {billingCycle === 'monthly' ? '100' : '1,200'}
-                  </td>
-                  <td className="py-3.5 px-4 text-center font-bold">
-                    {billingCycle === 'monthly' ? '200' : '2,400'}
-                  </td>
-                  <td className="py-3.5 px-4 text-center font-bold">
-                    {billingCycle === 'monthly' ? '500' : '6,000'}
-                  </td>
+                  <td className="py-3.5 px-4 text-center font-medium"><X className="w-4 h-4 text-red-500 inline-block" /></td>
+                  <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400"><Check className="w-4 h-4 text-emerald-500 inline-block" /></td>
+                  <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400"><Check className="w-4 h-4 text-emerald-500 inline-block" /></td>
+                  <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400"><Check className="w-4 h-4 text-emerald-500 inline-block" /></td>
                 </tr>
                 <tr>
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Saves & History Limit</td>

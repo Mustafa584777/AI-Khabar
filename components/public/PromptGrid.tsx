@@ -45,6 +45,7 @@ export const PromptGrid = () => {
     setIsAiSearchEnabled,
     aiSearchRemaining,
     isProUser,
+    planTier,
     setIsProCheckoutModalOpen,
     showToast,
     userAccount,
@@ -495,12 +496,17 @@ export const PromptGrid = () => {
                       openAuthModal('Please sign in or create a free account to use AI Search.');
                       return;
                     }
-                    if (!isProUser && aiSearchRemaining <= 0) {
-                      showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');
+                    const isPaid = isProUser || ['starter', 'pro', 'vip'].includes(planTier) || Boolean(userAccount?.isProUser);
+                    if (!isPaid) {
+                      showToast('AI Search is an exclusive Pro feature. Upgrade to a paid plan to get 3 daily AI searches!');
                       setIsProCheckoutModalOpen(true);
-                    } else {
-                      setIsAiSearchEnabled(true);
+                      return;
                     }
+                    if (aiSearchRemaining <= 0) {
+                      showToast('You have used your 3 daily AI searches for today. It will reset tomorrow!');
+                      return;
+                    }
+                    setIsAiSearchEnabled(true);
                   }}
                   className="px-5 py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-md transition-all inline-flex items-center gap-1.5 cursor-pointer"
                 >
@@ -515,22 +521,15 @@ export const PromptGrid = () => {
                 </button>
               </div>
             </div>
-          ) : searchQuery.trim() && aiSearchRemaining <= 0 && !isProUser ? (
+          ) : searchQuery.trim() && aiSearchRemaining <= 0 ? (
             <div className="space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center mx-auto mb-2">
+              <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto mb-2">
                 <Sparkles className="w-7 h-7" />
               </div>
-              <p className="text-sm font-bold text-red-600 dark:text-red-400">
-                You have used all of your AI search quota, please upgrade plan to unlock more limit
+              <p className="text-sm font-bold text-amber-700 dark:text-amber-300">
+                You have used your 3 daily AI searches. Your quota will reset tomorrow!
               </p>
               <div className="flex items-center justify-center gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsProCheckoutModalOpen(true)}
-                  className="px-5 py-2.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-md transition-all inline-flex items-center gap-1.5"
-                >
-                  <span>Upgrade Plan</span>
-                </button>
                 <button
                   onClick={() => setSearchQuery('')}
                   className="px-5 py-2.5 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs font-bold transition-all"

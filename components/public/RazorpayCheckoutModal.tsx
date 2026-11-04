@@ -37,7 +37,7 @@ const SUBSCRIPTION_PLANS: PlanOption[] = [
     displayPrice: '₹25',
     originalPrice: '₹50',
     period: '',
-    features: ['Premium Prompts', '100 prompt tool credits', '100 AI Searches', 'Unlimited saves & history'],
+    features: ['Premium Prompts', '100 prompt tool credits', 'AI Search', 'Unlimited saves & history'],
     icon: <Sparkles className="w-5 h-5 text-amber-500" />,
   },
   {
@@ -48,7 +48,7 @@ const SUBSCRIPTION_PLANS: PlanOption[] = [
     originalPrice: '₹100',
     period: '',
     badge: 'Most Popular',
-    features: ['Premium Prompts', '250 prompt tool credits', '200 AI Searches', 'Unlimited saves & history'],
+    features: ['Premium Prompts', '250 prompt tool credits', 'AI Search', 'Unlimited saves & history'],
     icon: <Zap className="w-5 h-5 text-[#E60023]" />,
   },
   {
@@ -59,7 +59,7 @@ const SUBSCRIPTION_PLANS: PlanOption[] = [
     originalPrice: '₹200',
     period: '',
     badge: 'Best Value',
-    features: ['Premium Prompts', '600 prompt tool credits', '500 AI Searches', 'Unlimited saves & history'],
+    features: ['Premium Prompts', '600 prompt tool credits', 'AI Search', 'Unlimited saves & history'],
     icon: <Crown className="w-5 h-5 text-purple-500" />,
   },
 ];

@@ -480,9 +480,9 @@ export const UserDashboard = () => {
             </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
-                {currentPlanConfig.unlimitedSearches ? 'Unlimited' : `${Math.min(Math.max(0, aiSearchRemaining), currentPlanConfig.aiSearchQuota)}/${currentPlanConfig.aiSearchQuota}`}
+                {isPaid ? `${Math.min(3, Math.max(0, aiSearchRemaining))}/3 Daily` : '0 (Paid Only)'}
               </div>
-              <div className="text-[11px] text-neutral-500 font-medium">AI Search Quota</div>
+              <div className="text-[11px] text-neutral-500 font-medium">Daily AI Searches</div>
             </div>
 
           </div>
@@ -582,8 +582,8 @@ export const UserDashboard = () => {
                 </div>
                 <p className="text-xs sm:text-sm text-neutral-300 max-w-xl leading-relaxed">
                   {isPaid
-                    ? `You have full access to all premium prompts, ${toolCredits} prompt tool credits, ${currentPlanConfig.unlimitedSaves ? 'unlimited' : currentPlanConfig.savesLimit} saves & history, and ${currentPlanConfig.unlimitedSearches ? 'unlimited' : currentPlanConfig.aiSearchQuota} AI searches.`
-                    : 'Unlock all premium prompts instantly, priority tool credits, increased saves & history quota, and custom prompt requests.'}
+                    ? `You have full access to all premium prompts, ${toolCredits} prompt tool credits, ${currentPlanConfig.unlimitedSaves ? 'unlimited' : currentPlanConfig.savesLimit} saves & history, and 3 daily AI searches.`
+                    : 'Unlock all premium prompts instantly, priority tool credits, increased saves & history quota, and 3 daily AI searches.'}
                 </p>
                 {isPaid && (
                   <div className="space-y-1 text-xs text-amber-400 font-bold">
