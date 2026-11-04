@@ -55,17 +55,44 @@ export const PromptGrid = () => {
   const [isMounted, setIsMounted] = useState<boolean>(true);
   const [randomOrderMap, setRandomOrderMap] = useState<Map<string, number>>(() => {
     const map = new Map<string, number>();
-    if (posts && posts.length > 0) {
-      const indices = posts.map((_, i) => i);
-      // Fisher-Yates random shuffle
-      for (let i = indices.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [indices[i], indices[j]] = [indices[j], indices[i]];
+    if (!posts || posts.length === 0) return map;
+
+    try {
+      if (typeof window !== 'undefined') {
+        const cachedSessionIds = sessionStorage.getItem('promptcms_random_order_ids');
+        if (cachedSessionIds) {
+          const parsedIds: string[] = JSON.parse(cachedSessionIds);
+          if (Array.isArray(parsedIds) && parsedIds.length > 0) {
+            parsedIds.forEach((id, idx) => {
+              map.set(id, idx);
+            });
+            posts.forEach((p) => {
+              if (!map.has(p.id)) {
+                map.set(p.id, map.size);
+              }
+            });
+            return map;
+          }
+        }
       }
-      posts.forEach((p, idx) => {
-        map.set(p.id, indices[idx]);
-      });
+    } catch {}
+
+    const postIds = posts.map((p) => p.id);
+    for (let i = postIds.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [postIds[i], postIds[j]] = [postIds[j], postIds[i]];
     }
+
+    postIds.forEach((id, idx) => {
+      map.set(id, idx);
+    });
+
+    try {
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('promptcms_random_order_ids', JSON.stringify(postIds));
+      }
+    } catch {}
+
     return map;
   });
   const shuffleInitializedRef = useRef<boolean>(true);
