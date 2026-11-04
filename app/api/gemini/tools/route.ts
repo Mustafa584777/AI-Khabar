@@ -26,12 +26,10 @@ Return ONLY valid JSON matching the required schema with a masterfully written, 
 
 async function generateWithModel(ai: GoogleGenAI, preferredModel: string | undefined, payload: any) {
   const candidateModels = [
-    preferredModel && preferredModel !== 'imagen-3.0-generate-002' ? preferredModel : 'gemini-2.5-flash',
-    'gemini-2.5-flash',
-    'gemini-3.7-flash',
-    'gemini-3.1-flash-lite',
+    preferredModel && preferredModel !== 'imagen-3.0-generate-002' ? preferredModel : 'gemini-flash-latest',
     'gemini-flash-latest',
-    'gemini-2.5-pro',
+    'gemini-3.8-flash',
+    'gemini-3.1-flash-lite',
   ];
 
   const uniqueModels = Array.from(new Set(candidateModels.filter(Boolean)));

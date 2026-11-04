@@ -2,22 +2,17 @@ import { MetadataRoute } from 'next';
 import { ServerStorage } from '@/lib/server-storage';
 import { getPromptSlug } from '@/lib/utils';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 86400;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://zeenaprompt.com';
 
   let posts: any[] = [];
   try {
-    // Attempt fetching latest deduplicated posts
-    posts = await ServerStorage.getAllPosts(false, true);
+    // Load published posts directly from local posts.json (zero Firestore reads)
+    posts = await ServerStorage.getAllPosts(false, false);
   } catch (err) {
-    try {
-      posts = await ServerStorage.getAllPosts(false, false);
-    } catch (e2) {
-      console.error('Error loading posts for dynamic sitemap:', e2);
-    }
+    console.error('Error loading posts for sitemap:', err);
   }
 
   // 1. Homepage & Essential Pages (Create, About, Contact, Privacy Policy, Disclaimer, Terms)

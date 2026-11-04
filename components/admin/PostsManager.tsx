@@ -40,7 +40,7 @@ export const PostsManager = () => {
     try {
       let rawList = posts;
       try {
-        const res = await fetch('/api/posts?all=true&source=firebase', { cache: 'no-store' });
+        const res = await fetch('/api/posts?all=true', { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           if (data.success && Array.isArray(data.posts) && data.posts.length > 0) {

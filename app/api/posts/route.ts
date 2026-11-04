@@ -13,7 +13,6 @@ export async function GET(req: NextRequest) {
     const tool = searchParams.get('tool');
     const search = searchParams.get('search');
 
-    // 100% Zero-Read Guarantee: Always serve from posts.json and memory cache!
     let posts = await ServerStorage.getAllPosts(includeDrafts, false);
 
     if (category && category !== 'all') {
@@ -42,7 +41,7 @@ export async function GET(req: NextRequest) {
         headers: {
           'Cache-Control': includeDrafts
             ? 'no-store, no-cache, must-revalidate, max-age=0'
-            : 'public, s-maxage=3600, stale-while-revalidate=86400',
+            : 'public, s-maxage=60, stale-while-revalidate=120',
         },
       }
     );
@@ -122,7 +121,7 @@ export async function DELETE(req: NextRequest) {
     const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : undefined;
 
     await ServerStorage.deletePosts(idsToDelete, token);
-    const allPosts = await ServerStorage.getAllPosts(true, true);
+    const allPosts = await ServerStorage.getAllPosts(true, false);
 
     try {
       revalidatePath('/');

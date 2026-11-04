@@ -1,11 +1,12 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
 
-// Prioritized model fallback sequence: if one model fails or is unavailable, switch to the next
+// Prioritized model fallback sequence: valid active Gemini models per official guidelines
 const CANDIDATE_MODELS = [
   'gemini-flash-latest',
   'gemini-3.8-flash',
-  'gemini-2.5-flash',
   'gemini-3.1-flash-lite',
 ];
 
@@ -76,7 +77,7 @@ function determineDynamicCategory(topic: string, defaultCat?: string) {
 }
 
 function generateFallbackPost(topic: string, tool: string, category: string, isFromImage = false) {
-  const cleanTitle = (topic || 'Cinematic Photo Composition')
+  const cleanTitle = (topic || (isFromImage ? 'Masterpiece Photographic Portrait' : 'Cinematic Photo Composition'))
     .trim()
     .replace(/^["']|["']$/g, '');
   const cleanSlug = cleanTitle
@@ -87,8 +88,8 @@ function generateFallbackPost(topic: string, tool: string, category: string, isF
   const dynamicCategory = determineDynamicCategory(cleanTitle, category);
 
   const promptText = isFromImage
-    ? `Masterpiece photograph of [subject], captured with [camera_lens], cinematic [lighting_setup], natural color grade, photorealistic textures, shallow depth of field, 8K ultra high detail, aesthetic studio art direction --ar 16:9 --v 6.1`
-    : `Editorial portrait of [subject], atmospheric [lighting], rich cinematic contrast, shot on [camera_angle], 85mm f/1.4 lens, hyper-detailed skin texture and fabrics, masterpiece quality --ar 16:9 --v 6.1`;
+    ? `Masterpiece editorial photograph of an elegant subject with authentic skin micro-textures and intricate facial details, captured with Sony A7R V with 85mm f/1.4 GM lens, natural golden hour volumetric lighting with soft directional fill, photorealistic textures, shallow depth of field, DaVinci Resolve color grading, 8K ultra high detail, aesthetic studio art direction --ar 16:9 --v 6.1`
+    : `Editorial portrait of ${cleanTitle}, atmospheric cinematic lighting, rich contrast, shot on 85mm f/1.4 GM lens, hyper-detailed skin texture and fabrics, masterpiece quality, natural bokeh --ar 16:9 --v 6.1`;
 
   return {
     title: cleanTitle,
@@ -151,7 +152,7 @@ export async function POST(req: NextRequest) {
 
       if (!apiKey) {
         const fallbackData = generateFallbackPost(topic || 'Featured Photo Prompt', tool, category, isImageMode);
-        return NextResponse.json({ success: true, data: fallbackData, fallback: true });
+        return NextResponse.json({ success: true, data: fallbackData, fallback: true, modelUsed: 'local-template' });
       }
 
       const ai = new GoogleGenAI({
@@ -165,7 +166,7 @@ export async function POST(req: NextRequest) {
 
       const systemInstruction = `You are a world-class prompt engineer and AI art director specializing in Midjourney v6, ChatGPT-4o, Flux.1, Stable Diffusion XL, Claude 3.5, and Gemini.
 Generate a comprehensive, high-quality prompt package formatted for a prompt directory article like trendinggeminiprompts.com.
-Ensure the prompt includes dynamic variable placeholders like [subject], [lighting], [style] so users can customize them.`;
+Ensure the prompt includes rich detail with lighting, camera optics, composition, and artistic nuances.`;
 
       let contentsPayload: any;
 
@@ -175,25 +176,38 @@ Ensure the prompt includes dynamic variable placeholders like [subject], [lighti
         let base64Data = '';
 
         if (image.startsWith('data:')) {
-          const match = image.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
-          if (match) {
-            mimeType = (match[1] || 'image/jpeg').split(';')[0].trim();
-            base64Data = match[2];
+          const parts = image.split(';base64,');
+          if (parts.length === 2) {
+            mimeType = parts[0].replace(/^data:/, '').trim() || 'image/jpeg';
+            base64Data = parts[1].trim();
           }
         } else if (image.startsWith('http')) {
           try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 8000);
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
             const imgRes = await fetch(image, { signal: controller.signal });
             clearTimeout(timeoutId);
             if (imgRes.ok) {
               const arrayBuffer = await imgRes.arrayBuffer();
               base64Data = Buffer.from(arrayBuffer).toString('base64');
-              const rawType = imgRes.headers.get('content-type') || 'image/jpeg';
-              mimeType = rawType.split(';')[0].trim();
+              mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
             }
           } catch (fetchErr) {
             console.warn('Failed to fetch remote image for multimodal analysis:', fetchErr);
+          }
+        } else if (image.startsWith('/')) {
+          try {
+            const publicPath = path.join(process.cwd(), 'public', image.replace(/^\//, ''));
+            if (fs.existsSync(publicPath)) {
+              const buffer = fs.readFileSync(publicPath);
+              base64Data = buffer.toString('base64');
+              const ext = path.extname(publicPath).toLowerCase();
+              if (ext === '.webp') mimeType = 'image/webp';
+              else if (ext === '.png') mimeType = 'image/png';
+              else mimeType = 'image/jpeg';
+            }
+          } catch (fsErr) {
+            console.warn('Failed to read local image for multimodal analysis:', fsErr);
           }
         }
 
@@ -222,7 +236,7 @@ Provide a structured JSON output with:
 - "seo": metaTitle, metaDescription, focusKeyword
 - "articleContent": rich markdown guide explaining how the prompt works, lighting/camera breakdowns, parameter settings, and pro tips.`,
           };
-          contentsPayload = { parts: [imagePart, textPart] };
+          contentsPayload = [imagePart, textPart];
         } else {
           // Fallback to text prompt
           contentsPayload = `Create a complete prompt post based on image concept: "${topic || 'Photorealistic Artwork'}" for ${tool || 'Midjourney'}. Available Categories: [${existingCatsList}].`;

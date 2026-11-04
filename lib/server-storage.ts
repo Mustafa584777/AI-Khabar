@@ -206,8 +206,9 @@ export const ServerStorage = {
   },
 
   getAllPosts: async (includeDrafts = true, _fromFirebase = false): Promise<PromptPost[]> => {
-    // 100% Zero-Read Guarantee: All prompts are served from memory and local posts.json file!
-    if (memoryPosts && memoryPosts.length > 0 && Date.now() - memoryPostsTimestamp < POSTS_CACHE_TTL) {
+    // CRITICAL COST OPTIMIZATION:
+    // Strictly load prompts from in-memory cache or posts.json to guarantee ZERO Firestore read units consumed.
+    if (memoryPosts && memoryPosts.length > 0) {
       return includeDrafts ? memoryPosts : memoryPosts.filter((p) => p.status === 'published');
     }
 
@@ -660,7 +661,7 @@ export const ServerStorage = {
     return true;
   },
 
-  // Site Settings: 100% Zero-Read Guarantee
+  // Site Settings
   getSettings: async (): Promise<SiteSettings> => {
     if (memorySettings) {
       return memorySettings;
@@ -693,7 +694,7 @@ export const ServerStorage = {
     return merged;
   },
 
-  // Tags: 100% Zero-Read Guarantee
+  // Tags
   getAllTags: async (): Promise<string[]> => {
     if (memoryTags && memoryTags.length > 0) {
       return memoryTags;

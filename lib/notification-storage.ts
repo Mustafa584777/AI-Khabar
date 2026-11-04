@@ -52,6 +52,8 @@ function writeJson<T>(filePath: string, data: T): void {
   }
 }
 
+let memoryNotifications: PushNotificationItem[] | null = null;
+
 export const NotificationServerStore = {
   // SUBSCRIBERS
   getSubscribers: async (): Promise<PushSubscriber[]> => {
@@ -133,20 +135,16 @@ export const NotificationServerStore = {
 
   // NOTIFICATIONS
   getNotifications: async (): Promise<PushNotificationItem[]> => {
-    if (isFirebaseConfigured()) {
-      try {
-        const snap = await getDoc(doc(firestoreDb, 'settings', NOTIF_SETTINGS_ID));
-        if (snap.exists() && Array.isArray(snap.data()?.data)) {
-          return snap.data().data as PushNotificationItem[];
-        }
-      } catch (e) {
-        console.warn('Firestore getNotifications fallback:', e);
-      }
+    if (memoryNotifications && memoryNotifications.length > 0) {
+      return memoryNotifications;
     }
-    return readJson<PushNotificationItem[]>(NOTIFICATIONS_FILE, []);
+    const local = readJson<PushNotificationItem[]>(NOTIFICATIONS_FILE, []);
+    memoryNotifications = local;
+    return local;
   },
 
   saveNotifications: async (items: PushNotificationItem[]): Promise<void> => {
+    memoryNotifications = items;
     writeJson(NOTIFICATIONS_FILE, items);
     if (isFirebaseConfigured()) {
       try {

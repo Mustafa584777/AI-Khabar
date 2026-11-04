@@ -93,7 +93,7 @@ export const PostEditor = () => {
   const [imageUrl, setImageUrl] = useState(
     () => existingPost?.imageUrl || ''
   );
-  const [localBase64, setLocalBase64] = useState<string>('');
+  const [localImageBase64, setLocalImageBase64] = useState<string>('');
   const [imageAlt, setImageAlt] = useState(
     () => existingPost?.imageAlt || (existingPost?.title || '')
   );
@@ -164,6 +164,7 @@ export const PostEditor = () => {
       setCategory(categories[0]?.name || 'Photorealistic & Portraits');
       setPromptText('');
       setImageUrl('');
+      setLocalImageBase64('');
       setImageAlt('');
       setImageFileName('');
       setAdditionalImages([]);
@@ -405,7 +406,7 @@ export const PostEditor = () => {
     try {
       const optimized = await optimizeImageFile(file);
       if (optimized) {
-        setLocalBase64(optimized);
+        setLocalImageBase64(optimized);
         let finalImageUrl = optimized;
         try {
           const cleanPublicId = slug || slugify(title) || `prompt-${Date.now()}`;
@@ -577,13 +578,14 @@ export const PostEditor = () => {
   // AI Copilot generation via Gemini server API with multi-model fallback & vision
   const handleGenerateWithAi = async () => {
     const effectiveTopic = aiTopic.trim() || title.trim();
+    const effectiveImage = localImageBase64 || imageUrl;
 
     if (autoFillMode === 'title' && !effectiveTopic) {
       showToast('Please enter a Title or Prompt Concept for AI auto-fill');
       return;
     }
 
-    if (autoFillMode === 'image' && !imageUrl) {
+    if (autoFillMode === 'image' && !effectiveImage) {
       showToast('Please upload or select a Featured Image first to auto-fill from image');
       return;
     }
@@ -603,7 +605,7 @@ export const PostEditor = () => {
           action: 'generate_full_post',
           mode: autoFillMode,
           topic: effectiveTopic || 'Photorealistic Artwork Recreation',
-          image: autoFillMode === 'image' ? (localBase64 || imageUrl) : undefined,
+          image: autoFillMode === 'image' ? effectiveImage : undefined,
           tool: 'Gemini',
           category,
           categories: categories.map((c) => c.name),
@@ -671,10 +673,10 @@ export const PostEditor = () => {
           setFocusKeyword(data.seo.focusKeyword || newTitle);
         }
 
-        const modelNote = json.modelUsed ? ` (via ${json.modelUsed})` : '';
         if (json.fallback) {
-          showToast('Auto-filled prompt fields using smart template engine!');
+          showToast('Fields auto-filled from prompt template!');
         } else {
+          const modelNote = json.modelUsed ? ` (via ${json.modelUsed})` : '';
           showToast(`Auto-filled prompt fields successfully${modelNote}!`);
         }
       } else {

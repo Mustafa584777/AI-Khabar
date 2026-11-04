@@ -1903,8 +1903,8 @@ export const AppProvider = ({
     if (isSavingRef.current) return;
     try {
       const isAdminView = currentView === 'admin' || isAuthenticated || (typeof window !== 'undefined' && (window.location.pathname.includes('admin') || window.location.pathname.includes('cms-login')));
-      const postsUrl = isAdminView ? `/api/posts?all=true` : `/api/posts`;
-      const fetchPosts = fetch(postsUrl)
+      const postsUrl = isAdminView ? `/api/posts?all=true&source=firebase` : `/api/posts`;
+      const fetchPosts = fetch(postsUrl, { cache: 'no-store' })
         .then(async (res) => {
           if (res.ok && !isSavingRef.current) {
             const data = await res.json();
