@@ -551,7 +551,7 @@ export const SettingsView = () => {
             type="button"
             onClick={async () => {
               try {
-                const res = await fetch('/api/posts?all=true');
+                const res = await fetch('/api/posts?all=true&source=firebase');
                 const data = await res.json();
                 if (data.success && data.posts) {
                   const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data.posts, null, 2));

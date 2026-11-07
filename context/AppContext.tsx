@@ -1197,7 +1197,10 @@ export const AppProvider = ({
   };
 
   // Data: Fast Cached + Server-Side Driven (SSR-safe initial states)
+  // Public site posts are strictly loaded from posts.json (INITIAL_POSTS)
   const [posts, setPosts] = useState<PromptPost[]>(() => initialPosts || INITIAL_POSTS);
+  // Admin posts are loaded live from Firebase Firestore for the Editorial CMS
+  const [adminPosts, setAdminPosts] = useState<PromptPost[]>([]);
   useEffect(() => {
     postsRef.current = posts;
   }, [posts]);
@@ -1991,55 +1994,33 @@ export const AppProvider = ({
     if (isSavingRef.current) return;
     try {
       const isAdminView = currentView === 'admin' || isAuthenticated || (typeof window !== 'undefined' && (window.location.pathname.includes('admin') || window.location.pathname.includes('cms-login')));
-      const postsUrl = isAdminView ? `/api/posts?all=true&source=firebase` : `/api/posts`;
-      const fetchPosts = fetch(postsUrl, { cache: 'no-store' })
-        .then(async (res) => {
-          if (res.ok && !isSavingRef.current) {
-            const data = await res.json();
-            if (data.success && Array.isArray(data.posts)) {
-              let deletedSet = new Set<string>();
-              if (typeof window !== 'undefined') {
-                try {
-                  const rawDel = localStorage.getItem('promptcms_deleted_ids');
-                  if (rawDel) {
-                    const parsed = JSON.parse(rawDel);
-                    if (Array.isArray(parsed)) deletedSet = new Set(parsed);
+      const fetchPosts = isAdminView
+        ? fetch('/api/posts?all=true&source=firebase', { cache: 'no-store' })
+            .then(async (res) => {
+              if (res.ok && !isSavingRef.current) {
+                const data = await res.json();
+                if (data.success && Array.isArray(data.posts)) {
+                  const seenSlugs = new Set<string>();
+                  const seenIds = new Set<string>();
+                  const cleanList: PromptPost[] = [];
+                  for (const p of data.posts) {
+                    if (!p || !p.id) continue;
+                    const slug = getPromptSlug(p);
+                    if (!seenIds.has(p.id) && !seenSlugs.has(slug)) {
+                      seenIds.add(p.id);
+                      seenSlugs.add(slug);
+                      cleanList.push({ ...p, slug });
+                    }
                   }
-                } catch {}
-              }
-              const seenSlugs = new Set<string>();
-              const seenIds = new Set<string>();
-              const cleanList: PromptPost[] = [];
-
-              for (const p of data.posts) {
-                if (!p || !p.id || deletedSet.has(p.id)) continue;
-                const slug = getPromptSlug(p);
-                if (!seenIds.has(p.id) && !seenSlugs.has(slug)) {
-                  seenIds.add(p.id);
-                  seenSlugs.add(slug);
-                  cleanList.push({ ...p, slug });
+                  setAdminPosts(cleanList);
                 }
               }
-
-              const currentPosts = postsRef.current;
-              const isDifferent =
-                currentPosts.length !== cleanList.length ||
-                (cleanList.length > 0 && currentPosts[0]?.id !== cleanList[0]?.id) ||
-                (cleanList.length > 0 && currentPosts[currentPosts.length - 1]?.id !== cleanList[cleanList.length - 1]?.id);
-
-              if (isDifferent || isAdminView) {
-                setPosts(cleanList);
-                try {
-                  StorageService.saveCachedPosts(cleanList);
-                } catch {}
-              }
-            }
-          }
-        })
-        .catch((err) => {
-          console.warn('Network sync posts notice (using cache):', err?.message || err);
-        })
-        .finally(() => setIsLoadingPosts(false));
+            })
+            .catch((err) => {
+              console.warn('Admin sync posts notice:', err?.message || err);
+            })
+            .finally(() => setIsLoadingPosts(false))
+        : Promise.resolve();
 
       const fetchCats = fetch('/api/categories')
         .then(async (res) => {
@@ -2568,9 +2549,9 @@ export const AppProvider = ({
       } catch {}
     }
 
-    // Immediate optimistic local update with deduplication
+    // Immediate optimistic local update for admin CMS
     const postSlug = getPromptSlug(post);
-    setPosts((prev) => {
+    setAdminPosts((prev) => {
       const idx = prev.findIndex((p) => p.id === post.id || (postSlug && getPromptSlug(p) === postSlug));
       if (idx >= 0) {
         const updated = [...prev];
@@ -2581,7 +2562,7 @@ export const AppProvider = ({
     });
 
     try {
-      // Send to server database
+      // Send to server to persist directly into Firebase Firestore
       const res = await fetch('/api/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2602,18 +2583,13 @@ export const AppProvider = ({
             cleanPosts.push({ ...p, slug });
           }
         }
-        setPosts(cleanPosts);
-        StorageService.saveCachedPosts(cleanPosts);
+        setAdminPosts(cleanPosts);
         const savedPost = data.post || post;
-        showToast(
-          savedPost.status === 'published'
-            ? 'Prompt published live to server & homepage!'
-            : 'Prompt saved as draft on server'
-        );
+        showToast('Prompt saved to Firebase! Click "Download posts.json" in Admin to export for main site.');
 
         return savedPost;
       } else {
-        throw new Error(data.error || 'Failed to save post to server');
+        throw new Error(data.error || 'Failed to save post to Firebase');
       }
     } catch (err: any) {
       console.error('Failed to save post on server:', err);
@@ -2643,12 +2619,8 @@ export const AppProvider = ({
       } catch {}
     }
 
-    // 1. Instant optimistic update in memory & local storage
-    setPosts((prev) => {
-      const updated = prev.filter((p) => !idSet.has(p.id));
-      StorageService.saveCachedPosts(updated);
-      return updated;
-    });
+    // 1. Instant optimistic update for admin CMS
+    setAdminPosts((prev) => prev.filter((p) => !idSet.has(p.id)));
 
     setBookmarkedIds((prev) => {
       const updated = prev.filter((item) => !idSet.has(item));
@@ -2667,7 +2639,7 @@ export const AppProvider = ({
       return updated;
     });
 
-    showToast(`${ids.length} prompt${ids.length > 1 ? 's' : ''} removed`);
+    showToast(`${ids.length} prompt${ids.length > 1 ? 's' : ''} removed from Firebase`);
 
     try {
       const res = await fetch('/api/posts', {
@@ -2679,8 +2651,7 @@ export const AppProvider = ({
       if (data.success && Array.isArray(data.posts)) {
         // Guarantee deleted IDs are NEVER reintroduced from server response
         const remaining = data.posts.filter((p: PromptPost) => !idSet.has(p.id));
-        setPosts(remaining);
-        StorageService.saveCachedPosts(remaining);
+        setAdminPosts(remaining);
       }
       return true;
     } catch (err) {
@@ -3026,8 +2997,8 @@ export const AppProvider = ({
         saveAiHistoryItem,
         deleteAiHistoryItem,
         clearAiHistory,
-        posts,
-        setPosts,
+        posts: (currentView === 'admin' && adminPosts.length > 0) ? adminPosts : posts,
+        setPosts: currentView === 'admin' ? setAdminPosts : setPosts,
         isLoadingPosts,
         categories,
         tags: allKnownTags,

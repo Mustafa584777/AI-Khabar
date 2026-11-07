@@ -12,69 +12,13 @@ const STORAGE_KEY_CACHED_TAGS = 'promptcms_cached_tags';
 const STORAGE_KEY_CACHED_SETTINGS = 'promptcms_cached_settings';
 
 export const StorageService = {
-  // Instant Cache for Fast 0ms Page Load
+  // Instant Cache for Fast 0ms Page Load (strictly from posts.json)
   getCachedPosts: (): PromptPost[] => {
-    if (typeof window !== 'undefined') {
-      try {
-        const deletedRaw = localStorage.getItem('promptcms_deleted_ids');
-        const deletedList: string[] = deletedRaw ? JSON.parse(deletedRaw) : [];
-        const deletedSet = new Set(deletedList);
-
-        const saved = localStorage.getItem(STORAGE_KEY_CACHED_POSTS);
-        const postMap = new Map<string, PromptPost>();
-        const seenSlugs = new Set<string>();
-        const seenImageUrls = new Set<string>();
-
-        const all: PromptPost[] = [];
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed) && parsed.length > 0) all.push(...parsed);
-          } catch {}
-        }
-        if (all.length === 0 && Array.isArray(INITIAL_POSTS)) {
-          all.push(...INITIAL_POSTS);
-        }
-
-        all.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-
-        for (const p of all) {
-          if (p && p.id && !deletedSet.has(p.id)) {
-            const slug = getPromptSlug(p);
-            if (slug && seenSlugs.has(slug)) continue;
-            const imgKey = p.imageUrl ? p.imageUrl.split('?')[0].trim().toLowerCase() : '';
-            if (imgKey && seenImageUrls.has(imgKey)) continue;
-            if (postMap.has(p.id)) continue;
-
-            if (slug) seenSlugs.add(slug);
-            if (imgKey) seenImageUrls.add(imgKey);
-            postMap.set(p.id, {
-              ...p,
-              slug,
-            });
-          }
-        }
-
-        const sorted = Array.from(postMap.values()).sort(
-          (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-        );
-        return sorted;
-      } catch (e) {
-        console.error('Error reading cached posts:', e);
-      }
-    }
     return INITIAL_POSTS || [];
   },
 
-  saveCachedPosts: (posts: PromptPost[]): void => {
-    if (typeof window !== 'undefined' && Array.isArray(posts)) {
-      try {
-        localStorage.setItem(STORAGE_KEY_CACHED_POSTS, JSON.stringify(posts));
-        localStorage.setItem('promptcms_cached_posts_time', String(Date.now()));
-      } catch (e) {
-        console.error('Error saving cached posts:', e);
-      }
-    }
+  saveCachedPosts: (_posts: PromptPost[]): void => {
+    // No-op: main site prompts are strictly driven by posts.json
   },
 
   getCachedCategories: (): Category[] => {

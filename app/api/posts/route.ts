@@ -8,8 +8,8 @@ export const revalidate = 0;
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const includeDrafts = searchParams.get('all') === 'true';
-    const fromFirebase = includeDrafts || searchParams.get('source') === 'firebase' || searchParams.get('admin') === 'true';
+    const fromFirebase = searchParams.get('source') === 'firebase' || searchParams.get('admin') === 'true';
+    const includeDrafts = fromFirebase || searchParams.get('all') === 'true';
     const category = searchParams.get('category');
     const tool = searchParams.get('tool');
     const search = searchParams.get('search');
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
       { success: true, posts },
       {
         headers: {
-          'Cache-Control': includeDrafts
+          'Cache-Control': fromFirebase
             ? 'no-store, no-cache, must-revalidate, max-age=0'
             : 'public, s-maxage=60, stale-while-revalidate=120',
         },
@@ -65,15 +65,10 @@ export async function POST(req: NextRequest) {
     const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : undefined;
 
     const saved = await ServerStorage.savePost(body, token);
-    const allPosts = await ServerStorage.getAllPosts(true, false);
-
-    try {
-      revalidatePath('/');
-      revalidatePath('/api/posts');
-    } catch {}
+    const adminPosts = await ServerStorage.getFirebasePosts();
 
     return NextResponse.json(
-      { success: true, post: saved, posts: allPosts },
+      { success: true, post: saved, posts: adminPosts },
       {
         headers: {
           'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
@@ -122,15 +117,10 @@ export async function DELETE(req: NextRequest) {
     const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : undefined;
 
     await ServerStorage.deletePosts(idsToDelete, token);
-    const allPosts = await ServerStorage.getAllPosts(true, false);
-
-    try {
-      revalidatePath('/');
-      revalidatePath('/api/posts');
-    } catch {}
+    const adminPosts = await ServerStorage.getFirebasePosts();
 
     return NextResponse.json(
-      { success: true, posts: allPosts, deletedIds: idsToDelete },
+      { success: true, posts: adminPosts, deletedIds: idsToDelete },
       {
         headers: {
           'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',

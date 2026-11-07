@@ -205,44 +205,54 @@ export const ServerStorage = {
     return { count: merged.length, posts: merged };
   },
 
-  getAllPosts: async (includeDrafts = true, fromFirebase = false): Promise<PromptPost[]> => {
-    // If admin requests drafts or fromFirebase, fetch live from Firebase Firestore
-    if ((includeDrafts || fromFirebase) && isFirebaseConfigured()) {
-      try {
-        const postsSnap = await getDocs(collection(firestoreDb, 'posts'));
-        const firebasePosts: PromptPost[] = [];
-        postsSnap.forEach((docSnap) => {
-          const data = docSnap.data() as PromptPost;
-          if (data && data.id) {
-            firebasePosts.push(data);
-          }
-        });
-        if (firebasePosts.length > 0) {
-          const cleaned = ServerStorage.deduplicatePosts(firebasePosts);
-          writeJsonFile(POSTS_FILE, cleaned);
-          memoryPosts = cleaned;
-          memoryPostsTimestamp = Date.now();
-          return includeDrafts ? cleaned : cleaned.filter((p) => p.status === 'published');
-        }
-      } catch (e) {
-        console.error('Error fetching posts from Firebase for admin:', e);
-      }
-    }
-
-    // For public visitors (includeDrafts = false), load strictly from local posts.json (zero Firestore reads)
+  getStaticPosts: async (): Promise<PromptPost[]> => {
     if (memoryPosts && memoryPosts.length > 0) {
-      return includeDrafts ? memoryPosts : memoryPosts.filter((p) => p.status === 'published');
+      return memoryPosts;
     }
-
     const posts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
     const cleaned = ServerStorage.deduplicatePosts(posts);
     memoryPosts = cleaned;
     memoryPostsTimestamp = Date.now();
-    return includeDrafts ? cleaned : cleaned.filter((p) => p.status === 'published');
+    return cleaned;
+  },
+
+  getFirebasePosts: async (): Promise<PromptPost[]> => {
+    if (!isFirebaseConfigured()) {
+      return ServerStorage.getStaticPosts();
+    }
+    try {
+      const postsSnap = await getDocs(collection(firestoreDb, 'posts'));
+      const firebasePosts: PromptPost[] = [];
+      postsSnap.forEach((docSnap) => {
+        const data = docSnap.data() as PromptPost;
+        if (data && data.id) {
+          firebasePosts.push(data);
+        }
+      });
+      if (firebasePosts.length > 0) {
+        return ServerStorage.deduplicatePosts(firebasePosts);
+      }
+    } catch (e) {
+      console.error('Error fetching posts from Firebase for admin:', e);
+    }
+    return ServerStorage.getStaticPosts();
+  },
+
+  getAllPosts: async (includeDrafts = false, fromFirebase = false): Promise<PromptPost[]> => {
+    // If admin explicitly requests Firebase, fetch live from Firebase Firestore
+    if (fromFirebase) {
+      const fbPosts = await ServerStorage.getFirebasePosts();
+      return includeDrafts ? fbPosts : fbPosts.filter((p) => p.status === 'published');
+    }
+
+    // For public visitors (main site), load strictly from local posts.json (zero Firestore reads)
+    const staticPosts = await ServerStorage.getStaticPosts();
+    return includeDrafts ? staticPosts : staticPosts.filter((p) => p.status === 'published');
   },
 
   getPostBySlug: async (slug: string): Promise<PromptPost | undefined> => {
-    const posts = await ServerStorage.getAllPosts(true);
+    // Main site articles load strictly from static posts.json
+    const posts = await ServerStorage.getStaticPosts();
     const targetSlug = slug.toLowerCase().trim();
     return posts.find((p) => {
       if (p.slug && p.slug.toLowerCase() === targetSlug) return true;
@@ -260,7 +270,8 @@ export const ServerStorage = {
   },
 
   getPostById: async (id: string): Promise<PromptPost | undefined> => {
-    const posts = await ServerStorage.getAllPosts(true);
+    // Main site lookups load strictly from static posts.json
+    const posts = await ServerStorage.getStaticPosts();
     return posts.find((p) => p.id === id);
   },
 
@@ -379,24 +390,9 @@ export const ServerStorage = {
       }
     }
 
-    // Update memory and local cache immediately with strict deduplication
+    // Save strictly to Firebase Firestore (Admin CMS database)
+    // CRUCIAL: Do NOT write to local posts.json or memoryPosts so public main site is never mutated automatically
     unrecordDeletedPostId(savedPost.id);
-    let currentList = memoryPosts && memoryPosts.length > 0
-      ? [...memoryPosts]
-      : readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
-
-    const index = currentList.findIndex((p) => p.id === savedPost.id || getPromptSlug(p) === autoSlug);
-    if (index >= 0) {
-      currentList[index] = savedPost;
-    } else {
-      currentList.unshift(savedPost);
-    }
-    const cleanMerged = ServerStorage.deduplicatePosts(currentList);
-    memoryPosts = cleanMerged;
-    memoryPostsTimestamp = Date.now();
-    writeJsonFile(POSTS_FILE, cleanMerged);
-
-    // Save to Firebase Firestore (awaited to guarantee persistence without being aborted)
     if (isFirebaseConfigured()) {
       try {
         await setDoc(doc(firestoreDb, 'posts', savedPost.id), cleanForFirestore(savedPost));
@@ -451,12 +447,8 @@ export const ServerStorage = {
 
     await recordDeletedPostIds(cleanIds);
 
-    const currentPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
-    const filteredPosts = currentPosts.filter((p) => !idSet.has(p.id));
-    memoryPosts = filteredPosts;
-    writeJsonFile(POSTS_FILE, filteredPosts);
-
-    // 1. Remove from Firebase Firestore
+    // 1. Remove strictly from Firebase Firestore (Admin CMS database)
+    // CRUCIAL: Do NOT alter local posts.json or memoryPosts
     if (isFirebaseConfigured()) {
       try {
         const batch = writeBatch(firestoreDb);
@@ -571,14 +563,7 @@ export const ServerStorage = {
       const p = memoryPosts.find((x) => x.id === id);
       if (p) p.copiesCount = (p.copiesCount || 0) + 1;
     }
-    try {
-      const rawPosts = readJsonFile<PromptPost[]>(POSTS_FILE, []);
-      const p = rawPosts.find((x) => x.id === id);
-      if (p) {
-        p.copiesCount = (p.copiesCount || 0) + 1;
-        writeJsonFile(POSTS_FILE, rawPosts);
-      }
-    } catch {}
+    // Copies count tracked in-memory/firebase, do not mutate posts.json
   },
 
   incrementCopyCount: async (id: string, token?: string): Promise<void> => {
