@@ -237,11 +237,11 @@ export const AppProvider = ({
       const targetUrl = urlMap[view] || '/';
       if (window.location.pathname !== targetUrl) {
         try {
-          window.history.pushState({ view }, '', targetUrl);
+          router.push(targetUrl);
         } catch {}
       }
     }
-  }, []);
+  }, [router]);
 
   const setSelectedPost = useCallback((post: PromptPost | null) => {
     setSelectedPostState(post);

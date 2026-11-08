@@ -19,10 +19,12 @@ const TasteProfileModal = dynamic(() => import('@/components/public/TasteProfile
 const SearchExploreModal = dynamic(() => import('@/components/public/SearchExploreModal').then((m) => m.SearchExploreModal), { ssr: false });
 const UserAuthModal = dynamic(() => import('@/components/public/UserAuthModal').then((m) => m.UserAuthModal), { ssr: false });
 const AdminLoginModal = dynamic(() => import('@/components/admin/AdminLoginModal').then((m) => m.AdminLoginModal), { ssr: false });
+const RazorpayCheckoutModal = dynamic(() => import('@/components/public/RazorpayCheckoutModal').then((m) => m.RazorpayCheckoutModal), { ssr: false });
+const UnlockPremiumModal = dynamic(() => import('@/components/public/UnlockPremiumModal').then((m) => m.UnlockPremiumModal), { ssr: false });
 
 export default function DashboardPage() {
   return (
-    <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col">
+    <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col pb-20 sm:pb-8">
       <Header />
       <div className="flex-1">
         <UserDashboard />
@@ -35,6 +37,8 @@ export default function DashboardPage() {
       <UserAuthModal />
       <AdminLoginModal />
       <ToastNotification />
+      <RazorpayCheckoutModal />
+      <UnlockPremiumModal />
       <BottomNav />
     </div>
   );

@@ -49,10 +49,10 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
     return () => clearInterval(interval);
   }, []);
 
-  const isHomeActive = currentView === 'public' || currentView === 'for-you' || (pathname === '/' && !currentView);
-  const isCreateActive = currentView === 'studio-tool' || pathname === '/create';
-  const isNotifsActive = currentView === 'notifications' || pathname === '/notifications';
-  const isDashboardActive = currentView === 'user-dashboard' || pathname === '/dashboard';
+  const isHomeActive = pathname === '/';
+  const isCreateActive = pathname === '/create';
+  const isNotifsActive = pathname === '/notifications';
+  const isDashboardActive = pathname === '/dashboard';
 
   const handleNav = (
     e: React.MouseEvent,
@@ -62,19 +62,16 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
     if (e.metaKey || e.ctrlKey || e.button === 1) return;
     e.preventDefault();
 
-    // If on an external/slug route, use client router to return to target
-    if (pathname !== '/' && pathname !== '/create' && pathname !== '/dashboard' && pathname !== '/notifications') {
-      router.push(targetPath);
+    if (pathname === targetPath) {
+      if (targetPath === '/') {
+        setSelectedSort('newest');
+        setSearchQuery('');
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
-    if (targetView === 'public') {
-      setSelectedSort('newest');
-      setSearchQuery('');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    setCurrentView(targetView);
+    router.push(targetPath);
   };
 
   const handleSearchClick = () => {

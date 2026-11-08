@@ -66,30 +66,28 @@ export const Header = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const isHomeActive = currentView === 'public' || currentView === 'for-you' || (pathname === '/' && !currentView);
-  const isCreateActive = currentView === 'studio-tool' || pathname === '/create';
+  const isHomeActive = pathname === '/';
+  const isCreateActive = pathname === '/create';
 
   const handleNav = (
     e: React.MouseEvent,
-    targetView: 'public' | 'studio-tool',
+    targetView: 'public' | 'studio-tool' | 'notifications' | 'user-dashboard',
     targetPath: string
   ) => {
     if (e.metaKey || e.ctrlKey || e.button === 1) return;
     e.preventDefault();
 
-    if (pathname !== '/' && pathname !== '/create' && pathname !== '/dashboard' && pathname !== '/notifications') {
-      router.push(targetPath);
+    if (pathname === targetPath) {
+      if (targetPath === '/') {
+        setSelectedCategory('');
+        setSelectedSort('newest');
+        setSearchQuery('');
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
-    if (targetView === 'public') {
-      setSelectedCategory('');
-      setSelectedSort('newest');
-      setSearchQuery('');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    setCurrentView(targetView);
+    router.push(targetPath);
   };
 
   const handleBookmarksClick = () => {
