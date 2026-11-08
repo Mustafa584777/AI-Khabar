@@ -25,6 +25,7 @@ import {
   Globe,
   Calendar,
   Laptop,
+  Download,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -66,20 +67,69 @@ export const PushNotificationsManager: React.FC = () => {
   const [realTotalSent, setRealTotalSent] = useState<number>(0);
   const [showSubscribersModal, setShowSubscribersModal] = useState<boolean>(false);
 
+  const [isSyncingWithFirestore, setIsSyncingWithFirestore] = useState<boolean>(false);
+
   const loadHistory = async () => {
     try {
-      const [subsData, statsData] = await Promise.all([
+      const [subsData, statsData, notifsRes] = await Promise.all([
         NotificationService.fetchRealSubscribers(),
         NotificationService.fetchRealStats(),
+        fetch('/api/notifications/send').then((r) => r.json()).catch(() => null),
       ]);
       setRealSubscribers(subsData.subscribers || []);
       setSubscribersCount(subsData.count || 0);
       setRealTotalSent(statsData.totalSent || 0);
+      if (notifsRes?.success && Array.isArray(notifsRes.notifications) && notifsRes.notifications.length > 0) {
+        setHistory(notifsRes.notifications);
+        NotificationService.saveNotifications(notifsRes.notifications);
+      } else {
+        const list = NotificationService.getNotifications();
+        setHistory(list);
+      }
     } catch (e) {
       console.error('Failed loading stats:', e);
+      const list = NotificationService.getNotifications();
+      setHistory(list);
     }
-    const list = NotificationService.getNotifications();
-    setHistory(list);
+  };
+
+  const handleDownloadNotificationsJson = async () => {
+    try {
+      const res = await fetch('/api/notifications/send');
+      const data = await res.json();
+      const list = (data.success && Array.isArray(data.notifications) && data.notifications.length > 0)
+        ? data.notifications
+        : history.length > 0 ? history : NotificationService.getNotifications();
+
+      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(list, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute('href', dataStr);
+      downloadAnchor.setAttribute('download', 'notifications.json');
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast('Downloaded notifications.json! Upload to GitHub to show notifications with 0 Firestore reads.');
+    } catch (e: any) {
+      showToast('Failed to download notifications.json: ' + e.message);
+    }
+  };
+
+  const handleSyncFirestoreNotifications = async () => {
+    setIsSyncingWithFirestore(true);
+    try {
+      const res = await fetch('/api/admin/sync-notifications-json', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message || `Synced ${data.count} notifications into notifications.json!`);
+        await loadHistory();
+      } else {
+        showToast(`Sync failed: ${data.error || 'Unknown error'}`);
+      }
+    } catch (err: any) {
+      showToast(`Error syncing notifications: ${err.message}`);
+    } finally {
+      setIsSyncingWithFirestore(false);
+    }
   };
 
   useEffect(() => {
@@ -231,8 +281,18 @@ export const PushNotificationsManager: React.FC = () => {
           </p>
         </div>
 
-        {/* Quick Stats */}
-        <div className="flex items-center gap-3">
+        {/* Quick Stats & Download */}
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={handleDownloadNotificationsJson}
+            className="px-4 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2 shadow-xs text-xs font-bold transition-all cursor-pointer"
+            title="Download notifications.json file to commit to your GitHub repository"
+          >
+            <Download className="w-4 h-4" />
+            <span>Download notifications.json for GitHub</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setShowSubscribersModal(true)}
@@ -607,14 +667,35 @@ export const PushNotificationsManager: React.FC = () => {
 
       {/* Sent Notifications History Table */}
       <div className="bg-white dark:bg-neutral-900 p-6 sm:p-7 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-neutral-100 dark:border-neutral-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-100 dark:border-neutral-800">
           <div>
             <h2 className="text-base font-bold text-neutral-900 dark:text-white">
               Sent Notifications History
             </h2>
             <p className="text-xs text-neutral-500">
-              Track broadcast performance, clicks, and re-send past viral drops.
+              Saved automatically to notifications.json and Firebase Firestore.
             </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={isSyncingWithFirestore}
+              onClick={handleSyncFirestoreNotifications}
+              className="px-3.5 py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-bold transition-colors flex items-center gap-1.5 disabled:opacity-50"
+              title="Sync latest notifications from Firestore into notifications.json"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncingWithFirestore ? 'animate-spin' : ''}`} />
+              <span>{isSyncingWithFirestore ? 'Syncing...' : 'Sync Firestore'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleDownloadNotificationsJson}
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-xs"
+              title="Download notifications.json file"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Download notifications.json</span>
+            </button>
           </div>
         </div>
 

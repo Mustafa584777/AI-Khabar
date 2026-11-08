@@ -1,0 +1,31 @@
+[
+  {
+    "id": "notif-1794049367750-ottp",
+    "title": "🔥 New: Glitch-Core Archive Portrait Prompt",
+    "subtitle": "Trending in Digital Art & Creative Portraiture",
+    "body": "Both for girls and boys\nTry in ChatGPT only 👇 \n\nCreate an ultra-realistic black-and-white distressed editorial portrait poster using the uploaded user photo.",
+    "category": "Digital Art & Creative Portraiture",
+    "imageUrl": "https://res.cloudinary.com/idbpgaqz/image/upload/v1793970417/prompts/prompt-1793970406067.jpg",
+    "collageImages": [
+      "https://res.cloudinary.com/idbpgaqz/image/upload/v1793970417/prompts/prompt-1793970406067.jpg",
+      "https://res.cloudinary.com/idbpgaqz/image/upload/v1793789121/prompts/prompt-1793789117792.jpg",
+      "https://res.cloudinary.com/idbpgaqz/image/upload/v1793341269/prompts/prompt-1793341266899.jpg",
+      "https://res.cloudinary.com/idbpgaqz/image/upload/v1793336679/prompts/prompt-1793336668786.jpg"
+    ],
+    "url": "/glitch-core-archive-portrait-prompt",
+    "actionButtons": [
+      {
+        "label": "Explore Prompt",
+        "url": "/glitch-core-archive-portrait-prompt"
+      },
+      {
+        "label": "Studio Tool",
+        "url": "/create"
+      }
+    ],
+    "sentAt": "2026-11-07T11:02:47.750Z",
+    "sentBy": "admin",
+    "clicksCount": 0,
+    "read": false
+  }
+]

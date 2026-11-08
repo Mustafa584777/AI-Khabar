@@ -134,13 +134,47 @@ export const NotificationServerStore = {
   },
 
   // NOTIFICATIONS
-  getNotifications: async (): Promise<PushNotificationItem[]> => {
-    if (memoryNotifications && memoryNotifications.length > 0) {
-      return memoryNotifications;
+  getNotifications: async (allowFirestoreFallback = true): Promise<PushNotificationItem[]> => {
+    let local = readJson<PushNotificationItem[]>(NOTIFICATIONS_FILE, []);
+    if ((!local || local.length === 0) && allowFirestoreFallback && isFirebaseConfigured()) {
+      try {
+        const snap = await getDoc(doc(firestoreDb, 'settings', NOTIF_SETTINGS_ID));
+        if (snap.exists() && Array.isArray(snap.data()?.data)) {
+          local = snap.data().data as PushNotificationItem[];
+          if (local.length > 0) {
+            writeJson(NOTIFICATIONS_FILE, local);
+          }
+        }
+      } catch (e) {
+        console.warn('Firestore getNotifications fallback error:', e);
+      }
     }
-    const local = readJson<PushNotificationItem[]>(NOTIFICATIONS_FILE, []);
-    memoryNotifications = local;
-    return local;
+    return Array.isArray(local) ? local : [];
+  },
+
+  syncFromFirestore: async (): Promise<{ count: number; items: PushNotificationItem[] }> => {
+    let items: PushNotificationItem[] = [];
+    if (isFirebaseConfigured()) {
+      try {
+        const snap = await getDoc(doc(firestoreDb, 'settings', NOTIF_SETTINGS_ID));
+        if (snap.exists() && Array.isArray(snap.data()?.data)) {
+          items = snap.data().data as PushNotificationItem[];
+        }
+      } catch (e) {
+        console.error('Failed to sync notifications from Firestore:', e);
+      }
+    }
+    if (items.length > 0) {
+      // Merge with existing local notifications by id
+      const current = readJson<PushNotificationItem[]>(NOTIFICATIONS_FILE, []);
+      const existingIds = new Set(items.map((i) => i.id));
+      const extraLocal = current.filter((c) => !existingIds.has(c.id));
+      const merged = [...items, ...extraLocal];
+      writeJson(NOTIFICATIONS_FILE, merged);
+      return { count: merged.length, items: merged };
+    }
+    const current = readJson<PushNotificationItem[]>(NOTIFICATIONS_FILE, []);
+    return { count: current.length, items: current };
   },
 
   saveNotifications: async (items: PushNotificationItem[]): Promise<void> => {

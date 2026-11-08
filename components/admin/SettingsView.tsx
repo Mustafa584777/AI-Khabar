@@ -19,6 +19,43 @@ export const SettingsView = () => {
   const [popularTags, setPopularTags] = useState<string[]>(settings.popularTags || []);
   const [newTag, setNewTag] = useState('');
   const [isSyncingPosts, setIsSyncingPosts] = useState(false);
+  const [isSyncingNotifications, setIsSyncingNotifications] = useState(false);
+
+  const handleSyncFirestoreToNotificationsJson = async () => {
+    setIsSyncingNotifications(true);
+    try {
+      const res = await fetch('/api/admin/sync-notifications-json', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message || `Success! Synced ${data.count} notifications to notifications.json!`);
+      } else {
+        showToast(`Sync failed: ${data.error || 'Unknown error'}`);
+      }
+    } catch (err: any) {
+      showToast(`Error syncing notifications: ${err.message}`);
+    } finally {
+      setIsSyncingNotifications(false);
+    }
+  };
+
+  const handleDownloadNotificationsJson = async () => {
+    try {
+      const res = await fetch('/api/notifications/send');
+      const data = await res.json();
+      if (data.success && Array.isArray(data.notifications)) {
+        const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data.notifications, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute('href', dataStr);
+        downloadAnchor.setAttribute('download', 'notifications.json');
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+        showToast('Downloaded notifications.json! Upload to GitHub for 0 Firestore reads.');
+      }
+    } catch (err: any) {
+      showToast(`Failed to download notifications.json: ${err.message}`);
+    }
+  };
 
   const handleSyncFirestoreToPostsJson = async () => {
     setIsSyncingPosts(true);
@@ -515,7 +552,7 @@ export const SettingsView = () => {
 
 
 
-      {/* Database to posts.json Sync & Migration Card */}
+      {/* Database to posts.json & notifications.json Sync & Migration Card */}
       <div className="bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-blue-500/10 dark:from-emerald-950/30 dark:via-neutral-900 dark:to-blue-950/30 p-6 rounded-3xl border border-emerald-500/30 dark:border-emerald-700/40 shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-start gap-3">
@@ -524,15 +561,15 @@ export const SettingsView = () => {
             </div>
             <div>
               <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                <span>Sync & Merge Database Prompts to posts.json</span>
+                <span>Sync & Download Static JSON for GitHub (posts.json & notifications.json)</span>
               </h3>
               <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 leading-relaxed">
-                Pulls all latest posts from Firebase Firestore, removes duplicates, and permanently saves them to local <code className="px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-800 text-emerald-600 dark:text-emerald-400 font-mono text-[11px]">data/posts.json</code> so they always load instantly on the homepage with 0 Firestore reads.
+                Pulls all latest posts & notifications from Firebase Firestore and permanently saves them to local <code className="px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-800 text-emerald-600 dark:text-emerald-400 font-mono text-[11px]">data/posts.json</code> and <code className="px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-800 text-emerald-600 dark:text-emerald-400 font-mono text-[11px]">data/notifications.json</code> so they always load instantly on the homepage with 0 Firestore reads.
               </p>
             </div>
           </div>
           <span className="self-start sm:self-auto text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-3 py-1 rounded-full border border-emerald-300 dark:border-emerald-800 uppercase tracking-wide">
-            1-Click Sync
+            Static GitHub Sync
           </span>
         </div>
 
@@ -541,10 +578,10 @@ export const SettingsView = () => {
             type="button"
             disabled={isSyncingPosts}
             onClick={handleSyncFirestoreToPostsJson}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold shadow-md shadow-emerald-600/30 transition-all transform active:scale-95 cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold shadow-md shadow-emerald-600/30 transition-all transform active:scale-95 cursor-pointer"
           >
             <RefreshCw className={`w-4 h-4 ${isSyncingPosts ? 'animate-spin' : ''}`} />
-            <span>{isSyncingPosts ? 'Syncing & Merging...' : 'Sync Firebase Database to posts.json'}</span>
+            <span>{isSyncingPosts ? 'Syncing...' : 'Sync Posts to posts.json'}</span>
           </button>
 
           <button
@@ -567,10 +604,29 @@ export const SettingsView = () => {
                 alert(`Failed to download posts.json: ${err.message}`);
               }
             }}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/30 transition-all transform active:scale-95 cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/30 transition-all transform active:scale-95 cursor-pointer"
           >
             <Download className="w-4 h-4" />
             <span>Download posts.json for GitHub</span>
+          </button>
+
+          <button
+            type="button"
+            disabled={isSyncingNotifications}
+            onClick={handleSyncFirestoreToNotificationsJson}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 disabled:opacity-50 text-white text-xs font-bold shadow-xs transition-all transform active:scale-95 cursor-pointer"
+          >
+            <RefreshCw className={`w-4 h-4 ${isSyncingNotifications ? 'animate-spin' : ''}`} />
+            <span>{isSyncingNotifications ? 'Syncing...' : 'Sync Firestore to notifications.json'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleDownloadNotificationsJson}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-md shadow-emerald-700/30 transition-all transform active:scale-95 cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            <span>Download notifications.json for GitHub</span>
           </button>
         </div>
       </div>

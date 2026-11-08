@@ -1,4 +1,5 @@
 import { PushNotificationItem, NotificationPreferences, PushSubscriber } from '@/types/notification';
+import { INITIAL_NOTIFICATIONS } from '@/lib/initial-data';
 
 const STORAGE_KEY_NOTIFICATIONS = 'promptcms_push_notifications';
 const STORAGE_KEY_PREFERENCES = 'promptcms_push_preferences';
@@ -19,8 +20,8 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   soundEnabled: true,
 };
 
-// Seed notifications styled like viral drops
-export const SEED_NOTIFICATIONS: PushNotificationItem[] = [];
+// Seed notifications loaded directly from data/notifications.json for instant static rendering
+export const SEED_NOTIFICATIONS: PushNotificationItem[] = INITIAL_NOTIFICATIONS;
 
 // Play soft ambient notification chime using Web Audio API
 export const playNotificationChime = () => {
@@ -267,7 +268,7 @@ export const NotificationService = {
     }
   },
 
-  // Get notifications from local storage
+  // Get notifications from local storage and merge with static notifications.json seeds
   getNotifications: (): PushNotificationItem[] => {
     if (typeof window === 'undefined') return SEED_NOTIFICATIONS;
     try {
@@ -275,6 +276,14 @@ export const NotificationService = {
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
+          // Merge any newly deployed notifications from notifications.json
+          const storedIds = new Set(parsed.map((item: PushNotificationItem) => item.id));
+          const missingSeeds = SEED_NOTIFICATIONS.filter((seed) => !storedIds.has(seed.id));
+          if (missingSeeds.length > 0) {
+            const merged = [...missingSeeds, ...parsed];
+            localStorage.setItem(STORAGE_KEY_NOTIFICATIONS, JSON.stringify(merged));
+            return merged;
+          }
           return parsed;
         }
       }
