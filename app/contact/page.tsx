@@ -17,6 +17,8 @@ export default function ContactPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !message) return;
+    const mailtoUrl = `mailto:geminiaipromptcopypaste@gmail.com?subject=${encodeURIComponent(subject || 'Contact Inquiry from ' + (name || email))}&body=${encodeURIComponent(`Name: ${name || 'N/A'}\nEmail: ${email}\n\nMessage:\n${message}`)}`;
+    window.location.href = mailtoUrl;
     setSubmitted(true);
   };
 
@@ -52,19 +54,9 @@ export default function ContactPage() {
             </div>
 
             <div className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 space-y-4 text-xs">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-red-50 dark:bg-red-950/60 text-[#E60023] flex items-center justify-center shrink-0">
-                  <Mail className="w-4 h-4" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-neutral-900 dark:text-white">Email Address</h4>
-                  <p className="text-neutral-500 mt-0.5">contact@zeenaprompt.com</p>
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800 text-[11px] text-neutral-500">
-                <p>Curated by <strong className="text-neutral-800 dark:text-neutral-200">tool.reelz</strong></p>
-                <p className="mt-0.5">Average response time: within 24–48 business hours.</p>
+              <div className="space-y-1">
+                <h4 className="font-bold text-neutral-900 dark:text-white">Support & Inquiries</h4>
+                <p className="text-neutral-500 mt-0.5">Average response time: within 24–48 business hours.</p>
               </div>
             </div>
           </div>
