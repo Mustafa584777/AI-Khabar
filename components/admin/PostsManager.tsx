@@ -313,7 +313,6 @@ export const PostsManager = () => {
                 </th>
                 <th className="py-4 pr-3">Prompt Title & Slug</th>
                 <th className="py-4 px-3">Category</th>
-                <th className="py-4 px-3 text-center">Copies / Views</th>
                 <th className="py-4 px-3">Status</th>
                 <th className="py-4 px-3">Date</th>
                 <th className="py-4 pr-4 text-right">Actions</th>
@@ -444,14 +443,7 @@ export const PostsManager = () => {
                         {post.category}
                       </td>
 
-                      <td className="py-4 px-3 text-center">
-                        <span className="font-mono font-bold text-neutral-800 dark:text-neutral-200">
-                          {post.copiesCount || 0}
-                        </span>
-                        <span className="text-neutral-400 text-[10px] block">
-                          {post.viewsCount || 0} views
-                        </span>
-                      </td>
+
 
                       <td className="py-4 px-3">
                         <button
@@ -515,7 +507,7 @@ export const PostsManager = () => {
                 })
               ) : (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-neutral-400">
+                  <td colSpan={6} className="py-12 text-center text-neutral-400">
                     No prompts found matching your criteria.
                   </td>
                 </tr>
