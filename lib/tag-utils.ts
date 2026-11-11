@@ -130,5 +130,5 @@ export function getDynamicPopularTags(
     return sorted.slice(0, limit);
   }
 
-  return ['Hyperrealistic', 'Portrait', 'Minimalist', 'Lifestyle', 'Aesthetic', 'Cinematic', 'Street Photography'];
+  return ['Traditional saree', 'trending mirror selfie', 'BMW', 'Sukuna', 'Instagram Trend', 'Couple'];
 }
