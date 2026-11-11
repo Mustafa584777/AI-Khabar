@@ -55,10 +55,18 @@ export const HeroSection = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  // Automatically assign popular tags based on number of times they are used across posts
   const popularTags = useMemo(() => {
-    return getDynamicPopularTags(posts, 7);
-  }, [posts]);
+    return settings.popularTags && settings.popularTags.length > 0
+      ? settings.popularTags
+      : [
+          'Traditional saree',
+          'trending mirror selfie',
+          'BMW',
+          'Sukuna',
+          'Instagram Trend',
+          'Couple',
+        ];
+  }, [settings.popularTags]);
 
   // Filter Most Viewed Categories with at least 5 prompts
   const validMostViewedCategories = useMemo(() => {
