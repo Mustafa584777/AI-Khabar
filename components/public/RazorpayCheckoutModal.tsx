@@ -33,8 +33,8 @@ const SUBSCRIPTION_PLANS: PlanOption[] = [
   {
     id: 'starter',
     name: 'Starter',
-    amountPaise: 5000,
-    displayPrice: '₹50',
+    amountPaise: 4900,
+    displayPrice: '₹49',
     period: '',
     features: ['Premium Prompts', '100 prompt tool credits', 'AI Search', 'Unlimited saves & history'],
     icon: <Sparkles className="w-5 h-5 text-amber-500" />,
@@ -42,8 +42,8 @@ const SUBSCRIPTION_PLANS: PlanOption[] = [
   {
     id: 'pro',
     name: 'Pro',
-    amountPaise: 10000,
-    displayPrice: '₹100',
+    amountPaise: 9900,
+    displayPrice: '₹99',
     period: '',
     badge: 'Most Popular',
     features: ['Premium Prompts', '250 prompt tool credits', 'AI Search', 'Unlimited saves & history'],
@@ -52,8 +52,8 @@ const SUBSCRIPTION_PLANS: PlanOption[] = [
   {
     id: 'vip',
     name: 'VIP',
-    amountPaise: 20000,
-    displayPrice: '₹200',
+    amountPaise: 19900,
+    displayPrice: '₹199',
     period: '',
     badge: 'Best Value',
     features: ['Premium Prompts', '600 prompt tool credits', 'AI Search', 'Unlimited saves & history'],
