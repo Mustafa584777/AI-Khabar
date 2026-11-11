@@ -71,7 +71,7 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
       return;
     }
 
-    router.push(targetPath);
+    window.location.href = targetPath;
   };
 
   const handleSearchClick = () => {

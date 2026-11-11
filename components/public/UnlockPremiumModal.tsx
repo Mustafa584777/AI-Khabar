@@ -137,11 +137,8 @@ export const UnlockPremiumModal: React.FC = () => {
                   <span className="text-xs font-black text-neutral-900 dark:text-white">Starter</span>
                   <div className="flex items-baseline gap-1">
                     <span className="text-xs font-bold text-neutral-900 dark:text-white">
-                      {modalBillingCycle === 'monthly' ? '₹25' : '₹245'}
+                      {modalBillingCycle === 'monthly' ? '₹50' : '₹495'}
                     </span>
-                    {modalBillingCycle === 'monthly' && (
-                      <span className="text-[10px] text-red-500 line-through font-bold">₹50</span>
-                    )}
                   </div>
                 </div>
                 <ul className="mt-2 space-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
@@ -160,12 +157,12 @@ export const UnlockPremiumModal: React.FC = () => {
                 </ul>
               </div>
               <RazorpayCheckoutButton
-                amount={modalBillingCycle === 'monthly' ? 2500 : 24500}
+                amount={modalBillingCycle === 'monthly' ? 5000 : 49500}
                 planName={modalBillingCycle === 'monthly' ? 'Starter Monthly' : 'Starter Yearly'}
                 planTier="starter"
                 billingCycle={modalBillingCycle}
                 description={modalBillingCycle === 'monthly' ? 'Premium Prompts + 100 credits + Unlimited saves' : 'Yearly Starter - 1200 credits + Unlimited saves upfront'}
-                buttonText={modalBillingCycle === 'monthly' ? 'Get Starter for ₹25' : 'Get Starter Yearly for ₹245'}
+                buttonText={modalBillingCycle === 'monthly' ? 'Get Starter for ₹50' : 'Get Starter Yearly for ₹495'}
                 variant="secondary"
                 size="sm"
                 className="w-full text-xs font-bold py-1.5"
@@ -183,11 +180,8 @@ export const UnlockPremiumModal: React.FC = () => {
                   <span className="text-xs font-black text-[#E60023] dark:text-red-400">Pro</span>
                   <div className="flex items-baseline gap-1">
                     <span className="text-xs font-bold text-neutral-900 dark:text-white">
-                      {modalBillingCycle === 'monthly' ? '₹50' : '₹495'}
+                      {modalBillingCycle === 'monthly' ? '₹100' : '₹995'}
                     </span>
-                    {modalBillingCycle === 'monthly' && (
-                      <span className="text-[10px] text-red-500 line-through font-bold">₹100</span>
-                    )}
                   </div>
                 </div>
                 <ul className="mt-2 space-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
@@ -206,12 +200,12 @@ export const UnlockPremiumModal: React.FC = () => {
                 </ul>
               </div>
               <RazorpayCheckoutButton
-                amount={modalBillingCycle === 'monthly' ? 5000 : 49500}
+                amount={modalBillingCycle === 'monthly' ? 10000 : 99500}
                 planName={modalBillingCycle === 'monthly' ? 'Pro Monthly' : 'Pro Yearly'}
                 planTier="pro"
                 billingCycle={modalBillingCycle}
                 description={modalBillingCycle === 'monthly' ? 'Premium Prompts + 250 credits + Unlimited saves' : 'Yearly Pro - 3000 credits + Unlimited saves upfront'}
-                buttonText={modalBillingCycle === 'monthly' ? 'Get Pro for ₹50' : 'Get Pro Yearly for ₹495'}
+                buttonText={modalBillingCycle === 'monthly' ? 'Get Pro for ₹100' : 'Get Pro Yearly for ₹995'}
                 variant="primary"
                 size="sm"
                 className="w-full text-xs font-bold py-1.5"
@@ -226,11 +220,8 @@ export const UnlockPremiumModal: React.FC = () => {
                   <span className="text-xs font-black text-amber-600 dark:text-amber-400">VIP</span>
                   <div className="flex items-baseline gap-1">
                     <span className="text-xs font-bold text-neutral-900 dark:text-white">
-                      {modalBillingCycle === 'monthly' ? '₹100' : '₹995'}
+                      {modalBillingCycle === 'monthly' ? '₹200' : '₹1,995'}
                     </span>
-                    {modalBillingCycle === 'monthly' && (
-                      <span className="text-[10px] text-red-500 line-through font-bold">₹200</span>
-                    )}
                   </div>
                 </div>
                 <ul className="mt-2 space-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
@@ -249,12 +240,12 @@ export const UnlockPremiumModal: React.FC = () => {
                 </ul>
               </div>
               <RazorpayCheckoutButton
-                amount={modalBillingCycle === 'monthly' ? 10000 : 99500}
+                amount={modalBillingCycle === 'monthly' ? 20000 : 199500}
                 planName={modalBillingCycle === 'monthly' ? 'VIP Monthly' : 'VIP Yearly'}
                 planTier="vip"
                 billingCycle={modalBillingCycle}
                 description={modalBillingCycle === 'monthly' ? 'Premium Prompts + 600 credits + Unlimited saves' : 'Yearly VIP - 7200 credits + Unlimited saves upfront'}
-                buttonText={modalBillingCycle === 'monthly' ? 'Get VIP for ₹100' : 'Get VIP Yearly for ₹995'}
+                buttonText={modalBillingCycle === 'monthly' ? 'Get VIP for ₹200' : 'Get VIP Yearly for ₹1,995'}
                 variant="secondary"
                 size="sm"
                 className="w-full text-xs font-bold py-1.5"

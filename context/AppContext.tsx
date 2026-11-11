@@ -2123,10 +2123,13 @@ export const AppProvider = ({
       const reqs = StorageService.getPromptRequests();
       if (reqs && reqs.length > 0) setPromptRequests(reqs);
 
-      const cachedPosts = StorageService.getCachedPosts();
-      if (cachedPosts && cachedPosts.length > 0) {
-        setPosts(cachedPosts);
-        setIsLoadingPosts(false);
+      // Public site prompts are strictly loaded from posts.json (INITIAL_POSTS)
+      if (currentView === 'admin' || isAuthenticated) {
+        const cachedPosts = StorageService.getCachedPosts();
+        if (cachedPosts && cachedPosts.length > 0) {
+          setPosts(cachedPosts);
+          setIsLoadingPosts(false);
+        }
       }
 
       const cachedCats = StorageService.getCachedCategories();

@@ -87,7 +87,7 @@ export const Header = () => {
       return;
     }
 
-    router.push(targetPath);
+    window.location.href = targetPath;
   };
 
   const handleBookmarksClick = () => {

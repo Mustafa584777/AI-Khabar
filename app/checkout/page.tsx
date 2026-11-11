@@ -84,44 +84,7 @@ export default function CheckoutPage() {
       <Header />
 
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-10">
-        {/* Diwali Special Offer Banner */}
-        <div className="w-full bg-gradient-to-r from-amber-500 via-orange-500 to-red-600 text-white p-4 sm:p-5 rounded-3xl shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3 text-center md:text-left">
-            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0 text-2xl">
-              🪔
-            </div>
-            <div>
-              <h2 className="text-base sm:text-lg font-black tracking-tight">
-                ✨ Mega Diwali Festival Special Offer — 50% OFF All Plans! ✨
-              </h2>
-              <p className="text-xs text-amber-100">
-                Celebrate Diwali with premium AI prompts at half price. Limited time offer valid until November 10!
-              </p>
-            </div>
-          </div>
-          {/* Countdown Timer */}
-          <div className="flex items-center gap-2 bg-black/30 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/20 text-xs font-bold">
-            <div className="flex flex-col items-center px-1.5">
-              <span className="text-base font-black">{String(timeLeft.days).padStart(2, '0')}</span>
-              <span className="text-[9px] uppercase tracking-wider text-amber-200">Days</span>
-            </div>
-            <span>:</span>
-            <div className="flex flex-col items-center px-1.5">
-              <span className="text-base font-black">{String(timeLeft.hours).padStart(2, '0')}</span>
-              <span className="text-[9px] uppercase tracking-wider text-amber-200">Hours</span>
-            </div>
-            <span>:</span>
-            <div className="flex flex-col items-center px-1.5">
-              <span className="text-base font-black">{String(timeLeft.minutes).padStart(2, '0')}</span>
-              <span className="text-[9px] uppercase tracking-wider text-amber-200">Mins</span>
-            </div>
-            <span>:</span>
-            <div className="flex flex-col items-center px-1.5">
-              <span className="text-base font-black">{String(timeLeft.seconds).padStart(2, '0')}</span>
-              <span className="text-[9px] uppercase tracking-wider text-amber-200">Secs</span>
-            </div>
-          </div>
-        </div>
+
 
         {/* Hero Section */}
         <div className="text-center space-y-3 max-w-3xl mx-auto">
@@ -211,13 +174,8 @@ export default function CheckoutPage() {
 
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-black text-neutral-900 dark:text-white">
-                  {billingCycle === 'monthly' ? '₹25' : '₹245'}
+                  {billingCycle === 'monthly' ? '₹50' : '₹495'}
                 </span>
-                {billingCycle === 'monthly' && (
-                  <span className="text-sm text-red-500 line-through font-bold">
-                    ₹50
-                  </span>
-                )}
               </div>
 
               <ul className="space-y-2.5 text-xs text-neutral-600 dark:text-neutral-300">
@@ -245,7 +203,7 @@ export default function CheckoutPage() {
             </div>
 
             <RazorpayCheckoutButton
-              amount={billingCycle === 'monthly' ? 2500 : 24500}
+              amount={billingCycle === 'monthly' ? 5000 : 49500}
               planTier="starter"
               billingCycle={billingCycle}
               planName={billingCycle === 'monthly' ? 'Starter Monthly' : 'Starter Yearly'}
@@ -254,7 +212,7 @@ export default function CheckoutPage() {
                   ? 'Monthly Starter - 100 Credits, AI Search, Unlimited Saves'
                   : 'Yearly Starter - 1200 Credits, AI Search, Unlimited Saves upfront'
               }
-              buttonText={billingCycle === 'monthly' ? 'Get Starter for ₹25' : 'Get Starter Yearly for ₹245'}
+              buttonText={billingCycle === 'monthly' ? 'Get Starter for ₹50' : 'Get Starter Yearly for ₹495'}
               variant="secondary"
               className="w-full text-xs"
             />
@@ -280,13 +238,8 @@ export default function CheckoutPage() {
 
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-black text-neutral-900 dark:text-white">
-                  {billingCycle === 'monthly' ? '₹50' : '₹495'}
+                  {billingCycle === 'monthly' ? '₹100' : '₹995'}
                 </span>
-                {billingCycle === 'monthly' && (
-                  <span className="text-sm text-red-500 line-through font-bold">
-                    ₹100
-                  </span>
-                )}
               </div>
 
               <ul className="space-y-2.5 text-xs text-neutral-600 dark:text-neutral-300">
@@ -314,7 +267,7 @@ export default function CheckoutPage() {
             </div>
 
             <RazorpayCheckoutButton
-              amount={billingCycle === 'monthly' ? 5000 : 49500}
+              amount={billingCycle === 'monthly' ? 10000 : 99500}
               planTier="pro"
               billingCycle={billingCycle}
               planName={billingCycle === 'monthly' ? 'Pro Monthly' : 'Pro Yearly'}
@@ -323,7 +276,7 @@ export default function CheckoutPage() {
                   ? 'Monthly Pro - 250 Credits, AI Search, Unlimited Saves'
                   : 'Yearly Pro - 3000 Credits, AI Search, Unlimited Saves upfront'
               }
-              buttonText={billingCycle === 'monthly' ? 'Get Pro for ₹50' : 'Get Pro Yearly for ₹495'}
+              buttonText={billingCycle === 'monthly' ? 'Get Pro for ₹100' : 'Get Pro Yearly for ₹995'}
               variant="pill"
               size="md"
               className="w-full text-xs"
@@ -346,13 +299,8 @@ export default function CheckoutPage() {
 
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-black text-neutral-900 dark:text-white">
-                  {billingCycle === 'monthly' ? '₹100' : '₹995'}
+                  {billingCycle === 'monthly' ? '₹200' : '₹1,995'}
                 </span>
-                {billingCycle === 'monthly' && (
-                  <span className="text-sm text-red-500 line-through font-bold">
-                    ₹200
-                  </span>
-                )}
               </div>
 
               <ul className="space-y-2.5 text-xs text-neutral-600 dark:text-neutral-300">
@@ -380,7 +328,7 @@ export default function CheckoutPage() {
             </div>
 
             <RazorpayCheckoutButton
-              amount={billingCycle === 'monthly' ? 10000 : 99500}
+              amount={billingCycle === 'monthly' ? 20000 : 199500}
               planTier="vip"
               billingCycle={billingCycle}
               planName={billingCycle === 'monthly' ? 'VIP Monthly' : 'VIP Yearly'}
@@ -389,7 +337,7 @@ export default function CheckoutPage() {
                   ? 'Monthly VIP - 600 Credits, AI Search, Unlimited Saves'
                   : 'Yearly VIP - 7200 Credits, AI Search, Unlimited Saves upfront'
               }
-              buttonText={billingCycle === 'monthly' ? 'Get VIP for ₹100' : 'Get VIP Yearly for ₹995'}
+              buttonText={billingCycle === 'monthly' ? 'Get VIP for ₹200' : 'Get VIP Yearly for ₹1,995'}
               variant="secondary"
               className="w-full text-xs"
             />
@@ -423,28 +371,13 @@ export default function CheckoutPage() {
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Price</td>
                   <td className="py-3.5 px-4 text-center font-bold text-emerald-600">₹0 Free</td>
                   <td className="py-3.5 px-4 text-center font-black text-neutral-900 dark:text-white">
-                    {billingCycle === 'monthly' ? (
-                      <span className="inline-flex items-center gap-1.5">
-                        <span>₹25</span>
-                        <span className="text-red-500 line-through text-xs font-normal">₹50</span>
-                      </span>
-                    ) : '₹245'}
+                    {billingCycle === 'monthly' ? '₹50' : '₹495'}
                   </td>
                   <td className="py-3.5 px-4 text-center font-black text-[#E60023]">
-                    {billingCycle === 'monthly' ? (
-                      <span className="inline-flex items-center gap-1.5">
-                        <span>₹50</span>
-                        <span className="text-red-500 line-through text-xs font-normal">₹100</span>
-                      </span>
-                    ) : '₹495'}
+                    {billingCycle === 'monthly' ? '₹100' : '₹995'}
                   </td>
                   <td className="py-3.5 px-4 text-center font-black text-purple-600 dark:text-purple-400">
-                    {billingCycle === 'monthly' ? (
-                      <span className="inline-flex items-center gap-1.5">
-                        <span>₹100</span>
-                        <span className="text-red-500 line-through text-xs font-normal">₹200</span>
-                      </span>
-                    ) : '₹995'}
+                    {billingCycle === 'monthly' ? '₹200' : '₹1,995'}
                   </td>
                 </tr>
                 <tr>
