@@ -1628,12 +1628,13 @@ export const AppProvider = ({
   const [isSearchModalOpen, setIsSearchModalOpen] = useState<boolean>(false);
   const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState<boolean>(false);
   const [popularSearchQueries, setPopularSearchQueries] = useState<string[]>([
-    'Traditional saree',
-    'trending mirror selfie',
-    'BMW',
+    'Traditional Saree',
+    'Aesthetic',
     'Sukuna',
     'Instagram Trend',
-    'Couple',
+    'Thar',
+    'birthday',
+    'couple',
   ]);
   const [selectedCategory, setSelectedCategoryState] = useState<string>(() => {
     if (typeof window !== 'undefined') {

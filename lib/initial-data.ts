@@ -94,11 +94,12 @@ export const INITIAL_SETTINGS: SiteSettings = {
   footerText: '© 2026 Zeenaprompt - Built for creators, designers & engineers. All prompts free to copy and commercial use.',
   adminEmail: 'admin@zeenaprompt.com',
   popularTags: [
-    'Traditional saree',
-    'trending mirror selfie',
-    'BMW',
-    'Sukuna',
-    'Instagram Trend',
-    'Couple',
+    'Cinematic 8K',
+    '3D Character',
+    'Minimalist Logo',
+    'Anime Style',
+    'Cyberpunk City',
+    'Vintage 35mm',
+    'Hyperrealistic',
   ],
 };

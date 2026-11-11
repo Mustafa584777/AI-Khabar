@@ -65,29 +65,36 @@ export function DirectPromptLoader({
   const { posts, setSelectedPost, currentView, showLoginModal, toastMessage } = useApp();
   const loadedPostIdRef = useRef<string | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
+    if (loadedPostIdRef.current === id) return;
+
     if (initialPost) {
+      loadedPostIdRef.current = id;
       setSelectedPost(initialPost);
-    } else if (id) {
-      const targetSlug = decodeURIComponent(id).toLowerCase().trim();
-      const matched = posts.find((p) => {
-        if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
-        if (p.id && p.id.toLowerCase() === targetSlug) return true;
-        if (p.title && (p.title.toLowerCase() === targetSlug || slugify(p.title) === targetSlug)) return true;
-        return false;
-      });
-      if (matched) {
-        setSelectedPost(matched);
-      } else {
-        fetch(`/api/posts/${encodeURIComponent(id)}`)
-          .then((res) => (res.ok ? res.json() : Promise.reject(res)))
-          .then((data) => {
-            if (data && data.post) {
-              setSelectedPost(data.post);
-            }
-          })
-          .catch(() => {});
-      }
+      return;
+    }
+
+    const targetSlug = decodeURIComponent(id).toLowerCase().trim();
+    const matched = posts.find((p) => {
+      if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
+      if (p.id && p.id.toLowerCase() === targetSlug) return true;
+      if (p.title && (p.title.toLowerCase() === targetSlug || slugify(p.title) === targetSlug)) return true;
+      return false;
+    });
+
+    if (matched) {
+      loadedPostIdRef.current = id;
+      setSelectedPost(matched);
+    } else {
+      fetch(`/api/posts/${encodeURIComponent(id)}`)
+        .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+        .then((data) => {
+          if (data && data.post) {
+            loadedPostIdRef.current = id;
+            setSelectedPost(data.post);
+          }
+        })
+        .catch(() => {});
     }
   }, [id, initialPost, posts, setSelectedPost]);
 
@@ -147,9 +154,10 @@ export function DirectPromptLoader({
   return (
     <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col pb-20 sm:pb-8">
       <Header />
-      <main className="flex-1 w-full">
-        <PromptDetailModal />
-      </main>
+      <HeroSection />
+      <ToolFilterBar />
+      <PromptGrid />
+      <SEOContentSection />
       <Footer />
       <BottomNav />
       <GlobalDirectModals />
