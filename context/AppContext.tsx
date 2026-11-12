@@ -113,8 +113,8 @@ interface AppContextType {
   setSelectedCategory: (cat: string) => void;
   selectedTool: string;
   setSelectedTool: (tool: string) => void;
-  selectedSort: 'trending' | 'most-popular' | 'most-liked' | 'most-copied' | 'newest';
-  setSelectedSort: (sort: 'trending' | 'most-popular' | 'most-liked' | 'most-copied' | 'newest') => void;
+  selectedSort: 'trending' | 'most-popular' | 'most-liked' | 'most-copied' | 'newest' | 'oldest';
+  setSelectedSort: (sort: 'trending' | 'most-popular' | 'most-liked' | 'most-copied' | 'newest' | 'oldest') => void;
 
   // Actions
   refreshData: () => void;
@@ -1628,13 +1628,12 @@ export const AppProvider = ({
   const [isSearchModalOpen, setIsSearchModalOpen] = useState<boolean>(false);
   const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState<boolean>(false);
   const [popularSearchQueries, setPopularSearchQueries] = useState<string[]>([
-    'Traditional Saree',
-    'Aesthetic',
+    'Traditional saree',
+    'trending mirror selfie',
+    'BMW',
     'Sukuna',
     'Instagram Trend',
-    'Thar',
-    'birthday',
-    'couple',
+    'Couple',
   ]);
   const [selectedCategory, setSelectedCategoryState] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -1695,7 +1694,7 @@ export const AppProvider = ({
   }, [pathname]);
   const [selectedTool, setSelectedTool] = useState<string>('all');
   const [selectedSort, setSelectedSort] = useState<
-    'trending' | 'most-popular' | 'most-liked' | 'most-copied' | 'newest'
+    'trending' | 'most-popular' | 'most-liked' | 'most-copied' | 'newest' | 'oldest'
   >('newest');
 
   // Gemini AI Search State & Cache

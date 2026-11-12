@@ -203,6 +203,14 @@ export const PromptGrid = () => {
           if (timeB !== timeA && !isNaN(timeB) && !isNaN(timeA)) return timeB - timeA;
           return (b.createdAt || '').localeCompare(a.createdAt || '') || b.id.localeCompare(a.id);
         });
+      } else if (selectedSort === 'oldest') {
+        // Oldest first sort selected
+        list = [...list].sort((a, b) => {
+          const timeB = new Date(b.publishedAt || b.createdAt || 0).getTime();
+          const timeA = new Date(a.publishedAt || a.createdAt || 0).getTime();
+          if (timeB !== timeA && !isNaN(timeB) && !isNaN(timeA)) return timeA - timeB;
+          return (a.createdAt || '').localeCompare(b.createdAt || '') || a.id.localeCompare(b.id);
+        });
       } else if (selectedSort === 'most-copied' || selectedSort === 'most-popular' || selectedSort === 'most-liked') {
         list = [...list].sort((a, b) => {
           const diff = (b.copiesCount || 0) - (a.copiesCount || 0);

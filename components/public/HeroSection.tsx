@@ -98,6 +98,12 @@ export const HeroSection = () => {
       desc: 'Recently published prompts',
     },
     {
+      id: 'oldest' as const,
+      label: 'Oldest First',
+      icon: Clock,
+      desc: 'Oldest published prompts',
+    },
+    {
       id: 'most-copied' as const,
       label: 'Most Copied',
       icon: Copy,
