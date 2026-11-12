@@ -2150,11 +2150,16 @@ export const AppProvider = ({
       console.warn('Error reading local cache on mount:', e);
     }
 
-    // 2. Background sync from server API (deferred by 2s so prompt cards and initial interactions are 100% immediate & unblocked)
+    // 2. Background sync from server API (strictly in admin/CMS view to eliminate public compute origin transfer)
     const syncTimer = setTimeout(() => {
-      void syncFromRemote();
+      const isAdmin = currentView === 'admin' || (typeof window !== 'undefined' && (window.location.pathname.includes('admin') || window.location.pathname.includes('cms-login')));
+      if (isAdmin) {
+        void syncFromRemote();
+      }
       const currentAcc = StorageService.getUserAccount();
-      void refreshPromptRequests(currentAcc?.email);
+      if (currentAcc?.isLoggedIn) {
+        void refreshPromptRequests(currentAcc?.email);
+      }
     }, 2000);
 
     const applySynced = (synced: any) => {
@@ -2413,7 +2418,8 @@ export const AppProvider = ({
     window.addEventListener('message', handleAuthMessage);
 
     const handleFocus = () => {
-      if (!isSavingRef.current) {
+      const isAdmin = currentView === 'admin' || (typeof window !== 'undefined' && (window.location.pathname.includes('admin') || window.location.pathname.includes('cms-login')));
+      if (isAdmin && !isSavingRef.current) {
         void syncFromRemote();
       }
       const acc = StorageService.getUserAccount();
