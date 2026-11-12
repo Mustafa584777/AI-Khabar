@@ -4,7 +4,7 @@ import { ServerStorage } from '@/lib/server-storage';
 import { getPromptSlug, getPromptMetaDescription } from '@/lib/utils';
 import { DirectPromptLoader } from '@/components/public/DirectPromptLoader';
 
-export const revalidate = 21600;
+export const revalidate = 86400;
 
 interface PageProps {
   params: Promise<{ id: string }>;

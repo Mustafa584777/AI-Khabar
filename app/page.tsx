@@ -2,7 +2,7 @@ import { ServerStorage } from '@/lib/server-storage';
 import { HomeClientWrapper } from '@/components/public/HomeClientWrapper';
 import { getPromptSlug } from '@/lib/utils';
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export default async function Page() {
   const rawPosts = await ServerStorage.getAllPosts(false);
