@@ -25,7 +25,7 @@ import { formatExpiryDateWithHour } from '@/lib/plans';
 const FAQS = [
   {
     question: 'What does the ₹99/year Pro Yearly plan include?',
-    answer: 'For just ₹99 per year (365 days), you unlock all benefits: unlimited access to all premium prompts, clean prompts with no watermark text on copy, 120 prompt tool credits for AI prompt generation/extraction/editing, AI Search (3 daily searches), and unlimited saves & history.',
+    answer: 'For just ₹99 per year (365 days), you unlock all benefits: unlimited access to all premium prompts, Bulk Upload in the Watermark Remover tool, clean prompts with no watermark text on copy, 120 prompt tool credits for AI prompt generation/extraction/editing, AI Search (3 daily searches), and unlimited saves & history.',
   },
   {
     question: 'How many tool credits do I receive with the ₹99/year plan?',
@@ -157,6 +157,12 @@ export default function CheckoutPage() {
                 </li>
                 <li className="flex items-center gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-[#E60023] shrink-0" />
+                  <span className="font-bold text-neutral-900 dark:text-white">
+                    Bulk upload in Watermark Remover
+                  </span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-[#E60023] shrink-0" />
                   <span className="font-bold text-[#E60023]">
                     Unlimited saves & history
                   </span>
@@ -242,6 +248,14 @@ export default function CheckoutPage() {
                   <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400">
                     <Check className="w-4 h-4 text-emerald-500 inline-block mr-1" />
                     <span>No Watermark Text</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Watermark Remover Bulk Upload</td>
+                  <td className="py-3.5 px-4 text-center font-medium"><X className="w-4 h-4 text-red-500 inline-block" /></td>
+                  <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400">
+                    <Check className="w-4 h-4 text-emerald-500 inline-block mr-1" />
+                    <span>Bulk Upload Unlocked</span>
                   </td>
                 </tr>
               </tbody>

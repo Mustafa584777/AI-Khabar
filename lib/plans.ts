@@ -33,6 +33,7 @@ const SINGLE_PRO_YEARLY_CONFIG: Omit<PlanConfig, 'id'> = {
   unlockAllPrompts: true,
     features: [
       'Unlock all premium prompts',
+      'Bulk upload in Watermark Remover',
       '120 prompt tool credits',
       'No watermark text on copied prompts',
       'AI Search (3 daily searches)',

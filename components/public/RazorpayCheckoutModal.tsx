@@ -25,6 +25,7 @@ const SINGLE_YEARLY_PLAN = {
   badge: 'All-Access Annual Pass',
   features: [
     'Unlock all premium prompts',
+    'Bulk upload in Watermark Remover',
     'No watermark text on copied prompts',
     '120 prompt tool credits',
     'AI Search (3 daily searches)',

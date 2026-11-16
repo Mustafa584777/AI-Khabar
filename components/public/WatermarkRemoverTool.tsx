@@ -20,7 +20,18 @@ import {
   Layers,
   Zap,
   Share2,
+  Lock,
+  Crown,
+  ExternalLink,
+  ArrowRight,
+  Minimize2,
+  Crop,
+  FileText,
+  Images,
+  X,
+  Package,
 } from 'lucide-react';
+import JSZip from 'jszip';
 import {
   removeWatermarkInpaint,
   type WatermarkRemovalMode,
@@ -29,8 +40,37 @@ import {
 import { useApp } from '@/context/AppContext';
 import { WatermarkRemoverSEO } from '@/components/public/WatermarkRemoverSEO';
 
+interface BulkWatermarkItem {
+  id: string;
+  name: string;
+  originalUrl: string;
+  cleanedUrl?: string;
+  width: number;
+  height: number;
+  status: 'pending' | 'processing' | 'done' | 'error';
+  durationMs?: number;
+}
+
 export const WatermarkRemoverTool = () => {
-  const { showToast } = useApp();
+  const {
+    showToast,
+    userAccount,
+    isProUser,
+    planTier,
+    planExpiresAt,
+    isActivePremiumUser,
+    setIsProCheckoutModalOpen,
+  } = useApp();
+
+  const effectiveTier = planTier || userAccount?.planTier || 'free';
+  const expires = planExpiresAt || userAccount?.planExpiresAt;
+  const isExpired = Boolean(expires && new Date(expires).getTime() <= Date.now());
+  const hasActivePremium = Boolean(
+    isActivePremiumUser ||
+      (userAccount?.isLoggedIn &&
+        !isExpired &&
+        (isProUser || ['starter', 'pro', 'vip'].includes(effectiveTier) || userAccount?.isProUser))
+  );
 
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
   const [hasImage, setHasImage] = useState(false);
@@ -45,7 +85,14 @@ export const WatermarkRemoverTool = () => {
   const [lastProcessMs, setLastProcessMs] = useState<number | null>(null);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
 
+  // Bulk Upload Queue (Premium-only feature)
+  const [bulkItems, setBulkItems] = useState<BulkWatermarkItem[]>([]);
+  const [bulkZone, setBulkZone] = useState<'bottom-right' | 'bottom-left' | 'both'>('bottom-right');
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bulkFileInputRef = useRef<HTMLInputElement>(null);
   const imageCanvasRef = useRef<HTMLCanvasElement>(null);
   const maskCanvasRef = useRef<HTMLCanvasElement>(null);
   const originalSnapshotRef = useRef<ImageData | null>(null);
@@ -102,6 +149,19 @@ export const WatermarkRemoverTool = () => {
     },
     [getGeminiWatermarkRect]
   );
+
+  const drawBottomLeftWatermarkMask = useCallback((mCtx: CanvasRenderingContext2D, w: number, h: number) => {
+    mCtx.save();
+    mCtx.fillStyle = 'rgba(236, 72, 153, 0.72)';
+    const boxW = Math.max(120, Math.round(w * 0.28));
+    const boxH = Math.max(40, Math.round(h * 0.075));
+    const padX = Math.max(8, Math.round(w * 0.015));
+    const padY = Math.max(8, Math.round(h * 0.015));
+    mCtx.beginPath();
+    mCtx.roundRect(padX, h - boxH - padY, boxW, boxH, 10);
+    mCtx.fill();
+    mCtx.restore();
+  }, []);
 
   const drawLoadedImage = useCallback(
     (img: HTMLImageElement) => {
@@ -408,17 +468,7 @@ export const WatermarkRemoverTool = () => {
       drawGeminiWatermarkMask(mCtx, w, h);
       showToast('Marked Bottom-Right Gemini Watermark zone. Click "Remove Watermark Now"!');
     } else {
-      // Bottom-left text/calligraphy watermark zone
-      mCtx.save();
-      mCtx.fillStyle = 'rgba(236, 72, 153, 0.72)';
-      const boxW = Math.max(120, Math.round(w * 0.28));
-      const boxH = Math.max(40, Math.round(h * 0.075));
-      const padX = Math.max(8, Math.round(w * 0.015));
-      const padY = Math.max(8, Math.round(h * 0.015));
-      mCtx.beginPath();
-      mCtx.roundRect(padX, h - boxH - padY, boxW, boxH, 10);
-      mCtx.fill();
-      mCtx.restore();
+      drawBottomLeftWatermarkMask(mCtx, w, h);
       showToast('Marked Bottom-Left Watermark zone. Click "Remove Watermark Now"!');
     }
 
@@ -841,6 +891,250 @@ export const WatermarkRemoverTool = () => {
     }
   };
 
+  // --- Bulk Add Handlers (Premium-Only) ---
+  const handleBulkAddTrigger = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!hasActivePremium) {
+      showToast('Bulk Upload is a Pro feature. Upgrade to Pro Yearly (₹99/year) to unlock!');
+      setIsProCheckoutModalOpen(true);
+      return;
+    }
+    bulkFileInputRef.current?.click();
+  };
+
+  const handleBulkFilesSelected = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    if (!hasActivePremium) {
+      setIsProCheckoutModalOpen(true);
+      return;
+    }
+
+    const validFiles = Array.from(files).filter((f) => f.type.startsWith('image/')).slice(0, 30);
+    if (validFiles.length === 0) {
+      showToast('Please select valid image files (PNG, JPG, WEBP).');
+      return;
+    }
+
+    const decodedItems: BulkWatermarkItem[] = [];
+    for (const file of validFiles) {
+      const objectUrl = URL.createObjectURL(file);
+      const dims = await new Promise<{ w: number; h: number } | null>((resolve) => {
+        const img = new window.Image();
+        img.onload = () => {
+          const maxDim = 2400;
+          let w = img.naturalWidth || img.width;
+          let h = img.naturalHeight || img.height;
+          if (w > maxDim || h > maxDim) {
+            const scale = maxDim / Math.max(w, h);
+            w = Math.round(w * scale);
+            h = Math.round(h * scale);
+          }
+          resolve({ w, h });
+        };
+        img.onerror = () => resolve(null);
+        img.src = objectUrl;
+      });
+
+      if (dims) {
+        decodedItems.push({
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          name: file.name,
+          originalUrl: objectUrl,
+          width: dims.w,
+          height: dims.h,
+          status: 'pending',
+        });
+      } else {
+        URL.revokeObjectURL(objectUrl);
+      }
+    }
+
+    if (decodedItems.length > 0) {
+      setBulkItems((prev) => [...prev, ...decodedItems]);
+      showToast(`Added ${decodedItems.length} photo${decodedItems.length > 1 ? 's' : ''} to Bulk Queue!`);
+    }
+  };
+
+  const handleProcessBulkQueue = async () => {
+    if (!hasActivePremium) {
+      setIsProCheckoutModalOpen(true);
+      return;
+    }
+    if (isBulkProcessing) return;
+
+    const pendingQueue = bulkItems.filter((item) => item.status !== 'done');
+    if (pendingQueue.length === 0) {
+      showToast('All queued photos are already cleaned!');
+      return;
+    }
+
+    setIsBulkProcessing(true);
+    setBulkProgress({ current: 0, total: pendingQueue.length });
+
+    let completed = 0;
+    for (const target of pendingQueue) {
+      setBulkItems((prev) =>
+        prev.map((it) => (it.id === target.id ? { ...it, status: 'processing' } : it))
+      );
+
+      try {
+        const result = await new Promise<{ cleanedUrl: string; durationMs: number }>((resolve, reject) => {
+          const img = new window.Image();
+          img.onload = async () => {
+            try {
+              const w = target.width;
+              const h = target.height;
+              const imgCanvas = document.createElement('canvas');
+              imgCanvas.width = w;
+              imgCanvas.height = h;
+              const maskCanvas = document.createElement('canvas');
+              maskCanvas.width = w;
+              maskCanvas.height = h;
+
+              const ctx = imgCanvas.getContext('2d', { willReadFrequently: true });
+              const mCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
+              if (!ctx || !mCtx) throw new Error('Canvas context unavailable');
+
+              ctx.drawImage(img, 0, 0, w, h);
+              if (bulkZone === 'bottom-right' || bulkZone === 'both') {
+                drawGeminiWatermarkMask(mCtx, w, h);
+              }
+              if (bulkZone === 'bottom-left' || bulkZone === 'both') {
+                drawBottomLeftWatermarkMask(mCtx, w, h);
+              }
+
+              const imgData = ctx.getImageData(0, 0, w, h);
+              const maskData = mCtx.getImageData(0, 0, w, h);
+              const inpainted = await removeWatermarkInpaint(imgData, maskData.data, {
+                mode: removalMode,
+              });
+              ctx.putImageData(inpainted.imageData, 0, 0);
+              resolve({
+                cleanedUrl: imgCanvas.toDataURL('image/png'),
+                durationMs: inpainted.durationMs,
+              });
+            } catch (err) {
+              reject(err);
+            }
+          };
+          img.onerror = () => reject(new Error('Image decode failed'));
+          img.src = target.originalUrl;
+        });
+
+        completed += 1;
+        setBulkProgress({ current: completed, total: pendingQueue.length });
+        setBulkItems((prev) =>
+          prev.map((it) =>
+            it.id === target.id
+              ? { ...it, status: 'done', cleanedUrl: result.cleanedUrl, durationMs: result.durationMs }
+              : it
+          )
+        );
+      } catch {
+        completed += 1;
+        setBulkProgress({ current: completed, total: pendingQueue.length });
+        setBulkItems((prev) =>
+          prev.map((it) => (it.id === target.id ? { ...it, status: 'error' } : it))
+        );
+      }
+    }
+
+    setIsBulkProcessing(false);
+    showToast(`Bulk processing complete! Cleaned ${pendingQueue.length} photo${pendingQueue.length > 1 ? 's' : ''} locally.`);
+  };
+
+  const handleDownloadBulkItem = (item: BulkWatermarkItem) => {
+    const url = item.cleanedUrl;
+    if (!url) return;
+    const baseName = item.name.replace(/\.[^.]+$/, '') || 'photo';
+    const blob = dataUrlToBlob(url);
+    const filename = `clean-${baseName}.png`;
+
+    if (blob) {
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => link.parentNode?.removeChild(link), 300);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
+    } else {
+      triggerSyncDownload(url, 'png');
+    }
+  };
+
+  const handleDownloadAllZip = async () => {
+    const doneItems = bulkItems.filter((it) => it.status === 'done' && it.cleanedUrl);
+    if (doneItems.length === 0) {
+      showToast('Process the queued images first before downloading ZIP.');
+      return;
+    }
+
+    const zip = new JSZip();
+    doneItems.forEach((item, idx) => {
+      if (!item.cleanedUrl) return;
+      const blob = dataUrlToBlob(item.cleanedUrl);
+      if (blob) {
+        const safeBase = (item.name.replace(/\.[^.]+$/, '') || `photo-${idx + 1}`).replace(/[^a-zA-Z0-9_-]/g, '_');
+        zip.file(`${idx + 1}-clean-${safeBase}.png`, blob);
+      }
+    });
+
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const zipUrl = URL.createObjectURL(zipBlob);
+    const link = document.createElement('a');
+    link.href = zipUrl;
+    link.download = `zeenaprompt-bulk-clean-${Date.now()}.zip`;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => link.parentNode?.removeChild(link), 300);
+    setTimeout(() => URL.revokeObjectURL(zipUrl), 30000);
+    showToast(`Downloaded ${doneItems.length} clean images as ZIP!`);
+  };
+
+  const handleLoadBulkItemInEditor = (item: BulkWatermarkItem) => {
+    const srcUrl = item.cleanedUrl || item.originalUrl;
+    const img = new window.Image();
+    img.onload = () => {
+      const tempObjUrl = srcUrl.startsWith('blob:') ? srcUrl : '';
+      pendingUploadRef.current = { img, objectUrl: tempObjUrl };
+      if (hasImage && drawLoadedImage(img)) {
+        pendingUploadRef.current = null;
+      } else {
+        setHasImage(true);
+      }
+      showToast(`Loaded "${item.name}" into Brush Editor!`);
+    };
+    img.src = srcUrl;
+  };
+
+  const handleRemoveBulkItem = (id: string) => {
+    setBulkItems((prev) => {
+      const target = prev.find((it) => it.id === id);
+      if (target?.originalUrl.startsWith('blob:')) {
+        try {
+          URL.revokeObjectURL(target.originalUrl);
+        } catch {}
+      }
+      return prev.filter((it) => it.id !== id);
+    });
+  };
+
+  const handleClearBulkQueue = () => {
+    bulkItems.forEach((it) => {
+      if (it.originalUrl.startsWith('blob:')) {
+        try {
+          URL.revokeObjectURL(it.originalUrl);
+        } catch {}
+      }
+    });
+    setBulkItems([]);
+    setBulkProgress({ current: 0, total: 0 });
+  };
+
   return (
     <div className="space-y-6">
       {/* Main H1 Header & Privacy Badges */}
@@ -869,7 +1163,7 @@ export const WatermarkRemoverTool = () => {
         </div>
       </div>
 
-      {/* Hidden File Input */}
+      {/* Hidden File Inputs */}
       <input
         ref={fileInputRef}
         type="file"
@@ -878,6 +1172,17 @@ export const WatermarkRemoverTool = () => {
         onChange={(e) => {
           const file = e.target.files?.[0];
           if (file) handleFile(file);
+          e.target.value = '';
+        }}
+      />
+      <input
+        ref={bulkFileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          void handleBulkFilesSelected(e.target.files);
           e.target.value = '';
         }}
       />
@@ -893,6 +1198,15 @@ export const WatermarkRemoverTool = () => {
           onDrop={(e) => {
             e.preventDefault();
             setIsDraggingFile(false);
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 1) {
+              if (!hasActivePremium) {
+                showToast('Bulk Upload is a Pro feature. Upgrade to Pro Yearly (₹99/year) to unlock!');
+                setIsProCheckoutModalOpen(true);
+                return;
+              }
+              void handleBulkFilesSelected(e.dataTransfer.files);
+              return;
+            }
             const file = e.dataTransfer.files?.[0];
             if (file) handleFile(file);
           }}
@@ -914,13 +1228,37 @@ export const WatermarkRemoverTool = () => {
               Select any Gemini photo or AI artwork from your gallery. Your image stays completely inside your device memory and is cleaned locally with crisp HD texture detail in seconds.
             </p>
           </div>
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-600 hover:from-pink-600 hover:via-fuchsia-600 hover:to-violet-700 text-white font-black text-sm shadow-lg shadow-pink-500/25 transition-all cursor-pointer"
-          >
-            <Upload className="w-4 h-4" />
-            <span>Choose Image from Phone / PC</span>
-          </button>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-600 hover:from-pink-600 hover:via-fuchsia-600 hover:to-violet-700 text-white font-black text-sm shadow-lg shadow-pink-500/25 transition-all cursor-pointer"
+            >
+              <Upload className="w-4 h-4" />
+              <span>Choose Image from Phone / PC</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleBulkAddTrigger}
+              id="bulk-add-dropzone-btn"
+              className={`inline-flex items-center gap-2 px-5 py-3.5 rounded-full font-black text-sm border transition-all cursor-pointer ${
+                hasActivePremium
+                  ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 border-neutral-900 dark:border-white hover:opacity-90 shadow-md'
+                  : 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-700/70 hover:bg-amber-100 dark:hover:bg-amber-900/50 shadow-sm'
+              }`}
+            >
+              {hasActivePremium ? (
+                <Images className="w-4 h-4 text-pink-500" />
+              ) : (
+                <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              )}
+              <span>Bulk Add</span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-black uppercase tracking-wider">
+                <Crown className="w-2.5 h-2.5" />
+                <span>{hasActivePremium ? 'PRO' : 'PRO ONLY'}</span>
+              </span>
+            </button>
+          </div>
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2 text-[11px] font-medium text-neutral-400">
             <span>No Login Required</span>
             <span aria-hidden="true">·</span>
@@ -969,6 +1307,29 @@ export const WatermarkRemoverTool = () => {
                     className="px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200 text-xs font-bold transition-colors cursor-pointer"
                   >
                     Change Photo
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleBulkAddTrigger}
+                    id="bulk-add-editor-btn"
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-colors cursor-pointer ${
+                      hasActivePremium
+                        ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 border-neutral-900 dark:border-white'
+                        : 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-700/70 hover:bg-amber-100'
+                    }`}
+                  >
+                    {hasActivePremium ? (
+                      <Images className="w-3.5 h-3.5 text-pink-500" />
+                    ) : (
+                      <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    )}
+                    <span>Bulk Add</span>
+                    {!hasActivePremium && (
+                      <span className="px-1.5 py-0.5 rounded bg-amber-500 text-white text-[9px] font-black uppercase">
+                        PRO
+                      </span>
+                    )}
                   </button>
                 </div>
               </div>
@@ -1284,6 +1645,280 @@ export const WatermarkRemoverTool = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Bulk Watermark Remover Queue Panel (Visible when Pro user adds multiple photos) */}
+      {bulkItems.length > 0 && (
+        <section
+          aria-label="Bulk Watermark Removal Queue"
+          className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-5"
+        >
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-neutral-100 dark:border-neutral-800">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-black uppercase tracking-wider">
+                  <Crown className="w-3 h-3" />
+                  <span>PRO BULK QUEUE</span>
+                </span>
+                <h3 className="text-base sm:text-lg font-black text-neutral-900 dark:text-white">
+                  Bulk Watermark Remover ({bulkItems.length} Photo{bulkItems.length > 1 ? 's' : ''})
+                </h3>
+              </div>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                100% local batch cleaning inside your browser memory. Choose watermark position and process all photos in one click.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleBulkAddTrigger}
+                className="px-3.5 py-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Images className="w-3.5 h-3.5 text-pink-500" />
+                <span>Add More</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={isBulkProcessing}
+                onClick={() => void handleProcessBulkQueue()}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-600 hover:from-pink-600 hover:via-fuchsia-600 hover:to-violet-700 disabled:opacity-50 text-white text-xs font-black flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
+              >
+                {isBulkProcessing ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Cleaning {bulkProgress.current}/{bulkProgress.total}...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Process All ({bulkItems.filter((i) => i.status !== 'done').length || bulkItems.length})</span>
+                  </>
+                )}
+              </button>
+
+              {bulkItems.some((it) => it.status === 'done') && (
+                <button
+                  type="button"
+                  onClick={() => void handleDownloadAllZip()}
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                >
+                  <Package className="w-3.5 h-3.5" />
+                  <span>Download All ZIP</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                disabled={isBulkProcessing}
+                onClick={handleClearBulkQueue}
+                className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 text-xs font-bold transition-colors cursor-pointer"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+
+          {/* Watermark Zone Preset Selector */}
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="font-bold text-neutral-500 dark:text-neutral-400 mr-1">Target Watermark Zone:</span>
+            {(
+              [
+                { id: 'bottom-right', label: 'Bottom-Right (Gemini Sparkle)' },
+                { id: 'bottom-left', label: 'Bottom-Left (Text Stamp)' },
+                { id: 'both', label: 'Both Corners' },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                disabled={isBulkProcessing}
+                onClick={() => setBulkZone(opt.id)}
+                className={`px-3 py-1.5 rounded-lg font-bold border transition-colors cursor-pointer ${
+                  bulkZone === opt.id
+                    ? 'border-pink-500 bg-pink-50 dark:bg-pink-950/30 text-pink-700 dark:text-pink-300'
+                    : 'border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:border-neutral-300'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Bulk Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {bulkItems.map((item) => (
+              <div
+                key={item.id}
+                className="p-3 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/60 dark:bg-neutral-950/60 flex items-center gap-3"
+              >
+                <div className="w-16 h-16 rounded-xl overflow-hidden bg-neutral-200 dark:bg-neutral-800 shrink-0 relative">
+                  <img
+                    src={item.cleanedUrl || item.originalUrl}
+                    alt={item.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="min-w-0 flex-1 space-y-1">
+                  <p className="text-xs font-bold text-neutral-900 dark:text-white truncate">{item.name}</p>
+                  <p className="text-[11px] text-neutral-500">
+                    {item.width} × {item.height} px ·{' '}
+                    <span
+                      className={
+                        item.status === 'done'
+                          ? 'text-emerald-600 dark:text-emerald-400 font-bold'
+                          : item.status === 'processing'
+                          ? 'text-pink-600 font-bold'
+                          : item.status === 'error'
+                          ? 'text-red-500 font-bold'
+                          : 'text-neutral-500'
+                      }
+                    >
+                      {item.status === 'done'
+                        ? `Cleaned (${((item.durationMs || 0) / 1000).toFixed(1)}s)`
+                        : item.status === 'processing'
+                        ? 'Processing...'
+                        : item.status === 'error'
+                        ? 'Failed'
+                        : 'Ready'}
+                    </span>
+                  </p>
+                  <div className="flex items-center gap-1.5 pt-0.5">
+                    {item.status === 'done' && (
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadBulkItem(item)}
+                        className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                      >
+                        <Download className="w-3 h-3" />
+                        <span>Save</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleLoadBulkItemInEditor(item)}
+                      className="px-2.5 py-1 rounded-lg bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-[11px] font-bold cursor-pointer"
+                    >
+                      Edit Brush
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isBulkProcessing}
+                      onClick={() => handleRemoveBulkItem(item.id)}
+                      aria-label={`Remove ${item.name}`}
+                      className="p-1 rounded-lg text-neutral-400 hover:text-red-500 hover:bg-neutral-200/70 dark:hover:bg-neutral-800 cursor-pointer ml-auto"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* More Tools Section (Appears after user uploads an image, directly above Browser-Native Pixel Reconstruction) */}
+      {hasImage && (
+        <section
+          aria-label="More Image & Productivity Tools"
+          className="mt-8 p-5 sm:p-7 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-5"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+            <div className="space-y-1">
+              <p className="text-xs font-bold uppercase tracking-wider text-pink-600 dark:text-pink-400">
+                Quick Companion Utilities
+              </p>
+              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-neutral-900 dark:text-white">
+                More Free Online Image &amp; Document Tools
+              </h2>
+            </div>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              Need to compress, resize for ID, or extract handwritten notes next?
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <a
+              href="https://toolimg.online/compress/compress-image-to-50kb"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group p-5 rounded-2xl bg-neutral-50 dark:bg-neutral-950/70 border border-neutral-200 dark:border-neutral-800 hover:border-pink-500 dark:hover:border-pink-500 transition-all flex flex-col justify-between gap-4"
+            >
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="w-10 h-10 rounded-xl bg-pink-100 dark:bg-pink-950/60 text-pink-600 dark:text-pink-400 flex items-center justify-center">
+                    <Minimize2 className="w-5 h-5" />
+                  </span>
+                  <ExternalLink className="w-4 h-4 text-neutral-400 group-hover:text-pink-500 transition-colors" />
+                </div>
+                <h3 className="text-base font-bold text-neutral-900 dark:text-white group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
+                  Compress Image
+                </h3>
+                <p className="text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
+                  Shrink photo file sizes down to 50KB cleanly for online forms, portals, and fast sharing.
+                </p>
+              </div>
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-pink-600 dark:text-pink-400">
+                <span>Open Compress Tool</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </span>
+            </a>
+
+            <a
+              href="https://toolimg.online/social-resize/us-passport-photo-2x2"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group p-5 rounded-2xl bg-neutral-50 dark:bg-neutral-950/70 border border-neutral-200 dark:border-neutral-800 hover:border-violet-500 dark:hover:border-violet-500 transition-all flex flex-col justify-between gap-4"
+            >
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-950/60 text-violet-600 dark:text-violet-400 flex items-center justify-center">
+                    <Crop className="w-5 h-5" />
+                  </span>
+                  <ExternalLink className="w-4 h-4 text-neutral-400 group-hover:text-violet-500 transition-colors" />
+                </div>
+                <h3 className="text-base font-bold text-neutral-900 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+                  Passport size photo maker
+                </h3>
+                <p className="text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
+                  Crop and resize portraits to exact 2×2 inch passport &amp; visa dimensions instantly.
+                </p>
+              </div>
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-violet-600 dark:text-violet-400">
+                <span>Create Passport Photo</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </span>
+            </a>
+
+            <a
+              href="https://toolimg.online/tools/handwriting-to-text"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group p-5 rounded-2xl bg-neutral-50 dark:bg-neutral-950/70 border border-neutral-200 dark:border-neutral-800 hover:border-emerald-500 dark:hover:border-emerald-500 transition-all flex flex-col justify-between gap-4"
+            >
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                    <FileText className="w-5 h-5" />
+                  </span>
+                  <ExternalLink className="w-4 h-4 text-neutral-400 group-hover:text-emerald-500 transition-colors" />
+                </div>
+                <h3 className="text-base font-bold text-neutral-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                  Handwriting to Text
+                </h3>
+                <p className="text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
+                  Convert handwritten notes, notebooks, and scanned pages into clean editable digital text.
+                </p>
+              </div>
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                <span>Convert Handwriting</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </span>
+            </a>
+          </div>
+        </section>
       )}
 
       {/* Comprehensive On-Page SEO Guide, Comparison Table & Interactive FAQ */}

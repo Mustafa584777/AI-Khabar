@@ -662,6 +662,10 @@ export const UserDashboard = () => {
                 title: '3 Daily AI Searches',
                 desc: 'Smart conversational prompt discovery every day',
               },
+              {
+                title: 'Bulk Watermark Upload',
+                desc: 'Clean multiple watermarked photos at once offline',
+              },
             ].map((feat, idx) => (
               <div key={idx} className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-start gap-3">
                 <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
