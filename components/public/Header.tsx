@@ -2,11 +2,10 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import {
   Bookmark,
-  BookOpen,
   User,
   Sparkles,
   Search,
@@ -21,22 +20,19 @@ import { getEmailAvatarUrl } from '@/lib/utils';
 
 export const Header = () => {
   const pathname = usePathname();
+  const router = useRouter();
   const {
     bookmarkedIds,
     setIsBookmarksDrawerOpen,
-    currentView,
-    setCurrentView,
-    selectedCategory,
     setSelectedCategory,
     setSelectedSort,
     searchQuery,
     setSearchQuery,
     setIsSearchModalOpen,
     setIsNotificationsModalOpen,
-    isNotificationsModalOpen,
+    setSelectedPost,
     isProUser,
     planTier,
-    setIsProCheckoutModalOpen,
     userAccount,
     openAuthModal,
   } = useApp();
@@ -56,13 +52,21 @@ export const Header = () => {
   const isHomeActive = pathname === '/';
   const isCreateActive = pathname === '/create';
 
+  const closeAllOverlays = () => {
+    setSelectedPost(null);
+    setIsBookmarksDrawerOpen(false);
+    setIsSearchModalOpen(false);
+    setIsNotificationsModalOpen(false);
+  };
+
   const handleNav = (
     e: React.MouseEvent,
-    targetView: 'public' | 'studio-tool' | 'notifications' | 'user-dashboard',
+    _targetView: 'public' | 'studio-tool' | 'notifications' | 'user-dashboard',
     targetPath: string
   ) => {
     if (e.metaKey || e.ctrlKey || e.button === 1) return;
     e.preventDefault();
+    closeAllOverlays();
 
     if (pathname === targetPath) {
       if (targetPath === '/') {
@@ -74,15 +78,25 @@ export const Header = () => {
       return;
     }
 
-    window.location.href = targetPath;
+    router.push(targetPath);
   };
 
   const handleBookmarksClick = () => {
-    if (!userAccount?.isLoggedIn) {
-      openAuthModal('Please sign in or create an account to access your saved collection.');
-      return;
-    }
+    setIsSearchModalOpen(false);
+    setIsNotificationsModalOpen(false);
     setIsBookmarksDrawerOpen(true);
+  };
+
+  const handleOpenSearch = () => {
+    setIsBookmarksDrawerOpen(false);
+    setIsNotificationsModalOpen(false);
+    setIsSearchModalOpen(true);
+  };
+
+  const warmRoute = (path: string) => {
+    try {
+      router.prefetch(path);
+    } catch {}
   };
 
   return (
@@ -92,6 +106,7 @@ export const Header = () => {
         <div className="flex items-center gap-3 sm:gap-4 shrink-0">
           <a
             href="/"
+            onMouseEnter={() => warmRoute('/')}
             onClick={(e) => handleNav(e, 'public', '/')}
             className="flex items-center group focus:outline-none p-1 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
             id="brand-logo-btn"
@@ -113,8 +128,9 @@ export const Header = () => {
           <nav className="flex items-center gap-1.5 sm:gap-2">
             <a
               href="/"
+              onMouseEnter={() => warmRoute('/')}
               onClick={(e) => handleNav(e, 'public', '/')}
-              className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+              className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 flex items-center gap-1.5 cursor-pointer active:scale-95 ${
                 isHomeActive
                   ? 'bg-red-50 text-[#E60023] dark:bg-red-950/40 dark:text-red-400 border border-red-200/90 dark:border-red-900/50 shadow-xs'
                   : 'text-neutral-700 dark:text-neutral-300 hover:bg-[#efefef] dark:hover:bg-neutral-800'
@@ -127,8 +143,9 @@ export const Header = () => {
             {/* Create / AI Studio Route Link */}
             <a
               href="/create"
+              onMouseEnter={() => warmRoute('/create')}
               onClick={(e) => handleNav(e, 'studio-tool', '/create')}
-              className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+              className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 flex items-center gap-1.5 cursor-pointer active:scale-95 ${
                 isCreateActive
                   ? 'bg-[#E60023] text-white shadow-sm'
                   : 'text-neutral-700 dark:text-neutral-300 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-[#E60023]'
@@ -144,7 +161,9 @@ export const Header = () => {
             <Link
               href="/prompt-editor"
               prefetch={false}
-              className={`hidden lg:flex px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 items-center gap-1.5 cursor-pointer ${
+              onMouseEnter={() => warmRoute('/prompt-editor')}
+              onClick={closeAllOverlays}
+              className={`hidden lg:flex px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 items-center gap-1.5 cursor-pointer active:scale-95 ${
                 pathname === '/prompt-editor'
                   ? 'bg-[#E60023] text-white shadow-sm'
                   : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
@@ -162,8 +181,8 @@ export const Header = () => {
         <div className="flex-1 max-w-md hidden md:flex items-center">
           <button
             type="button"
-            onClick={() => setIsSearchModalOpen(true)}
-            className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-[#f0f0f0] dark:bg-neutral-800 hover:bg-[#e4e4e4] dark:hover:bg-neutral-700 text-neutral-500 dark:text-neutral-400 text-xs font-medium transition-all group cursor-pointer"
+            onClick={handleOpenSearch}
+            className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-[#f0f0f0] dark:bg-neutral-800 hover:bg-[#e4e4e4] dark:hover:bg-neutral-700 text-neutral-500 dark:text-neutral-400 text-xs font-medium transition-all group cursor-pointer active:scale-[0.99]"
             id="header-search-trigger-btn"
             title="Search prompts, categories, and tags"
           >
@@ -176,11 +195,13 @@ export const Header = () => {
 
         {/* Right: Saved, Account & Admin Actions */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Notifications Button (Next.js Link with prefetch) */}
+          {/* Notifications Button */}
           <Link
             href="/notifications"
             prefetch={false}
-            className={`hidden sm:flex relative items-center justify-center p-2 rounded-full transition-colors cursor-pointer ${
+            onMouseEnter={() => warmRoute('/notifications')}
+            onClick={closeAllOverlays}
+            className={`hidden sm:flex relative items-center justify-center p-2 rounded-full transition-colors cursor-pointer active:scale-95 ${
               pathname === '/notifications'
                 ? 'bg-[#E60023] text-white shadow-xs'
                 : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
@@ -198,8 +219,9 @@ export const Header = () => {
 
           {/* Saved Prompts */}
           <button
+            type="button"
             onClick={handleBookmarksClick}
-            className="flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs sm:text-sm font-bold shadow-sm transition-all transform active:scale-95"
+            className="flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs sm:text-sm font-bold shadow-sm transition-all transform active:scale-95 cursor-pointer"
             title="View Saved Prompts"
             id="header-bookmarks-btn"
           >
@@ -219,7 +241,9 @@ export const Header = () => {
           <Link
             href="/pricing"
             prefetch={false}
-            className={`px-3 py-2 rounded-full text-xs font-black transition-all flex items-center gap-1.5 ${
+            onMouseEnter={() => warmRoute('/pricing')}
+            onClick={closeAllOverlays}
+            className={`px-3 py-2 rounded-full text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
               isProUser
                 ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
                 : 'bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 shadow-xs'
@@ -236,7 +260,9 @@ export const Header = () => {
             <Link
               href="/dashboard"
               prefetch={false}
-              className={`hidden sm:flex px-3.5 py-2 rounded-full text-xs font-bold transition-colors items-center gap-1.5 ${
+              onMouseEnter={() => warmRoute('/dashboard')}
+              onClick={closeAllOverlays}
+              className={`hidden sm:flex px-3.5 py-2 rounded-full text-xs font-bold transition-colors items-center gap-1.5 cursor-pointer active:scale-95 ${
                 pathname === '/dashboard'
                   ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950'
                   : 'bg-[#efefef] dark:bg-neutral-800 hover:bg-[#e2e2e2] dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200'
@@ -264,8 +290,9 @@ export const Header = () => {
             </Link>
           ) : (
             <button
+              type="button"
               onClick={() => openAuthModal('Sign in to access your creative dashboard, credits, and saved prompts.')}
-              className="hidden sm:flex px-4 py-2 rounded-full text-xs font-bold bg-[#efefef] dark:bg-neutral-800 hover:bg-[#e2e2e2] dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 transition-colors items-center gap-1.5"
+              className="hidden sm:flex px-4 py-2 rounded-full text-xs font-bold bg-[#efefef] dark:bg-neutral-800 hover:bg-[#e2e2e2] dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 transition-colors items-center gap-1.5 cursor-pointer active:scale-95"
               title="Sign In / Register"
               id="header-user-signin-btn"
             >

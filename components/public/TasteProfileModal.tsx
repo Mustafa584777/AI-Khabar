@@ -121,10 +121,16 @@ export const TasteProfileModal = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-fade-in">
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-fade-in"
+      onClick={() => setIsTasteModalOpen(false)}
+      role="dialog"
+      aria-modal="true"
+    >
       <div
         className="relative w-full max-w-2xl bg-white dark:bg-neutral-900 rounded-[28px] sm:rounded-[32px] shadow-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden flex flex-col max-h-[90vh] animate-scale-in"
         id="taste-profile-modal"
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="px-6 py-5 border-b border-neutral-100 dark:border-neutral-800/80 flex items-center justify-between bg-gradient-to-r from-neutral-50 to-white dark:from-neutral-900 dark:to-neutral-900/50">

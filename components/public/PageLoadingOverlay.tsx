@@ -34,13 +34,14 @@ const LoadingOverlayInner = () => {
       const actionAttr = target.getAttribute('data-action') || '';
       const text = (target.textContent || '').trim().toLowerCase();
       const href = (target.getAttribute('href') || '').trim();
+      const isPromptCardLink = Boolean(target.closest('article[id^="prompt-pin-"]'));
 
       // Only trigger action indicator for explicit studio decode/generator actions
       if (actionAttr === 'decode-prompt' || text === 'decode') {
         setActionLoading('Opening Image-to-Prompt Studio...');
       } else if (actionAttr === 'generate-version' || text === 'generate new version') {
         setActionLoading('Opening Prompt Generator...');
-      } else if (href && href.startsWith('/') && href !== pathname && !href.startsWith('#')) {
+      } else if (href && href.startsWith('/') && href !== pathname && !href.startsWith('#') && !isPromptCardLink) {
         // Standard route change: show sleek non-blocking top progress bar
         setIsNavigating(true);
       } else {
@@ -50,17 +51,21 @@ const LoadingOverlayInner = () => {
       // Strict Failsafe: Automatically dismiss after 350ms maximum, guaranteed!
       // This ensures NO loading skeleton or overlay can EVER get stuck on screen!
       if (failsafeTimerRef.current) clearTimeout(failsafeTimerRef.current);
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+
       failsafeTimerRef.current = setTimeout(() => {
         setIsNavigating(false);
         setActionLoading(null);
+        if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
       }, 350);
 
-      // Slow connection warning only if navigation stalls for over 4 seconds
-      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
-      slowTimerRef.current = setTimeout(() => {
-        setShowSlowWarning(true);
-        setTimeout(() => setShowSlowWarning(false), 3000);
-      }, 4000);
+      // Slow connection warning only if route navigation actually stalls for over 4 seconds
+      if (!actionAttr && href) {
+        slowTimerRef.current = setTimeout(() => {
+          setShowSlowWarning(true);
+          setTimeout(() => setShowSlowWarning(false), 3000);
+        }, 4000);
+      }
     };
 
     window.addEventListener('click', handleClick);

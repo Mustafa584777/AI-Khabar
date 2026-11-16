@@ -1,14 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
-import { X, Bookmark, Copy, Trash2, ExternalLink, Sparkles, Cloud, RefreshCw } from 'lucide-react';
-import Image from 'next/image';
+import { X, Bookmark, Copy, Trash2, Sparkles, Cloud, RefreshCw } from 'lucide-react';
 import { getPromptSlug, getOptimizedImageUrl } from '@/lib/utils';
-import { useRouter } from 'next/navigation';
 
 export const BookmarksDrawer = () => {
-  const router = useRouter();
   const {
     isBookmarksDrawerOpen,
     setIsBookmarksDrawerOpen,
@@ -23,13 +20,42 @@ export const BookmarksDrawer = () => {
     isSyncingUserData,
   } = useApp();
 
+  useEffect(() => {
+    if (!isBookmarksDrawerOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsBookmarksDrawerOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isBookmarksDrawerOpen, setIsBookmarksDrawerOpen]);
+
   if (!isBookmarksDrawerOpen) return null;
 
   const bookmarkedPosts = posts.filter((p) => bookmarkedIds.includes(p.id));
 
+  const handleOpenSavedPrompt = (post: (typeof posts)[number]) => {
+    setSelectedPost(post);
+    if (typeof window !== 'undefined' && window.location.pathname === '/') {
+      window.history.pushState({ postId: post.id }, '', `/${getPromptSlug(post)}`);
+    }
+    setIsBookmarksDrawerOpen(false);
+  };
+
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-sm animate-fade-in flex justify-end">
-      <div className="w-full max-w-md bg-white dark:bg-neutral-900 h-full shadow-2xl flex flex-col border-l border-neutral-200 dark:border-neutral-800">
+    <div
+      className="fixed inset-0 z-[60] overflow-hidden bg-black/60 backdrop-blur-sm animate-fade-in flex justify-end"
+      onClick={() => setIsBookmarksDrawerOpen(false)}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Saved Pins & Prompts"
+      id="bookmarks-drawer-overlay"
+    >
+      <div
+        className="w-full max-w-md bg-white dark:bg-neutral-900 h-full shadow-2xl flex flex-col border-l border-neutral-200 dark:border-neutral-800"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -46,8 +72,10 @@ export const BookmarksDrawer = () => {
             </div>
           </div>
           <button
+            type="button"
             onClick={() => setIsBookmarksDrawerOpen(false)}
-            className="p-2 rounded-full text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            className="p-2 rounded-full text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+            aria-label="Close Saved Prompts Drawer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -69,11 +97,12 @@ export const BookmarksDrawer = () => {
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => {
                   setIsBookmarksDrawerOpen(false);
                   openAuthModal('Sign in to view and manage your saved prompts.');
                 }}
-                className="py-2.5 px-5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-md shadow-red-500/20 transition-all"
+                className="py-2.5 px-5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold shadow-md shadow-red-500/20 transition-all cursor-pointer active:scale-95"
               >
                 Sign In / Create Free Account
               </button>
@@ -86,13 +115,7 @@ export const BookmarksDrawer = () => {
               >
                 {post.imageUrl && (
                   <div
-                    onClick={() => {
-                      setSelectedPost(post);
-                      if (typeof window !== 'undefined') {
-                        window.history.pushState({ postId: post.id }, '', `/${getPromptSlug(post)}`);
-                      }
-                      setIsBookmarksDrawerOpen(false);
-                    }}
+                    onClick={() => handleOpenSavedPrompt(post)}
                     className="relative w-16 h-20 rounded-xl overflow-hidden bg-neutral-900 shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
                   >
                     <img
@@ -115,13 +138,7 @@ export const BookmarksDrawer = () => {
                       {post.category}
                     </span>
                     <h4
-                      onClick={() => {
-                        setSelectedPost(post);
-                        if (typeof window !== 'undefined') {
-                          window.history.pushState({ postId: post.id }, '', `/${getPromptSlug(post)}`);
-                        }
-                        setIsBookmarksDrawerOpen(false);
-                      }}
+                      onClick={() => handleOpenSavedPrompt(post)}
                       className="text-xs font-bold text-neutral-900 dark:text-neutral-100 line-clamp-2 mt-1 cursor-pointer hover:text-[#E60023] transition-colors"
                     >
                       {post.title}

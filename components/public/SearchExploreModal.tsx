@@ -234,16 +234,31 @@ export const SearchExploreModal = () => {
     }, 2000);
   };
 
+  useEffect(() => {
+    if (!isSearchModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsSearchModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isSearchModalOpen, setIsSearchModalOpen]);
+
   if (!isSearchModalOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex flex-col justify-start animate-fade-in"
+      className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-md flex flex-col justify-start animate-fade-in"
       role="dialog"
       aria-modal="true"
+      onClick={handleClose}
     >
       {/* Modal Container - Expanded to bottom navigation menu on mobile with vertical scroll */}
-      <div className="fixed inset-x-0 top-0 bottom-14 sm:bottom-auto sm:inset-auto sm:w-full sm:max-w-4xl sm:mx-auto bg-white dark:bg-neutral-950 sm:max-h-[92vh] sm:my-auto sm:rounded-3xl shadow-2xl border border-neutral-200/80 dark:border-neutral-800 flex flex-col overflow-hidden">
+      <div
+        className="fixed inset-x-0 top-0 bottom-14 sm:bottom-auto sm:inset-auto sm:w-full sm:max-w-4xl sm:mx-auto bg-white dark:bg-neutral-950 sm:max-h-[92vh] sm:my-auto sm:rounded-3xl shadow-2xl border border-neutral-200/80 dark:border-neutral-800 flex flex-col overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* 1. Header Search Bar */}
         <div className="px-4 sm:px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-md shrink-0 flex items-center gap-3">
@@ -464,7 +479,7 @@ export const SearchExploreModal = () => {
                       key={post.id}
                       onClick={() => {
                         setSelectedPost(post);
-                        if (typeof window !== 'undefined') {
+                        if (typeof window !== 'undefined' && window.location.pathname === '/') {
                           window.history.pushState({ postId: post.id }, '', `/${getPromptSlug(post)}`);
                         }
                         setIsSearchModalOpen(false);

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { Home, Search, Plus, User, Bell } from 'lucide-react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { NotificationService } from '@/lib/notifications';
 
 interface BottomNavProps {
@@ -12,16 +12,16 @@ interface BottomNavProps {
 
 export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
   const pathname = usePathname();
+  const router = useRouter();
   
   const {
-    currentView,
-    setCurrentView,
-    selectedCategory,
-    setSelectedCategory,
     setSelectedSort,
     setSearchQuery,
     userAccount,
     setIsSearchModalOpen,
+    setIsBookmarksDrawerOpen,
+    setIsNotificationsModalOpen,
+    setSelectedPost,
   } = useApp();
 
   const [unreadNotifs, setUnreadNotifs] = useState(0);
@@ -41,13 +41,27 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
   const isNotifsActive = pathname === '/notifications';
   const isDashboardActive = pathname === '/dashboard';
 
+  const closeAllOverlays = () => {
+    setSelectedPost(null);
+    setIsBookmarksDrawerOpen(false);
+    setIsSearchModalOpen(false);
+    setIsNotificationsModalOpen(false);
+  };
+
+  const warmRoute = (path: string) => {
+    try {
+      router.prefetch(path);
+    } catch {}
+  };
+
   const handleNav = (
     e: React.MouseEvent,
-    targetView: 'public' | 'studio-tool' | 'notifications' | 'user-dashboard',
+    _targetView: 'public' | 'studio-tool' | 'notifications' | 'user-dashboard',
     targetPath: string
   ) => {
     if (e.metaKey || e.ctrlKey || e.button === 1) return;
     e.preventDefault();
+    closeAllOverlays();
 
     if (pathname === targetPath) {
       if (targetPath === '/') {
@@ -58,10 +72,12 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
       return;
     }
 
-    window.location.href = targetPath;
+    router.push(targetPath);
   };
 
   const handleSearchClick = () => {
+    setIsBookmarksDrawerOpen(false);
+    setIsNotificationsModalOpen(false);
     if (onSearchClick) {
       onSearchClick();
     } else {
@@ -74,11 +90,13 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
       aria-label="Mobile navigation"
       className="fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-2xl border-t border-neutral-200/70 dark:border-neutral-800/70 py-1.5 px-4 flex sm:hidden items-center justify-around shadow-2xl transition-all"
     >
-      {/* 1. Home Button (Instant local cache switch) */}
+      {/* 1. Home Button */}
       <a
         href="/"
+        onTouchStart={() => warmRoute('/')}
+        onMouseEnter={() => warmRoute('/')}
         onClick={(e) => handleNav(e, 'public', '/')}
-        className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 cursor-pointer ${
+        className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 cursor-pointer active:scale-95 ${
           isHomeActive
             ? 'text-[#E60023] scale-105 font-bold'
             : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
@@ -94,7 +112,7 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
       <button
         type="button"
         onClick={handleSearchClick}
-        className="flex flex-col items-center justify-center p-2 rounded-2xl text-neutral-500 hover:text-[#E60023] dark:hover:text-white transition-all duration-200 cursor-pointer"
+        className="flex flex-col items-center justify-center p-2 rounded-2xl text-neutral-500 hover:text-[#E60023] dark:hover:text-white transition-all duration-200 cursor-pointer active:scale-95"
         title="Explore Categories"
         id="bottom-nav-explore"
       >
@@ -102,11 +120,13 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
         <span className="text-[10px] mt-0.5 font-medium">Explore</span>
       </button>
 
-      {/* 3. Create (+) Button (Instant local cache switch) */}
+      {/* 3. Create (+) Button */}
       <a
         href="/create"
+        onTouchStart={() => warmRoute('/create')}
+        onMouseEnter={() => warmRoute('/create')}
         onClick={(e) => handleNav(e, 'studio-tool', '/create')}
-        className={`flex flex-col items-center justify-center p-1.5 transition-all duration-200 cursor-pointer ${
+        className={`flex flex-col items-center justify-center p-1.5 transition-all duration-200 cursor-pointer active:scale-95 ${
           isCreateActive ? 'scale-110' : 'hover:scale-105'
         }`}
         title="Create - Image to Prompt & Text to Image"
@@ -126,12 +146,14 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
         </span>
       </a>
 
-      {/* 4. Notifications Tab (Instant local cache switch) */}
+      {/* 4. Notifications Tab */}
       <a
         href="/notifications"
+        onTouchStart={() => warmRoute('/notifications')}
+        onMouseEnter={() => warmRoute('/notifications')}
         onClick={(e) => handleNav(e, 'notifications', '/notifications')}
         id="bottom-nav-notifications"
-        className={`relative flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 cursor-pointer ${
+        className={`relative flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 cursor-pointer active:scale-95 ${
           isNotifsActive
             ? 'text-[#E60023] scale-105 font-bold'
             : 'text-neutral-500 hover:text-[#E60023] dark:hover:text-white'
@@ -149,11 +171,13 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
         <span className="text-[10px] mt-0.5 font-medium">Updates</span>
       </a>
 
-      {/* 5. Account / Profile Button (Instant local cache switch) */}
+      {/* 5. Account / Profile Button */}
       <a
         href="/dashboard"
+        onTouchStart={() => warmRoute('/dashboard')}
+        onMouseEnter={() => warmRoute('/dashboard')}
         onClick={(e) => handleNav(e, 'user-dashboard', '/dashboard')}
-        className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 cursor-pointer ${
+        className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200 cursor-pointer active:scale-95 ${
           isDashboardActive
             ? 'text-[#E60023] font-bold'
             : 'text-neutral-500 hover:text-[#E60023] dark:hover:text-white'

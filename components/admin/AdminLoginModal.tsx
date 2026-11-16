@@ -33,8 +33,14 @@ export const AdminLoginModal = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-      <div className="relative w-full max-w-md bg-white dark:bg-neutral-900 rounded-[28px] shadow-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden p-6 sm:p-8">
+    <div
+      className="fixed inset-0 z-[70] overflow-y-auto bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+      onClick={() => setShowLoginModal(false)}
+    >
+      <div
+        className="relative w-full max-w-md bg-white dark:bg-neutral-900 rounded-[28px] shadow-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden p-6 sm:p-8"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Close */}
         <button
           onClick={() => setShowLoginModal(false)}

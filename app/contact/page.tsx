@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Header } from '@/components/public/Header';
 import { Footer } from '@/components/public/Footer';
-import { AdminLoginModal } from '@/components/admin/AdminLoginModal';
 import { Mail, MessageSquare, Send, CheckCircle2, Home, ArrowLeft } from 'lucide-react';
 
 export default function ContactPage() {
@@ -168,7 +167,6 @@ export default function ContactPage() {
         </div>
       </main>
 
-      <AdminLoginModal />
       <Footer />
     </div>
   );

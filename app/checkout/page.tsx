@@ -6,7 +6,6 @@ import { Header } from '@/components/public/Header';
 import { Footer } from '@/components/public/Footer';
 import { BottomNav } from '@/components/public/BottomNav';
 import { RazorpayCheckoutButton } from '@/components/public/RazorpayCheckoutButton';
-import { RazorpayCheckoutModal } from '@/components/public/RazorpayCheckoutModal';
 import {
   ShieldCheck,
   Zap,
@@ -317,7 +316,6 @@ export default function CheckoutPage() {
 
       <Footer />
       <BottomNav />
-      <RazorpayCheckoutModal />
     </div>
   );
 }

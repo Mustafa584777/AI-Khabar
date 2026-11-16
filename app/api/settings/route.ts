@@ -1,7 +1,7 @@
 import { ServerStorage } from '@/lib/server-storage';
 import { NextRequest, NextResponse } from 'next/server';
 
-export const revalidate = 259200;
+export const revalidate = 604800;
 
 export async function GET() {
   try {
@@ -10,7 +10,7 @@ export async function GET() {
       { success: true, settings },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=259200, stale-while-revalidate=604800',
+          'Cache-Control': 'public, max-age=604800, s-maxage=604800, stale-while-revalidate=604800',
         },
       }
     );

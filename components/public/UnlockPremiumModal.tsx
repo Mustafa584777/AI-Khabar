@@ -48,7 +48,7 @@ export const UnlockPremiumModal: React.FC = () => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md animate-fade-in"
+      className="fixed inset-0 z-[65] flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md animate-fade-in"
       onClick={() => setIsUnlockPremiumModalOpen(false)}
       role="dialog"
       aria-modal="true"

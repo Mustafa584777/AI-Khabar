@@ -366,11 +366,33 @@ export const PromptDetailModal = () => {
     setHistoryStack([]);
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
-      if (path !== '/' && path !== '/dashboard' && path !== '/create' && !path.startsWith('/admin')) {
+      const knownNonSlugRoutes = [
+        '/',
+        '/dashboard',
+        '/create',
+        '/prompt-editor',
+        '/notifications',
+        '/pricing',
+        '/checkout',
+        '/about',
+        '/contact',
+        '/privacy-policy',
+        '/terms',
+        '/disclaimer',
+        '/cancellation-refund',
+        '/ai-policy',
+      ];
+      if (knownNonSlugRoutes.includes(path) || path.startsWith('/admin')) {
+        // Stay cleanly on the current route when closed as an overlay
+        return;
+      }
+      if (window.history.state?.postId) {
         window.history.pushState(null, '', '/');
+      } else {
+        router.push('/');
       }
     }
-  }, [setSelectedPost]);
+  }, [setSelectedPost, router]);
 
   const handleGoBack = useCallback(() => {
     if (historyStack.length > 1) {
@@ -1451,7 +1473,7 @@ export const PromptDetailModal = () => {
           onContextMenu={(e) => e.preventDefault()}
           onTouchStart={allImages.length > 1 ? handleTouchStart : undefined}
           onTouchEnd={allImages.length > 1 ? handleTouchEnd : undefined}
-          className="fixed inset-0 z-60 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out animate-fade-in select-none"
+          className="fixed inset-0 z-[75] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out animate-fade-in select-none"
         >
           {/* Lightbox Top Left: Counter */}
           {allImages.length > 1 && (

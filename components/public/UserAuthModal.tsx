@@ -566,10 +566,16 @@ export const UserAuthModal = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+    <div
+      className="fixed inset-0 z-[65] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200"
+      onClick={() => setIsUserAuthModalOpen(false)}
+      role="dialog"
+      aria-modal="true"
+    >
       <div
         className="relative w-full max-w-md bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden"
         id="user-auth-modal"
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header Ribbon */}
         <div className="p-6 bg-gradient-to-br from-neutral-900 via-neutral-950 to-neutral-900 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 text-white relative">

@@ -151,7 +151,7 @@ export const RazorpayCheckoutModal: React.FC = () => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-md animate-fade-in"
+      className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-md animate-fade-in"
       onClick={() => !isProcessing && setIsProCheckoutModalOpen(false)}
     >
       <div

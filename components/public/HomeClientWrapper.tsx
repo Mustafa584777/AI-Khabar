@@ -9,59 +9,16 @@ import { ToolFilterBar } from '@/components/public/ToolFilterBar';
 import { PromptGrid } from '@/components/public/PromptGrid';
 import { Footer } from '@/components/public/Footer';
 import { SEOContentSection } from '@/components/public/SEOContentSection';
-import { ToastNotification } from '@/components/public/ToastNotification';
 import { BottomNav } from '@/components/public/BottomNav';
 import { PromptPost, Category, SiteSettings } from '@/types/prompt';
-import { PromptDetailModal } from '@/components/public/PromptDetailModal';
 
-const BookmarksDrawer = dynamic(() => import('@/components/public/BookmarksDrawer').then((m) => m.BookmarksDrawer), { ssr: false });
-const TasteProfileModal = dynamic(() => import('@/components/public/TasteProfileModal').then((m) => m.TasteProfileModal), { ssr: false });
-const UserAuthModal = dynamic(() => import('@/components/public/UserAuthModal').then((m) => m.UserAuthModal), { ssr: false });
 const AdminLayout = dynamic(() => import('@/components/admin/AdminLayout').then((m) => m.AdminLayout), { ssr: false });
-const AdminLoginModal = dynamic(() => import('@/components/admin/AdminLoginModal').then((m) => m.AdminLoginModal), { ssr: false });
-const SearchExploreModal = dynamic(() => import('@/components/public/SearchExploreModal').then((m) => m.SearchExploreModal), { ssr: false });
-const RazorpayCheckoutModal = dynamic(() => import('@/components/public/RazorpayCheckoutModal').then((m) => m.RazorpayCheckoutModal), { ssr: false });
-const UnlockPremiumModal = dynamic(() => import('@/components/public/UnlockPremiumModal').then((m) => m.UnlockPremiumModal), { ssr: false });
-
-function GlobalInteractiveModals() {
-  const {
-    selectedPost,
-    isBookmarksDrawerOpen,
-    isTasteModalOpen,
-    isUserAuthModalOpen,
-    showLoginModal,
-    isSearchModalOpen,
-    isProCheckoutModalOpen,
-    isUnlockPremiumModalOpen,
-    toastMessage,
-  } = useApp();
-
-  return (
-    <>
-      {selectedPost && <PromptDetailModal />}
-      {isSearchModalOpen && <SearchExploreModal />}
-      {isBookmarksDrawerOpen && <BookmarksDrawer />}
-      {isTasteModalOpen && <TasteProfileModal />}
-      {isUserAuthModalOpen && <UserAuthModal />}
-      {showLoginModal && <AdminLoginModal />}
-      {toastMessage && <ToastNotification />}
-      {isProCheckoutModalOpen && <RazorpayCheckoutModal />}
-      {isUnlockPremiumModalOpen && <UnlockPremiumModal />}
-    </>
-  );
-}
 
 function MainApp() {
-  const { currentView, showLoginModal, toastMessage } = useApp();
+  const { currentView } = useApp();
 
   if (currentView === 'admin') {
-    return (
-      <>
-        <AdminLayout />
-        {showLoginModal && <AdminLoginModal />}
-        {toastMessage && <ToastNotification />}
-      </>
-    );
+    return <AdminLayout />;
   }
 
   return (
@@ -78,7 +35,6 @@ function MainApp() {
 
       <Footer />
       <BottomNav />
-      <GlobalInteractiveModals />
     </div>
   );
 }

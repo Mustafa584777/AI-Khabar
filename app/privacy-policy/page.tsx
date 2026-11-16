@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Header } from '@/components/public/Header';
 import { Footer } from '@/components/public/Footer';
-import { AdminLoginModal } from '@/components/admin/AdminLoginModal';
 import { ShieldCheck, Home, ArrowLeft } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -123,7 +122,6 @@ export default function PrivacyPolicyPage() {
         </div>
       </main>
 
-      <AdminLoginModal />
       <Footer />
     </div>
   );

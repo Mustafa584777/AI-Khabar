@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useApp } from '@/context/AppContext';
 import { Header } from '@/components/public/Header';
@@ -11,45 +11,45 @@ import { slugify } from '@/lib/utils';
 import { Sparkles } from 'lucide-react';
 import { PromptPost } from '@/types/prompt';
 
-import { PromptDetailModal } from '@/components/public/PromptDetailModal';
-const BookmarksDrawer = dynamic(() => import('@/components/public/BookmarksDrawer').then((m) => m.BookmarksDrawer), { ssr: false });
-const TasteProfileModal = dynamic(() => import('@/components/public/TasteProfileModal').then((m) => m.TasteProfileModal), { ssr: false });
 const UserDashboard = dynamic(() => import('@/components/public/UserDashboard').then((m) => m.UserDashboard), { ssr: false });
 const AIStudioTool = dynamic(() => import('@/components/public/AIStudioTool').then((m) => m.AIStudioTool), { ssr: false });
-const UserAuthModal = dynamic(() => import('@/components/public/UserAuthModal').then((m) => m.UserAuthModal), { ssr: false });
 const AdminLayout = dynamic(() => import('@/components/admin/AdminLayout').then((m) => m.AdminLayout), { ssr: false });
-const AdminLoginModal = dynamic(() => import('@/components/admin/AdminLoginModal').then((m) => m.AdminLoginModal), { ssr: false });
-const SearchExploreModal = dynamic(() => import('@/components/public/SearchExploreModal').then((m) => m.SearchExploreModal), { ssr: false });
-const RazorpayCheckoutModal = dynamic(() => import('@/components/public/RazorpayCheckoutModal').then((m) => m.RazorpayCheckoutModal), { ssr: false });
-const UnlockPremiumModal = dynamic(() => import('@/components/public/UnlockPremiumModal').then((m) => m.UnlockPremiumModal), { ssr: false });
-const ToastNotification = dynamic(() => import('@/components/public/ToastNotification').then((m) => m.ToastNotification), { ssr: false });
 
-function GlobalDirectModals() {
-  const {
-    selectedPost,
-    isBookmarksDrawerOpen,
-    isTasteModalOpen,
-    isUserAuthModalOpen,
-    showLoginModal,
-    isSearchModalOpen,
-    isProCheckoutModalOpen,
-    isUnlockPremiumModalOpen,
-    toastMessage,
-  } = useApp();
+const PROMPT_DETAIL_CACHE_KEY = 'auraprompt_prompt_detail_cache_v1';
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
-  return (
-    <>
-      {isSearchModalOpen && <SearchExploreModal />}
-      {selectedPost && <PromptDetailModal />}
-      {isBookmarksDrawerOpen && <BookmarksDrawer />}
-      {isTasteModalOpen && <TasteProfileModal />}
-      {isUserAuthModalOpen && <UserAuthModal />}
-      {showLoginModal && <AdminLoginModal />}
-      {toastMessage && <ToastNotification />}
-      {isProCheckoutModalOpen && <RazorpayCheckoutModal />}
-      {isUnlockPremiumModalOpen && <UnlockPremiumModal />}
-    </>
-  );
+function readCachedPrompt(idOrSlug: string): PromptPost | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(PROMPT_DETAIL_CACHE_KEY);
+    if (!raw) return null;
+    const map = JSON.parse(raw) as Record<string, { post: PromptPost; savedAt: number }>;
+    const key = decodeURIComponent(idOrSlug).toLowerCase().trim();
+    const entry = map[key];
+    if (!entry || !entry.post) return null;
+    if (Date.now() - entry.savedAt > SEVEN_DAYS_MS) return null;
+    return entry.post;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedPrompt(idOrSlug: string, post: PromptPost) {
+  if (typeof window === 'undefined' || !post) return;
+  try {
+    const raw = localStorage.getItem(PROMPT_DETAIL_CACHE_KEY);
+    const map: Record<string, { post: PromptPost; savedAt: number }> = raw ? JSON.parse(raw) : {};
+    const key = decodeURIComponent(idOrSlug).toLowerCase().trim();
+    map[key] = { post, savedAt: Date.now() };
+    const entries = Object.entries(map);
+    if (entries.length > 100) {
+      entries.sort((a, b) => b[1].savedAt - a[1].savedAt);
+      const trimmed = Object.fromEntries(entries.slice(0, 80));
+      localStorage.setItem(PROMPT_DETAIL_CACHE_KEY, JSON.stringify(trimmed));
+    } else {
+      localStorage.setItem(PROMPT_DETAIL_CACHE_KEY, JSON.stringify(map));
+    }
+  } catch {}
 }
 
 export function DirectPromptLoader({
@@ -59,43 +59,56 @@ export function DirectPromptLoader({
   id: string;
   initialPost?: PromptPost | null;
 }) {
-  const { posts, setSelectedPost, currentView, showLoginModal, toastMessage } = useApp();
-  const loadedPostIdRef = useRef<string | null>(null);
+  const { posts, setSelectedPost, currentView } = useApp();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (initialPost) {
       setSelectedPost(initialPost);
-    } else if (id) {
-      const targetSlug = decodeURIComponent(id).toLowerCase().trim();
-      const matched = posts.find((p) => {
-        if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
-        if (p.id && p.id.toLowerCase() === targetSlug) return true;
-        if (p.title && (p.title.toLowerCase() === targetSlug || slugify(p.title) === targetSlug)) return true;
-        return false;
-      });
-      if (matched) {
-        setSelectedPost(matched);
-      } else {
-        fetch(`/api/posts/${encodeURIComponent(id)}`)
-          .then((res) => (res.ok ? res.json() : Promise.reject(res)))
-          .then((data) => {
-            if (data && data.post) {
-              setSelectedPost(data.post);
-            }
-          })
-          .catch(() => {});
-      }
+      writeCachedPrompt(id, initialPost);
+      return;
     }
+
+    if (!id) return;
+
+    let targetSlug = id;
+    try {
+      targetSlug = decodeURIComponent(id).toLowerCase().trim();
+    } catch {
+      targetSlug = id.toLowerCase().trim();
+    }
+
+    const matched = posts.find((p) => {
+      if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
+      if (p.id && p.id.toLowerCase() === targetSlug) return true;
+      if (p.title && (p.title.toLowerCase() === targetSlug || slugify(p.title) === targetSlug)) return true;
+      return false;
+    });
+
+    if (matched) {
+      setSelectedPost(matched);
+      writeCachedPrompt(id, matched);
+      return;
+    }
+
+    const cached = readCachedPrompt(id);
+    if (cached) {
+      setSelectedPost(cached);
+      return;
+    }
+
+    fetch(`/api/posts/${encodeURIComponent(id)}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+      .then((data) => {
+        if (data && data.post) {
+          setSelectedPost(data.post);
+          writeCachedPrompt(id, data.post);
+        }
+      })
+      .catch(() => {});
   }, [id, initialPost, posts, setSelectedPost]);
 
   if (currentView === 'admin') {
-    return (
-      <>
-        <AdminLayout />
-        {showLoginModal && <AdminLoginModal />}
-        {toastMessage && <ToastNotification />}
-      </>
-    );
+    return <AdminLayout />;
   }
 
   if (currentView === 'user-dashboard') {
@@ -103,7 +116,6 @@ export function DirectPromptLoader({
       <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col">
         <UserDashboard />
         <BottomNav />
-        <GlobalDirectModals />
       </div>
     );
   }
@@ -125,7 +137,6 @@ export function DirectPromptLoader({
           <PromptGrid />
         </div>
         <BottomNav />
-        <GlobalDirectModals />
       </div>
     );
   }
@@ -136,7 +147,6 @@ export function DirectPromptLoader({
         <Header />
         <AIStudioTool />
         <BottomNav />
-        <GlobalDirectModals />
       </div>
     );
   }
@@ -144,12 +154,9 @@ export function DirectPromptLoader({
   return (
     <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col pb-20 sm:pb-8">
       <Header />
-      <main className="flex-1 w-full">
-        <PromptDetailModal />
-      </main>
+      <main className="flex-1 w-full" />
       <Footer />
       <BottomNav />
-      <GlobalDirectModals />
     </div>
   );
 }

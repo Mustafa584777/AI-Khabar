@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Download, Smartphone, X } from 'lucide-react';
+import { useApp } from '@/context/AppContext';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -9,6 +10,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export const PWAInstallButton: React.FC = () => {
+  const { showToast } = useApp();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
@@ -45,7 +47,6 @@ export const PWAInstallButton: React.FC = () => {
 
   const install = async () => {
     if (!deferredPrompt) return {
-      // fallback if no deferredPrompt yet
       success: false
     };
     await deferredPrompt.prompt();
@@ -63,8 +64,9 @@ export const PWAInstallButton: React.FC = () => {
   if (deferredPrompt) {
     return (
       <button
+        type="button"
         onClick={install}
-        className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-semibold hover:opacity-90 transition shadow-sm"
+        className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-semibold hover:opacity-90 transition shadow-sm cursor-pointer active:scale-95"
         title="Install App on Device"
         id="pwa-install-btn"
       >
@@ -78,8 +80,9 @@ export const PWAInstallButton: React.FC = () => {
     return (
       <>
         <button
+          type="button"
           onClick={() => setShowIOSGuide(true)}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-semibold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-semibold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition cursor-pointer active:scale-95"
           title="Install on iOS"
           id="pwa-install-ios-btn"
         >
@@ -88,16 +91,23 @@ export const PWAInstallButton: React.FC = () => {
         </button>
 
         {showIOSGuide && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-            <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-white">
+          <div
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+            onClick={() => setShowIOSGuide(false)}
+          >
+            <div
+              className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-white"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-base font-bold flex items-center gap-2">
                   <Smartphone className="w-5 h-5 text-[#E60023]" />
                   Install on iPhone / iPad
                 </h3>
                 <button
+                  type="button"
                   onClick={() => setShowIOSGuide(false)}
-                  className="p-1 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500"
+                  className="p-1 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -111,8 +121,9 @@ export const PWAInstallButton: React.FC = () => {
                 <li>Tap <strong>Add</strong> in the top right corner.</li>
               </ol>
               <button
+                type="button"
                 onClick={() => setShowIOSGuide(false)}
-                className="mt-5 w-full rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 py-2.5 text-xs font-bold hover:opacity-90 transition shadow-sm"
+                className="mt-5 w-full rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 py-2.5 text-xs font-bold hover:opacity-90 transition shadow-sm cursor-pointer"
               >
                 Got It
               </button>
@@ -125,10 +136,11 @@ export const PWAInstallButton: React.FC = () => {
 
   return (
     <button
+      type="button"
       onClick={() => {
-        alert('To install this app, open your browser menu (three dots) and select "Install app" or "Add to Home screen".');
+        showToast('Open your browser menu (three dots) and select "Install app" or "Add to Home screen".');
       }}
-      className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-semibold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
+      className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-semibold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition cursor-pointer active:scale-95"
       title="Install App"
       id="pwa-install-generic-btn"
     >

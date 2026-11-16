@@ -101,9 +101,24 @@ const nextConfig: NextConfig = {
     ],
   },
   transpilePackages: ['motion'],
+  experimental: {
+    staleTimes: {
+      dynamic: 300,
+      static: 604800,
+    },
+  },
   async headers() {
     return [
-       {
+      {
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, must-revalidate',
+          },
+        ],
+      },
+      {
         source: '/images/:path*',
         headers: [
           {
@@ -113,11 +128,47 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: '/(favicon.ico|logo.png|ads.txt)',
+        source: '/(favicon.ico|logo.png|ads.txt|manifest.webmanifest)',
         headers: [
           {
             key: 'Cache-Control',
             value: 'public, max-age=604800, stale-while-revalidate=2592000',
+          },
+        ],
+      },
+      {
+        source: '/',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=604800, s-maxage=604800, stale-while-revalidate=604800',
+          },
+        ],
+      },
+      {
+        source: '/:id',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=604800, s-maxage=604800, stale-while-revalidate=604800',
+          },
+        ],
+      },
+      {
+        source: '/(dashboard|cms-login|admin)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'private, no-cache, no-store, must-revalidate',
+          },
+        ],
+      },
+      {
+        source: '/admin/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'private, no-cache, no-store, must-revalidate',
           },
         ],
       },
