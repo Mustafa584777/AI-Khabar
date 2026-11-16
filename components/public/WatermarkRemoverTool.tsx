@@ -58,53 +58,103 @@ export const WatermarkRemoverTool = () => {
   const [beforePreviewUrl, setBeforePreviewUrl] = useState<string>('');
   const [afterPreviewUrl, setAfterPreviewUrl] = useState<string>('');
 
-  const drawLoadedImage = useCallback((img: HTMLImageElement) => {
-    const imgCanvas = imageCanvasRef.current;
-    const maskCanvas = maskCanvasRef.current;
-    if (!imgCanvas || !maskCanvas) return;
+  const pendingUploadRef = useRef<{ img: HTMLImageElement; objectUrl: string } | null>(null);
 
-    // Keep full crisp mobile resolution capped at 2400px longest side for instant <1s mobile RAM safety
-    const maxDim = 2400;
-    let w = img.naturalWidth || img.width;
-    let h = img.naturalHeight || img.height;
-    if (w > maxDim || h > maxDim) {
-      const scale = maxDim / Math.max(w, h);
-      w = Math.round(w * scale);
-      h = Math.round(h * scale);
-    }
+  // Calibrated from real Gemini outputs (e.g., 765x1024 where 39x40 sparkle center sits 102px from right & bottom)
+  const getGeminiWatermarkRect = useCallback((w: number, h: number) => {
+    const maxSide = Math.max(w, h);
+    const centerOffset = Math.max(32, Math.round(maxSide * 0.1));
+    const boxSize = Math.max(48, Math.round(maxSide * 0.068));
+    const half = Math.round(boxSize / 2);
 
-    imgCanvas.width = w;
-    imgCanvas.height = h;
-    maskCanvas.width = w;
-    maskCanvas.height = h;
+    const cx = Math.max(half + 2, w - centerOffset);
+    const cy = Math.max(half + 2, h - centerOffset);
+    const x = Math.max(0, Math.min(w - boxSize, cx - half));
+    const y = Math.max(0, Math.min(h - boxSize, cy - half));
 
-    const ctx = imgCanvas.getContext('2d', { willReadFrequently: true });
-    const mCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx || !mCtx) return;
-
-    ctx.clearRect(0, 0, w, h);
-    ctx.drawImage(img, 0, 0, w, h);
-    mCtx.clearRect(0, 0, w, h);
-
-    const snapshot = ctx.getImageData(0, 0, w, h);
-    originalSnapshotRef.current = snapshot;
-    undoSnapshotsRef.current = [];
-    maskHistoryRef.current = [];
-
-    try {
-      const url = imgCanvas.toDataURL('image/png');
-      beforeDataUrlRef.current = url;
-      setBeforePreviewUrl(url);
-      setAfterPreviewUrl('');
-    } catch {}
-
-    setImageDimensions({ width: w, height: h });
-    setHasImage(true);
-    setHasMaskStrokes(false);
-    setHasProcessedResult(false);
-    setShowCompareMode(false);
-    setLastProcessMs(null);
+    return { x, y, width: boxSize, height: boxSize };
   }, []);
+
+  const drawGeminiWatermarkMask = useCallback(
+    (mCtx: CanvasRenderingContext2D, w: number, h: number) => {
+      const rect = getGeminiWatermarkRect(w, h);
+      mCtx.save();
+      mCtx.fillStyle = 'rgba(236, 72, 153, 0.72)';
+      mCtx.beginPath();
+      mCtx.roundRect(rect.x, rect.y, rect.width, rect.height, 14);
+      mCtx.fill();
+      mCtx.restore();
+    },
+    [getGeminiWatermarkRect]
+  );
+
+  const drawLoadedImage = useCallback(
+    (img: HTMLImageElement) => {
+      const imgCanvas = imageCanvasRef.current;
+      const maskCanvas = maskCanvasRef.current;
+      if (!imgCanvas || !maskCanvas) return false;
+
+      // Keep full crisp mobile resolution capped at 2400px longest side for instant <1s mobile RAM safety
+      const maxDim = 2400;
+      let w = img.naturalWidth || img.width;
+      let h = img.naturalHeight || img.height;
+      if (w > maxDim || h > maxDim) {
+        const scale = maxDim / Math.max(w, h);
+        w = Math.round(w * scale);
+        h = Math.round(h * scale);
+      }
+
+      imgCanvas.width = w;
+      imgCanvas.height = h;
+      maskCanvas.width = w;
+      maskCanvas.height = h;
+
+      const ctx = imgCanvas.getContext('2d', { willReadFrequently: true });
+      const mCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx || !mCtx) return false;
+
+      ctx.clearRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      mCtx.clearRect(0, 0, w, h);
+
+      const snapshot = ctx.getImageData(0, 0, w, h);
+      originalSnapshotRef.current = snapshot;
+      undoSnapshotsRef.current = [];
+
+      // Save blank mask snapshot so Undo can clear the auto-mark cleanly if desired
+      maskHistoryRef.current = [mCtx.getImageData(0, 0, w, h)];
+
+      // Automatically mark the fixed bottom-right Gemini watermark spot right after upload
+      drawGeminiWatermarkMask(mCtx, w, h);
+
+      try {
+        const url = imgCanvas.toDataURL('image/png');
+        beforeDataUrlRef.current = url;
+        setBeforePreviewUrl(url);
+        setAfterPreviewUrl('');
+      } catch {}
+
+      setImageDimensions({ width: w, height: h });
+      setHasImage(true);
+      setHasMaskStrokes(true);
+      setHasProcessedResult(false);
+      setShowCompareMode(false);
+      setLastProcessMs(null);
+      showToast('Gemini watermark spot auto-marked! Just click "Remove Watermark Now".');
+      return true;
+    },
+    [drawGeminiWatermarkMask, showToast]
+  );
+
+  // Ensure pending upload draws immediately once canvases mount when transitioning from !hasImage -> hasImage
+  useEffect(() => {
+    if (!hasImage || !pendingUploadRef.current) return;
+    const pending = pendingUploadRef.current;
+    if (drawLoadedImage(pending.img)) {
+      URL.revokeObjectURL(pending.objectUrl);
+      pendingUploadRef.current = null;
+    }
+  }, [hasImage, drawLoadedImage]);
 
   const handleFile = useCallback(
     (file: File) => {
@@ -113,14 +163,21 @@ export const WatermarkRemoverTool = () => {
         return;
       }
 
+      if (pendingUploadRef.current) {
+        URL.revokeObjectURL(pendingUploadRef.current.objectUrl);
+        pendingUploadRef.current = null;
+      }
+
       const objectUrl = URL.createObjectURL(file);
       const img = new window.Image();
       img.onload = () => {
-        setHasImage(true);
-        requestAnimationFrame(() => {
-          drawLoadedImage(img);
+        pendingUploadRef.current = { img, objectUrl };
+        if (hasImage && drawLoadedImage(img)) {
           URL.revokeObjectURL(objectUrl);
-        });
+          pendingUploadRef.current = null;
+        } else {
+          setHasImage(true);
+        }
       };
       img.onerror = () => {
         URL.revokeObjectURL(objectUrl);
@@ -128,7 +185,7 @@ export const WatermarkRemoverTool = () => {
       };
       img.src = objectUrl;
     },
-    [drawLoadedImage, showToast]
+    [drawLoadedImage, hasImage, showToast]
   );
 
   // Sync image canvas dimensions after first file loads into DOM
@@ -279,23 +336,14 @@ export const WatermarkRemoverTool = () => {
     maskHistoryRef.current.push(mCtx.getImageData(0, 0, maskCanvas.width, maskCanvas.height));
     const w = maskCanvas.width;
     const h = maskCanvas.height;
-    const minSide = Math.min(w, h);
-
-    mCtx.save();
-    mCtx.fillStyle = 'rgba(236, 72, 153, 0.72)';
 
     if (corner === 'bottom-right') {
-      // Gemini AI bottom-right four-point sparkle badge zone
-      const boxSize = Math.max(44, Math.round(minSide * 0.085));
-      const pad = Math.max(8, Math.round(minSide * 0.015));
-      const x = w - boxSize - pad;
-      const y = h - boxSize - pad;
-      mCtx.beginPath();
-      mCtx.roundRect(x, y, boxSize, boxSize, 12);
-      mCtx.fill();
-      showToast('Marked Bottom-Right Gemini Watermark zone. Click "Remove Watermark"!');
+      drawGeminiWatermarkMask(mCtx, w, h);
+      showToast('Marked Bottom-Right Gemini Watermark zone. Click "Remove Watermark Now"!');
     } else {
       // Bottom-left text/calligraphy watermark zone
+      mCtx.save();
+      mCtx.fillStyle = 'rgba(236, 72, 153, 0.72)';
       const boxW = Math.max(120, Math.round(w * 0.28));
       const boxH = Math.max(40, Math.round(h * 0.075));
       const padX = Math.max(8, Math.round(w * 0.015));
@@ -303,10 +351,10 @@ export const WatermarkRemoverTool = () => {
       mCtx.beginPath();
       mCtx.roundRect(padX, h - boxH - padY, boxW, boxH, 10);
       mCtx.fill();
-      showToast('Marked Bottom-Left Watermark zone. Click "Remove Watermark"!');
+      mCtx.restore();
+      showToast('Marked Bottom-Left Watermark zone. Click "Remove Watermark Now"!');
     }
 
-    mCtx.restore();
     setHasMaskStrokes(true);
     setShowCompareMode(false);
   };
@@ -518,6 +566,8 @@ export const WatermarkRemoverTool = () => {
                   <span>
                     {showCompareMode
                       ? 'Before / After Comparison (Drag Slider)'
+                      : hasMaskStrokes
+                      ? 'Gemini Watermark Auto-Marked — Click "Remove Watermark Now" or Adjust with Brush'
                       : 'Brush Over Watermark or Tap a Corner Preset'}
                   </span>
                 </div>
