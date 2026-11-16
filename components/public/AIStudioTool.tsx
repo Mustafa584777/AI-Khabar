@@ -20,10 +20,12 @@ import {
   Wand2,
   Edit3,
   AlertCircle,
+  Eraser,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PromptEditorTool } from '@/components/public/PromptEditorTool';
+import { WatermarkRemoverTool } from '@/components/public/WatermarkRemoverTool';
 import { ensureAspectRatio34, formatPromptForClipboard } from '@/lib/utils';
 
 const SAMPLE_IMAGES_FALLBACK = [
@@ -77,7 +79,11 @@ interface ExtractedPromptData {
   tags?: string[];
 }
 
-export const AIStudioTool = () => {
+export const AIStudioTool = ({
+  initialTab,
+}: {
+  initialTab?: 'reverse' | 'generator' | 'editor' | 'watermark';
+} = {}) => {
   const router = useRouter();
   const {
     setCurrentView,
@@ -138,7 +144,8 @@ export const AIStudioTool = () => {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Tab State
-  const [activeStudioTab, setActiveStudioTab] = useState<'reverse' | 'generator' | 'editor'>(() => {
+  const [activeStudioTab, setActiveStudioTab] = useState<'reverse' | 'generator' | 'editor' | 'watermark'>(() => {
+    if (initialTab) return initialTab;
     if (typeof window !== 'undefined') {
       const tab = sessionStorage.getItem('promptcms_studio_tab');
       if (tab === 'reverse' || tab === 'editor' || tab === 'generator') {
@@ -454,8 +461,8 @@ export const AIStudioTool = () => {
     showToast('Saved to your AI Studio History!');
   };
 
-  // Strict Login Gate: Unauthenticated users cannot use or see tool workspace
-  if (!userAccount?.isLoggedIn) {
+  // Strict Login Gate for server AI tools (Watermark Remover stays 100% free & offline without login)
+  if (!userAccount?.isLoggedIn && activeStudioTab !== 'watermark') {
     return (
       <main className="min-h-[80vh] flex items-center justify-center px-4 py-16 bg-[#fafafa] dark:bg-neutral-950">
         <div className="max-w-md w-full p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xl text-center space-y-6">
@@ -510,30 +517,38 @@ export const AIStudioTool = () => {
 
           <div className="flex items-center gap-3">
             {/* Tool Credits Indicator */}
-            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 text-xs font-bold shadow-xs">
-              <Coins className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-              <span>{toolCredits} Credits</span>
-              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium hidden sm:inline">
-                • {activeStudioTab === 'reverse' ? '2 cr / extraction' : '1 cr / generation'}
+            {activeStudioTab !== 'watermark' ? (
+              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 text-xs font-bold shadow-xs">
+                <Coins className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                <span>{toolCredits} Credits</span>
+                <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium hidden sm:inline">
+                  • {activeStudioTab === 'reverse' ? '2 cr / extraction' : '1 cr / generation'}
+                </span>
+                <Link
+                  href="/pricing"
+                  className="text-[11px] font-black text-[#E60023] hover:underline ml-1"
+                >
+                  + Top Up
+                </Link>
+              </div>
+            ) : (
+              <span className="px-3.5 py-1.5 rounded-full bg-gradient-to-r from-pink-500/15 to-violet-500/15 border border-pink-300/60 dark:border-pink-800/60 text-pink-600 dark:text-pink-300 text-xs font-black">
+                100% Free • Offline
               </span>
-              <Link
-                href="/pricing"
-                className="text-[11px] font-black text-[#E60023] hover:underline ml-1"
-              >
-                + Top Up
-              </Link>
-            </div>
+            )}
 
-            <button
-              onClick={() => {
-                setCurrentView('user-dashboard');
-                router.push('/dashboard');
-              }}
-              className="flex items-center gap-1.5 text-xs font-bold text-neutral-600 dark:text-neutral-300 hover:text-[#E60023] px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
-            >
-              <History className="w-3.5 h-3.5 text-[#E60023]" />
-              <span>View History</span>
-            </button>
+            {userAccount?.isLoggedIn && (
+              <button
+                onClick={() => {
+                  setCurrentView('user-dashboard');
+                  router.push('/dashboard');
+                }}
+                className="flex items-center gap-1.5 text-xs font-bold text-neutral-600 dark:text-neutral-300 hover:text-[#E60023] px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+              >
+                <History className="w-3.5 h-3.5 text-[#E60023]" />
+                <span>View History</span>
+              </button>
+            )}
             <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800 text-[#E60023] text-xs font-black">
               <Zap className="w-3.5 h-3.5 fill-current" />
               <span>AI Studio Lab</span>
@@ -543,27 +558,36 @@ export const AIStudioTool = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 space-y-8">
-        {/* Hero Title */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-neutral-200 dark:border-neutral-800">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-neutral-900 dark:text-white tracking-tight flex items-center gap-2.5">
-              <Sparkles className="w-7 h-7 text-[#E60023]" />
-              <span>{activeStudioTab === 'reverse' ? 'Image to Prompt Studio' : 'Prompt Generator Studio'}</span>
-            </h1>
-            <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-              {activeStudioTab === 'reverse'
-                ? 'Extract precise, high-fidelity AI prompts from any photo or visual with optical analysis.'
-                : 'Generate professional-grade detailed image prompts from basic concepts with expert styling presets.'}
-            </p>
+        {/* Hero Title (Hidden when Watermark tab is active so WatermarkRemoverTool owns the main H1) */}
+        {activeStudioTab !== 'watermark' && (
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-neutral-200 dark:border-neutral-800">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-black text-neutral-900 dark:text-white tracking-tight flex items-center gap-2.5">
+                <Sparkles className="w-7 h-7 text-[#E60023]" />
+                <span>{activeStudioTab === 'reverse' ? 'Image to Prompt Studio' : 'Prompt Generator Studio'}</span>
+              </h1>
+              <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                {activeStudioTab === 'reverse'
+                  ? 'Extract precise, high-fidelity AI prompts from any photo or visual with optical analysis.'
+                  : 'Generate professional-grade detailed image prompts from basic concepts with expert styling presets.'}
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Modern Segmented Tab Control */}
         <div className="flex border-b border-neutral-200 dark:border-neutral-800 pb-px overflow-x-auto">
           <div className="flex gap-6 whitespace-nowrap">
             <button
-              onClick={() => setActiveStudioTab('reverse')}
-              className={`pb-4 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+              onClick={() => {
+                if (initialTab === 'watermark') {
+                  if (typeof window !== 'undefined') sessionStorage.setItem('promptcms_studio_tab', 'reverse');
+                  router.push('/create');
+                } else {
+                  setActiveStudioTab('reverse');
+                }
+              }}
+              className={`pb-4 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
                 activeStudioTab === 'reverse'
                   ? 'border-[#E60023] text-[#E60023]'
                   : 'border-transparent text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200'
@@ -573,8 +597,15 @@ export const AIStudioTool = () => {
               <span>Image to Prompt</span>
             </button>
             <button
-              onClick={() => setActiveStudioTab('generator')}
-              className={`pb-4 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+              onClick={() => {
+                if (initialTab === 'watermark') {
+                  if (typeof window !== 'undefined') sessionStorage.setItem('promptcms_studio_tab', 'generator');
+                  router.push('/create');
+                } else {
+                  setActiveStudioTab('generator');
+                }
+              }}
+              className={`pb-4 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
                 activeStudioTab === 'generator'
                   ? 'border-[#E60023] text-[#E60023]'
                   : 'border-transparent text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200'
@@ -584,8 +615,15 @@ export const AIStudioTool = () => {
               <span>Idea to Prompt</span>
             </button>
             <button
-              onClick={() => setActiveStudioTab('editor')}
-              className={`pb-4 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+              onClick={() => {
+                if (initialTab === 'watermark') {
+                  if (typeof window !== 'undefined') sessionStorage.setItem('promptcms_studio_tab', 'editor');
+                  router.push('/create');
+                } else {
+                  setActiveStudioTab('editor');
+                }
+              }}
+              className={`pb-4 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
                 activeStudioTab === 'editor'
                   ? 'border-[#E60023] text-[#E60023]'
                   : 'border-transparent text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200'
@@ -594,10 +632,26 @@ export const AIStudioTool = () => {
               <Edit3 className="w-4 h-4 text-emerald-500" />
               <span>AI Prompt Editor &amp; Modifier</span>
             </button>
+            <Link
+              href="/free-gemini-watermark-remover-online"
+              prefetch={false}
+              className={`pb-4 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+                activeStudioTab === 'watermark'
+                  ? 'border-pink-500 text-pink-600 dark:text-pink-400'
+                  : 'border-transparent text-neutral-500 hover:text-pink-600 dark:hover:text-pink-400'
+              }`}
+            >
+              <Eraser className="w-4 h-4 text-pink-500" />
+              <span>Free Gemini Watermark Remover</span>
+            </Link>
           </div>
         </div>
 
-        {activeStudioTab === 'editor' ? (
+        {activeStudioTab === 'watermark' ? (
+          <div className="py-2">
+            <WatermarkRemoverTool />
+          </div>
+        ) : activeStudioTab === 'editor' ? (
           <div className="py-4">
             <PromptEditorTool />
           </div>

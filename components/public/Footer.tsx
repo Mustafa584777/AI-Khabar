@@ -117,6 +117,11 @@ export const Footer = () => {
                   </Link>
                 </li>
                 <li>
+                  <Link href="/free-gemini-watermark-remover-online" prefetch={false} className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
+                    Free Gemini Watermark Remover Online
+                  </Link>
+                </li>
+                <li>
                   <Link href="/dashboard" prefetch={false} className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
                     Creator Dashboard
                   </Link>

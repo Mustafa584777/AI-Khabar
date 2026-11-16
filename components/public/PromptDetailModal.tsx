@@ -1359,6 +1359,16 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                       </div>
                     </div>
                   )}
+
+                  <Link
+                    href="/free-gemini-watermark-remover-online"
+                    prefetch={false}
+                    onClick={() => setSelectedPost(null)}
+                    className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-600 hover:from-pink-600 hover:via-fuchsia-600 hover:to-violet-700 text-white font-bold text-xs sm:text-sm text-center flex items-center justify-center gap-2 shadow-md transition-transform active:scale-[0.99]"
+                  >
+                    <Wand2 className="w-4 h-4 shrink-0" />
+                    <span>Try Free Gemini Watermark Remover Tool</span>
+                  </Link>
                 </div>
 
                 {/* Tags */}
