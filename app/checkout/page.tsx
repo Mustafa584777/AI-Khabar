@@ -203,7 +203,7 @@ export default function CheckoutPage() {
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">
                     Tool Credits
                   </td>
-                  <td className="py-3.5 px-4 text-center font-medium">5 Lifetime (Signup)</td>
+                  <td className="py-3.5 px-4 text-center font-medium">5 Credits</td>
                   <td className="py-3.5 px-4 text-center font-bold text-neutral-900 dark:text-white">
                     120 Credits
                   </td>
@@ -230,11 +230,6 @@ export default function CheckoutPage() {
                     <Check className="w-4 h-4 text-emerald-500 inline-block mr-1" />
                     <span>All Unlocked</span>
                   </td>
-                </tr>
-                <tr>
-                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Validity</td>
-                  <td className="py-3.5 px-4 text-center font-medium">Free Forever</td>
-                  <td className="py-3.5 px-4 text-center font-bold text-neutral-900 dark:text-white">1 Year (365 Days)</td>
                 </tr>
               </tbody>
             </table>
