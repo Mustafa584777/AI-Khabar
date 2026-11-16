@@ -2,11 +2,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { PromptPost } from '@/types/prompt';
 import { useApp } from '@/context/AppContext';
 import Image from 'next/image';
-import { Sparkles, Bookmark, Crown, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Layers, Copy, Wand2 } from 'lucide-react';
+import { Sparkles, Bookmark, Crown, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Layers, Copy } from 'lucide-react';
 import { getPromptSlug, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription } from '@/lib/utils';
 
 export const PromptCard = ({ post, priority = false }: { post: PromptPost; priority?: boolean }) => {
@@ -449,19 +448,6 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
         )}
 
       </a>
-
-      <div className="p-2 bg-white dark:bg-neutral-900 border-t border-neutral-200/70 dark:border-neutral-800/70">
-        <Link
-          href="/free-gemini-watermark-remover-online"
-          prefetch={false}
-          onClick={(e) => e.stopPropagation()}
-          className="w-full py-2 px-2.5 rounded-xl bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-600 hover:from-pink-600 hover:via-fuchsia-600 hover:to-violet-700 text-white font-bold text-[10px] sm:text-[11px] leading-tight text-center flex items-center justify-center gap-1.5 shadow-sm transition-transform active:scale-[0.98]"
-          title="Try Free Gemini Watermark Remover Tool"
-        >
-          <Wand2 className="w-3.5 h-3.5 shrink-0" />
-          <span className="truncate">Try Free Gemini Watermark Remover Tool</span>
-        </Link>
-      </div>
     </article>
   );
 };

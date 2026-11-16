@@ -128,7 +128,7 @@ export function ensureAspectRatio34(text: string): string {
 }
 
 export const FREE_USER_PROMPT_WATERMARK =
-  'A small watermark reading zeenaprompt.com in bottom left corner in beautiful cursive calligraphy in white colour with transparent background';
+  'A small watermark reading Zeena Prompt in bottom left corner in beautiful cursive calligraphy in white colour with transparent background';
 
 export function formatPromptForClipboard(
   promptText: string,
