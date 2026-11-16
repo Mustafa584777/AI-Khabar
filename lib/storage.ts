@@ -1,5 +1,9 @@
 import { Category, PromptPost, SiteSettings, UserAccount, AIHistoryItem, PromptRequestItem } from '@/types/prompt';
-import { INITIAL_CATEGORIES, INITIAL_SETTINGS, INITIAL_POSTS } from './initial-data';
+import {
+  INITIAL_FEED_POSTS,
+  INITIAL_FEED_CATEGORIES as INITIAL_CATEGORIES,
+  INITIAL_FEED_SETTINGS as INITIAL_SETTINGS,
+} from './initial-feed';
 import { getPromptSlug } from './utils';
 
 const STORAGE_KEY_BOOKMARKS = 'promptcms_user_bookmarks';
@@ -12,9 +16,9 @@ const STORAGE_KEY_CACHED_TAGS = 'promptcms_cached_tags';
 const STORAGE_KEY_CACHED_SETTINGS = 'promptcms_cached_settings';
 
 export const StorageService = {
-  // Instant Cache for Fast 0ms Page Load (strictly from posts.json)
+  // Instant Cache for Fast 0ms Page Load
   getCachedPosts: (): PromptPost[] => {
-    return INITIAL_POSTS || [];
+    return INITIAL_FEED_POSTS || [];
   },
 
   saveCachedPosts: (_posts: PromptPost[]): void => {

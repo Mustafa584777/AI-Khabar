@@ -1,15 +1,18 @@
 'use client';
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import confetti from 'canvas-confetti';
+import { triggerConfetti } from '@/lib/confetti';
 import { PromptPost, Category, SiteSettings, AdminUser, UserAccount, AIHistoryItem, AiSearchResult, PlanTier, PromptRequestItem, QueuedPlan } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
-import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, signOut as firebaseSignOut, getRedirectResult } from 'firebase/auth';
 import { UserSyncService } from '@/lib/user-sync';
-import { INITIAL_POSTS, INITIAL_CATEGORIES, INITIAL_SETTINGS } from '@/lib/initial-data';
+import {
+  INITIAL_FEED_POSTS,
+  INITIAL_FEED_CATEGORIES as INITIAL_CATEGORIES,
+  INITIAL_FEED_SETTINGS as INITIAL_SETTINGS,
+  INITIAL_CATEGORY_COUNTS,
+} from '@/lib/initial-feed';
 import {
   UserTasteProfile,
   PersonalizationEngine,
@@ -23,7 +26,7 @@ import {
   getPlanFeaturesForCycle,
   BillingCycle,
 } from '@/lib/plans';
-import { getPromptSlug, getEmailAvatarUrl } from '@/lib/utils';
+import { getPromptSlug, getEmailAvatarUrl, formatPromptForClipboard } from '@/lib/utils';
 
 interface AppContextType {
   // Navigation & Views
@@ -176,6 +179,12 @@ interface AppContextType {
   lockedPromptContext: PromptPost | null;
   setLockedPromptContext: (post: PromptPost | null) => void;
   applyPlan: (planTier: 'starter' | 'pro' | 'vip') => void;
+  ensureFullCatalogLoaded: () => Promise<PromptPost[]>;
+  isFullCatalogLoaded: boolean;
+  categoryPostCounts: Record<string, number>;
+  isDirectRouteHost: boolean;
+  setIsDirectRouteHost: (val: boolean) => void;
+  isActivePremiumUser: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -243,19 +252,13 @@ export const AppProvider = ({
     }
   }, [router]);
 
+  const [isDirectRouteHost, setIsDirectRouteHost] = useState<boolean>(false);
+
   const setSelectedPost = useCallback((post: PromptPost | null) => {
     setSelectedPostState(post);
-    if (typeof window !== 'undefined') {
-      if (post) {
-        window.history.pushState({ selectedPostId: post.id }, '', `#prompt=${post.id}`);
-      } else {
-        const cleanUrl = window.location.pathname + window.location.search;
-        window.history.replaceState({ selectedPostId: null }, '', cleanUrl);
-      }
-    }
   }, []);
 
-  const postsRef = useRef<PromptPost[]>(INITIAL_POSTS);
+  const postsRef = useRef<PromptPost[]>(initialPosts || INITIAL_FEED_POSTS);
 
   // Listen to popstate (Browser Back/Forward buttons)
   useEffect(() => {
@@ -533,6 +536,15 @@ export const AppProvider = ({
     [userAccount, isProUser, planTier, planExpiresAt, unlockedPromptIds]
   );
 
+  const isActivePremiumUser = useMemo(() => {
+    if (!userAccount || !userAccount.isLoggedIn) return false;
+    const effectiveTier = planTier || userAccount.planTier;
+    const isPaidTier = Boolean(effectiveTier && ['starter', 'pro', 'vip'].includes(effectiveTier));
+    const expires = planExpiresAt || userAccount.planExpiresAt;
+    const isExpired = Boolean(expires && new Date(expires).getTime() <= Date.now());
+    return Boolean((isProUser || isPaidTier || userAccount.isProUser || userAccount.isPremium) && !isExpired);
+  }, [userAccount, isProUser, planTier, planExpiresAt]);
+
   const unlockPromptWithCredit = useCallback(
     (_promptId: string): { success: boolean; message: string } => {
       return {
@@ -756,7 +768,7 @@ export const AppProvider = ({
       console.warn('API sync warning for prompt request:', e);
     }
 
-    confetti({ particleCount: 75, spread: 65, origin: { y: 0.6 } });
+    void triggerConfetti({ particleCount: 75, spread: 65, origin: { y: 0.6 } });
     showToast('Prompt request submitted! We will fulfill it to your dashboard.');
     return true;
   };
@@ -815,7 +827,7 @@ export const AppProvider = ({
       console.warn('Fulfillment API sync error:', e);
     }
 
-    confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
+    void triggerConfetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
     showToast('Request fulfilled! Delivered to user dashboard.');
     return true;
   };
@@ -1098,6 +1110,10 @@ export const AppProvider = ({
 
   const logoutUser = async () => {
     try {
+      const [{ auth }, { signOut: firebaseSignOut }] = await Promise.all([
+        import('@/lib/firebase'),
+        import('firebase/auth'),
+      ]);
       await firebaseSignOut(auth);
     } catch (e) {
       console.warn('Firebase signOut error:', e);
@@ -1181,9 +1197,88 @@ export const AppProvider = ({
     showToast('AI Generation history cleared');
   };
 
-  // Data: Fast Cached + Server-Side Driven (SSR-safe initial states)
-  // Public site posts are strictly loaded from posts.json (INITIAL_POSTS)
-  const [posts, setPosts] = useState<PromptPost[]>(() => initialPosts || INITIAL_POSTS);
+  // Data: Fast Cached + Progressive Static Catalog Loading
+  // Initial SSR & boot strictly loads compact top-16 newest posts (~57KB) for 0ms TBT
+  const [posts, setPosts] = useState<PromptPost[]>(() => initialPosts || INITIAL_FEED_POSTS);
+  const [isFullCatalogLoaded, setIsFullCatalogLoaded] = useState<boolean>(false);
+  const fullCatalogPromiseRef = useRef<Promise<PromptPost[]> | null>(null);
+
+  const ensureFullCatalogLoaded = useCallback(async (): Promise<PromptPost[]> => {
+    if (isFullCatalogLoaded && postsRef.current.length > INITIAL_FEED_POSTS.length) {
+      return postsRef.current;
+    }
+    if (fullCatalogPromiseRef.current) {
+      return fullCatalogPromiseRef.current;
+    }
+
+    fullCatalogPromiseRef.current = import('@/data/posts.json')
+      .then((mod) => {
+        const allRaw = (Array.isArray(mod.default) ? mod.default : []) as unknown as PromptPost[];
+        // Preserve initial top posts order at the top, append remaining posts cleanly
+        const currentTop = postsRef.current;
+        const seenIds = new Set(currentTop.map((p) => p.id));
+        const remaining = allRaw.filter((p) => p && p.id && !seenIds.has(p.id));
+        const merged = [...currentTop, ...remaining];
+        setPosts(merged);
+        postsRef.current = merged;
+        setIsFullCatalogLoaded(true);
+        return merged;
+      })
+      .catch(() => postsRef.current);
+
+    return fullCatalogPromiseRef.current;
+  }, [isFullCatalogLoaded]);
+
+  // Background idle catalog warm-up well after first paint & TTI window
+  useEffect(() => {
+    if (typeof window === 'undefined' || isFullCatalogLoaded) return;
+    const isNonPublic =
+      currentView !== 'public' ||
+      window.location.pathname === '/create' ||
+      window.location.pathname === '/dashboard' ||
+      window.location.pathname === '/admin';
+    const delayMs = isNonPublic ? 200 : 4200;
+
+    let idleId: number | null = null;
+    const timer = window.setTimeout(() => {
+      if (typeof (window as any).requestIdleCallback === 'function') {
+        idleId = (window as any).requestIdleCallback(() => {
+          void ensureFullCatalogLoaded();
+        }, { timeout: 2000 });
+      } else {
+        void ensureFullCatalogLoaded();
+      }
+    }, delayMs);
+
+    return () => {
+      window.clearTimeout(timer);
+      if (idleId !== null && typeof (window as any).cancelIdleCallback === 'function') {
+        (window as any).cancelIdleCallback(idleId);
+      }
+    };
+  }, [currentView, isFullCatalogLoaded, ensureFullCatalogLoaded]);
+
+  useEffect(() => {
+    if (selectedPost && !isFullCatalogLoaded) {
+      void ensureFullCatalogLoaded();
+    }
+  }, [selectedPost, isFullCatalogLoaded, ensureFullCatalogLoaded]);
+
+  const categoryPostCounts = useMemo(() => {
+    if (!isFullCatalogLoaded && Object.keys(INITIAL_CATEGORY_COUNTS).length > 0) {
+      return INITIAL_CATEGORY_COUNTS;
+    }
+    const counts: Record<string, number> = {};
+    for (let i = 0; i < posts.length; i++) {
+      const p = posts[i];
+      if (p.status === 'published' && p.category) {
+        const k = p.category.toLowerCase().trim();
+        counts[k] = (counts[k] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [posts, isFullCatalogLoaded]);
+
   // Admin posts are loaded live from Firebase Firestore for the Editorial CMS
   const [adminPosts, setAdminPosts] = useState<PromptPost[]>([]);
   useEffect(() => {
@@ -1223,7 +1318,13 @@ export const AppProvider = ({
   const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([]);
   const lastBookmarkToggleTimeRef = useRef<number>(0);
   const [likedIds, setLikedIds] = useState<string[]>([]);
-  const [isBookmarksDrawerOpen, setIsBookmarksDrawerOpen] = useState<boolean>(false);
+  const [isBookmarksDrawerOpen, setIsBookmarksDrawerOpenState] = useState<boolean>(false);
+  const setIsBookmarksDrawerOpen = useCallback((open: boolean) => {
+    setIsBookmarksDrawerOpenState(open);
+    if (open) {
+      void ensureFullCatalogLoaded();
+    }
+  }, [ensureFullCatalogLoaded]);
 
   // Personalization Taste Profile (AI Personalization)
   const [tasteProfile, setTasteProfile] = useState<UserTasteProfile>(INITIAL_TASTE_PROFILE);
@@ -1609,8 +1710,22 @@ export const AppProvider = ({
   }, [planTier, planExpiresAt, queuedPlan, toolCredits, userAccount, showToast]);
 
   // Search & Filter
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [isSearchModalOpen, setIsSearchModalOpen] = useState<boolean>(false);
+  const [searchQuery, setSearchQueryState] = useState<string>('');
+  const setSearchQuery = useCallback((query: string) => {
+    setSearchQueryState(query);
+    if (query.trim()) {
+      void ensureFullCatalogLoaded();
+    }
+  }, [ensureFullCatalogLoaded]);
+
+  const [isSearchModalOpen, setIsSearchModalOpenState] = useState<boolean>(false);
+  const setIsSearchModalOpen = useCallback((open: boolean) => {
+    setIsSearchModalOpenState(open);
+    if (open) {
+      void ensureFullCatalogLoaded();
+    }
+  }, [ensureFullCatalogLoaded]);
+
   const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState<boolean>(false);
   const [popularSearchQueries, setPopularSearchQueries] = useState<string[]>([
     'Traditional saree',
@@ -1620,24 +1735,14 @@ export const AppProvider = ({
     'Instagram Trend',
     'Couple',
   ]);
-  const [selectedCategory, setSelectedCategoryState] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const catParam = params.get('category');
-      if (catParam) {
-        const decoded = decodeURIComponent(catParam);
-        localStorage.setItem('auraprompt_selected_category', decoded);
-        return decoded;
-      }
-      const saved = localStorage.getItem('auraprompt_selected_category');
-      if (saved) return saved;
-    }
-    return '';
-  });
+  const [selectedCategory, setSelectedCategoryState] = useState<string>('');
 
-  const setSelectedCategory = (cat: string) => {
+  const setSelectedCategory = useCallback((cat: string) => {
     const clean = cat === 'all' || cat === 'none' ? '' : cat;
     setSelectedCategoryState(clean);
+    if (clean) {
+      void ensureFullCatalogLoaded();
+    }
     if (typeof window !== 'undefined') {
       if (clean) {
         localStorage.setItem('auraprompt_selected_category', clean);
@@ -1645,7 +1750,7 @@ export const AppProvider = ({
         localStorage.removeItem('auraprompt_selected_category');
       }
     }
-  };
+  }, [ensureFullCatalogLoaded]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -1656,7 +1761,7 @@ export const AppProvider = ({
           const decoded = decodeURIComponent(catParam);
           setSelectedCategoryState(decoded);
           localStorage.setItem('auraprompt_selected_category', decoded);
-          // Scroll up to category filter bar if landing on homepage
+          void ensureFullCatalogLoaded();
           setTimeout(() => {
             const el = document.getElementById('categories-filter-bar') || document.getElementById('prompts-grid-section');
             if (el) {
@@ -1664,10 +1769,10 @@ export const AppProvider = ({
             }
           }, 150);
         } else {
-          // Retain saved category from localStorage so category persists across navigation until reload or unselect
           const saved = localStorage.getItem('auraprompt_selected_category');
           if (saved) {
             setSelectedCategoryState(saved);
+            void ensureFullCatalogLoaded();
           }
         }
       };
@@ -1676,11 +1781,17 @@ export const AppProvider = ({
       window.addEventListener('popstate', syncCategoryFromUrl);
       return () => window.removeEventListener('popstate', syncCategoryFromUrl);
     }
-  }, [pathname]);
+  }, [pathname, ensureFullCatalogLoaded]);
   const [selectedTool, setSelectedTool] = useState<string>('all');
-  const [selectedSort, setSelectedSort] = useState<
+  const [selectedSort, setSelectedSortState] = useState<
     'trending' | 'most-popular' | 'most-liked' | 'most-copied' | 'newest' | 'oldest'
   >('newest');
+  const setSelectedSort = useCallback((sort: 'trending' | 'most-popular' | 'most-liked' | 'most-copied' | 'newest' | 'oldest') => {
+    setSelectedSortState(sort);
+    if (sort !== 'newest') {
+      void ensureFullCatalogLoaded();
+    }
+  }, [ensureFullCatalogLoaded]);
 
   // Gemini AI Search State & Cache
   const [aiSearchResults, setAiSearchResults] = useState<AiSearchResult | null>(null);
@@ -2313,81 +2424,107 @@ export const AppProvider = ({
       });
     };
 
-    // Handle Google Redirect Result on page mount (e.g., mobile logins)
+    // Defer Firebase Auth SDK loading until after initial paint — anonymous visitors never pay for Firebase SDK on boot
+    let unsubscribeAuth: (() => void) | null = null;
+    let authCancelled = false;
+    let authTimer: number | null = null;
+
     if (typeof window !== 'undefined') {
-      getRedirectResult(auth)
-        .then(async (result) => {
-          if (result && result.user) {
-            const u = result.user;
-            const emailPrefix = u.email ? u.email.split('@')[0] : 'Creator';
-            const name = u.displayName || emailPrefix;
-            const avatar = u.photoURL || getEmailAvatarUrl(u.email || '', name);
-            await loginUser(u.email || '', '', name, avatar, u.uid);
-            showToast(`Welcome ${name}! Signed in via Google.`);
+      const hasSession = Boolean(StorageService.getUserAccount()?.isLoggedIn);
+      const searchStr = window.location.search || '';
+      const hasAuthParams =
+        searchStr.includes('oobCode=') ||
+        searchStr.includes('mode=verifyEmail') ||
+        searchStr.includes('apiKey=') ||
+        window.location.hash.includes('firebase');
+
+      if (hasSession || hasAuthParams) {
+        authTimer = window.setTimeout(async () => {
+          if (authCancelled) return;
+          try {
+            const [{ auth }, { onAuthStateChanged, getRedirectResult }] = await Promise.all([
+              import('@/lib/firebase'),
+              import('firebase/auth'),
+            ]);
+            if (authCancelled) return;
+
+            if (hasAuthParams) {
+              getRedirectResult(auth)
+                .then(async (result) => {
+                  if (result && result.user) {
+                    const u = result.user;
+                    const emailPrefix = u.email ? u.email.split('@')[0] : 'Creator';
+                    const name = u.displayName || emailPrefix;
+                    const avatar = u.photoURL || getEmailAvatarUrl(u.email || '', name);
+                    await loginUser(u.email || '', '', name, avatar, u.uid);
+                    showToast(`Welcome ${name}! Signed in via Google.`);
+                  }
+                })
+                .catch((err: any) => {
+                  if (err && err.code !== 'auth/credential-already-in-use') {
+                    console.warn('Firebase getRedirectResult notice:', err);
+                  }
+                });
+            }
+
+            unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+              if (firebaseUser) {
+                const isGoogle = firebaseUser.providerData.some((p) => p.providerId === 'google.com');
+                const isVerified = Boolean(firebaseUser.emailVerified || isGoogle);
+
+                if (!isVerified) {
+                  setUserAccount(null);
+                  StorageService.clearAllUserData();
+                  return;
+                }
+
+                const existing = StorageService.getUserAccount();
+                const emailPrefix = firebaseUser.email ? firebaseUser.email.split('@')[0] : 'Creator';
+                const account: UserAccount = {
+                  id: firebaseUser.uid,
+                  name: firebaseUser.displayName || existing?.name || emailPrefix,
+                  username: existing?.username || `@${emailPrefix.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+                  email: firebaseUser.email || existing?.email || '',
+                  avatar:
+                    firebaseUser.photoURL ||
+                    (existing?.avatar && !existing.avatar.includes('unsplash.com') ? existing.avatar : null) ||
+                    getEmailAvatarUrl(firebaseUser.email || existing?.email || '', firebaseUser.displayName || existing?.name || emailPrefix),
+                  isLoggedIn: true,
+                  emailVerified: true,
+                  joinedDate: existing?.joinedDate || 'Recently',
+                  points: existing?.points ?? 10,
+                  requestsMade: existing?.requestsMade || 0,
+                  likesCountForPoints: existing?.likesCountForPoints || 0,
+                  savesCountForPoints: existing?.savesCountForPoints || 0,
+                  generationsCountForPoints: existing?.generationsCountForPoints || 0,
+                  sharesCountForPoints: existing?.sharesCountForPoints || 0,
+                  referralsCountForPoints: existing?.referralsCountForPoints || 0,
+                  toolCredits: existing?.toolCredits !== undefined ? existing.toolCredits : 5,
+                };
+                setUserAccount(account);
+                StorageService.saveUserAccount(account);
+
+                const synced = await UserSyncService.reconcileOnLogin(account);
+                applySynced(synced);
+              } else {
+                setUserAccount((prev) => {
+                  if (prev) {
+                    setIsProUserState(false);
+                    setPlanTierState('free');
+                    setUnlockedPromptIds([]);
+                    StorageService.clearAllUserData();
+                    return null;
+                  }
+                  return null;
+                });
+              }
+            });
+          } catch (err) {
+            console.warn('Lazy Firebase auth init notice:', err);
           }
-        })
-        .catch((err: any) => {
-          if (err && err.code !== 'auth/credential-already-in-use') {
-            console.warn('Firebase getRedirectResult notice:', err);
-          }
-        });
-    }
-
-    // Check Firebase Auth Session
-    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        const isGoogle = firebaseUser.providerData.some((p) => p.providerId === 'google.com');
-        const isVerified = Boolean(firebaseUser.emailVerified || isGoogle);
-
-        if (!isVerified) {
-          console.info('Unverified Firebase user detected; access restricted until email is verified:', firebaseUser.email);
-          setUserAccount(null);
-          StorageService.clearAllUserData();
-          return;
-        }
-
-        const existing = StorageService.getUserAccount();
-        const emailPrefix = firebaseUser.email ? firebaseUser.email.split('@')[0] : 'Creator';
-        const account: UserAccount = {
-          id: firebaseUser.uid,
-          name: firebaseUser.displayName || existing?.name || emailPrefix,
-          username: existing?.username || `@${emailPrefix.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
-          email: firebaseUser.email || existing?.email || '',
-          avatar:
-            firebaseUser.photoURL ||
-            (existing?.avatar && !existing.avatar.includes('unsplash.com') ? existing.avatar : null) ||
-            getEmailAvatarUrl(firebaseUser.email || existing?.email || '', firebaseUser.displayName || existing?.name || emailPrefix),
-          isLoggedIn: true,
-          emailVerified: true,
-          joinedDate: existing?.joinedDate || 'Recently',
-          points: existing?.points ?? 10,
-          requestsMade: existing?.requestsMade || 0,
-          likesCountForPoints: existing?.likesCountForPoints || 0,
-          savesCountForPoints: existing?.savesCountForPoints || 0,
-          generationsCountForPoints: existing?.generationsCountForPoints || 0,
-          sharesCountForPoints: existing?.sharesCountForPoints || 0,
-          referralsCountForPoints: existing?.referralsCountForPoints || 0,
-          toolCredits: existing?.toolCredits !== undefined ? existing.toolCredits : 5,
-        };
-        setUserAccount(account);
-        StorageService.saveUserAccount(account);
-
-        const synced = await UserSyncService.reconcileOnLogin(account);
-        applySynced(synced);
-      } else {
-        // Only clear if a logged-in user was active
-        setUserAccount((prev) => {
-          if (prev) {
-            setIsProUserState(false);
-            setPlanTierState('free');
-            setUnlockedPromptIds([]);
-            StorageService.clearAllUserData();
-            return null;
-          }
-          return null;
-        });
+        }, hasAuthParams ? 50 : 1200);
       }
-    });
+    }
 
     const handleAuthMessage = (event: MessageEvent) => {
       if (typeof window !== 'undefined' && event.origin === window.location.origin) {
@@ -2454,6 +2591,9 @@ export const AppProvider = ({
     window.addEventListener('storage', handleStorage);
     window.addEventListener('taste_profile_updated', handleTasteProfileEvent);
     return () => {
+      authCancelled = true;
+      if (authTimer !== null) window.clearTimeout(authTimer);
+      if (unsubscribeAuth) unsubscribeAuth();
       window.removeEventListener('message', handleAuthMessage);
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('storage', handleStorage);
@@ -2710,17 +2850,14 @@ export const AppProvider = ({
         }
       }
     }
-    navigator.clipboard.writeText(text);
-    try {
-      confetti({
-        particleCount: 40,
-        spread: 60,
-        origin: { y: 0.85 },
-        colors: ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B'],
-      });
-    } catch {
-      // ignore
-    }
+    const clipboardText = formatPromptForClipboard(text, isActivePremiumUser);
+    navigator.clipboard.writeText(clipboardText);
+    void triggerConfetti({
+      particleCount: 40,
+      spread: 60,
+      origin: { y: 0.85 },
+      colors: ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B'],
+    });
     showToast('Prompt copied to clipboard!');
   };
 
@@ -3064,6 +3201,12 @@ export const AppProvider = ({
         lockedPromptContext,
         setLockedPromptContext,
         applyPlan,
+        ensureFullCatalogLoaded,
+        isFullCatalogLoaded,
+        categoryPostCounts,
+        isDirectRouteHost,
+        setIsDirectRouteHost,
+        isActivePremiumUser,
       }}
     >
       {children}

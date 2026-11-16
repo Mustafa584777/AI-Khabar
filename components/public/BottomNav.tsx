@@ -88,7 +88,7 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
   return (
     <nav
       aria-label="Mobile navigation"
-      className="fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-2xl border-t border-neutral-200/70 dark:border-neutral-800/70 py-1.5 px-4 flex sm:hidden items-center justify-around shadow-2xl transition-all"
+      className="fixed bottom-0 inset-x-0 z-40 bg-white/98 dark:bg-neutral-950/98 border-t border-neutral-200/70 dark:border-neutral-800/70 py-1.5 px-4 flex sm:hidden items-center justify-around shadow-xl"
     >
       {/* 1. Home Button */}
       <a
@@ -111,6 +111,8 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
       {/* 2. Explore & Categories Button */}
       <button
         type="button"
+        onTouchStart={() => { void import('./SearchExploreModal'); }}
+        onMouseEnter={() => { void import('./SearchExploreModal'); }}
         onClick={handleSearchClick}
         className="flex flex-col items-center justify-center p-2 rounded-2xl text-neutral-500 hover:text-[#E60023] dark:hover:text-white transition-all duration-200 cursor-pointer active:scale-95"
         title="Explore Categories"
@@ -163,7 +165,7 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
         <div className="relative">
           <Bell className={`w-6 h-6 ${isNotifsActive ? 'fill-current' : ''}`} />
           {unreadNotifs > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#E60023] text-white text-[9px] font-black flex items-center justify-center ring-2 ring-white dark:ring-neutral-950 animate-pulse">
+            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#E60023] text-white text-[9px] font-black flex items-center justify-center ring-2 ring-white dark:ring-neutral-950">
               {unreadNotifs > 9 ? '9+' : unreadNotifs}
             </span>
           )}

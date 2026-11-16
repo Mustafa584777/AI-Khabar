@@ -88,9 +88,9 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   useEffect(() => {
     if (!isMultiple || !inView) return;
 
-    // Stagger start time slightly so cards with the same interval don't slide simultaneously
+    // Stagger start time slightly past initial paint so boot TBT remains 0ms
     const charCode = post.id ? post.id.charCodeAt(post.id.length - 1) : 0;
-    const initialOffset = (charCode % 8) * 200; // 0ms to 1400ms stagger
+    const initialOffset = 2200 + (charCode % 8) * 250;
 
     let intervalId: NodeJS.Timeout | null = null;
     const timeoutId = setTimeout(() => {
@@ -205,18 +205,14 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
         <span className="sr-only">{post.title} - {post.category} copy paste prompt</span>
         {/* Premium Badge */}
         {post.isPremium && (
-          <div className={`absolute top-2.5 left-2.5 z-20 flex items-center justify-center w-7 h-7 rounded-full backdrop-blur-md shadow-xl pointer-events-none ${
+          <div className={`absolute top-2.5 left-2.5 z-20 flex items-center justify-center w-7 h-7 rounded-full shadow-lg pointer-events-none ${
             isUnlocked && !isProUser
-              ? 'bg-emerald-950/85 border border-emerald-400/60 text-emerald-300'
+              ? 'bg-emerald-950/90 border border-emerald-400/60 text-emerald-300'
               : 'bg-black/85 border border-amber-400/60 text-amber-300'
           }`}>
             <Crown className={`w-3.5 h-3.5 ${isUnlocked && !isProUser ? 'fill-emerald-400 text-emerald-400' : 'fill-amber-400 text-amber-400'}`} />
           </div>
         )}
-
-
-
-        {/* Full-Height Shimmer Skeleton Placeholder removed */}
 
         {inView && isMultiple ? (
           <div
@@ -229,36 +225,54 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
                 : `translateX(-${activeImageIndex * 100}%)`,
             }}
           >
-            {displayImages.map((imgUrl, idx) => (
-              <div key={idx} className="w-full h-full shrink-0 relative overflow-hidden bg-neutral-900">
-                <img
-                  src={getOptimizedImageUrl(imgUrl, 500)}
-                  alt={`${post.imageAlt || post.title} - photo ${idx + 1}`}
-                  draggable={false}
-                  className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
-                  referrerPolicy="no-referrer"
-                  loading={priority && idx === 0 ? 'eager' : 'lazy'}
-                  fetchPriority={priority && idx === 0 ? 'high' : 'auto'}
-                  decoding={priority && idx === 0 ? 'sync' : 'async'}
-                  width={450}
-                  height={600}
-                />
-              </div>
-            ))}
+            {displayImages.map((imgUrl, idx) => {
+              const img360 = getOptimizedImageUrl(imgUrl, 360);
+              const img280 = getOptimizedImageUrl(imgUrl, 280);
+              const img520 = getOptimizedImageUrl(imgUrl, 520);
+              const hasOptimized = img360 !== imgUrl;
+              return (
+                <div key={idx} className="w-full h-full shrink-0 relative overflow-hidden bg-neutral-900">
+                  <img
+                    src={img360}
+                    srcSet={hasOptimized ? `${img280} 280w, ${img360} 360w, ${img520} 520w` : undefined}
+                    sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 240px"
+                    alt={`${post.imageAlt || post.title} - photo ${idx + 1}`}
+                    draggable={false}
+                    className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
+                    referrerPolicy="no-referrer"
+                    loading={priority && idx === 0 ? 'eager' : 'lazy'}
+                    fetchPriority={priority && idx === 0 ? 'high' : 'auto'}
+                    decoding="async"
+                    width={360}
+                    height={480}
+                  />
+                </div>
+              );
+            })}
           </div>
         ) : inView && post.imageUrl ? (
-          <img
-            src={getOptimizedImageUrl(post.imageUrl, 500)}
-            alt={post.imageAlt || post.title}
-            draggable={false}
-            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-all duration-500 ease-out select-none pointer-events-none"
-            referrerPolicy="no-referrer"
-            loading={priority ? 'eager' : 'lazy'}
-            fetchPriority={priority ? 'high' : 'auto'}
-            decoding={priority ? 'sync' : 'async'}
-            width={450}
-            height={600}
-          />
+          (() => {
+            const img360 = getOptimizedImageUrl(post.imageUrl, 360);
+            const img280 = getOptimizedImageUrl(post.imageUrl, 280);
+            const img520 = getOptimizedImageUrl(post.imageUrl, 520);
+            const hasOptimized = img360 !== post.imageUrl;
+            return (
+              <img
+                src={img360}
+                srcSet={hasOptimized ? `${img280} 280w, ${img360} 360w, ${img520} 520w` : undefined}
+                sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 240px"
+                alt={post.imageAlt || post.title}
+                draggable={false}
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
+                referrerPolicy="no-referrer"
+                loading={priority ? 'eager' : 'lazy'}
+                fetchPriority={priority ? 'high' : 'auto'}
+                decoding="async"
+                width={360}
+                height={480}
+              />
+            );
+          })()
         ) : !post.imageUrl ? (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-tr from-neutral-800 to-neutral-900 text-neutral-400">
             <Sparkles className="w-8 h-8 opacity-40" />
@@ -266,7 +280,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
         ) : null}
 
         {/* Dark Semi-Transparent Overlay with White Action Buttons */}
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto flex items-center justify-center gap-2 z-10 px-3">
+        <div className="absolute inset-0 bg-black/65 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto flex items-center justify-center gap-2 z-10 px-3">
           {post.isPremium && !isUnlocked ? (
             <div className="flex flex-col items-center justify-center gap-2 w-full px-2 text-center pointer-events-auto">
               <button
@@ -276,12 +290,12 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
                   e.stopPropagation();
                   router.push('/pricing');
                 }}
-                className="flex items-center justify-center gap-1.5 w-full max-w-[175px] py-2 px-3 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs shadow-lg transition-transform hover:scale-105 active:scale-95"
-                title="Upgrade to Premium"
-                aria-label="Upgrade to Premium"
+                className="flex items-center justify-center gap-1.5 w-full max-w-[225px] py-2 px-3 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-[11px] leading-tight shadow-lg transition-transform hover:scale-105 active:scale-95"
+                title="Upgrade to Premium at just 99/Year"
+                aria-label="Upgrade to Premium at just 99/Year"
               >
                 <Crown className="w-3.5 h-3.5 fill-black text-black shrink-0" />
-                <span>Upgrade to Premium</span>
+                <span>Upgrade to Premium at just 99/Year</span>
               </button>
             </div>
           ) : (

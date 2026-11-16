@@ -7,7 +7,7 @@ import { AppProvider } from '@/context/AppContext';
 import { AppGlobalOverlays } from '@/components/public/AppGlobalOverlays';
 
 const poppins = Poppins({
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '600', '700'],
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-poppins',
@@ -53,8 +53,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   ReactDOM.preconnect('https://res.cloudinary.com', { crossOrigin: 'anonymous' });
+  ReactDOM.preconnect('https://images.unsplash.com', { crossOrigin: 'anonymous' });
   if (typeof (ReactDOM as any).prefetchDNS === 'function') {
     (ReactDOM as any).prefetchDNS('https://res.cloudinary.com');
+    (ReactDOM as any).prefetchDNS('https://images.unsplash.com');
   }
 
   return (
@@ -83,11 +85,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             gtag('config', 'G-28QHB2KNZC');
           `}
         </Script>
-        <Script
-          id="razorpay-checkout-sdk"
-          src="https://checkout.razorpay.com/v1/checkout.js"
-          strategy="lazyOnload"
-        />
       </body>
     </html>
   );

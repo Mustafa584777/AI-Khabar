@@ -1,6 +1,7 @@
+import ReactDOM from 'react-dom';
 import { ServerStorage } from '@/lib/server-storage';
 import { HomeClientWrapper } from '@/components/public/HomeClientWrapper';
-import { getPromptSlug } from '@/lib/utils';
+import { getPromptSlug, getOptimizedImageUrl } from '@/lib/utils';
 
 export const revalidate = false;
 
@@ -23,6 +24,25 @@ export default async function Page() {
       posts.push({
         ...post,
         slug,
+      });
+    }
+  }
+
+  // Sort newest first deterministically to match PromptGrid default SSR order and preload top 2 hero cards
+  const newestSorted = [...posts]
+    .filter((p) => p.status === 'published')
+    .sort(
+      (a, b) =>
+        new Date(b.publishedAt || b.createdAt || 0).getTime() -
+        new Date(a.publishedAt || a.createdAt || 0).getTime()
+    );
+
+  for (let i = 0; i < Math.min(2, newestSorted.length); i++) {
+    const img = newestSorted[i]?.imageUrl;
+    if (img) {
+      ReactDOM.preload(getOptimizedImageUrl(img, 360), {
+        as: 'image',
+        fetchPriority: 'high',
       });
     }
   }
@@ -57,6 +77,7 @@ export default async function Page() {
       </div>
 
       <HomeClientWrapper
+        initialPosts={newestSorted.slice(0, 16)}
         initialCategories={categories}
         initialSettings={settings}
       />

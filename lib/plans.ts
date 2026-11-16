@@ -31,13 +31,14 @@ const SINGLE_PRO_YEARLY_CONFIG: Omit<PlanConfig, 'id'> = {
   unlimitedSaves: true,
   unlimitedSearches: false,
   unlockAllPrompts: true,
-  features: [
-    'Unlock all premium prompts',
-    '120 prompt tool credits',
-    'AI Search (3 daily searches)',
-    'Unlimited saves & history',
-  ],
-};
+    features: [
+      'Unlock all premium prompts',
+      '120 prompt tool credits',
+      'No watermark text on copied prompts',
+      'AI Search (3 daily searches)',
+      'Unlimited saves & history',
+    ],
+  };
 
 export const PLAN_CONFIGS: Record<PlanTier, PlanConfig> = {
   free: {
@@ -58,6 +59,7 @@ export const PLAN_CONFIGS: Record<PlanTier, PlanConfig> = {
       '5 one-time free signup tool credits',
       '10 combined saves & history',
       'Free tier prompt access',
+      'Copied prompts include watermark text',
     ],
   },
   // Legacy tier keys alias to the single ₹99/year Pro Yearly benefits for backward DB compatibility

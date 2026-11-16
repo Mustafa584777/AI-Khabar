@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { PromptPost, AIHistoryItem, PlanTier } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
-import { getPromptSlug, getOptimizedImageUrl, getEmailAvatarUrl } from '@/lib/utils';
+import { getPromptSlug, getOptimizedImageUrl, getEmailAvatarUrl, formatPromptForClipboard } from '@/lib/utils';
 import {
   User,
   Bookmark,
@@ -39,7 +39,7 @@ import {
   Coins,
   X,
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import { triggerConfetti } from '@/lib/confetti';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { RazorpayCheckoutButton } from './RazorpayCheckoutButton';
@@ -95,14 +95,12 @@ export const UserDashboard = () => {
         if (msg) {
           setCongratulationsBanner(msg);
           sessionStorage.removeItem('plan_congrats_message');
-          try {
-            confetti({
-              particleCount: 150,
-              spread: 80,
-              origin: { y: 0.5 },
-              colors: ['#E60023', '#FFD700', '#00C853', '#7C4DFF'],
-            });
-          } catch {}
+          void triggerConfetti({
+            particleCount: 150,
+            spread: 80,
+            origin: { y: 0.5 },
+            colors: ['#E60023', '#FFD700', '#00C853', '#7C4DFF'],
+          });
         }
       } catch {}
     }
@@ -174,7 +172,7 @@ export const UserDashboard = () => {
   };
 
   const handleCopyFulfilledPrompt = (promptText: string, reqId: string) => {
-    navigator.clipboard.writeText(promptText);
+    navigator.clipboard.writeText(formatPromptForClipboard(promptText, isPaid));
     setCopiedRequestId(reqId);
     showToast('Prompt copied to clipboard!');
     setTimeout(() => setCopiedRequestId(null), 2500);
@@ -221,7 +219,7 @@ export const UserDashboard = () => {
 
   const handleCopyPrompt = (e: React.MouseEvent, text: string, id: string) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(formatPromptForClipboard(text, isPaid));
     setCopiedId(id);
     showToast('Prompt copied to clipboard!');
     setTimeout(() => setCopiedId(null), 2000);
@@ -463,7 +461,7 @@ export const UserDashboard = () => {
             </div>
             <div className="text-center md:text-left">
               <div className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
-                {isPaid ? `All (${currentPlanConfig.name})` : unlockedPromptIds.length}
+                {isPaid ? 'All' : unlockedPromptIds.length}
               </div>
               <div className="text-[11px] text-neutral-500 font-medium">Unlocked Prompts</div>
             </div>

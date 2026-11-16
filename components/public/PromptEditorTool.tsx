@@ -16,10 +16,11 @@ import {
   X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { formatPromptForClipboard } from '@/lib/utils';
 
 export const PromptEditorTool = () => {
   const router = useRouter();
-  const { showToast, saveAiHistoryItem, userAccount, openAuthModal, toolCredits, deductToolCredit } = useApp();
+  const { showToast, saveAiHistoryItem, userAccount, openAuthModal, toolCredits, deductToolCredit, isActivePremiumUser } = useApp();
 
   const [inputPrompt, setInputPrompt] = useState<string>('');
 
@@ -121,7 +122,7 @@ export const PromptEditorTool = () => {
   };
 
   const copyToClipboard = (text: string, isEnhanced: boolean) => {
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(formatPromptForClipboard(text, isActivePremiumUser));
     if (isEnhanced) {
       setCopiedEnhanced(true);
       setTimeout(() => setCopiedEnhanced(false), 2000);
@@ -297,7 +298,17 @@ export const PromptEditorTool = () => {
                       {copiedEnhanced ? 'Copied!' : 'Copy Edited Prompt'}
                     </button>
                   </div>
-                  <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm leading-relaxed font-mono">
+                  <div
+                    onCopy={(e) => {
+                      if (!isActivePremiumUser) {
+                        e.preventDefault();
+                        const selected = typeof window !== 'undefined' ? window.getSelection()?.toString() : '';
+                        const target = selected && selected.trim().length > 0 ? selected : resultData.enhancedPrompt;
+                        e.clipboardData?.setData('text/plain', formatPromptForClipboard(target, false));
+                      }
+                    }}
+                    className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm leading-relaxed font-mono"
+                  >
                     {resultData.enhancedPrompt}
                   </div>
                 </div>

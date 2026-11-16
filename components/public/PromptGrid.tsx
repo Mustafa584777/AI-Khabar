@@ -10,20 +10,7 @@ import { PromptPost } from '@/types/prompt';
 import { PersonalizationEngine } from '@/lib/personalization';
 import { getPromptSlug } from '@/lib/utils';
 
-const getInitialBatchSize = () => {
-  if (typeof window === 'undefined') return 20;
-  const width = window.innerWidth;
-  const height = window.innerHeight;
-  let cols = 4;
-  if (width >= 1280) cols = 5;
-  else if (width >= 1024) cols = 4;
-  else if (width >= 640) cols = 3;
-  else cols = 2;
-
-  const rows = Math.max(3, Math.ceil(height / 260) + 1);
-  return cols * rows;
-};
-
+const INITIAL_BATCH_SIZE = 10;
 const SCROLL_BATCH_SIZE = 20;
 
 export const PromptGrid = () => {
@@ -50,68 +37,32 @@ export const PromptGrid = () => {
     showToast,
     userAccount,
     openAuthModal,
+    ensureFullCatalogLoaded,
   } = useApp();
 
-  // Mount state & fresh random shuffle map on initial load
-  const [isMounted, setIsMounted] = useState<boolean>(true);
-  const [randomOrderMap, setRandomOrderMap] = useState<Map<string, number>>(() => {
-    const map = new Map<string, number>();
-    if (!posts || posts.length === 0) return map;
-
-    try {
-      if (typeof window !== 'undefined') {
-        const cachedSessionIds = sessionStorage.getItem('promptcms_random_order_ids');
-        if (cachedSessionIds) {
-          const parsedIds: string[] = JSON.parse(cachedSessionIds);
-          if (Array.isArray(parsedIds) && parsedIds.length > 0) {
-            parsedIds.forEach((id, idx) => {
-              map.set(id, idx);
-            });
-            posts.forEach((p) => {
-              if (!map.has(p.id)) {
-                map.set(p.id, map.size);
-              }
-            });
-            return map;
-          }
-        }
-      }
-    } catch {}
-
-    const postIds = posts.map((p) => p.id);
-    for (let i = postIds.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [postIds[i], postIds[j]] = [postIds[j], postIds[i]];
-    }
-
-    postIds.forEach((id, idx) => {
-      map.set(id, idx);
-    });
-
-    try {
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('promptcms_random_order_ids', JSON.stringify(postIds));
-      }
-    } catch {}
-
-    return map;
-  });
-  const shuffleInitializedRef = useRef<boolean>(true);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
   const currentFilterKey = `${searchQuery}_${selectedCategory}_${selectedTool}_${selectedSort}_${tasteProfile.genderVibe}`;
-  const [displayedCount, setDisplayedCount] = useState<number>(getInitialBatchSize);
+  const [displayedCount, setDisplayedCount] = useState<number>(INITIAL_BATCH_SIZE);
   const [prevFilterKey, setPrevFilterKey] = useState<string>(currentFilterKey);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
 
   // Reset pagination if filter key changed during render
   if (currentFilterKey !== prevFilterKey) {
     setPrevFilterKey(currentFilterKey);
-    setDisplayedCount(getInitialBatchSize());
+    setDisplayedCount(INITIAL_BATCH_SIZE);
   }
+
+  // Ensure full catalog loads whenever any search/filter/sort becomes active
+  useEffect(() => {
+    const hasActiveFilter =
+      Boolean(searchQuery.trim()) ||
+      (selectedCategory !== 'all' && selectedCategory !== '') ||
+      (selectedTool !== 'all' && selectedTool !== '') ||
+      selectedSort !== 'newest';
+
+    if (hasActiveFilter) {
+      void ensureFullCatalogLoaded();
+    }
+  }, [searchQuery, selectedCategory, selectedTool, selectedSort, ensureFullCatalogLoaded]);
 
   // Filter only published posts for the public directory and strictly deduplicate with deterministic ordering
   const filteredPosts = useMemo(() => {
@@ -181,22 +132,7 @@ export const PromptGrid = () => {
         });
       }
     } else {
-      const isRandomMode =
-        !searchQuery.trim() &&
-        selectedCategory !== 'latest' &&
-        (!selectedCategory || selectedCategory === 'all') &&
-        (selectedTool === 'all' || !selectedTool) &&
-        selectedSort === 'newest';
-
-      if (isRandomMode && randomOrderMap && randomOrderMap.size > 0) {
-        // Default homepage view: Random prompts on initial load & reload until Latest or category is clicked
-        list = [...list].sort((a, b) => {
-          const rankA = randomOrderMap.get(a.id) ?? 999999;
-          const rankB = randomOrderMap.get(b.id) ?? 999999;
-          return rankA - rankB;
-        });
-      } else if (selectedCategory === 'latest' || selectedSort === 'newest') {
-        // "Latest Prompts" filter button clicked or 'newest' sort selected: Always prioritize newest published posts first
+      if (selectedCategory === 'latest' || selectedSort === 'newest') {
         list = [...list].sort((a, b) => {
           const timeB = new Date(b.publishedAt || b.createdAt || 0).getTime();
           const timeA = new Date(a.publishedAt || a.createdAt || 0).getTime();
@@ -204,7 +140,6 @@ export const PromptGrid = () => {
           return (b.createdAt || '').localeCompare(a.createdAt || '') || b.id.localeCompare(a.id);
         });
       } else if (selectedSort === 'oldest') {
-        // Oldest first sort selected
         list = [...list].sort((a, b) => {
           const timeB = new Date(b.publishedAt || b.createdAt || 0).getTime();
           const timeA = new Date(a.publishedAt || a.createdAt || 0).getTime();
@@ -218,7 +153,6 @@ export const PromptGrid = () => {
           return (b.createdAt || '').localeCompare(a.createdAt || '') || a.id.localeCompare(b.id);
         });
       } else {
-        // Fallback newest
         list = [...list].sort((a, b) => {
           const timeB = new Date(b.publishedAt || b.createdAt || 0).getTime();
           const timeA = new Date(a.publishedAt || a.createdAt || 0).getTime();
@@ -244,11 +178,16 @@ export const PromptGrid = () => {
     }
 
     return uniqueList;
-  }, [posts, selectedCategory, selectedTool, searchQuery, selectedSort, aiSearchResults, randomOrderMap]);
+  }, [posts, selectedCategory, selectedTool, searchQuery, selectedSort, aiSearchResults]);
 
-  // Infinite Scroll: Dual-Layer (IntersectionObserver + Scroll Window Event)
+  // Infinite Scroll: Dual-Layer (IntersectionObserver + Scroll Window Event) + Full Catalog Lazy Hydration
   useEffect(() => {
-    if (!isMounted || isLoadingPosts || displayedCount >= filteredPosts.length) return;
+    if (isLoadingPosts) return;
+
+    const loadNextBatch = () => {
+      void ensureFullCatalogLoaded();
+      setDisplayedCount((prev) => prev + SCROLL_BATCH_SIZE);
+    };
 
     const sentinel = bottomSentinelRef.current;
     let observer: IntersectionObserver | null = null;
@@ -257,7 +196,7 @@ export const PromptGrid = () => {
       observer = new IntersectionObserver(
         (entries) => {
           if (entries[0]?.isIntersecting) {
-            setDisplayedCount((prev) => Math.min(prev + SCROLL_BATCH_SIZE, filteredPosts.length));
+            loadNextBatch();
           }
         },
         { rootMargin: '800px 0px' }
@@ -267,10 +206,13 @@ export const PromptGrid = () => {
 
     const handleWindowScroll = () => {
       const scrollY = window.scrollY || window.pageYOffset;
+      if (scrollY > 120) {
+        void ensureFullCatalogLoaded();
+      }
       const windowHeight = window.innerHeight;
       const documentHeight = document.documentElement.scrollHeight;
       if (scrollY + windowHeight >= documentHeight - 1000) {
-        setDisplayedCount((prev) => Math.min(prev + SCROLL_BATCH_SIZE, filteredPosts.length));
+        setDisplayedCount((prev) => Math.min(prev + SCROLL_BATCH_SIZE, Math.max(prev + SCROLL_BATCH_SIZE, filteredPosts.length)));
       }
     };
 
@@ -280,71 +222,22 @@ export const PromptGrid = () => {
       if (observer) observer.disconnect();
       window.removeEventListener('scroll', handleWindowScroll);
     };
-  }, [displayedCount, filteredPosts.length, isMounted, isLoadingPosts]);
+  }, [filteredPosts.length, isLoadingPosts, ensureFullCatalogLoaded]);
 
   const visiblePosts = filteredPosts.slice(0, displayedCount);
   const hasMore = displayedCount < filteredPosts.length;
 
-  const [columnCount, setColumnCount] = useState<number>(() => {
-    if (typeof window !== 'undefined') {
-      const width = window.innerWidth;
-      if (width >= 1280) return 5;
-      if (width >= 1024) return 4;
-      if (width >= 640) return 3;
-      return 2;
+  // Segmented masonry batches: pure CSS multi-column layout matches mobile (2 cols) on SSR byte 1
+  // and keeps earlier batches completely immovable when infinite scroll appends new batches below (CLS = 0)
+  const masonryBatches = useMemo(() => {
+    const batches: PromptPost[][] = [];
+    if (visiblePosts.length === 0) return batches;
+    batches.push(visiblePosts.slice(0, INITIAL_BATCH_SIZE));
+    for (let i = INITIAL_BATCH_SIZE; i < visiblePosts.length; i += SCROLL_BATCH_SIZE) {
+      batches.push(visiblePosts.slice(i, i + SCROLL_BATCH_SIZE));
     }
-    return 4;
-  });
-
-  useEffect(() => {
-    const updateColumnCount = () => {
-      const width = window.innerWidth;
-      if (width >= 1280) {
-        setColumnCount(5);
-      } else if (width >= 1024) {
-        setColumnCount(4);
-      } else if (width >= 640) {
-        setColumnCount(3);
-      } else {
-        setColumnCount(2);
-      }
-    };
-
-    updateColumnCount();
-    window.addEventListener('resize', updateColumnCount);
-    return () => window.removeEventListener('resize', updateColumnCount);
-  }, []);
-
-  // Partition visible posts into columns strictly by shortest-column-first vertical balancing.
-  // This guarantees that:
-  // 1. Both columns (on mobile) or all columns (on desktop) maintain balanced heights.
-  // 2. Existing cards are NEVER moved or shuffled when new cards load below.
-  // 3. New cards are strictly appended at the bottom vertically, eliminating the gap in the right column.
-  const columns = useMemo(() => {
-    const cols: PromptPost[][] = Array.from({ length: columnCount }, () => []);
-    const colHeights: number[] = Array.from({ length: columnCount }, () => 0);
-
-    for (let i = 0; i < visiblePosts.length; i++) {
-      const post = visiblePosts[i];
-      // Pick column with smallest accumulated height
-      let targetCol = 0;
-      let minH = colHeights[0];
-      for (let c = 1; c < columnCount; c++) {
-        if (colHeights[c] < minH) {
-          minH = colHeights[c];
-          targetCol = c;
-        }
-      }
-
-      cols[targetCol].push(post);
-
-      // Estimate card height: card has aspect ratio (height / width)
-      const ratio = post.imageHeight && post.imageWidth ? post.imageHeight / post.imageWidth : 1.33;
-      colHeights[targetCol] += ratio;
-    }
-
-    return cols;
-  }, [visiblePosts, columnCount]);
+    return batches;
+  }, [visiblePosts]);
 
   const totalPublishedCount = useMemo(() => {
     return posts.filter((p) => p.status === 'published').length;
@@ -354,7 +247,7 @@ export const PromptGrid = () => {
     <main id="prompts-grid-section" className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 scroll-mt-20">
       {/* Gemini AI Smart Search Results Header */}
       {searchQuery.trim() && (
-        <div className="mb-6 p-4 sm:p-5 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
+        <div className="mb-6 p-4 sm:p-5 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-start sm:items-center gap-3.5">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#E60023] via-rose-500 to-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-red-500/20 relative overflow-hidden">
               {isAiSearching ? (
@@ -440,15 +333,19 @@ export const PromptGrid = () => {
         <PromptGridSkeleton />
       ) : filteredPosts.length > 0 ? (
         <>
-          <div className="flex gap-3 sm:gap-4 items-start w-full animate-fade-in" id="vertical-masonry-feed">
-            {columns.map((colPosts, colIdx) => (
-              <div key={colIdx} className="flex-1 flex flex-col gap-3 sm:gap-4 min-w-0">
-                {colPosts.map((post, postIdx) => (
-                  <PromptCard
-                    key={post.id}
-                    post={post}
-                    priority={postIdx === 0}
-                  />
+          <div className="space-y-3 sm:space-y-4 w-full" id="vertical-masonry-feed">
+            {masonryBatches.map((batch, batchIdx) => (
+              <div
+                key={batchIdx}
+                className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-3 sm:gap-4 w-full"
+              >
+                {batch.map((post, postIdx) => (
+                  <div key={post.id} className="break-inside-avoid mb-3 sm:mb-4">
+                    <PromptCard
+                      post={post}
+                      priority={batchIdx === 0 && postIdx < 2}
+                    />
+                  </div>
                 ))}
               </div>
             ))}
@@ -466,7 +363,10 @@ export const PromptGrid = () => {
               </div>
               <button
                 type="button"
-                onClick={() => setDisplayedCount((prev) => Math.min(prev + SCROLL_BATCH_SIZE, filteredPosts.length))}
+                onClick={() => {
+                  void ensureFullCatalogLoaded();
+                  setDisplayedCount((prev) => Math.min(prev + SCROLL_BATCH_SIZE, filteredPosts.length));
+                }}
                 className="text-xs font-bold text-[#E60023] hover:underline cursor-pointer bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/50 px-3.5 py-1.5 rounded-full border border-red-200 dark:border-red-900/40 transition-colors"
               >
                 Load more prompts ({filteredPosts.length - displayedCount} remaining)

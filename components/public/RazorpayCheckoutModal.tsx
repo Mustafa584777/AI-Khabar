@@ -11,7 +11,7 @@ import {
   AlertCircle,
   Loader2,
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import { triggerConfetti } from '@/lib/confetti';
 import { useApp } from '@/context/AppContext';
 import { startRazorpayCheckout } from '@/lib/razorpay';
 
@@ -24,6 +24,7 @@ const SINGLE_YEARLY_PLAN = {
   badge: 'All-Access Annual Pass',
   features: [
     'Unlock all premium prompts',
+    'No watermark text on copied prompts',
     '120 prompt tool credits',
     'AI Search (3 daily searches)',
     'Unlimited saves & history',
@@ -121,14 +122,12 @@ export const RazorpayCheckoutModal: React.FC = () => {
             message: data.message || 'Successfully processed Pro Yearly (₹99/year) plan.',
           });
 
-          try {
-            confetti({
-              particleCount: 120,
-              spread: 80,
-              origin: { y: 0.55 },
-              colors: ['#E60023', '#FFD700', '#00C853', '#7C4DFF'],
-            });
-          } catch {}
+          void triggerConfetti({
+            particleCount: 120,
+            spread: 80,
+            origin: { y: 0.55 },
+            colors: ['#E60023', '#FFD700', '#00C853', '#7C4DFF'],
+          });
 
           setTimeout(() => {
             setIsProCheckoutModalOpen(false);

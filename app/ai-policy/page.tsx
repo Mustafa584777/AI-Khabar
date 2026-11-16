@@ -24,7 +24,7 @@ export default function AiPolicyPage() {
           <section className="space-y-2">
             <h2 className="text-base font-bold text-neutral-900 dark:text-white">1. Responsible AI Generation</h2>
             <p>
-              Gemini Prompt Generator is committed to promoting safe, ethical, and responsible generative AI creation. Our prompts are curated to adhere to safety guidelines set by major AI providers such as Google Gemini, OpenAI, and Midjourney.
+              Zeena Prompt is committed to promoting safe, ethical, and responsible generative AI creation. Our prompts are curated to adhere to safety guidelines set by major AI providers such as Google Gemini, OpenAI, and Midjourney.
             </p>
           </section>
 

@@ -1,5 +1,5 @@
 import { PushNotificationItem, NotificationPreferences, PushSubscriber } from '@/types/notification';
-import { INITIAL_NOTIFICATIONS } from '@/lib/initial-data';
+import { INITIAL_NOTIFICATIONS } from '@/lib/initial-feed';
 
 const STORAGE_KEY_NOTIFICATIONS = 'promptcms_push_notifications';
 const STORAGE_KEY_PREFERENCES = 'promptcms_push_preferences';

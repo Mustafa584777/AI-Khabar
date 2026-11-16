@@ -43,15 +43,11 @@ export const HeroSection = () => {
     userAccount,
     openAuthModal,
     performAiSearch,
+    ensureFullCatalogLoaded,
   } = useApp();
 
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const isMounted = React.useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false
-  );
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
@@ -61,8 +57,9 @@ export const HeroSection = () => {
       : ['Traditional saree', 'trending mirror selfie', 'BMW', 'Sukuna', 'Instagram Trend', 'Couple'];
   }, [settings.popularTags]);
 
-  // Filter Most Viewed Categories with at least 5 prompts
+  // Compute category previews strictly when search dropdown opens so initial hero mount stays 0ms
   const validMostViewedCategories = useMemo(() => {
+    if (!isSearchOpen) return [];
     const published = posts.filter((p) => p.status === 'published');
     return categories
       .map((cat) => {
@@ -76,7 +73,7 @@ export const HeroSection = () => {
         };
       })
       .filter((cat) => cat.postCount >= 5);
-  }, [categories, posts]);
+  }, [isSearchOpen, categories, posts]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -118,11 +115,11 @@ export const HeroSection = () => {
 
   return (
     <section className="relative w-full max-w-4xl mx-auto pt-8 pb-4 px-4 sm:px-6 text-center">
-      <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-neutral-900 dark:text-white mb-4 animate-fade-in [animation-delay:100ms]">
+      <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-neutral-900 dark:text-white mb-4">
         {settings.heroHeadline || 'Trending Copy Paste Photo Prompts'}
       </h1>
 
-      <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto mb-6 animate-fade-in [animation-delay:200ms]">
+      <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto mb-6">
         {settings.heroSubheadline ||
           "Explore professionally crafted photo prompts for Gemini, and ChatGPT. Copy with 1 click. Decode any image's prompt, generate new version, create new prompt from idea or edit an existing one."}
       </p>
@@ -131,7 +128,7 @@ export const HeroSection = () => {
       <ImageToPromptBox />
 
       {/* Action Bar: Search & Sort Dropdown */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 animate-fade-in [animation-delay:300ms]">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
         {/* Search Bar */}
         <div
           className={`flex-1 relative group transition-all ${
@@ -145,10 +142,14 @@ export const HeroSection = () => {
           <input
             type="text"
             value={searchQuery}
-            onFocus={() => setIsSearchOpen(true)}
+            onFocus={() => {
+              setIsSearchOpen(true);
+              void ensureFullCatalogLoaded();
+            }}
             onChange={(e) => {
               setSearchQuery(e.target.value);
               setIsSearchOpen(true);
+              void ensureFullCatalogLoaded();
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
@@ -461,7 +462,7 @@ export const HeroSection = () => {
       </div>
 
       {/* Quick Chips Container */}
-      <div className="flex flex-wrap items-center justify-center gap-2.5 mt-8 animate-fade-in [animation-delay:400ms]">
+      <div className="flex flex-wrap items-center justify-center gap-2.5 mt-8">
         <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-widest mr-1">
           Popular:
         </span>

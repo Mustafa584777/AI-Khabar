@@ -624,7 +624,6 @@ export const PostEditor = () => {
         }
 
         if (data.slug) setSlug(data.slug);
-        if (data.promptText) setPromptText(data.promptText);
 
         // Smart Category Assignment & Auto-Creation without Duplication
         let activeCategoryName = category;

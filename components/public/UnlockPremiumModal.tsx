@@ -133,6 +133,10 @@ export const UnlockPremiumModal: React.FC = () => {
             </li>
             <li className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-[#E60023] shrink-0" />
+              <span className="font-bold text-neutral-900 dark:text-white">No watermark text on copied prompts</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-[#E60023] shrink-0" />
               <span className="font-bold text-[#E60023]">Unlimited saves & history</span>
             </li>
           </ul>

@@ -14,13 +14,13 @@ export default function AboutPage() {
         <div className="text-center space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-50 dark:bg-red-950/60 text-[#E60023] text-xs font-black">
             <Sparkles className="w-4 h-4" />
-            <span>About Gemini Prompt Generator</span>
+            <span>About Zeena Prompt</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-black tracking-tight">
             Empowering AI Creators Worldwide
           </h1>
           <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto leading-relaxed">
-            Gemini Prompt Generator is the premier copy-paste photo and art prompt directory optimized for Gemini, ChatGPT, Midjourney, and Flux. We make high-end AI generation accessible to everyone.
+            Zeena Prompt is the premier copy-paste photo and art prompt directory optimized for Gemini, ChatGPT, Midjourney, and Flux. We make high-end AI generation accessible to everyone.
           </p>
         </div>
 
@@ -53,7 +53,7 @@ export default function AboutPage() {
         <div className="p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
           <h3 className="text-lg font-black">Our Mission</h3>
           <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-            We believe that generative AI should be frictionless and precise. Instead of spending hours tinkering with parameters, our platform gives you instant access to professionally tested master prompts. Whether you are generating photorealistic portraits, cinematic landscapes, or vibrant anime art, Gemini Prompt Generator is your ultimate creative companion.
+            We believe that generative AI should be frictionless and precise. Instead of spending hours tinkering with parameters, our platform gives you instant access to professionally tested master prompts. Whether you are generating photorealistic portraits, cinematic landscapes, or vibrant anime art, Zeena Prompt is your ultimate creative companion.
           </p>
         </div>
       </main>

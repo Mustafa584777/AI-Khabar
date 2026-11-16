@@ -127,6 +127,20 @@ export function ensureAspectRatio34(text: string): string {
   return clean ? `${clean}, aspect ratio 3:4` : 'aspect ratio 3:4';
 }
 
+export const FREE_USER_PROMPT_WATERMARK =
+  'A small watermark reading zeenaprompt.com in bottom left corner in beautiful cursive calligraphy in white colour with transparent background';
+
+export function formatPromptForClipboard(
+  promptText: string,
+  isPremiumMember: boolean
+): string {
+  const raw = promptText || '';
+  const trimmed = raw.trim();
+  if (!trimmed || isPremiumMember) return raw;
+  if (trimmed.includes(FREE_USER_PROMPT_WATERMARK)) return raw;
+  return `${trimmed}\n\n${FREE_USER_PROMPT_WATERMARK}`;
+}
+
 export function getEmailAvatarUrl(email?: string, name?: string): string {
   const cleanEmail = (email || '').trim().toLowerCase();
   const seed = name && name !== 'Administrator' && name !== 'Admin' && name !== 'User' && name !== 'Creator'

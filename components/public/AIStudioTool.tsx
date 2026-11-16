@@ -24,7 +24,7 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PromptEditorTool } from '@/components/public/PromptEditorTool';
-import { ensureAspectRatio34 } from '@/lib/utils';
+import { ensureAspectRatio34, formatPromptForClipboard } from '@/lib/utils';
 
 const SAMPLE_IMAGES_FALLBACK = [
   {
@@ -91,6 +91,7 @@ export const AIStudioTool = () => {
     deductToolCredit,
     isAuthenticated,
     posts,
+    isActivePremiumUser,
   } = useApp();
 
   const sampleImages = React.useMemo(() => {
@@ -265,7 +266,7 @@ export const AIStudioTool = () => {
   }, []);
 
   const copyToClipboard = (text: string, key: string, label = 'Copied to clipboard!') => {
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(formatPromptForClipboard(text, isActivePremiumUser));
     setCopiedKey(key);
     showToast(label);
     setTimeout(() => setCopiedKey(null), 2000);
@@ -848,7 +849,17 @@ export const AIStudioTool = () => {
                       </div>
                     )}
 
-                    <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 font-mono text-xs sm:text-sm text-neutral-900 dark:text-neutral-100 leading-relaxed break-words select-all">
+                    <div
+                      onCopy={(e) => {
+                        if (!isActivePremiumUser) {
+                          e.preventDefault();
+                          const selected = typeof window !== 'undefined' ? window.getSelection()?.toString() : '';
+                          const target = selected && selected.trim().length > 0 ? selected : extractedData.promptText;
+                          e.clipboardData?.setData('text/plain', formatPromptForClipboard(target, false));
+                        }
+                      }}
+                      className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 font-mono text-xs sm:text-sm text-neutral-900 dark:text-neutral-100 leading-relaxed break-words select-all"
+                    >
                       {extractedData.promptText}
                     </div>
 
@@ -1177,7 +1188,17 @@ export const AIStudioTool = () => {
                       </span>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 font-mono text-xs sm:text-sm text-neutral-900 dark:text-neutral-100 leading-relaxed break-words select-all">
+                    <div
+                      onCopy={(e) => {
+                        if (!isActivePremiumUser) {
+                          e.preventDefault();
+                          const selected = typeof window !== 'undefined' ? window.getSelection()?.toString() : '';
+                          const target = selected && selected.trim().length > 0 ? selected : generatedPromptData.promptText;
+                          e.clipboardData?.setData('text/plain', formatPromptForClipboard(target, false));
+                        }
+                      }}
+                      className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 font-mono text-xs sm:text-sm text-neutral-900 dark:text-neutral-100 leading-relaxed break-words select-all"
+                    >
                       {generatedPromptData.promptText}
                     </div>
 

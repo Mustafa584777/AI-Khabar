@@ -9,7 +9,7 @@ import { useApp } from '@/context/AppContext';
 export const Footer = () => {
   const router = useRouter();
   const pathname = usePathname();
-  const { categories, posts, setSelectedCategory, setSelectedSort, setSearchQuery } = useApp();
+  const { categories, categoryPostCounts, setSelectedCategory, setSelectedSort, setSearchQuery } = useApp();
 
   const handleCategoryClick = (catName: string) => {
     setSelectedCategory(catName);
@@ -39,7 +39,7 @@ export const Footer = () => {
             <div className="w-12 h-12 rounded-full overflow-hidden shadow-sm border border-[#E60023]/30 bg-white dark:bg-neutral-900 flex items-center justify-center">
               <Image
                 src="/logo.png"
-                alt="Gemini Prompt Generator"
+                alt="Zeena Prompt"
                 width={48}
                 height={48}
                 className="w-full h-full object-cover"
@@ -47,7 +47,7 @@ export const Footer = () => {
               />
             </div>
             <span className="font-black text-xl sm:text-2xl text-neutral-900 dark:text-white tracking-tight">
-              Gemini Prompt Generator
+              Zeena Prompt
             </span>
           </div>
           <p className="text-xs sm:text-sm leading-relaxed text-neutral-500 dark:text-neutral-400 max-w-md mx-auto">
@@ -84,12 +84,7 @@ export const Footer = () => {
               </h5>
               <ul className="space-y-1.5">
                 {categories
-                  .filter((cat) => {
-                    const count = posts.filter(
-                      (p) => p.status === 'published' && p.category && p.category.toLowerCase() === cat.name.toLowerCase()
-                    ).length;
-                    return count >= 5;
-                  })
+                  .filter((cat) => (categoryPostCounts[cat.name.toLowerCase().trim()] || 0) >= 5)
                   .map((cat) => (
                     <li key={cat.id}>
                       <button
@@ -183,7 +178,7 @@ export const Footer = () => {
         {/* Copyright Line */}
         <div className="pt-8 border-t border-neutral-200 dark:border-neutral-800/80 text-center">
           <p className="text-xs font-semibold text-neutral-500">
-            © 2026 Gemini Prompt Generator. All rights reserved.
+            © 2026 Zeena Prompt. All rights reserved.
           </p>
         </div>
 

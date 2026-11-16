@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CreditCard, Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import { triggerConfetti } from '@/lib/confetti';
 import { startRazorpayCheckout } from '@/lib/razorpay';
 import { useApp } from '@/context/AppContext';
 
@@ -112,16 +112,12 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
             } catch {}
           }
 
-          try {
-            confetti({
-              particleCount: 120,
-              spread: 75,
-              origin: { y: 0.6 },
-              colors: ['#E60023', '#FFD700', '#00C853', '#2979FF'],
-            });
-          } catch {
-            // ignore confetti fallback
-          }
+          void triggerConfetti({
+            particleCount: 120,
+            spread: 75,
+            origin: { y: 0.6 },
+            colors: ['#E60023', '#FFD700', '#00C853', '#2979FF'],
+          });
 
           if (onSuccess) {
             onSuccess(verifyData);

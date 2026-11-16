@@ -5,23 +5,24 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { UploadCloud, Wand2, Sparkles, X, Image as ImageIcon, Camera, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
+import { getOptimizedImageUrl } from '@/lib/utils';
 
 const SAMPLE_TEST_IMAGES = [
   {
     name: 'Editorial Portrait',
-    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=64&q=60',
   },
   {
     name: 'Cinematic Fashion',
-    url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+    url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=64&q=60',
   },
   {
     name: 'Minimalist Architecture',
-    url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
+    url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=64&q=60',
   },
   {
     name: 'Golden Hour Aesthetic',
-    url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80',
+    url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=64&q=60',
   },
 ];
 
@@ -42,7 +43,7 @@ export const ImageToPromptBox = () => {
     if (valid.length >= 4) {
       return valid.slice(0, 4).map((p) => ({
         name: p.title || 'Aesthetic Sample',
-        url: p.imageUrl,
+        url: getOptimizedImageUrl(p.imageUrl, 64),
       }));
     }
     return SAMPLE_TEST_IMAGES;
@@ -138,7 +139,7 @@ export const ImageToPromptBox = () => {
 
   return (
     <div className="w-full max-w-4xl mx-auto my-6 text-left" id="homepage-image-to-prompt-box">
-      <div className="relative rounded-3xl bg-white dark:bg-neutral-900/95 p-4 sm:p-6 border border-neutral-200 dark:border-neutral-800 shadow-2xl shadow-neutral-200/50 dark:shadow-black/60 transition-all space-y-4 backdrop-blur-md">
+      <div className="relative rounded-3xl bg-white dark:bg-neutral-900 p-4 sm:p-6 border border-neutral-200 dark:border-neutral-800 shadow-lg shadow-neutral-200/40 dark:shadow-black/50 space-y-4">
         {/* Header Ribbon */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-100 dark:border-neutral-800/80 pb-3">
           <div className="flex items-center gap-2.5">
@@ -262,7 +263,7 @@ export const ImageToPromptBox = () => {
                   className="group flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 border border-neutral-200/80 dark:border-neutral-750 text-neutral-700 dark:text-neutral-300 text-xs font-medium whitespace-nowrap transition-all active:scale-95 cursor-pointer"
                 >
                   <div className="w-4 h-4 rounded-md overflow-hidden relative shrink-0">
-                    <img src={s.url} alt={s.name} className="w-full h-full object-cover" />
+                    <img src={s.url} alt={s.name} width={16} height={16} decoding="async" className="w-full h-full object-cover" />
                   </div>
                   <span className="truncate max-w-[100px]">{s.name}</span>
                 </button>
@@ -275,9 +276,9 @@ export const ImageToPromptBox = () => {
             type="button"
             onClick={handleGeneratePromptClick}
             id="homepage-generate-prompt-btn"
-            className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-[#E60023] hover:bg-[#ad081b] text-white text-sm font-black flex items-center justify-center gap-2.5 shadow-lg shadow-red-500/25 transition-all transform active:scale-95 cursor-pointer shrink-0"
+            className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-[#E60023] hover:bg-[#ad081b] text-white text-sm font-black flex items-center justify-center gap-2.5 shadow-lg shadow-red-500/25 transition-colors active:scale-95 cursor-pointer shrink-0"
           >
-            <Wand2 className="w-4 h-4 animate-pulse" />
+            <Wand2 className="w-4 h-4" />
             <span>Generate Prompt</span>
             <ArrowRight className="w-4 h-4" />
           </button>

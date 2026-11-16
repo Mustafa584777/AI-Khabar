@@ -31,7 +31,7 @@ export const GeminiPromptBox = () => {
     }
 
     if (!userAccount?.isLoggedIn) {
-      openAuthModal('Please sign in or create a free account to use the Gemini Prompt Generator.');
+      openAuthModal('Please sign in or create a free account to use the Zeena Prompt Generator.');
       return;
     }
 

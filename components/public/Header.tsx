@@ -100,7 +100,7 @@ export const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-neutral-950/95 backdrop-blur-xl border-b border-neutral-200/80 dark:border-neutral-800/80 shadow-xs">
+    <header className="sticky top-0 z-40 w-full bg-white/98 dark:bg-neutral-950/98 border-b border-neutral-200/80 dark:border-neutral-800/80 shadow-xs">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3 sm:gap-4">
         {/* Left: Brand Icon & Navigation Pills */}
         <div className="flex items-center gap-3 sm:gap-4 shrink-0">
@@ -115,7 +115,7 @@ export const Header = () => {
             <div className="w-10 h-10 rounded-full overflow-hidden group-hover:scale-105 transition-transform shrink-0 relative flex items-center justify-center bg-transparent border-0 shadow-none">
               <Image
                 src="/logo.png"
-                alt="Gemini Prompt Generator"
+                alt="Zeena Prompt"
                 width={40}
                 height={40}
                 className="w-full h-full object-cover rounded-full bg-transparent border-0 shadow-none"
@@ -171,7 +171,7 @@ export const Header = () => {
               id="header-prompt-editor-btn"
               title="AI Prompt Editor & Refiner"
             >
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
               <span>Prompt Editor</span>
             </Link>
           </nav>
@@ -181,6 +181,8 @@ export const Header = () => {
         <div className="flex-1 max-w-md hidden md:flex items-center">
           <button
             type="button"
+            onMouseEnter={() => { void import('./SearchExploreModal'); }}
+            onTouchStart={() => { void import('./SearchExploreModal'); }}
             onClick={handleOpenSearch}
             className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-[#f0f0f0] dark:bg-neutral-800 hover:bg-[#e4e4e4] dark:hover:bg-neutral-700 text-neutral-500 dark:text-neutral-400 text-xs font-medium transition-all group cursor-pointer active:scale-[0.99]"
             id="header-search-trigger-btn"
@@ -211,7 +213,7 @@ export const Header = () => {
           >
             <Bell className="w-4 h-4" />
             {unreadNotifs > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#E60023] text-white text-[9px] font-black flex items-center justify-center ring-2 ring-white dark:ring-neutral-950 animate-pulse">
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#E60023] text-white text-[9px] font-black flex items-center justify-center ring-2 ring-white dark:ring-neutral-950">
                 {unreadNotifs > 9 ? '9+' : unreadNotifs}
               </span>
             )}
@@ -220,6 +222,8 @@ export const Header = () => {
           {/* Saved Prompts */}
           <button
             type="button"
+            onMouseEnter={() => { void import('./BookmarksDrawer'); }}
+            onTouchStart={() => { void import('./BookmarksDrawer'); }}
             onClick={handleBookmarksClick}
             className="flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs sm:text-sm font-bold shadow-sm transition-all transform active:scale-95 cursor-pointer"
             title="View Saved Prompts"
@@ -291,6 +295,8 @@ export const Header = () => {
           ) : (
             <button
               type="button"
+              onMouseEnter={() => { void import('./UserAuthModal'); }}
+              onTouchStart={() => { void import('./UserAuthModal'); }}
               onClick={() => openAuthModal('Sign in to access your creative dashboard, credits, and saved prompts.')}
               className="hidden sm:flex px-4 py-2 rounded-full text-xs font-bold bg-[#efefef] dark:bg-neutral-800 hover:bg-[#e2e2e2] dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 transition-colors items-center gap-1.5 cursor-pointer active:scale-95"
               title="Sign In / Register"

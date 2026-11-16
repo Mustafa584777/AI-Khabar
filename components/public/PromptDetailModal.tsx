@@ -31,11 +31,10 @@ import {
   Scissors,
   Footprints,
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
 import Image from 'next/image';
 import Link from 'next/link';
 import { PersonalizationEngine } from '@/lib/personalization';
-import { getPromptSlug, slugify, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription } from '@/lib/utils';
+import { getPromptSlug, slugify, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription, formatPromptForClipboard } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
 interface RecommendedPinCardProps {
@@ -106,9 +105,13 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
       {/* Photo Pin Image (rendered ONLY when inView is true) */}
       {pin.imageUrl && inView && (
         <img
-          src={getOptimizedImageUrl(pin.imageUrl, 500)}
+          src={getOptimizedImageUrl(pin.imageUrl, 360)}
+          srcSet={`${getOptimizedImageUrl(pin.imageUrl, 280)} 280w, ${getOptimizedImageUrl(pin.imageUrl, 420)} 420w`}
+          sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 240px"
           alt={pin.imageAlt || pin.title}
-          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
+          loading="lazy"
+          decoding="async"
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           referrerPolicy="no-referrer"
         />
       )}
@@ -167,9 +170,14 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
   );
 };
 
-export const PromptDetailModal = () => {
+export interface PromptDetailModalProps {
+  inlinePost?: PromptPost | null;
+  isDirectRoute?: boolean;
+}
+
+export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: PromptDetailModalProps = {}) => {
   const {
-    selectedPost,
+    selectedPost: contextSelectedPost,
     setSelectedPost,
     copyPromptToClipboard,
     toggleBookmark,
@@ -186,7 +194,12 @@ export const PromptDetailModal = () => {
     isPromptUnlocked,
     userAccount,
     openAuthModal,
+    setIsDirectRouteHost,
+    isActivePremiumUser,
   } = useApp();
+
+  const [isDirectClosed, setIsDirectClosed] = useState(false);
+  const selectedPost = contextSelectedPost ?? (isDirectRoute && !isDirectClosed ? (inlinePost ?? null) : null);
 
   const INITIAL_RECOMMENDED_COUNT = 15;
   const [copiedPrompt, setCopiedPrompt] = useState(false);
@@ -219,28 +232,11 @@ export const PromptDetailModal = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [firstImageRatio, setFirstImageRatio] = useState<string | null>(null);
 
-  // Always reset slider to first photo whenever a new prompt is opened
+  // Always reset slider & custom ratio whenever a new prompt is opened
   useEffect(() => {
     setCurrentImageIndex(0);
+    setFirstImageRatio(null);
   }, [selectedPost?.id]);
-
-  // Dynamically compute the exact natural aspect ratio of the first image
-  useEffect(() => {
-    const firstUrl = allImages[0] || selectedPost?.imageUrl;
-    if (!firstUrl) {
-      setFirstImageRatio(null);
-      return;
-    }
-    if (typeof window !== 'undefined') {
-      const img = new window.Image();
-      img.src = firstUrl;
-      img.onload = () => {
-        if (img.naturalWidth && img.naturalHeight) {
-          setFirstImageRatio(`${img.naturalWidth} / ${img.naturalHeight}`);
-        }
-      };
-    }
-  }, [allImages, selectedPost?.imageUrl]);
 
   const handlePrevImage = useCallback((e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -362,8 +358,12 @@ export const PromptDetailModal = () => {
       e.preventDefault();
       e.stopPropagation();
     }
+    setIsDirectClosed(true);
     setSelectedPost(null);
     setHistoryStack([]);
+    if (isDirectRoute) {
+      setIsDirectRouteHost(false);
+    }
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
       const knownNonSlugRoutes = [
@@ -382,21 +382,19 @@ export const PromptDetailModal = () => {
         '/cancellation-refund',
         '/ai-policy',
       ];
-      if (knownNonSlugRoutes.includes(path) || path.startsWith('/admin')) {
-        // Stay cleanly on the current route when closed as an overlay
+      if (!isDirectRoute && (knownNonSlugRoutes.includes(path) || path.startsWith('/admin'))) {
         return;
       }
-      if (window.history.state?.postId) {
+      if (!isDirectRoute && window.history.state?.postId) {
         window.history.pushState(null, '', '/');
       } else {
         router.push('/');
       }
     }
-  }, [setSelectedPost, router]);
+  }, [setSelectedPost, router, isDirectRoute, setIsDirectRouteHost]);
 
   const handleGoBack = useCallback(() => {
     if (historyStack.length > 1) {
-      // Deterministically pop to previous prompt in the stack without crashing into Next.js router
       const newStack = [...historyStack];
       newStack.pop();
       const prevPost = newStack[newStack.length - 1];
@@ -421,6 +419,7 @@ export const PromptDetailModal = () => {
       if (typeof window === 'undefined') return;
       const path = window.location.pathname;
       if (path === '/' || path === '' || path === '/dashboard' || path === '/create' || path.startsWith('/admin')) {
+        setIsDirectClosed(true);
         setSelectedPost(null);
         setHistoryStack([]);
         return;
@@ -432,27 +431,30 @@ export const PromptDetailModal = () => {
         let matched: PromptPost | undefined;
 
         if (statePostId) {
-          matched = currentPosts.find((p) => p.id === statePostId) || currentStack.find((p) => p.id === statePostId);
+          matched =
+            currentPosts.find((p) => p.id === statePostId) ||
+            currentStack.find((p) => p.id === statePostId) ||
+            (inlinePost && inlinePost.id === statePostId ? inlinePost : undefined);
         }
 
         const rawSlug = path.replace('/', '').split('/')[0];
         const targetSlug = decodeURIComponent(rawSlug).toLowerCase().trim();
 
         if (!matched) {
-          matched = currentPosts.find((p) => {
+          const checkMatch = (p: PromptPost) => {
             if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
             if (p.id && p.id.toLowerCase() === targetSlug) return true;
             if (p.title && (p.title.toLowerCase() === targetSlug || slugify(p.title) === targetSlug)) return true;
             return false;
-          }) || currentStack.find((p) => {
-            if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
-            if (p.id && p.id.toLowerCase() === targetSlug) return true;
-            if (p.title && (p.title.toLowerCase() === targetSlug || slugify(p.title) === targetSlug)) return true;
-            return false;
-          });
+          };
+          matched =
+            currentPosts.find(checkMatch) ||
+            currentStack.find(checkMatch) ||
+            (inlinePost && checkMatch(inlinePost) ? inlinePost : undefined);
         }
 
         if (matched) {
+          setIsDirectClosed(false);
           if (containerRef.current) {
             containerRef.current.scrollTop = 0;
           }
@@ -463,6 +465,7 @@ export const PromptDetailModal = () => {
             .then((res) => (res.ok ? res.json() : Promise.reject(res)))
             .then((data) => {
               if (data.success && data.post) {
+                setIsDirectClosed(false);
                 if (containerRef.current) {
                   containerRef.current.scrollTop = 0;
                 }
@@ -673,35 +676,6 @@ export const PromptDetailModal = () => {
     return allRecommendedPins.slice(0, displayedCount);
   }, [allRecommendedPins, displayedCount]);
 
-  const [columnCount, setColumnCount] = useState<number>(2);
-
-  useEffect(() => {
-    const updateColumnCount = () => {
-      const width = window.innerWidth;
-      if (width >= 1280) {
-        setColumnCount(5);
-      } else if (width >= 1024) {
-        setColumnCount(4);
-      } else if (width >= 640) {
-        setColumnCount(3);
-      } else {
-        setColumnCount(2);
-      }
-    };
-
-    updateColumnCount();
-    window.addEventListener('resize', updateColumnCount);
-    return () => window.removeEventListener('resize', updateColumnCount);
-  }, []);
-
-  const recommendedColumns = useMemo(() => {
-    const cols: PromptPost[][] = Array.from({ length: columnCount }, () => []);
-    visiblePins.forEach((pin, idx) => {
-      cols[idx % columnCount].push(pin);
-    });
-    return cols;
-  }, [visiblePins, columnCount]);
-
   if (!selectedPost) return null;
 
   const detectedRatio = detectPostAspectRatio(selectedPost);
@@ -783,6 +757,7 @@ export const PromptDetailModal = () => {
 
   const handleSelectPin = (pin: PromptPost) => {
     PersonalizationEngine.recordView(pin);
+    setIsDirectClosed(false);
     if (containerRef.current) {
       containerRef.current.scrollTop = 0;
     }
@@ -816,11 +791,11 @@ export const PromptDetailModal = () => {
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-50 overflow-y-auto bg-neutral-100 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors flex flex-col animate-fade-in"
+      className="fixed inset-0 z-50 overflow-y-auto bg-neutral-100 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 flex flex-col"
       id="fullscreen-prompt-view"
     >
       {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-40 flex items-center justify-between px-3 sm:px-6 lg:px-8 py-3 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md border-b border-neutral-200/80 dark:border-neutral-800 shadow-sm">
+      <header className="sticky top-0 z-40 flex items-center justify-between px-3 sm:px-6 lg:px-8 py-3 bg-white dark:bg-neutral-900 border-b border-neutral-200/80 dark:border-neutral-800 shadow-sm">
         {/* Left: Back to explore / previous pin button */}
         <div className="flex items-center gap-3">
           <button
@@ -898,7 +873,7 @@ export const PromptDetailModal = () => {
         {/* Master Prompt Card */}
         <section
           key={selectedPost.id}
-          className="bg-white dark:bg-neutral-900 rounded-[28px] sm:rounded-[36px] shadow-2xl border border-neutral-200/80 dark:border-neutral-800 overflow-hidden animate-fade-in transition-all duration-150"
+          className="bg-white dark:bg-neutral-900 rounded-[28px] sm:rounded-[36px] shadow-2xl border border-neutral-200/80 dark:border-neutral-800 overflow-hidden"
         >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
             {/* Left Column: Edge-to-Edge High-Resolution Photo Showcase with Pinterest Slider */}
@@ -973,11 +948,21 @@ export const PromptDetailModal = () => {
                             className="w-full h-full shrink-0 relative overflow-hidden bg-neutral-950 flex items-center justify-center"
                           >
                             <img
-                              src={getOptimizedImageUrl(imgUrl, 1200)}
+                              src={getOptimizedImageUrl(imgUrl, idx === 0 ? 800 : 600)}
+                              srcSet={idx === 0 ? `${getOptimizedImageUrl(imgUrl, 560)} 560w, ${getOptimizedImageUrl(imgUrl, 800)} 800w, ${getOptimizedImageUrl(imgUrl, 1200)} 1200w` : undefined}
+                              sizes="(max-width: 1024px) 100vw, 720px"
                               alt={`${selectedPost.imageAlt || selectedPost.title} - photo ${idx + 1}`}
                               className="w-full h-full object-cover object-top block select-none pointer-events-none"
                               referrerPolicy="no-referrer"
                               loading={idx === 0 ? 'eager' : 'lazy'}
+                              fetchPriority={idx === 0 ? 'high' : 'auto'}
+                              decoding="async"
+                              onLoad={idx === 0 && (!selectedPost.imageWidth || !selectedPost.imageHeight) ? (e) => {
+                                const img = e.currentTarget;
+                                if (img.naturalWidth && img.naturalHeight) {
+                                  setFirstImageRatio(`${img.naturalWidth} / ${img.naturalHeight}`);
+                                }
+                              } : undefined}
                             />
                           </div>
                         ))}
@@ -1070,8 +1055,19 @@ export const PromptDetailModal = () => {
                       className="relative w-full overflow-hidden bg-neutral-950 select-none group/single flex items-center justify-center"
                     >
                       <img
-                        src={getOptimizedImageUrl(allImages[0] || selectedPost.imageUrl, 1200)}
+                        src={getOptimizedImageUrl(allImages[0] || selectedPost.imageUrl, 800)}
+                        srcSet={`${getOptimizedImageUrl(allImages[0] || selectedPost.imageUrl, 560)} 560w, ${getOptimizedImageUrl(allImages[0] || selectedPost.imageUrl, 800)} 800w, ${getOptimizedImageUrl(allImages[0] || selectedPost.imageUrl, 1200)} 1200w`}
+                        sizes="(max-width: 1024px) 100vw, 720px"
                         alt={selectedPost.imageAlt || selectedPost.title}
+                        loading="eager"
+                        fetchPriority="high"
+                        decoding="async"
+                        onLoad={(!selectedPost.imageWidth || !selectedPost.imageHeight) ? (e) => {
+                          const img = e.currentTarget;
+                          if (img.naturalWidth && img.naturalHeight) {
+                            setFirstImageRatio(`${img.naturalWidth} / ${img.naturalHeight}`);
+                          }
+                        } : undefined}
                         className="w-full h-full object-cover object-top block select-none pointer-events-none"
                         referrerPolicy="no-referrer"
                       />
@@ -1290,7 +1286,7 @@ export const PromptDetailModal = () => {
                             className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition-all active:scale-95 font-sans cursor-pointer text-center"
                           >
                             <Crown className="w-4 h-4 fill-black shrink-0" />
-                            <span>Upgrade to Premium</span>
+                            <span>Upgrade to Premium at just 99/Year</span>
                             <ArrowRight className="w-4 h-4 shrink-0" />
                           </button>
                         </div>
@@ -1298,7 +1294,17 @@ export const PromptDetailModal = () => {
                     </div>
                   ) : (
                     <div className="relative rounded-2xl bg-neutral-950 text-neutral-100 p-4 sm:p-5 font-mono text-xs sm:text-sm leading-relaxed border border-neutral-800 shadow-inner group">
-                      <p className="whitespace-pre-wrap select-all selection:bg-red-600 selection:text-white max-h-[220px] overflow-y-auto">
+                      <p
+                        onCopy={(e) => {
+                          if (!isActivePremiumUser) {
+                            e.preventDefault();
+                            const selected = typeof window !== 'undefined' ? window.getSelection()?.toString() : '';
+                            const target = selected && selected.trim().length > 0 ? selected : selectedPost.promptText;
+                            e.clipboardData?.setData('text/plain', formatPromptForClipboard(target, false));
+                          }
+                        }}
+                        className="whitespace-pre-wrap select-all selection:bg-red-600 selection:text-white max-h-[220px] overflow-y-auto"
+                      >
                         {selectedPost.promptText}
                       </p>
 
@@ -1393,48 +1399,45 @@ export const PromptDetailModal = () => {
             </span>
           </div>
 
-          {/* Responsive Visual Pins Stable Flex Columns */}
-          <div className="flex gap-3 sm:gap-4 items-start w-full" id="more-explore-masonry">
-            {recommendedColumns.map((colPins, colIdx) => (
-              <div key={colIdx} className="flex-1 flex flex-col gap-3 sm:gap-4 min-w-0">
-                {colPins.map((pin) => (
-                  <RecommendedPinCard
-                    key={pin.id}
-                    pin={pin}
-                    isPinBookmarked={bookmarkedIds.includes(pin.id)}
-                    isCopied={copiedPinId === pin.id}
-                    isUnlocked={isPromptUnlocked(pin.id, pin.isPremium)}
-                    isProUser={isProUser}
-                    onSelect={handleSelectPin}
-                    onGenerate={(e, p) => {
-                      e.stopPropagation();
-                      const isPinUnlocked = isPromptUnlocked(p.id, p.isPremium);
-                      if (!isPinUnlocked) {
-                        handleUpgradeToPremium();
-                        return;
+          {/* Responsive Visual Pins Pure CSS Masonry Columns (0 CLS on hydration/resize) */}
+          <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-3 sm:gap-4 w-full" id="more-explore-masonry">
+            {visiblePins.map((pin) => (
+              <div key={pin.id} className="break-inside-avoid mb-3 sm:mb-4">
+                <RecommendedPinCard
+                  pin={pin}
+                  isPinBookmarked={bookmarkedIds.includes(pin.id)}
+                  isCopied={copiedPinId === pin.id}
+                  isUnlocked={isPromptUnlocked(pin.id, pin.isPremium)}
+                  isProUser={isProUser}
+                  onSelect={handleSelectPin}
+                  onGenerate={(e, p) => {
+                    e.stopPropagation();
+                    const isPinUnlocked = isPromptUnlocked(p.id, p.isPremium);
+                    if (!isPinUnlocked) {
+                      handleUpgradeToPremium();
+                      return;
+                    }
+                    if (typeof window !== 'undefined') {
+                      sessionStorage.setItem('auraprompt_studio_preload', p.promptText);
+                      sessionStorage.setItem('promptcms_studio_preload', p.promptText);
+                      if (p.imageUrl) {
+                        sessionStorage.setItem('promptcms_studio_image_preload', p.imageUrl);
                       }
-                      if (typeof window !== 'undefined') {
-                        sessionStorage.setItem('auraprompt_studio_preload', p.promptText);
-                        sessionStorage.setItem('promptcms_studio_preload', p.promptText);
-                        if (p.imageUrl) {
-                          sessionStorage.setItem('promptcms_studio_image_preload', p.imageUrl);
-                        }
-                      }
-                      setSelectedPost(null);
-                      router.push('/create');
-                      showToast('Loaded prompt into Create Studio!');
-                    }}
-                    onCopy={(e, p) => handleQuickCopyPin(e, p)}
-                    onToggleBookmark={(e, p) => {
-                      e.stopPropagation();
-                      if (!userAccount?.isLoggedIn) {
-                        openAuthModal('Please sign in or create an account to save prompts.');
-                        return;
-                      }
-                      toggleBookmark(p.id);
-                    }}
-                  />
-                ))}
+                    }
+                    setSelectedPost(null);
+                    router.push('/create');
+                    showToast('Loaded prompt into Create Studio!');
+                  }}
+                  onCopy={(e, p) => handleQuickCopyPin(e, p)}
+                  onToggleBookmark={(e, p) => {
+                    e.stopPropagation();
+                    if (!userAccount?.isLoggedIn) {
+                      openAuthModal('Please sign in or create an account to save prompts.');
+                      return;
+                    }
+                    toggleBookmark(p.id);
+                  }}
+                />
               </div>
             ))}
           </div>

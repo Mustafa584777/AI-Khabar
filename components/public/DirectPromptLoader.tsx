@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useApp } from '@/context/AppContext';
 import { Header } from '@/components/public/Header';
 import { PromptGrid } from '@/components/public/PromptGrid';
 import { Footer } from '@/components/public/Footer';
 import { BottomNav } from '@/components/public/BottomNav';
+import { PromptDetailModal } from '@/components/public/PromptDetailModal';
 import { slugify } from '@/lib/utils';
 import { Sparkles } from 'lucide-react';
 import { PromptPost } from '@/types/prompt';
@@ -59,10 +60,22 @@ export function DirectPromptLoader({
   id: string;
   initialPost?: PromptPost | null;
 }) {
-  const { posts, setSelectedPost, currentView } = useApp();
+  const { posts, setSelectedPost, currentView, setIsDirectRouteHost, ensureFullCatalogLoaded } = useApp();
+  const initializedIdRef = useRef<string | null>(null);
 
   useEffect(() => {
+    setIsDirectRouteHost(true);
+    return () => {
+      setIsDirectRouteHost(false);
+    };
+  }, [setIsDirectRouteHost]);
+
+  useEffect(() => {
+    // Only initialize ONCE per route id so closing or selecting recommended cards never snaps back to initialPost
+    if (initializedIdRef.current === id) return;
+
     if (initialPost) {
+      initializedIdRef.current = id;
       setSelectedPost(initialPost);
       writeCachedPrompt(id, initialPost);
       return;
@@ -77,14 +90,17 @@ export function DirectPromptLoader({
       targetSlug = id.toLowerCase().trim();
     }
 
-    const matched = posts.find((p) => {
-      if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
-      if (p.id && p.id.toLowerCase() === targetSlug) return true;
-      if (p.title && (p.title.toLowerCase() === targetSlug || slugify(p.title) === targetSlug)) return true;
-      return false;
-    });
+    const findMatch = (list: PromptPost[]) =>
+      list.find((p) => {
+        if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
+        if (p.id && p.id.toLowerCase() === targetSlug) return true;
+        if (p.title && (p.title.toLowerCase() === targetSlug || slugify(p.title) === targetSlug)) return true;
+        return false;
+      });
 
+    const matched = findMatch(posts);
     if (matched) {
+      initializedIdRef.current = id;
       setSelectedPost(matched);
       writeCachedPrompt(id, matched);
       return;
@@ -92,20 +108,38 @@ export function DirectPromptLoader({
 
     const cached = readCachedPrompt(id);
     if (cached) {
+      initializedIdRef.current = id;
       setSelectedPost(cached);
       return;
     }
 
-    fetch(`/api/posts/${encodeURIComponent(id)}`)
-      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
-      .then((data) => {
-        if (data && data.post) {
-          setSelectedPost(data.post);
-          writeCachedPrompt(id, data.post);
-        }
-      })
-      .catch(() => {});
-  }, [id, initialPost, posts, setSelectedPost]);
+    let cancelled = false;
+    ensureFullCatalogLoaded().then((allPosts) => {
+      if (cancelled || initializedIdRef.current === id) return;
+      const deepMatch = findMatch(allPosts);
+      if (deepMatch) {
+        initializedIdRef.current = id;
+        setSelectedPost(deepMatch);
+        writeCachedPrompt(id, deepMatch);
+        return;
+      }
+
+      fetch(`/api/posts/${encodeURIComponent(id)}`)
+        .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+        .then((data) => {
+          if (!cancelled && data && data.post && initializedIdRef.current !== id) {
+            initializedIdRef.current = id;
+            setSelectedPost(data.post);
+            writeCachedPrompt(id, data.post);
+          }
+        })
+        .catch(() => {});
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, initialPost, posts, setSelectedPost, ensureFullCatalogLoaded]);
 
   if (currentView === 'admin') {
     return <AdminLayout />;
@@ -152,9 +186,11 @@ export function DirectPromptLoader({
   }
 
   return (
-    <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col pb-20 sm:pb-8">
+    <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans flex flex-col pb-20 sm:pb-8">
       <Header />
-      <main className="flex-1 w-full" />
+      <main className="flex-1 w-full">
+        <PromptDetailModal inlinePost={initialPost} isDirectRoute />
+      </main>
       <Footer />
       <BottomNav />
     </div>
