@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { ServerStorage } from '@/lib/server-storage';
 import { getPromptSlug } from '@/lib/utils';
 
-export const revalidate = 86400;
+export const revalidate = false;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://zeenaprompt.com';

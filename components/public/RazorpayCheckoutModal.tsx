@@ -5,9 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   X,
   ShieldCheck,
-  Sparkles,
   Zap,
-  Crown,
   CreditCard,
   CheckCircle2,
   AlertCircle,
@@ -17,56 +15,27 @@ import confetti from 'canvas-confetti';
 import { useApp } from '@/context/AppContext';
 import { startRazorpayCheckout } from '@/lib/razorpay';
 
-interface PlanOption {
-  id: 'starter' | 'pro' | 'vip';
-  name: string;
-  amountPaise: number;
-  displayPrice: string;
-  originalPrice?: string;
-  period: string;
-  badge?: string;
-  features: string[];
-  icon: React.ReactNode;
-}
-
-const SUBSCRIPTION_PLANS: PlanOption[] = [
-  {
-    id: 'starter',
-    name: 'Starter',
-    amountPaise: 4900,
-    displayPrice: '₹49',
-    period: '',
-    features: ['Premium Prompts', '100 prompt tool credits', 'AI Search', 'Unlimited saves & history'],
-    icon: <Sparkles className="w-5 h-5 text-amber-500" />,
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    amountPaise: 9900,
-    displayPrice: '₹99',
-    period: '',
-    badge: 'Most Popular',
-    features: ['Premium Prompts', '250 prompt tool credits', 'AI Search', 'Unlimited saves & history'],
-    icon: <Zap className="w-5 h-5 text-[#E60023]" />,
-  },
-  {
-    id: 'vip',
-    name: 'VIP',
-    amountPaise: 19900,
-    displayPrice: '₹199',
-    period: '',
-    badge: 'Best Value',
-    features: ['Premium Prompts', '600 prompt tool credits', 'AI Search', 'Unlimited saves & history'],
-    icon: <Crown className="w-5 h-5 text-purple-500" />,
-  },
-];
+const SINGLE_YEARLY_PLAN = {
+  id: 'pro' as const,
+  name: 'Pro Yearly',
+  amountPaise: 9900,
+  displayPrice: '₹99',
+  period: '/ year',
+  badge: 'All-Access Annual Pass',
+  features: [
+    'Unlock all premium prompts',
+    '120 prompt tool credits',
+    'AI Search (3 daily searches)',
+    'Unlimited saves & history',
+    'Valid for 1 full year (365 days)',
+  ],
+};
 
 export const RazorpayCheckoutModal: React.FC = () => {
   const router = useRouter();
   const {
     isProCheckoutModalOpen,
     setIsProCheckoutModalOpen,
-    setIsProUser,
     upgradePlan,
     toolCredits,
     userAccount,
@@ -74,7 +43,6 @@ export const RazorpayCheckoutModal: React.FC = () => {
     openAuthModal,
   } = useApp();
 
-  const [selectedPlanId, setSelectedPlanId] = useState<'starter' | 'pro' | 'vip'>('pro');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [paymentResult, setPaymentResult] = useState<{
     success: boolean;
@@ -96,16 +64,6 @@ export const RazorpayCheckoutModal: React.FC = () => {
 
   if (!isProCheckoutModalOpen) return null;
 
-  const getEffectiveAmountPaise = (): number => {
-    const plan = SUBSCRIPTION_PLANS.find((p) => p.id === selectedPlanId);
-    return plan ? plan.amountPaise : 9900;
-  };
-
-  const getEffectiveTitle = (): string => {
-    const plan = SUBSCRIPTION_PLANS.find((p) => p.id === selectedPlanId);
-    return plan ? `${plan.name} Membership` : 'Pro Membership';
-  };
-
   const handlePayNow = async () => {
     setErrorMessage(null);
 
@@ -115,31 +73,27 @@ export const RazorpayCheckoutModal: React.FC = () => {
       return;
     }
 
-    const amountPaise = getEffectiveAmountPaise();
-
-    if (amountPaise < 100) {
-      setErrorMessage('Minimum amount is ₹1.00 (100 paise).');
-      return;
-    }
-
+    const amountPaise = SINGLE_YEARLY_PLAN.amountPaise;
     setIsProcessing(true);
-    const itemTitle = getEffectiveTitle();
 
     try {
       await startRazorpayCheckout({
         amount: amountPaise,
         currency: 'INR',
         name: 'Trending Copy Paste Photo Prompts',
-        description: `${itemTitle} - Instant Access`,
+        description: 'Pro Yearly Membership (₹99/year) - All Benefits + 120 Credits',
         receipt: `rcpt_${Date.now()}`,
         prefill: {
           name: userAccount.name || userAccount.username || userAccount.email.split('@')[0],
           email: userAccount.email,
         },
         notes: {
-          item: itemTitle,
+          item: 'Pro Yearly',
+          plan: 'Pro Yearly',
           type: 'subscription',
-          tier: selectedPlanId,
+          planTier: 'pro',
+          tier: 'pro',
+          billingCycle: 'yearly',
           userEmail: userAccount.email,
           userId: userAccount.id,
         },
@@ -147,11 +101,10 @@ export const RazorpayCheckoutModal: React.FC = () => {
         onSuccess: (data) => {
           setIsProcessing(false);
           const isQueued = Boolean(data?.isQueued);
-          upgradePlan(selectedPlanId, data.userSyncData, isQueued);
-          const targetTier = (selectedPlanId || 'pro').toUpperCase();
+          upgradePlan('pro', data.userSyncData, isQueued, 'yearly');
           const congratsMsg = isQueued
-            ? (data?.message || `🎉 Congratulations! Your ${targetTier} plan is queued and will activate once your current plan ends!`)
-            : `🎉 Congratulations! Your ${targetTier} plan has been activated successfully! All premium prompts are unlocked.`;
+            ? (data?.message || '🎉 Congratulations! Your Pro Yearly plan is queued and will activate once your current plan ends!')
+            : '🎉 Congratulations! Your Pro Yearly (₹99/year) plan has been activated successfully! All premium prompts are unlocked & 120 credits added.';
 
           showToast(congratsMsg);
 
@@ -165,7 +118,7 @@ export const RazorpayCheckoutModal: React.FC = () => {
             success: true,
             orderId: data.order_id,
             paymentId: data.payment_id,
-            message: data.message || `Successfully processed ${targetTier} plan.`,
+            message: data.message || 'Successfully processed Pro Yearly (₹99/year) plan.',
           });
 
           try {
@@ -177,7 +130,6 @@ export const RazorpayCheckoutModal: React.FC = () => {
             });
           } catch {}
 
-          // Automatically redirect to Creator Dashboard after short delay
           setTimeout(() => {
             setIsProCheckoutModalOpen(false);
             router.push('/dashboard');
@@ -197,20 +149,13 @@ export const RazorpayCheckoutModal: React.FC = () => {
     }
   };
 
-  const amountPaise = getEffectiveAmountPaise();
-  const displayTotal = (amountPaise / 100).toLocaleString('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  });
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-md animate-fade-in"
       onClick={() => !isProcessing && setIsProCheckoutModalOpen(false)}
     >
       <div
-        className="w-full max-w-lg bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-neutral-800 p-5 sm:p-7 space-y-5 max-h-[92vh] overflow-y-auto"
+        className="w-full max-w-md bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-neutral-800 p-5 sm:p-7 space-y-5 max-h-[92vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
@@ -221,7 +166,7 @@ export const RazorpayCheckoutModal: React.FC = () => {
                 <CreditCard className="w-5 h-5" />
               </div>
               <h2 className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white tracking-tight">
-                Quick Razorpay Checkout
+                Pro Yearly Membership
               </h2>
             </div>
             <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400">
@@ -284,7 +229,6 @@ export const RazorpayCheckoutModal: React.FC = () => {
           </div>
         ) : (
           <>
-            {/* Error Message */}
             {errorMessage && (
               <div className="p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-300 text-xs flex items-center gap-2.5">
                 <AlertCircle className="w-4 h-4 shrink-0" />
@@ -292,59 +236,45 @@ export const RazorpayCheckoutModal: React.FC = () => {
               </div>
             )}
 
-            {/* Selection Grid */}
-            <div className="space-y-2.5">
-              <div className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-                Select Subscription Plan:
+            {/* Single Annual Plan Card */}
+            <div className="p-5 rounded-2xl border-2 border-[#E60023] bg-red-50/40 dark:bg-red-950/20 space-y-4 relative shadow-xs">
+              <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full bg-[#E60023] text-white text-[10px] font-black uppercase tracking-wide">
+                {SINGLE_YEARLY_PLAN.badge}
+              </span>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-950 text-[#E60023] flex items-center justify-center">
+                    <Zap className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-base font-black text-neutral-900 dark:text-white">
+                      {SINGLE_YEARLY_PLAN.name}
+                    </h4>
+                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                      Full Year Membership • 365 Days
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <span className="text-2xl font-black text-neutral-900 dark:text-white">
+                    {SINGLE_YEARLY_PLAN.displayPrice}
+                  </span>
+                  <span className="text-xs font-bold text-neutral-500 dark:text-neutral-400 ml-1">
+                    {SINGLE_YEARLY_PLAN.period}
+                  </span>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                {SUBSCRIPTION_PLANS.map((plan) => {
-                  const isSelected = selectedPlanId === plan.id;
-                  return (
-                    <div
-                      key={plan.id}
-                      onClick={() => setSelectedPlanId(plan.id)}
-                      className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between space-y-2 relative ${
-                        isSelected
-                          ? 'border-[#E60023] bg-red-50/40 dark:bg-red-950/20 shadow-xs'
-                          : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700'
-                      }`}
-                    >
-                      {plan.badge && (
-                        <span className="absolute -top-2 right-2 px-2 py-0.5 rounded-full bg-[#E60023] text-white text-[9px] font-black uppercase">
-                          {plan.badge}
-                        </span>
-                      )}
-
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          {plan.icon}
-                        </div>
-                        <h4 className="text-xs font-bold text-neutral-900 dark:text-white">
-                          {plan.name}
-                        </h4>
-                        <div className="flex items-baseline gap-1.5">
-                          <span className="text-base font-black text-neutral-900 dark:text-white">
-                            {plan.displayPrice}
-                          </span>
-                          {plan.originalPrice && (
-                            <span className="text-xs text-red-500 line-through font-bold">
-                              {plan.originalPrice}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <ul className="space-y-1 text-[10px] text-neutral-500 dark:text-neutral-400">
-                        {plan.features.map((f, i) => (
-                          <li key={i}>• {f}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  );
-                })}
-              </div>
+              <ul className="space-y-2 text-xs text-neutral-700 dark:text-neutral-300 pt-1 border-t border-red-200/60 dark:border-red-900/40">
+                {SINGLE_YEARLY_PLAN.features.map((feat, i) => (
+                  <li key={i} className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-[#E60023] shrink-0" />
+                    <span className="font-semibold">{feat}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
 
             {/* Security note */}
@@ -373,7 +303,7 @@ export const RazorpayCheckoutModal: React.FC = () => {
               ) : (
                 <>
                   <CreditCard className="w-4 h-4" />
-                  <span>Pay {displayTotal} with Razorpay</span>
+                  <span>Pay ₹99 / year with Razorpay</span>
                 </>
               )}
             </button>

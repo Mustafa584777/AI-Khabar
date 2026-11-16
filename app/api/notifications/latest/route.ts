@@ -8,11 +8,18 @@ export async function GET(req: NextRequest) {
     const allNotifications = await NotificationServerStore.getNotifications();
 
     if (!since) {
-      return NextResponse.json({
-        success: true,
-        notifications: allNotifications.slice(0, 10),
-        timestamp: Date.now(),
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          notifications: allNotifications.slice(0, 10),
+          timestamp: Date.now(),
+        },
+        {
+          headers: {
+            'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+          },
+        }
+      );
     }
 
     const sinceTime = parseInt(since, 10) || new Date(since).getTime() || 0;
@@ -21,11 +28,18 @@ export async function GET(req: NextRequest) {
       return itemTime > sinceTime;
     });
 
-    return NextResponse.json({
-      success: true,
-      notifications: newItems,
-      timestamp: Date.now(),
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        notifications: newItems,
+        timestamp: Date.now(),
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        },
+      }
+    );
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Failed to fetch latest notifications' },

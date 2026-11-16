@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       planName,
     } = body;
 
-    const billingCycle: BillingCycle = incomingBillingCycle === 'yearly' ? 'yearly' : 'monthly';
+    const billingCycle: BillingCycle = 'yearly';
 
     const orderId = razorpay_order_id || order_id;
     const paymentId = razorpay_payment_id || payment_id;
@@ -141,11 +141,8 @@ export async function POST(req: NextRequest) {
           userSyncData: updatedSyncData,
         });
       } else {
-        // Membership Plan Subscription (starter, pro, vip)
-        const validTiers: PlanTier[] = ['starter', 'pro', 'vip'];
-        const resolvedTier: PlanTier = validTiers.includes(planTier as PlanTier)
-          ? (planTier as PlanTier)
-          : 'pro';
+        // Single annual Pro Yearly subscription (₹99/year, 120 tool credits, all benefits)
+        const resolvedTier: PlanTier = 'pro';
         const planFeatures = getPlanFeaturesForCycle(resolvedTier, billingCycle);
 
         // Check if user currently has an active, unexpired paid plan
@@ -167,7 +164,7 @@ export async function POST(req: NextRequest) {
 
           const queuedPlan: QueuedPlan = {
             planTier: resolvedTier,
-            planName: `${planFeatures.name}${billingCycle === 'yearly' ? ' (Yearly)' : ''}`,
+            planName: 'Pro Yearly',
             credits: planFeatures.credits,
             promptRequests: planFeatures.promptRequests,
             aiSearchQuota: planFeatures.aiSearchQuota,
@@ -209,7 +206,7 @@ export async function POST(req: NextRequest) {
             email: cleanEmail,
             userId,
             planTier: resolvedTier,
-            planName: `${planFeatures.name}${billingCycle === 'yearly' ? ' (Yearly)' : ''}`,
+            planName: 'Pro Yearly',
             checkoutType: 'subscription_queued',
             creditsAdded: planFeatures.credits,
             scheduledStartAt,
@@ -221,7 +218,7 @@ export async function POST(req: NextRequest) {
             success: true,
             isQueued: true,
             queuedPlan,
-            message: `Your current ${currentTier.toUpperCase()} plan is active until ${formatExpiryDateWithHour(currentExpiresAt)}. Your new ${planFeatures.name}${billingCycle === 'yearly' ? ' (Yearly)' : ''} plan is queued and will start automatically after that date at 11:59 PM.`,
+            message: `Your current plan is active until ${formatExpiryDateWithHour(currentExpiresAt)}. Your new Pro Yearly plan is queued and will start automatically after that date at 11:59 PM.`,
             order_id: orderId,
             payment_id: paymentId,
             verified_at: new Date().toISOString(),
@@ -260,8 +257,7 @@ export async function POST(req: NextRequest) {
           ? 999999
           : planFeatures.aiSearchQuota;
 
-        const addedPoints = resolvedTier === 'starter' ? 10 : resolvedTier === 'pro' ? 20 : resolvedTier === 'vip' ? 50 : 100;
-        const resolvedPoints = (existingProfile.points || 10) + (billingCycle === 'yearly' ? addedPoints * 5 : addedPoints);
+        const resolvedPoints = (existingProfile.points || 10) + 100;
 
         updatedSyncData = {
           ...existingProfile,
@@ -293,7 +289,7 @@ export async function POST(req: NextRequest) {
           email: cleanEmail,
           userId,
           planTier: resolvedTier,
-          planName: `${planFeatures.name}${billingCycle === 'yearly' ? ' (Yearly)' : ''}`,
+          planName: 'Pro Yearly',
           checkoutType: 'subscription',
           creditsAdded: planFeatures.credits,
           verifiedAt: new Date().toISOString(),
@@ -302,7 +298,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
           success: true,
           isQueued: false,
-          message: `Payment verified and ${planFeatures.name}${billingCycle === 'yearly' ? ' (Yearly)' : ''} plan activated successfully! Valid until ${formatExpiryDateWithHour(planExpiresAt)}.`,
+          message: `Payment verified and Pro Yearly (₹99/year) plan activated successfully! Valid until ${formatExpiryDateWithHour(planExpiresAt)}.`,
           order_id: orderId,
           payment_id: paymentId,
           verified_at: new Date().toISOString(),

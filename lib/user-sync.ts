@@ -357,12 +357,7 @@ export const UserSyncService = {
     }
     let resolvedIsPro: boolean = resolvedTier !== 'free' || Boolean(remote.isProUser || localIsPro);
 
-    const isYearly = Boolean(
-      (remote as any).billingCycle === 'yearly' ||
-      (remote.planExpiresAt && remote.planStartedAt && (new Date(remote.planExpiresAt).getTime() - new Date(remote.planStartedAt).getTime()) > 60 * 24 * 60 * 60 * 1000) ||
-      (localPlanExpiresAt && localPlanStartedAt && (new Date(localPlanExpiresAt).getTime() - new Date(localPlanStartedAt).getTime()) > 60 * 24 * 60 * 60 * 1000)
-    );
-    const planCfg = getPlanFeaturesForCycle(resolvedTier, isYearly ? 'yearly' : 'monthly');
+    const planCfg = getPlanFeaturesForCycle(resolvedTier, 'yearly');
 
     // Rule 2 & 8: Strictly preserve consumed balance and quotas.
     // For free new users who haven't consumed credits, default to 5 credits!
@@ -440,7 +435,7 @@ export const UserSyncService = {
 
     if (resolvedTier !== 'free') {
       if (!resolvedPlanStartedAt || !resolvedPlanExpiresAt) {
-        const initDates = calculatePlanDates(resolvedPlanStartedAt || new Date(), 30);
+        const initDates = calculatePlanDates(resolvedPlanStartedAt || new Date(), 365);
         resolvedPlanStartedAt = resolvedPlanStartedAt || initDates.planStartedAt;
         resolvedPlanExpiresAt = resolvedPlanExpiresAt || initDates.planExpiresAt;
       }

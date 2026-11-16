@@ -471,7 +471,6 @@ export const HeroSection = () => {
             onClick={() => {
               setSearchQuery(tag);
               setSelectedCategory('all');
-              recordSearchQuery(tag);
               if (isAiSearchEnabled && userAccount?.isLoggedIn) {
                 if (!isProUser && aiSearchRemaining <= 0) {
                   showToast('You have used all of your AI search quota, please upgrade plan to unlock more limit');

@@ -2,7 +2,7 @@ import { ServerStorage } from '@/lib/server-storage';
 import { HomeClientWrapper } from '@/components/public/HomeClientWrapper';
 import { getPromptSlug } from '@/lib/utils';
 
-export const revalidate = 259200; // 72 hours
+export const revalidate = false;
 
 export default async function Page() {
   const rawPosts = await ServerStorage.getAllPosts(false);
@@ -29,16 +29,16 @@ export default async function Page() {
 
   return (
     <>
-      {/* Semantic Crawl-Friendly HTML for Search Engine Crawlers (100% pure HTML, zero JS dependency) */}
+      {/* Lightweight Semantic Crawl-Friendly Links for Search Engine Crawlers */}
       <div className="sr-only" aria-hidden="false">
         <h1>{settings?.heroHeadline || 'Trending Copy Paste AI Photo Prompts'}</h1>
         <p>{settings?.heroSubheadline || settings?.siteTagline || 'Discover and copy high-converting Midjourney, ChatGPT, Flux, and Stable Diffusion photo prompts.'}</p>
-        
+
         <h2>Categories</h2>
         <ul>
           {categories.map((cat) => (
             <li key={cat.id}>
-              <a href={`/?category=${cat.slug}`}>{cat.name}</a>
+              <strong>{cat.name}</strong>: {cat.description}
             </li>
           ))}
         </ul>
@@ -49,15 +49,7 @@ export default async function Page() {
             const slug = getPromptSlug(post);
             return (
               <li key={post.id}>
-                <article>
-                  <h3>
-                    <a href={`/${slug}`}>{post.title}</a>
-                  </h3>
-                  <p>{post.promptText}</p>
-                  <div>Category: {post.category}</div>
-                  <div>AI Tool: {post.aiTool}</div>
-                  {post.tags && <div>Tags: {post.tags.join(', ')}</div>}
-                </article>
+                <a href={`/${slug}`}>{post.title}</a> — {post.category} ({post.aiTool})
               </li>
             );
           })}

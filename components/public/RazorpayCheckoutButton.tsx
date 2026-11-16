@@ -27,13 +27,13 @@ export interface RazorpayCheckoutButtonProps {
 }
 
 export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
-  amount = 19900, // default ₹199
+  amount = 9900, // default ₹99/year
   currency = 'INR',
-  planName = 'Pro Creator Pass',
+  planName = 'Pro Yearly',
   planTier = 'pro',
-  billingCycle = 'monthly',
+  billingCycle = 'yearly',
   creditsToAdd,
-  description = 'Unlimited AI Studio Generations & VIP Prompts',
+  description = '1 Year Pro Access • 120 Credits • All Premium Prompts • Unlimited Saves',
   buttonText,
   className = '',
   variant = 'primary',
@@ -76,7 +76,7 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
         notes: {
           plan: planName,
           planTier: planTier || 'pro',
-          billingCycle: billingCycle || 'monthly',
+          billingCycle: billingCycle || 'yearly',
           userEmail: userAccount.email,
           userId: userAccount.id,
           ...(creditsToAdd ? { creditsToAdd: String(creditsToAdd) } : {}),
@@ -95,14 +95,13 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
             showToast(congratsMsg);
           } else {
             const isQueued = Boolean(verifyData?.isQueued);
-            upgradePlan(planTier, verifyData?.userSyncData, isQueued, billingCycle);
+            upgradePlan(planTier, verifyData?.userSyncData, isQueued, 'yearly');
             if (isQueued) {
-              congratsMsg = verifyData?.message || `🎉 Congratulations! Your ${planTier.toUpperCase()} plan is queued and will activate once your current plan ends!`;
+              congratsMsg = verifyData?.message || '🎉 Congratulations! Your Pro Yearly plan is queued and will activate once your current plan ends!';
               showToast(congratsMsg);
             } else {
               setIsProUser(true);
-              const cycleText = billingCycle === 'yearly' ? 'Yearly' : 'Monthly';
-              congratsMsg = `🎉 Congratulations! Your ${planTier.toUpperCase()} (${cycleText}) plan has been activated successfully! All premium prompts are unlocked.`;
+              congratsMsg = '🎉 Congratulations! Your Pro Yearly (₹99/year) plan has been activated successfully! All premium prompts are unlocked & 120 credits added.';
               showToast(congratsMsg);
             }
           }

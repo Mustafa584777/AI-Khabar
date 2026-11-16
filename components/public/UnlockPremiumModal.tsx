@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import {
   Crown,
-  Sparkles,
   CheckCircle2,
   X,
   ArrowRight,
@@ -24,8 +23,6 @@ export const UnlockPremiumModal: React.FC = () => {
     showToast,
   } = useApp();
 
-  const [modalBillingCycle, setModalBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
-
   if (!isUnlockPremiumModalOpen) return null;
 
   const handleGoToPricing = () => {
@@ -33,11 +30,11 @@ export const UnlockPremiumModal: React.FC = () => {
     router.push('/pricing');
   };
 
-  const handlePlanSuccess = (planName: 'starter' | 'pro' | 'vip') => {
-    applyPlan(planName);
+  const handlePlanSuccess = () => {
+    applyPlan('pro');
     setIsUnlockPremiumModalOpen(false);
-    const targetTier = planName.toUpperCase();
-    const congratsMsg = `🎉 Congratulations! Your ${targetTier} plan has been activated successfully! All premium prompts are unlocked.`;
+    const congratsMsg =
+      '🎉 Congratulations! Your Pro Yearly (₹99/year) plan has been activated successfully! All premium prompts are unlocked & 120 credits added.';
     if (typeof window !== 'undefined') {
       try {
         sessionStorage.setItem('plan_congrats_message', congratsMsg);
@@ -57,7 +54,7 @@ export const UnlockPremiumModal: React.FC = () => {
       aria-modal="true"
     >
       <div
-        className="relative w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-2xl p-5 sm:p-7 space-y-5 text-neutral-900 dark:text-neutral-100"
+        className="relative w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-2xl p-5 sm:p-7 space-y-5 text-neutral-900 dark:text-neutral-100"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
@@ -80,7 +77,7 @@ export const UnlockPremiumModal: React.FC = () => {
           </h2>
 
           <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 max-w-md mx-auto">
-            Subscribe to any paid plan to instantly unlock all premium prompts, unlimited saves & history, and recurring tool credits.
+            Get full access for 1 entire year at just ₹99/year — includes all benefits & 120 prompt tool credits.
           </p>
         </div>
 
@@ -97,161 +94,61 @@ export const UnlockPremiumModal: React.FC = () => {
           </div>
         )}
 
-        {/* Monthly / Yearly Billing Toggle */}
-        <div className="space-y-4">
-          <div className="flex justify-center">
-            <div className="inline-flex p-1 rounded-xl bg-neutral-200/80 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-[11px] font-bold shadow-inner">
-              <button
-                type="button"
-                onClick={() => setModalBillingCycle('monthly')}
-                className={`px-4 py-1.5 rounded-lg transition-all ${
-                  modalBillingCycle === 'monthly'
-                    ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm'
-                    : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
-                }`}
-              >
-                Monthly Billing
-              </button>
-              <button
-                type="button"
-                onClick={() => setModalBillingCycle('yearly')}
-                className={`px-4 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-                  modalBillingCycle === 'yearly'
-                    ? 'bg-white dark:bg-neutral-900 text-[#E60023] dark:text-red-400 shadow-sm'
-                    : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
-                }`}
-              >
-                <span>Yearly Billing</span>
-                <span className="px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-950 text-[#E60023] text-[9px] font-black uppercase tracking-wide">
-                  Save ~20%
-                </span>
-              </button>
+        {/* Single ₹99/year Plan Card */}
+        <div className="relative p-5 rounded-2xl bg-red-50/50 dark:bg-red-950/25 border-2 border-[#E60023] flex flex-col justify-between space-y-4 shadow-md">
+          <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-[#E60023] text-white text-[10px] font-black uppercase tracking-wider">
+            All-Access Annual Plan
+          </span>
+
+          <div className="flex items-center justify-between pt-1">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-950 text-[#E60023] flex items-center justify-center">
+                <Zap className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-neutral-900 dark:text-white">Pro Yearly</h3>
+                <p className="text-[11px] text-neutral-500 dark:text-neutral-400">Full 365 days access</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="text-2xl font-black text-neutral-900 dark:text-white">₹99</span>
+              <span className="text-xs font-bold text-neutral-500 dark:text-neutral-400"> / year</span>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-             <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700/80 flex flex-col justify-between space-y-2.5 hover:border-amber-400 transition-colors">
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-black text-neutral-900 dark:text-white">Starter</span>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-xs font-bold text-neutral-900 dark:text-white">
-                      {modalBillingCycle === 'monthly' ? '₹49' : '₹499'}
-                    </span>
-                  </div>
-                </div>
-                <ul className="mt-2 space-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
-                  <li className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span>Premium Prompts</span>
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span>{modalBillingCycle === 'yearly' ? '1,200 credits' : '100 credits'}</span>
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">Unlimited saves</span>
-                  </li>
-                </ul>
-              </div>
-              <RazorpayCheckoutButton
-                amount={modalBillingCycle === 'monthly' ? 4900 : 49900}
-                planName={modalBillingCycle === 'monthly' ? 'Starter Monthly' : 'Starter Yearly'}
-                planTier="starter"
-                billingCycle={modalBillingCycle}
-                description={modalBillingCycle === 'monthly' ? 'Premium Prompts + 100 credits + Unlimited saves' : 'Yearly Starter - 1200 credits + Unlimited saves upfront'}
-                buttonText={modalBillingCycle === 'monthly' ? 'Get Starter for ₹49' : 'Get Starter Yearly for ₹499'}
-                variant="secondary"
-                size="sm"
-                className="w-full text-xs font-bold py-1.5"
-                onSuccess={() => handlePlanSuccess('starter')}
-              />
-            </div>
-
-            {/* Pro Tier (Featured) */}
-            <div className="relative p-3.5 rounded-2xl bg-red-50/60 dark:bg-red-950/30 border-2 border-[#E60023] flex flex-col justify-between space-y-2.5 shadow-md">
-              <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-[#E60023] text-white text-[10px] font-black uppercase tracking-wider">
-                Popular
+          <ul className="space-y-2 text-xs text-neutral-700 dark:text-neutral-300">
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-[#E60023] shrink-0" />
+              <span className="font-bold text-neutral-900 dark:text-white">Unlock all premium prompts</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-[#E60023] shrink-0" />
+              <span>
+                <strong>120</strong> prompt tool credits (AI Generator, Extractor & Editor)
               </span>
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-black text-[#E60023] dark:text-red-400">Pro</span>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-xs font-bold text-neutral-900 dark:text-white">
-                      {modalBillingCycle === 'monthly' ? '₹99' : '₹999'}
-                    </span>
-                  </div>
-                </div>
-                <ul className="mt-2 space-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
-                  <li className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span>Premium Prompts</span>
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span>{modalBillingCycle === 'yearly' ? '3,000 credits' : '250 credits'}</span>
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span className="font-bold text-[#E60023]">Unlimited saves</span>
-                  </li>
-                </ul>
-              </div>
-              <RazorpayCheckoutButton
-                amount={modalBillingCycle === 'monthly' ? 9900 : 99900}
-                planName={modalBillingCycle === 'monthly' ? 'Pro Monthly' : 'Pro Yearly'}
-                planTier="pro"
-                billingCycle={modalBillingCycle}
-                description={modalBillingCycle === 'monthly' ? 'Premium Prompts + 250 credits + Unlimited saves' : 'Yearly Pro - 3000 credits + Unlimited saves upfront'}
-                buttonText={modalBillingCycle === 'monthly' ? 'Get Pro for ₹99' : 'Get Pro Yearly for ₹999'}
-                variant="primary"
-                size="sm"
-                className="w-full text-xs font-bold py-1.5"
-                onSuccess={() => handlePlanSuccess('pro')}
-              />
-            </div>
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-[#E60023] shrink-0" />
+              <span className="font-bold text-neutral-900 dark:text-white">AI Search (3 daily smart searches)</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-[#E60023] shrink-0" />
+              <span className="font-bold text-[#E60023]">Unlimited saves & history</span>
+            </li>
+          </ul>
 
-            {/* VIP Tier */}
-            <div className="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700/80 flex flex-col justify-between space-y-2.5 hover:border-amber-400 transition-colors">
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-black text-amber-600 dark:text-amber-400">VIP</span>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-xs font-bold text-neutral-900 dark:text-white">
-                      {modalBillingCycle === 'monthly' ? '₹199' : '₹1,999'}
-                    </span>
-                  </div>
-                </div>
-                <ul className="mt-2 space-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
-                  <li className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span>Premium Prompts</span>
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span>{modalBillingCycle === 'yearly' ? '7,200 credits' : '600 credits'}</span>
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span className="font-bold text-purple-600 dark:text-purple-400">Unlimited saves</span>
-                  </li>
-                </ul>
-              </div>
-              <RazorpayCheckoutButton
-                amount={modalBillingCycle === 'monthly' ? 19900 : 199900}
-                planName={modalBillingCycle === 'monthly' ? 'VIP Monthly' : 'VIP Yearly'}
-                planTier="vip"
-                billingCycle={modalBillingCycle}
-                description={modalBillingCycle === 'monthly' ? 'Premium Prompts + 600 credits + Unlimited saves' : 'Yearly VIP - 7200 credits + Unlimited saves upfront'}
-                buttonText={modalBillingCycle === 'monthly' ? 'Get VIP for ₹199' : 'Get VIP Yearly for ₹1,999'}
-                variant="secondary"
-                size="sm"
-                className="w-full text-xs font-bold py-1.5"
-                onSuccess={() => handlePlanSuccess('vip')}
-              />
-            </div>
-          </div>
+          <RazorpayCheckoutButton
+            amount={9900}
+            planName="Pro Yearly"
+            planTier="pro"
+            billingCycle="yearly"
+            description="1 Year Pro Access • 120 Credits • AI Search • Unlimited Saves"
+            buttonText="Unlock Everything for ₹99 / year"
+            variant="primary"
+            size="md"
+            className="w-full text-xs sm:text-sm font-black py-2.5"
+            onSuccess={handlePlanSuccess}
+          />
         </div>
 
         {/* Footer info and link */}
@@ -265,7 +162,7 @@ export const UnlockPremiumModal: React.FC = () => {
             onClick={handleGoToPricing}
             className="inline-flex items-center gap-1.5 font-black text-[#E60023] hover:underline"
           >
-            <span>View Full Pricing Page</span>
+            <span>View Full Plan Details</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>

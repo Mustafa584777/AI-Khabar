@@ -24,9 +24,6 @@ export const Footer = () => {
       } else {
         window.scrollTo({ top: 380, behavior: 'smooth' });
       }
-      try {
-        window.history.pushState(null, '', `/?category=${encodeURIComponent(catName)}`);
-      } catch {}
     } else {
       router.push(`/?category=${encodeURIComponent(catName)}`);
     }
@@ -115,22 +112,22 @@ export const Footer = () => {
               </h5>
               <ul className="space-y-2">
                 <li>
-                  <Link href="/create" className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
+                  <Link href="/create" prefetch={false} className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
                     AI Studio (Image to Prompt)
                   </Link>
                 </li>
                 <li>
-                  <Link href="/create" className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
+                  <Link href="/create" prefetch={false} className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
                     Idea to Prompt Generator
                   </Link>
                 </li>
                 <li>
-                  <Link href="/dashboard" className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
+                  <Link href="/dashboard" prefetch={false} className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
                     Creator Dashboard
                   </Link>
                 </li>
                 <li>
-                  <Link href="/pricing" className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
+                  <Link href="/pricing" prefetch={false} className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
                     Pricing & Credits
                   </Link>
                 </li>
@@ -144,37 +141,37 @@ export const Footer = () => {
               </h5>
               <ul className="space-y-2">
                 <li>
-                  <Link href="/about" className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
+                  <Link href="/about" prefetch={false} className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
                     About Us
                   </Link>
                 </li>
                 <li>
-                  <Link href="/contact" className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
+                  <Link href="/contact" prefetch={false} className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
                     Contact
                   </Link>
                 </li>
                 <li>
-                  <Link href="/pricing" className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
+                  <Link href="/pricing" prefetch={false} className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
                     Pricing Page
                   </Link>
                 </li>
                 <li>
-                  <Link href="/privacy-policy" className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
+                  <Link href="/privacy-policy" prefetch={false} className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
                     Privacy Policy
                   </Link>
                 </li>
                 <li>
-                  <Link href="/terms" className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
+                  <Link href="/terms" prefetch={false} className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
                     Terms and Conditions
                   </Link>
                 </li>
                 <li>
-                  <Link href="/disclaimer" className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
+                  <Link href="/disclaimer" prefetch={false} className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
                     Disclaimer
                   </Link>
                 </li>
                 <li>
-                  <Link href="/cancellation-refund" className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
+                  <Link href="/cancellation-refund" prefetch={false} className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
                     Cancellation and Refund
                   </Link>
                 </li>

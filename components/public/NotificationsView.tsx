@@ -38,7 +38,7 @@ export const NotificationsView: React.FC = () => {
       setIsLoading(true);
     }
     try {
-      const res = await fetch('/api/notifications/send', { cache: 'no-store' });
+      const res = await fetch('/api/notifications/send');
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.notifications) && data.notifications.length > 0) {
@@ -67,14 +67,8 @@ export const NotificationsView: React.FC = () => {
     };
     window.addEventListener('promptcms_new_notification', handleNewNotif);
 
-    // Periodic sync every 15 seconds for real-time delivery in background
-    const interval = setInterval(() => {
-      NotificationService.syncWithServer().then(() => loadNotifications(true));
-    }, 15000);
-
     return () => {
       window.removeEventListener('promptcms_new_notification', handleNewNotif);
-      clearInterval(interval);
     };
   }, []);
 

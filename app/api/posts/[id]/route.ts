@@ -1,8 +1,6 @@
 import { ServerStorage } from '@/lib/server-storage';
 import { NextRequest, NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -23,7 +21,14 @@ export async function GET(
     if (!post) {
       return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
-    return NextResponse.json({ success: true, post });
+    return NextResponse.json(
+      { success: true, post },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=259200, stale-while-revalidate=604800',
+        },
+      }
+    );
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

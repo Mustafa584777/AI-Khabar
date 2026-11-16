@@ -1441,7 +1441,7 @@ export const PostEditor = () => {
                     )}
                   </h3>
                   <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
-                    Gate prompt text for Starter, Pro & VIP subscribers
+                    Gate prompt text for Pro Yearly subscribers
                   </p>
                 </div>
               </div>

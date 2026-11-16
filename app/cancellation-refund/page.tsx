@@ -42,7 +42,7 @@ export default function CancellationRefundPage() {
               <h2>1. No Cancellation Policy</h2>
             </div>
             <p>
-              Once a subscription plan (Starter, Pro, VIP, or Studio 499) or Pay-As-You-Go credit pack is purchased and activated on <strong>zeenaprompt.com</strong>, it <strong>cannot be cancelled</strong> or prematurely terminated for a refund.
+              Once the <strong>Pro Yearly (₹99/year)</strong> subscription plan is purchased and activated on <strong>zeenaprompt.com</strong>, it <strong>cannot be cancelled</strong> or prematurely terminated for a refund.
             </p>
             <p>
               Because our digital systems immediately provision credits, AI search capabilities, and unrestricted prompt access to your account upon checkout confirmation, the service is considered fully delivered.

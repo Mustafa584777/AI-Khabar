@@ -6,11 +6,18 @@ export async function GET() {
   try {
     const notifications = await NotificationServerStore.getNotifications();
     const stats = await NotificationServerStore.getStats();
-    return NextResponse.json({
-      success: true,
-      notifications,
-      stats,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        notifications,
+        stats,
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        },
+      }
+    );
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Failed to fetch notifications' },

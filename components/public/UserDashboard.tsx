@@ -116,12 +116,7 @@ export const UserDashboard = () => {
     (!planExpiresAt || new Date(planExpiresAt).getTime() > Date.now())
   );
   const effectivePlanTier: PlanTier = isPaid ? (['starter', 'pro', 'vip'].includes(planTier) ? planTier : 'pro') : 'free';
-  const isYearlyPlan = Boolean(
-    userAccount?.billingCycle === 'yearly' ||
-    (typeof window !== 'undefined' && localStorage.getItem('auraprompt_billing_cycle') === 'yearly') ||
-    (planExpiresAt && planStartedAt && (new Date(planExpiresAt).getTime() - new Date(planStartedAt).getTime()) > 60 * 24 * 60 * 60 * 1000)
-  );
-  const currentPlanConfig = getPlanFeaturesForCycle(effectivePlanTier, isYearlyPlan ? 'yearly' : 'monthly');
+  const currentPlanConfig = getPlanFeaturesForCycle(effectivePlanTier, 'yearly');
 
   // Verify that queued plan is genuinely upcoming in future (start date has not arrived yet)
   const isQueuedPlanUpcoming = Boolean(
@@ -568,7 +563,7 @@ export const UserDashboard = () => {
               <div className="space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2.5">
                   <h3 className="text-lg sm:text-xl font-black text-white tracking-tight">
-                    {isPaid ? `${currentPlanConfig.name.toUpperCase()} Membership Active` : 'Upgrade to Creator Plan'}
+                    {isPaid ? 'Pro Yearly Membership Active' : 'Upgrade to Pro Yearly (₹99/year)'}
                   </h3>
                   <span
                     className={`px-3 py-1 rounded-full text-[10px] font-mono font-extrabold tracking-wide uppercase ${
@@ -577,13 +572,13 @@ export const UserDashboard = () => {
                         : 'bg-white/10 text-neutral-300 border border-white/20'
                     }`}
                   >
-                    {isPaid ? `PAID (${currentPlanConfig.name.toUpperCase()})` : 'FREE TIER'}
+                    {isPaid ? 'PAID (PRO YEARLY)' : 'FREE TIER'}
                   </span>
                 </div>
                 <p className="text-xs sm:text-sm text-neutral-300 max-w-xl leading-relaxed">
                   {isPaid
-                    ? `You have full access to all premium prompts, ${toolCredits} prompt tool credits, ${currentPlanConfig.unlimitedSaves ? 'unlimited' : currentPlanConfig.savesLimit} saves & history, and 3 daily AI searches.`
-                    : 'Unlock all premium prompts instantly, priority tool credits, increased saves & history quota, and 3 daily AI searches.'}
+                    ? `You have full access to all premium prompts, ${toolCredits} prompt tool credits, unlimited saves & history, and 3 daily AI searches.`
+                    : 'Unlock all premium prompts, 120 prompt tool credits, unlimited saves & history, and 3 daily AI searches — all for just ₹99/year.'}
                 </p>
                 {isPaid && (
                   <div className="space-y-1 text-xs text-amber-400 font-bold">
@@ -618,10 +613,11 @@ export const UserDashboard = () => {
               {!isPaid ? (
                 <>
                   <RazorpayCheckoutButton
-                    amount={4900}
-                    planTier="starter"
-                    planName="Starter"
-                    buttonText="Get Starter for ₹49"
+                    amount={9900}
+                    planTier="pro"
+                    billingCycle="yearly"
+                    planName="Pro Yearly"
+                    buttonText="Get Pro Yearly for ₹99/year"
                     variant="pill"
                     size="md"
                   />
@@ -629,7 +625,7 @@ export const UserDashboard = () => {
                     onClick={() => router.push('/pricing')}
                     className="px-5 py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold text-white transition-all shadow-sm"
                   >
-                    View All Plans & Packs
+                    View Plan Details
                   </button>
                 </>
               ) : (
@@ -637,7 +633,7 @@ export const UserDashboard = () => {
                   onClick={() => router.push('/pricing')}
                   className="px-6 py-3 rounded-full bg-amber-500 hover:bg-amber-400 text-neutral-950 text-xs font-black shadow-lg shadow-amber-500/20 transition-all"
                 >
-                  Manage Membership & Top-Up
+                  Renew / Extend Pro Yearly
                 </button>
               )}
             </div>
@@ -646,15 +642,15 @@ export const UserDashboard = () => {
           {/* Premium Features Grid (Accurately reflects currentPlanConfig) */}
           <div className="relative z-10 pt-4 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {[
-              { title: 'Unlock All Prompts', desc: 'Instant access to 500+ elite prompts' },
-              { title: `${currentPlanConfig.credits} Tool Credits`, desc: 'For prompt studio, extraction & edits' },
+              { title: 'Unlock All Prompts', desc: 'Instant access to all premium prompts' },
+              { title: '120 Yearly Credits', desc: 'For prompt studio, extraction & edits' },
               {
                 title: currentPlanConfig.unlimitedSaves ? 'Unlimited Saves' : `${currentPlanConfig.savesLimit} Saves Quota`,
                 desc: currentPlanConfig.unlimitedSaves ? 'No limits on bookmarks & history' : `Save up to ${currentPlanConfig.savesLimit} prompts & history`,
               },
               {
-                title: currentPlanConfig.unlimitedSearches ? 'Unlimited AI Search' : `${currentPlanConfig.aiSearchQuota} AI Searches / mo`,
-                desc: currentPlanConfig.unlimitedSearches ? 'Uncapped conversational AI discovery' : `${currentPlanConfig.aiSearchQuota} semantic searches per month`,
+                title: '3 Daily AI Searches',
+                desc: 'Smart conversational prompt discovery every day',
               },
             ].map((feat, idx) => (
               <div key={idx} className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-start gap-3">

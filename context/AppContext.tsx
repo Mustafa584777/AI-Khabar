@@ -544,13 +544,9 @@ export const AppProvider = ({
   );
 
   const upgradePlan = useCallback((tier: 'starter' | 'pro' | 'vip', serverData?: any, isQueued?: boolean, cycle?: 'monthly' | 'yearly') => {
-    const resolvedCycle: BillingCycle = cycle || serverData?.billingCycle || (
-      serverData?.planExpiresAt && serverData?.planStartedAt &&
-      (new Date(serverData.planExpiresAt).getTime() - new Date(serverData.planStartedAt).getTime()) > 60 * 24 * 60 * 60 * 1000
-        ? 'yearly'
-        : 'monthly'
-    );
-    const planFeatures = getPlanFeaturesForCycle(tier, resolvedCycle);
+    const resolvedTier: 'starter' | 'pro' | 'vip' = tier || 'pro';
+    const resolvedCycle: BillingCycle = 'yearly';
+    const planFeatures = getPlanFeaturesForCycle(resolvedTier, resolvedCycle);
 
     // 1. If this upgrade is queued because the user already has an active plan:
     if (isQueued || serverData?.isQueued || serverData?.queuedPlan) {
@@ -563,14 +559,14 @@ export const AppProvider = ({
       }
       showToast(
         serverData?.message ||
-        `Your ${planFeatures.name}${resolvedCycle === 'yearly' ? ' (Yearly)' : ''} plan is queued and will start automatically after your current plan expires at 11:59 PM!`
+        `Your Pro Yearly plan is queued and will start automatically after your current plan expires at 11:59 PM!`
       );
       return;
     }
 
     // 2. Active plan activation
     setIsProUserState(true);
-    setPlanTierState(tier);
+    setPlanTierState(resolvedTier);
     const today = new Date().toISOString().slice(0, 10);
     const allocatedAiSearch = 3;
     setAiSearchRemainingState(3);
@@ -579,10 +575,9 @@ export const AppProvider = ({
       localStorage.setItem('auraprompt_ai_search_date', today);
     }
 
-    const addedCredits = planFeatures.credits;
+    const addedCredits = planFeatures.credits; // Strictly 120 credits for the ₹99/year plan
     const addedRequests = planFeatures.promptRequests;
-    const addedPoints = tier === 'starter' ? 10 : tier === 'pro' ? 20 : tier === 'vip' ? 50 : 100;
-    const finalPointsBonus = resolvedCycle === 'yearly' ? addedPoints * 5 : addedPoints;
+    const finalPointsBonus = 100;
 
     // Fresh plan initialization: grant plan quotas (Rule 2: unused credits never expire or overwrite)
     const currentCredits = toolCredits || userAccount?.toolCredits || 0;
@@ -674,8 +669,7 @@ export const AppProvider = ({
       });
     }
 
-    const cycleBadge = resolvedCycle === 'yearly' ? ' (Yearly)' : '';
-    showToast(`Welcome to ${planFeatures.name}${cycleBadge}! Valid until ${formatExpiryDateWithHour(planExpiresAt)}.`);
+    showToast(`Welcome to ${planFeatures.name}! Valid until ${formatExpiryDateWithHour(planExpiresAt)}.`);
   }, [userAccount, showToast]);
 
   // AI Studio History State
@@ -941,11 +935,7 @@ export const AppProvider = ({
         localStorage.setItem('auraprompt_pro_member', String(synced.isProUser || false));
       }
 
-      const isYearly = Boolean(
-        (synced as any).billingCycle === 'yearly' ||
-        (synced.planExpiresAt && synced.planStartedAt && (new Date(synced.planExpiresAt).getTime() - new Date(synced.planStartedAt).getTime()) > 60 * 24 * 60 * 60 * 1000)
-      );
-      const cycleCfg = getPlanFeaturesForCycle(resolvedTier, isYearly ? 'yearly' : 'monthly');
+      const cycleCfg = getPlanFeaturesForCycle(resolvedTier, 'yearly');
 
       let resolvedCredits: number;
       if (synced.toolCredits !== undefined && synced.toolCredits !== null) {
@@ -1150,16 +1140,11 @@ export const AppProvider = ({
     }
 
     const isAlreadySaved = aiHistory.some(h => h.id === item.id);
-    const isYearly = Boolean(
-      userAccount?.billingCycle === 'yearly' ||
-      (typeof window !== 'undefined' && localStorage.getItem('auraprompt_billing_cycle') === 'yearly') ||
-      (planExpiresAt && planStartedAt && (new Date(planExpiresAt).getTime() - new Date(planStartedAt).getTime()) > 60 * 24 * 60 * 60 * 1000)
-    );
-    const planCfg = getPlanFeaturesForCycle(planTier, isYearly ? 'yearly' : 'monthly');
+    const planCfg = getPlanFeaturesForCycle(planTier, 'yearly');
     const maxSaves = userAccount?.savesLimit || planCfg.savesLimit;
     const isUnlimited = planCfg.unlimitedSaves || maxSaves >= 999999;
     if (!isAlreadySaved && !isUnlimited && (bookmarkedIds.length + aiHistory.length >= maxSaves)) {
-      showToast(`${planCfg.name}${isYearly ? ' (Yearly)' : ''} plan limit reached: ${maxSaves} combined saves max (bookmarks + history). Upgrade your plan to increase your limit!`);
+      showToast(`${planCfg.name} plan limit reached: ${maxSaves} combined saves max (bookmarks + history). Upgrade to Pro Yearly (₹99/year) for unlimited saves!`);
       setIsProCheckoutModalOpen(true);
       return;
     }
@@ -1424,7 +1409,7 @@ export const AppProvider = ({
             setQueuedPlan(null);
             localStorage.removeItem('auraprompt_queued_plan');
 
-            const qpCfg = getPlanFeaturesForCycle(queuedToPromote.planTier, queuedToPromote.billingCycle || 'monthly');
+            const qpCfg = getPlanFeaturesForCycle(queuedToPromote.planTier, 'yearly');
             resolvedCredits = (Number(resolvedCredits) || 0) + (queuedToPromote.credits || qpCfg.credits);
             resolvedReqs = queuedToPromote.promptRequests || qpCfg.promptRequests;
             resolvedAiSearchCount = 3;
@@ -1442,7 +1427,7 @@ export const AppProvider = ({
             resolvedSavesLimitCount = 10;
           }
         } else if (finalTier !== 'free') {
-          const planCfg = getPlanFeaturesForCycle(finalTier, (synced.billingCycle as any) || 'monthly');
+          const planCfg = getPlanFeaturesForCycle(finalTier, 'yearly');
           resolvedSavesLimitCount = synced.savesLimit || planCfg.savesLimit;
           const userSubmittedCount = Array.isArray(synced.promptRequests) ? synced.promptRequests.length : 0;
           if (resolvedReqs <= 0 && userSubmittedCount < planCfg.promptRequests) {
@@ -1541,7 +1526,7 @@ export const AppProvider = ({
           // If queued plan exists, promote it!
           if (queuedPlan) {
             const qp = queuedPlan;
-            const qpCfg = getPlanFeaturesForCycle(qp.planTier, qp.billingCycle || 'monthly');
+            const qpCfg = getPlanFeaturesForCycle(qp.planTier, 'yearly');
             const newStart = qp.scheduledStartAt || new Date().toISOString();
             const newExpires = qp.scheduledExpiresAt || calculatePlanDates(newStart, qpCfg.durationDays).planExpiresAt;
             const newCredits = (toolCredits || 0) + (qp.credits || qpCfg.credits);
@@ -1983,8 +1968,8 @@ export const AppProvider = ({
   };
 
   const applyPlan = useCallback((tier: 'starter' | 'pro' | 'vip') => {
-    upgradePlan(tier);
-    showToast(`Success! You have unlocked the ${tier.toUpperCase()} plan.`);
+    upgradePlan(tier, undefined, false, 'yearly');
+    showToast('Success! You have unlocked the Pro Yearly (₹99/year) plan.');
   }, [upgradePlan, showToast]);
 
   const isSavingRef = React.useRef(false);
@@ -2752,16 +2737,11 @@ export const AppProvider = ({
 
     const currentBookmarks = StorageService.getBookmarkedIds();
     const isCurrentlyBookmarked = currentBookmarks.includes(id);
-    const isYearly = Boolean(
-      currentAcc?.billingCycle === 'yearly' ||
-      (typeof window !== 'undefined' && localStorage.getItem('auraprompt_billing_cycle') === 'yearly') ||
-      (planExpiresAt && planStartedAt && (new Date(planExpiresAt).getTime() - new Date(planStartedAt).getTime()) > 60 * 24 * 60 * 60 * 1000)
-    );
-    const planCfg = getPlanFeaturesForCycle(planTier, isYearly ? 'yearly' : 'monthly');
+    const planCfg = getPlanFeaturesForCycle(planTier, 'yearly');
     const maxSaves = currentAcc?.savesLimit || planCfg.savesLimit;
     const isUnlimited = planCfg.unlimitedSaves || maxSaves >= 999999;
     if (!isCurrentlyBookmarked && !isUnlimited && (currentBookmarks.length + aiHistory.length >= maxSaves)) {
-      showToast(`${planCfg.name}${isYearly ? ' (Yearly)' : ''} plan limit reached: ${maxSaves} combined saves max (bookmarks + history). Upgrade your plan to increase your limit!`);
+      showToast(`${planCfg.name} plan limit reached: ${maxSaves} combined saves max (bookmarks + history). Upgrade to Pro Yearly (₹99/year) for unlimited saves!`);
       setIsProCheckoutModalOpen(true);
       return;
     }

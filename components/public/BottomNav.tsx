@@ -3,17 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { Home, Search, Plus, User, Bell } from 'lucide-react';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { NotificationService } from '@/lib/notifications';
-
-import Link from 'next/link';
 
 interface BottomNavProps {
   onSearchClick?: () => void;
 }
 
 export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
-  const router = useRouter();
   const pathname = usePathname();
   
   const {
@@ -28,16 +25,6 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
   } = useApp();
 
   const [unreadNotifs, setUnreadNotifs] = useState(0);
-
-  // Eagerly prefetch routes for fallback client cache
-  useEffect(() => {
-    try {
-      router.prefetch('/');
-      router.prefetch('/create');
-      router.prefetch('/notifications');
-      router.prefetch('/dashboard');
-    } catch {}
-  }, [router]);
 
   useEffect(() => {
     const updateUnread = () => {

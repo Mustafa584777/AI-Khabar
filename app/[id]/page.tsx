@@ -1,10 +1,28 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
+import { notFound } from 'next/navigation';
 import { ServerStorage } from '@/lib/server-storage';
 import { getPromptSlug, getPromptMetaDescription } from '@/lib/utils';
 import { DirectPromptLoader } from '@/components/public/DirectPromptLoader';
 
-export const revalidate = 259200; // 72 hours
+export const revalidate = false;
+export const dynamicParams = false;
+
+export async function generateStaticParams() {
+  const posts = await ServerStorage.getAllPosts(false);
+  const seen = new Set<string>();
+  const paramsList: { id: string }[] = [];
+
+  for (const post of posts) {
+    if (!post) continue;
+    const slug = getPromptSlug(post);
+    if (slug && !seen.has(slug)) {
+      seen.add(slug);
+      paramsList.push({ id: slug });
+    }
+  }
+
+  return paramsList;
+}
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -110,7 +128,11 @@ export default async function SinglePromptDetailPage({ params }: PageProps) {
   const { id } = await params;
   const post = await resolvePost(id);
 
-  const slug = post ? getPromptSlug(post) : id;
+  if (!post) {
+    notFound();
+  }
+
+  const slug = getPromptSlug(post);
   const pageUrl = `https://zeenaprompt.com/${slug}`;
 
   // Structured Data Schema for Google (JSON-LD) - Strict NO AUTHOR
@@ -175,15 +197,6 @@ export default async function SinglePromptDetailPage({ params }: PageProps) {
           <blockquote>{post.promptText}</blockquote>
           <div>Category: {post.category}</div>
           {post.tags && <div>Tags: {post.tags.join(', ')}</div>}
-          {post.imageUrl && (
-            <Image
-              src={post.imageUrl}
-              alt={post.imageAlt || post.title}
-              width={post.imageWidth || 600}
-              height={post.imageHeight || 800}
-              referrerPolicy="no-referrer"
-            />
-          )}
         </article>
       )}
       <DirectPromptLoader id={id} initialPost={post} />

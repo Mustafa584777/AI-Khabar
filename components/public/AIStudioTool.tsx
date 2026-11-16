@@ -1347,12 +1347,12 @@ export const AIStudioTool = () => {
             <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-left space-y-2 text-xs text-neutral-700 dark:text-neutral-300">
               <div className="font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
                 <Coins className="w-3.5 h-3.5 text-amber-500" />
-                <span>Instant Pay-As-You-Go Credits Packs:</span>
+                <span>Pro Yearly Plan (₹99 / year):</span>
               </div>
               <ul className="space-y-1 text-[11px] text-neutral-600 dark:text-neutral-400">
-                <li>• <strong>100 Credits (₹49)</strong>: ~100 prompt generations or 33 image extractions</li>
-                <li>• <strong>250 Credits (₹99)</strong>: ~250 prompt generations or 83 image extractions</li>
-                <li>• <strong>499 Credits (₹199)</strong>: ~499 prompt generations or 166 image extractions</li>
+                <li>• <strong>120 Prompt Tool Credits</strong> for AI generator, extractor & editor</li>
+                <li>• <strong>All Premium Prompts</strong> unlocked for 365 days</li>
+                <li>• <strong>AI Search (3 daily)</strong> + Unlimited saves & history</li>
               </ul>
             </div>
 
@@ -1364,7 +1364,7 @@ export const AIStudioTool = () => {
                 }}
                 className="w-full py-3 rounded-full bg-gradient-to-r from-[#E60023] to-[#ff3b56] hover:from-red-700 hover:to-red-600 text-white text-xs sm:text-sm font-black shadow-md shadow-red-500/20 transition-all"
               >
-                View Pricing Plans & Get Credits
+                Get Pro Yearly (₹99/year) — 120 Credits
               </button>
               <button
                 onClick={() => setIsOutOfCreditsModalOpen(false)}

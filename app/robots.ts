@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 
-export const revalidate = 86400;
+export const revalidate = false;
 
 export default function robots(): MetadataRoute.Robots {
   const baseUrl = 'https://zeenaprompt.com';

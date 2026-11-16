@@ -6,10 +6,10 @@ export interface PlanConfig {
   badge?: string | null;
   priceRupees: number;
   amountPaise: number;
-  credits: number; // Monthly recurring tool credits added (0 for free)
+  credits: number; // Yearly tool credits granted (0 for free signup base)
   initialSignupCredits?: number; // One-time signup credits (5 for free)
-  aiSearchQuota: number; // Searches per month
-  promptRequests: number; // Custom prompt requests per month
+  aiSearchQuota: number; // Daily AI searches
+  promptRequests: number;
   savesLimit: number; // Combined bookmarks + history limit
   unlimitedSaves: boolean;
   unlimitedSearches: boolean;
@@ -18,6 +18,26 @@ export interface PlanConfig {
 }
 
 export type BillingCycle = 'monthly' | 'yearly';
+
+const SINGLE_PRO_YEARLY_CONFIG: Omit<PlanConfig, 'id'> = {
+  name: 'Pro Yearly',
+  badge: 'All-Access Annual Pass',
+  priceRupees: 99,
+  amountPaise: 9900,
+  credits: 120,
+  aiSearchQuota: 3,
+  promptRequests: 0,
+  savesLimit: 999999,
+  unlimitedSaves: true,
+  unlimitedSearches: false,
+  unlockAllPrompts: true,
+  features: [
+    'Unlock all premium prompts',
+    '120 prompt tool credits',
+    'AI Search (3 daily searches)',
+    'Unlimited saves & history',
+  ],
+};
 
 export const PLAN_CONFIGS: Record<PlanTier, PlanConfig> = {
   free: {
@@ -40,65 +60,18 @@ export const PLAN_CONFIGS: Record<PlanTier, PlanConfig> = {
       'Free tier prompt access',
     ],
   },
+  // Legacy tier keys alias to the single ₹99/year Pro Yearly benefits for backward DB compatibility
   starter: {
     id: 'starter',
-    name: 'Starter',
-    badge: null,
-    priceRupees: 49,
-    amountPaise: 4900,
-    credits: 100,
-    aiSearchQuota: 3,
-    promptRequests: 0,
-    savesLimit: 999999,
-    unlimitedSaves: true,
-    unlimitedSearches: false,
-    unlockAllPrompts: true,
-    features: [
-      'Unlock all premium prompts',
-      '100 prompt tool credits / mo',
-      'AI Search',
-      'Unlimited saves & history',
-    ],
+    ...SINGLE_PRO_YEARLY_CONFIG,
   },
   pro: {
     id: 'pro',
-    name: 'Pro',
-    badge: 'Most Popular',
-    priceRupees: 99,
-    amountPaise: 9900,
-    credits: 250,
-    aiSearchQuota: 3,
-    promptRequests: 0,
-    savesLimit: 999999,
-    unlimitedSaves: true,
-    unlimitedSearches: false,
-    unlockAllPrompts: true,
-    features: [
-      'Unlock all premium prompts',
-      '250 prompt tool credits / mo',
-      'AI Search',
-      'Unlimited saves & history',
-    ],
+    ...SINGLE_PRO_YEARLY_CONFIG,
   },
   vip: {
     id: 'vip',
-    name: 'VIP',
-    badge: 'Best Value',
-    priceRupees: 199,
-    amountPaise: 19900,
-    credits: 600,
-    aiSearchQuota: 3,
-    promptRequests: 0,
-    savesLimit: 999999,
-    unlimitedSaves: true,
-    unlimitedSearches: false,
-    unlockAllPrompts: true,
-    features: [
-      'Unlock all premium prompts',
-      '600 prompt tool credits / mo',
-      'AI Search',
-      'Unlimited saves & history',
-    ],
+    ...SINGLE_PRO_YEARLY_CONFIG,
   },
 };
 
@@ -110,35 +83,33 @@ export function getPlanConfig(tier?: PlanTier | string | null): PlanConfig {
 }
 
 /**
- * Returns features, quotas, credits, and duration for a given plan and billing cycle.
- * For Yearly subscriptions, all 12 months of credits, searches, prompt requests, and saves
- * are combined and granted immediately upfront in one go.
+ * Returns features, quotas, credits, and duration for the active plan.
+ * Paid membership is a single annual ₹99/year plan with full benefits and strictly 120 tool credits.
  */
 export function getPlanFeaturesForCycle(
   tier?: PlanTier | string | null,
-  cycle: BillingCycle = 'monthly'
+  _cycle: BillingCycle = 'yearly'
 ): PlanConfig & { durationDays: number; billingCycle: BillingCycle } {
   const base = getPlanConfig(tier);
-  const isYearly = cycle === 'yearly' && base.id !== 'free';
-  const multiplier = isYearly ? 12 : 1;
-  const durationDays = isYearly ? 365 : 30;
 
   if (base.id === 'free') {
     return {
       ...base,
       durationDays: 36500, // lifetime
-      billingCycle: 'monthly',
+      billingCycle: 'yearly',
     };
   }
 
   return {
     ...base,
-    credits: base.credits * multiplier,
+    credits: 120,
     aiSearchQuota: 3,
-    promptRequests: base.promptRequests * multiplier,
-    savesLimit: base.unlimitedSaves ? 999999 : base.savesLimit * multiplier,
-    durationDays,
-    billingCycle: cycle,
+    promptRequests: 0,
+    savesLimit: 999999,
+    unlimitedSaves: true,
+    unlockAllPrompts: true,
+    durationDays: 365,
+    billingCycle: 'yearly',
   };
 }
 
@@ -148,12 +119,11 @@ export function getPlanFeaturesForCycle(
  */
 export function calculatePlanDates(
   startDateInput?: Date | string | number | null,
-  durationDays: number = 30
+  durationDays: number = 365
 ): { planStartedAt: string; planExpiresAt: string } {
   const start = startDateInput ? new Date(startDateInput) : new Date();
   const safeStart = isNaN(start.getTime()) ? new Date() : start;
 
-  // Add 30 days
   const expires = new Date(safeStart.getTime() + durationDays * 24 * 60 * 60 * 1000);
   // Guarantee expiration at 11:59:59.999 PM
   expires.setHours(23, 59, 59, 999);
@@ -169,7 +139,7 @@ export function calculatePlanDates(
  */
 export function calculateQueuedPlanDates(
   activePlanExpiresAt: string | Date,
-  durationDays: number = 30
+  durationDays: number = 365
 ): { scheduledStartAt: string; scheduledExpiresAt: string } {
   const start = new Date(activePlanExpiresAt);
   const safeStart = isNaN(start.getTime()) ? new Date() : start;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { Header } from '@/components/public/Header';
 import { Footer } from '@/components/public/Footer';
@@ -10,13 +10,8 @@ import { RazorpayCheckoutModal } from '@/components/public/RazorpayCheckoutModal
 import {
   ShieldCheck,
   Zap,
-  Sparkles,
-  Crown,
   CheckCircle2,
   Coins,
-  ArrowRight,
-  Lock,
-  ImageIcon,
   ChevronDown,
   ChevronUp,
   HelpCircle,
@@ -30,16 +25,20 @@ import { formatExpiryDateWithHour } from '@/lib/plans';
 
 const FAQS = [
   {
-    question: 'How do subscription plans work?',
-    answer: 'Subscribe to Starter, Pro, or VIP on a monthly or yearly billing cycle to unlock all premium prompts instantly and receive recurring tool credits, AI search quotas, and unlimited saves & history.',
+    question: 'What does the ₹99/year Pro Yearly plan include?',
+    answer: 'For just ₹99 per year (365 days), you unlock all benefits: unlimited access to all premium prompts, 120 prompt tool credits for AI prompt generation/extraction/editing, AI Search (3 daily searches), and unlimited saves & history.',
   },
   {
-    question: 'Can I cancel, upgrade or downgrade my plan?',
-    answer: 'Plans cannot be cancelled once active, but you can upgrade or downgrade at any time. When you purchase a new plan while your current plan is still active, the new plan is safely queued and automatically starts immediately after your existing plan expires.',
+    question: 'How many tool credits do I receive with the ₹99/year plan?',
+    answer: 'You receive 120 prompt tool credits upfront for the full year. Unused credits remain safely in your account and never disappear.',
   },
   {
-    question: 'What happens to my saved data after my plan expires?',
-    answer: 'Your saved prompts, history, and unlocked items are 100% safe and never deleted when a plan expires. Your account simply demotes to the free tier, and your existing saves remain fully intact.',
+    question: 'Can I renew or extend my Pro Yearly plan while it is still active?',
+    answer: 'Yes! If you purchase the ₹99/year plan while your current plan is still active, your new yearly plan is safely queued and automatically starts immediately after your active plan expires at 11:59 PM.',
+  },
+  {
+    question: 'What happens to my saved data after my yearly plan expires?',
+    answer: 'Your saved prompts, AI history, unlocked items, and remaining tool credits are 100% safe and never deleted. Your account simply returns to the Free tier while keeping everything intact.',
   },
   {
     question: 'What payment methods are supported via Razorpay?',
@@ -47,45 +46,19 @@ const FAQS = [
   },
   {
     question: 'What is AI Search and how does it work?',
-    answer: 'AI Search allows you to search across thousands of curated visual prompts using natural conversational queries. All paid subscription plans include 3 AI searches every day.',
-  },
-  {
-    question: 'Are premium prompts unlocked with subscriptions?',
-    answer: 'Yes! All active subscription plans (Starter, Pro, and VIP) give you 100% free, unlimited access to unlock all premium prompts instantly without using any tool credits.',
+    answer: 'AI Search lets you discover curated visual prompts using natural conversational queries. The ₹99/year Pro Yearly plan includes 3 AI searches every single day.',
   },
 ];
 
 export default function CheckoutPage() {
   const { isProUser, planTier, toolCredits, planExpiresAt, queuedPlan } = useApp();
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
-  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-
-  useEffect(() => {
-    const targetDate = new Date('2026-11-10T23:59:59').getTime();
-    const updateTimer = () => {
-      const now = new Date().getTime();
-      const difference = targetDate - now;
-      if (difference > 0) {
-        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-        setTimeLeft({ days, hours, minutes, seconds });
-      }
-    };
-    updateTimer();
-    const timerId = setInterval(updateTimer, 1000);
-    return () => clearInterval(timerId);
-  }, []);
 
   return (
     <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans transition-colors flex flex-col pb-20 sm:pb-8">
       <Header />
 
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-10">
-
-
         {/* Hero Section */}
         <div className="text-center space-y-3 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 text-xs font-bold shadow-xs">
@@ -94,11 +67,11 @@ export default function CheckoutPage() {
           </div>
 
           <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-neutral-900 dark:text-white tracking-tight">
-            Subscription Plans for Every Creator
+            One Simple Yearly Plan for Creators
           </h1>
 
           <p className="text-xs sm:text-base text-neutral-600 dark:text-neutral-400">
-            Subscribe monthly or yearly to unlock all premium prompts, enjoy unlimited saves & history, and get recurring tool credits.
+            Unlock every single Pro feature for an entire year at just ₹99/year — including all premium prompts, AI Search, unlimited saves & history, and 120 prompt tool credits.
           </p>
 
           {/* Current User Status */}
@@ -112,7 +85,8 @@ export default function CheckoutPage() {
                 <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700">•</span>
                 <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  {(planTier || 'Pro').toUpperCase()} Plan {planExpiresAt ? `(Expires ${formatExpiryDateWithHour(planExpiresAt)})` : ''}
+                  {(planTier === 'free' ? 'PRO' : planTier || 'Pro').toUpperCase()} Yearly Plan{' '}
+                  {planExpiresAt ? `(Expires ${formatExpiryDateWithHour(planExpiresAt)})` : ''}
                 </span>
               </>
             )}
@@ -121,144 +95,63 @@ export default function CheckoutPage() {
                 <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700">•</span>
                 <span className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400">
                   <Clock className="w-3.5 h-3.5" />
-                  Upcoming: {queuedPlan.planName?.toUpperCase() || queuedPlan.planTier.toUpperCase()} Scheduled
+                  Upcoming: {queuedPlan.planName?.toUpperCase() || 'PRO YEARLY'} Scheduled
                 </span>
               </>
             )}
           </div>
-
-          {/* Monthly / Yearly Billing Toggle */}
-          <div className="pt-4 flex justify-center">
-            <div className="inline-flex p-1 rounded-xl bg-neutral-200/80 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs font-bold shadow-inner">
-              <button
-                type="button"
-                onClick={() => setBillingCycle('monthly')}
-                className={`px-6 py-2 rounded-lg transition-all ${
-                  billingCycle === 'monthly'
-                    ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm'
-                    : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
-                }`}
-              >
-                Monthly Billing
-              </button>
-              <button
-                type="button"
-                onClick={() => setBillingCycle('yearly')}
-                className={`px-6 py-2 rounded-lg transition-all flex items-center gap-1.5 ${
-                  billingCycle === 'yearly'
-                    ? 'bg-white dark:bg-neutral-900 text-[#E60023] dark:text-red-400 shadow-sm'
-                    : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
-                }`}
-              >
-                <span>Yearly Billing</span>
-              </button>
-            </div>
-          </div>
         </div>
 
-        {/* Subscription Plans Grid (Starter, Pro, VIP) */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {/* Tier 1: Starter */}
-          <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col justify-between space-y-6 hover:shadow-md transition-shadow">
-            <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-500 flex items-center justify-center">
-                <Sparkles className="w-6 h-6" />
-              </div>
-
-              <div>
-                <h3 className="text-lg font-black text-neutral-900 dark:text-white">Starter</h3>
-                <p className="text-xs text-neutral-500">
-                  {billingCycle === 'yearly' ? 'Combined annual membership' : 'Essential membership'}
-                </p>
-              </div>
-
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-black text-neutral-900 dark:text-white">
-                  {billingCycle === 'monthly' ? '₹49' : '₹499'}
-                </span>
-              </div>
-
-              <ul className="space-y-2.5 text-xs text-neutral-600 dark:text-neutral-300">
-                <li className="flex items-center gap-2">
-                  <span className="text-emerald-500 font-bold">✓</span>
-                  <span className="font-bold text-neutral-900 dark:text-white">Premium Prompts</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-emerald-500 font-bold">✓</span>
-                  <span>
-                    <strong>{billingCycle === 'yearly' ? '1,200' : '100'}</strong> prompt tool credits {billingCycle === 'yearly' ? 'upfront' : ''}
-                  </span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-emerald-500 font-bold">✓</span>
-                  <span className="font-bold text-neutral-900 dark:text-white">AI Search</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-emerald-500 font-bold">✓</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                    Unlimited saves & history
-                  </span>
-                </li>
-              </ul>
-            </div>
-
-            <RazorpayCheckoutButton
-              amount={billingCycle === 'monthly' ? 4900 : 49900}
-              planTier="starter"
-              billingCycle={billingCycle}
-              planName={billingCycle === 'monthly' ? 'Starter Monthly' : 'Starter Yearly'}
-              description={
-                billingCycle === 'monthly'
-                  ? 'Monthly Starter - 100 Credits, AI Search, Unlimited Saves'
-                  : 'Yearly Starter - 1200 Credits, AI Search, Unlimited Saves upfront'
-              }
-              buttonText={billingCycle === 'monthly' ? 'Get Starter for ₹49' : 'Get Starter Yearly for ₹499'}
-              variant="secondary"
-              className="w-full text-xs"
-            />
-          </div>
-
-          {/* Tier 2: Pro */}
-          <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border-2 border-[#E60023] shadow-lg flex flex-col justify-between space-y-6 relative hover:shadow-xl transition-shadow">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-[#E60023] text-white text-[10px] font-black uppercase tracking-wider">
-              {billingCycle === 'yearly' ? 'Best Annual Value' : 'Most Popular'}
+        {/* Single Annual Plan Card (₹99/year) */}
+        <div className="max-w-md mx-auto">
+          <div className="p-7 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border-2 border-[#E60023] shadow-xl flex flex-col justify-between space-y-6 relative">
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-[#E60023] text-white text-[10px] font-black uppercase tracking-wider whitespace-nowrap">
+              All-Access Annual Pass
             </div>
 
             <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-red-50 dark:bg-red-950/50 text-[#E60023] flex items-center justify-center">
-                <Zap className="w-6 h-6" />
-              </div>
-
-              <div>
-                <h3 className="text-lg font-black text-neutral-900 dark:text-white">Pro</h3>
-                <p className="text-xs text-neutral-500">
-                  {billingCycle === 'yearly' ? '3,000 Combined Credits for full year' : 'For active creators & prompt engineers'}
-                </p>
-              </div>
-
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-black text-neutral-900 dark:text-white">
-                  {billingCycle === 'monthly' ? '₹99' : '₹999'}
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-2xl bg-red-50 dark:bg-red-950/50 text-[#E60023] flex items-center justify-center">
+                  <Zap className="w-6 h-6" />
+                </div>
+                <span className="px-3 py-1 rounded-full bg-red-50 dark:bg-red-950/50 text-[#E60023] dark:text-red-400 text-[11px] font-black">
+                  365 Days Full Access
                 </span>
               </div>
 
-              <ul className="space-y-2.5 text-xs text-neutral-600 dark:text-neutral-300">
-                <li className="flex items-center gap-2">
-                  <span className="text-[#E60023] font-bold">✓</span>
-                  <span className="font-bold text-neutral-900 dark:text-white">Premium Prompts</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[#E60023] font-bold">✓</span>
-                  <span>
-                    <strong>{billingCycle === 'yearly' ? '3,000' : '250'}</strong> prompt tool credits {billingCycle === 'yearly' ? 'upfront' : ''}
+              <div>
+                <h2 className="text-xl font-black text-neutral-900 dark:text-white">Pro Yearly</h2>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  All premium benefits unlocked for 1 full year
+                </p>
+              </div>
+
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-4xl font-black text-neutral-900 dark:text-white">₹99</span>
+                <span className="text-sm font-bold text-neutral-500 dark:text-neutral-400">/ year</span>
+              </div>
+
+              <ul className="space-y-3 text-xs sm:text-sm text-neutral-600 dark:text-neutral-300 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+                <li className="flex items-center gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-[#E60023] shrink-0" />
+                  <span className="font-bold text-neutral-900 dark:text-white">
+                    Unlock all premium prompts
                   </span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[#E60023] font-bold">✓</span>
-                  <span className="font-bold text-neutral-900 dark:text-white">AI Search</span>
+                <li className="flex items-center gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-[#E60023] shrink-0" />
+                  <span>
+                    <strong className="text-neutral-900 dark:text-white">120</strong> prompt tool credits
+                  </span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-[#E60023] font-bold">✓</span>
+                <li className="flex items-center gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-[#E60023] shrink-0" />
+                  <span className="font-bold text-neutral-900 dark:text-white">
+                    AI Search (3 daily smart searches)
+                  </span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-[#E60023] shrink-0" />
                   <span className="font-bold text-[#E60023]">
                     Unlimited saves & history
                   </span>
@@ -267,91 +160,27 @@ export default function CheckoutPage() {
             </div>
 
             <RazorpayCheckoutButton
-              amount={billingCycle === 'monthly' ? 9900 : 99900}
+              amount={9900}
               planTier="pro"
-              billingCycle={billingCycle}
-              planName={billingCycle === 'monthly' ? 'Pro Monthly' : 'Pro Yearly'}
-              description={
-                billingCycle === 'monthly'
-                  ? 'Monthly Pro - 250 Credits, AI Search, Unlimited Saves'
-                  : 'Yearly Pro - 3000 Credits, AI Search, Unlimited Saves upfront'
-              }
-              buttonText={billingCycle === 'monthly' ? 'Get Pro for ₹99' : 'Get Pro Yearly for ₹999'}
+              billingCycle="yearly"
+              planName="Pro Yearly"
+              description="1 Year Pro Access • 120 Credits • All Premium Prompts • AI Search • Unlimited Saves"
+              buttonText="Get Pro Yearly for ₹99/year"
               variant="pill"
-              size="md"
-              className="w-full text-xs"
-            />
-          </div>
-
-          {/* Tier 3: VIP */}
-          <div className="p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col justify-between space-y-6 hover:shadow-md transition-shadow">
-            <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-950/50 text-purple-500 flex items-center justify-center">
-                <Crown className="w-6 h-6" />
-              </div>
-
-              <div>
-                <h3 className="text-lg font-black text-neutral-900 dark:text-white">VIP</h3>
-                <p className="text-xs text-neutral-500">
-                  {billingCycle === 'yearly' ? '7,200 Combined Credits for studios' : 'Power creators & studios'}
-                </p>
-              </div>
-
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-black text-neutral-900 dark:text-white">
-                  {billingCycle === 'monthly' ? '₹199' : '₹1,999'}
-                </span>
-              </div>
-
-              <ul className="space-y-2.5 text-xs text-neutral-600 dark:text-neutral-300">
-                <li className="flex items-center gap-2">
-                  <span className="text-purple-500 font-bold">✓</span>
-                  <span className="font-bold text-neutral-900 dark:text-white">Premium Prompts</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-purple-500 font-bold">✓</span>
-                  <span>
-                    <strong>{billingCycle === 'yearly' ? '7,200' : '600'}</strong> prompt tool credits {billingCycle === 'yearly' ? 'upfront' : ''}
-                  </span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-purple-500 font-bold">✓</span>
-                  <span className="font-bold text-neutral-900 dark:text-white">AI Search</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-purple-500 font-bold">✓</span>
-                  <span className="font-bold text-purple-600 dark:text-purple-400">
-                    Unlimited saves & history
-                  </span>
-                </li>
-              </ul>
-            </div>
-
-            <RazorpayCheckoutButton
-              amount={billingCycle === 'monthly' ? 19900 : 199900}
-              planTier="vip"
-              billingCycle={billingCycle}
-              planName={billingCycle === 'monthly' ? 'VIP Monthly' : 'VIP Yearly'}
-              description={
-                billingCycle === 'monthly'
-                  ? 'Monthly VIP - 600 Credits, AI Search, Unlimited Saves'
-                  : 'Yearly VIP - 7200 Credits, AI Search, Unlimited Saves upfront'
-              }
-              buttonText={billingCycle === 'monthly' ? 'Get VIP for ₹199' : 'Get VIP Yearly for ₹1,999'}
-              variant="secondary"
-              className="w-full text-xs"
+              size="lg"
+              className="w-full text-sm"
             />
           </div>
         </div>
 
         {/* Features Comparison Table */}
-        <div className="max-w-5xl mx-auto p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
+        <div className="max-w-3xl mx-auto p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
           <div className="text-center space-y-2 max-w-2xl mx-auto">
             <h2 className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white">
-              Compare Plan Features
+              Free vs Pro Yearly
             </h2>
             <p className="text-xs sm:text-sm text-neutral-500">
-              Find the exact subscription plan tailored to your creative workflow.
+              Everything unlocked with one simple ₹99/year membership.
             </p>
           </div>
 
@@ -361,38 +190,22 @@ export default function CheckoutPage() {
                 <tr className="border-b border-neutral-200 dark:border-neutral-800 text-neutral-400 font-bold">
                   <th className="py-3 px-4">Feature / Benefit</th>
                   <th className="py-3 px-4 text-center">Free</th>
-                  <th className="py-3 px-4 text-center">Starter</th>
-                  <th className="py-3 px-4 text-center">Pro</th>
-                  <th className="py-3 px-4 text-center">VIP</th>
+                  <th className="py-3 px-4 text-center text-[#E60023]">Pro Yearly</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800 text-neutral-700 dark:text-neutral-300">
                 <tr>
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Price</td>
                   <td className="py-3.5 px-4 text-center font-bold text-emerald-600">₹0 Free</td>
-                  <td className="py-3.5 px-4 text-center font-black text-neutral-900 dark:text-white">
-                    {billingCycle === 'monthly' ? '₹49' : '₹499'}
-                  </td>
-                  <td className="py-3.5 px-4 text-center font-black text-[#E60023]">
-                    {billingCycle === 'monthly' ? '₹99' : '₹999'}
-                  </td>
-                  <td className="py-3.5 px-4 text-center font-black text-purple-600 dark:text-purple-400">
-                    {billingCycle === 'monthly' ? '₹199' : '₹1,999'}
-                  </td>
+                  <td className="py-3.5 px-4 text-center font-black text-[#E60023]">₹99 / year</td>
                 </tr>
                 <tr>
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">
-                    {billingCycle === 'monthly' ? 'Tool Credits' : 'Total Combined Credits'}
+                    Tool Credits
                   </td>
-                  <td className="py-3.5 px-4 text-center font-medium">5 Lifetime</td>
+                  <td className="py-3.5 px-4 text-center font-medium">5 Lifetime (Signup)</td>
                   <td className="py-3.5 px-4 text-center font-bold text-neutral-900 dark:text-white">
-                    {billingCycle === 'monthly' ? '100' : '1,200 upfront'}
-                  </td>
-                  <td className="py-3.5 px-4 text-center font-bold text-neutral-900 dark:text-white">
-                    {billingCycle === 'monthly' ? '250' : '3,000 upfront'}
-                  </td>
-                  <td className="py-3.5 px-4 text-center font-bold text-neutral-900 dark:text-white">
-                    {billingCycle === 'monthly' ? '600' : '7,200 upfront'}
+                    120 Credits
                   </td>
                 </tr>
                 <tr>
@@ -400,23 +213,28 @@ export default function CheckoutPage() {
                     AI Search
                   </td>
                   <td className="py-3.5 px-4 text-center font-medium"><X className="w-4 h-4 text-red-500 inline-block" /></td>
-                  <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400"><Check className="w-4 h-4 text-emerald-500 inline-block" /></td>
-                  <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400"><Check className="w-4 h-4 text-emerald-500 inline-block" /></td>
-                  <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400"><Check className="w-4 h-4 text-emerald-500 inline-block" /></td>
+                  <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400">
+                    <Check className="w-4 h-4 text-emerald-500 inline-block mr-1" />
+                    <span>3 Daily</span>
+                  </td>
                 </tr>
                 <tr>
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Saves & History Limit</td>
                   <td className="py-3.5 px-4 text-center font-medium">10 saves</td>
                   <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400">Unlimited</td>
-                  <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400">Unlimited</td>
-                  <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400">Unlimited</td>
                 </tr>
                 <tr>
                   <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Premium Prompts</td>
                   <td className="py-3.5 px-4 text-center font-medium"><X className="w-4 h-4 text-red-500 inline-block" /></td>
-                  <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400"><Check className="w-4 h-4 text-emerald-500 inline-block" /></td>
-                  <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400"><Check className="w-4 h-4 text-emerald-500 inline-block" /></td>
-                  <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400"><Check className="w-4 h-4 text-emerald-500 inline-block" /></td>
+                  <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400">
+                    <Check className="w-4 h-4 text-emerald-500 inline-block mr-1" />
+                    <span>All Unlocked</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Validity</td>
+                  <td className="py-3.5 px-4 text-center font-medium">Free Forever</td>
+                  <td className="py-3.5 px-4 text-center font-bold text-neutral-900 dark:text-white">1 Year (365 Days)</td>
                 </tr>
               </tbody>
             </table>
@@ -424,7 +242,7 @@ export default function CheckoutPage() {
         </div>
 
         {/* FAQ Section */}
-        <div className="max-w-4xl mx-auto p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
+        <div className="max-w-3xl mx-auto p-6 sm:p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-6">
           <div className="flex items-center gap-3 border-b border-neutral-200 dark:border-neutral-800 pb-4">
             <div className="w-9 h-9 rounded-full bg-red-50 dark:bg-red-950/60 text-[#E60023] flex items-center justify-center shrink-0">
               <HelpCircle className="w-5 h-5" />
@@ -434,7 +252,7 @@ export default function CheckoutPage() {
                 Frequently Asked Questions
               </h2>
               <p className="text-xs text-neutral-500">
-                Everything you need to know about plans and subscriptions
+                Everything you need to know about the ₹99/year Pro Yearly plan
               </p>
             </div>
           </div>

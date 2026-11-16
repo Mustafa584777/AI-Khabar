@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import {
   Bookmark,
@@ -20,7 +20,6 @@ import { PWAInstallButton } from './PWAInstallButton';
 import { getEmailAvatarUrl } from '@/lib/utils';
 
 export const Header = () => {
-  const router = useRouter();
   const pathname = usePathname();
   const {
     bookmarkedIds,
@@ -43,18 +42,6 @@ export const Header = () => {
   } = useApp();
 
   const [unreadNotifs, setUnreadNotifs] = React.useState(0);
-
-  // Eagerly prefetch all 5 primary routes for instant client-cached navigation
-  React.useEffect(() => {
-    try {
-      router.prefetch('/');
-      router.prefetch('/create');
-      router.prefetch('/notifications');
-      router.prefetch('/dashboard');
-      router.prefetch('/pricing');
-      router.prefetch('/prompt-editor');
-    } catch {}
-  }, [router]);
 
   React.useEffect(() => {
     const update = () => {
@@ -156,7 +143,7 @@ export const Header = () => {
             {/* Prompt Editor Route Link */}
             <Link
               href="/prompt-editor"
-              prefetch={true}
+              prefetch={false}
               className={`hidden lg:flex px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 items-center gap-1.5 cursor-pointer ${
                 pathname === '/prompt-editor'
                   ? 'bg-[#E60023] text-white shadow-sm'
@@ -192,7 +179,7 @@ export const Header = () => {
           {/* Notifications Button (Next.js Link with prefetch) */}
           <Link
             href="/notifications"
-            prefetch={true}
+            prefetch={false}
             className={`hidden sm:flex relative items-center justify-center p-2 rounded-full transition-colors cursor-pointer ${
               pathname === '/notifications'
                 ? 'bg-[#E60023] text-white shadow-xs'
@@ -231,6 +218,7 @@ export const Header = () => {
           {/* Razorpay Pro Upgrade Button -> Navigates to /pricing */}
           <Link
             href="/pricing"
+            prefetch={false}
             className={`px-3 py-2 rounded-full text-xs font-black transition-all flex items-center gap-1.5 ${
               isProUser
                 ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
@@ -247,6 +235,7 @@ export const Header = () => {
           {userAccount?.isLoggedIn ? (
             <Link
               href="/dashboard"
+              prefetch={false}
               className={`hidden sm:flex px-3.5 py-2 rounded-full text-xs font-bold transition-colors items-center gap-1.5 ${
                 pathname === '/dashboard'
                   ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950'

@@ -402,7 +402,7 @@ export const UsersManager = () => {
             {hasFetched ? paidUsersCount : (isLoading ? '...' : '—')}
           </div>
           <span className="text-[11px] text-neutral-400">
-            Starter / Pro / VIP
+            Pro Yearly (₹99/year)
           </span>
         </div>
 
