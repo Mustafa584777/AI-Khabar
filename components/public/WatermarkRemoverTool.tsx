@@ -17,8 +17,14 @@ import {
   SlidersHorizontal,
   CornerDownRight,
   CornerDownLeft,
+  Layers,
+  Zap,
 } from 'lucide-react';
-import { removeWatermarkInpaint } from '@/lib/watermark-remover';
+import {
+  removeWatermarkInpaint,
+  type WatermarkRemovalMode,
+  type InpaintProgress,
+} from '@/lib/watermark-remover';
 import { useApp } from '@/context/AppContext';
 
 export const WatermarkRemoverTool = () => {
@@ -26,8 +32,10 @@ export const WatermarkRemoverTool = () => {
 
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
   const [hasImage, setHasImage] = useState(false);
-  const [brushSize, setBrushSize] = useState<number>(34);
+  const [brushSize, setBrushSize] = useState<number>(28);
+  const [removalMode, setRemovalMode] = useState<WatermarkRemovalMode>('hd');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [progressInfo, setProgressInfo] = useState<InpaintProgress>({ percent: 0, stage: '' });
   const [hasMaskStrokes, setHasMaskStrokes] = useState(false);
   const [hasProcessedResult, setHasProcessedResult] = useState(false);
   const [comparePosition, setComparePosition] = useState<number>(50);
@@ -305,7 +313,7 @@ export const WatermarkRemoverTool = () => {
   const handleRemoveWatermark = () => {
     const imgCanvas = imageCanvasRef.current;
     const maskCanvas = maskCanvasRef.current;
-    if (!imgCanvas || !maskCanvas || imgCanvas.width === 0) return;
+    if (!imgCanvas || !maskCanvas || imgCanvas.width === 0 || isProcessing) return;
 
     const ctx = imgCanvas.getContext('2d', { willReadFrequently: true });
     const mCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
@@ -329,14 +337,20 @@ export const WatermarkRemoverTool = () => {
     }
 
     setIsProcessing(true);
+    setProgressInfo({ percent: 5, stage: 'Preparing high-detail reconstruction...' });
 
-    // Defer 16ms so button state updates cleanly on mobile UI thread before running local canvas math
-    setTimeout(() => {
+    // Defer 16ms so UI progress state mounts cleanly before starting chunked processing
+    setTimeout(async () => {
       try {
         undoSnapshotsRef.current.push(currentImg);
         if (undoSnapshotsRef.current.length > 8) undoSnapshotsRef.current.shift();
 
-        const result = removeWatermarkInpaint(currentImg, maskImg.data);
+        const result = await removeWatermarkInpaint(currentImg, maskImg.data, {
+          mode: removalMode,
+          onProgress: (info) => {
+            setProgressInfo(info);
+          },
+        });
         ctx.putImageData(result.imageData, 0, 0);
         mCtx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
         maskHistoryRef.current = [];
@@ -347,12 +361,13 @@ export const WatermarkRemoverTool = () => {
         setLastProcessMs(result.durationMs);
         setHasMaskStrokes(false);
         setHasProcessedResult(true);
-        showToast(`Watermark removed offline in ${(result.durationMs / 1000).toFixed(2)}s!`);
+        showToast(`Watermark removed in ${(result.durationMs / 1000).toFixed(2)}s (${removalMode.toUpperCase()} Quality)!`);
       } catch (err) {
         console.error('Local inpaint error:', err);
         showToast('Could not process this selection. Try a smaller brush region.');
       } finally {
         setIsProcessing(false);
+        setProgressInfo({ percent: 0, stage: '' });
       }
     }, 16);
   };
@@ -472,7 +487,7 @@ export const WatermarkRemoverTool = () => {
               Upload Photo to Remove Watermark Locally
             </h2>
             <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400">
-              Select any Gemini photo or AI artwork from your gallery. Your image stays completely inside your device memory and is cleaned in under 1 second.
+              Select any Gemini photo or AI artwork from your gallery. Your image stays completely inside your device memory and is cleaned locally with crisp HD texture detail in seconds.
             </p>
           </div>
           <button
@@ -686,6 +701,77 @@ export const WatermarkRemoverTool = () => {
                 </div>
               </div>
 
+              {/* Reconstruction Quality Engine Selector */}
+              <div className="space-y-2.5 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+                <span className="text-xs font-bold uppercase tracking-wider text-neutral-400 block">
+                  Removal Engine
+                </span>
+                <div className="grid grid-cols-1 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setRemovalMode('hd')}
+                    className={`w-full p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      removalMode === 'hd'
+                        ? 'border-pink-500 bg-pink-50/70 dark:bg-pink-950/30 text-neutral-900 dark:text-white shadow-sm'
+                        : 'border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-800/40 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-xs font-bold">
+                      <span className="flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-pink-500" />
+                        <span>HD Texture Fill (Recommended)</span>
+                      </span>
+                      <span className="text-[10px] font-semibold text-pink-600 dark:text-pink-400">~1–3s</span>
+                    </div>
+                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                      Zero-blur PatchMatch + Seamless Detail for skin, hair, cloth & textured backgrounds.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setRemovalMode('translucent')}
+                    className={`w-full p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      removalMode === 'translucent'
+                        ? 'border-violet-500 bg-violet-50/70 dark:bg-violet-950/30 text-neutral-900 dark:text-white shadow-sm'
+                        : 'border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-800/40 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-xs font-bold">
+                      <span className="flex items-center gap-1.5">
+                        <Layers className="w-3.5 h-3.5 text-violet-500" />
+                        <span>Transparent Watermark Eraser</span>
+                      </span>
+                      <span className="text-[10px] font-semibold text-violet-600 dark:text-violet-400">~1–2s</span>
+                    </div>
+                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                      Unblends faint white logos & corner text to rescue real underlying photo detail.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setRemovalMode('fast')}
+                    className={`w-full p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      removalMode === 'fast'
+                        ? 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/30 text-neutral-900 dark:text-white shadow-sm'
+                        : 'border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-800/40 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-xs font-bold">
+                      <span className="flex items-center gap-1.5">
+                        <Zap className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>Instant Smooth Fill</span>
+                      </span>
+                      <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">&lt;0.4s</span>
+                    </div>
+                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                      Best for flat walls, plain studio backdrops, or clear skies.
+                    </p>
+                  </button>
+                </div>
+              </div>
+
               {/* Primary Inpaint Action */}
               <div className="space-y-2.5 pt-2 border-t border-neutral-100 dark:border-neutral-800">
                 <button
@@ -698,7 +784,7 @@ export const WatermarkRemoverTool = () => {
                   {isProcessing ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Removing Locally...</span>
+                      <span>Reconstructing HD... {progressInfo.percent}%</span>
                     </>
                   ) : (
                     <>
@@ -707,6 +793,20 @@ export const WatermarkRemoverTool = () => {
                     </>
                   )}
                 </button>
+
+                {isProcessing && (
+                  <div className="space-y-1.5 px-1">
+                    <div className="w-full h-2 rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-600 transition-all duration-150"
+                        style={{ width: `${Math.max(8, progressInfo.percent)}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400 text-center">
+                      {progressInfo.stage || 'Processing crisp pixels locally...'}
+                    </p>
+                  </div>
+                )}
 
                 {hasProcessedResult && (
                   <div className="space-y-2 pt-2">
