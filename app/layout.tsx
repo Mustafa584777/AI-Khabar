@@ -19,7 +19,7 @@ const poppins = Poppins({
 export const viewport: Viewport = {
   themeColor: '#0a0a0a',
   width: 'device-width',
-  initialScale: 0.7,
+  initialScale: 1,
   maximumScale: 5,
 };
 
@@ -67,22 +67,34 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AppGlobalOverlays />
         </AppProvider>
 
-        {/* Google Analytics (Strict Rule: G-Y6H3B2LY6D and G-28QHB2KNZC preserved) */}
-        <Script
-          id="gtag-base"
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=G-32DL2FJ0FQ"
-          strategy="lazyOnload"
-        />
-        <Script id="google-analytics" strategy="lazyOnload">
+        {/* Google Analytics (Strict Rule: G-Y6H3B2LY6D and G-28QHB2KNZC preserved & active across all pages; deferred after first interaction/idle for 0ms TBT) */}
+        <Script id="google-analytics" strategy="afterInteractive">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-
-            gtag('config', 'G-32DL2FJ0FQ');
             gtag('config', 'G-Y6H3B2LY6D');
             gtag('config', 'G-28QHB2KNZC');
+            gtag('config', 'G-32DL2FJ0FQ');
+
+            (function() {
+              var loaded = false;
+              function loadGtag() {
+                if (loaded) return;
+                loaded = true;
+                var s = document.createElement('script');
+                s.async = true;
+                s.src = 'https://www.googletagmanager.com/gtag/js?id=G-Y6H3B2LY6D';
+                document.head.appendChild(s);
+              }
+              var events = ['pointerdown', 'keydown', 'touchstart', 'scroll'];
+              events.forEach(function(evt) {
+                window.addEventListener(evt, loadGtag, { once: true, passive: true });
+              });
+              window.addEventListener('load', function() {
+                setTimeout(loadGtag, 6000);
+              }, { once: true });
+            })();
           `}
         </Script>
       </body>

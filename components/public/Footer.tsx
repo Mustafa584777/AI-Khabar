@@ -33,7 +33,7 @@ export const Footer = () => {
   };
 
   return (
-    <footer className="mt-20 border-t border-neutral-200/80 dark:border-neutral-800/80 bg-neutral-50 dark:bg-neutral-950 text-neutral-600 dark:text-neutral-400 text-xs pb-24 sm:pb-12">
+    <footer className="mt-20 border-t border-neutral-200/80 dark:border-neutral-800/80 bg-neutral-50 dark:bg-neutral-950 text-neutral-600 dark:text-neutral-400 text-xs pb-24 sm:pb-12 [content-visibility:auto] [contain-intrinsic-size:auto_650px]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12 sm:py-16 text-center space-y-10">
         
         {/* Brand Header */}

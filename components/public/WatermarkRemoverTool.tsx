@@ -31,11 +31,9 @@ import {
   X,
   Package,
 } from 'lucide-react';
-import JSZip from 'jszip';
-import {
-  removeWatermarkInpaint,
-  type WatermarkRemovalMode,
-  type InpaintProgress,
+import type {
+  WatermarkRemovalMode,
+  InpaintProgress,
 } from '@/lib/watermark-remover';
 import { useApp } from '@/context/AppContext';
 import { WatermarkRemoverSEO } from '@/components/public/WatermarkRemoverSEO';
@@ -511,6 +509,7 @@ export const WatermarkRemoverTool = () => {
         undoSnapshotsRef.current.push(currentImg);
         if (undoSnapshotsRef.current.length > 8) undoSnapshotsRef.current.shift();
 
+        const { removeWatermarkInpaint } = await import('@/lib/watermark-remover');
         const result = await removeWatermarkInpaint(currentImg, maskImg.data, {
           mode: removalMode,
           onProgress: (info) => {
@@ -1005,6 +1004,7 @@ export const WatermarkRemoverTool = () => {
 
               const imgData = ctx.getImageData(0, 0, w, h);
               const maskData = mCtx.getImageData(0, 0, w, h);
+              const { removeWatermarkInpaint } = await import('@/lib/watermark-remover');
               const inpainted = await removeWatermarkInpaint(imgData, maskData.data, {
                 mode: removalMode,
               });
@@ -1072,6 +1072,7 @@ export const WatermarkRemoverTool = () => {
       return;
     }
 
+    const { default: JSZip } = await import('jszip');
     const zip = new JSZip();
     doneItems.forEach((item, idx) => {
       if (!item.cleanedUrl) return;

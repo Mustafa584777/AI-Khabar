@@ -102,6 +102,8 @@ const nextConfig: NextConfig = {
   },
   transpilePackages: ['motion'],
   experimental: {
+    inlineCss: true,
+    optimizePackageImports: ['lucide-react', 'motion'],
     staleTimes: {
       dynamic: 0,
       static: 300,

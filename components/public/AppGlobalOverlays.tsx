@@ -3,11 +3,11 @@
 import React, { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useApp } from '@/context/AppContext';
-import { ToastNotification } from './ToastNotification';
 import { PageLoadingOverlay } from './PageLoadingOverlay';
 import { OfflineIndicator } from './OfflineIndicator';
 import { NetlifyBadgeRemover } from './NetlifyBadgeRemover';
 
+const ToastNotification = dynamic(() => import('./ToastNotification').then((m) => m.ToastNotification), { ssr: false });
 const PromptDetailModal = dynamic(() => import('./PromptDetailModal').then((m) => m.PromptDetailModal), { ssr: false });
 const BookmarksDrawer = dynamic(() => import('./BookmarksDrawer').then((m) => m.BookmarksDrawer), { ssr: false });
 const SearchExploreModal = dynamic(() => import('./SearchExploreModal').then((m) => m.SearchExploreModal), { ssr: false });
@@ -30,13 +30,14 @@ export const AppGlobalOverlays = () => {
     isUnlockPremiumModalOpen,
     isProCheckoutModalOpen,
     showLoginModal,
+    toastMessage,
   } = useApp();
 
-  // Register 7-day SW caching and warm interactive overlay chunks lazily after first paint (0ms TBT)
+  // Register 7-day SW caching lazily after window load (0ms TBT, zero eager Firebase/modal chunk downloads)
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const initBackground = async () => {
+    const registerSw = async () => {
       if ('serviceWorker' in navigator && (window.isSecureContext || window.location.hostname === 'localhost')) {
         try {
           const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
@@ -45,26 +46,12 @@ export const AppGlobalOverlays = () => {
           }
         } catch {}
       }
-
-      // Pre-warm commonly clicked overlay chunks after idle so Saved / Search / Card / SignIn respond in 0ms
-      const warmOverlays = () => {
-        void import('./BookmarksDrawer');
-        void import('./SearchExploreModal');
-        void import('./PromptDetailModal');
-        void import('./UserAuthModal');
-      };
-
-      if (typeof (window as any).requestIdleCallback === 'function') {
-        (window as any).requestIdleCallback(warmOverlays, { timeout: 3000 });
-      } else {
-        setTimeout(warmOverlays, 2500);
-      }
     };
 
     if (document.readyState === 'complete') {
-      void initBackground();
+      void registerSw();
     } else {
-      const handler = () => void initBackground();
+      const handler = () => void registerSw();
       window.addEventListener('load', handler, { once: true });
       return () => window.removeEventListener('load', handler);
     }
@@ -81,7 +68,7 @@ export const AppGlobalOverlays = () => {
       {isUnlockPremiumModalOpen && <UnlockPremiumModal />}
       {isProCheckoutModalOpen && <RazorpayCheckoutModal />}
       {showLoginModal && <AdminLoginModal />}
-      <ToastNotification />
+      {toastMessage && <ToastNotification />}
       <PageLoadingOverlay />
       <OfflineIndicator />
       <NetlifyBadgeRemover />

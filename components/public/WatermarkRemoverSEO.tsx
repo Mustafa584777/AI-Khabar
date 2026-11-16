@@ -118,7 +118,7 @@ export const WatermarkRemoverSEO: React.FC = () => {
   return (
     <section
       aria-label="About Free Gemini Watermark Remover Online"
-      className="mt-12 pt-10 border-t border-neutral-200 dark:border-neutral-800 space-y-12"
+      className="mt-12 pt-10 border-t border-neutral-200 dark:border-neutral-800 space-y-12 [content-visibility:auto] [contain-intrinsic-size:auto_1200px]"
     >
       {/* Editorial Overview & Key Capabilities */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
