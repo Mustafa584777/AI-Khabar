@@ -103,8 +103,8 @@ const nextConfig: NextConfig = {
   transpilePackages: ['motion'],
   experimental: {
     staleTimes: {
-      dynamic: 300,
-      static: 604800,
+      dynamic: 0,
+      static: 300,
     },
   },
   async headers() {
@@ -132,7 +132,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=604800, stale-while-revalidate=2592000',
+            value: 'public, max-age=3600, stale-while-revalidate=86400',
           },
         ],
       },
@@ -141,7 +141,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=604800, s-maxage=604800, stale-while-revalidate=604800',
+            value: 'public, max-age=0, must-revalidate, s-maxage=60, stale-while-revalidate=300',
           },
         ],
       },
@@ -150,7 +150,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=604800, s-maxage=604800, stale-while-revalidate=604800',
+            value: 'public, max-age=0, must-revalidate, s-maxage=60, stale-while-revalidate=300',
           },
         ],
       },

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import {
   Globe,
@@ -16,8 +17,10 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { getEmailAvatarUrl } from '@/lib/utils';
+import { StorageService } from '@/lib/storage';
 
 export const AdminHeader = ({ onToggleSidebar }: { onToggleSidebar?: () => void }) => {
+  const router = useRouter();
   const {
     setCurrentView,
     setAdminSubView,
@@ -26,6 +29,7 @@ export const AdminHeader = ({ onToggleSidebar }: { onToggleSidebar?: () => void 
     currentUser,
     settings,
     showToast,
+    refreshData,
   } = useApp();
 
   const [isClearingCache, setIsClearingCache] = useState(false);
@@ -33,26 +37,53 @@ export const AdminHeader = ({ onToggleSidebar }: { onToggleSidebar?: () => void 
   const handleClearCache = async () => {
     setIsClearingCache(true);
     try {
-      // 1. Call server-side cache clearing & revalidation
-      const res = await fetch('/api/admin/clear-cache', {
+      // 1. Server-side ISR revalidation across all URLs + ServerStorage reset + CDN purge
+      const res = await fetch(`/api/admin/clear-cache?t=${Date.now()}`, {
         method: 'POST',
+        cache: 'no-store',
       });
 
-      // 2. Clear browser cache storage safely (preserve localStorage auth & credits)
-      if ('caches' in window) {
-        try {
-          const cacheKeys = await window.caches.keys();
-          await Promise.all(cacheKeys.map((key) => window.caches.delete(key)));
-        } catch (e) {
-          console.warn('Browser cache purge notice:', e);
+      // 2. Purge stale localStorage content caches (preserves auth, Pro plan, credits & bookmarks)
+      StorageService.clearContentCache();
+
+      // 3. Purge ALL CacheStorage entries and Service Worker caches
+      if (typeof window !== 'undefined') {
+        if ('caches' in window) {
+          try {
+            const cacheKeys = await window.caches.keys();
+            await Promise.all(cacheKeys.map((key) => window.caches.delete(key)));
+          } catch (e) {
+            console.warn('Browser cache purge notice:', e);
+          }
         }
+
+        if ('serviceWorker' in navigator) {
+          try {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            for (const reg of regs) {
+              reg.active?.postMessage({ type: 'PURGE_ALL_CACHES' });
+              await reg.update().catch(() => {});
+            }
+          } catch {}
+        }
+
+        // 4. Bypass browser HTTP disk cache for core routes so latest build/data loads immediately
+        await Promise.allSettled([
+          fetch('/', { cache: 'reload' }),
+          fetch('/free-gemini-watermark-remover-online', { cache: 'reload' }),
+          fetch('/api/categories', { cache: 'reload' }),
+          fetch('/api/settings', { cache: 'reload' }),
+        ]);
       }
+
+      refreshData();
+      router.refresh();
 
       if (res.ok) {
         const data = await res.json();
-        showToast(data.message || 'System cache, routes, and browser cache cleared successfully!');
+        showToast(data.message || 'All URL caches, ISR routes, and browser cache purged successfully!');
       } else {
-        showToast('Route cache revalidated. Browser cache cleared.');
+        showToast('Route cache revalidated & browser cache cleared.');
       }
     } catch (err: any) {
       console.error('Clear cache error:', err);

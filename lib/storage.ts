@@ -99,6 +99,19 @@ export const StorageService = {
       }
     }
   },
+
+  clearContentCache: (): void => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(STORAGE_KEY_CACHED_POSTS);
+        localStorage.removeItem(STORAGE_KEY_CACHED_CATEGORIES);
+        localStorage.removeItem(STORAGE_KEY_CACHED_TAGS);
+        localStorage.removeItem(STORAGE_KEY_CACHED_SETTINGS);
+      } catch (e) {
+        console.warn('Error clearing content localStorage cache:', e);
+      }
+    }
+  },
   // Bookmarks (Client local user preference)
   getBookmarkedIds: (): string[] => {
     if (typeof window !== 'undefined') {

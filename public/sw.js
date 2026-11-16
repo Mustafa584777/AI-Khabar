@@ -1,5 +1,5 @@
-// Service Worker: 7-Day Ultra-Fast Page, Prompt & Asset Caching + Push Notifications
-const CACHE_VERSION = '7d-v1';
+// Service Worker: Fresh-First Page/API + Fast Static Asset Caching + Push Notifications
+const CACHE_VERSION = 'v2';
 const PAGES_CACHE = `zeena-pages-${CACHE_VERSION}`;
 const ASSETS_CACHE = `zeena-assets-${CACHE_VERSION}`;
 const API_CACHE = `zeena-api-${CACHE_VERSION}`;
@@ -117,6 +117,22 @@ async function cacheFirst7Days(cacheName, cacheKey, fetchRequest, validateRespon
   }
 }
 
+async function networkFirstWithFallback(cacheName, cacheKey, fetchRequest, validateResponse) {
+  const cache = await caches.open(cacheName);
+  try {
+    const networkResponse = await fetch(fetchRequest, { cache: 'no-cache' });
+    if (networkResponse && networkResponse.status === 200 && (!validateResponse || validateResponse(networkResponse))) {
+      const stamped = await cloneWithTimestamp(networkResponse);
+      await cache.put(cacheKey, stamped);
+    }
+    return networkResponse;
+  } catch (err) {
+    const cached = await cache.match(cacheKey);
+    if (cached) return cached;
+    throw err;
+  }
+}
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
@@ -131,7 +147,7 @@ self.addEventListener('fetch', (event) => {
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
   if (isExcluded(url)) return;
 
-  // 1. Static JS, CSS, Fonts, Images & Next Image Optimizer (7-day Cache-First)
+  // 1. Static JS, CSS, Fonts & Images (Cache-First for immutable hashed assets & images)
   if (isStaticAsset(url)) {
     event.respondWith(
       cacheFirst7Days(ASSETS_CACHE, request.url, request, (res) => res.type === 'basic' || res.type === 'cors')
@@ -139,11 +155,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Public Read APIs (7-day Cache-First)
+  // 2. Public Read APIs (Network-First so cleared/updated data always reflects immediately, cache fallback offline)
   if (url.pathname.startsWith('/api/')) {
     if (!isPublicApi(url)) return;
     event.respondWith(
-      cacheFirst7Days(API_CACHE, request.url, request, (res) => {
+      networkFirstWithFallback(API_CACHE, request.url, request, (res) => {
         const ct = (res.headers.get('content-type') || '').toLowerCase();
         return ct.includes('application/json');
       })
@@ -151,7 +167,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. Public Pages & Prompt Pages (HTML vs Next.js RSC payload strictly separated)
+  // 3. Public Pages & Prompt Pages (Network-First so visitors always get latest version)
   const isRsc =
     request.headers.get('RSC') === '1' ||
     request.headers.get('Next-Router-Prefetch') === '1' ||
@@ -162,9 +178,9 @@ self.addEventListener('fetch', (event) => {
 
   if (isRsc) {
     const rscToken = url.searchParams.get('_rsc') || '1';
-    const rscCacheKey = `${url.origin}${url.pathname}?__sw=rsc&v=${encodeURIComponent(rscToken)}`;
+    const rscCacheKey = `${url.origin}${url.pathname}${url.search ? '&q=' + encodeURIComponent(url.search) : ''}?__sw=rsc&v=${encodeURIComponent(rscToken)}`;
     event.respondWith(
-      cacheFirst7Days(PAGES_CACHE, rscCacheKey, request, (res) => {
+      networkFirstWithFallback(PAGES_CACHE, rscCacheKey, request, (res) => {
         const ct = (res.headers.get('content-type') || '').toLowerCase();
         return !ct.includes('text/html');
       })
@@ -172,9 +188,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  const htmlCacheKey = `${url.origin}${url.pathname}?__sw=html`;
+  const htmlCacheKey = `${url.origin}${url.pathname}${url.search ? '&q=' + encodeURIComponent(url.search) : ''}?__sw=html`;
   event.respondWith(
-    cacheFirst7Days(PAGES_CACHE, htmlCacheKey, request, (res) => {
+    networkFirstWithFallback(PAGES_CACHE, htmlCacheKey, request, (res) => {
       const ct = (res.headers.get('content-type') || '').toLowerCase();
       return ct.includes('text/html');
     })
@@ -215,6 +231,13 @@ self.addEventListener('push', (event) => {
 
 // Handle direct trigger message from client page
 self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'PURGE_ALL_CACHES') {
+    event.waitUntil(
+      caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+    );
+    return;
+  }
+
   if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
     const data = event.data.payload || {};
     const title = data.title || 'tool.reelz: Trending Photo Prompts';

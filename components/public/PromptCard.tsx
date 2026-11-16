@@ -9,7 +9,15 @@ import { Sparkles, Bookmark, Crown, ChevronLeft, ChevronRight, ChevronUp, Chevro
 import { getPromptSlug, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription } from '@/lib/utils';
 import { startRouteNavigation } from '@/lib/navigation';
 
-export const PromptCard = ({ post, priority = false }: { post: PromptPost; priority?: boolean }) => {
+export const PromptCard = ({
+  post,
+  priority = false,
+  onAspectRatioResolved,
+}: {
+  post: PromptPost;
+  priority?: boolean;
+  onAspectRatioResolved?: (postId: string, heightOverWidth: number) => void;
+}) => {
   const {
     setSelectedPost,
     toggleBookmark,
@@ -24,8 +32,10 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
 
   const router = useRouter();
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [resolvedAspectRatio, setResolvedAspectRatio] = useState<string | null>(null);
   const [inView, setInView] = useState(() => priority || typeof window === 'undefined' || !('IntersectionObserver' in window));
   const cardRef = useRef<HTMLElement>(null);
+  const primaryImgRef = useRef<HTMLImageElement | null>(null);
 
   // All images for this card (Main image + additionalImages)
   const allImages = React.useMemo(() => {
@@ -110,8 +120,29 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
   const isUnlocked = isPromptUnlocked(post.id, post.isPremium);
   const promptSlug = getPromptSlug(post);
   const detectedRatio = detectPostAspectRatio(post);
+  const effectiveAspectRatio = resolvedAspectRatio || detectedRatio;
   const currentImg = isMultiple ? (allImages[activeImageIndex] || post.imageUrl) : post.imageUrl;
   const optimizedImgUrl = getOptimizedImageUrl(currentImg, 600);
+
+  const syncNaturalRatio = React.useCallback(
+    (img: HTMLImageElement | null) => {
+      if (!img || !img.naturalWidth || !img.naturalHeight) return;
+      const ratioStr = `${img.naturalWidth} / ${img.naturalHeight}`;
+      setResolvedAspectRatio((prev) => (prev === ratioStr ? prev : ratioStr));
+      setImageLoaded(true);
+      onAspectRatioResolved?.(post.id, img.naturalHeight / img.naturalWidth);
+    },
+    [post.id, onAspectRatioResolved]
+  );
+
+  // Resolve cached images that already finished loading before hydration
+  useEffect(() => {
+    if (!inView) return;
+    const img = primaryImgRef.current;
+    if (img && img.complete && img.naturalWidth > 0) {
+      syncNaturalRatio(img);
+    }
+  }, [inView, syncNaturalRatio]);
 
   // Viewport IntersectionObserver: strictly loads images only when entering or near viewport
   useEffect(() => {
@@ -199,7 +230,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
       <a
         href={`/${promptSlug}`}
         onClick={handleCardClick}
-        style={{ aspectRatio: detectedRatio }}
+        style={{ aspectRatio: effectiveAspectRatio }}
         aria-label={`${post.title} - ${post.category} AI Photo Prompt`}
         className="block relative w-full overflow-hidden bg-neutral-100 dark:bg-neutral-800 focus:outline-none"
         onContextMenu={(e) => e.preventDefault()}
@@ -232,9 +263,11 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
               const img280 = getOptimizedImageUrl(imgUrl, 280);
               const img520 = getOptimizedImageUrl(imgUrl, 520);
               const hasOptimized = img360 !== imgUrl;
+              const isLeadImage = imgUrl === allImages[0];
               return (
                 <div key={idx} className="w-full h-full shrink-0 relative overflow-hidden bg-neutral-900">
                   <img
+                    ref={isLeadImage ? primaryImgRef : undefined}
                     src={img360}
                     srcSet={hasOptimized ? `${img280} 280w, ${img360} 360w, ${img520} 520w` : undefined}
                     sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 240px"
@@ -242,11 +275,10 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
                     draggable={false}
                     className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
                     referrerPolicy="no-referrer"
-                    loading={priority && idx === 0 ? 'eager' : 'lazy'}
-                    fetchPriority={priority && idx === 0 ? 'high' : 'auto'}
+                    loading={priority && isLeadImage ? 'eager' : 'lazy'}
+                    fetchPriority={priority && isLeadImage ? 'high' : 'auto'}
                     decoding="async"
-                    width={360}
-                    height={480}
+                    onLoad={isLeadImage ? (e) => syncNaturalRatio(e.currentTarget) : undefined}
                   />
                 </div>
               );
@@ -260,6 +292,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
             const hasOptimized = img360 !== post.imageUrl;
             return (
               <img
+                ref={primaryImgRef}
                 src={img360}
                 srcSet={hasOptimized ? `${img280} 280w, ${img360} 360w, ${img520} 520w` : undefined}
                 sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 240px"
@@ -270,8 +303,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
                 loading={priority ? 'eager' : 'lazy'}
                 fetchPriority={priority ? 'high' : 'auto'}
                 decoding="async"
-                width={360}
-                height={480}
+                onLoad={(e) => syncNaturalRatio(e.currentTarget)}
               />
             );
           })()

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { PromptCard } from './PromptCard';
@@ -8,7 +8,7 @@ import { PromptGridSkeleton } from './PromptCardSkeleton';
 import { SearchX, Filter, Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { PromptPost } from '@/types/prompt';
 import { PersonalizationEngine } from '@/lib/personalization';
-import { getPromptSlug } from '@/lib/utils';
+import { getPromptSlug, detectPostAspectRatio } from '@/lib/utils';
 
 const INITIAL_BATCH_SIZE = 10;
 const SCROLL_BATCH_SIZE = 20;
@@ -43,7 +43,43 @@ export const PromptGrid = () => {
   const currentFilterKey = `${searchQuery}_${selectedCategory}_${selectedTool}_${selectedSort}_${tasteProfile.genderVibe}`;
   const [displayedCount, setDisplayedCount] = useState<number>(INITIAL_BATCH_SIZE);
   const [prevFilterKey, setPrevFilterKey] = useState<string>(currentFilterKey);
+  const [columnCount, setColumnCount] = useState<number>(2);
+  const [measuredRatios, setMeasuredRatios] = useState<Record<string, number>>({});
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
+
+  // Sync column count strictly to CSS viewport breakpoints (2 / 3 / 4 / 5 columns)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mqXl = window.matchMedia('(min-width: 1280px)');
+    const mqLg = window.matchMedia('(min-width: 1024px)');
+    const mqSm = window.matchMedia('(min-width: 640px)');
+
+    const updateCols = () => {
+      if (mqXl.matches) setColumnCount(5);
+      else if (mqLg.matches) setColumnCount(4);
+      else if (mqSm.matches) setColumnCount(3);
+      else setColumnCount(2);
+    };
+
+    updateCols();
+    mqXl.addEventListener('change', updateCols);
+    mqLg.addEventListener('change', updateCols);
+    mqSm.addEventListener('change', updateCols);
+    return () => {
+      mqXl.removeEventListener('change', updateCols);
+      mqLg.removeEventListener('change', updateCols);
+      mqSm.removeEventListener('change', updateCols);
+    };
+  }, []);
+
+  const handleAspectRatioResolved = useCallback((postId: string, heightOverWidth: number) => {
+    if (!postId || !isFinite(heightOverWidth) || heightOverWidth <= 0) return;
+    setMeasuredRatios((prev) => {
+      const existing = prev[postId];
+      if (existing && Math.abs(existing - heightOverWidth) < 0.01) return prev;
+      return { ...prev, [postId]: heightOverWidth };
+    });
+  }, []);
 
   // Reset pagination if filter key changed during render
   if (currentFilterKey !== prevFilterKey) {
@@ -227,17 +263,40 @@ export const PromptGrid = () => {
   const visiblePosts = filteredPosts.slice(0, displayedCount);
   const hasMore = displayedCount < filteredPosts.length;
 
-  // Segmented masonry batches: pure CSS multi-column layout matches mobile (2 cols) on SSR byte 1
-  // and keeps earlier batches completely immovable when infinite scroll appends new batches below (CLS = 0)
-  const masonryBatches = useMemo(() => {
-    const batches: PromptPost[][] = [];
-    if (visiblePosts.length === 0) return batches;
-    batches.push(visiblePosts.slice(0, INITIAL_BATCH_SIZE));
-    for (let i = INITIAL_BATCH_SIZE; i < visiblePosts.length; i += SCROLL_BATCH_SIZE) {
-      batches.push(visiblePosts.slice(i, i + SCROLL_BATCH_SIZE));
-    }
-    return batches;
-  }, [visiblePosts]);
+  // Continuous shortest-column greedy masonry eliminates all empty gaps at batch boundaries or mixed ratios
+  const masonryColumns = useMemo(() => {
+    const cols: { post: PromptPost; globalIndex: number }[][] = Array.from(
+      { length: columnCount },
+      () => []
+    );
+    const colHeights = new Array<number>(columnCount).fill(0);
+
+    visiblePosts.forEach((post, globalIndex) => {
+      let shortestCol = 0;
+      for (let c = 1; c < columnCount; c++) {
+        if (colHeights[c] < colHeights[shortestCol]) {
+          shortestCol = c;
+        }
+      }
+
+      cols[shortestCol].push({ post, globalIndex });
+
+      // Estimate normalized height (height / width) + uniform card spacing factor
+      let heightFactor = measuredRatios[post.id];
+      if (!heightFactor) {
+        const ratioStr = detectPostAspectRatio(post);
+        const parts = ratioStr.split('/').map((n) => Number(n.trim()));
+        if (parts.length === 2 && parts[0] > 0 && parts[1] > 0) {
+          heightFactor = parts[1] / parts[0];
+        } else {
+          heightFactor = 4 / 3;
+        }
+      }
+      colHeights[shortestCol] += Math.min(Math.max(heightFactor, 0.4), 2.5) + 0.08;
+    });
+
+    return cols;
+  }, [visiblePosts, columnCount, measuredRatios]);
 
   const totalPublishedCount = useMemo(() => {
     return posts.filter((p) => p.status === 'published').length;
@@ -333,17 +392,15 @@ export const PromptGrid = () => {
         <PromptGridSkeleton />
       ) : filteredPosts.length > 0 ? (
         <>
-          <div className="space-y-3 sm:space-y-4 w-full" id="vertical-masonry-feed">
-            {masonryBatches.map((batch, batchIdx) => (
-              <div
-                key={batchIdx}
-                className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-3 sm:gap-4 w-full"
-              >
-                {batch.map((post, postIdx) => (
-                  <div key={post.id} className="break-inside-avoid mb-3 sm:mb-4">
+          <div className="flex items-start gap-3 sm:gap-4 w-full" id="vertical-masonry-feed">
+            {masonryColumns.map((colItems, colIdx) => (
+              <div key={colIdx} className="flex-1 min-w-0 flex flex-col gap-3 sm:gap-4">
+                {colItems.map(({ post, globalIndex }) => (
+                  <div key={post.id} className="w-full">
                     <PromptCard
                       post={post}
-                      priority={batchIdx === 0 && postIdx < 2}
+                      priority={globalIndex < 4}
+                      onAspectRatioResolved={handleAspectRatioResolved}
                     />
                   </div>
                 ))}

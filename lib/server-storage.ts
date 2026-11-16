@@ -145,6 +145,16 @@ let memoryTags: string[] | null = null;
 let memorySearchQueries: SearchQueryItem[] | null = null;
 
 export const ServerStorage = {
+  clearMemoryCache: (): void => {
+    memoryPosts = null;
+    memoryPostsTimestamp = 0;
+    memoryCategories = null;
+    memorySettings = null;
+    memoryTags = null;
+    memorySearchQueries = null;
+    memoryDeletedIds = null;
+  },
+
   deduplicatePosts: (posts: PromptPost[]): PromptPost[] => {
     const deletedIds = getDeletedPostIds();
     const map = new Map<string, PromptPost>();
