@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
+import { startRouteNavigation } from '@/lib/navigation';
 
 export const Footer = () => {
   const router = useRouter();
@@ -25,7 +26,9 @@ export const Footer = () => {
         window.scrollTo({ top: 380, behavior: 'smooth' });
       }
     } else {
-      router.push(`/?category=${encodeURIComponent(catName)}`);
+      const targetUrl = `/?category=${encodeURIComponent(catName)}`;
+      startRouteNavigation(targetUrl, `Loading ${catName} Prompts...`);
+      router.push(targetUrl);
     }
   };
 

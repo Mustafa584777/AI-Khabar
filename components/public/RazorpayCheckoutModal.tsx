@@ -14,6 +14,7 @@ import {
 import { triggerConfetti } from '@/lib/confetti';
 import { useApp } from '@/context/AppContext';
 import { startRazorpayCheckout } from '@/lib/razorpay';
+import { startRouteNavigation } from '@/lib/navigation';
 
 const SINGLE_YEARLY_PLAN = {
   id: 'pro' as const,
@@ -131,6 +132,7 @@ export const RazorpayCheckoutModal: React.FC = () => {
 
           setTimeout(() => {
             setIsProCheckoutModalOpen(false);
+            startRouteNavigation('/dashboard', 'Loading Creator Dashboard...');
             router.push('/dashboard');
           }, 800);
         },

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { formatPromptForClipboard } from '@/lib/utils';
+import { startRouteNavigation } from '@/lib/navigation';
 
 export const PromptEditorTool = () => {
   const router = useRouter();
@@ -139,6 +140,7 @@ export const PromptEditorTool = () => {
       sessionStorage.setItem('promptcms_studio_image_preload', promptToUse);
       sessionStorage.setItem('auraprompt_studio_preload', promptToUse);
     }
+    startRouteNavigation('/create', 'Opening AI Studio...');
     router.push('/create');
   };
 

@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { PushNotificationItem } from '@/types/notification';
 import { NotificationService } from '@/lib/notifications';
 import { getOptimizedImageUrl } from '@/lib/utils';
+import { startRouteNavigation } from '@/lib/navigation';
 import { Bell, ChevronUp, ChevronDown, ExternalLink, Sparkles, Check, ArrowRight } from 'lucide-react';
 
 interface PinterestNotificationCardProps {
@@ -39,6 +40,7 @@ export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps>
       } catch {}
     }
     if (notification.url) {
+      startRouteNavigation(notification.url);
       router.push(notification.url);
     }
   };
@@ -53,6 +55,7 @@ export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps>
         sessionStorage.setItem('auraprompt_active_slider_index', '0');
       } catch {}
     }
+    startRouteNavigation(url);
     router.push(url);
   };
 
@@ -168,7 +171,10 @@ export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps>
                         sessionStorage.setItem('auraprompt_active_slider_index', String(idx));
                       } catch {}
                     }
-                    if (notification.url) router.push(notification.url);
+                    if (notification.url) {
+                      startRouteNavigation(notification.url);
+                      router.push(notification.url);
+                    }
                   }}
                   className="relative w-full h-full bg-neutral-100 dark:bg-neutral-800 rounded-xl sm:rounded-2xl overflow-hidden group/img shadow-xs cursor-pointer hover:ring-2 hover:ring-[#E60023] transition-all"
                   title={`View image ${idx + 1}`}

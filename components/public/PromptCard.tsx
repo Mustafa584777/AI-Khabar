@@ -7,6 +7,7 @@ import { useApp } from '@/context/AppContext';
 import Image from 'next/image';
 import { Sparkles, Bookmark, Crown, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Layers, Copy } from 'lucide-react';
 import { getPromptSlug, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription } from '@/lib/utils';
+import { startRouteNavigation } from '@/lib/navigation';
 
 export const PromptCard = ({ post, priority = false }: { post: PromptPost; priority?: boolean }) => {
   const {
@@ -177,6 +178,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
       }
       sessionStorage.setItem('promptcms_studio_tab', 'reverse');
     }
+    startRouteNavigation('/create', 'Opening Image-to-Prompt Studio...');
     router.push('/create');
     showToast('Loaded prompt image into Image-to-Prompt tool!');
   };
@@ -288,6 +290,7 @@ export const PromptCard = ({ post, priority = false }: { post: PromptPost; prior
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
+                  startRouteNavigation('/pricing', 'Loading Pro Plans...');
                   router.push('/pricing');
                 }}
                 className="flex items-center justify-center gap-1.5 w-full max-w-[225px] py-2 px-3 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-[11px] leading-tight shadow-lg transition-transform hover:scale-105 active:scale-95"

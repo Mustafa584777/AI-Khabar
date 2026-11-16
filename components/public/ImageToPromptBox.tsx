@@ -6,6 +6,7 @@ import { useApp } from '@/context/AppContext';
 import { UploadCloud, Wand2, Sparkles, X, Image as ImageIcon, Camera, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { getOptimizedImageUrl } from '@/lib/utils';
+import { startRouteNavigation } from '@/lib/navigation';
 
 const SAMPLE_TEST_IMAGES = [
   {
@@ -119,6 +120,7 @@ export const ImageToPromptBox = () => {
 
     // If user is already logged in, redirect directly to image to prompt studio
     showToast('Redirecting to Image to Prompt Studio...');
+    startRouteNavigation('/create', 'Opening Image-to-Prompt Studio...');
     router.push('/create');
   };
 

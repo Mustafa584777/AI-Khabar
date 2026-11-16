@@ -12,6 +12,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { RazorpayCheckoutButton } from './RazorpayCheckoutButton';
+import { startRouteNavigation } from '@/lib/navigation';
 
 export const UnlockPremiumModal: React.FC = () => {
   const router = useRouter();
@@ -27,6 +28,7 @@ export const UnlockPremiumModal: React.FC = () => {
 
   const handleGoToPricing = () => {
     setIsUnlockPremiumModalOpen(false);
+    startRouteNavigation('/pricing', 'Loading Pro Plans...');
     router.push('/pricing');
   };
 
@@ -42,6 +44,7 @@ export const UnlockPremiumModal: React.FC = () => {
     }
     showToast(congratsMsg);
     setTimeout(() => {
+      startRouteNavigation('/dashboard', 'Loading Creator Dashboard...');
       router.push('/dashboard');
     }, 400);
   };

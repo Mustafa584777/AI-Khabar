@@ -6,6 +6,7 @@ import { CreditCard, Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
 import { triggerConfetti } from '@/lib/confetti';
 import { startRazorpayCheckout } from '@/lib/razorpay';
 import { useApp } from '@/context/AppContext';
+import { startRouteNavigation } from '@/lib/navigation';
 
 export interface RazorpayCheckoutButtonProps {
   amount?: number; // in paise (e.g. 100 = ₹1.00, 19900 = ₹199.00)
@@ -125,6 +126,7 @@ export const RazorpayCheckoutButton: React.FC<RazorpayCheckoutButtonProps> = ({
 
           // Automatically redirect user to creator dashboard with congratulations message
           setTimeout(() => {
+            startRouteNavigation('/dashboard', 'Loading Creator Dashboard...');
             router.push('/dashboard');
           }, 600);
 

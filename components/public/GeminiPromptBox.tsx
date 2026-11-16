@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { Wand2 } from 'lucide-react';
+import { startRouteNavigation } from '@/lib/navigation';
 
 export const GeminiPromptBox = () => {
   const router = useRouter();
@@ -36,6 +37,7 @@ export const GeminiPromptBox = () => {
     }
 
     showToast('Redirecting to Create Studio...');
+    startRouteNavigation('/create', 'Opening AI Studio...');
     router.push('/create');
   };
 

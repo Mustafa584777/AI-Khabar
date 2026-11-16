@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { startRouteNavigation } from '@/lib/navigation';
 import { PersonalizationEngine } from '@/lib/personalization';
 import { getPromptSlug, slugify, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription, formatPromptForClipboard } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
@@ -388,6 +389,7 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
       if (!isDirectRoute && window.history.state?.postId) {
         window.history.pushState(null, '', '/');
       } else {
+        startRouteNavigation('/', 'Loading Prompts...');
         router.push('/');
       }
     }
@@ -686,6 +688,7 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
 
   const handleUpgradeToPremium = () => {
     setSelectedPost(null);
+    startRouteNavigation('/pricing', 'Loading Pro Plans...');
     router.push('/pricing');
   };
 
@@ -705,6 +708,7 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
       sessionStorage.setItem('promptcms_studio_tab', 'editor');
     }
     setSelectedPost(null);
+    startRouteNavigation('/create', 'Opening AI Prompt Editor...');
     router.push('/create');
     showToast('Prompt loaded into Prompt Editor!');
   };
@@ -715,6 +719,7 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
       sessionStorage.setItem('promptcms_studio_tab', 'generator');
     }
     setSelectedPost(null);
+    startRouteNavigation('/create', 'Opening Prompt Generator...');
     router.push('/create');
     showToast('Prompt loaded into Prompt Generator!');
   };
@@ -784,6 +789,7 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
       }
     }
     setSelectedPost(null);
+    startRouteNavigation('/create', 'Opening Image-to-Prompt Studio...');
     router.push('/create');
     showToast('Loaded into Image-to-Prompt (Decode) Studio!');
   };
@@ -1362,7 +1368,6 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
 
                   <Link
                     href="/free-gemini-watermark-remover-online"
-                    prefetch={false}
                     onClick={() => setSelectedPost(null)}
                     className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-600 hover:from-pink-600 hover:via-fuchsia-600 hover:to-violet-700 text-white font-bold text-xs sm:text-sm text-center flex items-center justify-center gap-2 shadow-md transition-transform active:scale-[0.99]"
                   >
@@ -1435,6 +1440,7 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                       }
                     }
                     setSelectedPost(null);
+                    startRouteNavigation('/create', 'Opening AI Studio...');
                     router.push('/create');
                     showToast('Loaded prompt into Create Studio!');
                   }}

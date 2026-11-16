@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { auth } from '@/lib/firebase';
+import { startRouteNavigation } from '@/lib/navigation';
 import { 
   GoogleAuthProvider, 
   signInWithPopup,
@@ -119,6 +120,7 @@ export const UserAuthModal = () => {
       const hasPreload = sessionStorage.getItem('promptcms_studio_preload') || sessionStorage.getItem('auraprompt_studio_preload');
       const hasImagePreload = sessionStorage.getItem('promptcms_studio_image_preload') || sessionStorage.getItem('auraprompt_studio_image_preload');
       if (hasPreload || hasImagePreload) {
+        startRouteNavigation('/create', 'Opening AI Studio...');
         router.push('/create');
         return true;
       }

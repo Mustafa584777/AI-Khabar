@@ -5,6 +5,7 @@ import { useApp } from '@/context/AppContext';
 import { PromptPost, AIHistoryItem, PlanTier } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
 import { getPromptSlug, getOptimizedImageUrl, getEmailAvatarUrl, formatPromptForClipboard } from '@/lib/utils';
+import { startRouteNavigation } from '@/lib/navigation';
 import {
   User,
   Bookmark,
@@ -275,7 +276,10 @@ export const UserDashboard = () => {
               Sign In / Create Free Account
             </button>
             <button
-              onClick={() => router.push('/')}
+              onClick={() => {
+                startRouteNavigation('/', 'Loading Prompt Feed...');
+                router.push('/');
+              }}
               className="w-full py-3 px-6 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-bold transition-colors"
             >
               Back to Home Feed
@@ -294,6 +298,7 @@ export const UserDashboard = () => {
           <button
             onClick={() => {
               setCurrentView('public');
+              startRouteNavigation('/', 'Loading Prompt Feed...');
               router.push('/');
             }}
             className="flex items-center gap-2 text-xs sm:text-sm font-bold text-neutral-600 dark:text-neutral-300 hover:text-[#E60023] dark:hover:text-white transition-colors"
@@ -305,6 +310,7 @@ export const UserDashboard = () => {
           <div className="flex items-center gap-3">
             <button
               onClick={() => {
+                startRouteNavigation('/create', 'Opening AI Studio...');
                 router.push('/create');
               }}
               className="px-3.5 py-1.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
@@ -620,7 +626,10 @@ export const UserDashboard = () => {
                     size="md"
                   />
                   <button
-                    onClick={() => router.push('/pricing')}
+                    onClick={() => {
+                      startRouteNavigation('/pricing', 'Loading Pro Plans...');
+                      router.push('/pricing');
+                    }}
                     className="px-5 py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold text-white transition-all shadow-sm"
                   >
                     View Plan Details
@@ -628,7 +637,10 @@ export const UserDashboard = () => {
                 </>
               ) : (
                 <button
-                  onClick={() => router.push('/pricing')}
+                  onClick={() => {
+                    startRouteNavigation('/pricing', 'Loading Pro Plans...');
+                    router.push('/pricing');
+                  }}
                   className="px-6 py-3 rounded-full bg-amber-500 hover:bg-amber-400 text-neutral-950 text-xs font-black shadow-lg shadow-amber-500/20 transition-all"
                 >
                   Renew / Extend Pro Yearly
@@ -729,6 +741,7 @@ export const UserDashboard = () => {
                 <button
                   onClick={() => {
                     setCurrentView('public');
+                    startRouteNavigation('/', 'Loading Prompt Feed...');
                     router.push('/');
                   }}
                   className="px-5 py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold transition-all inline-flex items-center gap-1.5 shadow-md shadow-red-500/20"
@@ -908,7 +921,10 @@ export const UserDashboard = () => {
                   </p>
                 </div>
                 <button
-                  onClick={() => router.push('/create')}
+                  onClick={() => {
+                    startRouteNavigation('/create', 'Opening AI Studio...');
+                    router.push('/create');
+                  }}
                   className="px-5 py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-xs font-bold transition-all inline-flex items-center gap-1.5 shadow-md shadow-red-500/20"
                 >
                   <Sparkles className="w-4 h-4" />

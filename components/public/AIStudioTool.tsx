@@ -27,6 +27,7 @@ import { useRouter } from 'next/navigation';
 import { PromptEditorTool } from '@/components/public/PromptEditorTool';
 import { WatermarkRemoverTool } from '@/components/public/WatermarkRemoverTool';
 import { ensureAspectRatio34, formatPromptForClipboard } from '@/lib/utils';
+import { startRouteNavigation } from '@/lib/navigation';
 
 const SAMPLE_IMAGES_FALLBACK = [
   {
@@ -486,7 +487,10 @@ export const AIStudioTool = ({
               <span>Sign In / Create Free Account</span>
             </button>
             <button
-              onClick={() => router.push('/')}
+              onClick={() => {
+                startRouteNavigation('/', 'Loading Prompt Feed...');
+                router.push('/');
+              }}
               className="w-full py-3 px-6 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-bold transition-colors"
             >
               Back to Home Feed
@@ -507,6 +511,7 @@ export const AIStudioTool = ({
               setCurrentView('public');
               if (setSelectedCategory) setSelectedCategory('all');
               if (setSearchQuery) setSearchQuery('');
+              startRouteNavigation('/', 'Loading Prompt Feed...');
               router.push('/');
             }}
             className="flex items-center gap-2 text-xs sm:text-sm font-bold text-neutral-600 dark:text-neutral-300 hover:text-[#E60023] dark:hover:text-white transition-colors"
@@ -541,6 +546,7 @@ export const AIStudioTool = ({
               <button
                 onClick={() => {
                   setCurrentView('user-dashboard');
+                  startRouteNavigation('/dashboard', 'Loading Creator Dashboard...');
                   router.push('/dashboard');
                 }}
                 className="flex items-center gap-1.5 text-xs font-bold text-neutral-600 dark:text-neutral-300 hover:text-[#E60023] px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
@@ -582,6 +588,7 @@ export const AIStudioTool = ({
               onClick={() => {
                 if (initialTab === 'watermark') {
                   if (typeof window !== 'undefined') sessionStorage.setItem('promptcms_studio_tab', 'reverse');
+                  startRouteNavigation('/create', 'Opening Image-to-Prompt Studio...');
                   router.push('/create');
                 } else {
                   setActiveStudioTab('reverse');
@@ -600,6 +607,7 @@ export const AIStudioTool = ({
               onClick={() => {
                 if (initialTab === 'watermark') {
                   if (typeof window !== 'undefined') sessionStorage.setItem('promptcms_studio_tab', 'generator');
+                  startRouteNavigation('/create', 'Opening Prompt Generator...');
                   router.push('/create');
                 } else {
                   setActiveStudioTab('generator');
@@ -618,6 +626,7 @@ export const AIStudioTool = ({
               onClick={() => {
                 if (initialTab === 'watermark') {
                   if (typeof window !== 'undefined') sessionStorage.setItem('promptcms_studio_tab', 'editor');
+                  startRouteNavigation('/create', 'Opening AI Prompt Editor...');
                   router.push('/create');
                 } else {
                   setActiveStudioTab('editor');
@@ -1435,6 +1444,7 @@ export const AIStudioTool = ({
               <button
                 onClick={() => {
                   setIsOutOfCreditsModalOpen(false);
+                  startRouteNavigation('/pricing', 'Loading Pro Plans...');
                   router.push('/pricing');
                 }}
                 className="w-full py-3 rounded-full bg-gradient-to-r from-[#E60023] to-[#ff3b56] hover:from-red-700 hover:to-red-600 text-white text-xs sm:text-sm font-black shadow-md shadow-red-500/20 transition-all"

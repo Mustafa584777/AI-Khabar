@@ -1,134 +1,211 @@
 'use client';
 
-import React, { useState, useEffect, Suspense, useRef } from 'react';
-import { usePathname } from 'next/navigation';
-import { Sparkles, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect, Suspense, useRef, useCallback } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { NAV_START_EVENT, NavigationStartDetail, normalizeInternalUrl } from '@/lib/navigation';
+import { SmartRouteSkeleton } from './SmartRouteSkeleton';
+
+interface ActiveNavigationState {
+  targetUrl: string;
+  startUrl: string;
+  label?: string;
+}
 
 const LoadingOverlayInner = () => {
-  const pathname = usePathname();
-  const [isNavigating, setIsNavigating] = useState<boolean>(false);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [showSlowWarning, setShowSlowWarning] = useState<boolean>(false);
-  const currentPathRef = useRef(pathname);
-  const failsafeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const pathname = usePathname() || '/';
+  const searchParams = useSearchParams();
+  const searchString = searchParams ? searchParams.toString() : '';
+  const currentFullUrl = `${pathname}${searchString ? `?${searchString}` : ''}`;
+
+  const [navState, setNavState] = useState<ActiveNavigationState | null>(null);
+  const [isFadingOut, setIsFadingOut] = useState(false);
+  const [isSlow, setIsSlow] = useState(false);
+
+  const currentFullUrlRef = useRef(currentFullUrl);
+  currentFullUrlRef.current = currentFullUrl;
+
   const slowTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const failsafeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const fadeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const rafRef = useRef<number | null>(null);
 
-  // Instantly clear any loading state as soon as pathname changes (0ms delay, no blocking)
-  useEffect(() => {
-    if (pathname !== currentPathRef.current) {
-      currentPathRef.current = pathname;
-      setIsNavigating(false);
-      setActionLoading(null);
-      setShowSlowWarning(false);
-      if (failsafeTimerRef.current) clearTimeout(failsafeTimerRef.current);
-      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+  const clearAllTimers = useCallback(() => {
+    if (slowTimerRef.current) {
+      clearTimeout(slowTimerRef.current);
+      slowTimerRef.current = null;
     }
-  }, [pathname]);
+    if (failsafeTimerRef.current) {
+      clearTimeout(failsafeTimerRef.current);
+      failsafeTimerRef.current = null;
+    }
+    if (fadeTimerRef.current) {
+      clearTimeout(fadeTimerRef.current);
+      fadeTimerRef.current = null;
+    }
+    if (rafRef.current !== null && typeof cancelAnimationFrame === 'function') {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+  }, []);
 
-  // Click listener for explicit heavy actions (Decode, Generate version) or route navigation
+  const dismissImmediately = useCallback(() => {
+    clearAllTimers();
+    setIsFadingOut(false);
+    setIsSlow(false);
+    setNavState(null);
+  }, [clearAllTimers]);
+
+  const dismissAfterPaint = useCallback(() => {
+    clearAllTimers();
+    const finish = () => {
+      setIsFadingOut(true);
+      fadeTimerRef.current = setTimeout(() => {
+        setNavState(null);
+        setIsFadingOut(false);
+        setIsSlow(false);
+      }, 150);
+    };
+
+    if (typeof requestAnimationFrame === 'function') {
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = requestAnimationFrame(finish);
+      });
+    } else {
+      finish();
+    }
+  }, [clearAllTimers]);
+
+  const beginNavigation = useCallback(
+    (targetUrl: string, label?: string) => {
+      const normalized = normalizeInternalUrl(targetUrl);
+      if (!normalized) return;
+
+      const currentUrl =
+        typeof window !== 'undefined'
+          ? `${window.location.pathname}${window.location.search}`
+          : currentFullUrlRef.current;
+
+      if (normalized === currentUrl) return;
+
+      clearAllTimers();
+      setIsFadingOut(false);
+      setIsSlow(false);
+      setNavState({
+        targetUrl: normalized,
+        startUrl: currentUrl,
+        label,
+      });
+
+      // Mark as slow if target page still hasn't appeared after 4.5s (with manual Dismiss button)
+      slowTimerRef.current = setTimeout(() => {
+        setIsSlow(true);
+      }, 4500);
+
+      // Hard safety cap (18s) so overlay can never get permanently orphaned on failed requests
+      failsafeTimerRef.current = setTimeout(() => {
+        dismissImmediately();
+      }, 18000);
+    },
+    [clearAllTimers, dismissImmediately]
+  );
+
+  // Dismiss only once the target route commits & paints in the DOM
   useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      const target = (e.target as HTMLElement).closest('a, button');
+    if (!navState) return;
+    if (currentFullUrl !== navState.startUrl) {
+      dismissAfterPaint();
+    }
+  }, [currentFullUrl, navState, dismissAfterPaint]);
+
+  // Capture-phase click listener catches every <Link>/<a> and navigation <button> before stopPropagation()
+  useEffect(() => {
+    const handleClickCapture = (e: MouseEvent) => {
+      if (e.defaultPrevented) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+
+      const el = e.target as HTMLElement | null;
+      const target = el?.closest('a, button') as HTMLElement | null;
       if (!target) return;
 
-      const actionAttr = target.getAttribute('data-action') || '';
-      const text = (target.textContent || '').trim().toLowerCase();
-      const href = (target.getAttribute('href') || '').trim();
-      const isPromptCardLink = Boolean(target.closest('article[id^="prompt-pin-"]'));
-
-      // Only trigger action indicator for explicit studio decode/generator actions
-      if (actionAttr === 'decode-prompt' || text === 'decode') {
-        setActionLoading('Opening Image-to-Prompt Studio...');
-      } else if (actionAttr === 'generate-version' || text === 'generate new version') {
-        setActionLoading('Opening Prompt Generator...');
-      } else if (href && href.startsWith('/') && href !== pathname && !href.startsWith('#') && !isPromptCardLink) {
-        // Standard route change: show sleek non-blocking top progress bar
-        setIsNavigating(true);
-      } else {
+      // Ignore disabled controls
+      if ((target as HTMLButtonElement).disabled || target.getAttribute('aria-disabled') === 'true') {
         return;
       }
 
-      // Strict Failsafe: Automatically dismiss after 350ms maximum, guaranteed!
-      // This ensures NO loading skeleton or overlay can EVER get stuck on screen!
-      if (failsafeTimerRef.current) clearTimeout(failsafeTimerRef.current);
-      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+      if (target.tagName === 'A') {
+        const anchor = target as HTMLAnchorElement;
+        if (
+          anchor.target === '_blank' ||
+          anchor.hasAttribute('download')
+        ) {
+          return;
+        }
+        // Prompt cards open an instant in-memory modal rather than triggering a full route fetch
+        if (anchor.closest('article[id^="prompt-pin-"]')) {
+          return;
+        }
+        const href = anchor.getAttribute('href') || '';
+        if (!href) return;
+        beginNavigation(href);
+        return;
+      }
 
-      failsafeTimerRef.current = setTimeout(() => {
-        setIsNavigating(false);
-        setActionLoading(null);
-        if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
-      }, 350);
+      // Handle explicit navigation buttons (capture phase fires even if onClick stops propagation)
+      const navHref = target.getAttribute('data-nav-href');
+      if (navHref) {
+        const navLabel = target.getAttribute('data-nav-label') || undefined;
+        beginNavigation(navHref, navLabel);
+        return;
+      }
 
-      // Slow connection warning only if route navigation actually stalls for over 4 seconds
-      if (!actionAttr && href) {
-        slowTimerRef.current = setTimeout(() => {
-          setShowSlowWarning(true);
-          setTimeout(() => setShowSlowWarning(false), 3000);
-        }, 4000);
+      const actionAttr = target.getAttribute('data-action') || '';
+      if (actionAttr === 'decode-prompt') {
+        beginNavigation('/create', 'Opening Image-to-Prompt Studio...');
+      } else if (actionAttr === 'generate-version') {
+        beginNavigation('/create', 'Opening Prompt Generator...');
       }
     };
 
-    window.addEventListener('click', handleClick);
-    return () => {
-      window.removeEventListener('click', handleClick);
-      if (failsafeTimerRef.current) clearTimeout(failsafeTimerRef.current);
-      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+    const handleCustomNavStart = (e: Event) => {
+      const detail = (e as CustomEvent<NavigationStartDetail>).detail;
+      if (detail?.targetUrl) {
+        beginNavigation(detail.targetUrl, detail.label);
+      }
     };
-  }, [pathname]);
+
+    const handlePopState = () => {
+      // Browser history back/forward aborted or changed route
+      dismissAfterPaint();
+    };
+
+    window.addEventListener('click', handleClickCapture, true);
+    window.addEventListener(NAV_START_EVENT, handleCustomNavStart);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('click', handleClickCapture, true);
+      window.removeEventListener(NAV_START_EVENT, handleCustomNavStart);
+      window.removeEventListener('popstate', handlePopState);
+      clearAllTimers();
+    };
+  }, [beginNavigation, dismissAfterPaint, clearAllTimers]);
+
+  if (!navState) return null;
 
   return (
-    <>
-      {/* Sleek, Non-Blocking Top Progress Bar (Like YouTube / GitHub) */}
-      {(isNavigating || actionLoading) && (
-        <div
-          id="global-page-progress-bar"
-          className="fixed top-0 left-0 right-0 z-50 h-[3px] bg-neutral-200/40 dark:bg-neutral-800/40 pointer-events-none overflow-hidden"
-        >
-          <div className="h-full bg-gradient-to-r from-[#E60023] via-rose-500 to-amber-500 animate-[indeterminate_0.6s_infinite_linear] shadow-sm shadow-red-500/50" />
-        </div>
-      )}
-
-      {/* Brief Action Loader for Heavy Decode/Generate Studio Actions - Never blocks clicks (pointer-events-none) */}
-      {actionLoading && (
-        <div
-          className="fixed inset-0 z-50 bg-white/70 dark:bg-neutral-950/70 backdrop-blur-xs flex flex-col items-center justify-center p-4 transition-all duration-150 pointer-events-none"
-          id="global-action-loading-overlay"
-        >
-          <div className="w-14 h-14 rounded-full bg-red-50 dark:bg-red-950/60 text-[#E60023] flex items-center justify-center shadow-lg animate-pulse mb-3">
-            <Sparkles className="w-7 h-7 animate-spin" />
-          </div>
-          <h3 className="text-sm sm:text-base font-black text-neutral-900 dark:text-white mb-1 text-center px-4">
-            {actionLoading}
-          </h3>
-          <p className="text-[11px] text-neutral-500 dark:text-neutral-400 text-center">
-            Loading studio tools...
-          </p>
-        </div>
-      )}
-
-      {/* Slow internet alert */}
-      {showSlowWarning && (
-        <div
-          id="slow-internet-alert"
-          className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-50 bg-amber-500 dark:bg-amber-600 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs sm:text-sm font-black animate-in slide-in-from-bottom-5 duration-300 border border-amber-400"
-        >
-          <AlertTriangle className="w-5 h-5 shrink-0 animate-bounce" />
-          <div>
-            <p className="font-black">Slow internet connection detected</p>
-            <p className="text-[11px] font-medium text-amber-100">
-              Your request is processing securely, please hold on...
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowSlowWarning(false)}
-            className="ml-2 text-white/80 hover:text-white text-xs px-2 py-1 bg-black/20 rounded-lg cursor-pointer"
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
-    </>
+    <div
+      className={`transition-opacity duration-150 ${
+        isFadingOut ? 'opacity-0 pointer-events-none' : 'opacity-100'
+      }`}
+    >
+      <SmartRouteSkeleton
+        targetUrl={navState.targetUrl}
+        label={navState.label}
+        isSlow={isSlow}
+        onDismiss={dismissImmediately}
+        isFullScreenOverlay={true}
+      />
+    </div>
   );
 };
 
