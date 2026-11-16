@@ -26,6 +26,7 @@ import {
   type InpaintProgress,
 } from '@/lib/watermark-remover';
 import { useApp } from '@/context/AppContext';
+import { WatermarkRemoverSEO } from '@/components/public/WatermarkRemoverSEO';
 
 export const WatermarkRemoverTool = () => {
   const { showToast } = useApp();
@@ -429,7 +430,7 @@ export const WatermarkRemoverTool = () => {
             <span>Free Gemini Watermark Remover Online</span>
           </h1>
           <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 max-w-2xl">
-            Remove Gemini sparkle logos, text watermarks, and corner stamps in seconds right inside your phone browser. Zero server uploads — 100% private and works offline.
+            Our browser-based Gemini logo remover lets you remove Gemini watermark for free—erasing sparkle logos, text stamps, and corner overlays in seconds inside your browser. Zero server uploads, 100% private, and works offline.
           </p>
         </div>
 
@@ -843,6 +844,9 @@ export const WatermarkRemoverTool = () => {
           </div>
         </div>
       )}
+
+      {/* Comprehensive On-Page SEO Guide, Comparison Table & Interactive FAQ */}
+      <WatermarkRemoverSEO />
     </div>
   );
 };
