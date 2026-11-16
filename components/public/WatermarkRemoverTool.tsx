@@ -19,6 +19,7 @@ import {
   CornerDownLeft,
   Layers,
   Zap,
+  Share2,
 } from 'lucide-react';
 import {
   removeWatermarkInpaint,
@@ -59,6 +60,20 @@ export const WatermarkRemoverTool = () => {
   const [afterPreviewUrl, setAfterPreviewUrl] = useState<string>('');
 
   const pendingUploadRef = useRef<{ img: HTMLImageElement; objectUrl: string } | null>(null);
+  const pendingRestoredRef = useRef<{
+    afterDataUrl: string;
+    beforeDataUrl: string;
+    width: number;
+    height: number;
+    lastProcessMs: number | null;
+  } | null>(null);
+
+  const PENDING_REDIRECT_KEY = 'zp_wm_first_download_redirect_done';
+  const PENDING_DOWNLOAD_META_KEY = 'zp_wm_pending_download';
+  const PENDING_BACKUP_URL_KEY = 'zp_wm_pending_dataurl_backup';
+  const IDB_NAME = 'zp_watermark_offline_db';
+  const IDB_STORE = 'pending_downloads';
+  const IDB_KEY = 'latest';
 
   // Calibrated from real Gemini outputs (e.g., 765x1024 where 39x40 sparkle center sits 102px from right & bottom)
   const getGeminiWatermarkRect = useCallback((w: number, h: number) => {
@@ -146,13 +161,65 @@ export const WatermarkRemoverTool = () => {
     [drawGeminiWatermarkMask, showToast]
   );
 
-  // Ensure pending upload draws immediately once canvases mount when transitioning from !hasImage -> hasImage
+  // Ensure pending upload or restored image draws immediately once canvases mount when transitioning from !hasImage -> hasImage
   useEffect(() => {
-    if (!hasImage || !pendingUploadRef.current) return;
-    const pending = pendingUploadRef.current;
-    if (drawLoadedImage(pending.img)) {
-      URL.revokeObjectURL(pending.objectUrl);
-      pendingUploadRef.current = null;
+    if (!hasImage) return;
+
+    if (pendingUploadRef.current) {
+      const pending = pendingUploadRef.current;
+      if (drawLoadedImage(pending.img)) {
+        URL.revokeObjectURL(pending.objectUrl);
+        pendingUploadRef.current = null;
+      }
+      return;
+    }
+
+    if (pendingRestoredRef.current) {
+      const restored = pendingRestoredRef.current;
+      const imgCanvas = imageCanvasRef.current;
+      const maskCanvas = maskCanvasRef.current;
+      if (!imgCanvas || !maskCanvas) return;
+
+      const afterImg = new window.Image();
+      afterImg.onload = () => {
+        const w = restored.width || afterImg.naturalWidth || afterImg.width;
+        const h = restored.height || afterImg.naturalHeight || afterImg.height;
+        imgCanvas.width = w;
+        imgCanvas.height = h;
+        maskCanvas.width = w;
+        maskCanvas.height = h;
+
+        const ctx = imgCanvas.getContext('2d', { willReadFrequently: true });
+        const mCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
+        if (ctx && mCtx) {
+          ctx.clearRect(0, 0, w, h);
+          ctx.drawImage(afterImg, 0, 0, w, h);
+          mCtx.clearRect(0, 0, w, h);
+
+          const cleanSnap = ctx.getImageData(0, 0, w, h);
+          originalSnapshotRef.current = cleanSnap;
+          undoSnapshotsRef.current = [];
+          maskHistoryRef.current = [];
+
+          if (restored.beforeDataUrl) {
+            const beforeImg = new window.Image();
+            beforeImg.onload = () => {
+              const off = document.createElement('canvas');
+              off.width = w;
+              off.height = h;
+              const offCtx = off.getContext('2d');
+              if (offCtx) {
+                offCtx.drawImage(beforeImg, 0, 0, w, h);
+                originalSnapshotRef.current = offCtx.getImageData(0, 0, w, h);
+              }
+            };
+            beforeImg.src = restored.beforeDataUrl;
+          }
+        }
+        setImageDimensions({ width: w, height: h });
+        pendingRestoredRef.current = null;
+      };
+      afterImg.src = restored.afterDataUrl;
     }
   }, [hasImage, drawLoadedImage]);
 
@@ -441,29 +508,337 @@ export const WatermarkRemoverTool = () => {
     showToast('Reset to original photo.');
   };
 
-  const handleDownloadClean = (format: 'png' | 'jpeg' = 'png') => {
-    const imgCanvas = imageCanvasRef.current;
-    if (!imgCanvas || imgCanvas.width === 0) return;
+  const dataUrlToBlob = useCallback((dataUrl: string): Blob | null => {
+    try {
+      const parts = dataUrl.split(',');
+      if (parts.length < 2) return null;
+      const mimeMatch = parts[0].match(/:(.*?);/);
+      const mime = mimeMatch ? mimeMatch[1] : 'image/png';
+      const binary = atob(parts[1]);
+      const len = binary.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return new Blob([bytes], { type: mime });
+    } catch {
+      return null;
+    }
+  }, []);
 
-    const mime = format === 'jpeg' ? 'image/jpeg' : 'image/png';
-    const ext = format === 'jpeg' ? 'jpg' : 'png';
+  const getCleanDataUrl = useCallback(
+    (format: 'png' | 'jpeg' = 'png'): string | null => {
+      const mime = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+      const imgCanvas = imageCanvasRef.current;
+      if (imgCanvas && imgCanvas.width > 0 && imgCanvas.height > 0) {
+        try {
+          return imgCanvas.toDataURL(mime, 0.96);
+        } catch {}
+      }
+      if (afterDataUrlRef.current) {
+        return afterDataUrlRef.current;
+      }
+      if (afterPreviewUrl) {
+        return afterPreviewUrl;
+      }
+      return null;
+    },
+    [afterPreviewUrl]
+  );
 
-    imgCanvas.toBlob(
-      (blob) => {
-        if (!blob) return;
-        const url = URL.createObjectURL(blob);
+  const triggerSyncDownload = useCallback(
+    (dataUrl: string, format: 'png' | 'jpeg' = 'png', toastMsg?: string) => {
+      const ext = format === 'jpeg' ? 'jpg' : 'png';
+      const filename = `zeenaprompt-clean-${Date.now()}.${ext}`;
+      const blob = dataUrlToBlob(dataUrl);
+
+      if (blob) {
+        const blobUrl = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = url;
-        link.download = `zeenaprompt-clean-photo.${ext}`;
+        link.href = blobUrl;
+        link.download = filename;
+        link.rel = 'noopener';
+        link.style.display = 'none';
         document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-        showToast('Clean photo downloaded directly from your device!');
-      },
-      mime,
-      0.96
-    );
+        setTimeout(() => {
+          if (link.parentNode) link.parentNode.removeChild(link);
+        }, 300);
+        setTimeout(() => {
+          URL.revokeObjectURL(blobUrl);
+        }, 30000);
+      } else {
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = filename;
+        link.rel = 'noopener';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => {
+          if (link.parentNode) link.parentNode.removeChild(link);
+        }, 300);
+      }
+
+      showToast(toastMsg || 'Clean photo downloaded directly from your device!');
+    },
+    [dataUrlToBlob, showToast]
+  );
+
+  const savePendingPayloadToIdb = useCallback(async (payload: any) => {
+    if (typeof window === 'undefined' || !('indexedDB' in window)) return;
+    return new Promise<void>((resolve) => {
+      try {
+        const req = window.indexedDB.open(IDB_NAME, 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains(IDB_STORE)) {
+            db.createObjectStore(IDB_STORE);
+          }
+        };
+        req.onsuccess = () => {
+          try {
+            const db = req.result;
+            const tx = db.transaction(IDB_STORE, 'readwrite');
+            tx.objectStore(IDB_STORE).put(payload, IDB_KEY);
+            tx.oncomplete = () => {
+              db.close();
+              resolve();
+            };
+            tx.onerror = () => {
+              db.close();
+              resolve();
+            };
+          } catch {
+            resolve();
+          }
+        };
+        req.onerror = () => resolve();
+      } catch {
+        resolve();
+      }
+    });
+  }, []);
+
+  const readAndClearPendingPayloadFromIdb = useCallback(async (): Promise<any | null> => {
+    if (typeof window === 'undefined' || !('indexedDB' in window)) return null;
+    return new Promise<any | null>((resolve) => {
+      try {
+        const req = window.indexedDB.open(IDB_NAME, 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains(IDB_STORE)) {
+            db.createObjectStore(IDB_STORE);
+          }
+        };
+        req.onsuccess = () => {
+          try {
+            const db = req.result;
+            const tx = db.transaction(IDB_STORE, 'readwrite');
+            const store = tx.objectStore(IDB_STORE);
+            const getReq = store.get(IDB_KEY);
+            getReq.onsuccess = () => {
+              const val = getReq.result || null;
+              try {
+                store.delete(IDB_KEY);
+              } catch {}
+              resolve(val);
+            };
+            getReq.onerror = () => resolve(null);
+            tx.oncomplete = () => db.close();
+          } catch {
+            resolve(null);
+          }
+        };
+        req.onerror = () => resolve(null);
+      } catch {
+        resolve(null);
+      }
+    });
+  }, []);
+
+  // Handle auto-download when user navigates back from toolimg.online (both BFCache restore & fresh page reload)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const processPendingReturnDownload = async (fromMount: boolean) => {
+      const rawMeta = sessionStorage.getItem(PENDING_DOWNLOAD_META_KEY);
+      if (!rawMeta) return;
+
+      let parsed: { format?: 'png' | 'jpeg'; createdAt?: number } = {};
+      try {
+        parsed = JSON.parse(rawMeta);
+      } catch {}
+
+      // Prevent firing right before browser leaves on redirect
+      if (!fromMount && parsed.createdAt && Date.now() - parsed.createdAt < 350) {
+        return;
+      }
+
+      sessionStorage.removeItem(PENDING_DOWNLOAD_META_KEY);
+      const format: 'png' | 'jpeg' = parsed.format === 'jpeg' ? 'jpeg' : 'png';
+
+      const backupUrl = sessionStorage.getItem(PENDING_BACKUP_URL_KEY);
+      sessionStorage.removeItem(PENDING_BACKUP_URL_KEY);
+
+      const idbPayload = await readAndClearPendingPayloadFromIdb();
+
+      const liveUrl = getCleanDataUrl(format);
+      const finalUrl = liveUrl || idbPayload?.afterDataUrl || backupUrl;
+
+      if (fromMount && idbPayload?.afterDataUrl) {
+        pendingRestoredRef.current = {
+          afterDataUrl: idbPayload.afterDataUrl,
+          beforeDataUrl: idbPayload.beforeDataUrl || '',
+          width: idbPayload.width || 0,
+          height: idbPayload.height || 0,
+          lastProcessMs: idbPayload.lastProcessMs ?? null,
+        };
+        afterDataUrlRef.current = idbPayload.afterDataUrl;
+        setAfterPreviewUrl(idbPayload.afterDataUrl);
+        if (idbPayload.beforeDataUrl) {
+          beforeDataUrlRef.current = idbPayload.beforeDataUrl;
+          setBeforePreviewUrl(idbPayload.beforeDataUrl);
+        }
+        if (idbPayload.lastProcessMs !== undefined) {
+          setLastProcessMs(idbPayload.lastProcessMs);
+        }
+        setHasProcessedResult(true);
+        setHasImage(true);
+      }
+
+      if (finalUrl) {
+        setTimeout(() => {
+          triggerSyncDownload(
+            finalUrl,
+            format,
+            'Welcome back! Your clean photo is downloading automatically.'
+          );
+        }, 120);
+      }
+    };
+
+    void processPendingReturnDownload(true);
+
+    const onReturnEvent = () => {
+      if (document.visibilityState === 'hidden') return;
+      void processPendingReturnDownload(false);
+    };
+
+    window.addEventListener('pageshow', onReturnEvent);
+    window.addEventListener('focus', onReturnEvent);
+    document.addEventListener('visibilitychange', onReturnEvent);
+
+    return () => {
+      window.removeEventListener('pageshow', onReturnEvent);
+      window.removeEventListener('focus', onReturnEvent);
+      document.removeEventListener('visibilitychange', onReturnEvent);
+    };
+  }, [getCleanDataUrl, readAndClearPendingPayloadFromIdb, triggerSyncDownload]);
+
+  const handleDownloadClean = async (format: 'png' | 'jpeg' = 'png') => {
+    const dataUrl = getCleanDataUrl(format);
+    if (!dataUrl) {
+      showToast('No processed photo available to download yet.');
+      return;
+    }
+
+    // First-time download click: save state & redirect to toolimg.online; auto-download when returning
+    if (typeof window !== 'undefined' && sessionStorage.getItem(PENDING_REDIRECT_KEY) !== '1') {
+      sessionStorage.setItem(PENDING_REDIRECT_KEY, '1');
+      sessionStorage.setItem(
+        PENDING_DOWNLOAD_META_KEY,
+        JSON.stringify({ format, createdAt: Date.now() })
+      );
+
+      if (dataUrl.length < 2_500_000) {
+        try {
+          sessionStorage.setItem(PENDING_BACKUP_URL_KEY, dataUrl);
+        } catch {}
+      }
+
+      const payload = {
+        afterDataUrl: dataUrl,
+        beforeDataUrl: beforeDataUrlRef.current || beforePreviewUrl || '',
+        format,
+        width: imageDimensions?.width || imageCanvasRef.current?.width || 0,
+        height: imageDimensions?.height || imageCanvasRef.current?.height || 0,
+        lastProcessMs,
+        createdAt: Date.now(),
+      };
+
+      await Promise.race([
+        savePendingPayloadToIdb(payload),
+        new Promise<void>((resolve) => setTimeout(resolve, 350)),
+      ]);
+
+      window.location.href = 'https://toolimg.online';
+      return;
+    }
+
+    triggerSyncDownload(dataUrl, format);
+  };
+
+  const handleShareClean = async () => {
+    const dataUrl = getCleanDataUrl('png');
+    if (!dataUrl) {
+      showToast('Clean the photo first before sharing.');
+      return;
+    }
+
+    const blob = dataUrlToBlob(dataUrl);
+    if (!blob) {
+      showToast('Unable to prepare image for sharing.');
+      return;
+    }
+
+    const file = new File([blob], `zeenaprompt-clean-${Date.now()}.png`, {
+      type: 'image/png',
+    });
+
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: 'Clean Photo - Zeenaprompt Watermark Remover',
+            text: 'Watermark removed offline in seconds with Zeenaprompt!',
+          });
+          showToast('Shared clean photo successfully!');
+          return;
+        }
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return;
+      }
+
+      try {
+        await navigator.share({
+          title: 'Free Watermark Remover - Zeenaprompt',
+          text: 'Remove watermarks offline in seconds directly in your browser!',
+          url: window.location.href,
+        });
+        showToast('Shared link successfully!');
+        return;
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return;
+      }
+    }
+
+    // Desktop clipboard fallback
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && typeof ClipboardItem !== 'undefined') {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        showToast('Clean photo copied to clipboard! Paste anywhere to share.');
+        return;
+      }
+    } catch {}
+
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      showToast('Tool link copied to clipboard! Ready to share.');
+    } catch {
+      showToast('Sharing is not supported on this browser. Use Download instead.');
+    }
   };
 
   return (
@@ -598,9 +973,9 @@ export const WatermarkRemoverTool = () => {
                 </div>
               </div>
 
-              {/* Canvas Viewport */}
+              {/* Canvas Viewport (Canvases stay mounted so Compare toggle never resets image pixels) */}
               <div className="relative w-full rounded-2xl overflow-hidden bg-neutral-950 flex items-center justify-center min-h-[320px] sm:min-h-[460px] max-h-[72vh] select-none">
-                {showCompareMode && beforePreviewUrl && afterPreviewUrl ? (
+                {showCompareMode && beforePreviewUrl && afterPreviewUrl && (
                   <div className="relative inline-block max-w-full max-h-[70vh]">
                     {/* After Image Base */}
                     <img
@@ -646,22 +1021,28 @@ export const WatermarkRemoverTool = () => {
                       className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20"
                     />
                   </div>
-                ) : (
-                  <div className="relative inline-flex items-center justify-center max-w-full max-h-[70vh]">
-                    <canvas
-                      ref={imageCanvasRef}
-                      className="max-w-full max-h-[70vh] w-auto h-auto object-contain block rounded-lg"
-                    />
-                    <canvas
-                      ref={maskCanvasRef}
-                      onPointerDown={handlePointerDown}
-                      onPointerMove={handlePointerMove}
-                      onPointerUp={handlePointerUp}
-                      onPointerCancel={handlePointerUp}
-                      className="absolute inset-0 w-full h-full object-contain touch-none cursor-crosshair rounded-lg"
-                    />
-                  </div>
                 )}
+
+                <div
+                  className={
+                    showCompareMode && beforePreviewUrl && afterPreviewUrl
+                      ? 'hidden'
+                      : 'relative inline-flex items-center justify-center max-w-full max-h-[70vh]'
+                  }
+                >
+                  <canvas
+                    ref={imageCanvasRef}
+                    className="max-w-full max-h-[70vh] w-auto h-auto object-contain block rounded-lg"
+                  />
+                  <canvas
+                    ref={maskCanvasRef}
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerCancel={handlePointerUp}
+                    className="absolute inset-0 w-full h-full object-contain touch-none cursor-crosshair rounded-lg"
+                  />
+                </div>
               </div>
 
               {imageDimensions && (
@@ -863,7 +1244,7 @@ export const WatermarkRemoverTool = () => {
                   <div className="space-y-2 pt-2">
                     <button
                       type="button"
-                      onClick={() => handleDownloadClean('png')}
+                      onClick={() => void handleDownloadClean('png')}
                       className="w-full py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 transition-colors cursor-pointer"
                       id="download-clean-image-png-btn"
                     >
@@ -871,10 +1252,20 @@ export const WatermarkRemoverTool = () => {
                       <span>Download Clean Image (HD PNG)</span>
                     </button>
 
+                    <button
+                      type="button"
+                      onClick={() => void handleShareClean()}
+                      className="w-full py-2.5 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-sm flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                      id="share-clean-image-btn"
+                    >
+                      <Share2 className="w-4 h-4" />
+                      <span>Share Clean Photo</span>
+                    </button>
+
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
-                        onClick={() => handleDownloadClean('jpeg')}
+                        onClick={() => void handleDownloadClean('jpeg')}
                         className="py-2 px-3 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-xs font-bold transition-colors cursor-pointer"
                       >
                         Save as JPG
