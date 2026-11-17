@@ -105,20 +105,6 @@ export const WatermarkRemoverTool = () => {
   const [afterPreviewUrl, setAfterPreviewUrl] = useState<string>('');
 
   const pendingUploadRef = useRef<{ img: HTMLImageElement; objectUrl: string } | null>(null);
-  const pendingRestoredRef = useRef<{
-    afterDataUrl: string;
-    beforeDataUrl: string;
-    width: number;
-    height: number;
-    lastProcessMs: number | null;
-  } | null>(null);
-
-  const PENDING_REDIRECT_KEY = 'zp_wm_first_download_redirect_done';
-  const PENDING_DOWNLOAD_META_KEY = 'zp_wm_pending_download';
-  const PENDING_BACKUP_URL_KEY = 'zp_wm_pending_dataurl_backup';
-  const IDB_NAME = 'zp_watermark_offline_db';
-  const IDB_STORE = 'pending_downloads';
-  const IDB_KEY = 'latest';
 
   // Calibrated from real Gemini outputs (e.g., 765x1024 where 39x40 sparkle center sits 102px from right & bottom)
   const getGeminiWatermarkRect = useCallback((w: number, h: number) => {
@@ -219,65 +205,16 @@ export const WatermarkRemoverTool = () => {
     [drawGeminiWatermarkMask, showToast]
   );
 
-  // Ensure pending upload or restored image draws immediately once canvases mount when transitioning from !hasImage -> hasImage
+  // Ensure pending upload draws immediately once canvases mount when transitioning from !hasImage -> hasImage
   useEffect(() => {
     if (!hasImage) return;
 
     if (pendingUploadRef.current) {
       const pending = pendingUploadRef.current;
       if (drawLoadedImage(pending.img)) {
-        URL.revokeObjectURL(pending.objectUrl);
+        if (pending.objectUrl) URL.revokeObjectURL(pending.objectUrl);
         pendingUploadRef.current = null;
       }
-      return;
-    }
-
-    if (pendingRestoredRef.current) {
-      const restored = pendingRestoredRef.current;
-      const imgCanvas = imageCanvasRef.current;
-      const maskCanvas = maskCanvasRef.current;
-      if (!imgCanvas || !maskCanvas) return;
-
-      const afterImg = new window.Image();
-      afterImg.onload = () => {
-        const w = restored.width || afterImg.naturalWidth || afterImg.width;
-        const h = restored.height || afterImg.naturalHeight || afterImg.height;
-        imgCanvas.width = w;
-        imgCanvas.height = h;
-        maskCanvas.width = w;
-        maskCanvas.height = h;
-
-        const ctx = imgCanvas.getContext('2d', { willReadFrequently: true });
-        const mCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
-        if (ctx && mCtx) {
-          ctx.clearRect(0, 0, w, h);
-          ctx.drawImage(afterImg, 0, 0, w, h);
-          mCtx.clearRect(0, 0, w, h);
-
-          const cleanSnap = ctx.getImageData(0, 0, w, h);
-          originalSnapshotRef.current = cleanSnap;
-          undoSnapshotsRef.current = [];
-          maskHistoryRef.current = [];
-
-          if (restored.beforeDataUrl) {
-            const beforeImg = new window.Image();
-            beforeImg.onload = () => {
-              const off = document.createElement('canvas');
-              off.width = w;
-              off.height = h;
-              const offCtx = off.getContext('2d');
-              if (offCtx) {
-                offCtx.drawImage(beforeImg, 0, 0, w, h);
-                originalSnapshotRef.current = offCtx.getImageData(0, 0, w, h);
-              }
-            };
-            beforeImg.src = restored.beforeDataUrl;
-          }
-        }
-        setImageDimensions({ width: w, height: h });
-        pendingRestoredRef.current = null;
-      };
-      afterImg.src = restored.afterDataUrl;
     }
   }, [hasImage, drawLoadedImage]);
 
@@ -634,194 +571,10 @@ export const WatermarkRemoverTool = () => {
     [dataUrlToBlob, showToast]
   );
 
-  const savePendingPayloadToIdb = useCallback(async (payload: any) => {
-    if (typeof window === 'undefined' || !('indexedDB' in window)) return;
-    return new Promise<void>((resolve) => {
-      try {
-        const req = window.indexedDB.open(IDB_NAME, 1);
-        req.onupgradeneeded = () => {
-          const db = req.result;
-          if (!db.objectStoreNames.contains(IDB_STORE)) {
-            db.createObjectStore(IDB_STORE);
-          }
-        };
-        req.onsuccess = () => {
-          try {
-            const db = req.result;
-            const tx = db.transaction(IDB_STORE, 'readwrite');
-            tx.objectStore(IDB_STORE).put(payload, IDB_KEY);
-            tx.oncomplete = () => {
-              db.close();
-              resolve();
-            };
-            tx.onerror = () => {
-              db.close();
-              resolve();
-            };
-          } catch {
-            resolve();
-          }
-        };
-        req.onerror = () => resolve();
-      } catch {
-        resolve();
-      }
-    });
-  }, []);
-
-  const readAndClearPendingPayloadFromIdb = useCallback(async (): Promise<any | null> => {
-    if (typeof window === 'undefined' || !('indexedDB' in window)) return null;
-    return new Promise<any | null>((resolve) => {
-      try {
-        const req = window.indexedDB.open(IDB_NAME, 1);
-        req.onupgradeneeded = () => {
-          const db = req.result;
-          if (!db.objectStoreNames.contains(IDB_STORE)) {
-            db.createObjectStore(IDB_STORE);
-          }
-        };
-        req.onsuccess = () => {
-          try {
-            const db = req.result;
-            const tx = db.transaction(IDB_STORE, 'readwrite');
-            const store = tx.objectStore(IDB_STORE);
-            const getReq = store.get(IDB_KEY);
-            getReq.onsuccess = () => {
-              const val = getReq.result || null;
-              try {
-                store.delete(IDB_KEY);
-              } catch {}
-              resolve(val);
-            };
-            getReq.onerror = () => resolve(null);
-            tx.oncomplete = () => db.close();
-          } catch {
-            resolve(null);
-          }
-        };
-        req.onerror = () => resolve(null);
-      } catch {
-        resolve(null);
-      }
-    });
-  }, []);
-
-  // Handle auto-download when user navigates back from toolimg.online (both BFCache restore & fresh page reload)
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const processPendingReturnDownload = async (fromMount: boolean) => {
-      const rawMeta = sessionStorage.getItem(PENDING_DOWNLOAD_META_KEY);
-      if (!rawMeta) return;
-
-      let parsed: { format?: 'png' | 'jpeg'; createdAt?: number } = {};
-      try {
-        parsed = JSON.parse(rawMeta);
-      } catch {}
-
-      // Prevent firing right before browser leaves on redirect
-      if (!fromMount && parsed.createdAt && Date.now() - parsed.createdAt < 350) {
-        return;
-      }
-
-      sessionStorage.removeItem(PENDING_DOWNLOAD_META_KEY);
-      const format: 'png' | 'jpeg' = parsed.format === 'jpeg' ? 'jpeg' : 'png';
-
-      const backupUrl = sessionStorage.getItem(PENDING_BACKUP_URL_KEY);
-      sessionStorage.removeItem(PENDING_BACKUP_URL_KEY);
-
-      const idbPayload = await readAndClearPendingPayloadFromIdb();
-
-      const liveUrl = getCleanDataUrl(format);
-      const finalUrl = liveUrl || idbPayload?.afterDataUrl || backupUrl;
-
-      if (fromMount && idbPayload?.afterDataUrl) {
-        pendingRestoredRef.current = {
-          afterDataUrl: idbPayload.afterDataUrl,
-          beforeDataUrl: idbPayload.beforeDataUrl || '',
-          width: idbPayload.width || 0,
-          height: idbPayload.height || 0,
-          lastProcessMs: idbPayload.lastProcessMs ?? null,
-        };
-        afterDataUrlRef.current = idbPayload.afterDataUrl;
-        setAfterPreviewUrl(idbPayload.afterDataUrl);
-        if (idbPayload.beforeDataUrl) {
-          beforeDataUrlRef.current = idbPayload.beforeDataUrl;
-          setBeforePreviewUrl(idbPayload.beforeDataUrl);
-        }
-        if (idbPayload.lastProcessMs !== undefined) {
-          setLastProcessMs(idbPayload.lastProcessMs);
-        }
-        setHasProcessedResult(true);
-        setHasImage(true);
-      }
-
-      if (finalUrl) {
-        setTimeout(() => {
-          triggerSyncDownload(
-            finalUrl,
-            format,
-            'Welcome back! Your clean photo is downloading automatically.'
-          );
-        }, 120);
-      }
-    };
-
-    void processPendingReturnDownload(true);
-
-    const onReturnEvent = () => {
-      if (document.visibilityState === 'hidden') return;
-      void processPendingReturnDownload(false);
-    };
-
-    window.addEventListener('pageshow', onReturnEvent);
-    window.addEventListener('focus', onReturnEvent);
-    document.addEventListener('visibilitychange', onReturnEvent);
-
-    return () => {
-      window.removeEventListener('pageshow', onReturnEvent);
-      window.removeEventListener('focus', onReturnEvent);
-      document.removeEventListener('visibilitychange', onReturnEvent);
-    };
-  }, [getCleanDataUrl, readAndClearPendingPayloadFromIdb, triggerSyncDownload]);
-
-  const handleDownloadClean = async (format: 'png' | 'jpeg' = 'png') => {
+  const handleDownloadClean = (format: 'png' | 'jpeg' = 'png') => {
     const dataUrl = getCleanDataUrl(format);
     if (!dataUrl) {
       showToast('No processed photo available to download yet.');
-      return;
-    }
-
-    // First-time download click: save state & redirect to toolimg.online; auto-download when returning
-    if (typeof window !== 'undefined' && sessionStorage.getItem(PENDING_REDIRECT_KEY) !== '1') {
-      sessionStorage.setItem(PENDING_REDIRECT_KEY, '1');
-      sessionStorage.setItem(
-        PENDING_DOWNLOAD_META_KEY,
-        JSON.stringify({ format, createdAt: Date.now() })
-      );
-
-      if (dataUrl.length < 2_500_000) {
-        try {
-          sessionStorage.setItem(PENDING_BACKUP_URL_KEY, dataUrl);
-        } catch {}
-      }
-
-      const payload = {
-        afterDataUrl: dataUrl,
-        beforeDataUrl: beforeDataUrlRef.current || beforePreviewUrl || '',
-        format,
-        width: imageDimensions?.width || imageCanvasRef.current?.width || 0,
-        height: imageDimensions?.height || imageCanvasRef.current?.height || 0,
-        lastProcessMs,
-        createdAt: Date.now(),
-      };
-
-      await Promise.race([
-        savePendingPayloadToIdb(payload),
-        new Promise<void>((resolve) => setTimeout(resolve, 350)),
-      ]);
-
-      window.location.href = 'https://toolimg.online';
       return;
     }
 
