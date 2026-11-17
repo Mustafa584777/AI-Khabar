@@ -44,6 +44,8 @@ export default function robots(): MetadataRoute.Robots {
           '/pricing/',
           '/cancellation-refund',
           '/cancellation-refund/',
+          '/affiliate-disclosure',
+          '/affiliate-disclosure/',
           '/ai-policy',
           '/ai-policy/',
           '/notifications',

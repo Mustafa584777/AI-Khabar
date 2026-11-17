@@ -120,29 +120,30 @@ export const PromptCard = ({
   const isUnlocked = isPromptUnlocked(post.id, post.isPremium);
   const promptSlug = getPromptSlug(post);
   const detectedRatio = detectPostAspectRatio(post);
-  const effectiveAspectRatio = resolvedAspectRatio || detectedRatio;
+  const effectiveAspectRatio = isMultiple ? '3 / 4' : (resolvedAspectRatio || detectedRatio);
   const currentImg = isMultiple ? (allImages[activeImageIndex] || post.imageUrl) : post.imageUrl;
   const optimizedImgUrl = getOptimizedImageUrl(currentImg, 600);
 
   const syncNaturalRatio = React.useCallback(
     (img: HTMLImageElement | null) => {
       if (!img || !img.naturalWidth || !img.naturalHeight) return;
+      setImageLoaded(true);
+      if (isMultiple) return;
       const ratioStr = `${img.naturalWidth} / ${img.naturalHeight}`;
       setResolvedAspectRatio((prev) => (prev === ratioStr ? prev : ratioStr));
-      setImageLoaded(true);
       onAspectRatioResolved?.(post.id, img.naturalHeight / img.naturalWidth);
     },
-    [post.id, onAspectRatioResolved]
+    [post.id, isMultiple, onAspectRatioResolved]
   );
 
   // Resolve cached images that already finished loading before hydration
   useEffect(() => {
-    if (!inView) return;
+    if (!inView || isMultiple) return;
     const img = primaryImgRef.current;
     if (img && img.complete && img.naturalWidth > 0) {
       syncNaturalRatio(img);
     }
-  }, [inView, syncNaturalRatio]);
+  }, [inView, isMultiple, syncNaturalRatio]);
 
   // Viewport IntersectionObserver: strictly loads images only when entering or near viewport
   useEffect(() => {
@@ -219,7 +220,7 @@ export const PromptCard = ({
       ref={cardRef}
       itemScope
       itemType="https://schema.org/CreativeWork"
-      className="group relative rounded-[20px] sm:rounded-[24px] overflow-hidden bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800/80 cursor-pointer shadow-xs hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 select-none w-full"
+      className="group relative rounded-[20px] sm:rounded-[24px] overflow-hidden bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800/80 cursor-pointer shadow-xs hover:shadow-xl select-none w-full"
       id={`prompt-pin-${post.id}`}
       style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
       onMouseEnter={() => setIsHovered(true)}
@@ -273,7 +274,7 @@ export const PromptCard = ({
                     sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 240px"
                     alt={`${post.imageAlt || post.title} - photo ${idx + 1}`}
                     draggable={false}
-                    className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
+                    className="w-full h-full object-cover object-top select-none pointer-events-none"
                     referrerPolicy="no-referrer"
                     loading={priority && isLeadImage ? 'eager' : 'lazy'}
                     fetchPriority={priority && isLeadImage ? 'high' : 'auto'}
@@ -298,7 +299,7 @@ export const PromptCard = ({
                 sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 240px"
                 alt={post.imageAlt || post.title}
                 draggable={false}
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
+                className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none"
                 referrerPolicy="no-referrer"
                 loading={priority ? 'eager' : 'lazy'}
                 fetchPriority={priority ? 'high' : 'auto'}
@@ -313,75 +314,55 @@ export const PromptCard = ({
           </div>
         ) : null}
 
-        {/* Dark Semi-Transparent Overlay with White Action Buttons */}
-        <div className="absolute inset-0 bg-black/65 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto flex items-center justify-center gap-2 z-10 px-3">
-          {post.isPremium && !isUnlocked ? (
-            <div className="flex flex-col items-center justify-center gap-2 w-full px-2 text-center pointer-events-auto">
+        {/* Dark Semi-Transparent Overlay with White Action Buttons (only for unlocked/free cards so locked cards always open prompt view) */}
+        {!(post.isPremium && !isUnlocked) && (
+          <div className="hidden sm:flex absolute inset-0 bg-black/65 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto items-center justify-center gap-2 z-10 px-3">
+            {userAccount?.isLoggedIn && (
               <button
                 type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  startRouteNavigation('/pricing', 'Loading Pro Plans...');
-                  router.push('/pricing');
-                }}
-                className="flex items-center justify-center gap-1.5 w-full max-w-[225px] py-2 px-3 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-[11px] leading-tight shadow-lg transition-transform hover:scale-105 active:scale-95"
-                title="Upgrade to Premium at just 99/Year"
-                aria-label="Upgrade to Premium at just 99/Year"
+                onClick={handleBookmark}
+                className={`w-10 h-10 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl flex items-center justify-center ${
+                  isBookmarked ? 'ring-2 ring-[#E60023] text-[#E60023]' : 'text-neutral-900'
+                }`}
+                title={isBookmarked ? 'Saved (Click to remove)' : 'Save prompt'}
+                aria-label="Save prompt"
               >
-                <Crown className="w-3.5 h-3.5 fill-black text-black shrink-0" />
-                <span>Upgrade to Premium at just 99/Year</span>
+                {isBookmarked ? (
+                  <Bookmark className="w-4 h-4 fill-[#E60023] text-[#E60023]" />
+                ) : (
+                  <Bookmark className="w-4 h-4 text-neutral-800" />
+                )}
               </button>
-            </div>
-          ) : (
-            <>
-              {userAccount?.isLoggedIn && (
-                <button
-                  type="button"
-                  onClick={handleBookmark}
-                  className={`w-10 h-10 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl flex items-center justify-center transition-all duration-300 ease-out transform scale-75 group-hover:scale-100 hover:scale-110 active:scale-95 ${
-                    isBookmarked ? 'ring-2 ring-[#E60023] text-[#E60023]' : 'text-neutral-900'
-                  }`}
-                  title={isBookmarked ? 'Saved (Click to remove)' : 'Save prompt'}
-                  aria-label="Save prompt"
-                >
-                  {isBookmarked ? (
-                    <Bookmark className="w-4 h-4 fill-[#E60023] text-[#E60023]" />
-                  ) : (
-                    <Bookmark className="w-4 h-4 text-neutral-800" />
-                  )}
-                </button>
-              )}
+            )}
 
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  copyPromptToClipboard(post.promptText, post.id);
-                }}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl transition-all duration-300 ease-out transform scale-75 group-hover:scale-100 hover:scale-110 active:scale-95 text-xs font-bold"
-                title="Copy prompt"
-                aria-label="Copy prompt"
-              >
-                <Copy className="w-3.5 h-3.5 text-neutral-800" />
-                <span>Copy</span>
-              </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                copyPromptToClipboard(post.promptText, post.id);
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl text-xs font-bold"
+              title="Copy prompt"
+              aria-label="Copy prompt"
+            >
+              <Copy className="w-3.5 h-3.5 text-neutral-800" />
+              <span>Copy</span>
+            </button>
 
-              <button
-                type="button"
-                onClick={handleDeconstructImagePrompt}
-                data-action="decode-prompt"
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl transition-all duration-300 ease-out transform scale-75 group-hover:scale-100 hover:scale-110 active:scale-95 text-xs font-bold"
-                title="Decode"
-                aria-label="Decode"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                <span>Decode</span>
-              </button>
-            </>
-          )}
-        </div>
+            <button
+              type="button"
+              onClick={handleDeconstructImagePrompt}
+              data-action="decode-prompt"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-2xl text-xs font-bold"
+              title="Decode"
+              aria-label="Decode"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              <span>Decode</span>
+            </button>
+          </div>
+        )}
 
         {/* Multi-Image Pinterest Slider Controls on Card */}
         {isMultiple && (

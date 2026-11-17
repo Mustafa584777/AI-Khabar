@@ -42,6 +42,7 @@ export function resolveSkeletonKind(targetUrl: string): {
     path.startsWith('/terms') ||
     path.startsWith('/disclaimer') ||
     path.startsWith('/cancellation-refund') ||
+    path.startsWith('/affiliate-disclosure') ||
     path.startsWith('/ai-policy') ||
     path.startsWith('/auth')
   ) {

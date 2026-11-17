@@ -21,7 +21,7 @@ export const PromptCardSkeleton = ({ index = 0 }: { index?: number }) => {
 
   return (
     <div
-      className={`relative w-full ${ratioClass} rounded-2xl sm:rounded-3xl overflow-hidden bg-neutral-200/80 dark:bg-neutral-800/80 border border-neutral-200/70 dark:border-neutral-800/80 shadow-xs animate-pulse flex flex-col justify-between p-3 sm:p-4`}
+      className={`relative w-full ${ratioClass} rounded-2xl sm:rounded-3xl overflow-hidden bg-neutral-200/80 dark:bg-neutral-800/80 border border-neutral-200/70 dark:border-neutral-800/80 shadow-xs flex flex-col justify-between p-3 sm:p-4`}
     >
       {/* Top simulated badge/pill */}
       <div className="flex items-center justify-between w-full">

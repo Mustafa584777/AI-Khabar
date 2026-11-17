@@ -282,7 +282,8 @@ export const PromptGrid = () => {
       cols[shortestCol].push({ post, globalIndex });
 
       // Estimate normalized height (height / width) + uniform card spacing factor
-      let heightFactor = measuredRatios[post.id];
+      const isSliderPost = Array.isArray(post.additionalImages) && post.additionalImages.length > 0;
+      let heightFactor = isSliderPost ? 4 / 3 : measuredRatios[post.id];
       if (!heightFactor) {
         const ratioStr = detectPostAspectRatio(post);
         const parts = ratioStr.split('/').map((n) => Number(n.trim()));

@@ -178,6 +178,11 @@ export const Footer = () => {
                     Cancellation and Refund
                   </Link>
                 </li>
+                <li>
+                  <Link href="/affiliate-disclosure" prefetch={false} className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
+                    Affiliate Disclosure
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>

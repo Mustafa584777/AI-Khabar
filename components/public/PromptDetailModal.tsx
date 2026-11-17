@@ -416,6 +416,7 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
         '/terms',
         '/disclaimer',
         '/cancellation-refund',
+        '/affiliate-disclosure',
         '/ai-policy',
       ];
       if (!isDirectRoute && (knownNonSlugRoutes.includes(path) || path.startsWith('/admin'))) {
@@ -972,20 +973,13 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                   className="relative w-full overflow-hidden flex flex-col items-center justify-center select-none group/slider"
                 >
                   {allImages.length > 1 ? (
-                    /* Multi-Image Carousel Slider: Strictly matches each slide's original natural aspect ratio */
+                    /* Multi-Image Carousel Slider: Matches active slide natural aspect ratio with zero extra vertical spacing */
                     <div
                       style={{
                         aspectRatio: activeImageRatio,
-                        maxHeight: '82vh',
                       }}
-                      className="relative w-full overflow-hidden bg-neutral-950 select-none group/slider"
+                      className="relative w-full overflow-hidden bg-neutral-100 dark:bg-neutral-950 select-none group/slider"
                     >
-                      {!isCurrentImageLoaded && (
-                        <div
-                          aria-hidden="true"
-                          className="absolute inset-0 bg-neutral-200 dark:bg-neutral-900 animate-pulse pointer-events-none z-0"
-                        />
-                      )}
                       {/* Smooth Horizontal Sliding Track */}
                       <div
                         className="absolute inset-0 flex transition-transform duration-500 ease-out will-change-transform"
@@ -1004,7 +998,7 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                               srcSet={idx === 0 ? `${getOptimizedImageUrl(imgUrl, 560)} 560w, ${getOptimizedImageUrl(imgUrl, 800)} 800w, ${getOptimizedImageUrl(imgUrl, 1200)} 1200w` : undefined}
                               sizes="(max-width: 1024px) 100vw, 720px"
                               alt={`${selectedPost.imageAlt || selectedPost.title} - photo ${idx + 1}`}
-                              className="w-full h-full object-contain block select-none pointer-events-none"
+                              className="w-full h-full object-cover object-top block select-none pointer-events-none"
                               referrerPolicy="no-referrer"
                               loading={idx === 0 ? 'eager' : 'lazy'}
                               fetchPriority={idx === 0 ? 'high' : 'auto'}
@@ -1093,33 +1087,21 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                       </div>
                     </div>
                   ) : (
-                    /* Single Image Display: Strictly uses original natural aspect ratio without cropping or distortion */
-                    <div
-                      style={{
-                        aspectRatio: activeImageRatio,
-                        maxHeight: '82vh',
-                      }}
-                      className="relative w-full overflow-hidden bg-neutral-950 select-none group/single flex items-center justify-center"
-                    >
-                      {!isCurrentImageLoaded && (
-                        <div
-                          aria-hidden="true"
-                          className="absolute inset-0 bg-neutral-200 dark:bg-neutral-900 animate-pulse pointer-events-none z-0"
-                        />
-                      )}
+                    /* Single Image Display: Renders at exact original dimensions with zero top/bottom spacing */
+                    <div className="relative w-full overflow-hidden bg-neutral-100 dark:bg-neutral-900 select-none group/single">
                       <img
                         ref={(el) => {
                           mediaImgRefs.current[0] = el;
                         }}
-                        src={getOptimizedImageUrl(allImages[0] || selectedPost.imageUrl, 800)}
-                        srcSet={`${getOptimizedImageUrl(allImages[0] || selectedPost.imageUrl, 560)} 560w, ${getOptimizedImageUrl(allImages[0] || selectedPost.imageUrl, 800)} 800w, ${getOptimizedImageUrl(allImages[0] || selectedPost.imageUrl, 1200)} 1200w`}
+                        src={getOptimizedImageUrl(allImages[0] || selectedPost.imageUrl, 1000)}
+                        srcSet={`${getOptimizedImageUrl(allImages[0] || selectedPost.imageUrl, 560)} 560w, ${getOptimizedImageUrl(allImages[0] || selectedPost.imageUrl, 900)} 900w, ${getOptimizedImageUrl(allImages[0] || selectedPost.imageUrl, 1400)} 1400w`}
                         sizes="(max-width: 1024px) 100vw, 720px"
                         alt={selectedPost.imageAlt || selectedPost.title}
                         loading="eager"
                         fetchPriority="high"
                         decoding="async"
                         onLoad={(e) => syncMediaRatio(0, e.currentTarget)}
-                        className="w-full h-full object-contain block select-none pointer-events-none relative z-[1]"
+                        className="w-full h-auto block select-none pointer-events-none"
                         referrerPolicy="no-referrer"
                       />
 
