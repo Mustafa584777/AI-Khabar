@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Crown, Sparkles, Check } from 'lucide-react';
+import { useApp } from '@/context/AppContext';
 
 const PROMO_ITEMS = [
   'Unlock premium prompts at ₹99/Year',
@@ -15,6 +16,17 @@ const PROMO_ITEMS = [
 ];
 
 export const PromoMarqueeBar = () => {
+  const { isActivePremiumUser } = useApp();
+  const [hasHydrated, setHasHydrated] = useState(false);
+
+  useEffect(() => {
+    setHasHydrated(true);
+  }, []);
+
+  if (hasHydrated && isActivePremiumUser) {
+    return null;
+  }
+
   return (
     <div
       className="promo-marquee-container w-full h-8 bg-neutral-950 dark:bg-black text-white border-b border-neutral-800 overflow-hidden select-none relative z-30"

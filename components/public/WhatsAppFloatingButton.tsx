@@ -5,8 +5,8 @@ import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 
 const WHATSAPP_CHANNEL_URL = 'https://whatsapp.com/channel/0029VbBdohQHltY7L6LJu703';
-const SHOW_DURATION_MS = 8000;
-const CYCLE_INTERVAL_MS = 30000;
+const SHOW_DURATION_MS = 5000;
+const CYCLE_INTERVAL_MS = 45000;
 const INITIAL_DELAY_MS = 1200;
 
 export const WhatsAppFloatingButton = () => {
