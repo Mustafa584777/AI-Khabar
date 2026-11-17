@@ -8,7 +8,7 @@ import Image from 'next/image';
 import { Sparkles, Bookmark, Crown, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Layers, Copy } from 'lucide-react';
 import { getPromptSlug, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription } from '@/lib/utils';
 import { startRouteNavigation, pushPromptHistoryState } from '@/lib/navigation';
-import { warmPromptDetailModalChunk, preloadAndCacheImageUrl } from '@/lib/viewport-cache';
+import { warmPromptDetailModalChunk, preloadAndCacheImageUrl, recordLoadedImageElement } from '@/lib/viewport-cache';
 
 export const PromptCard = ({
   post,
@@ -129,12 +129,13 @@ export const PromptCard = ({
     (img: HTMLImageElement | null) => {
       if (!img || !img.naturalWidth || !img.naturalHeight) return;
       setImageLoaded(true);
+      recordLoadedImageElement(post.imageUrl, 360, img);
       if (isMultiple) return;
       const ratioStr = `${img.naturalWidth} / ${img.naturalHeight}`;
       setResolvedAspectRatio((prev) => (prev === ratioStr ? prev : ratioStr));
       onAspectRatioResolved?.(post.id, img.naturalHeight / img.naturalWidth);
     },
-    [post.id, isMultiple, onAspectRatioResolved]
+    [post.id, post.imageUrl, isMultiple, onAspectRatioResolved]
   );
 
   // Resolve cached images that already finished loading before hydration

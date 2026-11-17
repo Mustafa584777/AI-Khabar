@@ -18,6 +18,7 @@ const UserAuthModal = dynamic(() => import('./UserAuthModal').then((m) => m.User
 const UnlockPremiumModal = dynamic(() => import('./UnlockPremiumModal').then((m) => m.UnlockPremiumModal), { ssr: false });
 const RazorpayCheckoutModal = dynamic(() => import('./RazorpayCheckoutModal').then((m) => m.RazorpayCheckoutModal), { ssr: false });
 const AdminLoginModal = dynamic(() => import('@/components/admin/AdminLoginModal').then((m) => m.AdminLoginModal), { ssr: false });
+const WhatsAppFloatingButton = dynamic(() => import('./WhatsAppFloatingButton').then((m) => m.WhatsAppFloatingButton), { ssr: false });
 
 export const AppGlobalOverlays = () => {
   const {
@@ -73,6 +74,7 @@ export const AppGlobalOverlays = () => {
       {isProCheckoutModalOpen && <RazorpayCheckoutModal />}
       {showLoginModal && <AdminLoginModal />}
       {toastMessage && <ToastNotification />}
+      <WhatsAppFloatingButton />
       <PageLoadingOverlay />
       <OfflineIndicator />
       <NetlifyBadgeRemover />

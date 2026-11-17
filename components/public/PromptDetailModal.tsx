@@ -37,7 +37,12 @@ import Link from 'next/link';
 import { startRouteNavigation, pushPromptHistoryState } from '@/lib/navigation';
 import { PersonalizationEngine } from '@/lib/personalization';
 import { getPromptSlug, slugify, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription, formatPromptForClipboard } from '@/lib/utils';
-import { isImageUrlCachedInMemory } from '@/lib/viewport-cache';
+import {
+  isImageUrlCachedInMemory,
+  getCachedImageAspectRatio,
+  prepareMoreToExploreCard,
+  recordLoadedImageElement,
+} from '@/lib/viewport-cache';
 import { useRouter } from 'next/navigation';
 
 interface RecommendedPinCardProps {
@@ -68,6 +73,8 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
   return (
     <div
       onClick={() => onSelect(pin)}
+      onMouseEnter={() => prepareMoreToExploreCard(pin)}
+      onTouchStart={() => prepareMoreToExploreCard(pin)}
       style={{ aspectRatio: effectivePinRatio }}
       className="group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-neutral-200 dark:bg-neutral-900 cursor-pointer border border-neutral-200/60 dark:border-neutral-800/80 w-full"
       id={`masonry-pin-${pin.id}`}
@@ -92,6 +99,7 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
           alt={pin.imageAlt || pin.title}
           loading="eager"
           decoding="sync"
+          onLoad={(e) => recordLoadedImageElement(pin.imageUrl, 360, e.currentTarget)}
           className="absolute inset-0 w-full h-full object-cover block"
           referrerPolicy="no-referrer"
         />
@@ -215,24 +223,38 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
   }, [selectedPost?.id, selectedPost?.imageUrl, selectedPost?.additionalImages]);
 
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
-  const [imageRatios, setImageRatios] = useState<Record<number, string>>({});
+  const [prevPostIdForSlider, setPrevPostIdForSlider] = useState<string | null>(selectedPost?.id ?? null);
+  const [imageRatios, setImageRatios] = useState<Record<string, string>>({});
   const [loadedMediaMap, setLoadedMediaMap] = useState<Record<string, boolean>>({});
   const [erroredMediaMap, setErroredMediaMap] = useState<Record<string, boolean>>({});
   const mediaImgRefs = useRef<Record<number, HTMLImageElement | null>>({});
 
-  const syncMediaRatio = useCallback((idx: number, img: HTMLImageElement | null, mediaKey?: string) => {
-    if (!img || !img.naturalWidth || !img.naturalHeight) return;
-    const ratio = `${img.naturalWidth} / ${img.naturalHeight}`;
-    setImageRatios((prev) => (prev[idx] === ratio ? prev : { ...prev, [idx]: ratio }));
-    if (mediaKey) {
-      setLoadedMediaMap((prev) => (prev[mediaKey] ? prev : { ...prev, [mediaKey]: true }));
+  // Reset active slide synchronously during render when switching posts so frame 1 has index 0
+  if ((selectedPost?.id ?? null) !== prevPostIdForSlider) {
+    setPrevPostIdForSlider(selectedPost?.id ?? null);
+    if (currentImageIndex !== 0) {
+      setCurrentImageIndex(0);
     }
-  }, []);
+  }
 
-  // Always reset slider & resolved natural ratios whenever a new prompt is opened
+  const syncMediaRatio = useCallback(
+    (postId: string, idx: number, img: HTMLImageElement | null, mediaKey?: string, rawUrl?: string) => {
+      if (!img || !img.naturalWidth || !img.naturalHeight) return;
+      const ratio = `${img.naturalWidth} / ${img.naturalHeight}`;
+      const ratioKey = `${postId}::${idx}`;
+      setImageRatios((prev) => (prev[ratioKey] === ratio ? prev : { ...prev, [ratioKey]: ratio }));
+      if (mediaKey) {
+        setLoadedMediaMap((prev) => (prev[mediaKey] ? prev : { ...prev, [mediaKey]: true }));
+      }
+      if (rawUrl) {
+        recordLoadedImageElement(rawUrl, 800, img);
+      }
+    },
+    []
+  );
+
+  // Clear DOM ref slots whenever a new prompt is opened
   useEffect(() => {
-    setCurrentImageIndex(0);
-    setImageRatios({});
     mediaImgRefs.current = {};
   }, [selectedPost?.id]);
 
@@ -244,7 +266,7 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
     const keySrc = getOptimizedImageUrl(currentSrc, 800);
     const mediaKey = `${selectedPost.id}::${currentImageIndex}::${keySrc}`;
     if (img && img.complete && img.naturalWidth > 0) {
-      syncMediaRatio(currentImageIndex, img, mediaKey);
+      syncMediaRatio(selectedPost.id, currentImageIndex, img, mediaKey, currentSrc);
     }
   }, [selectedPost, currentImageIndex, allImages, syncMediaRatio]);
 
@@ -360,8 +382,21 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
   const currentPost = posts.find((p) => p.id === selectedPost?.id) || selectedPost;
   const copiesCount = currentPost?.copiesCount ?? selectedPost?.copiesCount ?? 0;
 
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [scrollRootEl, setScrollRootEl] = useState<HTMLDivElement | null>(null);
+  const setContainerNode = useCallback((node: HTMLDivElement | null) => {
+    containerRef.current = node;
+    setScrollRootEl(node);
+  }, []);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
+  const exploreCardNodesRef = useRef<Map<string, HTMLDivElement>>(new Map());
+  const registerExploreCardNode = useCallback((pinId: string, el: HTMLDivElement | null) => {
+    if (el) {
+      exploreCardNodesRef.current.set(pinId, el);
+    } else {
+      exploreCardNodesRef.current.delete(pinId);
+    }
+  }, []);
 
   const closeModal = useCallback((e?: React.MouseEvent) => {
     if (e) {
@@ -769,10 +804,55 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
     return cols;
   }, [visiblePins, exploreColumnCount]);
 
+  // Viewport IntersectionObserver for "More to explore": caches visible & scrolling cards locally at 0ms
+  useEffect(() => {
+    if (!selectedPost || visiblePins.length === 0) return;
+    const rootEl = scrollRootEl || containerRef.current;
+    if (!rootEl || typeof IntersectionObserver === 'undefined') return;
+
+    const pinById = new Map<string, PromptPost>();
+    for (const p of visiblePins) {
+      pinById.set(p.id, p);
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const target = entry.target as HTMLElement;
+          const pinId = target.dataset.explorePinId;
+          if (pinId) {
+            const pin = pinById.get(pinId);
+            if (pin) {
+              prepareMoreToExploreCard(pin);
+            }
+          }
+          observer.unobserve(target);
+        }
+      },
+      { root: rootEl, rootMargin: '250px 0px', threshold: 0.01 }
+    );
+
+    exploreCardNodesRef.current.forEach((node) => {
+      if (node && node.isConnected) {
+        observer.observe(node);
+      }
+    });
+
+    return () => observer.disconnect();
+  }, [selectedPost, visiblePins, scrollRootEl, exploreColumnCount]);
+
   if (!selectedPost) return null;
 
   const detectedRatio = detectPostAspectRatio(selectedPost);
-  const activeImageRatio = imageRatios[currentImageIndex] || imageRatios[0] || detectedRatio;
+  const activeSlideRawUrl = allImages[currentImageIndex] || selectedPost.imageUrl;
+  const leadSlideRawUrl = allImages[0] || selectedPost.imageUrl;
+  const activeImageRatio =
+    imageRatios[`${selectedPost.id}::${currentImageIndex}`] ||
+    getCachedImageAspectRatio(activeSlideRawUrl) ||
+    imageRatios[`${selectedPost.id}::0`] ||
+    getCachedImageAspectRatio(leadSlideRawUrl) ||
+    detectedRatio;
 
   const isBookmarked = bookmarkedIds.includes(selectedPost.id);
   const isUnlocked = isPromptUnlocked(selectedPost.id, selectedPost.isPremium);
@@ -854,7 +934,9 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
 
   const handleSelectPin = (pin: PromptPost) => {
     PersonalizationEngine.recordView(pin);
+    prepareMoreToExploreCard(pin);
     setIsDirectClosed(false);
+    setCurrentImageIndex(0);
     if (containerRef.current) {
       containerRef.current.scrollTop = 0;
     }
@@ -886,7 +968,7 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
 
   return (
     <div
-      ref={containerRef}
+      ref={setContainerNode}
       className="fixed inset-0 z-50 overflow-y-auto bg-neutral-100 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 flex flex-col"
       id="fullscreen-prompt-view"
     >
@@ -1039,18 +1121,19 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                       >
                         {allImages.map((imgUrl, idx) => {
                           const slide800 = getOptimizedImageUrl(imgUrl, 800);
+                          const slidePreviewUrl = getOptimizedImageUrl(imgUrl, 360);
                           const slideKey = `${selectedPost.id}::${idx}::${slide800}`;
                           const isSlideLoaded =
-                            Boolean(loadedMediaMap[slideKey]) ||
-                            isImageUrlCachedInMemory(imgUrl, 800) ||
-                            isImageUrlCachedInMemory(imgUrl, 360);
+                            Boolean(loadedMediaMap[slideKey]) || isImageUrlCachedInMemory(imgUrl, 800);
+                          const isSlidePreviewLoaded = isImageUrlCachedInMemory(imgUrl, 360);
                           const isSlideErrored = Boolean(erroredMediaMap[slideKey]);
+                          const hasDifferentSlidePreview = Boolean(slidePreviewUrl && slidePreviewUrl !== slide800);
                           return (
                             <div
                               key={idx}
                               className="w-full h-full shrink-0 relative overflow-hidden bg-neutral-200 dark:bg-neutral-900 flex items-center justify-center"
                             >
-                              {!isSlideLoaded && !isSlideErrored && (
+                              {!isSlideLoaded && !isSlidePreviewLoaded && !isSlideErrored && (
                                 <div
                                   aria-hidden="true"
                                   className="absolute inset-0 z-10 pointer-events-none bg-neutral-200 dark:bg-neutral-800 overflow-hidden flex flex-col items-center justify-center gap-2.5"
@@ -1060,18 +1143,29 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                                   </div>
                                 </div>
                               )}
+                              {!isSlideLoaded && isSlidePreviewLoaded && hasDifferentSlidePreview && (
+                                <img
+                                  src={slidePreviewUrl}
+                                  alt=""
+                                  aria-hidden="true"
+                                  loading="eager"
+                                  decoding="sync"
+                                  className="absolute inset-0 w-full h-full object-cover object-top block select-none pointer-events-none z-[1]"
+                                  referrerPolicy="no-referrer"
+                                />
+                              )}
                               <img
                                 ref={(el) => {
                                   mediaImgRefs.current[idx] = el;
                                 }}
                                 src={slide800}
                                 alt={`${selectedPost.imageAlt || selectedPost.title} - photo ${idx + 1}`}
-                                className="w-full h-full object-cover object-top block select-none pointer-events-none"
+                                className="relative z-[2] w-full h-full object-cover object-top block select-none pointer-events-none"
                                 referrerPolicy="no-referrer"
                                 loading={idx === 0 ? 'eager' : 'lazy'}
                                 fetchPriority={idx === 0 ? 'high' : 'auto'}
-                                decoding="async"
-                                onLoad={(e) => syncMediaRatio(idx, e.currentTarget, slideKey)}
+                                decoding="sync"
+                                onLoad={(e) => syncMediaRatio(selectedPost.id, idx, e.currentTarget, slideKey, imgUrl)}
                                 onError={() =>
                                   setErroredMediaMap((prev) => (prev[slideKey] ? prev : { ...prev, [slideKey]: true }))
                                 }
@@ -1172,9 +1266,16 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                         Boolean(loadedMediaMap[previewKey]) || isImageUrlCachedInMemory(rawSingleUrl, 360);
                       const isSingleErrored = Boolean(erroredMediaMap[singleKey]);
                       const hasDifferentPreview = Boolean(singlePreviewUrl && singlePreviewUrl !== singleUrl);
+                      const exactCachedRatio =
+                        imageRatios[`${selectedPost.id}::0`] || getCachedImageAspectRatio(rawSingleUrl);
+                      const containerStyle = exactCachedRatio
+                        ? { aspectRatio: exactCachedRatio }
+                        : isSingleLoaded
+                          ? undefined
+                          : { aspectRatio: activeImageRatio };
                       return (
                         <div
-                          style={isSingleLoaded ? undefined : { aspectRatio: activeImageRatio }}
+                          style={containerStyle}
                           className="relative w-full overflow-hidden bg-white dark:bg-neutral-900 select-none group/single"
                         >
                           {!isSingleLoaded && !isPreviewLoaded && !isSingleErrored && (
@@ -1195,7 +1296,7 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                               aria-hidden="true"
                               loading="eager"
                               decoding="sync"
-                              onLoad={(e) => syncMediaRatio(0, e.currentTarget, previewKey)}
+                              onLoad={(e) => syncMediaRatio(selectedPost.id, 0, e.currentTarget, previewKey, rawSingleUrl)}
                               className="absolute inset-0 w-full h-full object-cover object-top block select-none pointer-events-none z-[1]"
                               referrerPolicy="no-referrer"
                             />
@@ -1208,14 +1309,16 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                             alt={selectedPost.imageAlt || selectedPost.title}
                             loading="eager"
                             fetchPriority="high"
-                            decoding="async"
-                            onLoad={(e) => syncMediaRatio(0, e.currentTarget, singleKey)}
+                            decoding="sync"
+                            onLoad={(e) => syncMediaRatio(selectedPost.id, 0, e.currentTarget, singleKey, rawSingleUrl)}
                             onError={() =>
                               setErroredMediaMap((prev) => (prev[singleKey] ? prev : { ...prev, [singleKey]: true }))
                             }
                             className={
                               isSingleLoaded
-                                ? 'w-full h-auto block select-none pointer-events-none'
+                                ? exactCachedRatio
+                                  ? 'w-full h-full object-cover object-top block select-none pointer-events-none'
+                                  : 'w-full h-auto block select-none pointer-events-none'
                                 : 'relative z-[2] w-full h-full object-cover object-top block select-none pointer-events-none'
                             }
                             referrerPolicy="no-referrer"
@@ -1564,7 +1667,12 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
             {exploreMasonryColumns.map((colPins, colIdx) => (
               <div key={colIdx} className="flex-1 min-w-0 flex flex-col gap-3 sm:gap-4">
                 {colPins.map((pin) => (
-                  <div key={pin.id} className="w-full">
+                  <div
+                    key={pin.id}
+                    ref={(el) => registerExploreCardNode(pin.id, el)}
+                    data-explore-pin-id={pin.id}
+                    className="w-full"
+                  >
                     <RecommendedPinCard
                       pin={pin}
                       isPinBookmarked={bookmarkedIds.includes(pin.id)}
