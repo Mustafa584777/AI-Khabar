@@ -15,7 +15,7 @@ import {
   Sliders,
 } from 'lucide-react';
 import { getPromptSlug, getDynamicPopularTags, getOptimizedImageUrl } from '@/lib/utils';
-import { ImageToPromptBox } from './ImageToPromptBox';
+import { GeminiWatermarkRemoverBox } from './GeminiWatermarkRemoverBox';
 
 export const HeroSection = () => {
   const {
@@ -124,8 +124,8 @@ export const HeroSection = () => {
           "Explore professionally crafted photo prompts for Gemini, and ChatGPT. Copy with 1 click. Decode any image's prompt, generate new version, create new prompt from idea or edit an existing one."}
       </p>
 
-      {/* AI Image to Prompt Box */}
-      <ImageToPromptBox />
+      {/* Free Gemini Watermark Remover Box */}
+      <GeminiWatermarkRemoverBox />
 
       {/* Action Bar: Search & Sort Dropdown */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">

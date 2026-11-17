@@ -103,7 +103,7 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
       ref={cardRef}
       onClick={() => onSelect(pin)}
       style={{ aspectRatio: effectivePinRatio }}
-      className="group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-neutral-200 dark:bg-neutral-900 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-300 border border-neutral-200/60 dark:border-neutral-800/80 w-full"
+      className="group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-neutral-200 dark:bg-neutral-900 cursor-pointer shadow-sm hover:shadow-2xl border border-neutral-200/60 dark:border-neutral-800/80 w-full"
       id={`masonry-pin-${pin.id}`}
     >
       {/* Premium Badge */}
@@ -117,7 +117,7 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
         </div>
       )}
 
-      {/* Photo Pin Image (rendered ONLY when inView is true) */}
+      {/* Photo Pin Image (rendered ONLY when inView is true, without load animation) */}
       {pin.imageUrl && inView && (
         <img
           ref={pinImgRef}
@@ -128,19 +128,19 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
           loading="lazy"
           decoding="async"
           onLoad={(e) => syncPinRatio(e.currentTarget)}
-          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          className="absolute inset-0 w-full h-full object-cover"
           referrerPolicy="no-referrer"
         />
       )}
 
       {/* Dark Vignette Overlay on Hover */}
-      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-between p-3 pointer-events-none">
+      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex flex-col justify-between p-3 pointer-events-none">
         {/* Top Actions */}
         <div className="flex items-center justify-between w-full pointer-events-auto">
           <button
             type="button"
             onClick={(e) => onGenerate(e, pin)}
-            className="px-2.5 py-1 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 text-[10px] font-bold shadow-md transition-transform hover:scale-105 flex items-center gap-1"
+            className="px-2.5 py-1 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 text-[10px] font-bold shadow-md flex items-center gap-1"
             title="Generate Image with this prompt"
           >
             <Sparkles className="w-3 h-3 text-[#E60023]" />
@@ -151,7 +151,7 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
             <button
               type="button"
               onClick={(e) => onCopy(e, pin)}
-              className="p-1.5 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-md transition-all hover:scale-105"
+              className="p-1.5 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-md"
               title="Quick Copy Prompt"
             >
               {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
@@ -160,7 +160,7 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
             <button
               type="button"
               onClick={(e) => onToggleBookmark(e, pin)}
-              className={`px-2.5 py-1 rounded-full text-[10px] font-bold shadow-md transition-all hover:scale-105 flex items-center gap-1 ${
+              className={`px-2.5 py-1 rounded-full text-[10px] font-bold shadow-md flex items-center gap-1 ${
                 isPinBookmarked
                   ? 'bg-white text-[#E60023]'
                   : 'bg-white hover:bg-neutral-100 text-neutral-900'
@@ -248,21 +248,18 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
 
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [imageRatios, setImageRatios] = useState<Record<number, string>>({});
-  const [loadedImageIndices, setLoadedImageIndices] = useState<Record<number, boolean>>({});
   const mediaImgRefs = useRef<Record<number, HTMLImageElement | null>>({});
 
   const syncMediaRatio = useCallback((idx: number, img: HTMLImageElement | null) => {
     if (!img || !img.naturalWidth || !img.naturalHeight) return;
     const ratio = `${img.naturalWidth} / ${img.naturalHeight}`;
     setImageRatios((prev) => (prev[idx] === ratio ? prev : { ...prev, [idx]: ratio }));
-    setLoadedImageIndices((prev) => (prev[idx] ? prev : { ...prev, [idx]: true }));
   }, []);
 
   // Always reset slider & resolved natural ratios whenever a new prompt is opened
   useEffect(() => {
     setCurrentImageIndex(0);
     setImageRatios({});
-    setLoadedImageIndices({});
     mediaImgRefs.current = {};
   }, [selectedPost?.id]);
 
@@ -718,7 +715,6 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
 
   const detectedRatio = detectPostAspectRatio(selectedPost);
   const activeImageRatio = imageRatios[currentImageIndex] || imageRatios[0] || detectedRatio;
-  const isCurrentImageLoaded = Boolean(loadedImageIndices[currentImageIndex]);
 
   const isBookmarked = bookmarkedIds.includes(selectedPost.id);
   const isUnlocked = isPromptUnlocked(selectedPost.id, selectedPost.isPremium);

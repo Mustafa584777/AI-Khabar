@@ -39,6 +39,7 @@ import type {
 } from '@/lib/watermark-remover';
 import { useApp } from '@/context/AppContext';
 import { WatermarkRemoverSEO } from '@/components/public/WatermarkRemoverSEO';
+import { clearWatermarkHandoff, peekWatermarkHandoff } from '@/lib/watermark-handoff';
 
 interface BulkWatermarkItem {
   id: string;
@@ -219,6 +220,7 @@ export const WatermarkRemoverTool = () => {
       setHasProcessedResult(false);
       setShowCompareMode(false);
       setLastProcessMs(null);
+      clearWatermarkHandoff();
       showToast('Gemini watermark spot auto-marked! Just click "Remove Watermark Now".');
       return true;
     },
@@ -269,6 +271,54 @@ export const WatermarkRemoverTool = () => {
     },
     [drawLoadedImage, hasImage, showToast]
   );
+
+  // Auto-load image uploaded from the Homepage Gemini Watermark Remover box (works in both logged-out & logged-in modes)
+  useEffect(() => {
+    const handoff = peekWatermarkHandoff();
+    if (!handoff) return;
+
+    let cancelled = false;
+    let createdObjectUrl = '';
+
+    if (handoff.file) {
+      createdObjectUrl = URL.createObjectURL(handoff.file);
+    }
+    const src = createdObjectUrl || handoff.dataUrl;
+    if (!src) return;
+
+    const img = new window.Image();
+    img.onload = () => {
+      if (cancelled) {
+        if (createdObjectUrl) URL.revokeObjectURL(createdObjectUrl);
+        return;
+      }
+      if (pendingUploadRef.current?.objectUrl) {
+        URL.revokeObjectURL(pendingUploadRef.current.objectUrl);
+      }
+      pendingUploadRef.current = { img, objectUrl: createdObjectUrl };
+      if (imageCanvasRef.current && maskCanvasRef.current && drawLoadedImage(img)) {
+        if (createdObjectUrl) URL.revokeObjectURL(createdObjectUrl);
+        pendingUploadRef.current = null;
+      } else {
+        setHasImage(true);
+      }
+    };
+    img.onerror = () => {
+      if (createdObjectUrl) URL.revokeObjectURL(createdObjectUrl);
+      if (!cancelled) {
+        clearWatermarkHandoff();
+        showToast('Could not load uploaded image. Please choose your photo again.');
+      }
+    };
+    img.src = src;
+
+    return () => {
+      cancelled = true;
+      if (createdObjectUrl && pendingUploadRef.current?.objectUrl !== createdObjectUrl) {
+        URL.revokeObjectURL(createdObjectUrl);
+      }
+    };
+  }, [drawLoadedImage, showToast]);
 
   // Sync image canvas dimensions after first file loads into DOM
   useEffect(() => {
