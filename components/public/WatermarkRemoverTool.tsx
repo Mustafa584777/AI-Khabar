@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   Upload,
   Eraser,
@@ -20,6 +20,8 @@ import {
   Layers,
   Zap,
   Share2,
+  Link2,
+  MoveHorizontal,
   Lock,
   Crown,
   ExternalLink,
@@ -51,6 +53,7 @@ interface BulkWatermarkItem {
 
 export const WatermarkRemoverTool = () => {
   const {
+    posts,
     showToast,
     userAccount,
     isProUser,
@@ -82,6 +85,23 @@ export const WatermarkRemoverTool = () => {
   const [showCompareMode, setShowCompareMode] = useState(false);
   const [lastProcessMs, setLastProcessMs] = useState<number | null>(null);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
+
+  // MacBook Before/After Showcase (Homepage Latest Prompt Image)
+  const [demoSliderPos, setDemoSliderPos] = useState<number>(52);
+  const [demoImageError, setDemoImageError] = useState(false);
+
+  const latestHomepagePost = useMemo(() => {
+    const published = (posts || []).filter(
+      (p) => p && p.status !== 'draft' && typeof p.imageUrl === 'string' && p.imageUrl.trim().length > 0
+    );
+    if (published.length === 0) return null;
+    const sorted = [...published].sort((a, b) => {
+      const ta = new Date(a.publishedAt || a.createdAt || 0).getTime();
+      const tb = new Date(b.publishedAt || b.createdAt || 0).getTime();
+      return tb - ta;
+    });
+    return sorted[0];
+  }, [posts]);
 
   // Bulk Upload Queue (Premium-only feature)
   const [bulkItems, setBulkItems] = useState<BulkWatermarkItem[]>([]);
@@ -640,6 +660,34 @@ export const WatermarkRemoverTool = () => {
       showToast('Tool link copied to clipboard! Ready to share.');
     } catch {
       showToast('Sharing is not supported on this browser. Use Download instead.');
+    }
+  };
+
+  const handleShareTool = async () => {
+    const shareUrl =
+      typeof window !== 'undefined'
+        ? window.location.href
+        : 'https://zeenaprompt.com/free-gemini-watermark-remover-online';
+
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({
+          title: 'Free Gemini & AI Watermark Remover - Zeenaprompt',
+          text: 'Remove Gemini & AI watermarks offline in seconds directly inside your browser!',
+          url: shareUrl,
+        });
+        showToast('Tool link shared successfully!');
+        return;
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return;
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      showToast('Tool link copied to clipboard! Ready to share.');
+    } catch {
+      showToast('Copy the page link from your browser bar to share this tool.');
     }
   };
 
@@ -1367,15 +1415,27 @@ export const WatermarkRemoverTool = () => {
                       <span>Download Clean Image (HD PNG)</span>
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={() => void handleShareClean()}
-                      className="w-full py-2.5 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-sm flex items-center justify-center gap-2 transition-colors cursor-pointer"
-                      id="share-clean-image-btn"
-                    >
-                      <Share2 className="w-4 h-4" />
-                      <span>Share Clean Photo</span>
-                    </button>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void handleShareClean()}
+                        className="w-full py-2.5 px-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+                        id="share-clean-image-btn"
+                      >
+                        <Share2 className="w-4 h-4 shrink-0" />
+                        <span>Share Clean Photo</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => void handleShareTool()}
+                        className="w-full py-2.5 px-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+                        id="share-this-tool-btn"
+                      >
+                        <Link2 className="w-4 h-4 shrink-0" />
+                        <span>Share This Tool</span>
+                      </button>
+                    </div>
 
                     <div className="grid grid-cols-2 gap-2">
                       <button
@@ -1671,6 +1731,241 @@ export const WatermarkRemoverTool = () => {
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </span>
             </a>
+          </div>
+        </section>
+      )}
+
+      {/* Apple MacBook Laptop Window Frame Showcase (Latest Homepage Prompt with Interactive Before/After Slider) */}
+      {latestHomepagePost && (
+        <section
+          aria-label="Live Before and After Watermark Removal Showcase"
+          className="mt-8 space-y-4"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 px-1">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold text-pink-600 dark:text-pink-400">
+                Latest Homepage Prompt · Live Comparison
+              </p>
+              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-neutral-900 dark:text-white">
+                Before &amp; After HD Watermark Removal Preview
+              </h2>
+            </div>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              Drag the slider across the laptop preview to compare watermarked vs clean reconstruction.
+            </p>
+          </div>
+
+          {/* MacBook Outer Display Shell */}
+          <div className="mx-auto max-w-5xl">
+            <div className="rounded-t-[24px] sm:rounded-t-[30px] bg-[#0b0c10] p-2.5 sm:p-4 ring-1 ring-neutral-800 shadow-2xl relative">
+              {/* MacBook Pro Camera Notch */}
+              <div
+                aria-hidden="true"
+                className="hidden sm:flex items-center justify-center w-28 h-4 bg-[#0b0c10] rounded-b-xl absolute top-2.5 left-1/2 -translate-x-1/2 z-30 border-x border-b border-neutral-800/80"
+              >
+                <span className="w-2 h-2 rounded-full bg-neutral-800 ring-1 ring-neutral-700 flex items-center justify-center">
+                  <span className="w-1 h-1 rounded-full bg-sky-900" />
+                </span>
+              </div>
+
+              {/* Inner macOS Display Panel */}
+              <div className="rounded-2xl overflow-hidden bg-neutral-950 border border-neutral-800">
+                {/* macOS Window Title Bar */}
+                <div className="bg-neutral-900/95 border-b border-neutral-800 px-3.5 sm:px-5 py-2.5 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-1.5 shrink-0" aria-hidden="true">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F56]" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E]" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#27C93F]" />
+                  </div>
+
+                  <div className="flex-1 max-w-md mx-auto bg-neutral-950/90 border border-neutral-800 rounded-lg px-3 py-1 text-center truncate text-[11px] sm:text-xs font-medium text-neutral-300">
+                    zeenaprompt.com · {latestHomepagePost.title}
+                  </div>
+
+                  <div className="hidden sm:block text-[11px] font-mono tabular-nums text-neutral-400 whitespace-nowrap shrink-0">
+                    {latestHomepagePost.imageWidth || 1024} × {latestHomepagePost.imageHeight || 1536}
+                  </div>
+                </div>
+
+                {/* macOS Workspace Content */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch bg-neutral-950">
+                  {/* Left: Full Uncropped Before / After Comparison Canvas */}
+                  <div className="lg:col-span-7 p-4 sm:p-6 bg-[#111318] flex items-center justify-center border-b lg:border-b-0 lg:border-r border-neutral-800/90">
+                    <div className="relative w-full max-w-[330px] sm:max-w-[350px] aspect-[3/4] rounded-xl overflow-hidden bg-neutral-900 border border-neutral-800 select-none shadow-lg">
+                      {!demoImageError ? (
+                        <>
+                          {/* After Layer (Base Clean HD Photo) */}
+                          <img
+                            src={latestHomepagePost.imageUrl}
+                            alt={`${latestHomepagePost.title} - Clean photo without watermark`}
+                            loading="lazy"
+                            decoding="async"
+                            referrerPolicy="no-referrer"
+                            onError={() => setDemoImageError(true)}
+                            className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
+                          />
+
+                          {/* Before Layer (Left Clipped Region Showing Simulated Gemini Corner Watermark) */}
+                          <div
+                            className="absolute inset-0 overflow-hidden pointer-events-none select-none"
+                            style={{ clipPath: `inset(0 ${100 - demoSliderPos}% 0 0)` }}
+                          >
+                            <img
+                              src={latestHomepagePost.imageUrl}
+                              alt=""
+                              aria-hidden="true"
+                              loading="lazy"
+                              decoding="async"
+                              referrerPolicy="no-referrer"
+                              className="absolute inset-0 w-full h-full object-cover select-none"
+                            />
+                            {/* Realistic Corner Watermark Overlay Visible in Before Region */}
+                            <div
+                              aria-hidden="true"
+                              className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 rounded-md bg-black/35 backdrop-blur-[2px] text-white/95"
+                            >
+                              <Sparkles className="w-4 h-4 text-white drop-shadow" />
+                              <span className="text-[11px] font-semibold tracking-tight drop-shadow">
+                                Gemini
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Corner Split Labels */}
+                          <div className="absolute top-3 left-3 z-10 px-2.5 py-1 rounded-md bg-black/75 text-white text-[11px] font-semibold pointer-events-none">
+                            Before · Watermark
+                          </div>
+                          <div className="absolute top-3 right-3 z-10 px-2.5 py-1 rounded-md bg-emerald-600/90 text-white text-[11px] font-semibold pointer-events-none">
+                            After · Clean HD
+                          </div>
+
+                          {/* Vertical Divider & Thumb */}
+                          <div
+                            aria-hidden="true"
+                            className="absolute top-0 bottom-0 w-0.5 bg-white/90 shadow-[0_0_12px_rgba(0,0,0,0.85)] z-20 pointer-events-none"
+                            style={{ left: `${demoSliderPos}%` }}
+                          >
+                            <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-white text-neutral-900 shadow-xl border border-neutral-200 flex items-center justify-center">
+                              <MoveHorizontal className="w-4 h-4" />
+                            </div>
+                          </div>
+
+                          {/* Accessible Interactive Range Control */}
+                          <input
+                            type="range"
+                            min={0}
+                            max={100}
+                            value={demoSliderPos}
+                            onChange={(e) => setDemoSliderPos(Number(e.target.value))}
+                            aria-label="Slide to compare watermarked photo before and after removal"
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-30"
+                          />
+                        </>
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center gap-2 text-neutral-400">
+                          <Images className="w-8 h-8 text-neutral-500" />
+                          <p className="text-xs font-medium">{latestHomepagePost.title}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right: Prompt Details & Quick Slider Controls */}
+                  <div className="lg:col-span-5 p-5 sm:p-7 flex flex-col justify-between gap-5 text-neutral-100">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 text-xs text-neutral-400">
+                        <span>{latestHomepagePost.preferredAi || latestHomepagePost.aiTool || 'Gemini'}</span>
+                        <span aria-hidden="true">·</span>
+                        <span className="truncate">{latestHomepagePost.category}</span>
+                      </div>
+
+                      <div className="space-y-2">
+                        <h3 className="text-lg sm:text-xl font-bold text-white leading-snug">
+                          {latestHomepagePost.title}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed line-clamp-3">
+                          {latestHomepagePost.seo?.metaDescription || latestHomepagePost.promptText}
+                        </p>
+                      </div>
+
+                      {/* Slider Readout & Preset Buttons */}
+                      <div className="pt-2 space-y-2.5 border-t border-neutral-800/80">
+                        <div className="flex items-center justify-between text-xs text-neutral-400">
+                          <span>Comparison Split</span>
+                          <span className="font-mono tabular-nums text-neutral-200">
+                            {demoSliderPos}% Before / {100 - demoSliderPos}% After
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-1.5 p-1 rounded-lg bg-neutral-900 border border-neutral-800">
+                          <button
+                            type="button"
+                            onClick={() => setDemoSliderPos(100)}
+                            className={`px-2 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                              demoSliderPos >= 90
+                                ? 'bg-neutral-800 text-white'
+                                : 'text-neutral-400 hover:text-white'
+                            }`}
+                          >
+                            Before
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDemoSliderPos(50)}
+                            className={`px-2 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                              demoSliderPos > 10 && demoSliderPos < 90
+                                ? 'bg-neutral-800 text-white'
+                                : 'text-neutral-400 hover:text-white'
+                            }`}
+                          >
+                            50 / 50
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDemoSliderPos(0)}
+                            className={`px-2 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                              demoSliderPos <= 10
+                                ? 'bg-emerald-600 text-white'
+                                : 'text-neutral-400 hover:text-white'
+                            }`}
+                          >
+                            Clean HD
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (typeof window !== 'undefined') {
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }
+                          fileInputRef.current?.click();
+                        }}
+                        className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-600 hover:from-pink-600 hover:via-fuchsia-600 hover:to-violet-700 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap"
+                      >
+                        <Upload className="w-4 h-4 shrink-0" />
+                        <span>Upload Your Image to Clean</span>
+                      </button>
+
+                      <a
+                        href={`/prompt/${latestHomepagePost.slug || latestHomepagePost.id}`}
+                        className="w-full py-2.5 px-4 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-200 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-colors whitespace-nowrap"
+                      >
+                        <span>View This Homepage Prompt</span>
+                        <ArrowRight className="w-4 h-4 shrink-0" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Metallic MacBook Unibody Base / Hinge Lip */}
+            <div aria-hidden="true" className="relative mx-auto w-[103%] -ml-[1.5%] h-3.5 sm:h-4 rounded-b-2xl bg-gradient-to-b from-neutral-300 via-neutral-400 to-neutral-500 dark:from-neutral-700 dark:via-neutral-800 dark:to-neutral-900 shadow-lg flex justify-center">
+              <div className="w-16 sm:w-24 h-1.5 rounded-b-md bg-neutral-500/70 dark:bg-neutral-950/80" />
+            </div>
           </div>
         </section>
       )}
