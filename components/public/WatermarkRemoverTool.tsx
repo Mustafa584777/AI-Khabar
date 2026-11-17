@@ -996,10 +996,10 @@ export const WatermarkRemoverTool = () => {
             <span className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-500 via-fuchsia-500 to-violet-600 text-white flex items-center justify-center shadow-lg shadow-pink-500/25 shrink-0">
               <Eraser className="w-5 h-5" />
             </span>
-            <span>Free Gemini Watermark Remover Online</span>
+            <span>Free Gemini Watermark Remover Online Without Blur</span>
           </h1>
           <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 max-w-2xl">
-            Our browser-based Gemini logo remover lets you remove Gemini watermark for free—erasing sparkle logos, text stamps, and corner overlays in seconds inside your browser. Zero server uploads, 100% private, and works offline.
+            Our browser-based Free Gemini Watermark Remover Online Without Blur lets you erase Gemini sparkle logos, text stamps, and corner overlays in crisp HD inside your browser. Zero server uploads, zero quality loss, 100% private, and works offline.
           </p>
         </div>
 

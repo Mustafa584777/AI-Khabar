@@ -82,7 +82,7 @@ export async function resolveCloudinaryCredentials(): Promise<{
 export async function uploadImageToCloudinary(
   image: string,
   options?: { folder?: string; publicId?: string }
-): Promise<{ success: boolean; url: string; publicId?: string; error?: string }> {
+): Promise<{ success: boolean; url: string; publicId?: string; width?: number; height?: number; error?: string }> {
   try {
     if (!image || typeof image !== 'string') {
       return { success: false, url: image, error: 'No image data provided' };
@@ -131,6 +131,8 @@ export async function uploadImageToCloudinary(
         success: true,
         url: uploadResult.secure_url,
         publicId: uploadResult.public_id,
+        width: typeof uploadResult.width === 'number' ? uploadResult.width : undefined,
+        height: typeof uploadResult.height === 'number' ? uploadResult.height : undefined,
       };
     }
 

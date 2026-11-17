@@ -341,8 +341,8 @@ export const ServerStorage = {
       aiTool: post.aiTool || existing?.aiTool || 'Midjourney',
       imageUrl: post.imageUrl || existing?.imageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe',
       imageAlt: post.imageAlt || existing?.imageAlt || safeTitle,
-      imageWidth: post.imageWidth || existing?.imageWidth || 1024,
-      imageHeight: post.imageHeight || existing?.imageHeight || 1536,
+      imageWidth: post.imageWidth || existing?.imageWidth,
+      imageHeight: post.imageHeight || existing?.imageHeight,
       additionalImages: Array.isArray(post.additionalImages) ? post.additionalImages : (existing?.additionalImages || []),
       isPremium,
       parameters: mergedParameters,
@@ -371,6 +371,10 @@ export const ServerStorage = {
         });
         if (clRes.success && clRes.url) {
           savedPost.imageUrl = clRes.url;
+          if (clRes.width && clRes.height) {
+            savedPost.imageWidth = clRes.width;
+            savedPost.imageHeight = clRes.height;
+          }
           uploadedToCloud = true;
         }
       } catch (uploadErr) {

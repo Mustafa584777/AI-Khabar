@@ -55,6 +55,7 @@ interface RecommendedPinCardProps {
   onGenerate: (e: React.MouseEvent, pin: PromptPost) => void;
   onCopy: (e: React.MouseEvent, pin: PromptPost) => void;
   onToggleBookmark: (e: React.MouseEvent, pin: PromptPost) => void;
+  onAspectRatioResolved?: (pinId: string, heightOverWidth: number) => void;
 }
 
 const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
@@ -67,8 +68,33 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
   onGenerate,
   onCopy,
   onToggleBookmark,
+  onAspectRatioResolved,
 }) => {
-  const effectivePinRatio = detectPostAspectRatio(pin);
+  const pinImgRef = useRef<HTMLImageElement | null>(null);
+  const [resolvedPinRatio, setResolvedPinRatio] = useState<string | null>(() =>
+    getCachedImageAspectRatio(pin.imageUrl)
+  );
+  const detectedPinRatio = detectPostAspectRatio(pin);
+  const effectivePinRatio =
+    resolvedPinRatio || getCachedImageAspectRatio(pin.imageUrl) || detectedPinRatio;
+
+  const syncPinRatio = useCallback(
+    (img: HTMLImageElement | null) => {
+      if (!img || !img.naturalWidth || !img.naturalHeight) return;
+      recordLoadedImageElement(pin.imageUrl, 360, img);
+      const ratioStr = `${img.naturalWidth} / ${img.naturalHeight}`;
+      setResolvedPinRatio((prev) => (prev === ratioStr ? prev : ratioStr));
+      onAspectRatioResolved?.(pin.id, img.naturalHeight / img.naturalWidth);
+    },
+    [pin.id, pin.imageUrl, onAspectRatioResolved]
+  );
+
+  useEffect(() => {
+    const img = pinImgRef.current;
+    if (img && img.complete && img.naturalWidth > 0) {
+      syncPinRatio(img);
+    }
+  }, [syncPinRatio]);
 
   return (
     <div
@@ -93,13 +119,14 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
       {/* Photo Pin Image (rendered immediately with zero animation/transition/layout shift) */}
       {pin.imageUrl && (
         <img
+          ref={pinImgRef}
           src={getOptimizedImageUrl(pin.imageUrl, 360)}
           srcSet={`${getOptimizedImageUrl(pin.imageUrl, 280)} 280w, ${getOptimizedImageUrl(pin.imageUrl, 420)} 420w`}
           sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 240px"
           alt={pin.imageAlt || pin.title}
           loading="eager"
           decoding="sync"
-          onLoad={(e) => recordLoadedImageElement(pin.imageUrl, 360, e.currentTarget)}
+          onLoad={(e) => syncPinRatio(e.currentTarget)}
           className="absolute inset-0 w-full h-full object-cover block"
           referrerPolicy="no-referrer"
         />
@@ -782,6 +809,17 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
     };
   }, []);
 
+  const [measuredPinRatios, setMeasuredPinRatios] = useState<Record<string, number>>({});
+
+  const handlePinAspectRatioResolved = useCallback((pinId: string, heightOverWidth: number) => {
+    if (!pinId || !isFinite(heightOverWidth) || heightOverWidth <= 0) return;
+    setMeasuredPinRatios((prev) => {
+      const existing = prev[pinId];
+      if (existing && Math.abs(existing - heightOverWidth) < 0.01) return prev;
+      return { ...prev, [pinId]: heightOverWidth };
+    });
+  }, []);
+
   const exploreMasonryColumns = useMemo(() => {
     const cols: PromptPost[][] = Array.from({ length: exploreColumnCount }, () => []);
     const colHeights = new Array<number>(exploreColumnCount).fill(0);
@@ -795,14 +833,17 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
       }
       cols[shortestCol].push(pin);
 
-      const ratioStr = detectPostAspectRatio(pin);
-      const parts = ratioStr.split('/').map((n) => Number(n.trim()));
-      const heightFactor = parts.length === 2 && parts[0] > 0 && parts[1] > 0 ? parts[1] / parts[0] : 4 / 3;
+      let heightFactor = measuredPinRatios[pin.id];
+      if (!heightFactor) {
+        const ratioStr = getCachedImageAspectRatio(pin.imageUrl) || detectPostAspectRatio(pin);
+        const parts = ratioStr.split('/').map((n) => Number(n.trim()));
+        heightFactor = parts.length === 2 && parts[0] > 0 && parts[1] > 0 ? parts[1] / parts[0] : 4 / 3;
+      }
       colHeights[shortestCol] += Math.min(Math.max(heightFactor, 0.4), 2.5) + 0.08;
     });
 
     return cols;
-  }, [visiblePins, exploreColumnCount]);
+  }, [visiblePins, exploreColumnCount, measuredPinRatios]);
 
   // Viewport IntersectionObserver for "More to explore": caches visible & scrolling cards locally at 0ms
   useEffect(() => {
@@ -1680,6 +1721,7 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                       isUnlocked={isPromptUnlocked(pin.id, pin.isPremium)}
                       isProUser={isProUser}
                       onSelect={handleSelectPin}
+                      onAspectRatioResolved={handlePinAspectRatioResolved}
                       onGenerate={(e, p) => {
                         e.stopPropagation();
                         const isPinUnlocked = isPromptUnlocked(p.id, p.isPremium);

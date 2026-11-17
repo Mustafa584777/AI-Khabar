@@ -3,24 +3,25 @@ import type { Metadata } from 'next';
 const PAGE_URL = 'https://zeenaprompt.com/free-gemini-watermark-remover-online';
 
 export const metadata: Metadata = {
-  title: 'Free Gemini Watermark Remover Online | Gemini Logo Remover',
+  title: 'Free Gemini Watermark Remover Online Without Blur | Zeena Prompt',
   description:
-    'Use our Free Gemini Watermark Remover Online to remove Gemini watermark for free in seconds. Best browser-based Gemini logo remover—no login, zero uploads.',
+    'Use our Free Gemini Watermark Remover Online Without Blur to erase Gemini sparkle logos and watermarks in crisp HD. Best browser-based Gemini logo remover—no login, zero uploads.',
   keywords: [
+    'Free Gemini Watermark Remover Online Without Blur',
+    'free gemini watermark remover online without blur',
     'Free Gemini Watermark Remover Online',
-    'remove Gemini watermark for free',
-    'Gemini logo remover',
+    'remove Gemini watermark without blur',
+    'Gemini logo remover HD',
     'Gemini sparkle watermark remover',
     'remove Gemini AI watermark offline',
-    'Gemini image watermark eraser',
   ],
   alternates: {
     canonical: PAGE_URL,
   },
   openGraph: {
-    title: 'Free Gemini Watermark Remover Online | Gemini Logo Remover',
+    title: 'Free Gemini Watermark Remover Online Without Blur | Zeena Prompt',
     description:
-      'Remove Gemini watermark for free right inside your browser. Erase Gemini sparkle logos and text stamps in HD with zero server uploads and full offline privacy.',
+      'Use our Free Gemini Watermark Remover Online Without Blur right inside your browser. Erase Gemini sparkle logos and text stamps in crisp HD with zero server uploads and full offline privacy.',
     url: PAGE_URL,
     siteName: 'Zeena Prompt',
     type: 'website',
@@ -29,15 +30,15 @@ export const metadata: Metadata = {
         url: 'https://zeenaprompt.com/logo.png',
         width: 512,
         height: 512,
-        alt: 'Free Gemini Watermark Remover Online - Zeena Prompt',
+        alt: 'Free Gemini Watermark Remover Online Without Blur - Zeena Prompt',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Free Gemini Watermark Remover Online | Gemini Logo Remover',
+    title: 'Free Gemini Watermark Remover Online Without Blur | Zeena Prompt',
     description:
-      'Remove Gemini watermark for free in seconds. 100% browser-based Gemini logo remover with HD texture reconstruction and offline support.',
+      'Remove Gemini watermark without blur in seconds. 100% browser-based HD texture reconstruction with zero server uploads and offline support.',
     images: ['https://zeenaprompt.com/logo.png'],
   },
   robots: {
@@ -55,7 +56,7 @@ export const metadata: Metadata = {
 const webAppSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
-  name: 'Free Gemini Watermark Remover Online',
+  name: 'Free Gemini Watermark Remover Online Without Blur',
   alternateName: 'Zeena Prompt Gemini Logo Remover',
   url: PAGE_URL,
   applicationCategory: 'MultimediaApplication',
@@ -63,14 +64,14 @@ const webAppSchema = {
   browserRequirements: 'Requires HTML5 Canvas and JavaScript',
   isAccessibleForFree: true,
   description:
-    'Free Gemini Watermark Remover Online tool to remove Gemini watermark for free in seconds inside your browser with HD texture fill, matte inversion, zero server uploads, and offline support.',
+    'Free Gemini Watermark Remover Online Without Blur tool to erase Gemini watermarks cleanly in seconds inside your browser with HD texture fill, matte inversion, zero server uploads, and offline support.',
   featureList: [
     '100% Free with unlimited daily uses and no login',
     'Zero server uploads — runs locally in browser memory',
     'Works completely offline inside browser',
     '3 reconstruction modes: HD Texture Fill (PatchMatch), Transparent Matte Inversion, and Instant Smooth Fill',
     '1-click Bottom-Right Gemini Logo and Bottom-Left text presets plus 10–85px precision brush',
-    'Interactive Before/After split slider and crisp HD PNG/JPG export up to 2400px',
+    'Interactive Before/After split slider and crisp HD PNG/JPG export up to 2400px without blur',
   ],
   offers: {
     '@type': 'Offer',
@@ -82,14 +83,14 @@ const webAppSchema = {
 const howToSchema = {
   '@context': 'https://schema.org',
   '@type': 'HowTo',
-  name: 'How to Remove Gemini Watermark for Free Online',
+  name: 'How to Use Free Gemini Watermark Remover Online Without Blur',
   description:
-    'Step-by-step guide to erase Gemini sparkle logos and text watermarks in your browser without uploading photos.',
+    'Step-by-step guide to erase Gemini sparkle logos and text watermarks cleanly without blur in your browser.',
   totalTime: 'PT10S',
   tool: [
     {
       '@type': 'HowToTool',
-      name: 'Zeena Prompt Free Gemini Watermark Remover Online',
+      name: 'Zeena Prompt Free Gemini Watermark Remover Online Without Blur',
     },
   ],
   step: [
@@ -120,7 +121,7 @@ const faqSchema = {
   mainEntity: [
     {
       '@type': 'Question',
-      name: 'Is this Free Gemini Watermark Remover Online really 100% free without limits?',
+      name: 'Is this Free Gemini Watermark Remover Online Without Blur really 100% free?',
       acceptedAnswer: {
         '@type': 'Answer',
         text: 'Yes. Unlike tools that restrict exports behind daily credit walls or paid upgrades, you can remove Gemini watermark for free with unlimited images, zero login requirements, and full HD PNG or JPG downloads.',
