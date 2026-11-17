@@ -7,6 +7,7 @@ import { PageLoadingOverlay } from './PageLoadingOverlay';
 import { OfflineIndicator } from './OfflineIndicator';
 import { NetlifyBadgeRemover } from './NetlifyBadgeRemover';
 import { SmartRouteSkeleton } from './SmartRouteSkeleton';
+import { NotificationService } from '@/lib/notifications';
 
 const ToastNotification = dynamic(() => import('./ToastNotification').then((m) => m.ToastNotification), { ssr: false });
 const PromptDetailModal = dynamic(() => import('./PromptDetailModal').then((m) => m.PromptDetailModal), {
@@ -53,6 +54,9 @@ export const AppGlobalOverlays = () => {
           const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
           if (reg && typeof reg.update === 'function') {
             void reg.update().catch(() => {});
+          }
+          if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+            void NotificationService.ensurePushSubscription().catch(() => {});
           }
         } catch {}
       }

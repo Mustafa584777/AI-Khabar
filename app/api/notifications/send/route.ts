@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { setVapidDetails, sendNotification } from 'web-push';
 import { NotificationServerStore } from '@/lib/notification-storage';
 import { PushNotificationItem } from '@/types/notification';
+import { VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT } from '@/lib/push-config';
+
+// Initialize web-push VAPID credentials once
+if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+  try {
+    setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+  } catch (err) {
+    console.error('Failed to configure webpush VAPID details:', err);
+  }
+}
 
 export async function GET() {
   try {
@@ -38,6 +49,9 @@ export async function POST(req: NextRequest) {
       collageImages,
       url,
       actionButtons,
+      sendBrowserPush = true,
+      targetSubscriberId,
+      targetEndpoint,
     } = body;
 
     if (!title || (!contentBody && !subtitle)) {
@@ -65,11 +79,108 @@ export async function POST(req: NextRequest) {
 
     const { totalSent } = await NotificationServerStore.addNotification(newNotification);
 
+    let pushDeliveredCount = 0;
+    let pushFailedCount = 0;
+    const deadEndpoints: string[] = [];
+
+    // Dispatch real Web Push to subscribed browser endpoints
+    if (sendBrowserPush) {
+      const allSubscribers = await NotificationServerStore.getSubscribers();
+
+      let targetSubscribers = allSubscribers;
+
+      if (targetEndpoint) {
+        targetSubscribers = targetSubscribers.filter(
+          (s) => s.endpoint === targetEndpoint || s.subscription?.endpoint === targetEndpoint
+        );
+      } else if (targetSubscriberId) {
+        targetSubscribers = targetSubscribers.filter((s) => s.id === targetSubscriberId);
+      } else if (category && category !== 'all') {
+        const catLower = category.toLowerCase();
+        targetSubscribers = targetSubscribers.filter((s) => {
+          if (!s.interests || s.interests.length === 0) return true;
+          return s.interests.some(
+            (i) => i.toLowerCase().includes(catLower) || catLower.includes(i.toLowerCase())
+          );
+        });
+      }
+
+      // Filter subscribers with valid push endpoint and keys
+      const pushTargets = targetSubscribers.filter((s) => {
+        const ep = s.endpoint || s.subscription?.endpoint;
+        const k = s.keys || s.subscription?.keys;
+        return Boolean(ep && k?.p256dh && k?.auth);
+      });
+
+      const pushPayload = JSON.stringify({
+        id: newNotification.id,
+        title: newNotification.title,
+        body: newNotification.body || newNotification.subtitle,
+        subtitle: newNotification.subtitle,
+        icon: '/logo.png',
+        badge: '/logo.png',
+        image: newNotification.imageUrl || newNotification.collageImages?.[0] || undefined,
+        url: newNotification.url || '/',
+        actionButtons: newNotification.actionButtons || [],
+        category: newNotification.category,
+        data: {
+          url: newNotification.url || '/',
+          id: newNotification.id,
+          timestamp: Date.now(),
+        },
+      });
+
+      const sendPromises = pushTargets.map(async (subscriber) => {
+        const endpoint = subscriber.endpoint || subscriber.subscription?.endpoint;
+        const keys = subscriber.keys || subscriber.subscription?.keys;
+
+        if (!endpoint || !keys?.p256dh || !keys?.auth) return;
+
+        const pushSub = {
+          endpoint,
+          keys: {
+            p256dh: keys.p256dh,
+            auth: keys.auth,
+          },
+        };
+
+        try {
+          await sendNotification(pushSub, pushPayload, {
+            TTL: 60 * 60 * 24, // 24 hours
+            urgency: 'high',
+          });
+          pushDeliveredCount++;
+        } catch (err: any) {
+          pushFailedCount++;
+          // 404 or 410 indicates endpoint expired or user revoked browser permission
+          if (err.statusCode === 404 || err.statusCode === 410) {
+            deadEndpoints.push(endpoint);
+          } else {
+            console.warn(`WebPush delivery warning for ${endpoint.slice(0, 35)}...:`, err.message || err);
+          }
+        }
+      });
+
+      await Promise.allSettled(sendPromises);
+
+      // Clean up dead/unsubscribed endpoints automatically
+      if (deadEndpoints.length > 0) {
+        try {
+          await NotificationServerStore.removeSubscribersByEndpoints(deadEndpoints);
+        } catch (pruneErr) {
+          console.error('Failed to prune dead subscriptions:', pruneErr);
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       notification: newNotification,
       totalSent,
-      message: 'Push notification queued and saved in Supabase successfully!',
+      pushDeliveredCount,
+      pushFailedCount,
+      deadPrunedCount: deadEndpoints.length,
+      message: `Push notification queued and dispatched to ${pushDeliveredCount} device(s) successfully!`,
     });
   } catch (error: any) {
     return NextResponse.json(

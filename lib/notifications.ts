@@ -1,5 +1,6 @@
 import { PushNotificationItem, NotificationPreferences, PushSubscriber } from '@/types/notification';
 import { INITIAL_NOTIFICATIONS } from '@/lib/initial-feed';
+import { VAPID_PUBLIC_KEY, urlB64ToUint8Array } from '@/lib/push-config';
 
 const STORAGE_KEY_NOTIFICATIONS = 'promptcms_push_notifications';
 const STORAGE_KEY_PREFERENCES = 'promptcms_push_preferences';
@@ -111,18 +112,50 @@ export const NotificationService = {
       prefs.browserPushGranted = granted;
       NotificationService.savePreferences(prefs);
 
-      // Register Service Worker if granted
+      let pushSubscriptionData: {
+        endpoint?: string;
+        keys?: { p256dh: string; auth: string };
+        subscription?: any;
+      } | undefined = undefined;
+
+      // Register Service Worker & subscribe to PushManager if granted
       if (granted && 'serviceWorker' in navigator) {
         try {
-          await navigator.serviceWorker.register('/sw.js');
+          const registration = await navigator.serviceWorker.register('/sw.js');
+          await navigator.serviceWorker.ready;
+
+          if ('pushManager' in registration) {
+            let sub = await registration.pushManager.getSubscription();
+            if (!sub) {
+              const convertedKey = urlB64ToUint8Array(VAPID_PUBLIC_KEY);
+              sub = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: convertedKey as unknown as BufferSource,
+              });
+            }
+
+            if (sub) {
+              const json = sub.toJSON();
+              pushSubscriptionData = {
+                endpoint: sub.endpoint,
+                keys: json.keys
+                  ? {
+                      p256dh: json.keys.p256dh || '',
+                      auth: json.keys.auth || '',
+                    }
+                  : undefined,
+                subscription: json,
+              };
+            }
+          }
         } catch (swErr) {
-          console.warn('SW registration warning:', swErr);
+          console.warn('SW/PushManager subscription warning:', swErr);
         }
       }
 
-      // Record subscriber on server
+      // Record subscriber on server with full push subscription endpoint
       if (granted) {
-        await NotificationService.registerSubscriber(prefs.selectedInterests);
+        await NotificationService.registerSubscriber(prefs.selectedInterests, pushSubscriptionData);
       }
 
       return granted;
@@ -453,11 +486,50 @@ export const NotificationService = {
   },
 
   // Register real subscriber on server and locally
-  registerSubscriber: async (interests: string[]): Promise<void> => {
+  registerSubscriber: async (
+    interests: string[],
+    pushSubscriptionData?: {
+      endpoint?: string;
+      keys?: { p256dh: string; auth: string };
+      subscription?: any;
+    }
+  ): Promise<void> => {
     if (typeof window === 'undefined') return;
     const clientSubscriberId = NotificationService.getClientSubscriberId();
 
     try {
+      let subPayload = pushSubscriptionData;
+
+      // If no subscription data provided, try to check active registration
+      if (
+        !subPayload &&
+        'serviceWorker' in navigator &&
+        'Notification' in window &&
+        Notification.permission === 'granted'
+      ) {
+        try {
+          const reg = await navigator.serviceWorker.ready;
+          if (reg && 'pushManager' in reg) {
+            const sub = await reg.pushManager.getSubscription();
+            if (sub) {
+              const json = sub.toJSON();
+              subPayload = {
+                endpoint: sub.endpoint,
+                keys: json.keys
+                  ? {
+                      p256dh: json.keys.p256dh || '',
+                      auth: json.keys.auth || '',
+                    }
+                  : undefined,
+                subscription: json,
+              };
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
+
       // 1. Send to server
       const res = await fetch('/api/notifications/subscribe', {
         method: 'POST',
@@ -466,6 +538,9 @@ export const NotificationService = {
           subscriberId: clientSubscriberId,
           interests,
           userAgent: navigator.userAgent,
+          endpoint: subPayload?.endpoint,
+          keys: subPayload?.keys,
+          subscription: subPayload?.subscription,
         }),
       });
 
@@ -483,6 +558,85 @@ export const NotificationService = {
       }
     } catch (e) {
       console.error('Failed to register subscriber with server:', e);
+    }
+  },
+
+  // Ensure push subscription is active and synced with server
+  ensurePushSubscription: async (): Promise<void> => {
+    if (typeof window === 'undefined' || !('Notification' in window) || !('serviceWorker' in navigator)) {
+      return;
+    }
+    if (Notification.permission !== 'granted') {
+      return;
+    }
+    try {
+      const reg = await navigator.serviceWorker.register('/sw.js');
+      await navigator.serviceWorker.ready;
+      if ('pushManager' in reg) {
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) {
+          const convertedKey = urlB64ToUint8Array(VAPID_PUBLIC_KEY);
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: convertedKey as unknown as BufferSource,
+          });
+        }
+        if (sub) {
+          const json = sub.toJSON();
+          const prefs = NotificationService.getPreferences();
+          await NotificationService.registerSubscriber(prefs.selectedInterests, {
+            endpoint: sub.endpoint,
+            keys: json.keys
+              ? {
+                  p256dh: json.keys.p256dh || '',
+                  auth: json.keys.auth || '',
+                }
+              : undefined,
+            subscription: json,
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('ensurePushSubscription warning:', err);
+    }
+  },
+
+  // Send a test Web Push notification to current device endpoint
+  sendTestPushNotification: async (): Promise<{ success: boolean; message?: string; error?: string }> => {
+    try {
+      let endpoint: string | undefined;
+      if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.ready;
+        if (reg && 'pushManager' in reg) {
+          const sub = await reg.pushManager.getSubscription();
+          if (sub) endpoint = sub.endpoint;
+        }
+      }
+
+      const res = await fetch('/api/notifications/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: '🔥 Live Web Push Test!',
+          subtitle: 'Real browser push notification',
+          body: 'Success! Web Push delivered from server through Web Push protocol to your device.',
+          category: 'all',
+          url: '/notifications',
+          targetEndpoint: endpoint,
+          targetSubscriberId: NotificationService.getClientSubscriberId(),
+          sendBrowserPush: true,
+        }),
+      });
+
+      const data = await res.json();
+      return {
+        success: data.success,
+        message: data.message || `Test push dispatched! (${data.pushDeliveredCount || 0} device received)`,
+        error: data.error,
+      };
+    } catch (e: any) {
+      console.error('sendTestPushNotification failed:', e);
+      return { success: false, error: e.message || 'Network error' };
     }
   },
 

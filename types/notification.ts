@@ -32,8 +32,21 @@ export interface NotificationPreferences {
 export interface PushSubscriber {
   id: string;
   endpoint?: string;
+  keys?: {
+    p256dh: string;
+    auth: string;
+  };
+  subscription?: {
+    endpoint: string;
+    expirationTime?: number | null;
+    keys: {
+      p256dh: string;
+      auth: string;
+    };
+  };
   subscribedAt: string;
   interests: string[];
   userAgent?: string;
   lastActiveAt?: string;
 }
+

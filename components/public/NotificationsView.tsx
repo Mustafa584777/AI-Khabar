@@ -60,6 +60,7 @@ export const NotificationsView: React.FC = () => {
     // If cached notifications exist, load silently in background without showing loader skeleton
     loadNotifications(notifications.length > 0);
     NotificationService.syncWithServer().then(() => loadNotifications(true));
+    NotificationService.ensurePushSubscription();
 
     // Listen for live push notifications across tabs
     const handleNewNotif = () => {
@@ -99,7 +100,8 @@ export const NotificationsView: React.FC = () => {
       return;
     }
 
-    const success = await NotificationService.showNativeNotification({
+    const testRes = await NotificationService.sendTestPushNotification();
+    await NotificationService.showNativeNotification({
       id: `notif-test-${Date.now()}`,
       title: 'zeenaprompt.com: Trending AI Photo Prompts',
       subtitle: 'Instant Browser Push Test 🔔',
@@ -110,10 +112,10 @@ export const NotificationsView: React.FC = () => {
       sentAt: new Date().toISOString(),
     });
 
-    if (success) {
-      showToast('Test notification popup displayed on your device!');
+    if (testRes.success) {
+      showToast('Live test notification sent and displayed!');
     } else {
-      showToast('Could not display test popup. Check if notifications are allowed.');
+      showToast('Test notification popup triggered on your device!');
     }
   };
 
@@ -200,8 +202,8 @@ export const NotificationsView: React.FC = () => {
           </div>
         </div>
 
-        {/* Browser Push Permission Banner temporarily hidden */}
-        {false && browserPushPermission !== 'granted' && browserPushPermission !== 'unsupported' && (
+        {/* Browser Push Permission Banner */}
+        {browserPushPermission !== 'granted' && browserPushPermission !== 'unsupported' && (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[#E60023]/10 border border-[#E60023]/30">
             <div className="flex items-center gap-3">
               <BellRing className="w-5 h-5 text-[#E60023] shrink-0 animate-bounce" />
@@ -225,8 +227,8 @@ export const NotificationsView: React.FC = () => {
           </div>
         )}
 
-        {/* Active Browser Push Status Banner temporarily hidden */}
-        {false && browserPushPermission === 'granted' && (
+        {/* Active Browser Push Status Banner */}
+        {browserPushPermission === 'granted' && (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60">
             <div className="flex items-center gap-2.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />

@@ -204,26 +204,30 @@ self.addEventListener('push', (event) => {
     try {
       data = event.data.json();
     } catch (e) {
-      data = { title: 'tool.reelz: Trending Photo Prompts', body: event.data.text() };
+      data = { title: 'Zeena Prompt: Trending AI Photo Prompts', body: event.data.text() };
     }
   }
 
-  const title = data.title || 'tool.reelz: Trending Photo Prompts';
+  const title = data.title || 'Zeena Prompt: Trending AI Photo Prompts';
+  const targetUrl = data.url || (data.data && data.data.url) || '/';
   const options = {
     body: data.body || data.subtitle || 'New trending AI photo prompts curated for you!',
-    icon: '/logo.png',
-    badge: '/logo.png',
-    image: data.image || data.imageUrl,
+    icon: data.icon || '/logo.png',
+    badge: data.badge || '/logo.png',
+    image: data.image || data.imageUrl || undefined,
     data: {
-      url: data.url || '/',
+      url: targetUrl,
+      timestamp: Date.now(),
     },
+    tag: data.id || `zeena-push-${Date.now()}`,
+    renotify: true,
     vibrate: [100, 50, 100],
-    actions: Array.isArray(data.actionButtons)
+    actions: Array.isArray(data.actionButtons) && data.actionButtons.length > 0
       ? data.actionButtons.slice(0, 2).map((b) => ({
           action: b.actionKey || 'open',
-          title: b.label || 'Explore',
+          title: b.label || 'Explore Prompt',
         }))
-      : [{ action: 'open', title: 'Explore' }],
+      : [{ action: 'open', title: 'Explore Prompt' }],
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
@@ -240,22 +244,26 @@ self.addEventListener('message', (event) => {
 
   if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
     const data = event.data.payload || {};
-    const title = data.title || 'tool.reelz: Trending Photo Prompts';
+    const title = data.title || 'Zeena Prompt: Trending AI Photo Prompts';
+    const targetUrl = data.url || (data.data && data.data.url) || '/';
     const options = {
       body: data.subtitle || data.body || 'New trending AI photo prompts curated for you!',
-      icon: '/logo.png',
-      badge: '/logo.png',
-      image: data.imageUrl || data.image || '/logo.png',
+      icon: data.icon || '/logo.png',
+      badge: data.badge || '/logo.png',
+      image: data.imageUrl || data.image || undefined,
       data: {
-        url: data.url || '/',
+        url: targetUrl,
+        timestamp: Date.now(),
       },
+      tag: data.id || `zeena-push-${Date.now()}`,
+      renotify: true,
       vibrate: [100, 50, 100],
-      actions: Array.isArray(data.actionButtons)
+      actions: Array.isArray(data.actionButtons) && data.actionButtons.length > 0
         ? data.actionButtons.slice(0, 2).map((b) => ({
             action: b.actionKey || 'open',
-            title: b.label || 'Explore',
+            title: b.label || 'Explore Prompt',
           }))
-        : [{ action: 'open', title: 'Explore' }],
+        : [{ action: 'open', title: 'Explore Prompt' }],
     };
 
     event.waitUntil(self.registration.showNotification(title, options));
@@ -265,14 +273,21 @@ self.addEventListener('message', (event) => {
 // Handle notification click: focus or open URL
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const urlToOpen = (event.notification.data && event.notification.data.url) || '/';
+  const rawUrl = (event.notification.data && event.notification.data.url) || '/';
+  const urlToOpen = new URL(rawUrl, self.location.origin).href;
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (let i = 0; i < clientList.length; i++) {
         const client = clientList[i];
-        if (client.url && client.url.includes(urlToOpen) && 'focus' in client) {
+        if (client.url && client.url === urlToOpen && 'focus' in client) {
           return client.focus();
+        }
+      }
+      for (let i = 0; i < clientList.length; i++) {
+        const client = clientList[i];
+        if ('focus' in client && 'navigate' in client) {
+          return client.navigate(urlToOpen).then((c) => (c ? c.focus() : client.focus()));
         }
       }
       if (clients.openWindow) {
@@ -281,3 +296,4 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
+

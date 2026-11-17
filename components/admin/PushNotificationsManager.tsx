@@ -59,6 +59,7 @@ export const PushNotificationsManager: React.FC = () => {
 
   const [sendNativePush, setSendNativePush] = useState<boolean>(true);
   const [isSending, setIsSending] = useState<boolean>(false);
+  const [isTestingPush, setIsTestingPush] = useState<boolean>(false);
 
   // Notification History & Real Stats
   const [history, setHistory] = useState<PushNotificationItem[]>([]);
@@ -68,6 +69,31 @@ export const PushNotificationsManager: React.FC = () => {
   const [showSubscribersModal, setShowSubscribersModal] = useState<boolean>(false);
 
   const [isSyncingWithFirestore, setIsSyncingWithFirestore] = useState<boolean>(false);
+
+  const handleSendTestToDevice = async () => {
+    setIsTestingPush(true);
+    try {
+      if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
+        const granted = await NotificationService.requestPushPermission();
+        if (!granted) {
+          showToast('Notification permission was not granted in your browser');
+          setIsTestingPush(false);
+          return;
+        }
+      }
+      const res = await NotificationService.sendTestPushNotification();
+      if (res.success) {
+        showToast(res.message || 'Test push notification delivered to your device!');
+        await loadHistory();
+      } else {
+        showToast(res.error || 'Failed to dispatch test notification');
+      }
+    } catch (e: any) {
+      showToast(e.message || 'Error triggering test notification');
+    } finally {
+      setIsTestingPush(false);
+    }
+  };
 
   const loadHistory = async () => {
     try {
@@ -220,17 +246,21 @@ export const PushNotificationsManager: React.FC = () => {
         body: JSON.stringify({ ...itemPayload, sendBrowserPush: sendNativePush }),
       });
 
+      let deliveredMessage = 'Push Notification broadcasted successfully!';
       if (res.ok) {
         const data = await res.json();
         if (data.totalSent !== undefined) {
           setRealTotalSent(data.totalSent);
+        }
+        if (data.pushDeliveredCount !== undefined) {
+          deliveredMessage = `Notification delivered to ${data.pushDeliveredCount} device(s) via Web Push!`;
         }
       }
 
       await NotificationService.addNotification(itemPayload, sendNativePush);
 
       await loadHistory();
-      showToast('Push Notification sent and broadcasted to real users!');
+      showToast(deliveredMessage);
     } catch (err: any) {
       showToast(err.message || 'Failed to broadcast notification');
     } finally {
@@ -283,6 +313,18 @@ export const PushNotificationsManager: React.FC = () => {
 
         {/* Quick Stats & Download */}
         <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={handleSendTestToDevice}
+            disabled={isTestingPush}
+            className="px-4 py-2 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white flex items-center gap-2 shadow-xs text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+            title="Send an immediate test push notification to this browser"
+            id="btn-admin-test-push"
+          >
+            <Bell className={`w-4 h-4 ${isTestingPush ? 'animate-bounce' : ''}`} />
+            <span>{isTestingPush ? 'Sending Test...' : 'Test Push on This Device'}</span>
+          </button>
+
           <button
             type="button"
             onClick={handleDownloadNotificationsJson}
@@ -841,7 +883,14 @@ export const PushNotificationsManager: React.FC = () => {
                             {new Date(sub.subscribedAt).toLocaleDateString()} at {new Date(sub.subscribedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                           <span className="text-neutral-400">•</span>
-                          <span className="text-emerald-600 font-semibold">Active Push Device</span>
+                          {Boolean(sub.endpoint || sub.subscription?.endpoint) ? (
+                            <span className="text-emerald-600 font-bold flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              Web Push Active
+                            </span>
+                          ) : (
+                            <span className="text-neutral-400 font-medium">In-App Feed</span>
+                          )}
                         </div>
                       </div>
 

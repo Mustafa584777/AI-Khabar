@@ -90,15 +90,21 @@ export const SendPushNotificationModal: React.FC<SendPushNotificationModalProps>
         sentBy: 'admin',
       };
 
-      await fetch('/api/notifications/send', {
+      const res = await fetch('/api/notifications/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...payload, sendBrowserPush: true }),
       });
 
+      let deliveredCount = 0;
+      if (res.ok) {
+        const data = await res.json();
+        deliveredCount = data.pushDeliveredCount ?? 0;
+      }
+
       await NotificationService.addNotification(payload, true);
 
-      showToast(`Push notification sent to ${category === 'all' ? 'all users' : category} subscribers!`);
+      showToast(`Push notification dispatched! Delivered to ${deliveredCount} device(s)`);
       onClose();
     } catch (err: any) {
       showToast(err.message || 'Failed to send notification');

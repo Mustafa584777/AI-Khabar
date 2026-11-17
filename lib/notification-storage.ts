@@ -133,6 +133,29 @@ export const NotificationServerStore = {
     return { count: filtered.length };
   },
 
+  removeSubscribersByEndpoints: async (endpoints: string[]): Promise<{ count: number }> => {
+    if (!endpoints || endpoints.length === 0) return { count: 0 };
+    const deadSet = new Set(endpoints);
+    const list = await NotificationServerStore.getSubscribers();
+    const filtered = list.filter((s) => {
+      const ep = s.endpoint || s.subscription?.endpoint;
+      return !ep || !deadSet.has(ep);
+    });
+
+    writeJson(SUBSCRIBERS_FILE, filtered);
+
+    if (isFirebaseConfigured()) {
+      try {
+        await setDoc(doc(firestoreDb, 'settings', SUBS_SETTINGS_ID), { data: filtered });
+      } catch (e) {
+        console.error('Failed to prune dead subscribers in Firestore:', e);
+      }
+    }
+
+    return { count: filtered.length };
+  },
+
+
   // NOTIFICATIONS
   getNotifications: async (allowFirestoreFallback = true): Promise<PushNotificationItem[]> => {
     let local = readJson<PushNotificationItem[]>(NOTIFICATIONS_FILE, []);
