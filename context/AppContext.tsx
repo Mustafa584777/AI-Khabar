@@ -26,7 +26,7 @@ import {
   getPlanFeaturesForCycle,
   BillingCycle,
 } from '@/lib/plans';
-import { getPromptSlug, getEmailAvatarUrl, formatPromptForClipboard } from '@/lib/utils';
+import { getPromptSlug, getEmailAvatarUrl, formatPromptForClipboard, slugify } from '@/lib/utils';
 
 interface AppContextType {
   // Navigation & Views
@@ -253,46 +253,127 @@ export const AppProvider = ({
   }, [router]);
 
   const [isDirectRouteHost, setIsDirectRouteHost] = useState<boolean>(false);
-
-  const setSelectedPost = useCallback((post: PromptPost | null) => {
-    setSelectedPostState(post);
-  }, []);
-
+  const visitedPromptCacheRef = useRef<Map<string, PromptPost>>(new Map());
   const postsRef = useRef<PromptPost[]>(initialPosts || INITIAL_FEED_POSTS);
 
-  // Listen to popstate (Browser Back/Forward buttons)
+  const cacheVisitedPrompt = useCallback((post: PromptPost) => {
+    if (!post || !post.id) return;
+    visitedPromptCacheRef.current.set(post.id, post);
+    const canonicalSlug = getPromptSlug(post).toLowerCase();
+    if (canonicalSlug) visitedPromptCacheRef.current.set(canonicalSlug, post);
+    if (post.slug) {
+      visitedPromptCacheRef.current.set(post.slug.toLowerCase(), post);
+      visitedPromptCacheRef.current.set(slugify(post.slug), post);
+    }
+    if (post.title) {
+      visitedPromptCacheRef.current.set(slugify(post.title), post);
+    }
+  }, []);
+
+  const setSelectedPost = useCallback((post: PromptPost | null) => {
+    if (post) {
+      cacheVisitedPrompt(post);
+    }
+    setSelectedPostState(post);
+  }, [cacheVisitedPrompt]);
+
+  // Listen to popstate (Browser / Mobile Back & Forward buttons)
   useEffect(() => {
+    const knownNonSlugRoutes = new Set([
+      '',
+      '/',
+      '/dashboard',
+      '/create',
+      '/prompt-editor',
+      '/notifications',
+      '/pricing',
+      '/checkout',
+      '/about',
+      '/contact',
+      '/privacy-policy',
+      '/terms',
+      '/disclaimer',
+      '/cancellation-refund',
+      '/affiliate-disclosure',
+      '/ai-policy',
+      '/free-gemini-watermark-remover-online',
+    ]);
+
     const handlePopState = (event: PopStateEvent) => {
+      if (typeof window === 'undefined') return;
+      const path = window.location.pathname || '/';
       const hash = window.location.hash;
       const state = event.state;
 
-      // Handle view state from history
-      if (typeof window !== 'undefined') {
-        const p = window.location.pathname;
-        if (p.includes('dashboard')) setCurrentViewState('user-dashboard');
-        else if (p.includes('create') || p.includes('studio')) setCurrentViewState('studio-tool');
-        else if (p.includes('notifications')) setCurrentViewState('notifications');
-        else if (p.includes('admin') || p.includes('cms-login')) setCurrentViewState('admin');
-        else if (p === '/') setCurrentViewState('public');
+      // Sync active view with popped pathname
+      if (path.includes('dashboard')) setCurrentViewState('user-dashboard');
+      else if (path.includes('create') || path.includes('studio')) setCurrentViewState('studio-tool');
+      else if (path.includes('notifications')) setCurrentViewState('notifications');
+      else if (path.includes('admin') || path.includes('cms-login')) setCurrentViewState('admin');
+      else if (path === '/') setCurrentViewState('public');
+
+      // Popped back to homepage or any non-prompt route -> close active prompt modal cleanly
+      if (knownNonSlugRoutes.has(path) || path.startsWith('/admin') || path.startsWith('/cms-login')) {
+        setSelectedPostState(null);
+        return;
       }
 
       if (hash.startsWith('#prompt=')) {
         const promptId = hash.replace('#prompt=', '');
-        const found = postsRef.current.find((p) => p.id === promptId);
-        if (found) setSelectedPostState(found);
-        else setSelectedPostState(null);
-      } else if (state && state.selectedPostId) {
-        const found = postsRef.current.find((p) => p.id === state.selectedPostId);
-        if (found) setSelectedPostState(found);
-        else setSelectedPostState(null);
-      } else {
-        setSelectedPostState(null);
+        const found =
+          visitedPromptCacheRef.current.get(promptId) ||
+          postsRef.current.find((p) => p.id === promptId);
+        if (found) {
+          cacheVisitedPrompt(found);
+          setSelectedPostState(found);
+        } else {
+          setSelectedPostState(null);
+        }
+        return;
+      }
+
+      const statePostId = state?.postId || state?.selectedPostId;
+      if (statePostId) {
+        const found =
+          visitedPromptCacheRef.current.get(statePostId) ||
+          postsRef.current.find((p) => p.id === statePostId);
+        if (found) {
+          cacheVisitedPrompt(found);
+          setSelectedPostState(found);
+          return;
+        }
+      }
+
+      if (path.length > 1) {
+        let targetSlug = path.replace(/^\/+/, '').split('/')[0].toLowerCase().trim();
+        try {
+          targetSlug = decodeURIComponent(targetSlug).toLowerCase().trim();
+        } catch {}
+
+        const cached = visitedPromptCacheRef.current.get(targetSlug);
+        if (cached) {
+          setSelectedPostState(cached);
+          return;
+        }
+
+        const matched = postsRef.current.find((p) => {
+          if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
+          if (p.id && p.id.toLowerCase() === targetSlug) return true;
+          if (p.title && (p.title.toLowerCase() === targetSlug || slugify(p.title) === targetSlug)) return true;
+          return false;
+        });
+
+        if (matched) {
+          cacheVisitedPrompt(matched);
+          setSelectedPostState(matched);
+          return;
+        }
       }
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [cacheVisitedPrompt]);
 
   // Auth State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);

@@ -5,7 +5,7 @@ import { useApp } from '@/context/AppContext';
 import { PromptPost, AIHistoryItem, PlanTier } from '@/types/prompt';
 import { StorageService } from '@/lib/storage';
 import { getPromptSlug, getOptimizedImageUrl, getEmailAvatarUrl, formatPromptForClipboard } from '@/lib/utils';
-import { startRouteNavigation } from '@/lib/navigation';
+import { startRouteNavigation, pushPromptHistoryState } from '@/lib/navigation';
 import {
   User,
   Bookmark,
@@ -761,9 +761,7 @@ export const UserDashboard = () => {
                     key={post.id}
                     onClick={() => {
                       setSelectedPost(post);
-                      if (typeof window !== 'undefined') {
-                        window.history.pushState({ postId: post.id }, '', `/${getPromptSlug(post)}`);
-                      }
+                      pushPromptHistoryState(post.id, getPromptSlug(post));
                     }}
                     className="group relative rounded-2xl overflow-hidden bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer w-full"
                   >

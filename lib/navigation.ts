@@ -56,3 +56,29 @@ export function startRouteNavigation(targetUrl: string, label?: string) {
     })
   );
 }
+
+/**
+ * Updates browser URL to a prompt slug while preserving Next.js App Router
+ * internal history state so browser/mobile Back steps backward through each
+ * explored prompt instantaneously in memory before returning to the homepage.
+ */
+export function pushPromptHistoryState(postId: string, slug: string) {
+  if (typeof window === 'undefined' || !postId || !slug) return;
+  try {
+    const currentState =
+      window.history.state && typeof window.history.state === 'object'
+        ? window.history.state
+        : {};
+    window.history.pushState(
+      {
+        ...currentState,
+        postId,
+        selectedPostId: postId,
+        isPromptDetail: true,
+      },
+      '',
+      `/${slug}`
+    );
+  } catch {}
+}
+

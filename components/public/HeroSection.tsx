@@ -15,6 +15,7 @@ import {
   Sliders,
 } from 'lucide-react';
 import { getPromptSlug, getDynamicPopularTags, getOptimizedImageUrl } from '@/lib/utils';
+import { pushPromptHistoryState } from '@/lib/navigation';
 import { GeminiWatermarkRemoverBox } from './GeminiWatermarkRemoverBox';
 
 export const HeroSection = () => {
@@ -328,9 +329,7 @@ export const HeroSection = () => {
                                 key={post.id}
                                 onClick={() => {
                                   setSelectedPost(post);
-                                  if (typeof window !== 'undefined') {
-                                    window.history.pushState({ postId: post.id }, '', `/${getPromptSlug(post)}`);
-                                  }
+                                  pushPromptHistoryState(post.id, getPromptSlug(post));
                                   setIsSearchOpen(false);
                                 }}
                                 className="relative aspect-square rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 cursor-pointer group shadow-xs hover:shadow-md transition-all"

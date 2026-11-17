@@ -7,7 +7,7 @@ import { useApp } from '@/context/AppContext';
 import Image from 'next/image';
 import { Sparkles, Bookmark, Crown, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Layers, Copy } from 'lucide-react';
 import { getPromptSlug, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription } from '@/lib/utils';
-import { startRouteNavigation } from '@/lib/navigation';
+import { startRouteNavigation, pushPromptHistoryState } from '@/lib/navigation';
 import { warmPromptDetailModalChunk, preloadAndCacheImageUrl } from '@/lib/viewport-cache';
 
 export const PromptCard = ({
@@ -176,9 +176,7 @@ export const PromptCard = ({
       } catch {}
     }
     setSelectedPost(post);
-    if (typeof window !== 'undefined') {
-      window.history.pushState({ postId: post.id }, '', `/${promptSlug}`);
-    }
+    pushPromptHistoryState(post.id, promptSlug);
   };
 
   const handleBookmark = (e: React.MouseEvent) => {

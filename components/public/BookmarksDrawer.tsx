@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { X, Bookmark, Copy, Trash2, Sparkles, Cloud, RefreshCw } from 'lucide-react';
 import { getPromptSlug, getOptimizedImageUrl } from '@/lib/utils';
+import { pushPromptHistoryState } from '@/lib/navigation';
 
 export const BookmarksDrawer = () => {
   const {
@@ -38,7 +39,7 @@ export const BookmarksDrawer = () => {
   const handleOpenSavedPrompt = (post: (typeof posts)[number]) => {
     setSelectedPost(post);
     if (typeof window !== 'undefined' && window.location.pathname === '/') {
-      window.history.pushState({ postId: post.id }, '', `/${getPromptSlug(post)}`);
+      pushPromptHistoryState(post.id, getPromptSlug(post));
     }
     setIsBookmarksDrawerOpen(false);
   };

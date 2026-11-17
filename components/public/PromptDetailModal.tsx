@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { startRouteNavigation } from '@/lib/navigation';
+import { startRouteNavigation, pushPromptHistoryState } from '@/lib/navigation';
 import { PersonalizationEngine } from '@/lib/personalization';
 import { getPromptSlug, slugify, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription, formatPromptForClipboard } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
@@ -62,49 +62,13 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
   onCopy,
   onToggleBookmark,
 }) => {
-  const [inView, setInView] = useState(false);
-  const [resolvedPinRatio, setResolvedPinRatio] = useState<string | null>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
-  const pinImgRef = useRef<HTMLImageElement | null>(null);
-  const detectedRatio = detectPostAspectRatio(pin);
-  const effectivePinRatio = resolvedPinRatio || detectedRatio;
-
-  const syncPinRatio = useCallback((img: HTMLImageElement | null) => {
-    if (!img || !img.naturalWidth || !img.naturalHeight) return;
-    const ratioStr = `${img.naturalWidth} / ${img.naturalHeight}`;
-    setResolvedPinRatio((prev) => (prev === ratioStr ? prev : ratioStr));
-  }, []);
-
-  useEffect(() => {
-    const el = cardRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setInView(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: '80px 0px', threshold: 0.01 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!inView) return;
-    const img = pinImgRef.current;
-    if (img && img.complete && img.naturalWidth > 0) {
-      syncPinRatio(img);
-    }
-  }, [inView, syncPinRatio]);
+  const effectivePinRatio = detectPostAspectRatio(pin);
 
   return (
     <div
-      ref={cardRef}
       onClick={() => onSelect(pin)}
       style={{ aspectRatio: effectivePinRatio }}
-      className="group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-neutral-200 dark:bg-neutral-900 cursor-pointer shadow-sm hover:shadow-2xl border border-neutral-200/60 dark:border-neutral-800/80 w-full"
+      className="group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-neutral-200 dark:bg-neutral-900 cursor-pointer border border-neutral-200/60 dark:border-neutral-800/80 w-full"
       id={`masonry-pin-${pin.id}`}
     >
       {/* Premium Badge */}
@@ -118,18 +82,16 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
         </div>
       )}
 
-      {/* Photo Pin Image (rendered ONLY when inView is true, without load animation) */}
-      {pin.imageUrl && inView && (
+      {/* Photo Pin Image (rendered immediately with zero animation/transition/layout shift) */}
+      {pin.imageUrl && (
         <img
-          ref={pinImgRef}
           src={getOptimizedImageUrl(pin.imageUrl, 360)}
           srcSet={`${getOptimizedImageUrl(pin.imageUrl, 280)} 280w, ${getOptimizedImageUrl(pin.imageUrl, 420)} 420w`}
           sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 240px"
           alt={pin.imageAlt || pin.title}
-          loading="lazy"
-          decoding="async"
-          onLoad={(e) => syncPinRatio(e.currentTarget)}
-          className="absolute inset-0 w-full h-full object-cover"
+          loading="eager"
+          decoding="sync"
+          className="absolute inset-0 w-full h-full object-cover block"
           referrerPolicy="no-referrer"
         />
       )}
@@ -434,7 +396,7 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
         return;
       }
       if (!isDirectRoute && window.history.state?.postId) {
-        window.history.pushState(null, '', '/');
+        window.history.back();
       } else {
         startRouteNavigation('/', 'Loading Prompts...');
         router.push('/');
@@ -444,6 +406,10 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
 
   const handleGoBack = useCallback(() => {
     if (historyStack.length > 1) {
+      if (typeof window !== 'undefined' && window.history.state?.isPromptDetail) {
+        window.history.back();
+        return;
+      }
       const newStack = [...historyStack];
       newStack.pop();
       const prevPost = newStack[newStack.length - 1];
@@ -454,7 +420,8 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
       setSelectedPost(prevPost);
       if (typeof window !== 'undefined') {
         const prevSlug = getPromptSlug(prevPost);
-        window.history.replaceState({ postId: prevPost.id, isPromptDetail: true }, '', `/${prevSlug}`);
+        const currentState = window.history.state && typeof window.history.state === 'object' ? window.history.state : {};
+        window.history.replaceState({ ...currentState, postId: prevPost.id, selectedPostId: prevPost.id, isPromptDetail: true }, '', `/${prevSlug}`);
       }
       setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
     } else {
@@ -462,12 +429,34 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
     }
   }, [historyStack, closeModal, setSelectedPost]);
 
-  // Handle browser back / forward navigation and Escape key
+  const inlinePostRef = useRef(inlinePost);
+  inlinePostRef.current = inlinePost;
+
+  // Handle browser / mobile back navigation instantaneously from memory stack without listener churn
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
       if (typeof window === 'undefined') return;
       const path = window.location.pathname;
-      if (path === '/' || path === '' || path === '/dashboard' || path === '/create' || path.startsWith('/admin')) {
+      const nonPromptPaths = new Set([
+        '/',
+        '',
+        '/dashboard',
+        '/create',
+        '/prompt-editor',
+        '/notifications',
+        '/pricing',
+        '/checkout',
+        '/about',
+        '/contact',
+        '/privacy-policy',
+        '/terms',
+        '/disclaimer',
+        '/cancellation-refund',
+        '/affiliate-disclosure',
+        '/ai-policy',
+        '/free-gemini-watermark-remover-online',
+      ]);
+      if (nonPromptPaths.has(path) || path.startsWith('/admin') || path.startsWith('/cms-login')) {
         setIsDirectClosed(true);
         setSelectedPost(null);
         setHistoryStack([]);
@@ -476,18 +465,22 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
       if (path.length > 1) {
         const currentPosts = postsRef.current;
         const currentStack = historyStackRef.current;
-        const statePostId = event.state?.postId;
+        const currentInline = inlinePostRef.current;
+        const statePostId = event.state?.postId || event.state?.selectedPostId;
         let matched: PromptPost | undefined;
 
         if (statePostId) {
           matched =
-            currentPosts.find((p) => p.id === statePostId) ||
             currentStack.find((p) => p.id === statePostId) ||
-            (inlinePost && inlinePost.id === statePostId ? inlinePost : undefined);
+            currentPosts.find((p) => p.id === statePostId) ||
+            (currentInline && currentInline.id === statePostId ? currentInline : undefined);
         }
 
-        const rawSlug = path.replace('/', '').split('/')[0];
-        const targetSlug = decodeURIComponent(rawSlug).toLowerCase().trim();
+        const rawSlug = path.replace(/^\/+/, '').split('/')[0];
+        let targetSlug = rawSlug.toLowerCase().trim();
+        try {
+          targetSlug = decodeURIComponent(rawSlug).toLowerCase().trim();
+        } catch {}
 
         if (!matched) {
           const checkMatch = (p: PromptPost) => {
@@ -497,9 +490,9 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
             return false;
           };
           matched =
-            currentPosts.find(checkMatch) ||
             currentStack.find(checkMatch) ||
-            (inlinePost && checkMatch(inlinePost) ? inlinePost : undefined);
+            currentPosts.find(checkMatch) ||
+            (currentInline && checkMatch(currentInline) ? currentInline : undefined);
         }
 
         if (matched) {
@@ -527,6 +520,12 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
       }
     };
 
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [setSelectedPost]);
+
+  // Escape key closes lightbox or goes back
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (showFullImageModal) {
@@ -537,13 +536,9 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
       }
     };
 
-    window.addEventListener('popstate', handlePopState);
     window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [setSelectedPost, showFullImageModal, selectedPost, handleGoBack]);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showFullImageModal, selectedPost, handleGoBack]);
 
   const handleGenerateImage = () => {
     if (!selectedPost) return;
@@ -725,6 +720,54 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
     return allRecommendedPins.slice(0, displayedCount);
   }, [allRecommendedPins, displayedCount]);
 
+  const [exploreColumnCount, setExploreColumnCount] = useState<number>(2);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mqXl = window.matchMedia('(min-width: 1280px)');
+    const mqLg = window.matchMedia('(min-width: 1024px)');
+    const mqSm = window.matchMedia('(min-width: 640px)');
+
+    const updateCols = () => {
+      if (mqXl.matches) setExploreColumnCount(5);
+      else if (mqLg.matches) setExploreColumnCount(4);
+      else if (mqSm.matches) setExploreColumnCount(3);
+      else setExploreColumnCount(2);
+    };
+
+    updateCols();
+    mqXl.addEventListener('change', updateCols);
+    mqLg.addEventListener('change', updateCols);
+    mqSm.addEventListener('change', updateCols);
+    return () => {
+      mqXl.removeEventListener('change', updateCols);
+      mqLg.removeEventListener('change', updateCols);
+      mqSm.removeEventListener('change', updateCols);
+    };
+  }, []);
+
+  const exploreMasonryColumns = useMemo(() => {
+    const cols: PromptPost[][] = Array.from({ length: exploreColumnCount }, () => []);
+    const colHeights = new Array<number>(exploreColumnCount).fill(0);
+
+    visiblePins.forEach((pin) => {
+      let shortestCol = 0;
+      for (let c = 1; c < exploreColumnCount; c++) {
+        if (colHeights[c] < colHeights[shortestCol]) {
+          shortestCol = c;
+        }
+      }
+      cols[shortestCol].push(pin);
+
+      const ratioStr = detectPostAspectRatio(pin);
+      const parts = ratioStr.split('/').map((n) => Number(n.trim()));
+      const heightFactor = parts.length === 2 && parts[0] > 0 && parts[1] > 0 ? parts[1] / parts[0] : 4 / 3;
+      colHeights[shortestCol] += Math.min(Math.max(heightFactor, 0.4), 2.5) + 0.08;
+    });
+
+    return cols;
+  }, [visiblePins, exploreColumnCount]);
+
   if (!selectedPost) return null;
 
   const detectedRatio = detectPostAspectRatio(selectedPost);
@@ -815,9 +858,7 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
       containerRef.current.scrollTop = 0;
     }
     const pinSlug = getPromptSlug(pin);
-    if (typeof window !== 'undefined') {
-      window.history.pushState({ postId: pin.id, isPromptDetail: true }, '', `/${pinSlug}`);
-    }
+    pushPromptHistoryState(pin.id, pinSlug);
     setSelectedPost(pin);
     setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
   };
@@ -1515,46 +1556,50 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
             </span>
           </div>
 
-          {/* Responsive Visual Pins Pure CSS Masonry Columns (0 CLS on hydration/resize) */}
-          <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-3 sm:gap-4 w-full" id="more-explore-masonry">
-            {visiblePins.map((pin) => (
-              <div key={pin.id} className="break-inside-avoid mb-3 sm:mb-4">
-                <RecommendedPinCard
-                  pin={pin}
-                  isPinBookmarked={bookmarkedIds.includes(pin.id)}
-                  isCopied={copiedPinId === pin.id}
-                  isUnlocked={isPromptUnlocked(pin.id, pin.isPremium)}
-                  isProUser={isProUser}
-                  onSelect={handleSelectPin}
-                  onGenerate={(e, p) => {
-                    e.stopPropagation();
-                    const isPinUnlocked = isPromptUnlocked(p.id, p.isPremium);
-                    if (!isPinUnlocked) {
-                      handleSelectPin(p);
-                      return;
-                    }
-                    if (typeof window !== 'undefined') {
-                      sessionStorage.setItem('auraprompt_studio_preload', p.promptText);
-                      sessionStorage.setItem('promptcms_studio_preload', p.promptText);
-                      if (p.imageUrl) {
-                        sessionStorage.setItem('promptcms_studio_image_preload', p.imageUrl);
-                      }
-                    }
-                    setSelectedPost(null);
-                    startRouteNavigation('/create', 'Opening AI Studio...');
-                    router.push('/create');
-                    showToast('Loaded prompt into Create Studio!');
-                  }}
-                  onCopy={(e, p) => handleQuickCopyPin(e, p)}
-                  onToggleBookmark={(e, p) => {
-                    e.stopPropagation();
-                    if (!userAccount?.isLoggedIn) {
-                      openAuthModal('Please sign in or create an account to save prompts.');
-                      return;
-                    }
-                    toggleBookmark(p.id);
-                  }}
-                />
+          {/* Responsive Visual Pins Deterministic Masonry Columns (0 CLS & 0 transitions) */}
+          <div className="flex items-start gap-3 sm:gap-4 w-full" id="more-explore-masonry">
+            {exploreMasonryColumns.map((colPins, colIdx) => (
+              <div key={colIdx} className="flex-1 min-w-0 flex flex-col gap-3 sm:gap-4">
+                {colPins.map((pin) => (
+                  <div key={pin.id} className="w-full">
+                    <RecommendedPinCard
+                      pin={pin}
+                      isPinBookmarked={bookmarkedIds.includes(pin.id)}
+                      isCopied={copiedPinId === pin.id}
+                      isUnlocked={isPromptUnlocked(pin.id, pin.isPremium)}
+                      isProUser={isProUser}
+                      onSelect={handleSelectPin}
+                      onGenerate={(e, p) => {
+                        e.stopPropagation();
+                        const isPinUnlocked = isPromptUnlocked(p.id, p.isPremium);
+                        if (!isPinUnlocked) {
+                          handleSelectPin(p);
+                          return;
+                        }
+                        if (typeof window !== 'undefined') {
+                          sessionStorage.setItem('auraprompt_studio_preload', p.promptText);
+                          sessionStorage.setItem('promptcms_studio_preload', p.promptText);
+                          if (p.imageUrl) {
+                            sessionStorage.setItem('promptcms_studio_image_preload', p.imageUrl);
+                          }
+                        }
+                        setSelectedPost(null);
+                        startRouteNavigation('/create', 'Opening AI Studio...');
+                        router.push('/create');
+                        showToast('Loaded prompt into Create Studio!');
+                      }}
+                      onCopy={(e, p) => handleQuickCopyPin(e, p)}
+                      onToggleBookmark={(e, p) => {
+                        e.stopPropagation();
+                        if (!userAccount?.isLoggedIn) {
+                          openAuthModal('Please sign in or create an account to save prompts.');
+                          return;
+                        }
+                        toggleBookmark(p.id);
+                      }}
+                    />
+                  </div>
+                ))}
               </div>
             ))}
           </div>
