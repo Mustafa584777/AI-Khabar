@@ -62,9 +62,17 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
   onToggleBookmark,
 }) => {
   const [inView, setInView] = useState(false);
-  const [loaded, setLoaded] = useState(false);
+  const [resolvedPinRatio, setResolvedPinRatio] = useState<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  const pinImgRef = useRef<HTMLImageElement | null>(null);
   const detectedRatio = detectPostAspectRatio(pin);
+  const effectivePinRatio = resolvedPinRatio || detectedRatio;
+
+  const syncPinRatio = useCallback((img: HTMLImageElement | null) => {
+    if (!img || !img.naturalWidth || !img.naturalHeight) return;
+    const ratioStr = `${img.naturalWidth} / ${img.naturalHeight}`;
+    setResolvedPinRatio((prev) => (prev === ratioStr ? prev : ratioStr));
+  }, []);
 
   useEffect(() => {
     const el = cardRef.current;
@@ -82,16 +90,22 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    if (!inView) return;
+    const img = pinImgRef.current;
+    if (img && img.complete && img.naturalWidth > 0) {
+      syncPinRatio(img);
+    }
+  }, [inView, syncPinRatio]);
+
   return (
     <div
       ref={cardRef}
       onClick={() => onSelect(pin)}
-      style={{ aspectRatio: detectedRatio }}
+      style={{ aspectRatio: effectivePinRatio }}
       className="group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-neutral-200 dark:bg-neutral-900 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-300 border border-neutral-200/60 dark:border-neutral-800/80 w-full"
       id={`masonry-pin-${pin.id}`}
     >
-      {/* Shimmer Placeholder removed */}
-
       {/* Premium Badge */}
       {pin.isPremium && (
         <div className={`absolute top-2 left-2 z-10 flex items-center justify-center w-6 h-6 rounded-full backdrop-blur-md shadow-md pointer-events-none ${
@@ -106,12 +120,14 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
       {/* Photo Pin Image (rendered ONLY when inView is true) */}
       {pin.imageUrl && inView && (
         <img
+          ref={pinImgRef}
           src={getOptimizedImageUrl(pin.imageUrl, 360)}
           srcSet={`${getOptimizedImageUrl(pin.imageUrl, 280)} 280w, ${getOptimizedImageUrl(pin.imageUrl, 420)} 420w`}
           sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 240px"
           alt={pin.imageAlt || pin.title}
           loading="lazy"
           decoding="async"
+          onLoad={(e) => syncPinRatio(e.currentTarget)}
           className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           referrerPolicy="no-referrer"
         />
@@ -231,13 +247,32 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
   }, [selectedPost?.id, selectedPost?.imageUrl, selectedPost?.additionalImages]);
 
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
-  const [firstImageRatio, setFirstImageRatio] = useState<string | null>(null);
+  const [imageRatios, setImageRatios] = useState<Record<number, string>>({});
+  const [loadedImageIndices, setLoadedImageIndices] = useState<Record<number, boolean>>({});
+  const mediaImgRefs = useRef<Record<number, HTMLImageElement | null>>({});
 
-  // Always reset slider & custom ratio whenever a new prompt is opened
+  const syncMediaRatio = useCallback((idx: number, img: HTMLImageElement | null) => {
+    if (!img || !img.naturalWidth || !img.naturalHeight) return;
+    const ratio = `${img.naturalWidth} / ${img.naturalHeight}`;
+    setImageRatios((prev) => (prev[idx] === ratio ? prev : { ...prev, [idx]: ratio }));
+    setLoadedImageIndices((prev) => (prev[idx] ? prev : { ...prev, [idx]: true }));
+  }, []);
+
+  // Always reset slider & resolved natural ratios whenever a new prompt is opened
   useEffect(() => {
     setCurrentImageIndex(0);
-    setFirstImageRatio(null);
+    setImageRatios({});
+    setLoadedImageIndices({});
+    mediaImgRefs.current = {};
   }, [selectedPost?.id]);
+
+  // Immediately resolve cached / SSR-preloaded images synchronously after mount or slide change
+  useEffect(() => {
+    const img = mediaImgRefs.current[currentImageIndex];
+    if (img && img.complete && img.naturalWidth > 0) {
+      syncMediaRatio(currentImageIndex, img);
+    }
+  }, [selectedPost?.id, currentImageIndex, allImages.length, syncMediaRatio]);
 
   const handlePrevImage = useCallback((e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -681,6 +716,8 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
   if (!selectedPost) return null;
 
   const detectedRatio = detectPostAspectRatio(selectedPost);
+  const activeImageRatio = imageRatios[currentImageIndex] || imageRatios[0] || detectedRatio;
+  const isCurrentImageLoaded = Boolean(loadedImageIndices[currentImageIndex]);
 
   const isBookmarked = bookmarkedIds.includes(selectedPost.id);
   const isUnlocked = isPromptUnlocked(selectedPost.id, selectedPost.isPremium);
@@ -935,14 +972,20 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                   className="relative w-full overflow-hidden flex flex-col items-center justify-center select-none group/slider"
                 >
                   {allImages.length > 1 ? (
-                    /* Multi-Image Carousel Slider: Height strictly determined by first image natural aspect ratio */
+                    /* Multi-Image Carousel Slider: Strictly matches each slide's original natural aspect ratio */
                     <div
                       style={{
-                        aspectRatio: firstImageRatio || detectedRatio,
+                        aspectRatio: activeImageRatio,
                         maxHeight: '82vh',
                       }}
                       className="relative w-full overflow-hidden bg-neutral-950 select-none group/slider"
                     >
+                      {!isCurrentImageLoaded && (
+                        <div
+                          aria-hidden="true"
+                          className="absolute inset-0 bg-neutral-200 dark:bg-neutral-900 animate-pulse pointer-events-none z-0"
+                        />
+                      )}
                       {/* Smooth Horizontal Sliding Track */}
                       <div
                         className="absolute inset-0 flex transition-transform duration-500 ease-out will-change-transform"
@@ -954,21 +997,19 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                             className="w-full h-full shrink-0 relative overflow-hidden bg-neutral-950 flex items-center justify-center"
                           >
                             <img
+                              ref={(el) => {
+                                mediaImgRefs.current[idx] = el;
+                              }}
                               src={getOptimizedImageUrl(imgUrl, idx === 0 ? 800 : 600)}
                               srcSet={idx === 0 ? `${getOptimizedImageUrl(imgUrl, 560)} 560w, ${getOptimizedImageUrl(imgUrl, 800)} 800w, ${getOptimizedImageUrl(imgUrl, 1200)} 1200w` : undefined}
                               sizes="(max-width: 1024px) 100vw, 720px"
                               alt={`${selectedPost.imageAlt || selectedPost.title} - photo ${idx + 1}`}
-                              className="w-full h-full object-cover object-top block select-none pointer-events-none"
+                              className="w-full h-full object-contain block select-none pointer-events-none"
                               referrerPolicy="no-referrer"
                               loading={idx === 0 ? 'eager' : 'lazy'}
                               fetchPriority={idx === 0 ? 'high' : 'auto'}
                               decoding="async"
-                              onLoad={idx === 0 && (!selectedPost.imageWidth || !selectedPost.imageHeight) ? (e) => {
-                                const img = e.currentTarget;
-                                if (img.naturalWidth && img.naturalHeight) {
-                                  setFirstImageRatio(`${img.naturalWidth} / ${img.naturalHeight}`);
-                                }
-                              } : undefined}
+                              onLoad={(e) => syncMediaRatio(idx, e.currentTarget)}
                             />
                           </div>
                         ))}
@@ -1052,15 +1093,24 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                       </div>
                     </div>
                   ) : (
-                    /* Single Image Display: Determined by first image natural aspect ratio without left/right pillarbox spaces */
+                    /* Single Image Display: Strictly uses original natural aspect ratio without cropping or distortion */
                     <div
                       style={{
-                        aspectRatio: firstImageRatio || detectedRatio,
+                        aspectRatio: activeImageRatio,
                         maxHeight: '82vh',
                       }}
                       className="relative w-full overflow-hidden bg-neutral-950 select-none group/single flex items-center justify-center"
                     >
+                      {!isCurrentImageLoaded && (
+                        <div
+                          aria-hidden="true"
+                          className="absolute inset-0 bg-neutral-200 dark:bg-neutral-900 animate-pulse pointer-events-none z-0"
+                        />
+                      )}
                       <img
+                        ref={(el) => {
+                          mediaImgRefs.current[0] = el;
+                        }}
                         src={getOptimizedImageUrl(allImages[0] || selectedPost.imageUrl, 800)}
                         srcSet={`${getOptimizedImageUrl(allImages[0] || selectedPost.imageUrl, 560)} 560w, ${getOptimizedImageUrl(allImages[0] || selectedPost.imageUrl, 800)} 800w, ${getOptimizedImageUrl(allImages[0] || selectedPost.imageUrl, 1200)} 1200w`}
                         sizes="(max-width: 1024px) 100vw, 720px"
@@ -1068,13 +1118,8 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                         loading="eager"
                         fetchPriority="high"
                         decoding="async"
-                        onLoad={(!selectedPost.imageWidth || !selectedPost.imageHeight) ? (e) => {
-                          const img = e.currentTarget;
-                          if (img.naturalWidth && img.naturalHeight) {
-                            setFirstImageRatio(`${img.naturalWidth} / ${img.naturalHeight}`);
-                          }
-                        } : undefined}
-                        className="w-full h-full object-cover object-top block select-none pointer-events-none"
+                        onLoad={(e) => syncMediaRatio(0, e.currentTarget)}
+                        className="w-full h-full object-contain block select-none pointer-events-none relative z-[1]"
                         referrerPolicy="no-referrer"
                       />
 

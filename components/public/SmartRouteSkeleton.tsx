@@ -9,6 +9,7 @@ export type SkeletonKind =
   | 'studio'
   | 'dashboard'
   | 'pricing'
+  | 'prompt'
   | 'feed'
   | 'article';
 
@@ -46,7 +47,10 @@ export function resolveSkeletonKind(targetUrl: string): {
   ) {
     return { kind: 'article', defaultLabel: 'Loading Page...' };
   }
-  return { kind: 'feed', defaultLabel: 'Loading Prompts...' };
+  if (path === '/' || path === '') {
+    return { kind: 'feed', defaultLabel: 'Loading Prompts...' };
+  }
+  return { kind: 'prompt', defaultLabel: 'Opening Prompt Card...' };
 }
 
 const ShimmerBlock = ({ className = '' }: { className?: string }) => (
@@ -284,6 +288,56 @@ export const SmartRouteSkeleton: React.FC<SmartRouteSkeletonProps> = ({
                   <ShimmerBlock className="h-12 w-full rounded-full mt-4" />
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {kind === 'prompt' && (
+          <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-10">
+            {/* Master Prompt Card Skeleton (Split Image + Prompt Details) */}
+            <div className="bg-white dark:bg-neutral-900 rounded-[28px] sm:rounded-[36px] shadow-xl border border-neutral-200/80 dark:border-neutral-800 overflow-hidden">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
+                <div className="lg:col-span-7 bg-neutral-100 dark:bg-neutral-950 p-4 sm:p-6 flex items-center justify-center">
+                  <ShimmerBlock className="w-full aspect-[4/3] sm:aspect-[3/4] max-h-[68vh] rounded-2xl" />
+                </div>
+                <div className="lg:col-span-5 p-5 sm:p-8 lg:p-9 flex flex-col justify-between space-y-6">
+                  <div className="space-y-5">
+                    <div className="flex items-center justify-between gap-2 pb-3.5 border-b border-neutral-100 dark:border-neutral-800">
+                      <ShimmerBlock className="h-7 w-32 rounded-full" />
+                      <div className="flex items-center gap-2">
+                        <ShimmerBlock className="h-9 w-20 rounded-full" />
+                        <ShimmerBlock className="h-9 w-9 rounded-full" />
+                      </div>
+                    </div>
+                    <ShimmerBlock className="h-8 w-5/6 rounded-xl" />
+                    <div className="flex flex-wrap gap-2">
+                      <ShimmerBlock className="h-6 w-20 rounded-full" />
+                      <ShimmerBlock className="h-6 w-24 rounded-full" />
+                      <ShimmerBlock className="h-6 w-16 rounded-full" />
+                    </div>
+                    <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-950/60 border border-neutral-200/70 dark:border-neutral-800 space-y-2.5">
+                      <ShimmerBlock className="h-4 w-full rounded-lg" />
+                      <ShimmerBlock className="h-4 w-11/12 rounded-lg" />
+                      <ShimmerBlock className="h-4 w-4/5 rounded-lg" />
+                      <ShimmerBlock className="h-4 w-3/4 rounded-lg" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <ShimmerBlock className="h-12 rounded-2xl" />
+                    <ShimmerBlock className="h-12 rounded-2xl" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Recommended Related Prompts Grid Skeleton */}
+            <div className="space-y-4">
+              <ShimmerBlock className="h-6 w-52 rounded-lg" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <PromptCardSkeleton key={i} index={i} />
+                ))}
+              </div>
             </div>
           </div>
         )}

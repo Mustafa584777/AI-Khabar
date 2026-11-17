@@ -8,6 +8,7 @@ import { PromptGrid } from '@/components/public/PromptGrid';
 import { Footer } from '@/components/public/Footer';
 import { BottomNav } from '@/components/public/BottomNav';
 import { PromptDetailModal } from '@/components/public/PromptDetailModal';
+import { SmartRouteSkeleton } from '@/components/public/SmartRouteSkeleton';
 import { slugify } from '@/lib/utils';
 import { Sparkles } from 'lucide-react';
 import { PromptPost } from '@/types/prompt';
@@ -60,7 +61,7 @@ export function DirectPromptLoader({
   id: string;
   initialPost?: PromptPost | null;
 }) {
-  const { posts, setSelectedPost, currentView, setIsDirectRouteHost, ensureFullCatalogLoaded } = useApp();
+  const { posts, selectedPost, setSelectedPost, currentView, setIsDirectRouteHost, ensureFullCatalogLoaded } = useApp();
   const initializedIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -189,7 +190,15 @@ export function DirectPromptLoader({
     <div className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-sans flex flex-col pb-20 sm:pb-8">
       <Header />
       <main className="flex-1 w-full">
-        <PromptDetailModal inlinePost={initialPost} isDirectRoute />
+        {!initialPost && !selectedPost ? (
+          <SmartRouteSkeleton
+            targetUrl={`/${id}`}
+            label="Opening Prompt Card..."
+            isFullScreenOverlay={false}
+          />
+        ) : (
+          <PromptDetailModal inlinePost={initialPost} isDirectRoute />
+        )}
       </main>
       <Footer />
       <BottomNav />

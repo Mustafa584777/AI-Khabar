@@ -6,9 +6,19 @@ import { useApp } from '@/context/AppContext';
 import { PageLoadingOverlay } from './PageLoadingOverlay';
 import { OfflineIndicator } from './OfflineIndicator';
 import { NetlifyBadgeRemover } from './NetlifyBadgeRemover';
+import { SmartRouteSkeleton } from './SmartRouteSkeleton';
 
 const ToastNotification = dynamic(() => import('./ToastNotification').then((m) => m.ToastNotification), { ssr: false });
-const PromptDetailModal = dynamic(() => import('./PromptDetailModal').then((m) => m.PromptDetailModal), { ssr: false });
+const PromptDetailModal = dynamic(() => import('./PromptDetailModal').then((m) => m.PromptDetailModal), {
+  ssr: false,
+  loading: () => (
+    <SmartRouteSkeleton
+      targetUrl="/prompt-card"
+      label="Opening Prompt Card..."
+      isFullScreenOverlay={true}
+    />
+  ),
+});
 const BookmarksDrawer = dynamic(() => import('./BookmarksDrawer').then((m) => m.BookmarksDrawer), { ssr: false });
 const SearchExploreModal = dynamic(() => import('./SearchExploreModal').then((m) => m.SearchExploreModal), { ssr: false });
 const NotificationsModal = dynamic(() => import('./NotificationsModal').then((m) => m.NotificationsModal), { ssr: false });
