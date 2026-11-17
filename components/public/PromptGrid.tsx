@@ -9,6 +9,7 @@ import { SearchX, Filter, Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { PromptPost } from '@/types/prompt';
 import { PersonalizationEngine } from '@/lib/personalization';
 import { getPromptSlug, detectPostAspectRatio } from '@/lib/utils';
+import { prepareViewportPromptCards } from '@/lib/viewport-cache';
 
 const INITIAL_BATCH_SIZE = 10;
 const SCROLL_BATCH_SIZE = 20;
@@ -262,6 +263,14 @@ export const PromptGrid = () => {
 
   const visiblePosts = filteredPosts.slice(0, displayedCount);
   const hasMore = displayedCount < filteredPosts.length;
+
+  useEffect(() => {
+    if (visiblePosts.length === 0) return;
+    const timer = setTimeout(() => {
+      prepareViewportPromptCards(visiblePosts, 8);
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [visiblePosts]);
 
   // Continuous shortest-column greedy masonry eliminates all empty gaps at batch boundaries or mixed ratios
   const masonryColumns = useMemo(() => {

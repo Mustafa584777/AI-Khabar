@@ -2,14 +2,18 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Header } from '@/components/public/Header';
 import { Footer } from '@/components/public/Footer';
-import { Info, Home, ArrowLeft } from 'lucide-react';
+import { ShieldCheck, Home, ArrowLeft } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Affiliate Disclosure | Zeena Prompt',
-  description: 'Affiliate disclosure and transparency notice for links featured on Zeena Prompt.',
+  title: 'Affiliate Disclosure | Trending Copy Paste Photo Prompts',
+  description: 'Affiliate and sponsored links disclosure notice for Zeena Prompt (zeenaprompt.com).',
   robots: {
     index: false,
     follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
   },
 };
 
@@ -31,9 +35,9 @@ export default function AffiliateDisclosurePage() {
 
         <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl p-6 sm:p-10 shadow-xs space-y-8">
           <div className="space-y-3 border-b border-neutral-100 dark:border-neutral-800 pb-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 dark:bg-red-950/60 text-[#E60023] dark:text-red-400 text-xs font-bold border border-red-200 dark:border-red-800/60">
-              <Info className="w-4 h-4" />
-              <span>Transparency & Partner Links</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 text-xs font-bold border border-emerald-200 dark:border-emerald-800/60">
+              <ShieldCheck className="w-4 h-4" />
+              <span>Transparency &amp; FTC Compliance</span>
             </div>
             <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-white">
               Affiliate Disclosure
@@ -46,40 +50,50 @@ export default function AffiliateDisclosurePage() {
           <div className="prose prose-neutral dark:prose-invert max-w-none text-xs sm:text-sm leading-relaxed space-y-6 text-neutral-700 dark:text-neutral-300">
             <section className="space-y-2">
               <h2 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white">
-                1. Affiliate Relationships
+                1. Affiliate Relationship Transparency
               </h2>
               <p>
-                In compliance with the Federal Trade Commission (FTC) guidelines and international transparency standards, please assume that some links on <strong>zeenaprompt.com</strong> — including product tags, shopping hotspots displayed alongside prompt previews, and recommended creative resources — may be affiliate links.
+                In accordance with the Federal Trade Commission (FTC) guidelines concerning the use of endorsements and testimonials in advertising, please be aware that <strong>zeenaprompt.com</strong> (&ldquo;Zeena Prompt&rdquo;) participates in various affiliate marketing programs, including the Amazon Services LLC Associates Program and selected AI software or creative tool partner programs.
               </p>
             </section>
 
             <section className="space-y-2">
               <h2 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white">
-                2. Amazon Associates Disclosure
+                2. How Affiliate Links Work
               </h2>
               <p>
-                <strong>zeenaprompt.com</strong> may participate in the Amazon Services LLC Associates Program and Amazon India Associates Program, affiliate advertising programs designed to provide a means for websites to earn advertising fees by advertising and linking to Amazon properties. As an Amazon Associate, we earn from qualifying purchases made through tagged outfit, accessory, or product links.
+                Certain links across prompt cards, outfit/product hotspots, tool recommendations, and resource guides on this website may be affiliate tracking links. If you click on an affiliate link and make a qualifying purchase or sign up on a third-party retailer or platform, we may earn a small commission at <strong>zero extra cost to you</strong>.
               </p>
             </section>
 
             <section className="space-y-2">
               <h2 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white">
-                3. No Extra Cost to You
+                3. Editorial Independence
               </h2>
               <p>
-                Clicking an affiliate link and making a purchase never increases the price you pay. Any small commission earned helps cover our hosting, image delivery, AI utility tools, and free prompt library maintenance without adding intrusive popups.
+                Our primary commitment is curating helpful AI photography prompts, editing workflows, and browser-native image utilities. Any affiliate commissions help support server hosting, free tools such as our Watermark Remover, and ongoing prompt testing, without influencing our prompt quality or recommendations.
               </p>
             </section>
 
             <section className="space-y-2">
               <h2 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white">
-                4. Editorial Integrity & Contact
+                4. Third-Party Sites
               </h2>
               <p>
-                Our prompt curation, recommendations, and tool listings are chosen based on visual relevance and usefulness for creators. If you have any questions about our affiliate partnerships, please reach out via our{' '}
+                Once you leave <strong>zeenaprompt.com</strong> via an external product or affiliate link, purchases, pricing, shipping, and privacy practices are governed solely by that third-party merchant&apos;s policies. Please review their terms before completing any transaction.
+              </p>
+            </section>
+
+            <section className="space-y-2">
+              <h2 className="text-base sm:text-lg font-bold text-neutral-900 dark:text-white">
+                5. Questions
+              </h2>
+              <p>
+                If you have questions regarding any affiliate disclosures or partner links on this site, feel free to reach out through our{' '}
                 <Link href="/contact" className="text-[#E60023] font-semibold hover:underline">
-                  Contact Page
-                </Link>.
+                  Contact page
+                </Link>
+                .
               </p>
             </section>
           </div>

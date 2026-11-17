@@ -16,6 +16,7 @@ import {
 import { NotificationService } from '@/lib/notifications';
 import Link from 'next/link';
 import { PWAInstallButton } from './PWAInstallButton';
+import { PromoMarqueeBar } from './PromoMarqueeBar';
 import { getEmailAvatarUrl } from '@/lib/utils';
 
 export const Header = () => {
@@ -100,6 +101,7 @@ export const Header = () => {
   };
 
   return (
+    <>
     <header className="sticky top-0 z-40 w-full bg-white/98 dark:bg-neutral-950/98 border-b border-neutral-200/80 dark:border-neutral-800/80 shadow-xs">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3 sm:gap-4">
         {/* Left: Brand Icon & Navigation Pills */}
@@ -309,6 +311,8 @@ export const Header = () => {
         </div>
       </div>
     </header>
+    <PromoMarqueeBar />
+    </>
   );
 };
 

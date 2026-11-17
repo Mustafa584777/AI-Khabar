@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { Sparkles, Bookmark, Crown, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Layers, Copy } from 'lucide-react';
 import { getPromptSlug, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription } from '@/lib/utils';
 import { startRouteNavigation } from '@/lib/navigation';
+import { warmPromptDetailModalChunk, preloadAndCacheImageUrl } from '@/lib/viewport-cache';
 
 export const PromptCard = ({
   post,
@@ -223,7 +224,15 @@ export const PromptCard = ({
       className="group relative rounded-[20px] sm:rounded-[24px] overflow-hidden bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800/80 cursor-pointer shadow-xs hover:shadow-xl select-none w-full"
       id={`prompt-pin-${post.id}`}
       style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
-      onMouseEnter={() => setIsHovered(true)}
+      onMouseEnter={() => {
+        setIsHovered(true);
+        warmPromptDetailModalChunk();
+        preloadAndCacheImageUrl(post.imageUrl, 800);
+      }}
+      onTouchStart={() => {
+        warmPromptDetailModalChunk();
+        preloadAndCacheImageUrl(post.imageUrl, 800);
+      }}
       onMouseLeave={() => setIsHovered(false)}
     >
       <h2 className="sr-only" itemProp="name">{post.title}</h2>

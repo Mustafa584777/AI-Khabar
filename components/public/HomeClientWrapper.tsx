@@ -11,6 +11,7 @@ import { Footer } from '@/components/public/Footer';
 import { SEOContentSection } from '@/components/public/SEOContentSection';
 import { BottomNav } from '@/components/public/BottomNav';
 import { PromptPost, Category, SiteSettings } from '@/types/prompt';
+import { prepareViewportPromptCards } from '@/lib/viewport-cache';
 
 const AdminLayout = dynamic(() => import('@/components/admin/AdminLayout').then((m) => m.AdminLayout), { ssr: false });
 
@@ -51,6 +52,13 @@ export function HomeClientWrapper({ initialPosts }: HomeClientWrapperProps) {
   React.useEffect(() => {
     if (initialPosts && initialPosts.length > 0) {
       setPosts((prev) => (prev && prev.length >= initialPosts.length ? prev : initialPosts));
+      const runWarmup = () => prepareViewportPromptCards(initialPosts, 8);
+      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+        const idleId = (window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback(runWarmup, { timeout: 300 });
+        return () => (window as Window & { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback?.(idleId);
+      }
+      const timer = setTimeout(runWarmup, 100);
+      return () => clearTimeout(timer);
     }
   }, [initialPosts, setPosts]);
 

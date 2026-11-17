@@ -134,48 +134,52 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
         />
       )}
 
-      {/* Dark Vignette Overlay on Hover */}
-      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex flex-col justify-between p-3 pointer-events-none">
+      {/* Dark Vignette Overlay on Hover (desktop only & never on locked cards so image clicks always open prompt view) */}
+      <div className="hidden sm:flex absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex-col justify-between p-3 pointer-events-none">
         {/* Top Actions */}
-        <div className="flex items-center justify-between w-full pointer-events-auto">
-          <button
-            type="button"
-            onClick={(e) => onGenerate(e, pin)}
-            className="px-2.5 py-1 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 text-[10px] font-bold shadow-md flex items-center gap-1"
-            title="Generate Image with this prompt"
-          >
-            <Sparkles className="w-3 h-3 text-[#E60023]" />
-            <span>Generate</span>
-          </button>
-
-          <div className="flex items-center gap-1.5">
+        {!(pin.isPremium && !isUnlocked) ? (
+          <div className="flex items-center justify-between w-full pointer-events-auto">
             <button
               type="button"
-              onClick={(e) => onCopy(e, pin)}
-              className="p-1.5 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-md"
-              title="Quick Copy Prompt"
+              onClick={(e) => onGenerate(e, pin)}
+              className="px-2.5 py-1 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 text-[10px] font-bold shadow-md flex items-center gap-1"
+              title="Generate Image with this prompt"
             >
-              {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+              <Sparkles className="w-3 h-3 text-[#E60023]" />
+              <span>Generate</span>
             </button>
 
-            <button
-              type="button"
-              onClick={(e) => onToggleBookmark(e, pin)}
-              className={`px-2.5 py-1 rounded-full text-[10px] font-bold shadow-md flex items-center gap-1 ${
-                isPinBookmarked
-                  ? 'bg-white text-[#E60023]'
-                  : 'bg-white hover:bg-neutral-100 text-neutral-900'
-              }`}
-              title={isPinBookmarked ? 'Saved to collection' : 'Save Pin'}
-            >
-              <Bookmark className={`w-3 h-3 ${isPinBookmarked ? 'fill-[#E60023] text-[#E60023]' : ''}`} />
-              <span>{isPinBookmarked ? 'Saved' : 'Save'}</span>
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={(e) => onCopy(e, pin)}
+                className="p-1.5 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 shadow-md"
+                title="Quick Copy Prompt"
+              >
+                {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => onToggleBookmark(e, pin)}
+                className={`px-2.5 py-1 rounded-full text-[10px] font-bold shadow-md flex items-center gap-1 ${
+                  isPinBookmarked
+                    ? 'bg-white text-[#E60023]'
+                    : 'bg-white hover:bg-neutral-100 text-neutral-900'
+                }`}
+                title={isPinBookmarked ? 'Saved to collection' : 'Save Pin'}
+              >
+                <Bookmark className={`w-3 h-3 ${isPinBookmarked ? 'fill-[#E60023] text-[#E60023]' : ''}`} />
+                <span>{isPinBookmarked ? 'Saved' : 'Save'}</span>
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div />
+        )}
 
         {/* Bottom Info: Category & Title */}
-        <div className="pointer-events-auto">
+        <div className="pointer-events-none">
           <span className="px-2 py-0.5 rounded-full bg-black/75 backdrop-blur-md text-[9px] font-bold text-white mb-1 inline-block">
             {pin.category}
           </span>
@@ -274,7 +278,8 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
     if (!selectedPost) return;
     const img = mediaImgRefs.current[currentImageIndex];
     const currentSrc = allImages[currentImageIndex] || selectedPost.imageUrl;
-    const mediaKey = `${selectedPost.id}::${currentImageIndex}::${currentSrc}`;
+    const keySrc = allImages.length === 1 && currentImageIndex === 0 ? getOptimizedImageUrl(currentSrc, 800) : currentSrc;
+    const mediaKey = `${selectedPost.id}::${currentImageIndex}::${keySrc}`;
     if (img && img.complete && img.naturalWidth > 0) {
       syncMediaRatio(currentImageIndex, img, mediaKey);
     }
@@ -771,7 +776,7 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
     e.stopPropagation();
     const isPinUnlocked = isPromptUnlocked(pin.id, pin.isPremium);
     if (!isPinUnlocked) {
-      handleUpgradeToPremium();
+      handleSelectPin(pin);
       return;
     }
     copyPromptToClipboard(pin.promptText, pin.id);
@@ -925,10 +930,10 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
           className="bg-white dark:bg-neutral-900 rounded-[28px] sm:rounded-[36px] shadow-2xl border border-neutral-200/80 dark:border-neutral-800 overflow-hidden"
         >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
-            {/* Left Column: Edge-to-Edge High-Resolution Photo Showcase with Pinterest Slider */}
+            {/* Left Column: Edge-to-Edge Natural Proportions Photo Showcase */}
             <div
               onContextMenu={(e) => e.preventDefault()}
-              className="lg:col-span-7 bg-neutral-100 dark:bg-neutral-900 flex flex-col justify-start items-center p-0 relative select-none overflow-hidden"
+              className="lg:col-span-7 bg-white dark:bg-neutral-900 flex flex-col justify-start items-start p-0 relative select-none overflow-hidden"
             >
               {/* Affiliate Product Hotspot Badges - Left Side Vertically over image */}
               {selectedPost.affiliateProducts && selectedPost.affiliateProducts.length > 0 && (
@@ -1112,30 +1117,44 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                       </div>
                     </div>
                   ) : (
-                    /* Single Image Display: Reserves exact aspectRatio frame immediately (0 CLS + loading skeleton) and loads full original resolution */
+                    /* Single Image Display: Renders pre-cached 360w layer at 0ms while 800w seamlessly takes natural full height with zero extra spacing */
                     (() => {
-                      const singleUrl = allImages[0] || selectedPost.imageUrl;
+                      const rawSingleUrl = allImages[0] || selectedPost.imageUrl;
+                      const singleUrl = getOptimizedImageUrl(rawSingleUrl, 800);
+                      const singlePreviewUrl = getOptimizedImageUrl(rawSingleUrl, 360);
                       const singleKey = `${selectedPost.id}::0::${singleUrl}`;
+                      const previewKey = `${selectedPost.id}::0::preview::${singlePreviewUrl}`;
                       const isSingleLoaded = Boolean(loadedMediaMap[singleKey]);
+                      const isPreviewLoaded = Boolean(loadedMediaMap[previewKey]);
                       const isSingleErrored = Boolean(erroredMediaMap[singleKey]);
+                      const hasDifferentPreview = Boolean(singlePreviewUrl && singlePreviewUrl !== singleUrl);
                       return (
                         <div
-                          style={{ aspectRatio: activeImageRatio }}
-                          className="relative w-full overflow-hidden bg-neutral-200 dark:bg-neutral-900 select-none group/single"
+                          style={isSingleLoaded ? undefined : { aspectRatio: activeImageRatio }}
+                          className="relative w-full overflow-hidden bg-white dark:bg-neutral-900 select-none group/single"
                         >
-                          {!isSingleLoaded && !isSingleErrored && (
+                          {!isSingleLoaded && !isPreviewLoaded && !isSingleErrored && (
                             <div
                               aria-hidden="true"
-                              className="absolute inset-0 z-10 pointer-events-none bg-neutral-200 dark:bg-neutral-800 overflow-hidden flex flex-col items-center justify-center gap-2.5"
+                              className="absolute inset-0 z-0 pointer-events-none bg-neutral-200 dark:bg-neutral-800 overflow-hidden flex flex-col items-center justify-center gap-2.5"
                             >
                               <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 dark:via-white/10 to-transparent animate-shimmer" />
                               <div className="relative w-12 h-12 rounded-2xl bg-neutral-300/80 dark:bg-neutral-700/80 flex items-center justify-center">
                                 <ImageIcon className="w-6 h-6 text-neutral-500 dark:text-neutral-400" />
                               </div>
-                              <span className="relative text-xs font-semibold text-neutral-500 dark:text-neutral-400">
-                                Loading image...
-                              </span>
                             </div>
+                          )}
+                          {!isSingleLoaded && hasDifferentPreview && (
+                            <img
+                              src={singlePreviewUrl}
+                              alt=""
+                              aria-hidden="true"
+                              loading="eager"
+                              decoding="sync"
+                              onLoad={(e) => syncMediaRatio(0, e.currentTarget, previewKey)}
+                              className="absolute inset-0 w-full h-full object-cover object-top block select-none pointer-events-none z-[1]"
+                              referrerPolicy="no-referrer"
+                            />
                           )}
                           <img
                             ref={(el) => {
@@ -1150,37 +1169,41 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                             onError={() =>
                               setErroredMediaMap((prev) => (prev[singleKey] ? prev : { ...prev, [singleKey]: true }))
                             }
-                            className="w-full h-full object-cover object-top block select-none pointer-events-none"
+                            className={
+                              isSingleLoaded
+                                ? 'w-full h-auto block select-none pointer-events-none'
+                                : 'relative z-[2] w-full h-full object-cover object-top block select-none pointer-events-none'
+                            }
                             referrerPolicy="no-referrer"
                           />
 
-                      {/* Action Icons Overlay: Download + Enlarge */}
-                      <div className="absolute bottom-4 right-4 flex items-center gap-2 z-20">
-                        <button
-                          type="button"
-                          onClick={(e) => handleDownloadImage(e, allImages[0] || selectedPost.imageUrl)}
-                          disabled={isDownloadingImage}
-                          className="p-2.5 rounded-full bg-black/75 hover:bg-black text-white backdrop-blur-md transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer border border-white/10"
-                          title="Download Photo"
-                          aria-label="Download Photo"
-                        >
-                          {isDownloadingImage ? (
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <Download className="w-4 h-4" />
-                          )}
-                        </button>
+                          {/* Action Icons Overlay: Download + Enlarge */}
+                          <div className="absolute bottom-4 right-4 flex items-center gap-2 z-20">
+                            <button
+                              type="button"
+                              onClick={(e) => handleDownloadImage(e, allImages[0] || selectedPost.imageUrl)}
+                              disabled={isDownloadingImage}
+                              className="p-2.5 rounded-full bg-black/75 hover:bg-black text-white backdrop-blur-md transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer border border-white/10"
+                              title="Download Photo"
+                              aria-label="Download Photo"
+                            >
+                              {isDownloadingImage ? (
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <Download className="w-4 h-4" />
+                              )}
+                            </button>
 
-                        <button
-                          type="button"
-                          onClick={() => setShowFullImageModal(true)}
-                          className="p-2.5 rounded-full bg-black/75 hover:bg-black text-white backdrop-blur-md transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer border border-white/10"
-                          title="View Full Resolution Image"
-                          aria-label="Enlarge Image"
-                        >
-                          <Maximize2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                            <button
+                              type="button"
+                              onClick={() => setShowFullImageModal(true)}
+                              className="p-2.5 rounded-full bg-black/75 hover:bg-black text-white backdrop-blur-md transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer border border-white/10"
+                              title="View Full Resolution Image"
+                              aria-label="Enlarge Image"
+                            >
+                              <Maximize2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                       );
                     })()
@@ -1507,7 +1530,7 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                     e.stopPropagation();
                     const isPinUnlocked = isPromptUnlocked(p.id, p.isPremium);
                     if (!isPinUnlocked) {
-                      handleUpgradeToPremium();
+                      handleSelectPin(p);
                       return;
                     }
                     if (typeof window !== 'undefined') {

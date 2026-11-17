@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import ReactDOM from 'react-dom';
 import { notFound } from 'next/navigation';
 import { ServerStorage } from '@/lib/server-storage';
-import { getPromptSlug, getPromptMetaDescription } from '@/lib/utils';
+import { getPromptSlug, getPromptMetaDescription, getOptimizedImageUrl } from '@/lib/utils';
 import { DirectPromptLoader } from '@/components/public/DirectPromptLoader';
 
 export const revalidate = false;
@@ -134,7 +134,7 @@ export default async function SinglePromptDetailPage({ params }: PageProps) {
   }
 
   if (post.imageUrl) {
-    ReactDOM.preload(post.imageUrl, {
+    ReactDOM.preload(getOptimizedImageUrl(post.imageUrl, 800), {
       as: 'image',
       fetchPriority: 'high',
     });
