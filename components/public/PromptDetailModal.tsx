@@ -30,6 +30,7 @@ import {
   Tag,
   Scissors,
   Footprints,
+  Image as ImageIcon,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -248,12 +249,17 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
 
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [imageRatios, setImageRatios] = useState<Record<number, string>>({});
+  const [loadedMediaMap, setLoadedMediaMap] = useState<Record<string, boolean>>({});
+  const [erroredMediaMap, setErroredMediaMap] = useState<Record<string, boolean>>({});
   const mediaImgRefs = useRef<Record<number, HTMLImageElement | null>>({});
 
-  const syncMediaRatio = useCallback((idx: number, img: HTMLImageElement | null) => {
+  const syncMediaRatio = useCallback((idx: number, img: HTMLImageElement | null, mediaKey?: string) => {
     if (!img || !img.naturalWidth || !img.naturalHeight) return;
     const ratio = `${img.naturalWidth} / ${img.naturalHeight}`;
     setImageRatios((prev) => (prev[idx] === ratio ? prev : { ...prev, [idx]: ratio }));
+    if (mediaKey) {
+      setLoadedMediaMap((prev) => (prev[mediaKey] ? prev : { ...prev, [mediaKey]: true }));
+    }
   }, []);
 
   // Always reset slider & resolved natural ratios whenever a new prompt is opened
@@ -265,11 +271,14 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
 
   // Immediately resolve cached / SSR-preloaded images synchronously after mount or slide change
   useEffect(() => {
+    if (!selectedPost) return;
     const img = mediaImgRefs.current[currentImageIndex];
+    const currentSrc = allImages[currentImageIndex] || selectedPost.imageUrl;
+    const mediaKey = `${selectedPost.id}::${currentImageIndex}::${currentSrc}`;
     if (img && img.complete && img.naturalWidth > 0) {
-      syncMediaRatio(currentImageIndex, img);
+      syncMediaRatio(currentImageIndex, img, mediaKey);
     }
-  }, [selectedPost?.id, currentImageIndex, allImages.length, syncMediaRatio]);
+  }, [selectedPost, currentImageIndex, allImages, syncMediaRatio]);
 
   const handlePrevImage = useCallback((e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -981,28 +990,48 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                         className="absolute inset-0 flex transition-transform duration-500 ease-out will-change-transform"
                         style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
                       >
-                        {allImages.map((imgUrl, idx) => (
-                          <div
-                            key={idx}
-                            className="w-full h-full shrink-0 relative overflow-hidden bg-neutral-950 flex items-center justify-center"
-                          >
-                            <img
-                              ref={(el) => {
-                                mediaImgRefs.current[idx] = el;
-                              }}
-                              src={getOptimizedImageUrl(imgUrl, idx === 0 ? 800 : 600)}
-                              srcSet={idx === 0 ? `${getOptimizedImageUrl(imgUrl, 560)} 560w, ${getOptimizedImageUrl(imgUrl, 800)} 800w, ${getOptimizedImageUrl(imgUrl, 1200)} 1200w` : undefined}
-                              sizes="(max-width: 1024px) 100vw, 720px"
-                              alt={`${selectedPost.imageAlt || selectedPost.title} - photo ${idx + 1}`}
-                              className="w-full h-full object-cover object-top block select-none pointer-events-none"
-                              referrerPolicy="no-referrer"
-                              loading={idx === 0 ? 'eager' : 'lazy'}
-                              fetchPriority={idx === 0 ? 'high' : 'auto'}
-                              decoding="async"
-                              onLoad={(e) => syncMediaRatio(idx, e.currentTarget)}
-                            />
-                          </div>
-                        ))}
+                        {allImages.map((imgUrl, idx) => {
+                          const slideKey = `${selectedPost.id}::${idx}::${imgUrl}`;
+                          const isSlideLoaded = Boolean(loadedMediaMap[slideKey]);
+                          const isSlideErrored = Boolean(erroredMediaMap[slideKey]);
+                          return (
+                            <div
+                              key={idx}
+                              className="w-full h-full shrink-0 relative overflow-hidden bg-neutral-200 dark:bg-neutral-900 flex items-center justify-center"
+                            >
+                              {!isSlideLoaded && !isSlideErrored && (
+                                <div
+                                  aria-hidden="true"
+                                  className="absolute inset-0 z-10 pointer-events-none bg-neutral-200 dark:bg-neutral-800 overflow-hidden flex flex-col items-center justify-center gap-2.5"
+                                >
+                                  <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 dark:via-white/10 to-transparent animate-shimmer" />
+                                  <div className="relative w-12 h-12 rounded-2xl bg-neutral-300/80 dark:bg-neutral-700/80 flex items-center justify-center">
+                                    <ImageIcon className="w-6 h-6 text-neutral-500 dark:text-neutral-400" />
+                                  </div>
+                                  <span className="relative text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                                    Loading image...
+                                  </span>
+                                </div>
+                              )}
+                              <img
+                                ref={(el) => {
+                                  mediaImgRefs.current[idx] = el;
+                                }}
+                                src={imgUrl}
+                                alt={`${selectedPost.imageAlt || selectedPost.title} - photo ${idx + 1}`}
+                                className="w-full h-full object-cover object-top block select-none pointer-events-none"
+                                referrerPolicy="no-referrer"
+                                loading={idx === 0 ? 'eager' : 'lazy'}
+                                fetchPriority={idx === 0 ? 'high' : 'auto'}
+                                decoding="async"
+                                onLoad={(e) => syncMediaRatio(idx, e.currentTarget, slideKey)}
+                                onError={() =>
+                                  setErroredMediaMap((prev) => (prev[slideKey] ? prev : { ...prev, [slideKey]: true }))
+                                }
+                              />
+                            </div>
+                          );
+                        })}
                       </div>
 
                       {/* Multiple Photos Badge Indicator (e.g. 1 / 4) */}
@@ -1083,23 +1112,47 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                       </div>
                     </div>
                   ) : (
-                    /* Single Image Display: Renders at exact original dimensions with zero top/bottom spacing */
-                    <div className="relative w-full overflow-hidden bg-neutral-100 dark:bg-neutral-900 select-none group/single">
-                      <img
-                        ref={(el) => {
-                          mediaImgRefs.current[0] = el;
-                        }}
-                        src={getOptimizedImageUrl(allImages[0] || selectedPost.imageUrl, 1000)}
-                        srcSet={`${getOptimizedImageUrl(allImages[0] || selectedPost.imageUrl, 560)} 560w, ${getOptimizedImageUrl(allImages[0] || selectedPost.imageUrl, 900)} 900w, ${getOptimizedImageUrl(allImages[0] || selectedPost.imageUrl, 1400)} 1400w`}
-                        sizes="(max-width: 1024px) 100vw, 720px"
-                        alt={selectedPost.imageAlt || selectedPost.title}
-                        loading="eager"
-                        fetchPriority="high"
-                        decoding="async"
-                        onLoad={(e) => syncMediaRatio(0, e.currentTarget)}
-                        className="w-full h-auto block select-none pointer-events-none"
-                        referrerPolicy="no-referrer"
-                      />
+                    /* Single Image Display: Reserves exact aspectRatio frame immediately (0 CLS + loading skeleton) and loads full original resolution */
+                    (() => {
+                      const singleUrl = allImages[0] || selectedPost.imageUrl;
+                      const singleKey = `${selectedPost.id}::0::${singleUrl}`;
+                      const isSingleLoaded = Boolean(loadedMediaMap[singleKey]);
+                      const isSingleErrored = Boolean(erroredMediaMap[singleKey]);
+                      return (
+                        <div
+                          style={{ aspectRatio: activeImageRatio }}
+                          className="relative w-full overflow-hidden bg-neutral-200 dark:bg-neutral-900 select-none group/single"
+                        >
+                          {!isSingleLoaded && !isSingleErrored && (
+                            <div
+                              aria-hidden="true"
+                              className="absolute inset-0 z-10 pointer-events-none bg-neutral-200 dark:bg-neutral-800 overflow-hidden flex flex-col items-center justify-center gap-2.5"
+                            >
+                              <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 dark:via-white/10 to-transparent animate-shimmer" />
+                              <div className="relative w-12 h-12 rounded-2xl bg-neutral-300/80 dark:bg-neutral-700/80 flex items-center justify-center">
+                                <ImageIcon className="w-6 h-6 text-neutral-500 dark:text-neutral-400" />
+                              </div>
+                              <span className="relative text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                                Loading image...
+                              </span>
+                            </div>
+                          )}
+                          <img
+                            ref={(el) => {
+                              mediaImgRefs.current[0] = el;
+                            }}
+                            src={singleUrl}
+                            alt={selectedPost.imageAlt || selectedPost.title}
+                            loading="eager"
+                            fetchPriority="high"
+                            decoding="async"
+                            onLoad={(e) => syncMediaRatio(0, e.currentTarget, singleKey)}
+                            onError={() =>
+                              setErroredMediaMap((prev) => (prev[singleKey] ? prev : { ...prev, [singleKey]: true }))
+                            }
+                            className="w-full h-full object-cover object-top block select-none pointer-events-none"
+                            referrerPolicy="no-referrer"
+                          />
 
                       {/* Action Icons Overlay: Download + Enlarge */}
                       <div className="absolute bottom-4 right-4 flex items-center gap-2 z-20">
@@ -1128,7 +1181,9 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                           <Maximize2 className="w-4 h-4" />
                         </button>
                       </div>
-                    </div>
+                        </div>
+                      );
+                    })()
                   )}
 
                   {/* Thumbnail Row Strip when multiple images are present */}
