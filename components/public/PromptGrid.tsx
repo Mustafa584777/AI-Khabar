@@ -266,10 +266,7 @@ export const PromptGrid = () => {
 
   useEffect(() => {
     if (visiblePosts.length === 0) return;
-    const timer = setTimeout(() => {
-      prepareViewportPromptCards(visiblePosts, 8);
-    }, 150);
-    return () => clearTimeout(timer);
+    prepareViewportPromptCards(visiblePosts, 10);
   }, [visiblePosts]);
 
   // Continuous shortest-column greedy masonry eliminates all empty gaps at batch boundaries or mixed ratios
@@ -409,7 +406,7 @@ export const PromptGrid = () => {
                   <div key={post.id} className="w-full">
                     <PromptCard
                       post={post}
-                      priority={globalIndex < 4}
+                      priority={globalIndex < 8}
                       onAspectRatioResolved={handleAspectRatioResolved}
                     />
                   </div>

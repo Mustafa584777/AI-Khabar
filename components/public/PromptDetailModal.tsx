@@ -37,6 +37,7 @@ import Link from 'next/link';
 import { startRouteNavigation, pushPromptHistoryState } from '@/lib/navigation';
 import { PersonalizationEngine } from '@/lib/personalization';
 import { getPromptSlug, slugify, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription, formatPromptForClipboard } from '@/lib/utils';
+import { isImageUrlCachedInMemory } from '@/lib/viewport-cache';
 import { useRouter } from 'next/navigation';
 
 interface RecommendedPinCardProps {
@@ -240,7 +241,7 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
     if (!selectedPost) return;
     const img = mediaImgRefs.current[currentImageIndex];
     const currentSrc = allImages[currentImageIndex] || selectedPost.imageUrl;
-    const keySrc = allImages.length === 1 && currentImageIndex === 0 ? getOptimizedImageUrl(currentSrc, 800) : currentSrc;
+    const keySrc = getOptimizedImageUrl(currentSrc, 800);
     const mediaKey = `${selectedPost.id}::${currentImageIndex}::${keySrc}`;
     if (img && img.complete && img.naturalWidth > 0) {
       syncMediaRatio(currentImageIndex, img, mediaKey);
@@ -1037,8 +1038,12 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                         style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
                       >
                         {allImages.map((imgUrl, idx) => {
-                          const slideKey = `${selectedPost.id}::${idx}::${imgUrl}`;
-                          const isSlideLoaded = Boolean(loadedMediaMap[slideKey]);
+                          const slide800 = getOptimizedImageUrl(imgUrl, 800);
+                          const slideKey = `${selectedPost.id}::${idx}::${slide800}`;
+                          const isSlideLoaded =
+                            Boolean(loadedMediaMap[slideKey]) ||
+                            isImageUrlCachedInMemory(imgUrl, 800) ||
+                            isImageUrlCachedInMemory(imgUrl, 360);
                           const isSlideErrored = Boolean(erroredMediaMap[slideKey]);
                           return (
                             <div
@@ -1050,20 +1055,16 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                                   aria-hidden="true"
                                   className="absolute inset-0 z-10 pointer-events-none bg-neutral-200 dark:bg-neutral-800 overflow-hidden flex flex-col items-center justify-center gap-2.5"
                                 >
-                                  <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 dark:via-white/10 to-transparent animate-shimmer" />
                                   <div className="relative w-12 h-12 rounded-2xl bg-neutral-300/80 dark:bg-neutral-700/80 flex items-center justify-center">
                                     <ImageIcon className="w-6 h-6 text-neutral-500 dark:text-neutral-400" />
                                   </div>
-                                  <span className="relative text-xs font-semibold text-neutral-500 dark:text-neutral-400">
-                                    Loading image...
-                                  </span>
                                 </div>
                               )}
                               <img
                                 ref={(el) => {
                                   mediaImgRefs.current[idx] = el;
                                 }}
-                                src={imgUrl}
+                                src={slide800}
                                 alt={`${selectedPost.imageAlt || selectedPost.title} - photo ${idx + 1}`}
                                 className="w-full h-full object-cover object-top block select-none pointer-events-none"
                                 referrerPolicy="no-referrer"
@@ -1165,8 +1166,10 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                       const singlePreviewUrl = getOptimizedImageUrl(rawSingleUrl, 360);
                       const singleKey = `${selectedPost.id}::0::${singleUrl}`;
                       const previewKey = `${selectedPost.id}::0::preview::${singlePreviewUrl}`;
-                      const isSingleLoaded = Boolean(loadedMediaMap[singleKey]);
-                      const isPreviewLoaded = Boolean(loadedMediaMap[previewKey]);
+                      const isSingleLoaded =
+                        Boolean(loadedMediaMap[singleKey]) || isImageUrlCachedInMemory(rawSingleUrl, 800);
+                      const isPreviewLoaded =
+                        Boolean(loadedMediaMap[previewKey]) || isImageUrlCachedInMemory(rawSingleUrl, 360);
                       const isSingleErrored = Boolean(erroredMediaMap[singleKey]);
                       const hasDifferentPreview = Boolean(singlePreviewUrl && singlePreviewUrl !== singleUrl);
                       return (

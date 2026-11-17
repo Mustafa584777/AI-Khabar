@@ -37,13 +37,19 @@ export default async function Page() {
         new Date(a.publishedAt || a.createdAt || 0).getTime()
     );
 
-  for (let i = 0; i < Math.min(4, newestSorted.length); i++) {
+  for (let i = 0; i < Math.min(6, newestSorted.length); i++) {
     const img = newestSorted[i]?.imageUrl;
     if (img) {
       ReactDOM.preload(getOptimizedImageUrl(img, 360), {
         as: 'image',
-        fetchPriority: 'high',
+        fetchPriority: i < 4 ? 'high' : 'auto',
       });
+      if (i < 4) {
+        ReactDOM.preload(getOptimizedImageUrl(img, 800), {
+          as: 'image',
+          fetchPriority: 'low',
+        });
+      }
     }
   }
 

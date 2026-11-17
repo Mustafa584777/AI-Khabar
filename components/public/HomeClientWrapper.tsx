@@ -52,13 +52,7 @@ export function HomeClientWrapper({ initialPosts }: HomeClientWrapperProps) {
   React.useEffect(() => {
     if (initialPosts && initialPosts.length > 0) {
       setPosts((prev) => (prev && prev.length >= initialPosts.length ? prev : initialPosts));
-      const runWarmup = () => prepareViewportPromptCards(initialPosts, 8);
-      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-        const idleId = (window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback(runWarmup, { timeout: 300 });
-        return () => (window as Window & { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback?.(idleId);
-      }
-      const timer = setTimeout(runWarmup, 100);
-      return () => clearTimeout(timer);
+      prepareViewportPromptCards(initialPosts, 10);
     }
   }, [initialPosts, setPosts]);
 
