@@ -17,6 +17,10 @@ export const metadata: Metadata = {
   ],
   alternates: {
     canonical: PAGE_URL,
+    languages: {
+      en: PAGE_URL,
+      'pt-BR': 'https://zeenaprompt.com/removedor-de-marca-dagua-gemini-online',
+    },
   },
   openGraph: {
     title: 'Free Gemini Watermark Remover Online Without Blur | Zeena Prompt',

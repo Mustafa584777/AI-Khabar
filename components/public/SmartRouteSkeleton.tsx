@@ -22,6 +22,9 @@ export function resolveSkeletonKind(targetUrl: string): {
   if (path.startsWith('/free-gemini-watermark-remover-online')) {
     return { kind: 'watermark', defaultLabel: 'Loading Free Gemini Watermark Remover...' };
   }
+  if (path.startsWith('/removedor-de-marca-dagua-gemini-online')) {
+    return { kind: 'watermark', defaultLabel: "Carregando Removedor de Marca d'Água Gemini..." };
+  }
   if (path.startsWith('/prompt-editor')) {
     return { kind: 'studio', defaultLabel: 'Opening AI Prompt Editor...' };
   }

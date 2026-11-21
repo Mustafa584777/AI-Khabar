@@ -12,6 +12,7 @@ const STATIC_APP_ROUTES = [
   '/create',
   '/prompt-editor',
   '/free-gemini-watermark-remover-online',
+  '/removedor-de-marca-dagua-gemini-online',
   '/pricing',
   '/checkout',
   '/notifications',

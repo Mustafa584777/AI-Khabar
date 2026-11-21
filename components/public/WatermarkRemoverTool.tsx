@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import Link from 'next/link';
 import {
   Upload,
   Eraser,
@@ -32,12 +33,16 @@ import {
   Images,
   X,
   Package,
+  Globe,
+  ChevronDown,
+  Check,
 } from 'lucide-react';
 import type {
   WatermarkRemovalMode,
   InpaintProgress,
 } from '@/lib/watermark-remover';
 import { useApp } from '@/context/AppContext';
+import { startRouteNavigation } from '@/lib/navigation';
 import { WatermarkRemoverSEO } from '@/components/public/WatermarkRemoverSEO';
 import { clearWatermarkHandoff, peekWatermarkHandoff } from '@/lib/watermark-handoff';
 
@@ -86,6 +91,26 @@ export const WatermarkRemoverTool = () => {
   const [showCompareMode, setShowCompareMode] = useState(false);
   const [lastProcessMs, setLastProcessMs] = useState<number | null>(null);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+  const langMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isLangMenuOpen) return;
+    const handleOutside = (e: MouseEvent) => {
+      if (langMenuRef.current && !langMenuRef.current.contains(e.target as Node)) {
+        setIsLangMenuOpen(false);
+      }
+    };
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsLangMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [isLangMenuOpen]);
 
   // MacBook Before/After Showcase (Homepage Latest Prompt Image)
   const [demoSliderPos, setDemoSliderPos] = useState<number>(52);
@@ -1004,6 +1029,63 @@ export const WatermarkRemoverTool = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 shrink-0 text-xs font-semibold text-neutral-600 dark:text-neutral-300">
+          {/* Language Selector */}
+          <div className="relative" ref={langMenuRef}>
+            <button
+              type="button"
+              id="watermark-language-selector-btn"
+              aria-haspopup="menu"
+              aria-expanded={isLangMenuOpen}
+              aria-label="Select tool language"
+              onClick={() => setIsLangMenuOpen((prev) => !prev)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-lg bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-100 border border-neutral-200 dark:border-neutral-700 shadow-xs transition-colors cursor-pointer whitespace-nowrap shrink-0"
+            >
+              <Globe className="w-3.5 h-3.5 text-pink-500 shrink-0" />
+              <span>English</span>
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-neutral-400 transition-transform duration-150 shrink-0 ${
+                  isLangMenuOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            {isLangMenuOpen && (
+              <div
+                role="menu"
+                aria-label="Language options"
+                className="absolute left-0 lg:left-auto lg:right-0 mt-1.5 w-52 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xl py-1.5 z-40"
+              >
+                <button
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={true}
+                  onClick={() => setIsLangMenuOpen(false)}
+                  className="w-full px-3.5 py-2 text-left text-xs font-bold text-neutral-900 dark:text-white bg-pink-50/70 dark:bg-pink-950/30 flex items-center justify-between gap-2 cursor-pointer"
+                >
+                  <span>English</span>
+                  <Check className="w-3.5 h-3.5 text-pink-600 dark:text-pink-400 shrink-0" />
+                </button>
+                <Link
+                  href="/removedor-de-marca-dagua-gemini-online"
+                  prefetch={false}
+                  role="menuitemradio"
+                  aria-checked={false}
+                  onClick={() => {
+                    setIsLangMenuOpen(false);
+                    startRouteNavigation(
+                      '/removedor-de-marca-dagua-gemini-online',
+                      'Abrindo em Português (Brasil)...'
+                    );
+                  }}
+                  className="w-full px-3.5 py-2 text-left text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-between gap-2 transition-colors"
+                >
+                  <span>Português (Brasil)</span>
+                  <span className="text-[11px] font-medium text-neutral-400">pt-BR</span>
+                </Link>
+              </div>
+            )}
+          </div>
+
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
             <WifiOff className="w-3.5 h-3.5" />
             <span>Works Offline</span>
