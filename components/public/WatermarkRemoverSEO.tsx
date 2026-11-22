@@ -29,12 +29,12 @@ export const WATERMARK_FAQ_ITEMS = [
   {
     question: 'Which removal mode should I choose for the Gemini sparkle logo vs. text watermarks?',
     answer:
-      'Use HD Texture Fill (our multi-scale PatchMatch + Poisson gradient engine) for textured backgrounds like hair, skin, foliage, or fabric. Choose Transparent Watermark Eraser when removing semi-transparent white corner logos where underlying pixels are still faintly visible. Pick Instant Smooth Fill for solid walls, studio backdrops, or clear skies.',
+      'Use HD Texture Fill (our multi-scale PatchMatch + Poisson gradient engine) for textured backgrounds like hair, skin, foliage, or fabric—and pair it with our 25%–100% Intensity slider to prevent blur or distortion. Choose Transparent Watermark Eraser when removing semi-transparent white corner logos where underlying pixels are still faintly visible.',
   },
   {
     question: 'How is Zeena Prompt better than geminiwatermarkremover.in and geminiwatermarkremover.io?',
     answer:
-      'While single-mode removers typically rely on one generic auto-crop or basic corner blend and require an active internet connection, Zeena Prompt gives you three specialized reconstruction engines, 1-click bottom-right & bottom-left presets, an adjustable 10–85px manual brush for off-center stamps, a live Before/After split slider, offline PWA functionality, and integrated AI prompt creation tools.',
+      'While single-mode removers typically rely on one generic auto-crop or basic corner blend and require an active internet connection, Zeena Prompt gives you two specialized reconstruction engines with adjustable 25%–100% intensity, 1-click bottom-right & bottom-left presets, an adjustable 10–85px manual brush for off-center stamps, Undo/Redo controls, a live Before/After split slider, offline functionality, and integrated AI prompt creation tools.',
   },
   {
     question: 'Will removing the Gemini watermark reduce my image resolution or blur nearby details?',
@@ -75,8 +75,8 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     competitorIo: { text: 'Requires Internet', supported: false },
   },
   {
-    feature: 'Reconstruction Engines',
-    zeena: { text: '3 Modes (HD PatchMatch, Matte Unblend, Smooth)', supported: true, highlight: true },
+    feature: 'Reconstruction Engines & Intensity',
+    zeena: { text: '2 Precision Modes (HD PatchMatch & Matte Unblend) + 25%–100% Intensity', supported: true, highlight: true },
     competitorIn: { text: 'Single auto-blend mode', supported: false },
     competitorIo: { text: 'Single standard mode', supported: false },
   },
@@ -94,9 +94,9 @@ const COMPARISON_ROWS: ComparisonRow[] = [
   },
   {
     feature: 'Output Quality & Export Formats',
-    zeena: { text: 'Crisp HD PNG & 96% JPG (up to 2400px)', supported: true, highlight: true },
+    zeena: { text: 'Crisp HD PNG (up to 2400px)', supported: true, highlight: true },
     competitorIn: { text: 'Standard PNG', supported: true },
-    competitorIo: { text: 'PNG / Compressed JPG', supported: true },
+    competitorIo: { text: 'Compressed output', supported: true },
   },
   {
     feature: 'Signup / Login Required',
@@ -123,31 +123,31 @@ export const WatermarkRemoverSEO: React.FC = () => {
       {/* Editorial Overview & Key Capabilities */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <div className="lg:col-span-5 space-y-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-pink-600 dark:text-pink-400">
+          <p className="text-xs font-semibold uppercase tracking-wider text-[#E60023] dark:text-red-400">
             Browser-Native Pixel Reconstruction
           </p>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 dark:text-white [text-wrap:balance]">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-black dark:text-white [text-wrap:balance]">
             Why Use Our Free Gemini Watermark Remover Online Without Blur?
           </h2>
-          <p className="text-sm sm:text-base leading-relaxed text-neutral-600 dark:text-neutral-400">
+          <p className="text-sm sm:text-base leading-relaxed text-neutral-700 dark:text-neutral-300">
             AI-generated images from Google Gemini, Imagen, and Flow often include a visible four-point sparkle badge or text stamp in the corner. Instead of cropping away important framing or smudging details, our{' '}
-            <strong className="font-semibold text-neutral-900 dark:text-neutral-200">
+            <strong className="font-semibold text-black dark:text-white">
               Free Gemini Watermark Remover Online Without Blur
             </strong>{' '}
             lets you{' '}
-            <strong className="font-semibold text-neutral-900 dark:text-neutral-200">
+            <strong className="font-semibold text-black dark:text-white">
               remove Gemini watermark for free
             </strong>{' '}
             in crisp HD directly inside your browser memory in under 3 seconds.
           </p>
-          <div className="pt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-medium text-neutral-500 dark:text-neutral-400 tabular-nums">
-            <span className="inline-flex items-center gap-1.5 text-neutral-700 dark:text-neutral-300">
-              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          <div className="pt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-medium text-neutral-600 dark:text-neutral-400 tabular-nums">
+            <span className="inline-flex items-center gap-1.5 text-black dark:text-white">
+              <ShieldCheck className="w-4 h-4 text-[#E60023]" />
               0 KB Uploaded to Cloud
             </span>
             <span aria-hidden="true">·</span>
-            <span className="inline-flex items-center gap-1.5 text-neutral-700 dark:text-neutral-300">
-              <WifiOff className="w-4 h-4 text-pink-600 dark:text-pink-400" />
+            <span className="inline-flex items-center gap-1.5 text-black dark:text-white">
+              <WifiOff className="w-4 h-4 text-[#E60023]" />
               100% Offline Capable
             </span>
             <span aria-hidden="true">·</span>
@@ -155,44 +155,31 @@ export const WatermarkRemoverSEO: React.FC = () => {
           </div>
         </div>
 
-        {/* 3 Precision Engines Breakdown */}
-        <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* 2 Precision Engines Breakdown */}
+        <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <article className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 space-y-2.5">
-            <div className="flex items-center justify-between text-xs font-semibold text-pink-600 dark:text-pink-400">
+            <div className="flex items-center justify-between text-xs font-semibold text-[#E60023] dark:text-red-400">
               <span>01. HD Texture Fill</span>
               <Sparkles className="w-4 h-4" />
             </div>
-            <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
+            <h3 className="text-sm font-bold text-black dark:text-white">
               PatchMatch + Poisson Blend
             </h3>
             <p className="text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
-              Synthesizes matching skin, hair, fabric, and natural grain patterns, then solves seamless gradient blending so edges never look smudged.
+              Synthesizes matching skin, hair, fabric, and natural grain patterns, then solves seamless gradient blending with adjustable intensity so edges never look smudged or blurred.
             </p>
           </article>
 
           <article className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 space-y-2.5">
-            <div className="flex items-center justify-between text-xs font-semibold text-violet-600 dark:text-violet-400">
+            <div className="flex items-center justify-between text-xs font-semibold text-black dark:text-white">
               <span>02. Matte Inversion</span>
-              <Layers className="w-4 h-4" />
+              <Layers className="w-4 h-4 text-[#E60023]" />
             </div>
-            <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
+            <h3 className="text-sm font-bold text-black dark:text-white">
               Transparent Logo Eraser
             </h3>
             <p className="text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
-              Mathematically unblends semi-transparent white sparkle overlays and subtle corner text to recover the true original background pixels underneath.
-            </p>
-          </article>
-
-          <article className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 space-y-2.5">
-            <div className="flex items-center justify-between text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-              <span>03. Smooth Fill</span>
-              <Zap className="w-4 h-4" />
-            </div>
-            <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
-              Sub-Second Backdrop Clean
-            </h3>
-            <p className="text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
-              Clears stamps over studio backdrops, skies, and clean gradients in under 0.4s—ideal for quick product shots and social thumbnails.
+              Mathematically unblends semi-transparent white sparkle overlays and subtle corner text to recover the true original background pixels underneath cleanly.
             </p>
           </article>
         </div>
@@ -238,11 +225,11 @@ export const WatermarkRemoverSEO: React.FC = () => {
             <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 tabular-nums">
               03 · Verify &amp; Export HD
             </span>
-            <h3 className="text-base font-bold text-neutral-900 dark:text-white">
+            <h3 className="text-base font-bold text-black dark:text-white">
               Compare Slider &amp; Download
             </h3>
             <p className="text-xs sm:text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-              Click <strong className="font-semibold text-neutral-800 dark:text-neutral-200">Remove Watermark Now</strong>, inspect the result using the interactive Before/After split slider, and export as lossless HD PNG or JPG.
+              Click <strong className="font-semibold text-black dark:text-white">Remove Watermark Now</strong>, inspect the result using the interactive Before/After split slider, and export as lossless HD PNG.
             </p>
           </div>
         </div>
@@ -252,15 +239,15 @@ export const WatermarkRemoverSEO: React.FC = () => {
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div className="space-y-1.5 max-w-2xl">
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
-              Comparison: Zeena Prompt vs. geminiwatermarkremover.in &amp; geminiwatermarkremover.io
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-black dark:text-white">
+              Zeena Prompt Gemini Watermark Remover vs Competition
             </h2>
             <p className="text-sm text-neutral-600 dark:text-neutral-400">
-              See how our <strong className="font-semibold text-neutral-800 dark:text-neutral-200">Free Gemini Watermark Remover Online Without Blur</strong> compares against popular single-purpose watermark removers across privacy, offline reliability, and reconstruction control.
+              See how our <strong className="font-semibold text-black dark:text-white">Free Gemini Watermark Remover Online Without Blur</strong> compares against single-purpose watermark removers across privacy, offline reliability, and reconstruction control.
             </p>
           </div>
-          <span className="text-xs text-neutral-500 dark:text-neutral-400 inline-flex items-center gap-1.5 shrink-0">
-            <SlidersHorizontal className="w-3.5 h-3.5" />
+          <span className="text-xs text-neutral-600 dark:text-neutral-400 inline-flex items-center gap-1.5 shrink-0">
+            <SlidersHorizontal className="w-3.5 h-3.5 text-[#E60023]" />
             Verified Feature Matrix
           </span>
         </div>
@@ -275,7 +262,7 @@ export const WatermarkRemoverSEO: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="py-3.5 px-5 text-xs font-bold text-neutral-900 dark:text-white bg-pink-50/70 dark:bg-pink-950/30 border-x border-pink-200/70 dark:border-pink-900/50 w-[28%]"
+                    className="py-3.5 px-5 text-xs font-bold text-black dark:text-white bg-red-50/70 dark:bg-red-950/30 border-x border-red-200/70 dark:border-red-900/50 w-[28%]"
                   >
                     Zeena Prompt (This Tool)
                   </th>
@@ -295,13 +282,13 @@ export const WatermarkRemoverSEO: React.FC = () => {
                   >
                     <th
                       scope="row"
-                      className="py-3.5 px-5 font-semibold text-neutral-900 dark:text-neutral-100 align-top"
+                      className="py-3.5 px-5 font-semibold text-black dark:text-white align-top"
                     >
                       {row.feature}
                     </th>
-                    <td className="py-3.5 px-5 bg-pink-50/35 dark:bg-pink-950/15 border-x border-pink-200/60 dark:border-pink-900/40 align-top">
-                      <div className="flex items-start gap-2 font-semibold text-neutral-900 dark:text-white tabular-nums">
-                        <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" aria-hidden="true" />
+                    <td className="py-3.5 px-5 bg-red-50/35 dark:bg-red-950/15 border-x border-red-200/60 dark:border-red-900/40 align-top">
+                      <div className="flex items-start gap-2 font-semibold text-black dark:text-white tabular-nums">
+                        <Check className="w-4 h-4 text-[#E60023] shrink-0 mt-0.5" aria-hidden="true" />
                         <span>{row.zeena.text}</span>
                       </div>
                     </td>
@@ -336,7 +323,7 @@ export const WatermarkRemoverSEO: React.FC = () => {
       {/* Frequently Asked Questions (Interactive Accordion matching FAQPage Schema) */}
       <div className="space-y-4">
         <div className="space-y-1.5 max-w-2xl">
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-black dark:text-white">
             Frequently Asked Questions About Our Gemini Logo Remover
           </h2>
           <p className="text-sm text-neutral-600 dark:text-neutral-400">
@@ -344,7 +331,7 @@ export const WatermarkRemoverSEO: React.FC = () => {
           </p>
         </div>
 
-        <div className="divide-y divide-neutral-200 dark:divide-neutral-800 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
+        <div className="divide-y divide-neutral-200 dark:divide-neutral-800 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 overflow-hidden">
           {WATERMARK_FAQ_ITEMS.map((item, idx) => {
             const isOpen = openFaqIndex === idx;
             return (
@@ -355,12 +342,12 @@ export const WatermarkRemoverSEO: React.FC = () => {
                   onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
                   className="w-full px-5 py-4 text-left flex items-center justify-between gap-4 hover:bg-neutral-50 dark:hover:bg-neutral-800/40 transition-colors cursor-pointer min-h-[48px]"
                 >
-                  <h3 className="text-sm sm:text-base font-semibold text-neutral-900 dark:text-white">
+                  <h3 className="text-sm sm:text-base font-semibold text-black dark:text-white">
                     {item.question}
                   </h3>
                   <ChevronDown
-                    className={`w-4 h-4 text-neutral-500 shrink-0 transition-transform duration-200 ${
-                      isOpen ? 'rotate-180 text-pink-600 dark:text-pink-400' : ''
+                    className={`w-4 h-4 shrink-0 transition-transform duration-200 ${
+                      isOpen ? 'rotate-180 text-[#E60023]' : 'text-neutral-500'
                     }`}
                     aria-hidden="true"
                   />
@@ -379,7 +366,7 @@ export const WatermarkRemoverSEO: React.FC = () => {
       {/* Clean Related AI Tools Strip (Internal Linking for SEO) */}
       <div className="p-6 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <h3 className="text-base font-bold text-neutral-900 dark:text-white">
+          <h3 className="text-base font-bold text-black dark:text-white">
             Need Fresh Prompts After Cleaning Your Photos?
           </h3>
           <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
@@ -390,14 +377,14 @@ export const WatermarkRemoverSEO: React.FC = () => {
           <Link
             href="/"
             prefetch={false}
-            className="px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600 text-xs font-bold text-neutral-800 dark:text-neutral-200 transition-colors whitespace-nowrap"
+            className="px-4 py-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-xs font-bold text-black dark:text-white transition-colors whitespace-nowrap"
           >
             Browse Prompt Library
           </Link>
           <Link
             href="/create"
             prefetch={false}
-            className="px-4 py-2.5 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:opacity-90 text-xs font-bold inline-flex items-center gap-1.5 transition-opacity whitespace-nowrap"
+            className="px-4 py-2.5 rounded-xl bg-[#E60023] hover:bg-red-700 text-white text-xs font-bold inline-flex items-center gap-1.5 transition-colors whitespace-nowrap"
           >
             <span>Open AI Prompt Studio</span>
             <ArrowRight className="w-3.5 h-3.5" />

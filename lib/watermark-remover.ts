@@ -9,6 +9,7 @@ export interface InpaintProgress {
 
 export interface InpaintOptions {
   mode?: WatermarkRemovalMode;
+  intensity?: number; // 25 | 50 | 75 | 100 (default 100)
   onProgress?: (progress: InpaintProgress) => void;
 }
 
@@ -68,6 +69,8 @@ export async function removeWatermarkInpaint(
 ): Promise<InpaintResult> {
   const start = typeof performance !== 'undefined' ? performance.now() : Date.now();
   const mode: WatermarkRemovalMode = options.mode ?? 'hd';
+  const intensity = Math.max(10, Math.min(100, Math.round(options.intensity ?? 100)));
+  const strength = intensity / 100;
   const report = (percent: number, stage: string) => {
     options.onProgress?.({ percent: Math.min(100, Math.max(0, Math.round(percent))), stage });
   };
@@ -110,24 +113,28 @@ export async function removeWatermarkInpaint(
     };
   }
 
-  // Dilate mask by 2px to cover anti-aliased fringe / halo around logos & text
+  // Scale mask dilation radius by intensity so low intensity stays tightly inside painted watermark pixels
+  const dilateRadius = intensity >= 90 ? 2 : intensity >= 65 ? 1 : 0;
   const dilated = new Uint8Array(rawMask);
-  const padMinX = Math.max(0, minX - 3);
-  const padMaxX = Math.min(width - 1, maxX + 3);
-  const padMinY = Math.max(0, minY - 3);
-  const padMaxY = Math.min(height - 1, maxY + 3);
+  if (dilateRadius > 0) {
+    const padMinX = Math.max(0, minX - (dilateRadius + 1));
+    const padMaxX = Math.min(width - 1, maxX + (dilateRadius + 1));
+    const padMinY = Math.max(0, minY - (dilateRadius + 1));
+    const padMaxY = Math.min(height - 1, maxY + (dilateRadius + 1));
+    const r2 = dilateRadius === 2 ? 5 : 2;
 
-  for (let y = padMinY; y <= padMaxY; y++) {
-    for (let x = padMinX; x <= padMaxX; x++) {
-      if (rawMask[y * width + x] === 1) {
-        for (let dy = -2; dy <= 2; dy++) {
-          const ny = y + dy;
-          if (ny < 0 || ny >= height) continue;
-          for (let dx = -2; dx <= 2; dx++) {
-            const nx = x + dx;
-            if (nx < 0 || nx >= width) continue;
-            if (dx * dx + dy * dy <= 5) {
-              dilated[ny * width + nx] = 1;
+    for (let y = padMinY; y <= padMaxY; y++) {
+      for (let x = padMinX; x <= padMaxX; x++) {
+        if (rawMask[y * width + x] === 1) {
+          for (let dy = -dilateRadius; dy <= dilateRadius; dy++) {
+            const ny = y + dy;
+            if (ny < 0 || ny >= height) continue;
+            for (let dx = -dilateRadius; dx <= dilateRadius; dx++) {
+              const nx = x + dx;
+              if (nx < 0 || nx >= width) continue;
+              if (dx * dx + dy * dy <= r2) {
+                dilated[ny * width + nx] = 1;
+              }
             }
           }
         }
@@ -135,10 +142,10 @@ export async function removeWatermarkInpaint(
     }
   }
 
-  minX = Math.max(0, minX - 2);
-  maxX = Math.min(width - 1, maxX + 2);
-  minY = Math.max(0, minY - 2);
-  maxY = Math.min(height - 1, maxY + 2);
+  minX = Math.max(0, minX - dilateRadius);
+  maxX = Math.min(width - 1, maxX + dilateRadius);
+  minY = Math.max(0, minY - dilateRadius);
+  maxY = Math.min(height - 1, maxY + dilateRadius);
 
   // Build adaptive ROI around masked bounding box (ensures plenty of clean reference texture without wasting RAM)
   const maskW = maxX - minX + 1;
@@ -257,10 +264,11 @@ export async function removeWatermarkInpaint(
 
           // Consistent alpha across channels confirms neutral white/light watermark veil
           if (alpha > 0.06 && alpha < 0.74 && (aMax - aMin) < 0.28) {
-            const inv = 1 / Math.max(0.26, 1 - alpha);
-            roiSrc[p] = Math.max(0, Math.min(255, Math.round((r - alpha * 255) * inv)));
-            roiSrc[p + 1] = Math.max(0, Math.min(255, Math.round((g - alpha * 255) * inv)));
-            roiSrc[p + 2] = Math.max(0, Math.min(255, Math.round((b - alpha * 255) * inv)));
+            const effAlpha = alpha * strength;
+            const inv = 1 / Math.max(0.26, 1 - effAlpha);
+            roiSrc[p] = Math.max(0, Math.min(255, Math.round((r - effAlpha * 255) * inv)));
+            roiSrc[p + 1] = Math.max(0, Math.min(255, Math.round((g - effAlpha * 255) * inv)));
+            roiSrc[p + 2] = Math.max(0, Math.min(255, Math.round((b - effAlpha * 255) * inv)));
             stillOpaque[idx] = 0;
             recoveredPixels++;
           }
@@ -295,9 +303,9 @@ export async function removeWatermarkInpaint(
   if (mode === 'fast') {
     report(45, 'Running fast directional fill...');
     const fastOut = new Uint8ClampedArray(roiSrc);
-    directionalPeelInit(fastOut, roiMask, roiW, roiH, 2);
+    directionalPeelInit(fastOut, roiMask, roiW, roiH, intensity <= 50 ? 1 : 2);
     report(88, 'Feathering edges...');
-    copyRoiMaskBack(out, fastOut, roiMask, width, roiX0, roiY0, roiW, roiH);
+    copyRoiMaskBack(out, fastOut, roiMask, width, roiX0, roiY0, roiW, roiH, undefined, false, strength);
     const end = typeof performance !== 'undefined' ? performance.now() : Date.now();
     report(100, 'Done!');
     return {
@@ -313,11 +321,12 @@ export async function removeWatermarkInpaint(
   await yieldToMain();
 
   const roiWork = new Uint8ClampedArray(roiSrc);
-  const peelOrder = directionalPeelInit(roiWork, roiMask, roiW, roiH, 2);
+  const peelRelaxPasses = intensity <= 50 ? 1 : 2;
+  const peelOrder = directionalPeelInit(roiWork, roiMask, roiW, roiH, peelRelaxPasses);
 
   if (peelOrder.length === 0) {
     // Everything recovered cleanly by translucent matte pass
-    copyRoiMaskBack(out, roiSrc, dilated, width, roiX0, roiY0, roiW, roiH, roiMask, true);
+    copyRoiMaskBack(out, roiSrc, dilated, width, roiX0, roiY0, roiW, roiH, roiMask, true, 1);
     const end = typeof performance !== 'undefined' ? performance.now() : Date.now();
     report(100, 'Complete!');
     return {
@@ -406,7 +415,8 @@ export async function removeWatermarkInpaint(
     42
   );
 
-  // Copy back repaired ROI pixels cleanly
+  // Copy back repaired ROI pixels scaled cleanly by selected intensity (100% = full replacement; lower = gentler blend avoiding blur/distortion)
+  const invStrength = 1 - strength;
   for (let y = 0; y < roiH; y++) {
     const gy = roiY0 + y;
     const gRow = gy * width + roiX0;
@@ -418,9 +428,15 @@ export async function removeWatermarkInpaint(
         const gp = gIdx * 4;
         const rp = rIdx * 4;
         if (roiMask[rIdx] === 1) {
-          out[gp] = seamlessPixels[rp];
-          out[gp + 1] = seamlessPixels[rp + 1];
-          out[gp + 2] = seamlessPixels[rp + 2];
+          if (strength >= 0.99) {
+            out[gp] = seamlessPixels[rp];
+            out[gp + 1] = seamlessPixels[rp + 1];
+            out[gp + 2] = seamlessPixels[rp + 2];
+          } else {
+            out[gp] = Math.round(src[gp] * invStrength + seamlessPixels[rp] * strength);
+            out[gp + 1] = Math.round(src[gp + 1] * invStrength + seamlessPixels[rp + 1] * strength);
+            out[gp + 2] = Math.round(src[gp + 2] * invStrength + seamlessPixels[rp + 2] * strength);
+          }
           out[gp + 3] = 255;
         } else if (mode === 'translucent') {
           // Pixel was recovered directly by translucent alpha matte removal
@@ -453,8 +469,10 @@ function copyRoiMaskBack(
   roiW: number,
   roiH: number,
   overrideMask?: Uint8Array,
-  copyAllInRoi = false
+  copyAllInRoi = false,
+  strength = 1
 ) {
+  const invStrength = 1 - strength;
   for (let y = 0; y < roiH; y++) {
     const gRow = (roiY0 + y) * fullW + roiX0;
     const rRow = y * roiW;
@@ -464,9 +482,15 @@ function copyRoiMaskBack(
       if (use || (overrideMask && overrideMask[rIdx] === 1)) {
         const gp = (gRow + x) * 4;
         const rp = rIdx * 4;
-        out[gp] = roiOut[rp];
-        out[gp + 1] = roiOut[rp + 1];
-        out[gp + 2] = roiOut[rp + 2];
+        if (strength >= 0.99) {
+          out[gp] = roiOut[rp];
+          out[gp + 1] = roiOut[rp + 1];
+          out[gp + 2] = roiOut[rp + 2];
+        } else {
+          out[gp] = Math.round(out[gp] * invStrength + roiOut[rp] * strength);
+          out[gp + 1] = Math.round(out[gp + 1] * invStrength + roiOut[rp + 1] * strength);
+          out[gp + 2] = Math.round(out[gp + 2] * invStrength + roiOut[rp + 2] * strength);
+        }
         out[gp + 3] = 255;
       }
     }

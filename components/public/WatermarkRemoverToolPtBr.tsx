@@ -7,6 +7,7 @@ import {
   Eraser,
   Download,
   Undo2,
+  Redo2,
   Trash2,
   Sparkles,
   RefreshCw,
@@ -19,7 +20,6 @@ import {
   CornerDownRight,
   CornerDownLeft,
   Layers,
-  Zap,
   Share2,
   Link2,
   MoveHorizontal,
@@ -83,9 +83,12 @@ export const WatermarkRemoverToolPtBr = () => {
   const [hasImage, setHasImage] = useState(false);
   const [brushSize, setBrushSize] = useState<number>(28);
   const [removalMode, setRemovalMode] = useState<WatermarkRemovalMode>('hd');
+  const [intensity, setIntensity] = useState<25 | 50 | 75 | 100>(100);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressInfo, setProgressInfo] = useState<InpaintProgress>({ percent: 0, stage: '' });
   const [hasMaskStrokes, setHasMaskStrokes] = useState(false);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
   const [hasProcessedResult, setHasProcessedResult] = useState(false);
   const [comparePosition, setComparePosition] = useState<number>(50);
   const [showCompareMode, setShowCompareMode] = useState(false);
@@ -139,9 +142,10 @@ export const WatermarkRemoverToolPtBr = () => {
   const bulkFileInputRef = useRef<HTMLInputElement>(null);
   const imageCanvasRef = useRef<HTMLCanvasElement>(null);
   const maskCanvasRef = useRef<HTMLCanvasElement>(null);
-  const originalSnapshotRef = useRef<ImageData | null>(null);
   const undoSnapshotsRef = useRef<ImageData[]>([]);
+  const imageRedoRef = useRef<ImageData[]>([]);
   const maskHistoryRef = useRef<ImageData[]>([]);
+  const maskRedoHistoryRef = useRef<ImageData[]>([]);
   const isDrawingRef = useRef(false);
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
   const beforeDataUrlRef = useRef<string>('');
@@ -151,6 +155,11 @@ export const WatermarkRemoverToolPtBr = () => {
   const [afterPreviewUrl, setAfterPreviewUrl] = useState<string>('');
 
   const pendingUploadRef = useRef<{ img: HTMLImageElement; objectUrl: string } | null>(null);
+
+  const syncHistoryFlags = useCallback(() => {
+    setCanUndo(maskHistoryRef.current.length > 0 || undoSnapshotsRef.current.length > 0);
+    setCanRedo(maskRedoHistoryRef.current.length > 0 || imageRedoRef.current.length > 0);
+  }, []);
 
   // Calibrado com base em saídas reais do Gemini
   const getGeminiWatermarkRect = useCallback((w: number, h: number) => {
@@ -171,7 +180,7 @@ export const WatermarkRemoverToolPtBr = () => {
     (mCtx: CanvasRenderingContext2D, w: number, h: number) => {
       const rect = getGeminiWatermarkRect(w, h);
       mCtx.save();
-      mCtx.fillStyle = 'rgba(236, 72, 153, 0.72)';
+      mCtx.fillStyle = 'rgba(230, 0, 35, 0.68)';
       mCtx.beginPath();
       mCtx.roundRect(rect.x, rect.y, rect.width, rect.height, 14);
       mCtx.fill();
@@ -182,7 +191,7 @@ export const WatermarkRemoverToolPtBr = () => {
 
   const drawBottomLeftWatermarkMask = useCallback((mCtx: CanvasRenderingContext2D, w: number, h: number) => {
     mCtx.save();
-    mCtx.fillStyle = 'rgba(236, 72, 153, 0.72)';
+    mCtx.fillStyle = 'rgba(230, 0, 35, 0.68)';
     const boxW = Math.max(120, Math.round(w * 0.28));
     const boxH = Math.max(40, Math.round(h * 0.075));
     const padX = Math.max(8, Math.round(w * 0.015));
@@ -221,11 +230,11 @@ export const WatermarkRemoverToolPtBr = () => {
       ctx.drawImage(img, 0, 0, w, h);
       mCtx.clearRect(0, 0, w, h);
 
-      const snapshot = ctx.getImageData(0, 0, w, h);
-      originalSnapshotRef.current = snapshot;
       undoSnapshotsRef.current = [];
+      imageRedoRef.current = [];
 
       maskHistoryRef.current = [mCtx.getImageData(0, 0, w, h)];
+      maskRedoHistoryRef.current = [];
 
       drawGeminiWatermarkMask(mCtx, w, h);
 
@@ -242,11 +251,12 @@ export const WatermarkRemoverToolPtBr = () => {
       setHasProcessedResult(false);
       setShowCompareMode(false);
       setLastProcessMs(null);
+      syncHistoryFlags();
       clearWatermarkHandoff();
       showToast("Área da marca d'água do Gemini marcada automaticamente! Clique em \"Remover Marca d'Água Agora\".");
       return true;
     },
-    [drawGeminiWatermarkMask, showToast]
+    [drawGeminiWatermarkMask, showToast, syncHistoryFlags]
   );
 
   useEffect(() => {
@@ -373,8 +383,8 @@ export const WatermarkRemoverToolPtBr = () => {
     mCtx.save();
     mCtx.lineCap = 'round';
     mCtx.lineJoin = 'round';
-    mCtx.strokeStyle = 'rgba(236, 72, 153, 0.72)';
-    mCtx.fillStyle = 'rgba(236, 72, 153, 0.72)';
+    mCtx.strokeStyle = 'rgba(230, 0, 35, 0.68)';
+    mCtx.fillStyle = 'rgba(230, 0, 35, 0.68)';
     mCtx.lineWidth = effectiveRadius * 2;
 
     mCtx.beginPath();
@@ -398,6 +408,8 @@ export const WatermarkRemoverToolPtBr = () => {
     e.currentTarget.setPointerCapture(e.pointerId);
     maskHistoryRef.current.push(mCtx.getImageData(0, 0, maskCanvas.width, maskCanvas.height));
     if (maskHistoryRef.current.length > 15) maskHistoryRef.current.shift();
+    maskRedoHistoryRef.current = [];
+    syncHistoryFlags();
 
     const pt = getCanvasPoint(e);
     if (!pt) return;
@@ -426,14 +438,25 @@ export const WatermarkRemoverToolPtBr = () => {
     }
   };
 
+  const maskHasAlpha = (imgData: ImageData): boolean => {
+    const data = imgData.data;
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] > 20) return true;
+    }
+    return false;
+  };
+
   const handleClearMask = () => {
     const maskCanvas = maskCanvasRef.current;
     if (!maskCanvas) return;
     const mCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
     if (!mCtx) return;
     maskHistoryRef.current.push(mCtx.getImageData(0, 0, maskCanvas.width, maskCanvas.height));
+    if (maskHistoryRef.current.length > 15) maskHistoryRef.current.shift();
+    maskRedoHistoryRef.current = [];
     mCtx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
     setHasMaskStrokes(false);
+    syncHistoryFlags();
   };
 
   const handleUndo = () => {
@@ -445,16 +468,12 @@ export const WatermarkRemoverToolPtBr = () => {
       const mCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
       const prevMask = maskHistoryRef.current.pop();
       if (mCtx && prevMask) {
+        const currentMask = mCtx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
+        maskRedoHistoryRef.current.push(currentMask);
+        if (maskRedoHistoryRef.current.length > 15) maskRedoHistoryRef.current.shift();
         mCtx.putImageData(prevMask, 0, 0);
-        const data = prevMask.data;
-        let hasAny = false;
-        for (let i = 3; i < data.length; i += 4) {
-          if (data[i] > 20) {
-            hasAny = true;
-            break;
-          }
-        }
-        setHasMaskStrokes(hasAny);
+        setHasMaskStrokes(maskHasAlpha(prevMask));
+        syncHistoryFlags();
         return;
       }
     }
@@ -463,6 +482,9 @@ export const WatermarkRemoverToolPtBr = () => {
       const ctx = imgCanvas.getContext('2d', { willReadFrequently: true });
       const prevImg = undoSnapshotsRef.current.pop();
       if (ctx && prevImg) {
+        const currentImg = ctx.getImageData(0, 0, imgCanvas.width, imgCanvas.height);
+        imageRedoRef.current.push(currentImg);
+        if (imageRedoRef.current.length > 8) imageRedoRef.current.shift();
         ctx.putImageData(prevImg, 0, 0);
         const url = imgCanvas.toDataURL('image/png');
         afterDataUrlRef.current = url;
@@ -471,7 +493,45 @@ export const WatermarkRemoverToolPtBr = () => {
           setHasProcessedResult(false);
           setShowCompareMode(false);
         }
+        syncHistoryFlags();
         showToast("Última remoção de marca d'água desfeita.");
+      }
+    }
+  };
+
+  const handleRedo = () => {
+    const maskCanvas = maskCanvasRef.current;
+    const imgCanvas = imageCanvasRef.current;
+    if (!maskCanvas || !imgCanvas) return;
+
+    if (maskRedoHistoryRef.current.length > 0) {
+      const mCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
+      const nextMask = maskRedoHistoryRef.current.pop();
+      if (mCtx && nextMask) {
+        const currentMask = mCtx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
+        maskHistoryRef.current.push(currentMask);
+        if (maskHistoryRef.current.length > 15) maskHistoryRef.current.shift();
+        mCtx.putImageData(nextMask, 0, 0);
+        setHasMaskStrokes(maskHasAlpha(nextMask));
+        syncHistoryFlags();
+        return;
+      }
+    }
+
+    if (imageRedoRef.current.length > 0) {
+      const ctx = imgCanvas.getContext('2d', { willReadFrequently: true });
+      const nextImg = imageRedoRef.current.pop();
+      if (ctx && nextImg) {
+        const currentImg = ctx.getImageData(0, 0, imgCanvas.width, imgCanvas.height);
+        undoSnapshotsRef.current.push(currentImg);
+        if (undoSnapshotsRef.current.length > 8) undoSnapshotsRef.current.shift();
+        ctx.putImageData(nextImg, 0, 0);
+        const url = imgCanvas.toDataURL('image/png');
+        afterDataUrlRef.current = url;
+        setAfterPreviewUrl(url);
+        setHasProcessedResult(true);
+        syncHistoryFlags();
+        showToast("Última remoção de marca d'água refeita.");
       }
     }
   };
@@ -483,6 +543,8 @@ export const WatermarkRemoverToolPtBr = () => {
     if (!mCtx) return;
 
     maskHistoryRef.current.push(mCtx.getImageData(0, 0, maskCanvas.width, maskCanvas.height));
+    if (maskHistoryRef.current.length > 15) maskHistoryRef.current.shift();
+    maskRedoHistoryRef.current = [];
     const w = maskCanvas.width;
     const h = maskCanvas.height;
 
@@ -496,6 +558,7 @@ export const WatermarkRemoverToolPtBr = () => {
 
     setHasMaskStrokes(true);
     setShowCompareMode(false);
+    syncHistoryFlags();
   };
 
   const handleRemoveWatermark = () => {
@@ -530,10 +593,12 @@ export const WatermarkRemoverToolPtBr = () => {
       try {
         undoSnapshotsRef.current.push(currentImg);
         if (undoSnapshotsRef.current.length > 8) undoSnapshotsRef.current.shift();
+        imageRedoRef.current = [];
 
         const { removeWatermarkInpaint } = await import('@/lib/watermark-remover');
         const result = await removeWatermarkInpaint(currentImg, maskImg.data, {
           mode: removalMode,
+          intensity,
           onProgress: (info) => {
             setProgressInfo(info);
           },
@@ -541,6 +606,7 @@ export const WatermarkRemoverToolPtBr = () => {
         ctx.putImageData(result.imageData, 0, 0);
         mCtx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
         maskHistoryRef.current = [];
+        maskRedoHistoryRef.current = [];
 
         const cleanUrl = imgCanvas.toDataURL('image/png');
         afterDataUrlRef.current = cleanUrl;
@@ -548,8 +614,9 @@ export const WatermarkRemoverToolPtBr = () => {
         setLastProcessMs(result.durationMs);
         setHasMaskStrokes(false);
         setHasProcessedResult(true);
+        syncHistoryFlags();
         showToast(
-          `Marca d'água removida em ${(result.durationMs / 1000).toFixed(2)}s (Qualidade ${removalMode.toUpperCase()})!`
+          `Marca d'água removida em ${(result.durationMs / 1000).toFixed(2)}s (Intensidade ${intensity}%)!`
         );
       } catch (err) {
         console.error('Local inpaint error:', err);
@@ -559,26 +626,6 @@ export const WatermarkRemoverToolPtBr = () => {
         setProgressInfo({ percent: 0, stage: '' });
       }
     }, 16);
-  };
-
-  const handleResetToOriginal = () => {
-    const imgCanvas = imageCanvasRef.current;
-    const maskCanvas = maskCanvasRef.current;
-    if (!imgCanvas || !maskCanvas || !originalSnapshotRef.current) return;
-    const ctx = imgCanvas.getContext('2d', { willReadFrequently: true });
-    const mCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx || !mCtx) return;
-
-    ctx.putImageData(originalSnapshotRef.current, 0, 0);
-    mCtx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
-    undoSnapshotsRef.current = [];
-    maskHistoryRef.current = [];
-    setHasMaskStrokes(false);
-    setHasProcessedResult(false);
-    setShowCompareMode(false);
-    setAfterPreviewUrl('');
-    setLastProcessMs(null);
-    showToast('Foto restaurada para a versão original.');
   };
 
   const dataUrlToBlob = useCallback((dataUrl: string): Blob | null => {
@@ -876,6 +923,7 @@ export const WatermarkRemoverToolPtBr = () => {
               const { removeWatermarkInpaint } = await import('@/lib/watermark-remover');
               const inpainted = await removeWatermarkInpaint(imgData, maskData.data, {
                 mode: removalMode,
+                intensity,
               });
               ctx.putImageData(inpainted.imageData, 0, 0);
               resolve({
@@ -1012,19 +1060,19 @@ export const WatermarkRemoverToolPtBr = () => {
       {/* Cabeçalho Principal H1 e Selos de Privacidade + Seletor de Idioma */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-neutral-200 dark:border-neutral-800">
         <div className="space-y-1.5">
-          <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-neutral-900 dark:text-white flex items-center gap-3 flex-wrap">
-            <span className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-500 via-fuchsia-500 to-violet-600 text-white flex items-center justify-center shadow-lg shadow-pink-500/25 shrink-0">
+          <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-black dark:text-white flex items-center gap-3 flex-wrap">
+            <span className="w-10 h-10 rounded-2xl bg-[#E60023] text-white flex items-center justify-center shadow-lg shadow-red-600/20 shrink-0">
               <Eraser className="w-5 h-5" />
             </span>
             <span>Removedor de Marca d&apos;Água Gemini Online Grátis Sem Desfoque</span>
           </h1>
-          <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 max-w-2xl">
+          <p className="text-xs sm:text-sm text-neutral-700 dark:text-neutral-300 max-w-2xl">
             Nosso Removedor de Marca d&apos;Água Gemini Online Grátis Sem Desfoque funciona direto no navegador e permite apagar logos brilhantes do Gemini, selos de texto e marcas nos cantos em HD nítido. Zero envios ao servidor, zero perda de qualidade, 100% privado e funciona offline.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 shrink-0 text-xs font-semibold text-neutral-600 dark:text-neutral-300">
-          {/* Seletor de Idioma */}
+        <div className="flex flex-wrap items-center gap-2 shrink-0 text-xs font-semibold text-black dark:text-white">
+          {/* Seletor de Idioma (botão sem borda) */}
           <div className="relative" ref={langMenuRef}>
             <button
               type="button"
@@ -1033,12 +1081,12 @@ export const WatermarkRemoverToolPtBr = () => {
               aria-expanded={isLangMenuOpen}
               aria-label="Selecionar idioma da ferramenta"
               onClick={() => setIsLangMenuOpen((prev) => !prev)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-lg bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-100 border border-neutral-200 dark:border-neutral-700 shadow-xs transition-colors cursor-pointer whitespace-nowrap shrink-0"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[36px] rounded-xl bg-neutral-100 dark:bg-neutral-900 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-black dark:text-white transition-colors cursor-pointer whitespace-nowrap shrink-0"
             >
-              <Globe className="w-3.5 h-3.5 text-pink-500 shrink-0" />
+              <Globe className="w-3.5 h-3.5 text-[#E60023] shrink-0" />
               <span>Português (Brasil)</span>
               <ChevronDown
-                className={`w-3.5 h-3.5 text-neutral-400 transition-transform duration-150 shrink-0 ${
+                className={`w-3.5 h-3.5 text-neutral-600 dark:text-neutral-400 transition-transform duration-150 shrink-0 ${
                   isLangMenuOpen ? 'rotate-180' : ''
                 }`}
               />
@@ -1048,7 +1096,7 @@ export const WatermarkRemoverToolPtBr = () => {
               <div
                 role="menu"
                 aria-label="Opções de idioma"
-                className="absolute left-0 lg:left-auto lg:right-0 mt-1.5 w-52 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xl py-1.5 z-40"
+                className="absolute left-0 lg:left-auto lg:right-0 mt-1.5 w-52 rounded-xl bg-white dark:bg-neutral-900 shadow-xl py-1.5 z-40"
               >
                 <Link
                   href="/free-gemini-watermark-remover-online"
@@ -1062,30 +1110,30 @@ export const WatermarkRemoverToolPtBr = () => {
                       'Loading English version...'
                     );
                   }}
-                  className="w-full px-3.5 py-2 text-left text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-between gap-2 transition-colors"
+                  className="w-full px-3.5 py-2 text-left text-xs font-semibold text-black dark:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-between gap-2 transition-colors"
                 >
                   <span>English</span>
-                  <span className="text-[11px] font-medium text-neutral-400">EN</span>
+                  <span className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400">EN</span>
                 </Link>
                 <button
                   type="button"
                   role="menuitemradio"
                   aria-checked={true}
                   onClick={() => setIsLangMenuOpen(false)}
-                  className="w-full px-3.5 py-2 text-left text-xs font-bold text-neutral-900 dark:text-white bg-pink-50/70 dark:bg-pink-950/30 flex items-center justify-between gap-2 cursor-pointer"
+                  className="w-full px-3.5 py-2 text-left text-xs font-bold text-black dark:text-white bg-red-50 dark:bg-red-950/30 flex items-center justify-between gap-2 cursor-pointer"
                 >
                   <span>Português (Brasil)</span>
-                  <Check className="w-3.5 h-3.5 text-pink-600 dark:text-pink-400 shrink-0" />
+                  <Check className="w-3.5 h-3.5 text-[#E60023] shrink-0" />
                 </button>
               </div>
             )}
           </div>
 
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
-            <WifiOff className="w-3.5 h-3.5" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-100 dark:bg-neutral-900 text-black dark:text-white">
+            <WifiOff className="w-3.5 h-3.5 text-[#E60023]" />
             <span>Funciona Offline</span>
           </span>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pink-50 dark:bg-pink-950/40 text-pink-700 dark:text-pink-300 border border-pink-200 dark:border-pink-800/60">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 dark:bg-red-950/40 text-[#E60023] dark:text-red-400">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>Processamento no Dispositivo</span>
           </span>
@@ -1142,25 +1190,25 @@ export const WatermarkRemoverToolPtBr = () => {
           onClick={() => fileInputRef.current?.click()}
           className={`p-8 sm:p-14 rounded-3xl border-2 border-dashed transition-all cursor-pointer text-center space-y-5 bg-white dark:bg-neutral-900 shadow-sm ${
             isDraggingFile
-              ? 'border-pink-500 bg-pink-50/40 dark:bg-pink-950/20 scale-[0.99]'
-              : 'border-neutral-300 dark:border-neutral-700 hover:border-pink-500 dark:hover:border-pink-500'
+              ? 'border-[#E60023] bg-red-50/40 dark:bg-red-950/20 scale-[0.99]'
+              : 'border-neutral-300 dark:border-neutral-700 hover:border-[#E60023] dark:hover:border-[#E60023]'
           }`}
         >
-          <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-pink-500 via-fuchsia-500 to-violet-600 text-white flex items-center justify-center mx-auto shadow-xl shadow-pink-500/25">
+          <div className="w-16 h-16 rounded-3xl bg-[#E60023] text-white flex items-center justify-center mx-auto shadow-xl shadow-red-600/20">
             <Upload className="w-8 h-8" />
           </div>
           <div className="space-y-2 max-w-lg mx-auto">
-            <h2 className="text-lg sm:text-xl font-black text-neutral-900 dark:text-white">
+            <h2 className="text-lg sm:text-xl font-black text-black dark:text-white">
               Envie Sua Foto para Remover Marca d&apos;Água Localmente
             </h2>
-            <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400">
+            <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
               Escolha qualquer foto do Gemini ou arte de IA da sua galeria. Sua imagem fica totalmente na memória do seu aparelho e é limpa localmente com textura HD nítida em segundos.
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <button
               type="button"
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-600 hover:from-pink-600 hover:via-fuchsia-600 hover:to-violet-700 text-white font-black text-sm shadow-lg shadow-pink-500/25 transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-[#E60023] hover:bg-red-700 text-white font-black text-sm shadow-lg shadow-red-600/20 transition-all cursor-pointer"
             >
               <Upload className="w-4 h-4" />
               <span>Escolher Imagem do Celular / PC</span>
@@ -1170,25 +1218,25 @@ export const WatermarkRemoverToolPtBr = () => {
               type="button"
               onClick={handleBulkAddTrigger}
               id="bulk-add-dropzone-btn"
-              className={`inline-flex items-center gap-2 px-5 py-3.5 rounded-full font-black text-sm border transition-all cursor-pointer ${
+              className={`inline-flex items-center gap-2 px-5 py-3.5 rounded-full font-black text-sm transition-all cursor-pointer ${
                 hasActivePremium
-                  ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 border-neutral-900 dark:border-white hover:opacity-90 shadow-md'
-                  : 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-700/70 hover:bg-amber-100 dark:hover:bg-amber-900/50 shadow-sm'
+                  ? 'bg-black dark:bg-white text-white dark:text-black hover:opacity-90 shadow-md'
+                  : 'bg-neutral-100 dark:bg-neutral-800 text-black dark:text-white hover:bg-neutral-200 dark:hover:bg-neutral-700 shadow-sm'
               }`}
             >
               {hasActivePremium ? (
-                <Images className="w-4 h-4 text-pink-500" />
+                <Images className="w-4 h-4 text-[#E60023]" />
               ) : (
-                <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                <Lock className="w-4 h-4 text-[#E60023]" />
               )}
               <span>Adicionar em Lote</span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-black uppercase tracking-wider">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#E60023] text-white text-[10px] font-black uppercase tracking-wider">
                 <Crown className="w-2.5 h-2.5" />
                 <span>{hasActivePremium ? 'PRO' : 'SÓ PRO'}</span>
               </span>
             </button>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-2 text-[11px] font-medium text-neutral-400">
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-2 text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
             <span>Sem Login Obrigatório</span>
             <span aria-hidden="true">·</span>
             <span>Usos Gratuitos Ilimitados</span>
@@ -1203,8 +1251,8 @@ export const WatermarkRemoverToolPtBr = () => {
           <div className="lg:col-span-8 space-y-4">
             <div className="p-3 sm:p-4 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-neutral-100 dark:border-neutral-800">
-                <div className="flex items-center gap-2 text-xs font-bold text-neutral-700 dark:text-neutral-200">
-                  <Sparkles className="w-4 h-4 text-pink-500" />
+                <div className="flex items-center gap-2 text-xs font-bold text-black dark:text-white">
+                  <Sparkles className="w-4 h-4 text-[#E60023]" />
                   <span>
                     {showCompareMode
                       ? 'Comparação Antes / Depois (Arraste o Controle)'
@@ -1221,8 +1269,8 @@ export const WatermarkRemoverToolPtBr = () => {
                       onClick={() => setShowCompareMode(!showCompareMode)}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
                         showCompareMode
-                          ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900'
-                          : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200'
+                          ? 'bg-black dark:bg-white text-white dark:text-black'
+                          : 'bg-neutral-100 dark:bg-neutral-800 text-black dark:text-white hover:bg-neutral-200 dark:hover:bg-neutral-700'
                       }`}
                     >
                       <Eye className="w-3.5 h-3.5" />
@@ -1233,7 +1281,7 @@ export const WatermarkRemoverToolPtBr = () => {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200 text-xs font-bold transition-colors cursor-pointer"
+                    className="px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-black dark:text-white text-xs font-bold transition-colors cursor-pointer"
                   >
                     Trocar Foto
                   </button>
@@ -1242,20 +1290,20 @@ export const WatermarkRemoverToolPtBr = () => {
                     type="button"
                     onClick={handleBulkAddTrigger}
                     id="bulk-add-editor-btn"
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-colors cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
                       hasActivePremium
-                        ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 border-neutral-900 dark:border-white'
-                        : 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-700/70 hover:bg-amber-100'
+                        ? 'bg-black dark:bg-white text-white dark:text-black'
+                        : 'bg-neutral-100 dark:bg-neutral-800 text-black dark:text-white hover:bg-neutral-200 dark:hover:bg-neutral-700'
                     }`}
                   >
                     {hasActivePremium ? (
-                      <Images className="w-3.5 h-3.5 text-pink-500" />
+                      <Images className="w-3.5 h-3.5 text-[#E60023]" />
                     ) : (
-                      <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                      <Lock className="w-3.5 h-3.5 text-[#E60023]" />
                     )}
                     <span>Envio em Lote</span>
                     {!hasActivePremium && (
-                      <span className="px-1.5 py-0.5 rounded bg-amber-500 text-white text-[9px] font-black uppercase">
+                      <span className="px-1.5 py-0.5 rounded bg-[#E60023] text-white text-[9px] font-black uppercase">
                         PRO
                       </span>
                     )}
@@ -1264,7 +1312,7 @@ export const WatermarkRemoverToolPtBr = () => {
               </div>
 
               {/* Viewport do Canvas */}
-              <div className="relative w-full rounded-2xl overflow-hidden bg-neutral-950 flex items-center justify-center min-h-[320px] sm:min-h-[460px] max-h-[72vh] select-none">
+              <div className="relative w-full rounded-2xl overflow-hidden bg-black flex items-center justify-center min-h-[320px] sm:min-h-[460px] max-h-[72vh] select-none">
                 {showCompareMode && beforePreviewUrl && afterPreviewUrl && (
                   <div className="relative inline-block max-w-full max-h-[70vh]">
                     <img
@@ -1286,14 +1334,14 @@ export const WatermarkRemoverToolPtBr = () => {
                       className="absolute inset-y-0 w-0.5 bg-white shadow-[0_0_8px_rgba(0,0,0,0.8)] pointer-events-none"
                       style={{ left: `${comparePosition}%` }}
                     >
-                      <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-white text-neutral-900 shadow-xl flex items-center justify-center text-[10px] font-black border border-neutral-300">
+                      <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-white text-black shadow-xl flex items-center justify-center text-[10px] font-black">
                         ↔
                       </div>
                     </div>
-                    <span className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-black/75 text-white text-[10px] font-bold pointer-events-none">
+                    <span className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-black/85 text-white text-[10px] font-bold pointer-events-none">
                       Antes
                     </span>
-                    <span className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-emerald-600/90 text-white text-[10px] font-bold pointer-events-none">
+                    <span className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-[#E60023] text-white text-[10px] font-bold pointer-events-none">
                       Limpo
                     </span>
                     <input
@@ -1331,12 +1379,12 @@ export const WatermarkRemoverToolPtBr = () => {
               </div>
 
               {imageDimensions && (
-                <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-neutral-500 px-1">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-neutral-600 dark:text-neutral-400 px-1">
                   <span>
                     Resolução: {imageDimensions.width} × {imageDimensions.height} px
                   </span>
                   {lastProcessMs !== null && (
-                    <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                    <span className="text-[#E60023] font-bold flex items-center gap-1">
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       Limpo localmente em {(lastProcessMs / 1000).toFixed(2)}s
                     </span>
@@ -1346,22 +1394,22 @@ export const WatermarkRemoverToolPtBr = () => {
             </div>
           </div>
 
-          {/* Direita 4 Colunas: Controles de Pincel, Predefinições e Exportação */}
+          {/* Direita 4 Colunas: Controles de Pincel, Intensidade, Predefinições e Exportação */}
           <div className="lg:col-span-4 space-y-4">
             <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-5">
               {/* Predefinições Rápidas de 1 Clique */}
               <div className="space-y-2.5">
-                <span className="text-xs font-bold uppercase tracking-wider text-neutral-400 block">
+                <span className="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 block">
                   Predefinições Rápidas (1 Toque)
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
                   <button
                     type="button"
                     onClick={() => applyCornerPreset('bottom-right')}
-                    className="w-full py-2.5 px-3.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-pink-50 dark:hover:bg-pink-950/40 hover:text-pink-600 dark:hover:text-pink-300 border border-neutral-200 dark:border-neutral-700 text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
+                    className="w-full py-2.5 px-3.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-red-50 dark:hover:bg-red-950/40 text-black dark:text-white hover:text-[#E60023] dark:hover:text-red-400 text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
                   >
                     <span className="flex items-center gap-2">
-                      <Wand2 className="w-4 h-4 text-pink-500" />
+                      <Wand2 className="w-4 h-4 text-[#E60023]" />
                       <span>Marcar Logo Gemini Auto</span>
                     </span>
                     <CornerDownRight className="w-3.5 h-3.5 opacity-70" />
@@ -1370,10 +1418,10 @@ export const WatermarkRemoverToolPtBr = () => {
                   <button
                     type="button"
                     onClick={() => applyCornerPreset('bottom-left')}
-                    className="w-full py-2.5 px-3.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-violet-50 dark:hover:bg-violet-950/40 hover:text-violet-600 dark:hover:text-violet-300 border border-neutral-200 dark:border-neutral-700 text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
+                    className="w-full py-2.5 px-3.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-red-50 dark:hover:bg-red-950/40 text-black dark:text-white hover:text-[#E60023] dark:hover:text-red-400 text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
                   >
                     <span className="flex items-center gap-2">
-                      <Eraser className="w-4 h-4 text-violet-500" />
+                      <Eraser className="w-4 h-4 text-[#E60023]" />
                       <span>Marcar Texto Inferior Esquerdo</span>
                     </span>
                     <CornerDownLeft className="w-3.5 h-3.5 opacity-70" />
@@ -1381,14 +1429,14 @@ export const WatermarkRemoverToolPtBr = () => {
                 </div>
               </div>
 
-              {/* Controle de Tamanho do Pincel */}
-              <div className="space-y-2.5 pt-2 border-t border-neutral-100 dark:border-neutral-800">
-                <div className="flex items-center justify-between text-xs font-bold text-neutral-700 dark:text-neutral-200">
+              {/* Tamanho do Pincel + Caixa Compacta Desfazer / Refazer / Limpar Marcação */}
+              <div className="space-y-3 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+                <div className="flex items-center justify-between text-xs font-bold text-black dark:text-white">
                   <span className="flex items-center gap-1.5">
-                    <SlidersHorizontal className="w-3.5 h-3.5 text-pink-500" />
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-[#E60023]" />
                     Tamanho do Pincel
                   </span>
-                  <span>{brushSize} px</span>
+                  <span className="tabular-nums">{brushSize} px</span>
                 </div>
                 <input
                   type="range"
@@ -1396,51 +1444,93 @@ export const WatermarkRemoverToolPtBr = () => {
                   max={85}
                   value={brushSize}
                   onChange={(e) => setBrushSize(Number(e.target.value))}
-                  className="w-full accent-pink-500 cursor-pointer"
+                  className="w-full accent-[#E60023] cursor-pointer"
                 />
-                <div className="grid grid-cols-2 gap-2 pt-1">
+
+                {/* Caixa Compacta: Desfazer (só ícone), Refazer (só ícone) e Limpar Marcação */}
+                <div className="flex items-center gap-1.5 p-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-800">
                   <button
                     type="button"
                     onClick={handleUndo}
-                    className="py-2 px-3 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    disabled={!canUndo}
+                    aria-label="Desfazer"
+                    title="Desfazer"
+                    className="w-9 h-9 rounded-lg bg-white dark:bg-neutral-900 hover:bg-neutral-200 dark:hover:bg-neutral-700 disabled:opacity-35 text-black dark:text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
                   >
-                    <Undo2 className="w-3.5 h-3.5" />
-                    <span>Desfazer</span>
+                    <Undo2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRedo}
+                    disabled={!canRedo}
+                    aria-label="Refazer"
+                    title="Refazer"
+                    className="w-9 h-9 rounded-lg bg-white dark:bg-neutral-900 hover:bg-neutral-200 dark:hover:bg-neutral-700 disabled:opacity-35 text-black dark:text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                  >
+                    <Redo2 className="w-4 h-4" />
                   </button>
                   <button
                     type="button"
                     onClick={handleClearMask}
-                    className="py-2 px-3 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    disabled={!hasMaskStrokes}
+                    className="flex-1 h-9 px-3 rounded-lg bg-white dark:bg-neutral-900 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-[#E60023] disabled:opacity-40 text-black dark:text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-3.5 h-3.5 text-[#E60023]" />
                     <span>Limpar Marcação</span>
                   </button>
                 </div>
               </div>
 
+              {/* Controle de Intensidade (25% / 50% / 75% / 100%, Padrão 100%) */}
+              <div className="space-y-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+                <div className="flex items-center justify-between text-xs font-bold text-black dark:text-white">
+                  <span>Intensidade da Remoção</span>
+                  <span className="tabular-nums text-[#E60023]">{intensity}%</span>
+                </div>
+                <div className="grid grid-cols-4 gap-1.5 p-1 rounded-xl bg-neutral-100 dark:bg-neutral-800">
+                  {([25, 50, 75, 100] as const).map((level) => (
+                    <button
+                      key={level}
+                      type="button"
+                      onClick={() => setIntensity(level)}
+                      className={`py-2 rounded-lg text-xs font-black tabular-nums transition-colors cursor-pointer ${
+                        intensity === level
+                          ? 'bg-[#E60023] text-white'
+                          : 'bg-transparent text-black dark:text-white hover:bg-white dark:hover:bg-neutral-900'
+                      }`}
+                    >
+                      {level}%
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                  Intensidade menor suaviza a mistura para evitar desfoque ou distorção; 100% aplica remoção total.
+                </p>
+              </div>
+
               {/* Seletor de Motor de Remoção */}
               <div className="space-y-2.5 pt-2 border-t border-neutral-100 dark:border-neutral-800">
-                <span className="text-xs font-bold uppercase tracking-wider text-neutral-400 block">
+                <span className="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 block">
                   Motor de Remoção
                 </span>
                 <div className="grid grid-cols-1 gap-1.5">
                   <button
                     type="button"
                     onClick={() => setRemovalMode('hd')}
-                    className={`w-full p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                    className={`w-full p-3 rounded-xl text-left transition-all cursor-pointer ${
                       removalMode === 'hd'
-                        ? 'border-pink-500 bg-pink-50/70 dark:bg-pink-950/30 text-neutral-900 dark:text-white shadow-sm'
-                        : 'border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-800/40 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300'
+                        ? 'bg-red-50 dark:bg-red-950/35 text-black dark:text-white shadow-sm'
+                        : 'bg-neutral-100 dark:bg-neutral-800/70 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-800'
                     }`}
                   >
                     <div className="flex items-center justify-between text-xs font-bold">
                       <span className="flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-pink-500" />
+                        <Sparkles className="w-3.5 h-3.5 text-[#E60023]" />
                         <span>Textura HD (Recomendado)</span>
                       </span>
-                      <span className="text-[10px] font-semibold text-pink-600 dark:text-pink-400">~1–3s</span>
+                      <span className="text-[10px] font-bold text-[#E60023]">~1–3s</span>
                     </div>
-                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    <p className="text-[11px] text-neutral-600 dark:text-neutral-400 mt-0.5">
                       PatchMatch sem desfoque + detalhes contínuos para pele, cabelo, roupa e fundos texturizados.
                     </p>
                   </button>
@@ -1448,42 +1538,21 @@ export const WatermarkRemoverToolPtBr = () => {
                   <button
                     type="button"
                     onClick={() => setRemovalMode('translucent')}
-                    className={`w-full p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                    className={`w-full p-3 rounded-xl text-left transition-all cursor-pointer ${
                       removalMode === 'translucent'
-                        ? 'border-violet-500 bg-violet-50/70 dark:bg-violet-950/30 text-neutral-900 dark:text-white shadow-sm'
-                        : 'border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-800/40 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300'
+                        ? 'bg-red-50 dark:bg-red-950/35 text-black dark:text-white shadow-sm'
+                        : 'bg-neutral-100 dark:bg-neutral-800/70 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-800'
                     }`}
                   >
                     <div className="flex items-center justify-between text-xs font-bold">
                       <span className="flex items-center gap-1.5">
-                        <Layers className="w-3.5 h-3.5 text-violet-500" />
+                        <Layers className="w-3.5 h-3.5 text-[#E60023]" />
                         <span>Apagador de Marca Transparente</span>
                       </span>
-                      <span className="text-[10px] font-semibold text-violet-600 dark:text-violet-400">~1–2s</span>
+                      <span className="text-[10px] font-bold text-[#E60023]">~1–2s</span>
                     </div>
-                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    <p className="text-[11px] text-neutral-600 dark:text-neutral-400 mt-0.5">
                       Remove logos brancos suaves e textos de canto recuperando os detalhes reais abaixo.
-                    </p>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setRemovalMode('fast')}
-                    className={`w-full p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                      removalMode === 'fast'
-                        ? 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/30 text-neutral-900 dark:text-white shadow-sm'
-                        : 'border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-800/40 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between text-xs font-bold">
-                      <span className="flex items-center gap-1.5">
-                        <Zap className="w-3.5 h-3.5 text-emerald-500" />
-                        <span>Preenchimento Suave Instantâneo</span>
-                      </span>
-                      <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">&lt;0.4s</span>
-                    </div>
-                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
-                      Ideal para paredes lisas, fundos de estúdio simples ou céus limpos.
                     </p>
                   </button>
                 </div>
@@ -1495,7 +1564,7 @@ export const WatermarkRemoverToolPtBr = () => {
                   type="button"
                   disabled={isProcessing || !hasMaskStrokes}
                   onClick={handleRemoveWatermark}
-                  className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-600 hover:from-pink-600 hover:via-fuchsia-600 hover:to-violet-700 disabled:opacity-50 text-white font-black text-sm shadow-lg shadow-pink-500/25 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+                  className="w-full py-3.5 px-5 rounded-2xl bg-[#E60023] hover:bg-red-700 disabled:opacity-50 text-white font-black text-sm shadow-lg shadow-red-600/20 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
                   id="remove-watermark-action-btn"
                 >
                   {isProcessing ? (
@@ -1515,11 +1584,11 @@ export const WatermarkRemoverToolPtBr = () => {
                   <div className="space-y-1.5 px-1">
                     <div className="w-full h-2 rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-600 transition-all duration-150"
+                        className="h-full rounded-full bg-[#E60023] transition-all duration-150"
                         style={{ width: `${Math.max(8, progressInfo.percent)}%` }}
                       />
                     </div>
-                    <p className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400 text-center">
+                    <p className="text-[11px] font-medium text-neutral-600 dark:text-neutral-400 text-center">
                       {progressInfo.stage || 'Processando pixels nítidos localmente...'}
                     </p>
                   </div>
@@ -1530,7 +1599,7 @@ export const WatermarkRemoverToolPtBr = () => {
                     <button
                       type="button"
                       onClick={() => void handleDownloadClean('png')}
-                      className="w-full py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                      className="w-full py-3 px-4 rounded-2xl bg-black hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 text-white dark:text-black font-black text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 transition-colors cursor-pointer"
                       id="download-clean-image-png-btn"
                     >
                       <Download className="w-4 h-4" />
@@ -1541,7 +1610,7 @@ export const WatermarkRemoverToolPtBr = () => {
                       <button
                         type="button"
                         onClick={() => void handleShareClean()}
-                        className="w-full py-2.5 px-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+                        className="w-full py-2.5 px-3 rounded-2xl bg-[#E60023] hover:bg-red-700 text-white font-bold text-xs sm:text-sm shadow-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
                         id="share-clean-image-btn"
                       >
                         <Share2 className="w-4 h-4 shrink-0" />
@@ -1551,28 +1620,11 @@ export const WatermarkRemoverToolPtBr = () => {
                       <button
                         type="button"
                         onClick={() => void handleShareTool()}
-                        className="w-full py-2.5 px-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+                        className="w-full py-2.5 px-3 rounded-2xl bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-black dark:text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
                         id="share-this-tool-btn"
                       >
-                        <Link2 className="w-4 h-4 shrink-0" />
+                        <Link2 className="w-4 h-4 shrink-0 text-[#E60023]" />
                         <span>Compartilhar Site</span>
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => void handleDownloadClean('jpeg')}
-                        className="py-2 px-3 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-xs font-bold transition-colors cursor-pointer"
-                      >
-                        Salvar em JPG
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleResetToOriginal}
-                        className="py-2 px-3 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-xs font-bold transition-colors cursor-pointer"
-                      >
-                        Restaurar Original
                       </button>
                     </div>
                   </div>
@@ -1592,15 +1644,15 @@ export const WatermarkRemoverToolPtBr = () => {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-neutral-100 dark:border-neutral-800">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-black uppercase tracking-wider">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#E60023] text-white text-[10px] font-black uppercase tracking-wider">
                   <Crown className="w-3 h-3" />
                   <span>FILA EM LOTE PRO</span>
                 </span>
-                <h3 className="text-base sm:text-lg font-black text-neutral-900 dark:text-white">
+                <h3 className="text-base sm:text-lg font-black text-black dark:text-white">
                   Removedor em Lote ({bulkItems.length} Foto{bulkItems.length > 1 ? 's' : ''})
                 </h3>
               </div>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="text-xs text-neutral-600 dark:text-neutral-400">
                 Limpeza em lote 100% local na memória do seu navegador. Escolha a posição da marca d&apos;água e processe todas em um clique.
               </p>
             </div>
@@ -1609,9 +1661,9 @@ export const WatermarkRemoverToolPtBr = () => {
               <button
                 type="button"
                 onClick={handleBulkAddTrigger}
-                className="px-3.5 py-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="px-3.5 py-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-black dark:text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
               >
-                <Images className="w-3.5 h-3.5 text-pink-500" />
+                <Images className="w-3.5 h-3.5 text-[#E60023]" />
                 <span>Adicionar Mais</span>
               </button>
 
@@ -1619,7 +1671,7 @@ export const WatermarkRemoverToolPtBr = () => {
                 type="button"
                 disabled={isBulkProcessing}
                 onClick={() => void handleProcessBulkQueue()}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-600 hover:from-pink-600 hover:via-fuchsia-600 hover:to-violet-700 disabled:opacity-50 text-white text-xs font-black flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-[#E60023] hover:bg-red-700 disabled:opacity-50 text-white text-xs font-black flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
               >
                 {isBulkProcessing ? (
                   <>
@@ -1638,7 +1690,7 @@ export const WatermarkRemoverToolPtBr = () => {
                 <button
                   type="button"
                   onClick={() => void handleDownloadAllZip()}
-                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-black hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 text-white dark:text-black text-xs font-black flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
                 >
                   <Package className="w-3.5 h-3.5" />
                   <span>Baixar Tudo em ZIP</span>
@@ -1649,16 +1701,16 @@ export const WatermarkRemoverToolPtBr = () => {
                 type="button"
                 disabled={isBulkProcessing}
                 onClick={handleClearBulkQueue}
-                className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 text-xs font-bold transition-colors cursor-pointer"
+                className="px-3 py-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-[#E60023] text-black dark:text-white text-xs font-bold transition-colors cursor-pointer"
               >
                 Limpar
               </button>
             </div>
           </div>
 
-          {/* Seletor de Zona Alvo */}
+          {/* Seletor de Zona Alvo (botões sem borda) */}
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="font-bold text-neutral-500 dark:text-neutral-400 mr-1">Zona da Marca d&apos;Água:</span>
+            <span className="font-bold text-neutral-600 dark:text-neutral-400 mr-1">Zona da Marca d&apos;Água:</span>
             {(
               [
                 { id: 'bottom-right', label: 'Inferior Direito (Estrela Gemini)' },
@@ -1671,10 +1723,10 @@ export const WatermarkRemoverToolPtBr = () => {
                 type="button"
                 disabled={isBulkProcessing}
                 onClick={() => setBulkZone(opt.id)}
-                className={`px-3 py-1.5 rounded-lg font-bold border transition-colors cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg font-bold transition-colors cursor-pointer ${
                   bulkZone === opt.id
-                    ? 'border-pink-500 bg-pink-50 dark:bg-pink-950/30 text-pink-700 dark:text-pink-300'
-                    : 'border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:border-neutral-300'
+                    ? 'bg-[#E60023] text-white'
+                    : 'bg-neutral-100 dark:bg-neutral-800 text-black dark:text-white hover:bg-neutral-200 dark:hover:bg-neutral-700'
                 }`}
               >
                 {opt.label}
@@ -1697,17 +1749,17 @@ export const WatermarkRemoverToolPtBr = () => {
                   />
                 </div>
                 <div className="min-w-0 flex-1 space-y-1">
-                  <p className="text-xs font-bold text-neutral-900 dark:text-white truncate">{item.name}</p>
+                  <p className="text-xs font-bold text-black dark:text-white truncate">{item.name}</p>
                   <p className="text-[11px] text-neutral-500">
                     {item.width} × {item.height} px ·{' '}
                     <span
                       className={
                         item.status === 'done'
-                          ? 'text-emerald-600 dark:text-emerald-400 font-bold'
+                          ? 'text-black dark:text-white font-bold'
                           : item.status === 'processing'
-                          ? 'text-pink-600 font-bold'
+                          ? 'text-[#E60023] font-bold'
                           : item.status === 'error'
-                          ? 'text-red-500 font-bold'
+                          ? 'text-[#E60023] font-bold'
                           : 'text-neutral-500'
                       }
                     >
@@ -1725,7 +1777,7 @@ export const WatermarkRemoverToolPtBr = () => {
                       <button
                         type="button"
                         onClick={() => handleDownloadBulkItem(item)}
-                        className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                        className="px-2.5 py-1 rounded-lg bg-[#E60023] hover:bg-red-700 text-white text-[11px] font-bold flex items-center gap-1 cursor-pointer"
                       >
                         <Download className="w-3 h-3" />
                         <span>Salvar</span>
@@ -1734,7 +1786,7 @@ export const WatermarkRemoverToolPtBr = () => {
                     <button
                       type="button"
                       onClick={() => handleLoadBulkItemInEditor(item)}
-                      className="px-2.5 py-1 rounded-lg bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-[11px] font-bold cursor-pointer"
+                      className="px-2.5 py-1 rounded-lg bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700 text-black dark:text-white text-[11px] font-bold cursor-pointer"
                     >
                       Editar Pincel
                     </button>
@@ -1743,7 +1795,7 @@ export const WatermarkRemoverToolPtBr = () => {
                       disabled={isBulkProcessing}
                       onClick={() => handleRemoveBulkItem(item.id)}
                       aria-label={`Remover ${item.name}`}
-                      className="p-1 rounded-lg text-neutral-400 hover:text-red-500 hover:bg-neutral-200/70 dark:hover:bg-neutral-800 cursor-pointer ml-auto"
+                      className="p-1 rounded-lg text-neutral-500 hover:text-[#E60023] hover:bg-neutral-200/70 dark:hover:bg-neutral-800 cursor-pointer ml-auto"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -1763,14 +1815,14 @@ export const WatermarkRemoverToolPtBr = () => {
         >
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
             <div className="space-y-1">
-              <p className="text-xs font-bold uppercase tracking-wider text-pink-600 dark:text-pink-400">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#E60023] dark:text-red-400">
                 Utilitários Complementares Rápidos
               </p>
-              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-neutral-900 dark:text-white">
+              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-black dark:text-white">
                 Mais Ferramentas Online Grátis de Imagem e Documentos
               </h2>
             </div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="text-xs text-neutral-600 dark:text-neutral-400">
               Precisa comprimir, redimensionar para documento ou extrair anotações manuscritas?
             </p>
           </div>
@@ -1780,23 +1832,23 @@ export const WatermarkRemoverToolPtBr = () => {
               href="https://toolimg.online/compress/compress-image-to-50kb"
               target="_blank"
               rel="noopener noreferrer"
-              className="group p-5 rounded-2xl bg-neutral-50 dark:bg-neutral-950/70 border border-neutral-200 dark:border-neutral-800 hover:border-pink-500 dark:hover:border-pink-500 transition-all flex flex-col justify-between gap-4"
+              className="group p-5 rounded-2xl bg-neutral-50 dark:bg-neutral-950/70 border border-neutral-200 dark:border-neutral-800 hover:border-[#E60023] transition-all flex flex-col justify-between gap-4"
             >
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="w-10 h-10 rounded-xl bg-pink-100 dark:bg-pink-950/60 text-pink-600 dark:text-pink-400 flex items-center justify-center">
+                  <span className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-950/50 text-[#E60023] flex items-center justify-center">
                     <Minimize2 className="w-5 h-5" />
                   </span>
-                  <ExternalLink className="w-4 h-4 text-neutral-400 group-hover:text-pink-500 transition-colors" />
+                  <ExternalLink className="w-4 h-4 text-neutral-500 group-hover:text-[#E60023] transition-colors" />
                 </div>
-                <h3 className="text-base font-bold text-neutral-900 dark:text-white group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
+                <h3 className="text-base font-bold text-black dark:text-white group-hover:text-[#E60023] transition-colors">
                   Comprimir Imagem
                 </h3>
                 <p className="text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
                   Reduza o tamanho da foto até 50KB sem perder nitidez para formulários, portais e envio rápido.
                 </p>
               </div>
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-pink-600 dark:text-pink-400">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#E60023]">
                 <span>Abrir Compressor</span>
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </span>
@@ -1806,23 +1858,23 @@ export const WatermarkRemoverToolPtBr = () => {
               href="https://toolimg.online/social-resize/us-passport-photo-2x2"
               target="_blank"
               rel="noopener noreferrer"
-              className="group p-5 rounded-2xl bg-neutral-50 dark:bg-neutral-950/70 border border-neutral-200 dark:border-neutral-800 hover:border-violet-500 dark:hover:border-violet-500 transition-all flex flex-col justify-between gap-4"
+              className="group p-5 rounded-2xl bg-neutral-50 dark:bg-neutral-950/70 border border-neutral-200 dark:border-neutral-800 hover:border-[#E60023] transition-all flex flex-col justify-between gap-4"
             >
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-950/60 text-violet-600 dark:text-violet-400 flex items-center justify-center">
+                  <span className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-950/50 text-[#E60023] flex items-center justify-center">
                     <Crop className="w-5 h-5" />
                   </span>
-                  <ExternalLink className="w-4 h-4 text-neutral-400 group-hover:text-violet-500 transition-colors" />
+                  <ExternalLink className="w-4 h-4 text-neutral-500 group-hover:text-[#E60023] transition-colors" />
                 </div>
-                <h3 className="text-base font-bold text-neutral-900 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+                <h3 className="text-base font-bold text-black dark:text-white group-hover:text-[#E60023] transition-colors">
                   Criador de Foto para Passaporte
                 </h3>
                 <p className="text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
                   Recorte e ajuste retratos exatamente para dimensões 2×2 polegadas de passaporte e visto na hora.
                 </p>
               </div>
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-violet-600 dark:text-violet-400">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#E60023]">
                 <span>Criar Foto Passaporte</span>
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </span>
@@ -1832,23 +1884,23 @@ export const WatermarkRemoverToolPtBr = () => {
               href="https://toolimg.online/tools/handwriting-to-text"
               target="_blank"
               rel="noopener noreferrer"
-              className="group p-5 rounded-2xl bg-neutral-50 dark:bg-neutral-950/70 border border-neutral-200 dark:border-neutral-800 hover:border-emerald-500 dark:hover:border-emerald-500 transition-all flex flex-col justify-between gap-4"
+              className="group p-5 rounded-2xl bg-neutral-50 dark:bg-neutral-950/70 border border-neutral-200 dark:border-neutral-800 hover:border-[#E60023] transition-all flex flex-col justify-between gap-4"
             >
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                  <span className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-950/50 text-[#E60023] flex items-center justify-center">
                     <FileText className="w-5 h-5" />
                   </span>
-                  <ExternalLink className="w-4 h-4 text-neutral-400 group-hover:text-emerald-500 transition-colors" />
+                  <ExternalLink className="w-4 h-4 text-neutral-500 group-hover:text-[#E60023] transition-colors" />
                 </div>
-                <h3 className="text-base font-bold text-neutral-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                <h3 className="text-base font-bold text-black dark:text-white group-hover:text-[#E60023] transition-colors">
                   Manuscrito para Texto
                 </h3>
                 <p className="text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
                   Converta anotações feitas à mão, cadernos e páginas digitalizadas em texto digital editável.
                 </p>
               </div>
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#E60023]">
                 <span>Converter Manuscrito</span>
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </span>
@@ -1857,222 +1909,83 @@ export const WatermarkRemoverToolPtBr = () => {
         </section>
       )}
 
-      {/* Vitrine em Moldura MacBook (Último Prompt da Página Inicial com Controle Antes/Depois) */}
+      {/* Vitrine em Moldura Windows Branca (Apenas Imagem com Controle Antes/Depois) */}
       {latestHomepagePost && (
         <section
           aria-label="Demonstração ao Vivo de Remoção de Marca d'Água Antes e Depois"
-          className="mt-8 space-y-4"
+          className="mt-8"
         >
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 px-1">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-pink-600 dark:text-pink-400">
-                Último Prompt da Página Inicial · Comparação ao Vivo
-              </p>
-              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-neutral-900 dark:text-white">
-                Prévia de Remoção de Marca d&apos;Água em HD (Antes e Depois)
-              </h2>
-            </div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              Arraste o controle deslizante na prévia do notebook para comparar a imagem com marca d&apos;água vs. reconstrução limpa.
-            </p>
-          </div>
-
-          {/* Moldura MacBook */}
-          <div className="mx-auto max-w-5xl">
-            <div className="rounded-t-[24px] sm:rounded-t-[30px] bg-[#0b0c10] p-2.5 sm:p-4 ring-1 ring-neutral-800 shadow-2xl relative">
-              <div
-                aria-hidden="true"
-                className="hidden sm:flex items-center justify-center w-28 h-4 bg-[#0b0c10] rounded-b-xl absolute top-2.5 left-1/2 -translate-x-1/2 z-30 border-x border-b border-neutral-800/80"
-              >
-                <span className="w-2 h-2 rounded-full bg-neutral-800 ring-1 ring-neutral-700 flex items-center justify-center">
-                  <span className="w-1 h-1 rounded-full bg-sky-900" />
-                </span>
-              </div>
-
-              <div className="rounded-2xl overflow-hidden bg-neutral-950 border border-neutral-800">
-                <div className="bg-neutral-900/95 border-b border-neutral-800 px-3.5 sm:px-5 py-2.5 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-1.5 shrink-0" aria-hidden="true">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F56]" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E]" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#27C93F]" />
-                  </div>
-
-                  <div className="flex-1 max-w-md mx-auto bg-neutral-950/90 border border-neutral-800 rounded-lg px-3 py-1 text-center truncate text-[11px] sm:text-xs font-medium text-neutral-300">
-                    zeenaprompt.com · {latestHomepagePost.title}
-                  </div>
-
-                  <div className="hidden sm:block text-[11px] font-mono tabular-nums text-neutral-400 whitespace-nowrap shrink-0">
-                    {latestHomepagePost.imageWidth || 1024} × {latestHomepagePost.imageHeight || 1536}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch bg-neutral-950">
-                  <div className="lg:col-span-7 p-4 sm:p-6 bg-[#111318] flex items-center justify-center border-b lg:border-b-0 lg:border-r border-neutral-800/90">
-                    <div className="relative w-full max-w-[330px] sm:max-w-[350px] aspect-[3/4] rounded-xl overflow-hidden bg-neutral-900 border border-neutral-800 select-none shadow-lg">
-                      {!demoImageError ? (
-                        <>
-                          <img
-                            src={latestHomepagePost.imageUrl}
-                            alt={`${latestHomepagePost.title} - Foto limpa sem marca d'água`}
-                            loading="lazy"
-                            decoding="async"
-                            referrerPolicy="no-referrer"
-                            onError={() => setDemoImageError(true)}
-                            className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
-                          />
-
-                          <div
-                            className="absolute inset-0 overflow-hidden pointer-events-none select-none"
-                            style={{ clipPath: `inset(0 ${100 - demoSliderPos}% 0 0)` }}
-                          >
-                            <img
-                              src={latestHomepagePost.imageUrl}
-                              alt=""
-                              aria-hidden="true"
-                              loading="lazy"
-                              decoding="async"
-                              referrerPolicy="no-referrer"
-                              className="absolute inset-0 w-full h-full object-cover select-none"
-                            />
-                            <div
-                              aria-hidden="true"
-                              className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 rounded-md bg-black/35 backdrop-blur-[2px] text-white/95"
-                            >
-                              <Sparkles className="w-4 h-4 text-white drop-shadow" />
-                              <span className="text-[11px] font-semibold tracking-tight drop-shadow">
-                                Gemini
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="absolute top-3 left-3 z-10 px-2.5 py-1 rounded-md bg-black/75 text-white text-[11px] font-semibold pointer-events-none">
-                            Antes · Marca d&apos;Água
-                          </div>
-                          <div className="absolute top-3 right-3 z-10 px-2.5 py-1 rounded-md bg-emerald-600/90 text-white text-[11px] font-semibold pointer-events-none">
-                            Depois · HD Limpo
-                          </div>
-
-                          <div
-                            aria-hidden="true"
-                            className="absolute top-0 bottom-0 w-0.5 bg-white/90 shadow-[0_0_12px_rgba(0,0,0,0.85)] z-20 pointer-events-none"
-                            style={{ left: `${demoSliderPos}%` }}
-                          >
-                            <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-white text-neutral-900 shadow-xl border border-neutral-200 flex items-center justify-center">
-                              <MoveHorizontal className="w-4 h-4" />
-                            </div>
-                          </div>
-
-                          <input
-                            type="range"
-                            min={0}
-                            max={100}
-                            value={demoSliderPos}
-                            onChange={(e) => setDemoSliderPos(Number(e.target.value))}
-                            aria-label="Deslize para comparar a foto com marca d'água antes e depois da remoção"
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-30"
-                          />
-                        </>
-                      ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center gap-2 text-neutral-400">
-                          <Images className="w-8 h-8 text-neutral-500" />
-                          <p className="text-xs font-medium">{latestHomepagePost.title}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="lg:col-span-5 p-5 sm:p-7 flex flex-col justify-between gap-5 text-neutral-100">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2 text-xs text-neutral-400">
-                        <span>{latestHomepagePost.preferredAi || latestHomepagePost.aiTool || 'Gemini'}</span>
-                        <span aria-hidden="true">·</span>
-                        <span className="truncate">{latestHomepagePost.category}</span>
-                      </div>
-
-                      <div className="space-y-2">
-                        <h3 className="text-lg sm:text-xl font-bold text-white leading-snug">
-                          {latestHomepagePost.title}
-                        </h3>
-                        <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed line-clamp-3">
-                          {latestHomepagePost.seo?.metaDescription || latestHomepagePost.promptText}
-                        </p>
-                      </div>
-
-                      <div className="pt-2 space-y-2.5 border-t border-neutral-800/80">
-                        <div className="flex items-center justify-between text-xs text-neutral-400">
-                          <span>Divisão da Comparação</span>
-                          <span className="font-mono tabular-nums text-neutral-200">
-                            {demoSliderPos}% Antes / {100 - demoSliderPos}% Depois
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-1.5 p-1 rounded-lg bg-neutral-900 border border-neutral-800">
-                          <button
-                            type="button"
-                            onClick={() => setDemoSliderPos(100)}
-                            className={`px-2 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
-                              demoSliderPos >= 90
-                                ? 'bg-neutral-800 text-white'
-                                : 'text-neutral-400 hover:text-white'
-                            }`}
-                          >
-                            Antes
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDemoSliderPos(50)}
-                            className={`px-2 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
-                              demoSliderPos > 10 && demoSliderPos < 90
-                                ? 'bg-neutral-800 text-white'
-                                : 'text-neutral-400 hover:text-white'
-                            }`}
-                          >
-                            50 / 50
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDemoSliderPos(0)}
-                            className={`px-2 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
-                              demoSliderPos <= 10
-                                ? 'bg-emerald-600 text-white'
-                                : 'text-neutral-400 hover:text-white'
-                            }`}
-                          >
-                            HD Limpo
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 pt-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (typeof window !== 'undefined') {
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                          }
-                          fileInputRef.current?.click();
-                        }}
-                        className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-600 hover:from-pink-600 hover:via-fuchsia-600 hover:to-violet-700 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap"
-                      >
-                        <Upload className="w-4 h-4 shrink-0" />
-                        <span>Envie Sua Imagem para Limpar</span>
-                      </button>
-
-                      <a
-                        href={`/prompt/${latestHomepagePost.slug || latestHomepagePost.id}`}
-                        className="w-full py-2.5 px-4 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-200 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-colors whitespace-nowrap"
-                      >
-                        <span>Ver Este Prompt Inicial</span>
-                        <ArrowRight className="w-4 h-4 shrink-0" />
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <div className="mx-auto max-w-md sm:max-w-lg rounded-2xl sm:rounded-3xl bg-white p-2.5 sm:p-4 shadow-[0_20px_60px_rgba(0,0,0,0.12)] border border-neutral-200">
+            {/* Barra Minimalista Branca (apenas bolinhas, sem textos nem botões) */}
+            <div className="pb-2.5 px-1 flex items-center gap-1.5" aria-hidden="true">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#E60023]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-neutral-300" />
+              <span className="w-2.5 h-2.5 rounded-full bg-black" />
             </div>
 
-            <div aria-hidden="true" className="relative mx-auto w-[103%] -ml-[1.5%] h-3.5 sm:h-4 rounded-b-2xl bg-gradient-to-b from-neutral-300 via-neutral-400 to-neutral-500 dark:from-neutral-700 dark:via-neutral-800 dark:to-neutral-900 shadow-lg flex justify-center">
-              <div className="w-16 sm:w-24 h-1.5 rounded-b-md bg-neutral-500/70 dark:bg-neutral-950/80" />
+            <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden bg-neutral-100 select-none">
+              {!demoImageError ? (
+                <>
+                  {/* Camada Depois (Foto HD Limpa) */}
+                  <img
+                    src={latestHomepagePost.imageUrl}
+                    alt={latestHomepagePost.title}
+                    loading="lazy"
+                    decoding="async"
+                    referrerPolicy="no-referrer"
+                    onError={() => setDemoImageError(true)}
+                    className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
+                  />
+
+                  {/* Camada Antes (Recorte Esquerdo Mostrando Marca d'Água Simulada) */}
+                  <div
+                    className="absolute inset-0 overflow-hidden pointer-events-none select-none"
+                    style={{ clipPath: `inset(0 ${100 - demoSliderPos}% 0 0)` }}
+                  >
+                    <img
+                      src={latestHomepagePost.imageUrl}
+                      alt=""
+                      aria-hidden="true"
+                      loading="lazy"
+                      decoding="async"
+                      referrerPolicy="no-referrer"
+                      className="absolute inset-0 w-full h-full object-cover select-none"
+                    />
+                    <div
+                      aria-hidden="true"
+                      className="absolute bottom-3 right-3 flex items-center justify-center p-1.5 rounded-md bg-black/40"
+                    >
+                      <Sparkles className="w-4 h-4 text-white drop-shadow" />
+                    </div>
+                  </div>
+
+                  {/* Linha Divisória Vertical & Botão Deslizante */}
+                  <div
+                    aria-hidden="true"
+                    className="absolute top-0 bottom-0 w-0.5 bg-white shadow-[0_0_12px_rgba(0,0,0,0.85)] z-20 pointer-events-none"
+                    style={{ left: `${demoSliderPos}%` }}
+                  >
+                    <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-white text-black shadow-xl flex items-center justify-center">
+                      <MoveHorizontal className="w-4 h-4" />
+                    </div>
+                  </div>
+
+                  {/* Controle Deslizante Interativo Acessível */}
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={demoSliderPos}
+                    onChange={(e) => setDemoSliderPos(Number(e.target.value))}
+                    aria-label="Deslize para comparar a foto com marca d'água antes e depois da remoção"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-30"
+                  />
+                </>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-neutral-100">
+                  <Images className="w-8 h-8 text-neutral-400" />
+                </div>
+              )}
             </div>
           </div>
         </section>

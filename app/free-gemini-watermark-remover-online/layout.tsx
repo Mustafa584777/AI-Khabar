@@ -73,9 +73,9 @@ const webAppSchema = {
     '100% Free with unlimited daily uses and no login',
     'Zero server uploads — runs locally in browser memory',
     'Works completely offline inside browser',
-    '3 reconstruction modes: HD Texture Fill (PatchMatch), Transparent Matte Inversion, and Instant Smooth Fill',
-    '1-click Bottom-Right Gemini Logo and Bottom-Left text presets plus 10–85px precision brush',
-    'Interactive Before/After split slider and crisp HD PNG/JPG export up to 2400px without blur',
+    '2 reconstruction modes: HD Texture Fill (PatchMatch) and Transparent Matte Inversion with 25%–100% intensity control',
+    '1-click Bottom-Right Gemini Logo and Bottom-Left text presets plus 10–85px precision brush & Undo/Redo',
+    'Interactive Before/After split slider and crisp HD PNG export up to 2400px without blur',
   ],
   offers: {
     '@type': 'Offer',
@@ -128,7 +128,7 @@ const faqSchema = {
       name: 'Is this Free Gemini Watermark Remover Online Without Blur really 100% free?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Yes. Unlike tools that restrict exports behind daily credit walls or paid upgrades, you can remove Gemini watermark for free with unlimited images, zero login requirements, and full HD PNG or JPG downloads.',
+        text: 'Yes. Unlike tools that restrict exports behind daily credit walls or paid upgrades, you can remove Gemini watermark for free with unlimited images, zero login requirements, and full HD PNG downloads.',
       },
     },
     {
@@ -144,7 +144,7 @@ const faqSchema = {
       name: 'Which removal mode should I choose for the Gemini sparkle logo vs. text watermarks?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Use HD Texture Fill for textured backgrounds like hair, skin, foliage, or fabric. Choose Transparent Watermark Eraser when removing semi-transparent white corner logos. Pick Instant Smooth Fill for solid walls, studio backdrops, or clear skies.',
+        text: 'Use HD Texture Fill for textured backgrounds like hair, skin, foliage, or fabric—and adjust Intensity (25%–100%) to prevent blur or distortion. Choose Transparent Watermark Eraser when removing semi-transparent white corner logos.',
       },
     },
     {
@@ -152,7 +152,7 @@ const faqSchema = {
       name: 'How is Zeena Prompt better than geminiwatermarkremover.in and geminiwatermarkremover.io?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Zeena Prompt provides three specialized reconstruction engines, 1-click bottom-right and bottom-left presets, an adjustable 10-85px manual brush, a live Before/After split slider, full offline support, and built-in AI prompt tools with unlimited free HD exports.',
+        text: 'Zeena Prompt provides two specialized reconstruction engines with adjustable 25%–100% intensity, 1-click bottom-right and bottom-left presets, an adjustable 10-85px manual brush, Undo/Redo controls, a live Before/After split slider, full offline support, and built-in AI prompt tools with unlimited free HD exports.',
       },
     },
     {

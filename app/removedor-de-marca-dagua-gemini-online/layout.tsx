@@ -75,9 +75,9 @@ const webAppSchema = {
     '100% Gratuito com usos diários ilimitados e sem login',
     'Zero envio para servidores — executa localmente na memória do navegador',
     'Funciona totalmente offline dentro do navegador',
-    '3 modos de reconstrução: Textura HD (PatchMatch), Apagador Transparente e Preenchimento Suave Instantâneo',
-    'Predefinições de 1 clique para logo Gemini e texto inferior esquerdo mais pincel de precisão 10–85px',
-    'Controle deslizante interativo Antes/Depois e exportação em PNG/JPG HD até 2400px sem desfoque',
+    '2 modos de reconstrução: Textura HD (PatchMatch) e Apagador Transparente com controle de intensidade 25%–100%',
+    'Predefinições de 1 clique para logo Gemini e texto inferior esquerdo mais pincel de precisão 10–85px e Desfazer/Refazer',
+    'Controle deslizante interativo Antes/Depois e exportação em PNG HD até 2400px sem desfoque',
   ],
   offers: {
     '@type': 'Offer',
@@ -132,7 +132,7 @@ const faqSchema = {
       name: "Este Removedor de Marca d'Água Gemini Online Grátis Sem Desfoque é realmente 100% gratuito?",
       acceptedAnswer: {
         '@type': 'Answer',
-        text: "Sim. Ao contrário de sites que limitam downloads com créditos diários ou planos pagos, aqui você pode remover marca d'água do Gemini gratuitamente e sem desfoque em quantas imagens quiser, sem precisar de login e com exportação em HD PNG ou JPG.",
+        text: "Sim. Ao contrário de sites que limitam downloads com créditos diários ou planos pagos, aqui você pode remover marca d'água do Gemini gratuitamente e sem desfoque em quantas imagens quiser, sem precisar de login e com exportação em HD PNG.",
       },
     },
     {
@@ -148,7 +148,7 @@ const faqSchema = {
       name: "Qual modo de remoção devo escolher para o ícone de brilho do Gemini ou marcas d'água de texto?",
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Use Textura HD para fundos detalhados como cabelo, pele, folhagens ou tecidos. Escolha Apagador de Marca Transparente para logos brancos semitransparentes nos cantos. Selecione Preenchimento Suave Instantâneo para paredes lisas, fundos de estúdio ou céus limpos.',
+        text: 'Use Textura HD para fundos detalhados como cabelo, pele, folhagens ou tecidos — e ajuste a Intensidade (25%–100%) para evitar desfoque ou distorção. Escolha Apagador de Marca Transparente para logos brancos semitransparentes nos cantos.',
       },
     },
     {
@@ -156,7 +156,7 @@ const faqSchema = {
       name: 'Por que o Zeena Prompt é melhor que geminiwatermarkremover.in e geminiwatermarkremover.io?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'O Zeena Prompt oferece três motores especializados de reconstrução, predefinições de 1 clique no canto inferior direito e esquerdo, pincel manual ajustável de 10-85px, controle deslizante Antes/Depois ao vivo, suporte offline completo e ferramentas integradas de prompts de IA.',
+        text: 'O Zeena Prompt oferece dois motores especializados de reconstrução com controle de intensidade 25%–100%, predefinições de 1 clique no canto inferior direito e esquerdo, pincel manual ajustável de 10-85px, Desfazer/Refazer, controle deslizante Antes/Depois ao vivo, suporte offline completo e ferramentas integradas de prompts de IA.',
       },
     },
     {

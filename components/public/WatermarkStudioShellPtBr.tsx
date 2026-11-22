@@ -47,14 +47,14 @@ export const WatermarkStudioShellPtBr = () => {
               startRouteNavigation('/', 'Carregando Feed de Prompts...');
               router.push('/');
             }}
-            className="flex items-center gap-2 text-xs sm:text-sm font-bold text-neutral-600 dark:text-neutral-300 hover:text-[#E60023] dark:hover:text-white transition-colors cursor-pointer"
+            className="flex items-center gap-2 text-xs sm:text-sm font-bold text-neutral-700 dark:text-neutral-200 hover:text-[#E60023] dark:hover:text-red-400 transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Voltar ao Feed</span>
           </button>
 
           <div className="flex items-center gap-3">
-            <span className="px-3.5 py-1.5 rounded-full bg-gradient-to-r from-pink-500/15 to-violet-500/15 border border-pink-300/60 dark:border-pink-800/60 text-pink-600 dark:text-pink-300 text-xs font-black">
+            <span className="px-3.5 py-1.5 rounded-full bg-red-50 dark:bg-red-950/50 text-[#E60023] dark:text-red-400 text-xs font-black">
               100% Grátis • Offline
             </span>
 
@@ -66,14 +66,14 @@ export const WatermarkStudioShellPtBr = () => {
                   startRouteNavigation('/dashboard', 'Carregando Painel do Criador...');
                   router.push('/dashboard');
                 }}
-                className="flex items-center gap-1.5 text-xs font-bold text-neutral-600 dark:text-neutral-300 hover:text-[#E60023] px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 text-xs font-bold text-neutral-900 dark:text-white hover:text-[#E60023] px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors cursor-pointer"
               >
                 <History className="w-3.5 h-3.5 text-[#E60023]" />
                 <span>Ver Histórico</span>
               </button>
             )}
 
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800 text-[#E60023] text-xs font-black">
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E60023] text-white text-xs font-black">
               <Zap className="w-3.5 h-3.5 fill-current" />
               <span>Laboratório AI Studio</span>
             </span>
@@ -88,7 +88,7 @@ export const WatermarkStudioShellPtBr = () => {
             <button
               type="button"
               onClick={() => navigateStudioTab('reverse', 'Abrindo Estúdio Imagem para Prompt...')}
-              className="pb-4 text-xs sm:text-sm font-bold border-b-2 border-transparent text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 transition-all flex items-center gap-2 cursor-pointer"
+              className="pb-4 text-xs sm:text-sm font-bold text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white transition-all flex items-center gap-2 cursor-pointer"
             >
               <Camera className="w-4 h-4" />
               <span>Imagem para Prompt</span>
@@ -96,7 +96,7 @@ export const WatermarkStudioShellPtBr = () => {
             <button
               type="button"
               onClick={() => navigateStudioTab('generator', 'Abrindo Gerador de Prompts...')}
-              className="pb-4 text-xs sm:text-sm font-bold border-b-2 border-transparent text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 transition-all flex items-center gap-2 cursor-pointer"
+              className="pb-4 text-xs sm:text-sm font-bold text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white transition-all flex items-center gap-2 cursor-pointer"
             >
               <Wand2 className="w-4 h-4" />
               <span>Ideia para Prompt</span>
@@ -104,17 +104,17 @@ export const WatermarkStudioShellPtBr = () => {
             <button
               type="button"
               onClick={() => navigateStudioTab('editor', 'Abrindo Editor de Prompt IA...')}
-              className="pb-4 text-xs sm:text-sm font-bold border-b-2 border-transparent text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 transition-all flex items-center gap-2 cursor-pointer"
+              className="pb-4 text-xs sm:text-sm font-bold text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white transition-all flex items-center gap-2 cursor-pointer"
             >
-              <Edit3 className="w-4 h-4 text-emerald-500" />
+              <Edit3 className="w-4 h-4 text-[#E60023]" />
               <span>Editor e Modificador de Prompt IA</span>
             </button>
             <Link
               href="/removedor-de-marca-dagua-gemini-online"
               prefetch={false}
-              className="pb-4 text-xs sm:text-sm font-bold border-b-2 border-pink-500 text-pink-600 dark:text-pink-400 transition-all flex items-center gap-2"
+              className="pb-4 text-xs sm:text-sm font-bold border-b-2 border-[#E60023] text-[#E60023] dark:text-red-400 transition-all flex items-center gap-2"
             >
-              <Eraser className="w-4 h-4 text-pink-500" />
+              <Eraser className="w-4 h-4 text-[#E60023]" />
               <span>Removedor de Marca d&apos;Água Gemini Grátis</span>
             </Link>
           </div>
