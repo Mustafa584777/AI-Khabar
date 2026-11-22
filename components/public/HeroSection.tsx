@@ -13,6 +13,7 @@ import {
   Clock,
   Check,
   Sliders,
+  Shuffle,
 } from 'lucide-react';
 import { getPromptSlug, getDynamicPopularTags, getOptimizedImageUrl } from '@/lib/utils';
 import { pushPromptHistoryState } from '@/lib/navigation';
@@ -91,8 +92,14 @@ export const HeroSection = () => {
 
   const sortOptions = [
     {
+      id: 'random' as const,
+      label: 'Discover (Random)',
+      icon: Shuffle,
+      desc: 'Fresh randomized prompts on load',
+    },
+    {
       id: 'newest' as const,
-      label: 'Newest First',
+      label: 'Latest First',
       icon: Clock,
       desc: 'Recently published prompts',
     },

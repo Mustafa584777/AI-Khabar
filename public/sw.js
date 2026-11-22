@@ -1,5 +1,5 @@
-// Service Worker: Fresh-First Page/API + Fast Static Asset Caching + Push Notifications
-const CACHE_VERSION = 'v2';
+// Service Worker: Fresh-First Page/API + Stale-While-Revalidate Cached Revisits + Static Asset Caching
+const CACHE_VERSION = 'v3';
 const PAGES_CACHE = `zeena-pages-${CACHE_VERSION}`;
 const ASSETS_CACHE = `zeena-assets-${CACHE_VERSION}`;
 const API_CACHE = `zeena-api-${CACHE_VERSION}`;
@@ -133,6 +133,33 @@ async function networkFirstWithFallback(cacheName, cacheKey, fetchRequest, valid
   }
 }
 
+async function staleWhileRevalidate(cacheName, cacheKey, fetchRequest, validateResponse, event) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(cacheKey);
+
+  const revalidatePromise = fetch(fetchRequest)
+    .then(async (networkResponse) => {
+      if (networkResponse && networkResponse.status === 200 && (!validateResponse || validateResponse(networkResponse))) {
+        const stamped = await cloneWithTimestamp(networkResponse);
+        await cache.put(cacheKey, stamped);
+      }
+      return networkResponse;
+    })
+    .catch(() => null);
+
+  if (cached && isFresh(cached)) {
+    if (event && typeof event.waitUntil === 'function') {
+      event.waitUntil(revalidatePromise);
+    }
+    return cached;
+  }
+
+  const networkResponse = await revalidatePromise;
+  if (networkResponse) return networkResponse;
+  if (cached) return cached;
+  return fetch(fetchRequest);
+}
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
@@ -167,7 +194,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. Public Pages & Prompt Pages (Network-First so visitors always get latest version)
+  // 3. Public Pages & Prompt Pages (Stale-While-Revalidate so previously loaded pages reopen at 0ms)
   const isRsc =
     request.headers.get('RSC') === '1' ||
     request.headers.get('Next-Router-Prefetch') === '1' ||
@@ -177,23 +204,37 @@ self.addEventListener('fetch', (event) => {
   if (!isRsc && !isNavigation) return;
 
   if (isRsc) {
-    const rscToken = url.searchParams.get('_rsc') || '1';
-    const rscCacheKey = `${url.origin}${url.pathname}${url.search ? '&q=' + encodeURIComponent(url.search) : ''}?__sw=rsc&v=${encodeURIComponent(rscToken)}`;
+    const cleanParams = new URLSearchParams(url.search);
+    cleanParams.delete('_rsc');
+    const qs = cleanParams.toString();
+    const rscCacheKey = `${url.origin}${url.pathname}${qs ? `?${qs}&__sw=rsc` : '?__sw=rsc'}`;
     event.respondWith(
-      networkFirstWithFallback(PAGES_CACHE, rscCacheKey, request, (res) => {
-        const ct = (res.headers.get('content-type') || '').toLowerCase();
-        return !ct.includes('text/html');
-      })
+      staleWhileRevalidate(
+        PAGES_CACHE,
+        rscCacheKey,
+        request,
+        (res) => {
+          const ct = (res.headers.get('content-type') || '').toLowerCase();
+          return !ct.includes('text/html');
+        },
+        event
+      )
     );
     return;
   }
 
   const htmlCacheKey = `${url.origin}${url.pathname}${url.search ? '&q=' + encodeURIComponent(url.search) : ''}?__sw=html`;
   event.respondWith(
-    networkFirstWithFallback(PAGES_CACHE, htmlCacheKey, request, (res) => {
-      const ct = (res.headers.get('content-type') || '').toLowerCase();
-      return ct.includes('text/html');
-    })
+    staleWhileRevalidate(
+      PAGES_CACHE,
+      htmlCacheKey,
+      request,
+      (res) => {
+        const ct = (res.headers.get('content-type') || '').toLowerCase();
+        return ct.includes('text/html');
+      },
+      event
+    )
   );
 });
 
@@ -235,6 +276,29 @@ self.addEventListener('push', (event) => {
 
 // Handle direct trigger message from client page
 self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'PRECACHE_ROUTE' && typeof event.data.url === 'string') {
+    const rawPath = event.data.url.split('#')[0] || '/';
+    try {
+      const target = new URL(rawPath, self.location.origin);
+      if (!isExcluded(target)) {
+        const htmlCacheKey = `${target.origin}${target.pathname}${target.search ? '&q=' + encodeURIComponent(target.search) : ''}?__sw=html`;
+        event.waitUntil(
+          caches.open(PAGES_CACHE).then(async (cache) => {
+            const existing = await cache.match(htmlCacheKey);
+            if (!existing || !isFresh(existing)) {
+              const res = await fetch(target.href, { credentials: 'same-origin' });
+              if (res && res.status === 200 && (res.headers.get('content-type') || '').includes('text/html')) {
+                const stamped = await cloneWithTimestamp(res);
+                await cache.put(htmlCacheKey, stamped);
+              }
+            }
+          }).catch(() => {})
+        );
+      }
+    } catch {}
+    return;
+  }
+
   if (event.data && event.data.type === 'PURGE_ALL_CACHES') {
     event.waitUntil(
       caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))))

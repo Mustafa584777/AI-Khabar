@@ -111,7 +111,6 @@ export const WatermarkStudioShell = () => {
             </button>
             <Link
               href="/free-gemini-watermark-remover-online"
-              prefetch={false}
               className="pb-4 text-xs sm:text-sm font-bold border-b-2 border-[#E60023] text-[#E60023] dark:text-red-400 transition-all flex items-center gap-2"
             >
               <Eraser className="w-4 h-4 text-[#E60023]" />

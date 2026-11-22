@@ -9,10 +9,19 @@ import { SearchX, Filter, Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { PromptPost } from '@/types/prompt';
 import { PersonalizationEngine } from '@/lib/personalization';
 import { getPromptSlug, detectPostAspectRatio } from '@/lib/utils';
-import { prepareViewportPromptCards } from '@/lib/viewport-cache';
+import { prepareViewportPromptCards, getCachedImageAspectRatio } from '@/lib/viewport-cache';
 
 const INITIAL_BATCH_SIZE = 10;
 const SCROLL_BATCH_SIZE = 20;
+
+function seededHash(seed: number, id: string): number {
+  let h = (seed ^ 0x811c9dc5) >>> 0;
+  for (let i = 0; i < id.length; i++) {
+    h ^= id.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h >>> 0;
+}
 
 export const PromptGrid = () => {
   const {
@@ -39,6 +48,9 @@ export const PromptGrid = () => {
     userAccount,
     openAuthModal,
     ensureFullCatalogLoaded,
+    isFullCatalogLoaded,
+    isCatalogLoading,
+    catalogLoadError,
   } = useApp();
 
   const currentFilterKey = `${searchQuery}_${selectedCategory}_${selectedTool}_${selectedSort}_${tasteProfile.genderVibe}`;
@@ -46,7 +58,13 @@ export const PromptGrid = () => {
   const [prevFilterKey, setPrevFilterKey] = useState<string>(currentFilterKey);
   const [columnCount, setColumnCount] = useState<number>(2);
   const [measuredRatios, setMeasuredRatios] = useState<Record<string, number>>({});
+  const [randomSeed, setRandomSeed] = useState<number>(0);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
+
+  // Assign a fresh per-visit random seed immediately after client hydration (zero SSR mismatch)
+  useEffect(() => {
+    setRandomSeed(Math.floor(Math.random() * 2_000_000_000) + 1);
+  }, []);
 
   // Sync column count strictly to CSS viewport breakpoints (2 / 3 / 4 / 5 columns)
   useEffect(() => {
@@ -88,18 +106,18 @@ export const PromptGrid = () => {
     setDisplayedCount(INITIAL_BATCH_SIZE);
   }
 
-  // Ensure full catalog loads whenever any search/filter/sort becomes active
+  // Proactively load full catalog when filters/search are active or initial feed starts scrolling
   useEffect(() => {
     const hasActiveFilter =
       Boolean(searchQuery.trim()) ||
       (selectedCategory !== 'all' && selectedCategory !== '') ||
       (selectedTool !== 'all' && selectedTool !== '') ||
-      selectedSort !== 'newest';
+      selectedSort !== 'random';
 
-    if (hasActiveFilter) {
+    if (hasActiveFilter || !isFullCatalogLoaded) {
       void ensureFullCatalogLoaded();
     }
-  }, [searchQuery, selectedCategory, selectedTool, selectedSort, ensureFullCatalogLoaded]);
+  }, [searchQuery, selectedCategory, selectedTool, selectedSort, isFullCatalogLoaded, ensureFullCatalogLoaded]);
 
   // Filter only published posts for the public directory and strictly deduplicate with deterministic ordering
   const filteredPosts = useMemo(() => {
@@ -189,13 +207,11 @@ export const PromptGrid = () => {
           if (diff !== 0) return diff;
           return (b.createdAt || '').localeCompare(a.createdAt || '') || a.id.localeCompare(b.id);
         });
-      } else {
-        list = [...list].sort((a, b) => {
-          const timeB = new Date(b.publishedAt || b.createdAt || 0).getTime();
-          const timeA = new Date(a.publishedAt || a.createdAt || 0).getTime();
-          if (timeB !== timeA && !isNaN(timeB) && !isNaN(timeA)) return timeB - timeA;
-          return (b.createdAt || '').localeCompare(a.createdAt || '') || b.id.localeCompare(a.id);
-        });
+      } else if (randomSeed !== 0) {
+        // Default discovery order: randomized per visit until user explicitly selects Latest/other sort
+        list = [...list].sort(
+          (a, b) => seededHash(randomSeed, a.id) - seededHash(randomSeed, b.id)
+        );
       }
     }
 
@@ -215,7 +231,7 @@ export const PromptGrid = () => {
     }
 
     return uniqueList;
-  }, [posts, selectedCategory, selectedTool, searchQuery, selectedSort, aiSearchResults]);
+  }, [posts, selectedCategory, selectedTool, searchQuery, selectedSort, aiSearchResults, randomSeed]);
 
   // Infinite Scroll: Dual-Layer (IntersectionObserver + Scroll Window Event) + Full Catalog Lazy Hydration
   useEffect(() => {
@@ -223,7 +239,12 @@ export const PromptGrid = () => {
 
     const loadNextBatch = () => {
       void ensureFullCatalogLoaded();
-      setDisplayedCount((prev) => prev + SCROLL_BATCH_SIZE);
+      setDisplayedCount((prev) => {
+        if (prev < filteredPosts.length) {
+          return Math.min(prev + SCROLL_BATCH_SIZE, filteredPosts.length);
+        }
+        return prev;
+      });
     };
 
     const sentinel = bottomSentinelRef.current;
@@ -236,33 +257,43 @@ export const PromptGrid = () => {
             loadNextBatch();
           }
         },
-        { rootMargin: '800px 0px' }
+        { rootMargin: '900px 0px' }
       );
       observer.observe(sentinel);
     }
 
     const handleWindowScroll = () => {
       const scrollY = window.scrollY || window.pageYOffset;
-      if (scrollY > 120) {
+      if (scrollY > 80) {
         void ensureFullCatalogLoaded();
       }
       const windowHeight = window.innerHeight;
       const documentHeight = document.documentElement.scrollHeight;
-      if (scrollY + windowHeight >= documentHeight - 1000) {
-        setDisplayedCount((prev) => Math.min(prev + SCROLL_BATCH_SIZE, Math.max(prev + SCROLL_BATCH_SIZE, filteredPosts.length)));
+      if (scrollY + windowHeight >= documentHeight - 1100) {
+        loadNextBatch();
       }
     };
 
     window.addEventListener('scroll', handleWindowScroll, { passive: true });
 
+    // If sentinel is already within viewport right after catalog expands, advance batch immediately
+    if (sentinel) {
+      const rect = sentinel.getBoundingClientRect();
+      if (rect.top <= window.innerHeight + 900 && displayedCount < filteredPosts.length) {
+        loadNextBatch();
+      }
+    }
+
     return () => {
       if (observer) observer.disconnect();
       window.removeEventListener('scroll', handleWindowScroll);
     };
-  }, [filteredPosts.length, isLoadingPosts, ensureFullCatalogLoaded]);
+  }, [filteredPosts.length, displayedCount, isLoadingPosts, isFullCatalogLoaded, ensureFullCatalogLoaded]);
 
   const visiblePosts = filteredPosts.slice(0, displayedCount);
-  const hasMore = displayedCount < filteredPosts.length;
+  const hasMoreLoaded = displayedCount < filteredPosts.length;
+  const stillExpectingFullCatalog = !isFullCatalogLoaded;
+  const hasMore = hasMoreLoaded || stillExpectingFullCatalog;
 
   useEffect(() => {
     if (visiblePosts.length === 0) return;
@@ -287,11 +318,10 @@ export const PromptGrid = () => {
 
       cols[shortestCol].push({ post, globalIndex });
 
-      // Estimate normalized height (height / width) + uniform card spacing factor
-      const isSliderPost = Array.isArray(post.additionalImages) && post.additionalImages.length > 0;
-      let heightFactor = isSliderPost ? 4 / 3 : measuredRatios[post.id];
+      // Estimate normalized height (height / width) + uniform card spacing factor using true image ratio
+      let heightFactor = measuredRatios[post.id];
       if (!heightFactor) {
-        const ratioStr = detectPostAspectRatio(post);
+        const ratioStr = getCachedImageAspectRatio(post.imageUrl) || detectPostAspectRatio(post);
         const parts = ratioStr.split('/').map((n) => Number(n.trim()));
         if (parts.length === 2 && parts[0] > 0 && parts[1] > 0) {
           heightFactor = parts[1] / parts[0];
@@ -418,23 +448,41 @@ export const PromptGrid = () => {
           {/* Bottom Sentinel for Infinite Scroll */}
           <div ref={bottomSentinelRef} className="w-full h-10" />
 
-          {/* Loading Indicator or Finished Message */}
+          {/* Loading Indicator or Finished Message (only show end once full catalog is truly loaded) */}
           {hasMore ? (
             <div className="flex flex-col items-center justify-center py-8 gap-2.5">
-              <div className="flex items-center justify-center gap-2 text-xs text-neutral-500 font-semibold">
-                <Loader2 className="w-4 h-4 animate-spin text-[#E60023]" />
-                <span>Loading more prompts...</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  void ensureFullCatalogLoaded();
-                  setDisplayedCount((prev) => Math.min(prev + SCROLL_BATCH_SIZE, filteredPosts.length));
-                }}
-                className="text-xs font-bold text-[#E60023] hover:underline cursor-pointer bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/50 px-3.5 py-1.5 rounded-full border border-red-200 dark:border-red-900/40 transition-colors"
-              >
-                Load more prompts ({filteredPosts.length - displayedCount} remaining)
-              </button>
+              {catalogLoadError && !hasMoreLoaded ? (
+                <button
+                  type="button"
+                  onClick={() => void ensureFullCatalogLoaded()}
+                  className="text-xs font-bold text-[#E60023] hover:underline cursor-pointer bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/50 px-4 py-2 rounded-full border border-red-200 dark:border-red-900/40 transition-colors"
+                >
+                  Slow connection detected — Tap to load more prompts
+                </button>
+              ) : (
+                <>
+                  <div className="flex items-center justify-center gap-2 text-xs text-neutral-500 font-semibold">
+                    <Loader2 className="w-4 h-4 animate-spin text-[#E60023]" />
+                    <span>
+                      {isCatalogLoading && !hasMoreLoaded
+                        ? 'Loading full prompt collection...'
+                        : 'Loading more prompts...'}
+                    </span>
+                  </div>
+                  {hasMoreLoaded && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void ensureFullCatalogLoaded();
+                        setDisplayedCount((prev) => Math.min(prev + SCROLL_BATCH_SIZE, filteredPosts.length));
+                      }}
+                      className="text-xs font-bold text-[#E60023] hover:underline cursor-pointer bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/50 px-3.5 py-1.5 rounded-full border border-red-200 dark:border-red-900/40 transition-colors"
+                    >
+                      Load more prompts ({filteredPosts.length - displayedCount} remaining)
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           ) : (
             <div className="text-center py-12 px-4 mt-6 border-t border-neutral-200/70 dark:border-neutral-800/70 max-w-md mx-auto">
@@ -446,7 +494,12 @@ export const PromptGrid = () => {
         </>
       ) : (
         <div className="text-center py-16 px-4 bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 max-w-lg mx-auto shadow-sm">
-          {totalPublishedCount === 0 ? (
+          {!isFullCatalogLoaded && totalPublishedCount === 0 ? (
+            <div className="flex items-center justify-center gap-2 text-xs text-neutral-500 font-semibold py-8">
+              <Loader2 className="w-4 h-4 animate-spin text-[#E60023]" />
+              <span>Loading prompt collection...</span>
+            </div>
+          ) : totalPublishedCount === 0 ? (
             <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">
               You&apos;ve reached the end of our prompt collection. Come back later for more posts.
             </p>

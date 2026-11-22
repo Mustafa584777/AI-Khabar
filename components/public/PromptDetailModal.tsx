@@ -16,6 +16,8 @@ import {
   Layers,
   ChevronRight,
   ChevronLeft,
+  ChevronUp,
+  ChevronDown,
   Maximize2,
   Download,
   Crown,
@@ -78,6 +80,76 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
   const effectivePinRatio =
     resolvedPinRatio || getCachedImageAspectRatio(pin.imageUrl) || detectedPinRatio;
 
+  const allImages = useMemo(() => {
+    const list: string[] = [];
+    if (pin.imageUrl && typeof pin.imageUrl === 'string' && pin.imageUrl.trim()) {
+      list.push(pin.imageUrl.trim());
+    }
+    if (Array.isArray(pin.additionalImages)) {
+      pin.additionalImages.forEach((img) => {
+        if (img && typeof img === 'string' && img.trim() && !list.includes(img.trim())) {
+          list.push(img.trim());
+        }
+      });
+    }
+    return list;
+  }, [pin.imageUrl, pin.additionalImages]);
+
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const isMultiple = allImages.length > 1;
+
+  const isVerticalSlide = useMemo(() => {
+    if (!pin.id) return false;
+    let hash = 0;
+    for (let i = 0; i < pin.id.length; i++) {
+      hash = (hash << 5) - hash + pin.id.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash) % 5 < 2;
+  }, [pin.id]);
+
+  const displayImages = useMemo(() => {
+    if (isVerticalSlide) {
+      return [...allImages].reverse();
+    }
+    return allImages;
+  }, [allImages, isVerticalSlide]);
+
+  const translateYPercent = useMemo(() => {
+    if (!isVerticalSlide || allImages.length === 0) return 0;
+    return -((allImages.length - 1 - activeImageIndex) * 100);
+  }, [isVerticalSlide, allImages.length, activeImageIndex]);
+
+  const slideInterval = useMemo(() => {
+    const durations = [2600, 2700, 2800, 3000];
+    if (!pin.id) return durations[0];
+    let hash = 0;
+    for (let i = 0; i < pin.id.length; i++) {
+      hash = (hash << 5) - hash + pin.id.charCodeAt(i);
+      hash |= 0;
+    }
+    return durations[Math.abs(hash) % durations.length];
+  }, [pin.id]);
+
+  useEffect(() => {
+    if (!isMultiple) return;
+
+    const charCode = pin.id ? pin.id.charCodeAt(pin.id.length - 1) : 0;
+    const initialOffset = 2200 + (charCode % 8) * 250;
+
+    let intervalId: NodeJS.Timeout | null = null;
+    const timeoutId = setTimeout(() => {
+      intervalId = setInterval(() => {
+        setActiveImageIndex((prev) => (prev < allImages.length - 1 ? prev + 1 : 0));
+      }, slideInterval);
+    }, initialOffset);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isMultiple, allImages.length, slideInterval, pin.id]);
+
   const syncPinRatio = useCallback(
     (img: HTMLImageElement | null) => {
       if (!img || !img.naturalWidth || !img.naturalHeight) return;
@@ -94,7 +166,7 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
     if (img && img.complete && img.naturalWidth > 0) {
       syncPinRatio(img);
     }
-  }, [syncPinRatio]);
+  }, [pin.imageUrl, syncPinRatio]);
 
   return (
     <div
@@ -102,12 +174,12 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
       onMouseEnter={() => prepareMoreToExploreCard(pin)}
       onTouchStart={() => prepareMoreToExploreCard(pin)}
       style={{ aspectRatio: effectivePinRatio }}
-      className="group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-neutral-200 dark:bg-neutral-900 cursor-pointer border border-neutral-200/60 dark:border-neutral-800/80 w-full"
+      className="group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-neutral-200 dark:bg-neutral-900 cursor-pointer border border-neutral-200/60 dark:border-neutral-800/80 w-full select-none"
       id={`masonry-pin-${pin.id}`}
     >
       {/* Premium Badge */}
       {pin.isPremium && (
-        <div className={`absolute top-2 left-2 z-10 flex items-center justify-center w-6 h-6 rounded-full backdrop-blur-md shadow-md pointer-events-none ${
+        <div className={`absolute top-2 left-2 z-20 flex items-center justify-center w-6 h-6 rounded-full backdrop-blur-md shadow-md pointer-events-none ${
           isUnlocked && !isProUser
             ? 'bg-emerald-950/85 border border-emerald-400/60 text-emerald-300'
             : 'bg-black/85 border border-amber-400/60 text-amber-300'
@@ -116,8 +188,42 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
         </div>
       )}
 
-      {/* Photo Pin Image (rendered immediately with zero animation/transition/layout shift) */}
-      {pin.imageUrl && (
+      {/* Photo Pin Image or Multi-Image Slider matching Homepage PromptCard */}
+      {isMultiple ? (
+        <div
+          className={`absolute inset-0 flex ${
+            isVerticalSlide ? 'flex-col' : 'flex-row'
+          } transition-transform duration-700 ease-in-out will-change-transform`}
+          style={{
+            transform: isVerticalSlide
+              ? `translateY(${translateYPercent}%)`
+              : `translateX(-${activeImageIndex * 100}%)`,
+          }}
+        >
+          {displayImages.map((imgUrl, idx) => {
+            const img360 = getOptimizedImageUrl(imgUrl, 360);
+            const img280 = getOptimizedImageUrl(imgUrl, 280);
+            const img420 = getOptimizedImageUrl(imgUrl, 420);
+            const isLeadImage = imgUrl === allImages[0];
+            return (
+              <div key={idx} className="w-full h-full shrink-0 relative overflow-hidden bg-neutral-900">
+                <img
+                  ref={isLeadImage ? pinImgRef : undefined}
+                  src={img360}
+                  srcSet={`${img280} 280w, ${img420} 420w`}
+                  sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 240px"
+                  alt={`${pin.imageAlt || pin.title} - photo ${idx + 1}`}
+                  loading={isLeadImage ? 'eager' : 'lazy'}
+                  decoding={isLeadImage ? 'sync' : 'async'}
+                  onLoad={isLeadImage ? (e) => syncPinRatio(e.currentTarget) : undefined}
+                  className="w-full h-full object-cover object-top block select-none pointer-events-none"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+            );
+          })}
+        </div>
+      ) : pin.imageUrl ? (
         <img
           ref={pinImgRef}
           src={getOptimizedImageUrl(pin.imageUrl, 360)}
@@ -130,10 +236,103 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
           className="absolute inset-0 w-full h-full object-cover block"
           referrerPolicy="no-referrer"
         />
+      ) : null}
+
+      {/* Multi-Image Slider Controls (Arrows & Dots) */}
+      {isMultiple && (
+        <>
+          {isVerticalSlide ? (
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setActiveImageIndex((prev) => (prev > 0 ? prev - 1 : allImages.length - 1));
+                }}
+                className="absolute top-2.5 left-1/2 -translate-x-1/2 z-20 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/95 dark:bg-black/90 hover:bg-white text-neutral-900 dark:text-white shadow-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 active:scale-95 cursor-pointer border border-neutral-200/50"
+                title="Previous photo"
+                aria-label="Previous photo"
+              >
+                <ChevronUp className="w-4 h-4 -translate-y-0.5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setActiveImageIndex((prev) => (prev < allImages.length - 1 ? prev + 1 : 0));
+                }}
+                className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-20 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/95 dark:bg-black/90 hover:bg-white text-neutral-900 dark:text-white shadow-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 active:scale-95 cursor-pointer border border-neutral-200/50"
+                title="Next photo"
+                aria-label="Next photo"
+              >
+                <ChevronDown className="w-4 h-4 translate-y-0.5" />
+              </button>
+
+              <div className="absolute right-2.5 inset-y-0 flex flex-col items-center justify-center gap-1.5 z-20 pointer-events-none">
+                {allImages.map((_, idx) => (
+                  <span
+                    key={idx}
+                    className={`transition-all duration-300 rounded-full ${
+                      idx === activeImageIndex
+                        ? 'h-3.5 w-1 bg-white shadow-md'
+                        : 'w-1 h-1 bg-white/60'
+                    }`}
+                  />
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setActiveImageIndex((prev) => (prev > 0 ? prev - 1 : allImages.length - 1));
+                }}
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/95 dark:bg-black/90 hover:bg-white text-neutral-900 dark:text-white shadow-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 active:scale-95 cursor-pointer border border-neutral-200/50"
+                title="Previous photo"
+                aria-label="Previous photo"
+              >
+                <ChevronLeft className="w-4 h-4 -translate-x-0.5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setActiveImageIndex((prev) => (prev < allImages.length - 1 ? prev + 1 : 0));
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/95 dark:bg-black/90 hover:bg-white text-neutral-900 dark:text-white shadow-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 active:scale-95 cursor-pointer border border-neutral-200/50"
+                title="Next photo"
+                aria-label="Next photo"
+              >
+                <ChevronRight className="w-4 h-4 translate-x-0.5" />
+              </button>
+
+              <div className="absolute bottom-2.5 inset-x-0 flex items-center justify-center gap-1.5 z-20 pointer-events-none">
+                {allImages.map((_, idx) => (
+                  <span
+                    key={idx}
+                    className={`transition-all duration-300 rounded-full ${
+                      idx === activeImageIndex
+                        ? 'w-4 h-1.5 bg-white shadow-md'
+                        : 'w-1.5 h-1.5 bg-white/60'
+                    }`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </>
       )}
 
       {/* Dark Vignette Overlay on Hover (desktop only & never on locked cards so image clicks always open prompt view) */}
-      <div className="hidden sm:flex absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex-col justify-between p-3 pointer-events-none">
+      <div className="hidden sm:flex absolute inset-0 z-10 bg-black/30 opacity-0 group-hover:opacity-100 flex-col justify-between p-3 pointer-events-none">
         {/* Top Actions */}
         {!(pin.isPremium && !isUnlocked) ? (
           <div className="flex items-center justify-between w-full pointer-events-auto">
@@ -216,6 +415,8 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
     openAuthModal,
     setIsDirectRouteHost,
     isActivePremiumUser,
+    isFullCatalogLoaded,
+    ensureFullCatalogLoaded,
   } = useApp();
 
   const [isDirectClosed, setIsDirectClosed] = useState(false);
@@ -749,17 +950,21 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
     return combined;
   }, [selectedPost, posts]);
 
-  const hasMorePins = displayedCount < allRecommendedPins.length;
+  const hasMoreLoadedPins = displayedCount < allRecommendedPins.length;
+  const hasMorePins = hasMoreLoadedPins || !isFullCatalogLoaded;
 
   // Infinite scroll loader trigger (10 pins per batch)
   const loadMorePins = useCallback(() => {
     if (isLoadingMore || !hasMorePins) return;
+    if (!isFullCatalogLoaded) {
+      void ensureFullCatalogLoaded();
+    }
     setIsLoadingMore(true);
     setTimeout(() => {
       setDisplayedCount((prev) => prev + 10);
       setIsLoadingMore(false);
     }, 250);
-  }, [isLoadingMore, hasMorePins]);
+  }, [isLoadingMore, hasMorePins, isFullCatalogLoaded, ensureFullCatalogLoaded]);
 
   // Intersection observer for bottom sentinel
   useEffect(() => {
@@ -1265,8 +1470,25 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                         ))}
                       </div>
 
-                      {/* Action Icons Overlay: Download + Enlarge */}
+                      {/* Action Icons Overlay: Decode + Download + Enlarge */}
                       <div className="absolute bottom-4 right-4 flex items-center gap-2 z-20">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeconstructImage();
+                          }}
+                          data-action="decode-prompt"
+                          data-nav-href={isPromptGated ? '/pricing' : '/create'}
+                          data-nav-label={isPromptGated ? 'Loading Pro Plans...' : 'Opening Image-to-Prompt Studio...'}
+                          className="px-3 py-2 rounded-full bg-black/75 hover:bg-[#E60023] text-white backdrop-blur-md transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center gap-1.5 text-xs font-bold cursor-pointer border border-white/10"
+                          title="Decode Image & Prompt in AI Studio"
+                          aria-label="Decode Image & Prompt in AI Studio"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>Decode</span>
+                        </button>
+
                         <button
                           type="button"
                           onClick={(e) => handleDownloadImage(e, allImages[currentImageIndex])}
@@ -1365,8 +1587,25 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                             referrerPolicy="no-referrer"
                           />
 
-                          {/* Action Icons Overlay: Download + Enlarge */}
+                          {/* Action Icons Overlay: Decode + Download + Enlarge */}
                           <div className="absolute bottom-4 right-4 flex items-center gap-2 z-20">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeconstructImage();
+                              }}
+                              data-action="decode-prompt"
+                              data-nav-href={isPromptGated ? '/pricing' : '/create'}
+                              data-nav-label={isPromptGated ? 'Loading Pro Plans...' : 'Opening Image-to-Prompt Studio...'}
+                              className="px-3 py-2 rounded-full bg-black/75 hover:bg-[#E60023] text-white backdrop-blur-md transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center gap-1.5 text-xs font-bold cursor-pointer border border-white/10"
+                              title="Decode Image & Prompt in AI Studio"
+                              aria-label="Decode Image & Prompt in AI Studio"
+                            >
+                              <Sparkles className="w-3.5 h-3.5" />
+                              <span>Decode</span>
+                            </button>
+
                             <button
                               type="button"
                               onClick={(e) => handleDownloadImage(e, allImages[0] || selectedPost.imageUrl)}
@@ -1440,9 +1679,12 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                 <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-neutral-100 dark:border-neutral-800">
                   <div className="flex items-center flex-wrap gap-2">
                     {selectedPost.isPremium && (
-                      <span className="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-black tracking-wider uppercase flex items-center gap-1">
+                      <span
+                        className="w-7 h-7 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0"
+                        title="Premium Prompt"
+                        aria-label="Premium Prompt"
+                      >
                         <Crown className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                        <span>PRO PREVIEW</span>
                       </span>
                     )}
                     <span className="px-3 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 text-xs font-bold text-neutral-800 dark:text-neutral-200 border border-neutral-200/60 dark:border-neutral-700/60">
@@ -1450,7 +1692,7 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                     </span>
                   </div>
 
-                  {/* Action Icons: Preferred AI, Copy, Decode */}
+                  {/* Action Icons: Preferred AI, Copy */}
                   <div className="flex items-center gap-1.5 sm:gap-2">
                     {selectedPost.preferredAi && (
                       <a
@@ -1503,19 +1745,6 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                           <span>Copy</span>
                         </>
                       )}
-                    </button>
-
-                    {/* Decode Button */}
-                    <button
-                      type="button"
-                      onClick={handleDeconstructImage}
-                      data-action="decode-prompt"
-                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#E60023] hover:bg-[#ad081b] text-white shadow-sm transition-all active:scale-95"
-                      title="Decode Image & Prompt in AI Studio"
-                      aria-label="Decode Image & Prompt in AI Studio"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>Decode</span>
                     </button>
                   </div>
                 </div>

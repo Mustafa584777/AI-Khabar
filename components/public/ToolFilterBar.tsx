@@ -13,6 +13,7 @@ export const ToolFilterBar = () => {
   const {
     selectedCategory,
     setSelectedCategory,
+    selectedSort,
     setSelectedSort,
     categories,
     categoryPostCounts,
@@ -35,6 +36,8 @@ export const ToolFilterBar = () => {
     return PersonalizationEngine.getPersonalizedCategoryOrder(categoriesWithMinPrompts, tasteProfile);
   }, [categoriesWithMinPrompts, tasteProfile, isMounted]);
 
+  const isLatestActive = selectedCategory === 'latest' || selectedSort === 'newest';
+
   return (
     <div id="categories-filter-bar" className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-3 pb-2 scroll-mt-20">
       <div className="flex items-center gap-2">
@@ -44,16 +47,16 @@ export const ToolFilterBar = () => {
           <button
             type="button"
             onClick={() => {
-              if (selectedCategory === 'latest') {
+              if (isLatestActive) {
                 setSelectedCategory('');
-                setSelectedSort('newest');
+                setSelectedSort('random');
               } else {
                 setSelectedCategory('latest');
                 setSelectedSort('newest');
               }
             }}
             className={`flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 shrink-0 cursor-pointer ${
-              selectedCategory === 'latest'
+              isLatestActive
                 ? 'bg-[#E60023] text-white shadow-sm shadow-[#E60023]/30 scale-100'
                 : 'bg-[#efefef] dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 hover:bg-[#e2e2e2] dark:hover:bg-neutral-700'
             }`}
@@ -78,6 +81,9 @@ export const ToolFilterBar = () => {
                   if (isSelected) {
                     setSelectedCategory('');
                   } else {
+                    if (selectedCategory === 'latest') {
+                      setSelectedSort('random');
+                    }
                     setSelectedCategory(cat.name);
                   }
                 }}

@@ -116,8 +116,8 @@ interface AppContextType {
   setSelectedCategory: (cat: string) => void;
   selectedTool: string;
   setSelectedTool: (tool: string) => void;
-  selectedSort: 'trending' | 'most-popular' | 'most-liked' | 'most-copied' | 'newest' | 'oldest';
-  setSelectedSort: (sort: 'trending' | 'most-popular' | 'most-liked' | 'most-copied' | 'newest' | 'oldest') => void;
+  selectedSort: 'random' | 'trending' | 'most-popular' | 'most-liked' | 'most-copied' | 'newest' | 'oldest';
+  setSelectedSort: (sort: 'random' | 'trending' | 'most-popular' | 'most-liked' | 'most-copied' | 'newest' | 'oldest') => void;
 
   // Actions
   refreshData: () => void;
@@ -181,6 +181,8 @@ interface AppContextType {
   applyPlan: (planTier: 'starter' | 'pro' | 'vip') => void;
   ensureFullCatalogLoaded: () => Promise<PromptPost[]>;
   isFullCatalogLoaded: boolean;
+  isCatalogLoading: boolean;
+  catalogLoadError: boolean;
   categoryPostCounts: Record<string, number>;
   isDirectRouteHost: boolean;
   setIsDirectRouteHost: (val: boolean) => void;
@@ -1282,6 +1284,8 @@ export const AppProvider = ({
   // Initial SSR & boot strictly loads compact top-16 newest posts (~57KB) for 0ms TBT
   const [posts, setPosts] = useState<PromptPost[]>(() => initialPosts || INITIAL_FEED_POSTS);
   const [isFullCatalogLoaded, setIsFullCatalogLoaded] = useState<boolean>(false);
+  const [isCatalogLoading, setIsCatalogLoading] = useState<boolean>(false);
+  const [catalogLoadError, setCatalogLoadError] = useState<boolean>(false);
   const fullCatalogPromiseRef = useRef<Promise<PromptPost[]> | null>(null);
 
   const ensureFullCatalogLoaded = useCallback(async (): Promise<PromptPost[]> => {
@@ -1292,10 +1296,12 @@ export const AppProvider = ({
       return fullCatalogPromiseRef.current;
     }
 
+    setIsCatalogLoading(true);
+    setCatalogLoadError(false);
+
     fullCatalogPromiseRef.current = import('@/data/posts.json')
       .then((mod) => {
         const allRaw = (Array.isArray(mod.default) ? mod.default : []) as unknown as PromptPost[];
-        // Preserve initial top posts order at the top, append remaining posts cleanly
         const currentTop = postsRef.current;
         const seenIds = new Set(currentTop.map((p) => p.id));
         const remaining = allRaw.filter((p) => p && p.id && !seenIds.has(p.id));
@@ -1303,14 +1309,22 @@ export const AppProvider = ({
         setPosts(merged);
         postsRef.current = merged;
         setIsFullCatalogLoaded(true);
+        setCatalogLoadError(false);
+        setIsCatalogLoading(false);
         return merged;
       })
-      .catch(() => postsRef.current);
+      .catch(() => {
+        // Clear promise ref so slow/transient network failures retry cleanly on scroll or button click
+        fullCatalogPromiseRef.current = null;
+        setCatalogLoadError(true);
+        setIsCatalogLoading(false);
+        return postsRef.current;
+      });
 
     return fullCatalogPromiseRef.current;
   }, [isFullCatalogLoaded]);
 
-  // Background idle catalog warm-up well after first paint & TTI window
+  // Background catalog hydration shortly after first paint so infinite scroll never stalls on slow connections
   useEffect(() => {
     if (typeof window === 'undefined' || isFullCatalogLoaded) return;
     const isNonPublic =
@@ -1318,14 +1332,14 @@ export const AppProvider = ({
       window.location.pathname === '/create' ||
       window.location.pathname === '/dashboard' ||
       window.location.pathname === '/admin';
-    const delayMs = isNonPublic ? 200 : 4200;
+    const delayMs = isNonPublic ? 150 : 350;
 
     let idleId: number | null = null;
     const timer = window.setTimeout(() => {
       if (typeof (window as any).requestIdleCallback === 'function') {
         idleId = (window as any).requestIdleCallback(() => {
           void ensureFullCatalogLoaded();
-        }, { timeout: 2000 });
+        }, { timeout: 900 });
       } else {
         void ensureFullCatalogLoaded();
       }
@@ -1865,13 +1879,11 @@ export const AppProvider = ({
   }, [pathname, ensureFullCatalogLoaded]);
   const [selectedTool, setSelectedTool] = useState<string>('all');
   const [selectedSort, setSelectedSortState] = useState<
-    'trending' | 'most-popular' | 'most-liked' | 'most-copied' | 'newest' | 'oldest'
-  >('newest');
-  const setSelectedSort = useCallback((sort: 'trending' | 'most-popular' | 'most-liked' | 'most-copied' | 'newest' | 'oldest') => {
+    'random' | 'trending' | 'most-popular' | 'most-liked' | 'most-copied' | 'newest' | 'oldest'
+  >('random');
+  const setSelectedSort = useCallback((sort: 'random' | 'trending' | 'most-popular' | 'most-liked' | 'most-copied' | 'newest' | 'oldest') => {
     setSelectedSortState(sort);
-    if (sort !== 'newest') {
-      void ensureFullCatalogLoaded();
-    }
+    void ensureFullCatalogLoaded();
   }, [ensureFullCatalogLoaded]);
 
   // Gemini AI Search State & Cache
@@ -3284,6 +3296,8 @@ export const AppProvider = ({
         applyPlan,
         ensureFullCatalogLoaded,
         isFullCatalogLoaded,
+        isCatalogLoading,
+        catalogLoadError,
         categoryPostCounts,
         isDirectRouteHost,
         setIsDirectRouteHost,

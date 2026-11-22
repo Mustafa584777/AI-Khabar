@@ -1,8 +1,15 @@
 'use client';
 
 import React, { useState, useEffect, Suspense, useRef, useCallback } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { NAV_START_EVENT, NavigationStartDetail, normalizeInternalUrl } from '@/lib/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import {
+  NAV_START_EVENT,
+  NavigationStartDetail,
+  normalizeInternalUrl,
+  markRouteCached,
+  isRouteCached,
+  getCachedRoutesList,
+} from '@/lib/navigation';
 import { SmartRouteSkeleton } from './SmartRouteSkeleton';
 
 interface ActiveNavigationState {
@@ -13,6 +20,7 @@ interface ActiveNavigationState {
 
 const LoadingOverlayInner = () => {
   const pathname = usePathname() || '/';
+  const router = useRouter();
   const searchParams = useSearchParams();
   const searchString = searchParams ? searchParams.toString() : '';
   const currentFullUrl = `${pathname}${searchString ? `?${searchString}` : ''}`;
@@ -63,7 +71,7 @@ const LoadingOverlayInner = () => {
         setNavState(null);
         setIsFadingOut(false);
         setIsSlow(false);
-      }, 150);
+      }, 120);
     };
 
     if (typeof requestAnimationFrame === 'function') {
@@ -87,6 +95,12 @@ const LoadingOverlayInner = () => {
 
       if (normalized === currentUrl) return;
 
+      // If this page was already visited, loaded, and cached, open at 0s delay without showing skeleton
+      if (isRouteCached(normalized)) {
+        dismissImmediately();
+        return;
+      }
+
       clearAllTimers();
       setIsFadingOut(false);
       setIsSlow(false);
@@ -108,6 +122,60 @@ const LoadingOverlayInner = () => {
     },
     [clearAllTimers, dismissImmediately]
   );
+
+  // Mark the active page as settled & cached once the user spends time on the fully loaded page
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    let settleTimer: number | null = null;
+    let disposed = false;
+
+    const markSettled = () => {
+      if (disposed) return;
+      settleTimer = window.setTimeout(() => {
+        if (disposed) return;
+        markRouteCached(currentFullUrl);
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+          try {
+            navigator.serviceWorker.controller.postMessage({
+              type: 'PRECACHE_ROUTE',
+              url: window.location.pathname,
+            });
+          } catch {}
+        }
+      }, 850);
+    };
+
+    if (document.readyState === 'complete') {
+      markSettled();
+    } else {
+      window.addEventListener('load', markSettled, { once: true });
+    }
+
+    return () => {
+      disposed = true;
+      window.removeEventListener('load', markSettled);
+      if (settleTimer !== null) {
+        window.clearTimeout(settleTimer);
+      }
+    };
+  }, [currentFullUrl]);
+
+  // Keep already-cached routes hot in Next.js client router cache for synchronous 0ms revisit
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const warmTimer = window.setTimeout(() => {
+      const cached = getCachedRoutesList()
+        .filter((route) => route && !route.includes('?') && route !== pathname)
+        .slice(0, 8);
+      for (const route of cached) {
+        try {
+          router.prefetch(route);
+        } catch {}
+      }
+    }, 600);
+
+    return () => window.clearTimeout(warmTimer);
+  }, [pathname, router]);
 
   // Dismiss only once the target route commits & paints in the DOM
   useEffect(() => {

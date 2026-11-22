@@ -72,7 +72,7 @@ export const Header = () => {
     if (pathname === targetPath) {
       if (targetPath === '/') {
         setSelectedCategory('');
-        setSelectedSort('newest');
+        setSelectedSort('random');
         setSearchQuery('');
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -162,7 +162,6 @@ export const Header = () => {
             {/* Prompt Editor Route Link */}
             <Link
               href="/prompt-editor"
-              prefetch={false}
               onMouseEnter={() => warmRoute('/prompt-editor')}
               onClick={closeAllOverlays}
               className={`hidden lg:flex px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 items-center gap-1.5 cursor-pointer active:scale-95 ${

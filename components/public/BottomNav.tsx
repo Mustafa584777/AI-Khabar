@@ -65,7 +65,7 @@ export const BottomNav = ({ onSearchClick }: BottomNavProps) => {
 
     if (pathname === targetPath) {
       if (targetPath === '/') {
-        setSelectedSort('newest');
+        setSelectedSort('random');
         setSearchQuery('');
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });

@@ -85,7 +85,13 @@ export function detectPostAspectRatio(post: {
 
   // 2. Direct parameter specification (e.g., "16:9", "9:16", "1:1", "3:4", "2:3")
   if (post.parameters?.aspectRatio) {
-    const raw = post.parameters.aspectRatio.trim().replace(':', ' / ');
+    const cleanParam = post.parameters.aspectRatio.trim().toLowerCase();
+    if (cleanParam === 'square') return '1 / 1';
+    const ratioParamMatch = cleanParam.match(/([0-9]+)\s*[:/x]\s*([0-9]+)/i);
+    if (ratioParamMatch) {
+      return `${ratioParamMatch[1]} / ${ratioParamMatch[2]}`;
+    }
+    const raw = cleanParam.replace(':', ' / ');
     if (raw.includes('/')) return raw;
   }
 
@@ -103,13 +109,18 @@ export function detectPostAspectRatio(post: {
     return `${arTextMatch[1]} / ${arTextMatch[2]}`;
   }
 
-  // 5. Standalone standard ratio mentions like "9:16", "16:9", "1:1", "3:4", "4:5", "2:3", "3:2"
+  // 5. Written square aspect ratio (e.g. "Aspect ratio: square", "square 1:1")
+  if (/\baspect\s*ratio\s*[:=\-]?\s*square\b/i.test(text)) {
+    return '1 / 1';
+  }
+
+  // 6. Standalone standard ratio mentions like "9:16", "16:9", "1:1", "3:4", "4:5", "2:3", "3:2"
   const patternMatch = text.match(/\b(16:9|9:16|1:1|3:4|4:3|4:5|5:4|2:3|3:2|21:9)\b/i);
   if (patternMatch) {
     return patternMatch[1].replace(':', ' / ');
   }
 
-  // 6. Default pre-load placeholder fallback (overridden dynamically on image onLoad)
+  // 7. Default pre-load placeholder fallback (overridden dynamically on image onLoad)
   return '3 / 4';
 }
 

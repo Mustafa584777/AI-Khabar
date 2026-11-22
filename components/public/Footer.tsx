@@ -14,7 +14,7 @@ export const Footer = () => {
 
   const handleCategoryClick = (catName: string) => {
     setSelectedCategory(catName);
-    setSelectedSort('newest');
+    setSelectedSort('random');
     setSearchQuery('');
 
     if (pathname === '/') {
@@ -120,7 +120,7 @@ export const Footer = () => {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/free-gemini-watermark-remover-online" prefetch={false} className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
+                  <Link href="/free-gemini-watermark-remover-online" className="hover:text-[#E60023] dark:hover:text-white transition-colors text-xs font-medium">
                     Free Gemini Watermark Remover Online
                   </Link>
                 </li>

@@ -8,7 +8,12 @@ import Image from 'next/image';
 import { Sparkles, Bookmark, Crown, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Layers, Copy } from 'lucide-react';
 import { getPromptSlug, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription } from '@/lib/utils';
 import { startRouteNavigation, pushPromptHistoryState } from '@/lib/navigation';
-import { warmPromptDetailModalChunk, preloadAndCacheImageUrl, recordLoadedImageElement } from '@/lib/viewport-cache';
+import {
+  warmPromptDetailModalChunk,
+  preloadAndCacheImageUrl,
+  recordLoadedImageElement,
+  getCachedImageAspectRatio,
+} from '@/lib/viewport-cache';
 
 export const PromptCard = ({
   post,
@@ -33,7 +38,9 @@ export const PromptCard = ({
 
   const router = useRouter();
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [resolvedAspectRatio, setResolvedAspectRatio] = useState<string | null>(null);
+  const [resolvedAspectRatio, setResolvedAspectRatio] = useState<string | null>(() =>
+    getCachedImageAspectRatio(post.imageUrl)
+  );
   const [inView, setInView] = useState(() => priority || typeof window === 'undefined' || !('IntersectionObserver' in window));
   const cardRef = useRef<HTMLElement>(null);
   const primaryImgRef = useRef<HTMLImageElement | null>(null);
@@ -121,7 +128,8 @@ export const PromptCard = ({
   const isUnlocked = isPromptUnlocked(post.id, post.isPremium);
   const promptSlug = getPromptSlug(post);
   const detectedRatio = detectPostAspectRatio(post);
-  const effectiveAspectRatio = isMultiple ? '3 / 4' : (resolvedAspectRatio || detectedRatio);
+  const effectiveAspectRatio =
+    resolvedAspectRatio || getCachedImageAspectRatio(post.imageUrl) || detectedRatio;
   const currentImg = isMultiple ? (allImages[activeImageIndex] || post.imageUrl) : post.imageUrl;
   const optimizedImgUrl = getOptimizedImageUrl(currentImg, 600);
 
@@ -130,22 +138,21 @@ export const PromptCard = ({
       if (!img || !img.naturalWidth || !img.naturalHeight) return;
       setImageLoaded(true);
       recordLoadedImageElement(post.imageUrl, 360, img);
-      if (isMultiple) return;
       const ratioStr = `${img.naturalWidth} / ${img.naturalHeight}`;
       setResolvedAspectRatio((prev) => (prev === ratioStr ? prev : ratioStr));
       onAspectRatioResolved?.(post.id, img.naturalHeight / img.naturalWidth);
     },
-    [post.id, post.imageUrl, isMultiple, onAspectRatioResolved]
+    [post.id, post.imageUrl, onAspectRatioResolved]
   );
 
   // Resolve cached images that already finished loading before hydration
   useEffect(() => {
-    if (!inView || isMultiple) return;
+    if (!inView) return;
     const img = primaryImgRef.current;
     if (img && img.complete && img.naturalWidth > 0) {
       syncNaturalRatio(img);
     }
-  }, [inView, isMultiple, syncNaturalRatio]);
+  }, [inView, post.imageUrl, syncNaturalRatio]);
 
   // Viewport IntersectionObserver: strictly loads images only when entering or near viewport
   useEffect(() => {

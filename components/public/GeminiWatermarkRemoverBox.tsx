@@ -156,7 +156,6 @@ export const GeminiWatermarkRemoverBox = () => {
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <Link
               href="/free-gemini-watermark-remover-online"
-              prefetch={false}
               onClick={() =>
                 startRouteNavigation(
                   '/free-gemini-watermark-remover-online',
