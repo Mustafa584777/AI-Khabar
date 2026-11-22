@@ -20,6 +20,7 @@ export const metadata: Metadata = {
     languages: {
       en: PAGE_URL,
       'pt-BR': 'https://zeenaprompt.com/removedor-de-marca-dagua-gemini-online',
+      'x-default': PAGE_URL,
     },
   },
   openGraph: {

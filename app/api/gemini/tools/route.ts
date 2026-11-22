@@ -1,6 +1,7 @@
-import { GoogleGenAI, Type } from '@google/genai';
+import { Type } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
 import { ensureAspectRatio34 } from '@/lib/utils';
+import { runGeminiWithFastFallback } from '@/lib/gemini-runner';
 
 const IMAGE_TO_PROMPT_SYSTEM_INSTRUCTION = `You are an elite expert image-to-prompt reconstruction engine, professional photographer, cinematographer, art director, and fashion stylist simultaneously.
 
@@ -24,104 +25,6 @@ MASTER VISUAL REFERENCE STRUCTURE FOR THE PROMPT:
 OUTPUT FORMAT:
 Return ONLY valid JSON matching the required schema with a masterfully written, highly comprehensive detailed prompt string in the "prompt" field. The prompt MUST always specify and end with ", aspect ratio 3:4".`;
 
-async function generateWithModel(ai: GoogleGenAI, preferredModel: string | undefined, payload: any) {
-  const candidateModels = [
-    preferredModel && preferredModel !== 'imagen-3.0-generate-002' ? preferredModel : 'gemini-flash-latest',
-    'gemini-flash-latest',
-    'gemini-3.8-flash',
-    'gemini-3.1-flash-lite',
-  ];
-
-  const uniqueModels = Array.from(new Set(candidateModels.filter(Boolean)));
-  let lastErr: any = null;
-
-  for (const modelToUse of uniqueModels) {
-    try {
-      const res = await ai.models.generateContent({
-        ...payload,
-        model: modelToUse,
-      });
-
-      if (res && res.text) {
-        return { response: res, modelUsed: modelToUse };
-      }
-    } catch (err: any) {
-      console.warn(`[Gemini Tool] Model "${modelToUse}" failed:`, err?.message || err);
-      lastErr = err;
-    }
-  }
-
-  throw lastErr || new Error('All candidate Gemini models failed to generate response');
-}
-
-// Fallback reverse-prompt generator when offline or API key missing
-function generateLocalImageToPrompt(customInstructionsOrStyle?: string) {
-  const customRules = customInstructionsOrStyle ? ` | Rules: ${customInstructionsOrStyle}` : '';
-  return {
-    title: 'Photographic Visual Reconstruction',
-    summary: 'A precision-reconstructed composition featuring authentic textures, balanced natural lighting, and photographic realism.',
-    analysis: {
-      subject: 'Primary central subject with natural posture, authentic skin micro-textures, and realistic styling',
-      pose: 'Standing naturally, shoulders relaxed and aligned toward the camera perspective, natural facial expression',
-      composition: 'Balanced portrait framing, center subject placement with natural negative space and clean background separation',
-      environment: 'Contemporary architectural and natural environment with authentic ambient textures',
-      camera: 'High-resolution full-frame sensor, portrait lens category with natural perspective and shallow depth of field',
-      lighting: 'Soft directional key light with gentle ambient fill, subtle rim highlights and balanced exposure',
-      color_grading: 'Neutral authentic skin tones, medium natural contrast, slightly warm highlights and clean deep shadows',
-      effects: 'Natural optical depth blur, subtle organic grain, crisp in-focus subject without digital over-sharpening',
-      text_and_layout: 'None visible',
-    },
-    prompt: `Masterful realistic photograph of the subject with authentic physical presence. Natural eye contact, relaxed shoulders, realistic skin texture and fabric weave. Shot with natural portrait lens perspective, soft balanced key and fill lighting, shallow depth of field, natural color grade and true black levels${customRules}, aspect ratio 3:4`,
-    promptText: `Masterful realistic photograph of the subject with authentic physical presence. Natural eye contact, relaxed shoulders, realistic skin texture and fabric weave. Shot with natural portrait lens perspective, soft balanced key and fill lighting, shallow depth of field, natural color grade and true black levels${customRules}, aspect ratio 3:4`,
-    negative_prompt: 'cartoon, anime, CGI, plastic skin, altered face, distorted anatomy, extra fingers, extra limbs, unrealistic hands, incorrect object geometry, unnatural shadows, excessive blur, oversaturation, watermark',
-    negativePrompt: 'cartoon, anime, CGI, plastic skin, altered face, distorted anatomy, extra fingers, extra limbs, unrealistic hands, incorrect object geometry, unnatural shadows, excessive blur, oversaturation, watermark',
-    aspect_ratio: '3:4',
-    aspectRatio: '3:4',
-    confidence: 'high',
-    camera: 'Full-frame sensor with 85mm portrait lens',
-    lighting: 'Soft directional key light with subtle rim highlights',
-    tags: ['Reverse Engineered', 'Photorealistic', 'Natural Lighting', 'Master Prompt'],
-  };
-}
-
-// =========================================================================
-// ACTION 2: IDEA TO DETAILED PROMPT GENERATOR
-// =========================================================================
-function generateLocalIdeaToPrompt(
-  idea: string,
-  lighting?: string,
-  colorGrading?: string,
-  gender?: string,
-  aspectRatio = '3:4',
-  customInstructions?: string
-) {
-  const cleanIdea = (idea || 'Realistic visual composition').trim();
-  const genderClause = gender && gender !== 'Any / None' && gender !== 'Not Applicable' ? `${gender} subject, ` : '';
-  const lightClause = lighting && lighting !== 'Natural Daylight (Realistic Smartphone Photograph)' ? lighting : 'soft natural daylight, realistic smartphone photograph styling';
-  const colorClause = colorGrading || 'natural realistic color grading';
-  const customClause = customInstructions ? `, ${customInstructions}` : '';
-
-  const promptText = `Realistic smartphone photograph of ${genderClause}${cleanIdea}. Captured in ${lightClause}, natural skin micro-textures, authentic environment, crisp details, ${colorClause}${customClause} --ar ${aspectRatio} --style raw --v 6.1`;
-
-  return {
-    title: cleanIdea.length > 40 ? `${cleanIdea.slice(0, 37)}...` : cleanIdea,
-    promptText,
-    negativePrompt: 'low quality, blurry, pixelated, distorted proportions, extra limbs, bad anatomy, flat lighting, watermark, oversaturated, amateur snapshot',
-    aspectRatio,
-    camera: 'Smartphone camera with high-resolution sensor and natural portrait optics',
-    lighting: lighting || 'Natural Daylight',
-    colorPalette: colorGrading || 'Natural Color Palette',
-    composition: 'Rule of thirds, centered focal subject, environmental depth',
-    tags: [
-      gender && gender !== 'Any / None' ? gender : null,
-      lighting ? `Light: ${lighting}` : null,
-      colorGrading ? `Grading: ${colorGrading}` : null,
-      'Detailed AI Prompt',
-      'Midjourney v6.1 Ready',
-    ].filter(Boolean) as string[],
-  };
-}
-
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -133,23 +36,27 @@ export async function POST(req: NextRequest) {
       colorGrading,
       gender,
       aspectRatio,
-      referenceImage,
       styleFocus,
       customInstructions,
       prompt,
-      enhanceWithAi,
       selectedModel,
     } = body;
 
     const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { success: false, error: 'GEMINI_API_KEY is not configured on the server.' },
+        { status: 500 }
+      );
+    }
 
     // =========================================================================
-    // ACTION: IDEA TO DETAILED PROMPT GENERATOR
+    // ACTION 2: IDEA TO DETAILED PROMPT GENERATOR
     // =========================================================================
     if (action === 'idea_to_prompt' || action === 'generate_prompt') {
       const userIdea = (idea || prompt || '').trim();
       if (!userIdea) {
-        return NextResponse.json({ error: 'Please provide an idea or short description.' }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'Please provide an idea or short description.' }, { status: 400 });
       }
 
       const chosenLighting = lighting || 'Natural Daylight (Realistic Smartphone Photograph)';
@@ -157,21 +64,7 @@ export async function POST(req: NextRequest) {
       const chosenGender = gender || 'Any / None';
       const chosenRatio = aspectRatio || '3:4';
 
-      if (!apiKey) {
-        const fallback = generateLocalIdeaToPrompt(
-          userIdea,
-          chosenLighting,
-          chosenColor,
-          chosenGender,
-          chosenRatio,
-          customInstructions
-        );
-        return NextResponse.json({ success: true, data: fallback, fallback: true });
-      }
-
-      try {
-        const ai = new GoogleGenAI({ apiKey });
-        const systemPrompt = `You are an elite AI Art Director and Prompt Engineer specializing in Midjourney v6.1, Flux.1, ChatGPT/DALL-E 3, and Imagen 3.
+      const systemPrompt = `You are an elite AI Art Director and Prompt Engineer specializing in Midjourney v6.1, Flux.1, ChatGPT/DALL-E 3, and Imagen 3.
 The user will provide a simple idea or a few words. Your mission is to expand this into an exceptionally detailed, hyper-photorealistic masterpiece prompt according to the user's selected parameters.
 DO NOT provide a short, generic description or summary. Every detail must be meticulously described using professional photographic, cinematic, and art direction terminology.
 
@@ -192,66 +85,53 @@ CRITICAL REQUIREMENTS:
 6. "composition": Advanced composition technique used.
 7. "title": Catchy, short 3-6 word title.
 
-OUTPUT MUST BE VALID JSON ONLY matching this schema:
-{
-  "title": "string",
-  "promptText": "string",
-  "negativePrompt": "string",
-  "aspectRatio": "${chosenRatio}",
-  "camera": "string",
-  "lighting": "string",
-  "colorPalette": "string",
-  "composition": "string",
-  "tags": ["string", "string", "string"]
-}`;
+OUTPUT MUST BE VALID JSON ONLY.`;
 
-        const { response, modelUsed } = await generateWithModel(ai, undefined, {
-          contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
-          generationConfig: {
-            responseMimeType: 'application/json',
-            temperature: 0.7,
-            maxOutputTokens: 8192,
+      const { parsedJson, modelUsed, elapsedMs } = await runGeminiWithFastFallback({
+        apiKey,
+        preferredModel: selectedModel,
+        expectJson: true,
+        maxTotalMs: 13500,
+        contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
+        config: {
+          responseMimeType: 'application/json',
+          temperature: 0.7,
+          maxOutputTokens: 4096,
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              title: { type: Type.STRING },
+              promptText: { type: Type.STRING },
+              negativePrompt: { type: Type.STRING },
+              aspectRatio: { type: Type.STRING },
+              camera: { type: Type.STRING },
+              lighting: { type: Type.STRING },
+              colorPalette: { type: Type.STRING },
+              composition: { type: Type.STRING },
+              tags: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+              },
+            },
+            required: ['title', 'promptText', 'negativePrompt', 'camera', 'lighting', 'colorPalette', 'composition'],
           },
-        });
+        },
+      });
 
-        const rawText = response.text || '';
-        let parsed: any;
-        try {
-          parsed = JSON.parse(rawText);
-        } catch {
-          const match = rawText.match(/\{[\s\S]*\}/);
-          if (match) {
-            parsed = JSON.parse(match[0]);
-          } else {
-            throw new Error('Could not parse JSON response from Gemini');
-          }
-        }
+      const parsed = parsedJson || {};
+      const normalizedData = {
+        title: parsed.title || userIdea,
+        promptText: parsed.promptText || parsed.prompt || '',
+        negativePrompt: parsed.negativePrompt || parsed.negative_prompt || '',
+        aspectRatio: parsed.aspectRatio || chosenRatio,
+        camera: parsed.camera || '85mm f/1.4 lens, full frame sensor',
+        lighting: parsed.lighting || chosenLighting,
+        colorPalette: parsed.colorPalette || chosenColor,
+        composition: parsed.composition || 'Cinematic composition',
+        tags: Array.isArray(parsed.tags) ? parsed.tags : [chosenLighting, chosenColor, 'AI Master Prompt'],
+      };
 
-        const normalizedData = {
-          title: parsed.title || userIdea,
-          promptText: parsed.promptText || parsed.prompt || '',
-          negativePrompt: parsed.negativePrompt || parsed.negative_prompt || '',
-          aspectRatio: parsed.aspectRatio || chosenRatio,
-          camera: parsed.camera || '85mm f/1.4 lens, full frame sensor',
-          lighting: parsed.lighting || chosenLighting,
-          colorPalette: parsed.colorPalette || chosenColor,
-          composition: parsed.composition || 'Cinematic composition',
-          tags: Array.isArray(parsed.tags) ? parsed.tags : [chosenLighting, chosenColor, 'AI Master Prompt'],
-        };
-
-        return NextResponse.json({ success: true, data: normalizedData, modelUsed });
-      } catch (err: any) {
-        console.warn('Gemini idea prompt failed, using local heuristic:', err?.message);
-        const fallback = generateLocalIdeaToPrompt(
-          userIdea,
-          chosenLighting,
-          chosenColor,
-          chosenGender,
-          chosenRatio,
-          customInstructions
-        );
-        return NextResponse.json({ success: true, data: fallback, fallback: true });
-      }
+      return NextResponse.json({ success: true, data: normalizedData, modelUsed, elapsedMs });
     }
 
     // =========================================================================
@@ -262,14 +142,6 @@ OUTPUT MUST BE VALID JSON ONLY matching this schema:
         return NextResponse.json({ success: false, error: 'Image data is required' }, { status: 400 });
       }
 
-      if (!apiKey) {
-        const fallback = generateLocalImageToPrompt(customInstructions || styleFocus);
-        return NextResponse.json({ success: true, data: fallback, fallback: true });
-      }
-
-      const ai = new GoogleGenAI({ apiKey });
-
-      // Parse image base64 data
       let mimeType = 'image/jpeg';
       let base64Data = '';
 
@@ -281,7 +153,10 @@ OUTPUT MUST BE VALID JSON ONLY matching this schema:
         }
       } else if (image.startsWith('http')) {
         try {
-          const imgRes = await fetch(image);
+          const controller = new AbortController();
+          const fetchTimer = setTimeout(() => controller.abort(), 5000);
+          const imgRes = await fetch(image, { signal: controller.signal });
+          clearTimeout(fetchTimer);
           const arrayBuffer = await imgRes.arrayBuffer();
           base64Data = Buffer.from(arrayBuffer).toString('base64');
           mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
@@ -304,95 +179,93 @@ ${customInstructions ? `CRITICAL USER CUSTOM INSTRUCTIONS & CONSTRAINTS:
 You MUST strictly obey these custom instructions (e.g. if the user requests removing watermarks, maintaining a minimum length such as 250 words minimum, removing text, adding specific objects, or adjusting lighting/mood). Incorporate them directly into the reconstructed prompt.` : styleFocus ? `User requested aesthetic/style: "${styleFocus}". Remember the uploaded image is the PRIMARY SOURCE OF TRUTH.` : ''}
 Return the final response strictly conforming to the required JSON schema.`;
 
-      const jsonSchemaConfig = {
-        systemInstruction: IMAGE_TO_PROMPT_SYSTEM_INSTRUCTION,
-        responseMimeType: 'application/json',
-        maxOutputTokens: 8192,
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            title: { type: Type.STRING, description: 'Short descriptive title' },
-            summary: { type: Type.STRING, description: 'One sentence describing the visual concept' },
-            analysis: {
-              type: Type.OBJECT,
-              properties: {
-                subject: { type: Type.STRING, description: 'Detailed subject identification' },
-                pose: { type: Type.STRING, description: 'Exact reconstructed pose & body language' },
-                composition: { type: Type.STRING, description: 'Reverse-engineered composition & framing' },
-                environment: { type: Type.STRING, description: 'Actual visible environment' },
-                camera: { type: Type.STRING, description: 'Camera category & photographic optics' },
-                lighting: { type: Type.STRING, description: 'Actual visible lighting dynamics' },
-                color_grading: { type: Type.STRING, description: 'Actual color grading & palette' },
-                effects: { type: Type.STRING, description: 'Visible post-processing effects' },
-                text_and_layout: { type: Type.STRING, description: 'Visible text transcription and layout' },
+      const { parsedJson, modelUsed, elapsedMs } = await runGeminiWithFastFallback({
+        apiKey,
+        preferredModel: selectedModel,
+        expectJson: true,
+        maxTotalMs: 13500,
+        contents: {
+          parts: [
+            {
+              inlineData: {
+                mimeType,
+                data: base64Data,
               },
-              required: ['subject', 'pose', 'composition', 'environment', 'camera', 'lighting', 'color_grading'],
             },
-            prompt: { type: Type.STRING, description: 'Complete copy-paste-ready image generation prompt' },
-            negative_prompt: { type: Type.STRING, description: 'Complete negative prompt' },
-            aspect_ratio: { type: Type.STRING, description: 'Detected aspect ratio' },
-            confidence: { type: Type.STRING, description: 'high | medium | low' },
-          },
-          required: ['title', 'summary', 'analysis', 'prompt', 'negative_prompt', 'aspect_ratio', 'confidence'],
+            {
+              text: promptInstruction,
+            },
+          ],
         },
+        config: {
+          systemInstruction: IMAGE_TO_PROMPT_SYSTEM_INSTRUCTION,
+          responseMimeType: 'application/json',
+          maxOutputTokens: 4096,
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              title: { type: Type.STRING, description: 'Short descriptive title' },
+              summary: { type: Type.STRING, description: 'One sentence describing the visual concept' },
+              analysis: {
+                type: Type.OBJECT,
+                properties: {
+                  subject: { type: Type.STRING, description: 'Detailed subject identification' },
+                  pose: { type: Type.STRING, description: 'Exact reconstructed pose & body language' },
+                  composition: { type: Type.STRING, description: 'Reverse-engineered composition & framing' },
+                  environment: { type: Type.STRING, description: 'Actual visible environment' },
+                  camera: { type: Type.STRING, description: 'Camera category & photographic optics' },
+                  lighting: { type: Type.STRING, description: 'Actual visible lighting dynamics' },
+                  color_grading: { type: Type.STRING, description: 'Actual color grading & palette' },
+                  effects: { type: Type.STRING, description: 'Visible post-processing effects' },
+                  text_and_layout: { type: Type.STRING, description: 'Visible text transcription and layout' },
+                },
+                required: ['subject', 'pose', 'composition', 'environment', 'camera', 'lighting', 'color_grading'],
+              },
+              prompt: { type: Type.STRING, description: 'Complete copy-paste-ready image generation prompt' },
+              negative_prompt: { type: Type.STRING, description: 'Complete negative prompt' },
+              aspect_ratio: { type: Type.STRING, description: 'Detected aspect ratio' },
+              confidence: { type: Type.STRING, description: 'high | medium | low' },
+            },
+            required: ['title', 'summary', 'analysis', 'prompt', 'negative_prompt', 'aspect_ratio', 'confidence'],
+          },
+        },
+      });
+
+      const parsed = parsedJson || {};
+      const rawPrompt = parsed.prompt || parsed.promptText || '';
+      const finalPrompt = ensureAspectRatio34(rawPrompt);
+
+      const normalizedData = {
+        ...parsed,
+        prompt: finalPrompt,
+        promptText: finalPrompt,
+        negativePrompt: parsed.negative_prompt || parsed.negativePrompt || '',
+        aspectRatio: '3:4',
+        aspect_ratio: '3:4',
+        camera: parsed.analysis?.camera || parsed.camera || '',
+        lighting: parsed.analysis?.lighting || parsed.lighting || '',
+        composition: parsed.analysis?.composition || parsed.composition || '',
+        colorPalette: parsed.analysis?.color_grading || parsed.colorPalette || '',
+        tags: [
+          parsed.analysis?.subject ? 'Subject Reconstructed' : null,
+          parsed.analysis?.camera ? 'Optics Calibrated' : null,
+          parsed.confidence ? `${String(parsed.confidence).toUpperCase()} Confidence` : 'Verified DNA',
+          'AI Reverse Engine',
+        ].filter(Boolean),
       };
 
-      try {
-        const { response, modelUsed } = await generateWithModel(ai, selectedModel, {
-          contents: {
-            parts: [
-              {
-                inlineData: {
-                  mimeType,
-                  data: base64Data,
-                },
-              },
-              {
-                text: promptInstruction,
-              },
-            ],
-          },
-          config: jsonSchemaConfig,
-        });
-
-        const parsed = JSON.parse(response.text || '{}');
-        
-        const rawPrompt = parsed.prompt || parsed.promptText || '';
-        const finalPrompt = ensureAspectRatio34(rawPrompt);
-
-        // Normalize fields so all UI bindings and new schemas work seamlessly
-        const normalizedData = {
-          ...parsed,
-          prompt: finalPrompt,
-          promptText: finalPrompt,
-          negativePrompt: parsed.negative_prompt || parsed.negativePrompt || '',
-          aspectRatio: '3:4',
-          aspect_ratio: '3:4',
-          camera: parsed.analysis?.camera || parsed.camera || '',
-          lighting: parsed.analysis?.lighting || parsed.lighting || '',
-          composition: parsed.analysis?.composition || parsed.composition || '',
-          colorPalette: parsed.analysis?.color_grading || parsed.colorPalette || '',
-          tags: [
-            parsed.analysis?.subject ? 'Subject Reconstructed' : null,
-            parsed.analysis?.camera ? 'Optics Calibrated' : null,
-            parsed.confidence ? `${parsed.confidence.toUpperCase()} Confidence` : 'Verified DNA',
-            'AI Reverse Engine',
-          ].filter(Boolean),
-        };
-
-        return NextResponse.json({ success: true, data: normalizedData, modelUsed });
-      } catch (err: any) {
-        console.warn('Gemini vision failed, using heuristic reverse prompt:', err?.message);
-        const fallback = generateLocalImageToPrompt(customInstructions || styleFocus);
-        return NextResponse.json({ success: true, data: fallback, fallback: true });
-      }
+      return NextResponse.json({ success: true, data: normalizedData, modelUsed, elapsedMs });
     }
 
     return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
   } catch (error: any) {
-    console.error('AI Studio Tools Error:', error);
-    const fallback = generateLocalImageToPrompt();
-    return NextResponse.json({ success: true, data: fallback, fallback: true });
+    console.error('AI Studio Tools Error:', error?.message || error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'This tool is currently experiencing heavy load, please try again.',
+      },
+      { status: 503 }
+    );
   }
 }
-

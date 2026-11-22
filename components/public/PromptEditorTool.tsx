@@ -18,6 +18,8 @@ import {
 import { useRouter } from 'next/navigation';
 import { formatPromptForClipboard } from '@/lib/utils';
 import { startRouteNavigation } from '@/lib/navigation';
+import { PromptToolHowTo } from '@/components/public/PromptToolHowTo';
+import { PromptToolExploreSection } from '@/components/public/PromptToolExploreSection';
 
 export const PromptEditorTool = () => {
   const router = useRouter();
@@ -159,6 +161,16 @@ export const PromptEditorTool = () => {
           <p className="text-neutral-300 text-sm sm:text-base leading-relaxed">
             Paste your prompt in the first box and specify your custom changes in the second box. Our AI will precisely edit and transform your prompt while preserving its core style.
           </p>
+          {!userAccount?.isLoggedIn && (
+            <button
+              type="button"
+              onClick={() => openAuthModal('Sign in or create a free account to get 5 bonus AI Prompt Editor credits.')}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition-colors cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>Sign In to Claim 5 Free Credits</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -363,6 +375,20 @@ export const PromptEditorTool = () => {
           )}
         </div>
       </div>
+
+      {/* Step-by-Step How To Section */}
+      <PromptToolHowTo tool="editor" />
+
+      {/* Native Explore Prompts Section */}
+      <PromptToolExploreSection
+        mode="editor"
+        onUseInTool={(post) => {
+          setInputPrompt(post.promptText || '');
+          setResultData(null);
+          setEditorError(null);
+          showToast('Prompt loaded into Box 1! Add your desired changes in Box 2.', 'success');
+        }}
+      />
     </div>
   );
 };

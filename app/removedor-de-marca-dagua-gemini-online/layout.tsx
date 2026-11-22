@@ -20,6 +20,7 @@ export const metadata: Metadata = {
     languages: {
       en: EN_PAGE_URL,
       'pt-BR': PAGE_URL,
+      'x-default': EN_PAGE_URL,
     },
   },
   openGraph: {

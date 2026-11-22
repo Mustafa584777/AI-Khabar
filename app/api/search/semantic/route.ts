@@ -1,14 +1,8 @@
-import { GoogleGenAI, Type } from '@google/genai';
+import { Type } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
 import { ServerStorage } from '@/lib/server-storage';
 import { PromptPost } from '@/types/prompt';
-
-const CANDIDATE_MODELS = [
-  'gemini-3.8-flash',
-  'gemini-flash-latest',
-  'gemini-3.1-flash-lite',
-  'gemini-2.5-flash',
-];
+import { runGeminiWithFastFallback } from '@/lib/gemini-runner';
 
 // Common typo & transliteration dictionary for local heuristic fallback
 const LOCAL_SEMANTIC_EXPANSIONS: Record<string, string[]> = {
@@ -148,8 +142,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const ai = new GoogleGenAI({ apiKey });
-
     // 5. System instructions & prompt for Gemini
     const systemInstruction = `You are an intelligent visual search and semantic matching engine for an AI image prompt gallery.
 Your task is to understand user search queries, handle misspellings, typos, transliterated Hinglish/regional words (e.g. "Tradishnal sadi" means "traditional saree/sari/ethnic Indian attire"), and identify visual concepts, styles, subjects, and clothing.
@@ -172,79 +164,71 @@ Please perform:
   "explanation": "Short friendly sentence explaining what was understood and matched"
 }`;
 
-    let lastError: any = null;
-
-    for (const model of CANDIDATE_MODELS) {
-      try {
-        const response = await ai.models.generateContent({
-          model,
-          contents: userPrompt,
-          config: {
-            systemInstruction,
-            responseMimeType: 'application/json',
-            responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                correctedQuery: { type: Type.STRING },
-                expandedKeywords: {
-                  type: Type.ARRAY,
-                  items: { type: Type.STRING },
-                },
-                matchedPostIds: {
-                  type: Type.ARRAY,
-                  items: { type: Type.STRING },
-                },
-                explanation: { type: Type.STRING },
+    try {
+      const { parsedJson, modelUsed, elapsedMs } = await runGeminiWithFastFallback({
+        apiKey,
+        expectJson: true,
+        maxTotalMs: 9500,
+        contents: userPrompt,
+        config: {
+          systemInstruction,
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              correctedQuery: { type: Type.STRING },
+              expandedKeywords: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
               },
-              required: ['correctedQuery', 'expandedKeywords', 'matchedPostIds', 'explanation'],
+              matchedPostIds: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+              },
+              explanation: { type: Type.STRING },
             },
+            required: ['correctedQuery', 'expandedKeywords', 'matchedPostIds', 'explanation'],
           },
-        });
+        },
+      });
 
-        if (response && response.text) {
-          const parsed = JSON.parse(response.text);
-          const validPostIds = Array.isArray(parsed.matchedPostIds)
-            ? parsed.matchedPostIds.filter((id: string) => published.some((p) => p.id === id))
-            : [];
+      const parsed = parsedJson || {};
+      const validPostIds = Array.isArray(parsed.matchedPostIds)
+        ? parsed.matchedPostIds.filter((id: string) => published.some((p) => p.id === id))
+        : [];
 
-          // If AI found direct matches, return them!
-          // Also merge with any exact local title/tag matches just in case
-          const exactLower = query.toLowerCase();
-          const localDirectMatches = published
-            .filter((p) =>
-              p.title.toLowerCase().includes(exactLower) ||
-              (p.tags && p.tags.some((t) => t.toLowerCase().includes(exactLower)))
-            )
-            .map((p) => p.id);
+      const exactLower = query.toLowerCase();
+      const localDirectMatches = published
+        .filter(
+          (p) =>
+            p.title.toLowerCase().includes(exactLower) ||
+            (p.tags && p.tags.some((t) => t.toLowerCase().includes(exactLower)))
+        )
+        .map((p) => p.id);
 
-          const finalIds = Array.from(new Set([...validPostIds, ...localDirectMatches]));
+      const finalIds = Array.from(new Set([...validPostIds, ...localDirectMatches]));
 
-          return NextResponse.json({
-            success: true,
-            correctedQuery: parsed.correctedQuery || query,
-            expandedKeywords: parsed.expandedKeywords || [query],
-            matchedPostIds: finalIds,
-            explanation: parsed.explanation || `Found ${finalIds.length} matching visual prompts.`,
-            isAiPowered: true,
-            modelUsed: model,
-          });
-        }
-      } catch (err: any) {
-        console.warn(`[Semantic Search] Model "${model}" failed:`, err?.message || err);
-        lastError = err;
-      }
+      return NextResponse.json({
+        success: true,
+        correctedQuery: parsed.correctedQuery || query,
+        expandedKeywords: parsed.expandedKeywords || [query],
+        matchedPostIds: finalIds,
+        explanation: parsed.explanation || `Found ${finalIds.length} matching visual prompts.`,
+        isAiPowered: true,
+        modelUsed,
+        elapsedMs,
+      });
+    } catch (err: any) {
+      console.warn('[Semantic Search] All Gemini models failed or timed out. Falling back to local semantic matcher:', err?.message);
+      const fallback = localSemanticMatch(query, published);
+      return NextResponse.json({
+        success: true,
+        ...fallback,
+        isAiPowered: false,
+        fallbackUsed: true,
+        errorDetails: err?.message,
+      });
     }
-
-    // Fallback to smart local semantic matching if all models failed
-    console.warn('[Semantic Search] All Gemini models failed or timed out. Falling back to local semantic matcher.');
-    const fallback = localSemanticMatch(query, published);
-    return NextResponse.json({
-      success: true,
-      ...fallback,
-      isAiPowered: false,
-      fallbackUsed: true,
-      errorDetails: lastError?.message,
-    });
   } catch (err: any) {
     console.error('Semantic search error:', err);
     return NextResponse.json({

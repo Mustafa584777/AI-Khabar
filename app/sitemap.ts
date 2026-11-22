@@ -40,12 +40,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.9,
+      alternates: {
+        languages: {
+          en: `${baseUrl}/free-gemini-watermark-remover-online`,
+          'pt-BR': `${baseUrl}/removedor-de-marca-dagua-gemini-online`,
+        },
+      },
     },
     {
       url: `${baseUrl}/removedor-de-marca-dagua-gemini-online`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.9,
+      alternates: {
+        languages: {
+          en: `${baseUrl}/free-gemini-watermark-remover-online`,
+          'pt-BR': `${baseUrl}/removedor-de-marca-dagua-gemini-online`,
+        },
+      },
     },
     {
       url: `${baseUrl}/about`,

@@ -1,13 +1,6 @@
-import { GoogleGenAI } from '@google/genai';
+import { Type } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
-
-const CANDIDATE_MODELS = [
-  'gemini-2.5-flash',
-  'gemini-3.1-flash-lite',
-  'gemini-3.7-flash',
-  'gemini-flash-latest',
-  'gemini-2.5-pro',
-];
+import { runGeminiWithFastFallback } from '@/lib/gemini-runner';
 
 export async function POST(req: NextRequest) {
   let promptText = '';
@@ -29,17 +22,14 @@ export async function POST(req: NextRequest) {
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
-
   if (!apiKey) {
     return NextResponse.json(
-      { success: false, error: 'This tool is currently in high demand, please try again.' },
-      { status: 503 }
+      { success: false, error: 'GEMINI_API_KEY is not configured on the server.' },
+      { status: 500 }
     );
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
-
     const systemPrompt = `You are a world-class prompt engineer and AI art director specializing in Midjourney v6.1, Flux.1, and DALL-E 3.
 The user has provided:
 1. "Original Prompt": The base prompt (which may be very detailed and long, up to 1000+ words).
@@ -52,76 +42,56 @@ Surgically edit and update the original prompt precisely according to the user's
 - Include appropriate parameter flags at the end (e.g. --ar 16:9 --style raw --v 6.1 --s 250).
 
 OUTPUT FORMAT:
-Return ONLY valid JSON matching this schema:
-{
-  "enhancedPrompt": "The full length revised and upgraded prompt string",
-  "negativePrompt": "Comma-separated negative keywords to avoid flaws",
-  "improvementsMade": [
-    "Specific change 1 applied",
-    "Specific change 2 applied",
-    "Preserved original prompt length and detailed specifications"
-  ],
-  "parameters": {
-    "aspectRatio": "16:9",
-    "camera": "Camera and lens details",
-    "lighting": "Lighting setup details"
-  }
-}`;
+Return ONLY valid JSON matching the schema.`;
 
     const contents = `Original Prompt:\n${promptText}\n\nWhat You Want To Change / Edit Instructions:\n${changeInstructions}`;
 
-    let lastError: any = null;
-    let geminiResponse: any = null;
-
-    for (const model of CANDIDATE_MODELS) {
-      try {
-        const response = await ai.models.generateContent({
-          model,
-          contents,
-          config: {
-            systemInstruction: systemPrompt,
-            responseMimeType: 'application/json',
-            temperature: 0.3,
-            maxOutputTokens: 8192,
+    const { parsedJson, modelUsed, elapsedMs } = await runGeminiWithFastFallback({
+      apiKey,
+      expectJson: true,
+      maxTotalMs: 13500,
+      contents,
+      config: {
+        systemInstruction: systemPrompt,
+        responseMimeType: 'application/json',
+        temperature: 0.3,
+        maxOutputTokens: 4096,
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            enhancedPrompt: { type: Type.STRING },
+            negativePrompt: { type: Type.STRING },
+            improvementsMade: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
+            },
+            parameters: {
+              type: Type.OBJECT,
+              properties: {
+                aspectRatio: { type: Type.STRING },
+                camera: { type: Type.STRING },
+                lighting: { type: Type.STRING },
+              },
+            },
           },
-        });
+          required: ['enhancedPrompt', 'negativePrompt', 'improvementsMade'],
+        },
+      },
+    });
 
-        if (response && response.text) {
-          geminiResponse = response;
-          break;
-        }
-      } catch (err: any) {
-        console.warn(`[Prompt Edit API] Model "${model}" failed:`, err?.message || err);
-        lastError = err;
-      }
-    }
-
-    if (geminiResponse && geminiResponse.text) {
-      const rawText = geminiResponse.text;
-      let parsed: any;
-      try {
-        parsed = JSON.parse(rawText);
-      } catch {
-        const match = rawText.match(/\{[\s\S]*\}/);
-        if (match) {
-          parsed = JSON.parse(match[0]);
-        } else {
-          throw new Error('Could not parse Gemini JSON output');
-        }
-      }
-
-      return NextResponse.json({
-        success: true,
-        enhancedPrompt: parsed.enhancedPrompt || parsed.prompt || promptText,
-        negativePrompt: parsed.negativePrompt || parsed.negative_prompt || 'blurry, low quality, distorted, bad anatomy',
-        improvementsMade: Array.isArray(parsed.improvementsMade) && parsed.improvementsMade.length > 0
+    const parsed = parsedJson || {};
+    return NextResponse.json({
+      success: true,
+      enhancedPrompt: parsed.enhancedPrompt || parsed.prompt || promptText,
+      negativePrompt: parsed.negativePrompt || parsed.negative_prompt || 'blurry, low quality, distorted, bad anatomy',
+      improvementsMade:
+        Array.isArray(parsed.improvementsMade) && parsed.improvementsMade.length > 0
           ? parsed.improvementsMade
           : [`Applied change: ${changeInstructions}`, 'Enhanced photographic styling and composition'],
-        parameters: parsed.parameters || { aspectRatio: '16:9', lighting: 'Cinematic Lighting' },
-      });
-    }
-
-    throw lastError || new Error('All candidate models failed');
+      parameters: parsed.parameters || { aspectRatio: '16:9', lighting: 'Cinematic Lighting' },
+      modelUsed,
+      elapsedMs,
+    });
   } catch (err: any) {
     console.warn('Gemini prompt edit error:', err?.message || err);
     return NextResponse.json(

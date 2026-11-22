@@ -1,11 +1,5 @@
-import { GoogleGenAI } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
-
-const CANDIDATE_MODELS = [
-  'gemini-flash-latest',
-  'gemini-3.8-flash',
-  'gemini-3.1-flash-lite',
-];
+import { runGeminiWithFastFallback } from '@/lib/gemini-runner';
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,11 +20,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const ai = new GoogleGenAI({ apiKey });
-
-    const systemInstruction = `You are an expert AI content analyst and technical writer for an AI photography and prompt engineering platform (aitoolhindi.online).
+    const systemInstruction = `You are an expert AI content analyst and technical writer for an AI photography and prompt engineering platform.
 Your task is to read the provided article/prompt details and generate a concise, engaging, professional summary (around 3 to 4 impactful sentences or bullet points) highlighting the visual aesthetics, use cases, key prompt techniques, and creative style.
-Provide the response in clear, fluent Hindi (or mixed Hinglish/Hindi as appropriate for the user's audience) or professional English depending on the content. Make sure it is dynamically tailored to the specific text, NOT static.`;
+Provide the response in clear, fluent language tailored to the specific text, NOT static.`;
 
     const promptContent = `Please analyze and summarize the following article/prompt in real time:
 Title: ${title || 'Untitled Prompt'}
@@ -40,41 +32,24 @@ Prompt / Technical Text: ${promptText || 'N/A'}
 
 Provide a concise, high-value AI summary now.`;
 
-    let lastError: any = null;
-    let summaryResult = '';
+    const { text, modelUsed, elapsedMs } = await runGeminiWithFastFallback({
+      apiKey,
+      expectJson: false,
+      maxTotalMs: 12000,
+      contents: promptContent,
+      config: {
+        systemInstruction,
+        temperature: 0.7,
+        maxOutputTokens: 500,
+      },
+    });
 
-    for (const model of CANDIDATE_MODELS) {
-      try {
-        const response = await ai.models.generateContent({
-          model,
-          contents: promptContent,
-          config: {
-            systemInstruction,
-            temperature: 0.7,
-            maxOutputTokens: 500,
-          },
-        });
-
-        if (response && response.text) {
-          summaryResult = response.text.trim();
-          break;
-        }
-      } catch (err: any) {
-        console.warn(`[Summarize API] Model "${model}" failed: ${err?.message || err}. Trying next...`);
-        lastError = err;
-      }
-    }
-
-    if (!summaryResult) {
-      throw lastError || new Error('All candidate models failed to generate summary.');
-    }
-
-    return NextResponse.json({ summary: summaryResult });
+    return NextResponse.json({ summary: text, modelUsed, elapsedMs });
   } catch (error: any) {
     console.error('Error generating summary:', error);
     return NextResponse.json(
       { error: error?.message || 'Failed to generate real-time AI summary.' },
-      { status: 500 }
+      { status: 503 }
     );
   }
 }

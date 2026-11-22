@@ -26,6 +26,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PromptEditorTool } from '@/components/public/PromptEditorTool';
 import { WatermarkRemoverTool } from '@/components/public/WatermarkRemoverTool';
+import { PromptToolHowTo } from '@/components/public/PromptToolHowTo';
+import { PromptToolExploreSection } from '@/components/public/PromptToolExploreSection';
 import { ensureAspectRatio34, formatPromptForClipboard } from '@/lib/utils';
 import { startRouteNavigation } from '@/lib/navigation';
 
@@ -462,45 +464,6 @@ export const AIStudioTool = ({
     showToast('Saved to your AI Studio History!');
   };
 
-  // Strict Login Gate for server AI tools (Watermark Remover stays 100% free & offline without login)
-  if (!userAccount?.isLoggedIn && activeStudioTab !== 'watermark') {
-    return (
-      <main className="min-h-[80vh] flex items-center justify-center px-4 py-16 bg-[#fafafa] dark:bg-neutral-950">
-        <div className="max-w-md w-full p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xl text-center space-y-6">
-          <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-[#E60023] to-amber-500 text-white flex items-center justify-center mx-auto shadow-lg shadow-red-500/20">
-            <Sparkles className="w-8 h-8" />
-          </div>
-          <div className="space-y-2">
-            <h1 className="text-2xl font-black text-neutral-900 dark:text-white">
-              Sign In to Access AI Studio
-            </h1>
-            <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-              Image-to-Prompt extraction, AI reverse-engineering, and prompt generation require an active account. Sign in or register to get started with 5 bonus signup credits.
-            </p>
-          </div>
-          <div className="space-y-3 pt-2">
-            <button
-              onClick={() => openAuthModal('Sign in to access the AI Studio Creation Tool.')}
-              className="w-full py-3.5 px-6 rounded-full bg-[#E60023] hover:bg-[#ad081b] text-white text-sm font-bold shadow-lg shadow-red-500/25 transition-all transform active:scale-95 flex items-center justify-center gap-2"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>Sign In / Create Free Account</span>
-            </button>
-            <button
-              onClick={() => {
-                startRouteNavigation('/', 'Loading Prompt Feed...');
-                router.push('/');
-              }}
-              className="w-full py-3 px-6 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-bold transition-colors"
-            >
-              Back to Home Feed
-            </button>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
   return (
     <main className="min-h-screen bg-[#fafafa] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 pb-28">
       {/* Top Sticky Header */}
@@ -523,19 +486,30 @@ export const AIStudioTool = ({
           <div className="flex items-center gap-3">
             {/* Tool Credits Indicator */}
             {activeStudioTab !== 'watermark' ? (
-              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 text-xs font-bold shadow-xs">
-                <Coins className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                <span>{toolCredits} Credits</span>
-                <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium hidden sm:inline">
-                  • {activeStudioTab === 'reverse' ? '2 cr / extraction' : '1 cr / generation'}
-                </span>
-                <Link
-                  href="/pricing"
-                  className="text-[11px] font-black text-[#E60023] hover:underline ml-1"
+              userAccount?.isLoggedIn ? (
+                <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 text-xs font-bold shadow-xs">
+                  <Coins className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                  <span>{toolCredits} Credits</span>
+                  <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium hidden sm:inline">
+                    • {activeStudioTab === 'reverse' ? '2 cr / extraction' : '1 cr / generation'}
+                  </span>
+                  <Link
+                    href="/pricing"
+                    className="text-[11px] font-black text-[#E60023] hover:underline ml-1"
+                  >
+                    + Top Up
+                  </Link>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => openAuthModal('Sign in or create a free account to claim 5 bonus AI Studio credits.')}
+                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 text-xs font-bold shadow-xs hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors cursor-pointer"
                 >
-                  + Top Up
-                </Link>
-              </div>
+                  <Coins className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                  <span>Sign In • 5 Free Credits</span>
+                </button>
+              )
             ) : (
               <span className="px-3.5 py-1.5 rounded-full bg-gradient-to-r from-pink-500/15 to-violet-500/15 border border-pink-300/60 dark:border-pink-800/60 text-pink-600 dark:text-pink-300 text-xs font-black">
                 100% Free • Offline
@@ -666,6 +640,7 @@ export const AIStudioTool = ({
           </div>
         ) : activeStudioTab === 'reverse' ? (
           /* IMAGE TO PROMPT STUDIO */
+          <div className="space-y-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Left Column: Input Image & Options (5 cols) */}
             <div className="lg:col-span-5 space-y-6">
@@ -838,9 +813,9 @@ export const AIStudioTool = ({
 
                 <button
                   type="button"
-                  disabled={!uploadedImage || isExtractingPrompt}
+                  disabled={isExtractingPrompt || (!!userAccount?.isLoggedIn && !uploadedImage)}
                   onClick={handleExtractPrompt}
-                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#E60023] to-[#ff3b56] hover:from-red-700 hover:to-red-600 text-white text-xs sm:text-sm font-black shadow-md shadow-red-500/25 flex items-center justify-center gap-2 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#E60023] to-[#ff3b56] hover:from-red-700 hover:to-red-600 text-white text-xs sm:text-sm font-black shadow-md shadow-red-500/25 flex items-center justify-center gap-2 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {isExtractingPrompt ? (
                     <>
@@ -1105,8 +1080,25 @@ export const AIStudioTool = ({
               )}
             </div>
           </div>
+
+          <PromptToolHowTo tool="reverse" />
+
+          <PromptToolExploreSection
+            mode="reverse"
+            onUseInTool={(post) => {
+              if (post.imageUrl) {
+                setUploadedImage(post.imageUrl);
+                setExtractedData(null);
+                setIsSavedExtracted(false);
+                setToolError(null);
+                showToast('Loaded prompt image! Click "Extract AI Prompt from Image" above.');
+              }
+            }}
+          />
+          </div>
         ) : (
           /* AI PROMPT GENERATOR STUDIO (IDEA TO PROMPT) */
+          <div className="space-y-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Left Column: Idea and Options */}
             <div className="lg:col-span-5 space-y-6">
@@ -1191,9 +1183,9 @@ export const AIStudioTool = ({
 
                 <button
                   type="button"
-                  disabled={!promptIdea.trim() || isGeneratingPrompt}
+                  disabled={isGeneratingPrompt || (!!userAccount?.isLoggedIn && !promptIdea.trim())}
                   onClick={handleGeneratePrompt}
-                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#E60023] to-[#ff3b56] hover:from-red-700 hover:to-red-600 text-white text-xs sm:text-sm font-black shadow-md shadow-red-500/25 flex items-center justify-center gap-2 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#E60023] to-[#ff3b56] hover:from-red-700 hover:to-red-600 text-white text-xs sm:text-sm font-black shadow-md shadow-red-500/25 flex items-center justify-center gap-2 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {isGeneratingPrompt ? (
                     <>
@@ -1400,6 +1392,21 @@ export const AIStudioTool = ({
                 </div>
               )}
             </div>
+          </div>
+
+          <PromptToolHowTo tool="generator" />
+
+          <PromptToolExploreSection
+            mode="generator"
+            onUseInTool={(post) => {
+              const remixIdea = `generate a new version of this prompt: ${post.promptText}`;
+              setPromptIdea(remixIdea);
+              setGeneratedPromptData(null);
+              setIsSavedGenerated(false);
+              setToolError(null);
+              showToast('Prompt loaded into Idea to Prompt! Click Generate above.');
+            }}
+          />
           </div>
         )}
       </div>
