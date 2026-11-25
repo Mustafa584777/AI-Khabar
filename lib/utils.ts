@@ -1,5 +1,8 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import mediaRedirectsData from "@/data/media-redirects.json"
+
+const mediaRedirects = (mediaRedirectsData || {}) as Record<string, string>;
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -63,6 +66,13 @@ export function getOptimizedImageUrl(url?: string, width = 550): string {
   if (url.startsWith('data:') || url.startsWith('blob:')) {
     return url;
   }
+  const cleanDirect = url.split('?')[0].trim();
+  if (mediaRedirects[url]) {
+    return mediaRedirects[url];
+  }
+  if (mediaRedirects[cleanDirect]) {
+    return mediaRedirects[cleanDirect];
+  }
   if (url.includes('res.cloudinary.com/idbpgaqz/image/upload/')) {
     const afterUpload = url.split('/image/upload/')[1] || '';
     const cleanAfter = afterUpload.split('?')[0].replace(/^\/+/, '');
@@ -77,7 +87,11 @@ export function getOptimizedImageUrl(url?: string, width = 550): string {
       segments.shift();
     }
     if (segments.length > 0) {
-      return `https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/${segments.join('/')}`;
+      const assetPath = segments.join('/');
+      if (mediaRedirects[assetPath]) {
+        return mediaRedirects[assetPath];
+      }
+      return `https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/${assetPath}`;
     }
   }
   if (url.includes('res.cloudinary.com') && url.includes('/image/upload/')) {

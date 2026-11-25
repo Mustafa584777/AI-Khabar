@@ -12,7 +12,7 @@ import {
 } from 'firebase/firestore';
 import { cleanTagsArray, canonicalizeTag } from './tag-utils';
 import { uploadImageToCloudinary } from './cloudinary-server';
-import { uploadImageToGitHubAssets, resolveGitHubAssetsConfig } from './github-assets-server';
+import { uploadImageToGitHubAssets, resolveGitHubAssetsConfig, extractCloudinaryAssetPath } from './github-assets-server';
 import { PLAN_CONFIGS } from './plans';
 import { getPromptSlug } from './utils';
 import fs from 'fs';
@@ -28,6 +28,8 @@ const SUBSCRIPTIONS_FILE = path.join(DATA_DIR, 'subscriptions.json');
 const USER_PROFILES_FILE = path.join(DATA_DIR, 'users.json');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
 const DELETED_POSTS_FILE = path.join(DATA_DIR, 'deleted_posts.json');
+const MEDIA_REDIRECTS_FILE = path.join(DATA_DIR, 'media-redirects.json');
+const INITIAL_FEED_FILE = path.join(DATA_DIR, 'initial-feed.json');
 
 const DEFAULT_TAGS = [
   'Portrait', '35mm', 'Cinematic', 'Street Photography', 'Fashion',
@@ -423,8 +425,89 @@ export const ServerStorage = {
       }
     }
 
+    // Strip transient migration metadata fields before persisting PromptPost
+    const previousImageUrl = (post as any).previousImageUrl as string | undefined;
+    const previousAdditionalImages = Array.isArray((post as any).previousAdditionalImages)
+      ? ((post as any).previousAdditionalImages as string[])
+      : [];
+    delete (savedPost as any).previousImageUrl;
+    delete (savedPost as any).previousAdditionalImages;
+
+    // Record automatic SEO redirect mappings whenever an old Cloudinary URL is replaced by a new CDN URL
+    const redirectPairs: Array<[string, string]> = [];
+    const checkRedirectPair = (oldUrl?: string, newUrl?: string) => {
+      if (!oldUrl || !newUrl || oldUrl === newUrl) return;
+      if (oldUrl.includes('res.cloudinary.com/') && !newUrl.includes('res.cloudinary.com/')) {
+        redirectPairs.push([oldUrl, newUrl]);
+        const cleanOld = oldUrl.split('?')[0].trim();
+        if (cleanOld) redirectPairs.push([cleanOld, newUrl]);
+        const oldAssetPath = extractCloudinaryAssetPath(oldUrl);
+        if (oldAssetPath) redirectPairs.push([oldAssetPath, newUrl]);
+      }
+    };
+
+    checkRedirectPair(existing?.imageUrl, savedPost.imageUrl);
+    checkRedirectPair(previousImageUrl, savedPost.imageUrl);
+
+    const oldSlides = existing?.additionalImages || [];
+    const newSlides = savedPost.additionalImages || [];
+    for (let i = 0; i < newSlides.length; i++) {
+      checkRedirectPair(oldSlides[i], newSlides[i]);
+      checkRedirectPair(previousAdditionalImages[i], newSlides[i]);
+    }
+
+    if (redirectPairs.length > 0) {
+      try {
+        const currentRedirects = readJsonFile<Record<string, string>>(MEDIA_REDIRECTS_FILE, {});
+        for (const [fromKey, toVal] of redirectPairs) {
+          currentRedirects[fromKey] = toVal;
+        }
+        writeJsonFile(MEDIA_REDIRECTS_FILE, currentRedirects);
+
+        if (isFirebaseConfigured()) {
+          const mapPatch: Record<string, string> = {};
+          for (const [fromKey, toVal] of redirectPairs) {
+            mapPatch[fromKey] = toVal;
+          }
+          await setDoc(
+            doc(firestoreDb, 'settings', 'media_redirects'),
+            { map: mapPatch, updatedAt: now },
+            { merge: true }
+          ).catch(() => {});
+        }
+      } catch (redirErr) {
+        console.warn('Media redirect mapping notice:', redirErr);
+      }
+
+      // If this post was in local posts.json / initial-feed.json with a disabled Cloudinary URL, sync the new URL immediately
+      try {
+        if (existing) {
+          const idx = posts.findIndex((p) => p.id === savedPost.id);
+          if (idx !== -1) {
+            posts[idx] = savedPost;
+            writeJsonFile(POSTS_FILE, posts);
+          }
+        }
+        if (fs.existsSync(INITIAL_FEED_FILE)) {
+          const feedPosts = readJsonFile<PromptPost[]>(INITIAL_FEED_FILE, []);
+          const fIdx = feedPosts.findIndex((p) => p.id === savedPost.id);
+          if (fIdx !== -1) {
+            feedPosts[fIdx] = savedPost;
+            writeJsonFile(INITIAL_FEED_FILE, feedPosts);
+          }
+        }
+        if (memoryPosts) {
+          const mIdx = memoryPosts.findIndex((p) => p.id === savedPost.id);
+          if (mIdx !== -1) {
+            memoryPosts[mIdx] = savedPost;
+          }
+        }
+      } catch (syncLocalErr) {
+        console.warn('Local JSON media update notice:', syncLocalErr);
+      }
+    }
+
     // Save strictly to Firebase Firestore (Admin CMS database)
-    // CRUCIAL: Do NOT write to local posts.json or memoryPosts so public main site is never mutated automatically
     unrecordDeletedPostId(savedPost.id);
     if (isFirebaseConfigured()) {
       try {

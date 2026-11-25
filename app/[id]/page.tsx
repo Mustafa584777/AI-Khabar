@@ -59,6 +59,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const cleanTitle = post.title;
   const cleanDesc = getPromptMetaDescription(post);
   const pageUrl = `https://zeenaprompt.com/${slug}`;
+  const resolvedImageUrl = post.imageUrl ? getOptimizedImageUrl(post.imageUrl, 1200) : '';
 
   return {
     title: cleanTitle,
@@ -85,10 +86,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       type: 'article',
       publishedTime: post.publishedAt || post.createdAt,
       modifiedTime: post.updatedAt || post.publishedAt || post.createdAt,
-      images: post.imageUrl
+      images: resolvedImageUrl
         ? [
             {
-              url: post.imageUrl,
+              url: resolvedImageUrl,
               width: post.imageWidth || 1200,
               height: post.imageHeight || 1600,
               alt: post.imageAlt || post.title,
@@ -100,7 +101,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       card: 'summary_large_image',
       title: cleanTitle,
       description: cleanDesc,
-      images: post.imageUrl ? [post.imageUrl] : undefined,
+      images: resolvedImageUrl ? [resolvedImageUrl] : undefined,
     },
     robots: Boolean(
       post.isNoIndex ||
@@ -142,6 +143,7 @@ export default async function SinglePromptDetailPage({ params }: PageProps) {
 
   const slug = getPromptSlug(post);
   const pageUrl = `https://zeenaprompt.com/${slug}`;
+  const resolvedImageUrl = post.imageUrl ? getOptimizedImageUrl(post.imageUrl, 1200) : '';
 
   // Structured Data Schema for Google (JSON-LD) - Strict NO AUTHOR
   const jsonLd = post
@@ -151,7 +153,7 @@ export default async function SinglePromptDetailPage({ params }: PageProps) {
         name: post.title,
         headline: post.title,
         description: post.seoDescription || post.seo?.metaDescription || post.promptText,
-        image: post.imageUrl,
+        image: resolvedImageUrl || post.imageUrl,
         datePublished: post.publishedAt || post.createdAt,
         dateModified: post.updatedAt || post.publishedAt || post.createdAt,
         genre: post.category,
@@ -171,11 +173,11 @@ export default async function SinglePromptDetailPage({ params }: PageProps) {
       }
     : null;
 
-  const imageSchema = post?.imageUrl
+  const imageSchema = resolvedImageUrl
     ? {
         '@context': 'https://schema.org',
         '@type': 'ImageObject',
-        contentUrl: post.imageUrl,
+        contentUrl: resolvedImageUrl,
         name: post.title,
         description: post.imageAlt || post.title,
         caption: post.title,

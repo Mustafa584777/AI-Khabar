@@ -789,7 +789,16 @@ export const PostEditor = () => {
         }
       }
 
-      const saved = await savePost({ ...postPayload, imageUrl: finalImageUrl });
+      const saved = await savePost({
+        ...postPayload,
+        imageUrl: finalImageUrl,
+        ...(existingPost
+          ? {
+              previousImageUrl: existingPost.imageUrl,
+              previousAdditionalImages: existingPost.additionalImages || [],
+            }
+          : {}),
+      } as PromptPost);
       setEditingPostId(null);
       setAdminSubView('posts');
     } catch (err: any) {
