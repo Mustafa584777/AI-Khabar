@@ -111,8 +111,8 @@ export const PostEditor = () => {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   // Track the ID of the post currently loaded in the editor
-  // This ensures background polling/syncFromRemote does not clobber user's active edits or uploaded carousel images
-  const loadedPostIdRef = React.useRef<string | null>(editingPostId || null);
+  // This ensures background polling/syncFromRemote does not clobber user's active edits or staged images
+  const loadedPostIdRef = React.useRef<string | null>(existingPost ? existingPost.id : null);
 
   const [status, setStatus] = useState<'published' | 'draft'>(
     () => (existingPost?.status === 'draft' ? 'draft' : 'published')
@@ -131,31 +131,31 @@ export const PostEditor = () => {
   );
 
   useEffect(() => {
-    // Only load from existingPost if switching to a DIFFERENT post or switching between create/edit modes
-    if (editingPostId && editingPostId !== loadedPostIdRef.current) {
-      loadedPostIdRef.current = editingPostId;
-      if (existingPost) {
-        setTitle(existingPost.title || '');
-        setSlug(existingPost.slug || '');
-        setCategory(existingPost.category || '');
-        setPromptText(existingPost.promptText || '');
-        setImageUrl(existingPost.imageUrl || '');
-        setImageAlt(existingPost.imageAlt || existingPost.title || '');
-        setImageFileName(existingPost.imageFileName || (existingPost.title ? generateImageFileNameFromTitle(existingPost.title) : ''));
-        setAdditionalImages(Array.isArray(existingPost.additionalImages) ? existingPost.additionalImages : []);
-        setStatus(existingPost.status === 'draft' ? 'draft' : 'published');
-        setIsPremium(Boolean(existingPost.isPremium || existingPost.parameters?.isPremium));
-        setIsNoIndex(Boolean(existingPost.isNoIndex));
-        setPreferredAi((existingPost.preferredAi === 'ChatGPT' || existingPost.preferredAi === 'Gemini') ? existingPost.preferredAi : '');
-        setAffiliateProducts(Array.isArray(existingPost.affiliateProducts) ? existingPost.affiliateProducts : []);
-        if (existingPost.articleContent) setArticleContent(existingPost.articleContent);
-        if (Array.isArray(existingPost.tags) && existingPost.tags.length > 0) {
-          setTags(existingPost.tags);
-        }
-        if (existingPost.seo?.metaTitle) setMetaTitle(existingPost.seo.metaTitle);
-        if (existingPost.seo?.metaDescription) setMetaDescription(existingPost.seo.metaDescription);
-        if (existingPost.seo?.focusKeyword) setFocusKeyword(existingPost.seo.focusKeyword);
+    // Only load from existingPost if switching to a DIFFERENT post or when existingPost first arrives
+    if (editingPostId && existingPost && existingPost.id !== loadedPostIdRef.current) {
+      loadedPostIdRef.current = existingPost.id;
+      setTitle(existingPost.title || '');
+      setSlug(existingPost.slug || '');
+      setCategory(existingPost.category || '');
+      setPromptText(existingPost.promptText || '');
+      setImageUrl(existingPost.imageUrl || '');
+      setLocalImageBase64('');
+      setUploadedFileInfo(null);
+      setImageAlt(existingPost.imageAlt || existingPost.title || '');
+      setImageFileName(existingPost.imageFileName || (existingPost.title ? generateImageFileNameFromTitle(existingPost.title) : ''));
+      setAdditionalImages(Array.isArray(existingPost.additionalImages) ? existingPost.additionalImages : []);
+      setStatus(existingPost.status === 'draft' ? 'draft' : 'published');
+      setIsPremium(Boolean(existingPost.isPremium || existingPost.parameters?.isPremium));
+      setIsNoIndex(Boolean(existingPost.isNoIndex));
+      setPreferredAi((existingPost.preferredAi === 'ChatGPT' || existingPost.preferredAi === 'Gemini') ? existingPost.preferredAi : '');
+      setAffiliateProducts(Array.isArray(existingPost.affiliateProducts) ? existingPost.affiliateProducts : []);
+      if (existingPost.articleContent) setArticleContent(existingPost.articleContent);
+      if (Array.isArray(existingPost.tags) && existingPost.tags.length > 0) {
+        setTags(existingPost.tags);
       }
+      if (existingPost.seo?.metaTitle) setMetaTitle(existingPost.seo.metaTitle);
+      if (existingPost.seo?.metaDescription) setMetaDescription(existingPost.seo.metaDescription);
+      if (existingPost.seo?.focusKeyword) setFocusKeyword(existingPost.seo.focusKeyword);
     } else if (!editingPostId && loadedPostIdRef.current !== null) {
       // Switched from editing to new post creation mode
       loadedPostIdRef.current = null;
@@ -165,6 +165,7 @@ export const PostEditor = () => {
       setPromptText('');
       setImageUrl('');
       setLocalImageBase64('');
+      setUploadedFileInfo(null);
       setImageAlt('');
       setImageFileName('');
       setAdditionalImages([]);
@@ -342,8 +343,8 @@ export const PostEditor = () => {
           return;
         }
 
-        // Only convert to WebP if image file size is > 500 KB
-        if (file.size <= 500 * 1024) {
+        // Preserve lightweight files already under 250KB
+        if (file.size <= 250 * 1024) {
           resolve(dataUrl);
           return;
         }
@@ -371,15 +372,27 @@ export const PostEditor = () => {
             return;
           }
           ctx.drawImage(img, 0, 0, width, height);
-          try {
-            const webpData = canvas.toDataURL('image/webp', 0.90);
-            if (webpData && webpData.startsWith('data:image/webp')) {
-              resolve(webpData);
+
+          // Step down quality if needed so base64 upload stays well below Vercel's 4.5MB limit
+          const qualities = [0.88, 0.78, 0.68];
+          for (const q of qualities) {
+            try {
+              const webpData = canvas.toDataURL('image/webp', q);
+              if (webpData && webpData.startsWith('data:image/webp')) {
+                if (webpData.length <= 2_400_000 || q === qualities[qualities.length - 1]) {
+                  resolve(webpData);
+                  return;
+                }
+                continue;
+              }
+            } catch {}
+            const jpgData = canvas.toDataURL('image/jpeg', q);
+            if (jpgData.length <= 2_400_000 || q === qualities[qualities.length - 1]) {
+              resolve(jpgData);
               return;
             }
-          } catch {}
-          const fallback = canvas.toDataURL('image/jpeg', 0.88);
-          resolve(fallback);
+          }
+          resolve(canvas.toDataURL('image/jpeg', 0.75));
         };
         img.onerror = () => resolve(dataUrl);
         img.src = dataUrl;
@@ -391,6 +404,7 @@ export const PostEditor = () => {
 
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
+  // Stage image locally ONLY (actual upload to GitHub runs when clicking Save / Publish / Update)
   const handleFileUpload = async (file: File) => {
     if (!file.type.startsWith('image/')) {
       showToast('Please select a valid image file (PNG, JPG, WebP, GIF, AVIF).');
@@ -407,36 +421,7 @@ export const PostEditor = () => {
       const optimized = await optimizeImageFile(file);
       if (optimized) {
         setLocalImageBase64(optimized);
-        let finalImageUrl = optimized;
-        try {
-          const cleanPublicId = slug || slugify(title) || `prompt-${Date.now()}`;
-          const uploadRes = await fetch('/api/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              image: optimized,
-              folder: 'prompts',
-              publicId: cleanPublicId,
-            }),
-          });
-          const uploadData = await uploadRes.json();
-          if (uploadData && uploadData.url) {
-            finalImageUrl = uploadData.url;
-            if (uploadData.provider === 'github_cdn') {
-              showToast('Image uploaded & saved to GitHub + jsDelivr CDN successfully!');
-            } else if (uploadData.provider === 'cloudinary') {
-              showToast('Image uploaded & saved to Cloudinary CDN successfully!');
-            } else {
-              showToast('Image optimized and attached to prompt!');
-            }
-          } else {
-            showToast('Image processed and attached locally!');
-          }
-        } catch {
-          showToast('Image processed and attached locally!');
-        }
-
-        setImageUrl(finalImageUrl);
+        setImageUrl(optimized);
 
         const formattedSize =
           file.size / 1024 < 1024
@@ -455,6 +440,8 @@ export const PostEditor = () => {
         const autoFileName = generateImageFileNameFromTitle(title || file.name, file.name);
         setImageFileName(autoFileName);
 
+        showToast('Image ready! Click Update / Publish to upload to GitHub.');
+
         // Auto-assign category & tags if title or prompt is present
         if (title.trim() || promptText.trim()) {
           handleAutoTaxonomy();
@@ -467,6 +454,7 @@ export const PostEditor = () => {
     }
   };
 
+  // Stage carousel slide images locally ONLY (uploaded sequentially with clean slug when clicking Save)
   const handleAdditionalFileUpload = async (files: FileList | File[]) => {
     const fileArray = Array.from(files).filter((f) => f.type.startsWith('image/'));
     if (fileArray.length === 0) {
@@ -476,7 +464,7 @@ export const PostEditor = () => {
 
     setIsUploadingAdditional(true);
     try {
-      let addedCount = 0;
+      const stagedSlides: string[] = [];
       for (const file of fileArray) {
         if (file.size > 15 * 1024 * 1024) {
           showToast(`File ${file.name} exceeds 15MB limit.`);
@@ -485,30 +473,14 @@ export const PostEditor = () => {
 
         const optimized = await optimizeImageFile(file);
         if (optimized) {
-          let finalUrl = optimized;
-          try {
-            const cleanPublicId = `${slug || slugify(title) || 'slide'}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
-            const uploadRes = await fetch('/api/upload', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                image: optimized,
-                folder: 'prompts',
-                publicId: cleanPublicId,
-              }),
-            });
-            const uploadData = await uploadRes.json();
-            if (uploadData && uploadData.url) {
-              finalUrl = uploadData.url;
-            }
-          } catch {}
-
-          setAdditionalImages((prev) => [...prev, finalUrl]);
-          addedCount++;
+          stagedSlides.push(optimized);
         }
       }
-      if (addedCount > 0) {
-        showToast(`Added ${addedCount} slide ${addedCount === 1 ? 'image' : 'images'} successfully!`);
+      if (stagedSlides.length > 0) {
+        setAdditionalImages((prev) => [...prev, ...stagedSlides]);
+        showToast(
+          `Added ${stagedSlides.length} slide ${stagedSlides.length === 1 ? 'image' : 'images'} — click Save / Update to upload to GitHub!`
+        );
       }
     } catch {
       showToast('Failed to process slide images');
@@ -691,6 +663,8 @@ export const PostEditor = () => {
   };
 
   const handleSave = async (publishStatus: 'published' | 'draft') => {
+    if (isSavingPost) return;
+
     if (!title.trim() || !promptText.trim()) {
       showToast('Title and Prompt Text are required.');
       return;
@@ -698,6 +672,7 @@ export const PostEditor = () => {
 
     const finalAlt = imageAlt.trim() || title.trim() || 'AI Photo Prompt';
     const finalFileName = imageFileName.trim() || generateImageFileNameFromTitle(title, imageFileName);
+    const finalSlug = (slug || slugify(title) || `prompt-${Date.now()}`).trim();
 
     const chosenCat = (category || categories[0]?.name || 'Photorealistic & Portraits').trim();
 
@@ -729,7 +704,7 @@ export const PostEditor = () => {
     const postPayload: PromptPost = {
       id: existingPost ? existingPost.id : `prompt-${Date.now()}`,
       title,
-      slug: slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      slug: finalSlug,
       category: chosenCat,
       aiTool: existingPost?.aiTool || 'Midjourney',
       promptText,
@@ -770,28 +745,57 @@ export const PostEditor = () => {
           : undefined,
     };
 
+    const uploadStagedImage = async (dataUri: string, targetPublicId: string): Promise<string> => {
+      const upRes = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image: dataUri,
+          folder: 'prompts',
+          publicId: targetPublicId,
+        }),
+      });
+      const upJson = await upRes.json().catch(() => ({}));
+      if (!upRes.ok || !upJson?.success || !upJson?.url) {
+        throw new Error(upJson?.error || `Image upload failed (${upRes.status})`);
+      }
+      if (upJson.provider === 'fallback' || String(upJson.url).startsWith('data:')) {
+        throw new Error(upJson?.warning || upJson?.message || 'Cloud upload returned local base64 fallback.');
+      }
+      return String(upJson.url);
+    };
+
     setIsSavingPost(true);
     try {
+      // Upload staged cover image ONLY when saving (prevents duplicate/orphaned GitHub files)
       let finalImageUrl = postPayload.imageUrl;
       if (finalImageUrl && finalImageUrl.startsWith('data:image/')) {
-        try {
-          const upRes = await fetch('/api/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image: finalImageUrl, folder: 'prompts', publicId: postPayload.slug }),
-          });
-          const upJson = await upRes.json();
-          if (upJson.success && upJson.url) {
-            finalImageUrl = upJson.url;
-          }
-        } catch (e) {
-          console.warn('Image pre-upload notice:', e);
-        }
+        showToast('Uploading cover image to GitHub CDN...');
+        finalImageUrl = await uploadStagedImage(finalImageUrl, finalSlug);
+        setImageUrl(finalImageUrl);
+        setLocalImageBase64('');
       }
 
-      const saved = await savePost({
+      // Upload staged carousel slides sequentially with deterministic clean names
+      const finalAdditionalImages: string[] = [];
+      for (let i = 0; i < postPayload.additionalImages!.length; i++) {
+        const slideImg = postPayload.additionalImages![i];
+        if (slideImg && slideImg.startsWith('data:image/')) {
+          showToast(`Uploading slide ${i + 1} to GitHub CDN...`);
+          const uploadedSlideUrl = await uploadStagedImage(slideImg, `${finalSlug}-slide-${i + 1}`);
+          finalAdditionalImages.push(uploadedSlideUrl);
+        } else if (slideImg) {
+          finalAdditionalImages.push(slideImg);
+        }
+      }
+      if (finalAdditionalImages.length > 0) {
+        setAdditionalImages(finalAdditionalImages);
+      }
+
+      await savePost({
         ...postPayload,
         imageUrl: finalImageUrl,
+        additionalImages: finalAdditionalImages,
         ...(existingPost
           ? {
               previousImageUrl: existingPost.imageUrl,
@@ -802,7 +806,7 @@ export const PostEditor = () => {
       setEditingPostId(null);
       setAdminSubView('posts');
     } catch (err: any) {
-      showToast(err.message || 'Failed to save prompt');
+      showToast(err.message || 'Failed to upload image or save prompt');
     } finally {
       setIsSavingPost(false);
     }
@@ -889,6 +893,7 @@ export const PostEditor = () => {
                   type="button"
                   onClick={() => {
                     setImageUrl('');
+                    setLocalImageBase64('');
                     setUploadedFileInfo(null);
                   }}
                   className="text-[11px] font-semibold text-red-500 hover:text-red-600 hover:underline"
@@ -936,6 +941,7 @@ export const PostEditor = () => {
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {
                       handleFileUpload(e.target.files[0]);
+                      e.target.value = '';
                     }
                   }}
                   className="hidden"
@@ -957,10 +963,10 @@ export const PostEditor = () => {
                     <div className="flex flex-col items-center justify-center py-2">
                       <div className="w-10 h-10 rounded-full border-2 border-blue-500 border-t-transparent animate-spin mb-3" />
                       <p className="text-xs font-bold text-neutral-900 dark:text-white">
-                        Uploading & Optimizing Photo...
+                        Preparing & Optimizing Photo...
                       </p>
                       <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
-                        Please wait a moment
+                        Uploads to GitHub when you click Save / Update
                       </p>
                     </div>
                   ) : (
@@ -972,7 +978,7 @@ export const PostEditor = () => {
                         Click to browse or drag & drop photo
                       </p>
                       <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                        PNG, JPG, WebP, AVIF or GIF (up to 15MB)
+                        PNG, JPG, WebP, AVIF or GIF (uploads to GitHub only when you click Save)
                       </p>
                       {uploadedFileInfo && (
                         <div className="mt-3 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[11px] font-medium flex items-center gap-1.5">
@@ -1012,7 +1018,13 @@ export const PostEditor = () => {
               <div className="space-y-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
                 <div className="flex items-center justify-between text-[11px] font-semibold text-neutral-500">
                   <span>Current Preview</span>
-                  <span className="text-blue-600 dark:text-blue-400">Live Aspect Ratio 16:10</span>
+                  {imageUrl.startsWith('data:image/') ? (
+                    <span className="text-amber-600 dark:text-amber-400 font-bold">
+                      Staged locally — click Save / Update to upload
+                    </span>
+                  ) : (
+                    <span className="text-blue-600 dark:text-blue-400">Live Aspect Ratio 16:10</span>
+                  )}
                 </div>
                 <div className="relative w-full aspect-[16/10] rounded-2xl overflow-hidden bg-neutral-950 border border-neutral-200 dark:border-neutral-800 shadow-inner group">
                   <img
@@ -1033,6 +1045,7 @@ export const PostEditor = () => {
                       type="button"
                       onClick={() => {
                         setImageUrl('');
+                        setLocalImageBase64('');
                         setUploadedFileInfo(null);
                       }}
                       className="px-3 py-1.5 rounded-xl bg-red-600 text-white text-xs font-bold shadow-md hover:bg-red-700"
@@ -1082,7 +1095,7 @@ export const PostEditor = () => {
                 {isUploadingAdditional ? (
                   <div className="flex items-center gap-2 text-xs font-semibold text-neutral-600 dark:text-neutral-400">
                     <Loader2 className="w-4 h-4 animate-spin text-[#E60023]" />
-                    <span>Uploading slide image(s)...</span>
+                    <span>Preparing slide image(s)...</span>
                   </div>
                 ) : (
                   <>

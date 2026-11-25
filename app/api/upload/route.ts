@@ -105,6 +105,7 @@ export async function POST(req: Request) {
 
     // 1. Primary: GitHub Assets Repo + jsDelivr CDN
     const ghConfig = resolveGitHubAssetsConfig();
+    let ghError: string | undefined;
     if (ghConfig.isConfigured) {
       const ghRes = await uploadImageToGitHubAssets(image, { folder, publicId, exactPath });
       if (ghRes.success && ghRes.url) {
@@ -115,9 +116,10 @@ export async function POST(req: Request) {
           success: true,
         });
       }
+      ghError = ghRes.error || 'GitHub Assets upload failed';
     }
 
-    // 2. Fallback: Cloudinary (only if configured and active)
+    // 2. Fallback: Cloudinary (only if GitHub not configured or failed)
     const uploadRes = await uploadImageToCloudinary(image, { folder, publicId });
     if (uploadRes.success && uploadRes.url) {
       return NextResponse.json({
@@ -128,7 +130,19 @@ export async function POST(req: Request) {
       });
     }
 
-    // 3. Local fallback
+    // If GitHub was configured and failed, do NOT fake success with raw base64 fallback
+    if (ghConfig.isConfigured) {
+      return NextResponse.json(
+        {
+          success: false,
+          provider: 'github_cdn',
+          error: ghError || 'Failed to upload image to GitHub Assets',
+        },
+        { status: 502 }
+      );
+    }
+
+    // 3. Local fallback only when no cloud provider is configured
     return NextResponse.json({
       url: image,
       provider: 'fallback',

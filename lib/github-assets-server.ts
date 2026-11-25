@@ -278,37 +278,51 @@ export async function uploadImageToGitHubAssets(
       .join('/');
     const apiUrl = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${encodedPath}`;
 
-    // Check existing file sha if updating/overwriting
-    let existingSha: string | undefined;
-    try {
-      const getRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(cfg.branch)}`, {
-        headers: githubHeaders(cfg.token),
-        cache: 'no-store',
-      });
-      if (getRes.ok) {
-        const existingJson = await getRes.json();
-        if (existingJson?.sha) {
-          existingSha = existingJson.sha;
-        }
+    const performPut = async (sha?: string) => {
+      const putBody: Record<string, any> = {
+        message: `Upload asset ${targetPath}`,
+        content: base64,
+        branch: cfg.branch,
+      };
+      if (sha) {
+        putBody.sha = sha;
       }
-    } catch {}
-
-    const putBody: Record<string, any> = {
-      message: `Upload asset ${targetPath}`,
-      content: base64,
-      branch: cfg.branch,
+      const res = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: githubHeaders(cfg.token),
+        body: JSON.stringify(putBody),
+      });
+      const data = await res.json().catch(() => ({}));
+      return { res, data };
     };
-    if (existingSha) {
-      putBody.sha = existingSha;
+
+    const fetchLatestSha = async (): Promise<string | undefined> => {
+      try {
+        const getRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(cfg.branch)}`, {
+          headers: githubHeaders(cfg.token),
+          cache: 'no-store',
+        });
+        if (getRes.ok) {
+          const existingJson = await getRes.json();
+          return existingJson?.sha || undefined;
+        }
+      } catch {}
+      return undefined;
+    };
+
+    const existingSha = await fetchLatestSha();
+    let { res: putRes, data: putData } = await performPut(existingSha);
+
+    // Retry once on 409 Conflict or 422 stale SHA (e.g. concurrent upload or just-created file)
+    if (!putRes.ok && (putRes.status === 409 || putRes.status === 422)) {
+      const refreshedSha = await fetchLatestSha();
+      if (refreshedSha && refreshedSha !== existingSha) {
+        const retry = await performPut(refreshedSha);
+        putRes = retry.res;
+        putData = retry.data;
+      }
     }
 
-    const putRes = await fetch(apiUrl, {
-      method: 'PUT',
-      headers: githubHeaders(cfg.token),
-      body: JSON.stringify(putBody),
-    });
-
-    const putData = await putRes.json().catch(() => ({}));
     if (!putRes.ok) {
       return {
         success: false,
@@ -317,9 +331,18 @@ export async function uploadImageToGitHubAssets(
       };
     }
 
+    // Use commit SHA in jsDelivr URL so newly replaced images bypass @main edge cache immediately (0s freshness)
+    const commitSha: string | undefined = putData?.commit?.sha;
+    const cdnUrl = commitSha
+      ? buildJsDelivrUrl(targetPath, { ...cfg, branch: commitSha })
+      : buildJsDelivrUrl(targetPath, cfg);
+
+    // Best-effort non-blocking purge for @branch URL as well
+    void fetch(`https://purge.jsdelivr.net/gh/${cfg.owner}/${cfg.repo}@${cfg.branch}/${targetPath}`).catch(() => {});
+
     return {
       success: true,
-      url: buildJsDelivrUrl(targetPath, cfg),
+      url: cdnUrl,
       path: targetPath,
     };
   } catch (err: any) {
@@ -503,7 +526,7 @@ export async function uploadBatchToGitHubAssets(
 
     for (const entry of treeEntries) {
       uploadedPaths.push(entry.path);
-      cdnUrls[entry.path] = buildJsDelivrUrl(entry.path, cfg);
+      cdnUrls[entry.path] = buildJsDelivrUrl(entry.path, { ...cfg, branch: newCommitData.sha });
     }
 
     return {

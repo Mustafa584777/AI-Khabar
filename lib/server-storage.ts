@@ -294,17 +294,41 @@ export const ServerStorage = {
     const computedSlug = getPromptSlug({ ...post, title: safeTitle });
 
     const posts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
-    let existing = (post.id ? posts.find((p) => p.id === post.id) : undefined);
+    let existing = post.id ? posts.find((p) => p.id === post.id) : undefined;
 
-    // Prevent saving a duplicate with the same slug or same title
-    if (!existing && computedSlug) {
-      existing = posts.find((p) => getPromptSlug(p) === computedSlug || (p.slug && p.slug.toLowerCase().trim() === computedSlug));
+    // Check Firestore for existing post by ID when not present in local posts.json
+    if (!existing && post.id && isFirebaseConfigured()) {
+      try {
+        const snap = await getDoc(doc(firestoreDb, 'posts', post.id));
+        if (snap.exists()) {
+          existing = snap.data() as PromptPost;
+        }
+      } catch (lookupErr) {
+        console.warn('Firestore existing post lookup notice:', lookupErr);
+      }
     }
 
-    // Prevent saving the exact same image URL twice as a separate prompt
+    // Prevent saving a duplicate with the same slug or same title when creating new post without matching ID
+    if (!existing && computedSlug) {
+      existing = posts.find(
+        (p) =>
+          getPromptSlug(p) === computedSlug ||
+          (p.slug && p.slug.toLowerCase().trim() === computedSlug)
+      );
+    }
+
+    // Only match by image URL if no ID/slug matched AND it's a real uploaded non-placeholder external URL
     const normalizedNewImg = post.imageUrl ? post.imageUrl.split('?')[0].trim().toLowerCase() : '';
-    if (normalizedNewImg && !existing) {
-      const duplicateByImage = posts.find((p) => p.imageUrl && p.imageUrl.split('?')[0].trim().toLowerCase() === normalizedNewImg);
+    if (
+      normalizedNewImg &&
+      !existing &&
+      !post.id &&
+      !normalizedNewImg.startsWith('data:') &&
+      !normalizedNewImg.includes('images.unsplash.com')
+    ) {
+      const duplicateByImage = posts.find(
+        (p) => p.imageUrl && p.imageUrl.split('?')[0].trim().toLowerCase() === normalizedNewImg
+      );
       if (duplicateByImage) {
         existing = duplicateByImage;
       }
@@ -364,65 +388,91 @@ export const ServerStorage = {
       bookmarksCount: post.bookmarksCount !== undefined ? post.bookmarksCount : (existing?.bookmarksCount || 0),
     };
 
-    // If image is a local base64 data URI, auto-upload to GitHub Assets CDN (primary), Cloudinary, or local public/images/prompts
-    if (savedPost.imageUrl && savedPost.imageUrl.startsWith('data:image/')) {
-      let uploadedToCloud = false;
+    const uploadDataUriToCloud = async (
+      dataUri: string,
+      publicIdSlug: string
+    ): Promise<{ url: string; width?: number; height?: number }> => {
+      if (!dataUri.startsWith('data:image/')) {
+        return { url: dataUri };
+      }
+
+      const ghCfg = resolveGitHubAssetsConfig();
+      if (ghCfg.isConfigured) {
+        const ghRes = await uploadImageToGitHubAssets(dataUri, {
+          folder: 'prompts',
+          publicId: publicIdSlug,
+        });
+        if (ghRes.success && ghRes.url) {
+          return { url: ghRes.url };
+        }
+        throw new Error(ghRes.error || `GitHub image upload failed for ${publicIdSlug}`);
+      }
+
       try {
-        const ghCfg = resolveGitHubAssetsConfig();
-        if (ghCfg.isConfigured) {
-          const ghRes = await uploadImageToGitHubAssets(savedPost.imageUrl, {
-            folder: 'prompts',
-            publicId: savedPost.slug || savedPost.id,
-          });
-          if (ghRes.success && ghRes.url) {
-            savedPost.imageUrl = ghRes.url;
-            uploadedToCloud = true;
-          }
+        const clRes = await uploadImageToCloudinary(dataUri, {
+          folder: 'prompts',
+          publicId: publicIdSlug,
+        });
+        if (clRes.success && clRes.url) {
+          return {
+            url: clRes.url,
+            width: clRes.width,
+            height: clRes.height,
+          };
         }
-      } catch (ghErr) {
-        console.warn('ServerStorage GitHub Assets auto-upload fallback:', ghErr);
+      } catch (uploadErr) {
+        console.warn('ServerStorage Cloudinary auto-upload fallback:', uploadErr);
       }
 
-      if (!uploadedToCloud) {
-        try {
-          const clRes = await uploadImageToCloudinary(savedPost.imageUrl, {
-            folder: 'prompts',
-            publicId: savedPost.slug || savedPost.id,
-          });
-          if (clRes.success && clRes.url) {
-            savedPost.imageUrl = clRes.url;
-            if (clRes.width && clRes.height) {
-              savedPost.imageWidth = clRes.width;
-              savedPost.imageHeight = clRes.height;
-            }
-            uploadedToCloud = true;
+      try {
+        const match = dataUri.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
+        if (match) {
+          const safeId = publicIdSlug.replace(/[^a-zA-Z0-9_-]/g, '_');
+          let ext = match[1] === 'jpeg' ? 'jpg' : match[1];
+          if (ext.includes('webp')) ext = 'webp';
+          const promptsDir = path.join(process.cwd(), 'public', 'images', 'prompts');
+          if (!fs.existsSync(promptsDir)) {
+            fs.mkdirSync(promptsDir, { recursive: true });
           }
-        } catch (uploadErr) {
-          console.warn('ServerStorage Cloudinary auto-upload fallback:', uploadErr);
+          const filename = `${safeId}.${ext}`;
+          const filePath = path.join(promptsDir, filename);
+          const buffer = Buffer.from(match[2], 'base64');
+          fs.writeFileSync(filePath, buffer);
+          return { url: `/images/prompts/${filename}` };
         }
+      } catch (localFileErr) {
+        console.error('Failed to save static prompt image:', localFileErr);
       }
 
-      if (!uploadedToCloud) {
-        try {
-          const match = savedPost.imageUrl.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
-          if (match) {
-            const safeId = (savedPost.id || `prompt_${Date.now()}`).replace(/[^a-zA-Z0-9_-]/g, '_');
-            let ext = match[1] === 'jpeg' ? 'jpg' : match[1];
-            if (ext.includes('webp')) ext = 'webp';
-            const promptsDir = path.join(process.cwd(), 'public', 'images', 'prompts');
-            if (!fs.existsSync(promptsDir)) {
-              fs.mkdirSync(promptsDir, { recursive: true });
-            }
-            const filename = `${safeId}.${ext}`;
-            const filePath = path.join(promptsDir, filename);
-            const buffer = Buffer.from(match[2], 'base64');
-            fs.writeFileSync(filePath, buffer);
-            savedPost.imageUrl = `/images/prompts/${filename}`;
-          }
-        } catch (localFileErr) {
-          console.error('Failed to save static prompt image:', localFileErr);
+      return { url: dataUri };
+    };
+
+    // Auto-upload cover image if still base64 data URI
+    if (savedPost.imageUrl && savedPost.imageUrl.startsWith('data:image/')) {
+      const uploadedCover = await uploadDataUriToCloud(savedPost.imageUrl, savedPost.slug || savedPost.id);
+      savedPost.imageUrl = uploadedCover.url;
+      if (uploadedCover.width && uploadedCover.height) {
+        savedPost.imageWidth = uploadedCover.width;
+        savedPost.imageHeight = uploadedCover.height;
+      }
+    }
+
+    // Auto-upload any deferred carousel/additional base64 images too
+    if (Array.isArray(savedPost.additionalImages) && savedPost.additionalImages.length > 0) {
+      const uploadedSlides: string[] = [];
+      for (let i = 0; i < savedPost.additionalImages.length; i++) {
+        const slideImg = savedPost.additionalImages[i];
+        if (slideImg && slideImg.startsWith('data:image/')) {
+          const uploadedSlide = await uploadDataUriToCloud(
+            slideImg,
+            `${savedPost.slug || savedPost.id}-slide-${i + 1}`
+          );
+          uploadedSlides.push(uploadedSlide.url);
+        } else if (slideImg) {
+          uploadedSlides.push(slideImg);
         }
       }
+      savedPost.additionalImages = uploadedSlides;
     }
 
     // Strip transient migration metadata fields before persisting PromptPost
@@ -478,33 +528,31 @@ export const ServerStorage = {
       } catch (redirErr) {
         console.warn('Media redirect mapping notice:', redirErr);
       }
+    }
 
-      // If this post was in local posts.json / initial-feed.json with a disabled Cloudinary URL, sync the new URL immediately
-      try {
-        if (existing) {
-          const idx = posts.findIndex((p) => p.id === savedPost.id);
-          if (idx !== -1) {
-            posts[idx] = savedPost;
-            writeJsonFile(POSTS_FILE, posts);
-          }
-        }
-        if (fs.existsSync(INITIAL_FEED_FILE)) {
-          const feedPosts = readJsonFile<PromptPost[]>(INITIAL_FEED_FILE, []);
-          const fIdx = feedPosts.findIndex((p) => p.id === savedPost.id);
-          if (fIdx !== -1) {
-            feedPosts[fIdx] = savedPost;
-            writeJsonFile(INITIAL_FEED_FILE, feedPosts);
-          }
-        }
-        if (memoryPosts) {
-          const mIdx = memoryPosts.findIndex((p) => p.id === savedPost.id);
-          if (mIdx !== -1) {
-            memoryPosts[mIdx] = savedPost;
-          }
-        }
-      } catch (syncLocalErr) {
-        console.warn('Local JSON media update notice:', syncLocalErr);
+    // Keep local posts.json / initial-feed.json / memoryPosts synchronized for any existing post edit
+    try {
+      const idx = posts.findIndex((p) => p.id === savedPost.id);
+      if (idx !== -1) {
+        posts[idx] = savedPost;
+        writeJsonFile(POSTS_FILE, posts);
       }
+      if (fs.existsSync(INITIAL_FEED_FILE)) {
+        const feedPosts = readJsonFile<PromptPost[]>(INITIAL_FEED_FILE, []);
+        const fIdx = feedPosts.findIndex((p) => p.id === savedPost.id);
+        if (fIdx !== -1) {
+          feedPosts[fIdx] = savedPost;
+          writeJsonFile(INITIAL_FEED_FILE, feedPosts);
+        }
+      }
+      if (memoryPosts) {
+        const mIdx = memoryPosts.findIndex((p) => p.id === savedPost.id);
+        if (mIdx !== -1) {
+          memoryPosts[mIdx] = savedPost;
+        }
+      }
+    } catch (syncLocalErr) {
+      console.warn('Local JSON media update notice:', syncLocalErr);
     }
 
     // Save strictly to Firebase Firestore (Admin CMS database)
@@ -512,8 +560,9 @@ export const ServerStorage = {
     if (isFirebaseConfigured()) {
       try {
         await setDoc(doc(firestoreDb, 'posts', savedPost.id), cleanForFirestore(savedPost));
-      } catch (fErr) {
+      } catch (fErr: any) {
         console.error('Firestore savePost error:', fErr);
+        throw new Error(fErr?.message || 'Failed to save prompt to Firestore');
       }
     }
 

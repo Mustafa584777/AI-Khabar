@@ -8,7 +8,6 @@ import {
   FileText,
   FolderTree,
   Sparkles,
-  Settings,
   Globe,
   LogOut,
   Sliders,
@@ -69,11 +68,6 @@ export const AdminSidebar = () => {
       id: 'search-history',
       label: 'User Search History',
       icon: Search,
-    },
-    {
-      id: 'settings',
-      label: 'Site Settings',
-      icon: Settings,
     },
   ];
 
