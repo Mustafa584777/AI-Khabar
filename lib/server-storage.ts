@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { cleanTagsArray, canonicalizeTag } from './tag-utils';
 import { uploadImageToCloudinary } from './cloudinary-server';
+import { uploadImageToGitHubAssets, resolveGitHubAssetsConfig } from './github-assets-server';
 import { PLAN_CONFIGS } from './plans';
 import { getPromptSlug } from './utils';
 import fs from 'fs';
@@ -361,24 +362,42 @@ export const ServerStorage = {
       bookmarksCount: post.bookmarksCount !== undefined ? post.bookmarksCount : (existing?.bookmarksCount || 0),
     };
 
-    // If image is a local base64 data URI, auto-upload to Cloudinary or save to public/images/prompts
+    // If image is a local base64 data URI, auto-upload to GitHub Assets CDN (primary), Cloudinary, or local public/images/prompts
     if (savedPost.imageUrl && savedPost.imageUrl.startsWith('data:image/')) {
       let uploadedToCloud = false;
       try {
-        const clRes = await uploadImageToCloudinary(savedPost.imageUrl, {
-          folder: 'prompts',
-          publicId: savedPost.slug || savedPost.id,
-        });
-        if (clRes.success && clRes.url) {
-          savedPost.imageUrl = clRes.url;
-          if (clRes.width && clRes.height) {
-            savedPost.imageWidth = clRes.width;
-            savedPost.imageHeight = clRes.height;
+        const ghCfg = resolveGitHubAssetsConfig();
+        if (ghCfg.isConfigured) {
+          const ghRes = await uploadImageToGitHubAssets(savedPost.imageUrl, {
+            folder: 'prompts',
+            publicId: savedPost.slug || savedPost.id,
+          });
+          if (ghRes.success && ghRes.url) {
+            savedPost.imageUrl = ghRes.url;
+            uploadedToCloud = true;
           }
-          uploadedToCloud = true;
         }
-      } catch (uploadErr) {
-        console.warn('ServerStorage Cloudinary auto-upload fallback:', uploadErr);
+      } catch (ghErr) {
+        console.warn('ServerStorage GitHub Assets auto-upload fallback:', ghErr);
+      }
+
+      if (!uploadedToCloud) {
+        try {
+          const clRes = await uploadImageToCloudinary(savedPost.imageUrl, {
+            folder: 'prompts',
+            publicId: savedPost.slug || savedPost.id,
+          });
+          if (clRes.success && clRes.url) {
+            savedPost.imageUrl = clRes.url;
+            if (clRes.width && clRes.height) {
+              savedPost.imageWidth = clRes.width;
+              savedPost.imageHeight = clRes.height;
+            }
+            uploadedToCloud = true;
+          }
+        } catch (uploadErr) {
+          console.warn('ServerStorage Cloudinary auto-upload fallback:', uploadErr);
+        }
       }
 
       if (!uploadedToCloud) {

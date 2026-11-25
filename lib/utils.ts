@@ -63,6 +63,23 @@ export function getOptimizedImageUrl(url?: string, width = 550): string {
   if (url.startsWith('data:') || url.startsWith('blob:')) {
     return url;
   }
+  if (url.includes('res.cloudinary.com/idbpgaqz/image/upload/')) {
+    const afterUpload = url.split('/image/upload/')[1] || '';
+    const cleanAfter = afterUpload.split('?')[0].replace(/^\/+/, '');
+    const segments = cleanAfter.split('/').filter(Boolean);
+    if (
+      segments.length > 0 &&
+      (segments[0].includes(',') || /^(f|q|w|h|c|dpr|e|g|fl|ar)_/i.test(segments[0]))
+    ) {
+      segments.shift();
+    }
+    if (segments.length > 0 && /^v\d+$/i.test(segments[0])) {
+      segments.shift();
+    }
+    if (segments.length > 0) {
+      return `https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/${segments.join('/')}`;
+    }
+  }
   if (url.includes('res.cloudinary.com') && url.includes('/image/upload/')) {
     if (url.includes('/image/upload/f_auto') || url.includes('/image/upload/q_auto') || url.includes('/image/upload/w_')) {
       return url.replace(/\/image\/upload\/[^/]+\//, `/image/upload/f_auto,q_auto:good,w_${width},c_limit/`);

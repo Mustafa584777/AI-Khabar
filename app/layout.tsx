@@ -53,10 +53,10 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  ReactDOM.preconnect('https://res.cloudinary.com', { crossOrigin: 'anonymous' });
+  ReactDOM.preconnect('https://cdn.jsdelivr.net', { crossOrigin: 'anonymous' });
   ReactDOM.preconnect('https://images.unsplash.com', { crossOrigin: 'anonymous' });
   if (typeof (ReactDOM as any).prefetchDNS === 'function') {
-    (ReactDOM as any).prefetchDNS('https://res.cloudinary.com');
+    (ReactDOM as any).prefetchDNS('https://cdn.jsdelivr.net');
     (ReactDOM as any).prefetchDNS('https://images.unsplash.com');
   }
 

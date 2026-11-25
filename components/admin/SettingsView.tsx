@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '@/context/AppContext';
-import { Settings, Save, RotateCcw, Download, Database, Cloud, CheckCircle2, AlertCircle, X, Sparkles, RefreshCw } from 'lucide-react';
+import { Settings, Save, RotateCcw, Download, Database, Cloud, CheckCircle2, AlertCircle, X, Sparkles, RefreshCw, Upload, FolderArchive } from 'lucide-react';
+import JSZip from 'jszip';
 
 export const SettingsView = () => {
   const { settings, saveSettings, posts, categories, tags, restorePromptCards, refreshData, showToast, setAdminSubView } = useApp();
@@ -143,19 +144,346 @@ export const SettingsView = () => {
       });
   };
 
+  // GitHub Assets + jsDelivr CDN & Bulk Migration State
+  const [githubCdnStatus, setGithubCdnStatus] = useState<{
+    configured: boolean;
+    owner?: string;
+    repo?: string;
+    branch?: string;
+    cdnBaseUrl?: string;
+  } | null>(null);
+  const [testingGitHubCdn, setTestingGitHubCdn] = useState(false);
+  const [migrationStats, setMigrationStats] = useState<{
+    totalExpected: number;
+    uploadedCount: number;
+    missingCount: number;
+    totalGitHubFiles: number;
+    cloudinaryUrlCount: number;
+    alreadyUploadedPaths: string[];
+    expectedPaths: string[];
+    basenameMap: Record<string, string[]>;
+  } | null>(null);
+  const [loadingMigrationStats, setLoadingMigrationStats] = useState(false);
+  const [isMigratingFiles, setIsMigratingFiles] = useState(false);
+  const [migrationProgress, setMigrationProgress] = useState<{
+    processed: number;
+    total: number;
+    uploaded: number;
+    skipped: number;
+    failed: number;
+    statusText: string;
+  } | null>(null);
+  const [isRewritingUrls, setIsRewritingUrls] = useState(false);
+  const migrationFileInputRef = useRef<HTMLInputElement>(null);
+
+  const loadMigrationStatus = async () => {
+    setLoadingMigrationStats(true);
+    try {
+      const res = await fetch('/api/admin/migrate-media');
+      const data = await res.json();
+      if (data?.success) {
+        setMigrationStats(data);
+        if (data.github) {
+          setGithubCdnStatus({
+            configured: Boolean(data.github.configured),
+            owner: data.github.owner,
+            repo: data.github.repo,
+            branch: data.github.branch,
+            cdnBaseUrl: data.github.cdnBaseUrl,
+          });
+        }
+      }
+    } catch {
+      // Non-blocking
+    } finally {
+      setLoadingMigrationStats(false);
+    }
+  };
+
+  const testGitHubConnection = async () => {
+    setTestingGitHubCdn(true);
+    try {
+      const res = await fetch('/api/upload?test=true');
+      const data = await res.json();
+      if (data?.success && data?.provider === 'github_cdn') {
+        setGithubCdnStatus({
+          configured: true,
+          owner: data.owner,
+          repo: data.repo,
+          branch: data.branch,
+          cdnBaseUrl: data.cdnBaseUrl,
+        });
+        showToast(data.message || 'Connected to GitHub Assets + jsDelivr CDN!');
+        void loadMigrationStatus();
+      } else {
+        showToast(`GitHub Assets error: ${data?.error || 'Connection failed'}`);
+      }
+    } catch (err: any) {
+      showToast(`Failed to test GitHub Assets: ${err.message}`);
+    } finally {
+      setTestingGitHubCdn(false);
+    }
+  };
+
+  const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 0x8000;
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, i + chunkSize);
+      binary += String.fromCharCode(...chunk);
+    }
+    return btoa(binary);
+  };
+
+  const resolveTargetAssetPaths = (
+    rawRelPath: string,
+    expectedSet: Set<string>,
+    basenameMap: Record<string, string[]>
+  ): string[] => {
+    const normalized = rawRelPath.replace(/\\/g, '/').replace(/^\/+/, '');
+    const lowerNorm = normalized.toLowerCase();
+    for (const exp of expectedSet) {
+      if (exp.toLowerCase() === lowerNorm) return [exp];
+    }
+    const baseName = normalized.split('/').pop()?.toLowerCase() || '';
+    if (baseName && basenameMap[baseName]?.length > 0) {
+      return basenameMap[baseName];
+    }
+    if (normalized.startsWith('prompts/')) {
+      return [normalized];
+    }
+    return baseName ? [`prompts/${baseName}`] : [];
+  };
+
+  const handleBulkMediaUpload = async (fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return;
+
+    setIsMigratingFiles(true);
+    setMigrationProgress({
+      processed: 0,
+      total: 0,
+      uploaded: 0,
+      skipped: 0,
+      failed: 0,
+      statusText: 'Preparing files...',
+    });
+
+    try {
+      // Refresh latest status so already-uploaded paths are skipped accurately
+      const statusRes = await fetch('/api/admin/migrate-media');
+      const statusData = await statusRes.json();
+      if (statusData?.success) {
+        setMigrationStats(statusData);
+      }
+
+      const expectedSet = new Set<string>(statusData?.expectedPaths || migrationStats?.expectedPaths || []);
+      const existingSet = new Set<string>(statusData?.alreadyUploadedPaths || migrationStats?.alreadyUploadedPaths || []);
+      const basenameMap: Record<string, string[]> = statusData?.basenameMap || migrationStats?.basenameMap || {};
+
+      const queuedItems: Array<{ targetPath: string; readBase64: () => Promise<string> }> = [];
+      const seenTargets = new Set<string>();
+      const validImgExt = /\.(jpg|jpeg|png|webp|gif|avif)$/i;
+
+      for (const file of Array.from(fileList)) {
+        if (file.name.toLowerCase().endsWith('.zip')) {
+          setMigrationProgress((prev) =>
+            prev ? { ...prev, statusText: `Extracting ${file.name}...` } : prev
+          );
+          const zip = await JSZip.loadAsync(file);
+          for (const [entryPath, zipEntry] of Object.entries(zip.files)) {
+            if (zipEntry.dir || entryPath.startsWith('__MACOSX/')) continue;
+            if (!validImgExt.test(entryPath)) continue;
+            const targets = resolveTargetAssetPaths(entryPath, expectedSet, basenameMap);
+            for (const targetPath of targets) {
+              if (seenTargets.has(targetPath)) continue;
+              seenTargets.add(targetPath);
+              queuedItems.push({
+                targetPath,
+                readBase64: async () => {
+                  const buf = await zipEntry.async('arraybuffer');
+                  return arrayBufferToBase64(buf);
+                },
+              });
+            }
+          }
+        } else if (file.type.startsWith('image/') || validImgExt.test(file.name)) {
+          const relPath = (file as any).webkitRelativePath || file.name;
+          const targets = resolveTargetAssetPaths(relPath, expectedSet, basenameMap);
+          for (const targetPath of targets) {
+            if (seenTargets.has(targetPath)) continue;
+            seenTargets.add(targetPath);
+            queuedItems.push({
+              targetPath,
+              readBase64: async () => {
+                const buf = await file.arrayBuffer();
+                return arrayBufferToBase64(buf);
+              },
+            });
+          }
+        }
+      }
+
+      if (queuedItems.length === 0) {
+        showToast('No matching image files found in your selection.');
+        setMigrationProgress(null);
+        setIsMigratingFiles(false);
+        return;
+      }
+
+      let processed = 0;
+      let uploaded = 0;
+      let skipped = 0;
+      let failed = 0;
+
+      const toUpload = queuedItems.filter((item) => {
+        if (existingSet.has(item.targetPath)) {
+          skipped++;
+          processed++;
+          return false;
+        }
+        return true;
+      });
+
+      setMigrationProgress({
+        processed,
+        total: queuedItems.length,
+        uploaded,
+        skipped,
+        failed,
+        statusText: toUpload.length === 0 ? 'All selected files are already in GitHub!' : `Uploading ${toUpload.length} files to GitHub...`,
+      });
+
+      const MAX_FILES_PER_BATCH = 8;
+      const MAX_BYTES_PER_BATCH = 2.4 * 1024 * 1024;
+      let currentBatch: Array<{ path: string; contentBase64: string }> = [];
+      let currentBatchBytes = 0;
+
+      const flushBatch = async () => {
+        if (currentBatch.length === 0) return;
+        const batchToSend = currentBatch;
+        currentBatch = [];
+        currentBatchBytes = 0;
+
+        setMigrationProgress({
+          processed,
+          total: queuedItems.length,
+          uploaded,
+          skipped,
+          failed,
+          statusText: `Committing batch of ${batchToSend.length} images to GitHub...`,
+        });
+
+        try {
+          const res = await fetch('/api/admin/migrate-media', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'upload_batch', files: batchToSend }),
+          });
+          const data = await res.json();
+          if (data?.success) {
+            uploaded += Array.isArray(data.uploadedPaths) ? data.uploadedPaths.length : batchToSend.length;
+            skipped += Array.isArray(data.skippedPaths) ? data.skippedPaths.length : 0;
+          } else {
+            failed += batchToSend.length;
+            showToast(`Batch upload error: ${data?.error || 'Failed'}`);
+          }
+        } catch {
+          failed += batchToSend.length;
+        }
+        processed += batchToSend.length;
+        setMigrationProgress({
+          processed,
+          total: queuedItems.length,
+          uploaded,
+          skipped,
+          failed,
+          statusText: `Uploaded ${uploaded} / ${queuedItems.length}...`,
+        });
+      };
+
+      for (const item of toUpload) {
+        try {
+          const b64 = await item.readBase64();
+          if (currentBatch.length >= MAX_FILES_PER_BATCH || (currentBatch.length > 0 && currentBatchBytes + b64.length > MAX_BYTES_PER_BATCH)) {
+            await flushBatch();
+          }
+          currentBatch.push({ path: item.targetPath, contentBase64: b64 });
+          currentBatchBytes += b64.length;
+        } catch {
+          failed++;
+          processed++;
+        }
+      }
+      await flushBatch();
+
+      setMigrationProgress({
+        processed,
+        total: queuedItems.length,
+        uploaded,
+        skipped,
+        failed,
+        statusText: `Done! Uploaded: ${uploaded}, Already present: ${skipped}, Failed: ${failed}.`,
+      });
+      showToast(`Uploaded ${uploaded} images to GitHub (${skipped} already existed).`);
+      await loadMigrationStatus();
+    } catch (err: any) {
+      showToast(`Migration error: ${err?.message || 'Failed to read files'}`);
+    } finally {
+      setIsMigratingFiles(false);
+      if (migrationFileInputRef.current) {
+        migrationFileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRewriteAllMediaUrls = async () => {
+    setIsRewritingUrls(true);
+    try {
+      const res = await fetch('/api/admin/migrate-media', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'rewrite_urls' }),
+      });
+      const data = await res.json();
+      if (data?.success) {
+        showToast(data.message || 'Successfully migrated URLs to jsDelivr CDN!');
+        await loadMigrationStatus();
+        void refreshData();
+      } else {
+        showToast(`URL rewrite failed: ${data?.error || 'Unknown error'}`);
+      }
+    } catch (err: any) {
+      showToast(`Error updating URLs: ${err.message}`);
+    } finally {
+      setIsRewritingUrls(false);
+    }
+  };
+
   useEffect(() => {
     let isMounted = true;
     fetch('/api/upload')
       .then((res) => res.json())
       .then((data) => {
         if (isMounted) {
+          if (data.provider === 'github_cdn') {
+            setGithubCdnStatus({
+              configured: Boolean(data.configured),
+              owner: data.owner,
+              repo: data.repo,
+              branch: data.branch,
+              cdnBaseUrl: data.cdnBaseUrl,
+            });
+          }
           setCloudinaryStatus({
-            configured: data.configured,
+            configured: data.provider === 'cloudinary' ? data.configured : false,
             cloudName: data.cloudName,
           });
         }
       })
       .catch(() => {});
+
+    void loadMigrationStatus();
 
     setTimeout(() => {
       if (isMounted) {
@@ -386,16 +714,144 @@ export const SettingsView = () => {
           </div>
         </div>
 
-        {/* Cloudinary CDN Media Storage Settings */}
+        {/* GitHub Assets Repo + jsDelivr CDN & Bulk Migration */}
+        <div className="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-emerald-200 dark:border-emerald-900/60 shadow-sm space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                <FolderArchive className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span>GitHub Assets + jsDelivr CDN (Primary Storage)</span>
+              </h3>
+              <p className="text-xs text-neutral-500 mt-0.5">
+                Host all prompt images in <code className="font-mono text-neutral-700 dark:text-neutral-300">{githubCdnStatus?.owner || 'Mustafa584777'}/{githubCdnStatus?.repo || 'zeena-prompt-assets'}</code> and serve via free global jsDelivr CDN with zero Vercel bandwidth cost.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={testGitHubConnection}
+                disabled={testingGitHubCdn}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-xs font-bold transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${testingGitHubCdn ? 'animate-spin' : ''}`} />
+                <span>{testingGitHubCdn ? 'Testing...' : 'Test GitHub CDN'}</span>
+              </button>
+
+              {githubCdnStatus?.configured ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Connected ({githubCdnStatus.owner}/{githubCdnStatus.repo})</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-[11px] font-medium">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  <span>Set GITHUB_ASSETS_TOKEN in Env</span>
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-neutral-50 dark:bg-neutral-950 p-4 rounded-2xl border border-neutral-200 dark:border-neutral-800">
+            <div>
+              <div className="text-[11px] font-medium text-neutral-500">Tracked Assets</div>
+              <div className="text-base font-extrabold text-neutral-900 dark:text-white mt-0.5">
+                {loadingMigrationStats ? '...' : (migrationStats?.totalExpected ?? 0)}
+              </div>
+            </div>
+            <div>
+              <div className="text-[11px] font-medium text-neutral-500">Uploaded in GitHub</div>
+              <div className="text-base font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                {loadingMigrationStats ? '...' : (migrationStats?.uploadedCount ?? 0)}
+              </div>
+            </div>
+            <div>
+              <div className="text-[11px] font-medium text-neutral-500">Remaining Missing</div>
+              <div className="text-base font-extrabold text-amber-600 dark:text-amber-400 mt-0.5">
+                {loadingMigrationStats ? '...' : (migrationStats?.missingCount ?? 0)}
+              </div>
+            </div>
+            <div>
+              <div className="text-[11px] font-medium text-neutral-500">Old Cloudinary Links</div>
+              <div className="text-base font-extrabold text-neutral-900 dark:text-white mt-0.5">
+                {loadingMigrationStats ? '...' : (migrationStats?.cloudinaryUrlCount ?? 0)}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
+            <input
+              ref={migrationFileInputRef}
+              type="file"
+              multiple
+              accept=".zip,image/*"
+              className="hidden"
+              onChange={(e) => void handleBulkMediaUpload(e.target.files)}
+            />
+            <button
+              type="button"
+              onClick={() => migrationFileInputRef.current?.click()}
+              disabled={isMigratingFiles}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors disabled:opacity-50"
+            >
+              <Upload className={`w-4 h-4 ${isMigratingFiles ? 'animate-bounce' : ''}`} />
+              <span>{isMigratingFiles ? 'Uploading to GitHub...' : 'Upload Recovered Images / ZIP'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleRewriteAllMediaUrls}
+              disabled={isRewritingUrls}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${isRewritingUrls ? 'animate-spin' : ''}`} />
+              <span>{isRewritingUrls ? 'Updating DB & JSON...' : 'Update All URLs in JSON + Firestore'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => void loadMigrationStatus()}
+              disabled={loadingMigrationStats}
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200 text-xs font-bold transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loadingMigrationStats ? 'animate-spin' : ''}`} />
+              <span>Refresh Count</span>
+            </button>
+          </div>
+
+          {migrationProgress && (
+            <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-emerald-900 dark:text-emerald-200">
+                <span>{migrationProgress.statusText}</span>
+                <span>
+                  {migrationProgress.total > 0
+                    ? `${Math.min(migrationProgress.processed, migrationProgress.total)} / ${migrationProgress.total}`
+                    : ''}
+                </span>
+              </div>
+              {migrationProgress.total > 0 && (
+                <div className="w-full h-2 rounded-full bg-emerald-200/70 dark:bg-emerald-900/60 overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-600 transition-all duration-300"
+                    style={{
+                      width: `${Math.min(100, Math.round((migrationProgress.processed / migrationProgress.total) * 100))}%`,
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Legacy Cloudinary Fallback Settings */}
         <div className="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
                 <Cloud className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <span>Cloudinary Media CDN Settings</span>
+                <span>Cloudinary Fallback Settings (Optional)</span>
               </h3>
               <p className="text-xs text-neutral-500 mt-0.5">
-                Automatically host and deliver prompt cover photos via high-speed Cloudinary CDN.
+                Used only if GitHub Assets CDN is not configured.
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -415,9 +871,9 @@ export const SettingsView = () => {
                   <span>Cloudinary Connected ({cloudinaryStatus.cloudName})</span>
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-[11px] font-medium">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 text-[11px] font-medium">
                   <AlertCircle className="w-3.5 h-3.5" />
-                  <span>Using Optimized Local Storage</span>
+                  <span>Secondary Fallback</span>
                 </span>
               )}
             </div>

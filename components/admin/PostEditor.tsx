@@ -422,7 +422,9 @@ export const PostEditor = () => {
           const uploadData = await uploadRes.json();
           if (uploadData && uploadData.url) {
             finalImageUrl = uploadData.url;
-            if (uploadData.provider === 'cloudinary') {
+            if (uploadData.provider === 'github_cdn') {
+              showToast('Image uploaded & saved to GitHub + jsDelivr CDN successfully!');
+            } else if (uploadData.provider === 'cloudinary') {
               showToast('Image uploaded & saved to Cloudinary CDN successfully!');
             } else {
               showToast('Image optimized and attached to prompt!');

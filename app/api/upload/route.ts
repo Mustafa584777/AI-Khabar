@@ -1,27 +1,53 @@
 import { NextResponse } from 'next/server';
 import { resolveCloudinaryCredentials, uploadImageToCloudinary } from '@/lib/cloudinary-server';
+import {
+  resolveGitHubAssetsConfig,
+  testGitHubAssetsConnection,
+  uploadImageToGitHubAssets,
+} from '@/lib/github-assets-server';
 import { v2 as cloudinary } from 'cloudinary';
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const isTest = searchParams.get('test') === 'true';
+    const providerParam = searchParams.get('provider');
 
-    const { cloudName, apiKey, apiSecret, isConfigured } = await resolveCloudinaryCredentials();
+    const ghConfig = resolveGitHubAssetsConfig();
+    const clConfig = await resolveCloudinaryCredentials();
 
     if (isTest) {
-      if (!isConfigured) {
+      if (providerParam !== 'cloudinary' && ghConfig.isConfigured) {
+        const ghTest = await testGitHubAssetsConnection();
+        return NextResponse.json({
+          configured: ghTest.configured,
+          success: ghTest.success,
+          provider: 'github_cdn',
+          owner: ghTest.owner,
+          repo: ghTest.repo,
+          branch: ghTest.branch,
+          cdnBaseUrl: ghTest.cdnBaseUrl,
+          message: ghTest.success
+            ? `Connected to GitHub Assets (${ghTest.owner}/${ghTest.repo}@${ghTest.branch}) via jsDelivr CDN!`
+            : undefined,
+          error: ghTest.error,
+        });
+      }
+
+      if (!clConfig.isConfigured) {
         return NextResponse.json({
           configured: false,
           success: false,
-          error: 'Cloudinary credentials missing. Please provide Cloud Name, API Key, and API Secret.',
+          provider: 'none',
+          error:
+            'No cloud media storage configured. Set GITHUB_ASSETS_TOKEN (recommended) or Cloudinary credentials.',
         });
       }
 
       cloudinary.config({
-        cloud_name: cloudName,
-        api_key: apiKey,
-        api_secret: apiSecret,
+        cloud_name: clConfig.cloudName,
+        api_key: clConfig.apiKey,
+        api_secret: clConfig.apiSecret,
         secure: true,
       });
 
@@ -30,41 +56,69 @@ export async function GET(req: Request) {
         return NextResponse.json({
           configured: true,
           success: true,
-          cloudName,
+          provider: 'cloudinary',
+          cloudName: clConfig.cloudName,
           pingResult,
-          message: `Successfully connected to Cloudinary account (${cloudName})!`,
+          message: `Successfully connected to Cloudinary account (${clConfig.cloudName})!`,
         });
       } catch (pingErr: any) {
         return NextResponse.json({
           configured: true,
           success: false,
-          cloudName,
+          provider: 'cloudinary',
+          cloudName: clConfig.cloudName,
           error: pingErr?.message || 'Failed to ping Cloudinary API. Please check your credentials.',
         });
       }
     }
 
+    if (ghConfig.isConfigured) {
+      return NextResponse.json({
+        configured: true,
+        provider: 'github_cdn',
+        owner: ghConfig.owner,
+        repo: ghConfig.repo,
+        branch: ghConfig.branch,
+        cdnBaseUrl: ghConfig.cdnBaseUrl,
+        cloudName: `${ghConfig.owner}/${ghConfig.repo}`,
+      });
+    }
+
     return NextResponse.json({
-      configured: isConfigured,
-      cloudName: isConfigured ? cloudName : null,
-      provider: isConfigured ? 'cloudinary' : 'local_fallback',
+      configured: clConfig.isConfigured,
+      cloudName: clConfig.isConfigured ? clConfig.cloudName : null,
+      provider: clConfig.isConfigured ? 'cloudinary' : 'local_fallback',
     });
   } catch (error: any) {
-    return NextResponse.json({ configured: false, error: error?.message || 'Error checking Cloudinary status' });
+    return NextResponse.json({ configured: false, error: error?.message || 'Error checking media storage status' });
   }
 }
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { image, folder, publicId } = body || {};
+    const { image, folder, publicId, exactPath } = body || {};
 
     if (!image || typeof image !== 'string') {
       return NextResponse.json({ error: 'No valid image data provided' }, { status: 400 });
     }
 
-    const uploadRes = await uploadImageToCloudinary(image, { folder, publicId });
+    // 1. Primary: GitHub Assets Repo + jsDelivr CDN
+    const ghConfig = resolveGitHubAssetsConfig();
+    if (ghConfig.isConfigured) {
+      const ghRes = await uploadImageToGitHubAssets(image, { folder, publicId, exactPath });
+      if (ghRes.success && ghRes.url) {
+        return NextResponse.json({
+          url: ghRes.url,
+          provider: 'github_cdn',
+          path: ghRes.path,
+          success: true,
+        });
+      }
+    }
 
+    // 2. Fallback: Cloudinary (only if configured and active)
+    const uploadRes = await uploadImageToCloudinary(image, { folder, publicId });
     if (uploadRes.success && uploadRes.url) {
       return NextResponse.json({
         url: uploadRes.url,
@@ -74,13 +128,13 @@ export async function POST(req: Request) {
       });
     }
 
-    // If Cloudinary failed or isn't configured, fall back gracefully to the optimized local WebP
+    // 3. Local fallback
     return NextResponse.json({
       url: image,
       provider: 'fallback',
       success: true,
       warning: uploadRes.error,
-      message: uploadRes.error || 'Cloudinary upload fallback used.',
+      message: uploadRes.error || 'Media cloud upload fallback used.',
     });
   } catch (error: any) {
     console.error('Upload route processing error:', error?.message || error);
