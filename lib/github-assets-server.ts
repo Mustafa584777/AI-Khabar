@@ -412,7 +412,7 @@ export async function uploadBatchToGitHubAssets(
 
   try {
     // 1. Check current branch HEAD commit
-    const refUrl = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/git/ref/heads/${encodeURIComponent(cfg.branch)}`;
+    const refUrl = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/git/refs/heads/${encodeURIComponent(cfg.branch)}`;
     let refRes = await fetch(refUrl, {
       headers: githubHeaders(cfg.token),
       cache: 'no-store',
@@ -665,7 +665,7 @@ export async function pushFilesToGitHubRepo(
     commitSha?: string;
     error?: string;
   }> => {
-    const refUrl = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/git/ref/heads/${encodeURIComponent(cfg.branch)}`;
+    const refUrl = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/git/refs/heads/${encodeURIComponent(cfg.branch)}`;
     const refRes = await fetch(refUrl, {
       headers: githubHeaders(cfg.token),
       cache: 'no-store',
