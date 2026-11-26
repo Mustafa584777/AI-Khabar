@@ -1,39 +1,6 @@
 [
   {
-    "copiesCount": 0,
-    "author": {
-      "role": "Author",
-      "name": "tool.reelz",
-      "avatar": "/logo.png"
-    },
-    "additionalImages": [],
-    "parameters": {
-      "isPremium": false
-    },
     "createdAt": "2026-11-22T06:47:04.224Z",
-    "category": "Digital Art & Creative Portraiture",
-    "aiTool": "Midjourney",
-    "updatedAt": "2026-11-25T10:43:55.870Z",
-    "affiliateProducts": [],
-    "id": "prompt-1795330024224",
-    "variables": [],
-    "slug": "viral-gta-6-trending-photo-prompt",
-    "articleContent": "Capture the essence of a high-stakes, neon-drenched lifestyle with this prompt. Designed to emulate the iconic, stylized realism of open-world game promotional art, this prompt balances sharp fashion photography with dramatic environmental lighting. The key to this look is the contrast between the natural sunset colors and the artificial neon glow, which creates the signature 'Vice City' mood. Use this for character concept art, high-fashion social media posts, or game-inspired fan art.",
-    "imageFileName": "viral-gta-6-trending-photo-prompt.webp",
-    "seo": {
-      "metaDescription": "Master the aesthetic of iconic neon-soaked city vibes with this high-end prompt. Perfect for creating cinematic character portraits in a GTA-inspired art style.",
-      "metaTitle": "Create Cinematic 'Vice City' Style Portraits | AI Prompt Guide",
-      "focusKeyword": "Vice City art style"
-    },
-    "isPremium": false,
-    "preferredAi": "ChatGPT",
-    "viewsCount": 0,
-    "imageAlt": "Viral GTA 6 Trending Photo Prompt",
-    "isNoIndex": false,
-    "likesCount": 0,
-    "publishedAt": "2026-11-22T06:47:04.224Z",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/viral-gta-6-trending-photo-prompt.jpg",
-    "status": "published",
     "tags": [
       "Gta6",
       "Grandtheftauto",
@@ -48,41 +15,68 @@
       "Muscle Car Culture",
       "Fashion Editorial"
     ],
-    "title": "Viral GTA 6 Trending Photo Prompt",
     "promptText": "Use the uploaded reference image as the primary reference for the main person. Create an ultra-realistic cinematic Grand Theft Auto VI (GTA 6) inspired promotional poster.\n\nMain Subject:\nThe person from the uploaded reference image must appear as a real-life human, standing naturally beside the hood of iconic gta vice city muscle car with folded hands. Preserve the original facial identity, face shape, hairstyle, beard, skin tone, body proportions and overall appearance. Do not change the person's identity.\n\nBackground & Environment:\nCreate a beautiful GTA 6 / Vice City-inspired tropical Miami atmosphere featuring:\n\n- Beautiful pink, purple and orange sunset sky.\n- Tall tropical palm trees.\n- Neon-lit city atmosphere.\n- Modern coastal nightlife environment.\n- Cinematic urban surroundings.\n- Other background characters dressed in stylish modern streetwear.\n- Realistic environmental lighting and cinematic depth.\n\nGTA 6 Poster Theme:\nUse the iconic Grand Theft Auto VI promotional artwork aesthetic, vibrant pink and purple color grading, warm sunset lighting, cinematic composition and polished video-game poster atmosphere.\n\nAdd an authentic-looking GTA VI logo in the upper-left corner, clearly visible and integrated naturally into the poster.\n\nQuality & Realism:\nUltra-photorealistic, 8K quality, realistic skin texture, natural facial details, accurate shadows, professional cinematic photography, realistic clothing fabric, detailed surroundings and premium movie-poster composition.\n\nIMPORTANT INSTRUCTIONS:\n\n- Main person's face must remain identical to the uploaded reference.\n- Maintain the EXACT original sitting posture.\n- Do not change the person's clothes unless necessary.\n- Do not make the person look cartoonish or animated.\n- The main person must look like a real human photographed inside a GTA 6-inspired world.\n- Do not distort hands, legs, face or body.\n- Make the final image look like a premium GTA 6 fan-made promotional poster.",
-    "bookmarksCount": 0
+    "parameters": {
+      "isPremium": false
+    },
+    "publishedAt": "2026-11-22T06:47:04.224Z",
+    "seo": {
+      "metaTitle": "Create Cinematic 'Vice City' Style Portraits | AI Prompt Guide",
+      "metaDescription": "Master the aesthetic of iconic neon-soaked city vibes with this high-end prompt. Perfect for creating cinematic character portraits in a GTA-inspired art style.",
+      "focusKeyword": "Vice City art style"
+    },
+    "status": "published",
+    "affiliateProducts": [],
+    "aiTool": "Midjourney",
+    "preferredAi": "ChatGPT",
+    "title": "Viral GTA 6 Trending Photo Prompt",
+    "bookmarksCount": 0,
+    "isPremium": false,
+    "id": "prompt-1795330024224",
+    "imageAlt": "Viral GTA 6 Trending Photo Prompt",
+    "isNoIndex": false,
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/viral-gta-6-trending-photo-prompt.jpg",
+    "copiesCount": 0,
+    "category": "Digital Art & Creative Portraiture",
+    "variables": [],
+    "imageFileName": "viral-gta-6-trending-photo-prompt.webp",
+    "additionalImages": [],
+    "slug": "viral-gta-6-trending-photo-prompt",
+    "updatedAt": "2026-11-25T10:43:55.870Z",
+    "author": {
+      "avatar": "/logo.png",
+      "role": "Author",
+      "name": "tool.reelz"
+    },
+    "viewsCount": 0,
+    "likesCount": 0,
+    "articleContent": "Capture the essence of a high-stakes, neon-drenched lifestyle with this prompt. Designed to emulate the iconic, stylized realism of open-world game promotional art, this prompt balances sharp fashion photography with dramatic environmental lighting. The key to this look is the contrast between the natural sunset colors and the artificial neon glow, which creates the signature 'Vice City' mood. Use this for character concept art, high-fashion social media posts, or game-inspired fan art."
   },
   {
-    "additionalImages": [],
-    "status": "published",
-    "promptText": "Create an ultra-realistic 3D travel magazine cover featuring a cute young woman standing at the center of a 360-degree tiny planet city. Use a dramatic fisheye lens and circular panoramic aerial view of Hanoi, Vietnam, with Hoan Kiem Lake, beautiful red-roof buildings, green trees, streets and city landmarks curved around her.\n\nThe woman is wearing a rust-orange oversized knitted sweater, a peach layered ruffle skirt, matching sneakers and cute hair accessories. She is smiling sweetly, looking directly at the camera, with both hands placed under her cheeks in a cute pose.\n\nCreate a magical miniature planet effect, with the entire city forming a circular globe beneath her feet. Soft pastel peach and beige cloudy sky, warm autumn lighting, cinematic photography, realistic skin texture, highly detailed cityscape, professional editorial travel photography.\n\nAt the top add large bold white typography:\n\"HELLO HANOI\"\n\nBelow it add:\n\"AUTUMN DIARY 2026\"\n\nOn the right side add:\n\"THE HEARTBEAT OF THE CITY\"\n\nVertical 3:4 magazine cover composition, premium travel magazine aesthetic, sharp details, beautiful color grading, photorealistic, 8K quality.\n\nImportant: Keep the woman's face natural and realistic. Do not distort facial features or hands.",
-    "likesCount": 0,
-    "publishedAt": "2026-11-22T06:42:31.205Z",
-    "imageAlt": "Hanoi Tiny Planet Portrait for Girls",
-    "articleContent": "Capture the magic of travel with a 'tiny planet' perspective. This prompt uses wide-angle lens physics and circular composition to wrap a city landscape around your subject. By focusing on the 'tiny planet' effect, you can turn a standard travel portrait into a conceptual masterpiece. The contrast between the cozy, detailed subject and the expansive, curving city horizon creates a whimsical, editorial feel perfect for travel diaries and lifestyle feeds.",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/hanoi-tiny-planet-portrait-for-girls.jpg",
-    "isNoIndex": true,
-    "slug": "hanoi-tiny-planet-portrait-for-girls",
-    "id": "prompt-1795329751204",
-    "isPremium": true,
-    "preferredAi": "ChatGPT",
-    "variables": [],
-    "viewsCount": 0,
-    "affiliateProducts": [],
-    "bookmarksCount": 0,
-    "aiTool": "Midjourney",
-    "title": "Hanoi Tiny Planet Portrait for Girls",
     "createdAt": "2026-11-22T06:42:31.205Z",
+    "id": "prompt-1795329751204",
+    "bookmarksCount": 0,
+    "affiliateProducts": [],
     "parameters": {
       "isPremium": true
     },
-    "imageFileName": "hanoi-tiny-planet-portrait-for-girls.webp",
-    "updatedAt": "2026-11-25T10:16:09.991Z",
+    "promptText": "Create an ultra-realistic 3D travel magazine cover featuring a cute young woman standing at the center of a 360-degree tiny planet city. Use a dramatic fisheye lens and circular panoramic aerial view of Hanoi, Vietnam, with Hoan Kiem Lake, beautiful red-roof buildings, green trees, streets and city landmarks curved around her.\n\nThe woman is wearing a rust-orange oversized knitted sweater, a peach layered ruffle skirt, matching sneakers and cute hair accessories. She is smiling sweetly, looking directly at the camera, with both hands placed under her cheeks in a cute pose.\n\nCreate a magical miniature planet effect, with the entire city forming a circular globe beneath her feet. Soft pastel peach and beige cloudy sky, warm autumn lighting, cinematic photography, realistic skin texture, highly detailed cityscape, professional editorial travel photography.\n\nAt the top add large bold white typography:\n\"HELLO HANOI\"\n\nBelow it add:\n\"AUTUMN DIARY 2026\"\n\nOn the right side add:\n\"THE HEARTBEAT OF THE CITY\"\n\nVertical 3:4 magazine cover composition, premium travel magazine aesthetic, sharp details, beautiful color grading, photorealistic, 8K quality.\n\nImportant: Keep the woman's face natural and realistic. Do not distort facial features or hands.",
+    "slug": "hanoi-tiny-planet-portrait-for-girls",
+    "articleContent": "Capture the magic of travel with a 'tiny planet' perspective. This prompt uses wide-angle lens physics and circular composition to wrap a city landscape around your subject. By focusing on the 'tiny planet' effect, you can turn a standard travel portrait into a conceptual masterpiece. The contrast between the cozy, detailed subject and the expansive, curving city horizon creates a whimsical, editorial feel perfect for travel diaries and lifestyle feeds.",
+    "aiTool": "Midjourney",
+    "status": "published",
+    "copiesCount": 0,
+    "isPremium": true,
+    "imageAlt": "Hanoi Tiny Planet Portrait for Girls",
     "seo": {
-      "focusKeyword": "tiny planet photography prompt",
+      "metaTitle": "Hanoi Tiny Planet Portrait: AI Photography Prompt Guide",
       "metaDescription": "Create stunning, travel-inspired 'tiny planet' portrait photography with this detailed AI prompt. Perfect for capturing urban landscapes with a unique fisheye perspective.",
-      "metaTitle": "Hanoi Tiny Planet Portrait: AI Photography Prompt Guide"
+      "focusKeyword": "tiny planet photography prompt"
     },
+    "imageFileName": "hanoi-tiny-planet-portrait-for-girls.webp",
+    "preferredAi": "ChatGPT",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/hanoi-tiny-planet-portrait-for-girls.jpg",
+    "likesCount": 0,
     "tags": [
       "Hanoi",
       "Tiny Planet",
@@ -93,49 +87,46 @@
       "Urban Aesthetic",
       "360-degree View"
     ],
+    "isNoIndex": true,
+    "viewsCount": 0,
+    "variables": [],
     "author": {
       "avatar": "/logo.png",
       "role": "Author",
       "name": "tool.reelz"
     },
-    "copiesCount": 0,
-    "category": "Photorealistic & Portraits"
+    "additionalImages": [],
+    "updatedAt": "2026-11-25T10:16:09.991Z",
+    "category": "Photorealistic & Portraits",
+    "title": "Hanoi Tiny Planet Portrait for Girls",
+    "publishedAt": "2026-11-22T06:42:31.205Z"
   },
   {
-    "copiesCount": 0,
-    "author": {
-      "avatar": "/logo.png",
-      "role": "Author",
-      "name": "tool.reelz"
+    "imageFileName": "sticker-art-urban-portrait-for-girl.webp",
+    "preferredAi": "Gemini",
+    "variables": [],
+    "affiliateProducts": [],
+    "updatedAt": "2026-11-25T17:49:44.174Z",
+    "title": "Sticker Art Urban Portrait for Girl",
+    "publishedAt": "2026-11-22T06:42:00.060Z",
+    "isNoIndex": true,
+    "isPremium": true,
+    "aiTool": "Midjourney",
+    "slug": "sticker-art-urban-portrait-for-girl",
+    "status": "published",
+    "likesCount": 0,
+    "viewsCount": 0,
+    "imageAlt": "Sticker Art Urban Portrait for Girl",
+    "seo": {
+      "focusKeyword": "sticker art portrait prompt",
+      "metaTitle": "Sticker Art Urban Portrait Prompt for AI Art",
+      "metaDescription": "Generate a creative, sticker-style urban portrait with this Midjourney and Stable Diffusion prompt. Perfect for trendy social media visuals."
     },
+    "promptText": "Full body high-angle overhead shot of user. There is a small white heart sticker on her left cheek. The image has a distinctive digital 'sticker' effect, where the subject has a white outline border separating her from the background. The background is an urban grey stone sidewalk with the large, bold white stenciled text 'WALK YOUR OWN WAY' painted directly onto the ground. Near her feet, there is a small, simple white doodle of a cute cat character. The lighting is soft, natural, and diffused daylight. The perspective is slightly distorted with a wide-angle mobile photography feel. Sharp focus, clean composition, high contrast, street aesthetic, urban fashion photography, 8k resolution, crisp details, aspect ratio 3:4",
     "parameters": {
       "isPremium": true
     },
-    "additionalImages": [],
-    "category": "Digital Art & Creative Illustration",
-    "createdAt": "2026-11-22T06:42:01.485Z",
-    "aiTool": "Midjourney",
-    "updatedAt": "2026-11-25T17:49:44.174Z",
-    "affiliateProducts": [],
-    "id": "prompt-1795329721484",
-    "variables": [],
-    "slug": "sticker-art-urban-portrait-for-girl",
-    "articleContent": "This prompt captures the essence of a modern social media trend: blending realistic portraiture with playful, hand-drawn 'sticker' overlays. The key to this image is the juxtaposition of the high-angle, realistic urban photography and the digital 'cut-out' effect created by the white border outline. To achieve the best results, use a sharp, high-resolution camera setting (like a 35mm lens) while keeping the lighting diffuse to mimic natural overcast daylight. The stencil typography element adds a narrative, inspirational layer to the composition, making it ideal for creative storytelling or lifestyle branding.",
-    "imageFileName": "sticker-art-urban-portrait-for-girl.webp",
-    "seo": {
-      "focusKeyword": "sticker art portrait prompt",
-      "metaDescription": "Generate a creative, sticker-style urban portrait with this Midjourney and Stable Diffusion prompt. Perfect for trendy social media visuals.",
-      "metaTitle": "Sticker Art Urban Portrait Prompt for AI Art"
-    },
-    "preferredAi": "Gemini",
-    "isPremium": true,
-    "viewsCount": 0,
-    "imageAlt": "Sticker Art Urban Portrait for Girl",
-    "isNoIndex": true,
-    "likesCount": 0,
-    "publishedAt": "2026-11-22T06:42:00.060Z",
     "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@7547dc986ffc3f9335ed64d1d9cc82caee571fe0/prompts/sticker-art-urban-portrait-for-girl.jpg",
-    "status": "published",
     "tags": [
       "Sticker Art",
       "Urban Portrait",
@@ -150,25 +141,49 @@
       "Minimalist",
       "Top-down-view"
     ],
-    "title": "Sticker Art Urban Portrait for Girl",
-    "promptText": "Full body high-angle overhead shot of user. There is a small white heart sticker on her left cheek. The image has a distinctive digital 'sticker' effect, where the subject has a white outline border separating her from the background. The background is an urban grey stone sidewalk with the large, bold white stenciled text 'WALK YOUR OWN WAY' painted directly onto the ground. Near her feet, there is a small, simple white doodle of a cute cat character. The lighting is soft, natural, and diffused daylight. The perspective is slightly distorted with a wide-angle mobile photography feel. Sharp focus, clean composition, high contrast, street aesthetic, urban fashion photography, 8k resolution, crisp details, aspect ratio 3:4",
-    "bookmarksCount": 0
-  },
-  {
-    "promptText": "A professional cinematic poster featuring a motorcyclist, split composition. TOP: a large, detailed profile shot of a male subject wearing a glossy black full-face motorcycle helmet and a black Palm Angels hoodie, dramatic studio lighting with soft highlights on the helmet shell. BOTTOM: a smaller, dynamic full-body shot of the same rider on a sleek black Yamaha R15 sports bike, captured in motion on an asphalt road with motion blur. BACKGROUND: the image transitions from the dark asphalt into a clean, atmospheric white gradient fog. TYPOGRAPHY: large, bold, architectural white typography spelling 'BIKER' overlaid behind the portrait, in mono space font. lSTYLE: high-contrast street photography, sharp details on the subject, ethereal misty aesthetics, professional graphic design composition, 8k resolution, cinematic color grading, cold blue-black tones, high-speed shutter, aspect ratio 3:4",
+    "articleContent": "This prompt captures the essence of a modern social media trend: blending realistic portraiture with playful, hand-drawn 'sticker' overlays. The key to this image is the juxtaposition of the high-angle, realistic urban photography and the digital 'cut-out' effect created by the white border outline. To achieve the best results, use a sharp, high-resolution camera setting (like a 35mm lens) while keeping the lighting diffuse to mimic natural overcast daylight. The stencil typography element adds a narrative, inspirational layer to the composition, making it ideal for creative storytelling or lifestyle branding.",
+    "copiesCount": 0,
+    "bookmarksCount": 0,
     "author": {
       "avatar": "/logo.png",
-      "role": "Author",
-      "name": "tool.reelz"
+      "name": "tool.reelz",
+      "role": "Author"
     },
-    "additionalImages": [],
-    "articleContent": "This prompt is designed to capture the essence of modern urban editorial photography. By combining a tight, intimate portrait with an action-oriented motorcycle shot, the composition creates a narrative depth often seen in lifestyle branding. The 'double exposure' effect relies on a clean, foggy background to act as a buffer between the two subjects, allowing the eye to travel naturally from the facial details to the motion of the bike. Perfect for social media branding or high-end lifestyle projects, this prompt utilizes specific lens references (85mm vs 35mm) to instruct the AI to respect depth-of-field differences.",
-    "isPremium": false,
-    "category": "Vehicles & Automotive",
-    "publishedAt": "2026-11-22T06:40:25.047Z",
-    "variables": [],
-    "aiTool": "Midjourney",
+    "category": "Digital Art & Creative Illustration",
+    "id": "prompt-1795329721484",
+    "createdAt": "2026-11-22T06:42:01.485Z",
+    "additionalImages": []
+  },
+  {
     "createdAt": "2026-11-22T06:40:25.047Z",
+    "author": {
+      "role": "Author",
+      "name": "tool.reelz",
+      "avatar": "/logo.png"
+    },
+    "imageFileName": "trending-viral-bike-poster-photo-prompt-for-boy.webp",
+    "publishedAt": "2026-11-22T06:40:25.047Z",
+    "title": "Trending Viral Bike Poster Photo Prompt for Boy",
+    "slug": "trending-viral-bike-poster-photo-prompt-for-boy",
+    "parameters": {
+      "isPremium": false
+    },
+    "promptText": "A professional cinematic poster featuring a motorcyclist, split composition. TOP: a large, detailed profile shot of a male subject wearing a glossy black full-face motorcycle helmet and a black Palm Angels hoodie, dramatic studio lighting with soft highlights on the helmet shell. BOTTOM: a smaller, dynamic full-body shot of the same rider on a sleek black Yamaha R15 sports bike, captured in motion on an asphalt road with motion blur. BACKGROUND: the image transitions from the dark asphalt into a clean, atmospheric white gradient fog. TYPOGRAPHY: large, bold, architectural white typography spelling 'BIKER' overlaid behind the portrait, in mono space font. lSTYLE: high-contrast street photography, sharp details on the subject, ethereal misty aesthetics, professional graphic design composition, 8k resolution, cinematic color grading, cold blue-black tones, high-speed shutter, aspect ratio 3:4",
+    "affiliateProducts": [],
+    "isPremium": false,
+    "imageAlt": "Trending Viral Bike Poster Photo Prompt for Boy",
+    "viewsCount": 0,
+    "id": "prompt-1795329625047",
+    "likesCount": 0,
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/trending-viral-bike-poster-photo-prompt-for-boy.jpg",
+    "copiesCount": 0,
+    "bookmarksCount": 0,
+    "aiTool": "Midjourney",
+    "seo": {
+      "metaDescription": "Learn how to prompt for moody, cinematic double-exposure motorcycle photography with this expert guide and prompt setup.",
+      "metaTitle": "Create Cinematic Biker Composite Portraits with AI",
+      "focusKeyword": "biker photography composite"
+    },
     "tags": [
       "Biker Aesthetic",
       "Double Exposure",
@@ -178,59 +193,44 @@
       "Urban Style",
       "Hyperrealistic"
     ],
-    "updatedAt": "2026-11-25T10:46:26.059Z",
-    "imageFileName": "trending-viral-bike-poster-photo-prompt-for-boy.webp",
-    "affiliateProducts": [],
-    "likesCount": 0,
-    "imageAlt": "Trending Viral Bike Poster Photo Prompt for Boy",
-    "bookmarksCount": 0,
-    "copiesCount": 0,
-    "viewsCount": 0,
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/trending-viral-bike-poster-photo-prompt-for-boy.jpg",
-    "seo": {
-      "metaTitle": "Create Cinematic Biker Composite Portraits with AI",
-      "metaDescription": "Learn how to prompt for moody, cinematic double-exposure motorcycle photography with this expert guide and prompt setup.",
-      "focusKeyword": "biker photography composite"
-    },
-    "id": "prompt-1795329625047",
-    "status": "published",
-    "slug": "trending-viral-bike-poster-photo-prompt-for-boy",
     "isNoIndex": false,
-    "title": "Trending Viral Bike Poster Photo Prompt for Boy",
-    "parameters": {
-      "isPremium": false
-    }
+    "status": "published",
+    "articleContent": "This prompt is designed to capture the essence of modern urban editorial photography. By combining a tight, intimate portrait with an action-oriented motorcycle shot, the composition creates a narrative depth often seen in lifestyle branding. The 'double exposure' effect relies on a clean, foggy background to act as a buffer between the two subjects, allowing the eye to travel naturally from the facial details to the motion of the bike. Perfect for social media branding or high-end lifestyle projects, this prompt utilizes specific lens references (85mm vs 35mm) to instruct the AI to respect depth-of-field differences.",
+    "variables": [],
+    "updatedAt": "2026-11-25T10:46:26.059Z",
+    "category": "Vehicles & Automotive",
+    "additionalImages": []
   },
   {
-    "additionalImages": [],
-    "status": "published",
-    "promptText": "A professional portrait of user wearing sunglasses on his head, dressed in a crisp black button-down shirt with the sleeves rolled up and light grey relaxed-fit denim trousers. He is sitting on a polished, mirror-finish chrome Royal Enfield motorcycle fuel tank, with one feet on the footrest near engine and other touching the ground. One hands gripping the the handle bar, looking on the opposite side of bike away from camera. The background is a lake with mountains. The lighting is soft and natural, realistic natural dispersed sunlight reflecting off the metallic surface of the bike. High-end portrait photography style, no depth,blur, focus or Bokeh effect, organic textures, hyper-realistic, detailed skin pores and hair texture, aspect ratio 3:4",
-    "likesCount": 0,
-    "imageAlt": "Royal Enfield bike prompt",
-    "publishedAt": "2026-11-22T06:39:10.400Z",
-    "articleContent": "This prompt is designed to replicate the classic, aspirational travel photography style often seen in adventure lifestyle magazines. It captures the intersection of man, machine, and nature. By emphasizing the contrast between the polished chrome of the motorcycle and the raw, earthy textures of the mountain background, this prompt allows AI image generators to create a scene that feels authentic, rugged, and cinematic. The key to this look is the balance of sharp, detailed subject matter against the soft, natural ambient lighting of a cloudy day, which reduces harsh shadows and creates a professional editorial finish.",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@3996d8db927bcdd56f14a1db90d614be2bd54a63/prompts/royal-enfield-bike-prompt.jpg",
-    "isNoIndex": false,
-    "slug": "royal-enfield-bike-prompt",
-    "id": "prompt-1795329550400",
-    "isPremium": false,
-    "variables": [],
-    "viewsCount": 0,
-    "affiliateProducts": [],
     "bookmarksCount": 0,
-    "aiTool": "Midjourney",
+    "seo": {
+      "metaTitle": "Royal Enfield Adventure Lifestyle Photography Prompt",
+      "focusKeyword": "Royal Enfield photography prompt",
+      "metaDescription": "Capture the essence of rugged adventure with this professional lifestyle photography prompt, perfect for creating cinematic shots of motorcycles and travel landscapes."
+    },
+    "category": "Vehicles & Automotive",
+    "additionalImages": [],
+    "variables": [],
+    "updatedAt": "2026-11-25T19:40:52.733Z",
+    "affiliateProducts": [],
     "title": "Royal Enfield bike prompt",
-    "createdAt": "2026-11-22T06:39:10.400Z",
+    "slug": "royal-enfield-bike-prompt",
+    "imageAlt": "Royal Enfield bike prompt",
+    "isNoIndex": false,
     "parameters": {
       "isPremium": false
     },
-    "imageFileName": "royal-enfield-bike-prompt.webp",
-    "updatedAt": "2026-11-25T19:40:52.733Z",
-    "seo": {
-      "focusKeyword": "Royal Enfield photography prompt",
-      "metaTitle": "Royal Enfield Adventure Lifestyle Photography Prompt",
-      "metaDescription": "Capture the essence of rugged adventure with this professional lifestyle photography prompt, perfect for creating cinematic shots of motorcycles and travel landscapes."
+    "promptText": "A professional portrait of user wearing sunglasses on his head, dressed in a crisp black button-down shirt with the sleeves rolled up and light grey relaxed-fit denim trousers. He is sitting on a polished, mirror-finish chrome Royal Enfield motorcycle fuel tank, with one feet on the footrest near engine and other touching the ground. One hands gripping the the handle bar, looking on the opposite side of bike away from camera. The background is a lake with mountains. The lighting is soft and natural, realistic natural dispersed sunlight reflecting off the metallic surface of the bike. High-end portrait photography style, no depth,blur, focus or Bokeh effect, organic textures, hyper-realistic, detailed skin pores and hair texture, aspect ratio 3:4",
+    "author": {
+      "avatar": "/logo.png",
+      "role": "Author",
+      "name": "tool.reelz"
     },
+    "isPremium": false,
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@3996d8db927bcdd56f14a1db90d614be2bd54a63/prompts/royal-enfield-bike-prompt.jpg",
+    "articleContent": "This prompt is designed to replicate the classic, aspirational travel photography style often seen in adventure lifestyle magazines. It captures the intersection of man, machine, and nature. By emphasizing the contrast between the polished chrome of the motorcycle and the raw, earthy textures of the mountain background, this prompt allows AI image generators to create a scene that feels authentic, rugged, and cinematic. The key to this look is the balance of sharp, detailed subject matter against the soft, natural ambient lighting of a cloudy day, which reduces harsh shadows and creates a professional editorial finish.",
+    "copiesCount": 0,
+    "imageFileName": "royal-enfield-bike-prompt.webp",
     "tags": [
       "Travel Photography",
       "Royal Enfield",
@@ -242,32 +242,46 @@
       "Adventure Aesthetic",
       "Royal Enfield Bike"
     ],
-    "author": {
-      "role": "Author",
-      "name": "tool.reelz",
-      "avatar": "/logo.png"
-    },
-    "copiesCount": 0,
-    "category": "Vehicles & Automotive"
+    "viewsCount": 0,
+    "likesCount": 0,
+    "status": "published",
+    "aiTool": "Midjourney",
+    "createdAt": "2026-11-22T06:39:10.400Z",
+    "id": "prompt-1795329550400",
+    "publishedAt": "2026-11-22T06:39:10.400Z"
   },
   {
+    "affiliateProducts": [],
+    "aiTool": "Midjourney",
+    "isPremium": true,
+    "status": "published",
+    "imageFileName": "urban-isolation-kinetic-street-portraiture.webp",
     "copiesCount": 0,
-    "likesCount": 0,
-    "seo": {
-      "metaDescription": "Generate stunning, professional-grade street portraits with motion-blurred backgrounds using this optimized AI photography prompt.",
-      "metaTitle": "Cinematic Urban Portraiture Prompt - AI Photography",
-      "focusKeyword": "cinematic street portrait"
-    },
-    "bookmarksCount": 0,
     "isNoIndex": true,
     "id": "prompt-1795329464957",
-    "category": "Lifestyle & Portrait Photography",
+    "updatedAt": "2026-11-26T05:18:05.364Z",
+    "promptText": "A top diagonal medium shot of a young man with dark, messy hair and a sharp, thoughtful face standing perfectly still in the center of a chaotic, rushing crowd, the crowd is rendered in a heavy, ethereal motion blur creating a sense of rapid movement around the static subject. The subject is wearing a high-quality matte black insulated down puffer jacket with a prominent collar and a small subtle logo on the chest, his hands are tucked deep inside his pockets. The expression is stoic, introspective, and slightly detached, gaze fixed away from the camera. The scene is shot with a 50mm lens at a wide aperture to isolate the subject, sharp focus on the face with intricate skin texture and fine details in the hair. The environment is an urban street, gloomy and overcast with a cold, desaturated color palette dominated by charcoal grays, deep blacks, and muted blues. Lighting is soft and directional, highlighting the subject's features while creating deep, soft shadows. The overall aesthetic is cinematic, moody, and melancholy, 35mm film grain, hyper-realistic, high contrast, aspect ratio 3:4",
+    "parameters": {
+      "isPremium": true
+    },
+    "variables": [],
+    "seo": {
+      "focusKeyword": "cinematic street portrait",
+      "metaDescription": "Generate stunning, professional-grade street portraits with motion-blurred backgrounds using this optimized AI photography prompt.",
+      "metaTitle": "Cinematic Urban Portraiture Prompt - AI Photography"
+    },
+    "slug": "urban-isolation-kinetic-street-portraiture",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@5fa2a855b495355edf3fa87cb1ef03076c02b6d5/prompts/urban-isolation-kinetic-street-portraiture.jpg",
+    "createdAt": "2026-11-22T06:37:44.959Z",
+    "viewsCount": 0,
+    "publishedAt": "2026-11-22T06:37:44.959Z",
+    "bookmarksCount": 0,
     "author": {
-      "avatar": "/logo.png",
       "name": "tool.reelz",
+      "avatar": "/logo.png",
       "role": "Author"
     },
-    "promptText": "A top diagonal medium shot of a young man with dark, messy hair and a sharp, thoughtful face standing perfectly still in the center of a chaotic, rushing crowd, the crowd is rendered in a heavy, ethereal motion blur creating a sense of rapid movement around the static subject. The subject is wearing a high-quality matte black insulated down puffer jacket with a prominent collar and a small subtle logo on the chest, his hands are tucked deep inside his pockets. The expression is stoic, introspective, and slightly detached, gaze fixed away from the camera. The scene is shot with a 50mm lens at a wide aperture to isolate the subject, sharp focus on the face with intricate skin texture and fine details in the hair. The environment is an urban street, gloomy and overcast with a cold, desaturated color palette dominated by charcoal grays, deep blacks, and muted blues. Lighting is soft and directional, highlighting the subject's features while creating deep, soft shadows. The overall aesthetic is cinematic, moody, and melancholy, 35mm film grain, hyper-realistic, high contrast, aspect ratio 3:4",
+    "imageAlt": "Urban Isolation: Kinetic Street Portraiture",
     "tags": [
       "Street Photography",
       "Motion Blur",
@@ -277,106 +291,82 @@
       "Hyper-realistic",
       "Candid Style"
     ],
-    "aiTool": "Midjourney",
-    "affiliateProducts": [],
-    "title": "Urban Isolation: Kinetic Street Portraiture",
-    "status": "published",
-    "updatedAt": "2026-11-26T05:18:05.364Z",
-    "parameters": {
-      "isPremium": true
-    },
-    "createdAt": "2026-11-22T06:37:44.959Z",
-    "publishedAt": "2026-11-22T06:37:44.959Z",
+    "likesCount": 0,
     "additionalImages": [],
+    "title": "Urban Isolation: Kinetic Street Portraiture",
     "articleContent": "This prompt is engineered to replicate the 'frozen in time' effect often seen in high-end editorial street photography. By specifying a wide aperture (f/1.8) and emphasizing the contrast between the static subject and the motion-blurred crowd, you can achieve a professional depth-of-field effect that highlights the isolation of the subject within an urban landscape. The focus on desaturated tones and overcast lighting provides a moody, authentic metropolitan aesthetic ideal for fashion or lifestyle editorial use.",
-    "isPremium": true,
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@5fa2a855b495355edf3fa87cb1ef03076c02b6d5/prompts/urban-isolation-kinetic-street-portraiture.jpg",
-    "imageFileName": "urban-isolation-kinetic-street-portraiture.webp",
-    "variables": [],
-    "imageAlt": "Urban Isolation: Kinetic Street Portraiture",
-    "slug": "urban-isolation-kinetic-street-portraiture",
-    "viewsCount": 0
+    "category": "Lifestyle & Portrait Photography"
   },
   {
-    "publishedAt": "2026-11-20T12:03:32.733Z",
-    "imageAlt": "New royal Enfield bike trend prompt ai photo",
-    "status": "published",
-    "additionalImages": [],
     "likesCount": 0,
-    "affiliateProducts": [],
     "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@63570a408c11f57dfc1c6bcf90d03584bc4a5f3a/prompts/new-royal-enfield-bike-trend-prompt-ai-photo.jpg",
-    "isNoIndex": false,
-    "slug": "new-royal-enfield-bike-trend-prompt-ai-photo",
-    "seo": {
-      "metaTitle": "New bike trend prompt ai photo | Trending Copy Paste Photo Prompts",
-      "focusKeyword": "New royal Enfield bike trend prompt ai photo",
-      "metaDescription": "Copy and paste this photo prompt for New royal Enfield bike trend prompt ai photo."
-    },
-    "promptText": "Create an ultra-realistic, high-quality lifestyle photograph using the uploaded user's photograph as the ONLY facial identity and personal appearance reference, and the provided reference image as the exact scene composition, motorcycle, body posture, outfit, environment, camera angle, and lighting reference.\n1. FACE AND IDENTITY — ABSOLUTE PRIORITY\nPreserve the user's exact recognizable facial identity, facial proportions, eyes, eyebrows, nose, lips, jawline, skin tone, hairstyle, and natural facial characteristics.\nMaintain realistic skin texture and authentic facial details. Do not change the user's identity or facial structure.\n2. EXACT OUTFIT\nRecreate the exact outfit from the reference image:\n- Light pastel pink button-down shirt.\n- Full-length sleeves casually folded up to approximately the forearms.\n- Relaxed shirt fit with natural fabric folds.\n- Front buttons and open relaxed collar.\n- Dark charcoal-grey straight-fit trousers.\n- Simple silver-toned wristwatch.\nPreserve the exact colors, fabric appearance, fit, and styling.\n3. EXACT POSE AND BODY POSITION\nThe user is sitting on motorcycle.\nThe upper body is slightly bent forward toward the motorcycle's handlebar.\nBoth hands are placed naturally on the motorcycle handlebars, with fingers realistically wrapped around the grips.\nThe head is slightly tilted left side away from the camera.\n\nThe user's body should appear naturally balanced, as if casually inspecting or preparing to ride the motorcycle.\n4. MOTORCYCLE — EXACT REFERENCE STYLE\nInclude a beautiful classic black-and-chrome retro Royal Enfield Classic 350 motorcycle with proper details.\n5. BACKGROUND AND ENVIRONMENT\nRecreate a modern outdoor commercial building entrance.\nBehind the user, create a tall charcoal-black wall covered with closely spaced vertical wooden or metallic slats.\n\nOn the right side, include a warm beige exterior wall with lush tropical green palm leaves extending into the frame.\nCreate beautiful natural palm-leaf shadows falling across the beige wall and dark slatted surface.\nKeep the environment sophisticated, minimal, and naturally realistic.\n6. LIGHTING — EXACT GOLDEN-HOUR EFFECT\nUse warm late-afternoon sunlight entering from the upper-right side.\nCreate beautiful golden highlights on the pink shirt, motorcycle chrome, hair, palm leaves, and architectural wall.\nInclude soft, naturally shaped palm-leaf shadows on the background.\nThe lighting should feel warm, bright, and naturally sunlit without appearing artificially illuminated.\n7. CAMERA AND COMPOSITION\nVertical portrait photograph, approximately 3:4 aspect ratio.\nUse a slightly low-to-eye-level camera perspective.\nFrame the user from the head down to the upper legs, while keeping the motorcycle's headlight, fuel tank, handlebars, and a significant portion of the engine visible.\nPlace the user slightly right of center and the motorcycle across the lower half of the composition.\nKeep the vertical slatted wall occupying most of the left background and tropical greenery in the upper-right corner.\nUse realistic portrait-lens depth of field, with the user and motorcycle sharply detailed and the distant greenery softly blurred.\n8. PHOTOGRAPHIC REALISM\nProfessional lifestyle photography, authentic outdoor smartphone-photography appearance, realistic human anatomy, detailed motorcycle mechanics, natural fabric textures, realistic reflections, warm daylight, subtle background bokeh, and high-resolution photographic detail.\nThe final image must look like a genuine photograph taken at a modern outdoor location, not an illustration, painting, or CGI render.\nNEGATIVE PROMPT\nDifferent face, altered identity, sitting on motorcycle, riding motorcycle, hands away from handlebars, incorrect hand placement, distorted fingers, extra limbs, incorrect motorcycle proportions, sports bike, modern racing bike, different shirt color, jacket, artificial lighting, cartoon, anime, CGI, excessive cinematic grading, text overlays, watermark, logo.\nAspect Ratio: 3:4 vertical portrait.",
-    "title": "New royal Enfield bike trend prompt ai photo",
-    "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
-    "imageFileName": "new-royal-enfield-bike-trend-prompt-ai-photo.webp",
-    "variables": [],
-    "copiesCount": 0,
-    "category": "Fashion & Editorial Photography",
-    "parameters": {
-      "isPremium": false
-    },
-    "isPremium": false,
-    "bookmarksCount": 0,
-    "preferredAi": "Gemini",
     "viewsCount": 0,
-    "id": "prompt-1795176212732",
     "author": {
-      "role": "Author",
       "name": "tool.reelz",
+      "role": "Author",
       "avatar": "/logo.png"
     },
+    "preferredAi": "Gemini",
+    "imageAlt": "New royal Enfield bike trend prompt ai photo",
+    "id": "prompt-1795176212732",
+    "imageFileName": "new-royal-enfield-bike-trend-prompt-ai-photo.webp",
+    "createdAt": "2026-11-20T12:03:32.733Z",
+    "publishedAt": "2026-11-20T12:03:32.733Z",
     "tags": [
       "AI",
       "Photorealistic",
       "Masterpiece",
       "New Royal Enfield Bike Trend Prompt AI"
     ],
-    "createdAt": "2026-11-20T12:03:32.733Z",
+    "affiliateProducts": [],
+    "seo": {
+      "metaTitle": "New bike trend prompt ai photo | Trending Copy Paste Photo Prompts",
+      "metaDescription": "Copy and paste this photo prompt for New royal Enfield bike trend prompt ai photo.",
+      "focusKeyword": "New royal Enfield bike trend prompt ai photo"
+    },
+    "category": "Fashion & Editorial Photography",
+    "additionalImages": [],
+    "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
+    "isNoIndex": false,
+    "slug": "new-royal-enfield-bike-trend-prompt-ai-photo",
+    "title": "New royal Enfield bike trend prompt ai photo",
+    "status": "published",
     "aiTool": "Midjourney",
-    "updatedAt": "2026-11-26T06:02:37.232Z"
+    "isPremium": false,
+    "copiesCount": 0,
+    "promptText": "Create an ultra-realistic, high-quality lifestyle photograph using the uploaded user's photograph as the ONLY facial identity and personal appearance reference, and the provided reference image as the exact scene composition, motorcycle, body posture, outfit, environment, camera angle, and lighting reference.\n1. FACE AND IDENTITY — ABSOLUTE PRIORITY\nPreserve the user's exact recognizable facial identity, facial proportions, eyes, eyebrows, nose, lips, jawline, skin tone, hairstyle, and natural facial characteristics.\nMaintain realistic skin texture and authentic facial details. Do not change the user's identity or facial structure.\n2. EXACT OUTFIT\nRecreate the exact outfit from the reference image:\n- Light pastel pink button-down shirt.\n- Full-length sleeves casually folded up to approximately the forearms.\n- Relaxed shirt fit with natural fabric folds.\n- Front buttons and open relaxed collar.\n- Dark charcoal-grey straight-fit trousers.\n- Simple silver-toned wristwatch.\nPreserve the exact colors, fabric appearance, fit, and styling.\n3. EXACT POSE AND BODY POSITION\nThe user is sitting on motorcycle.\nThe upper body is slightly bent forward toward the motorcycle's handlebar.\nBoth hands are placed naturally on the motorcycle handlebars, with fingers realistically wrapped around the grips.\nThe head is slightly tilted left side away from the camera.\n\nThe user's body should appear naturally balanced, as if casually inspecting or preparing to ride the motorcycle.\n4. MOTORCYCLE — EXACT REFERENCE STYLE\nInclude a beautiful classic black-and-chrome retro Royal Enfield Classic 350 motorcycle with proper details.\n5. BACKGROUND AND ENVIRONMENT\nRecreate a modern outdoor commercial building entrance.\nBehind the user, create a tall charcoal-black wall covered with closely spaced vertical wooden or metallic slats.\n\nOn the right side, include a warm beige exterior wall with lush tropical green palm leaves extending into the frame.\nCreate beautiful natural palm-leaf shadows falling across the beige wall and dark slatted surface.\nKeep the environment sophisticated, minimal, and naturally realistic.\n6. LIGHTING — EXACT GOLDEN-HOUR EFFECT\nUse warm late-afternoon sunlight entering from the upper-right side.\nCreate beautiful golden highlights on the pink shirt, motorcycle chrome, hair, palm leaves, and architectural wall.\nInclude soft, naturally shaped palm-leaf shadows on the background.\nThe lighting should feel warm, bright, and naturally sunlit without appearing artificially illuminated.\n7. CAMERA AND COMPOSITION\nVertical portrait photograph, approximately 3:4 aspect ratio.\nUse a slightly low-to-eye-level camera perspective.\nFrame the user from the head down to the upper legs, while keeping the motorcycle's headlight, fuel tank, handlebars, and a significant portion of the engine visible.\nPlace the user slightly right of center and the motorcycle across the lower half of the composition.\nKeep the vertical slatted wall occupying most of the left background and tropical greenery in the upper-right corner.\nUse realistic portrait-lens depth of field, with the user and motorcycle sharply detailed and the distant greenery softly blurred.\n8. PHOTOGRAPHIC REALISM\nProfessional lifestyle photography, authentic outdoor smartphone-photography appearance, realistic human anatomy, detailed motorcycle mechanics, natural fabric textures, realistic reflections, warm daylight, subtle background bokeh, and high-resolution photographic detail.\nThe final image must look like a genuine photograph taken at a modern outdoor location, not an illustration, painting, or CGI render.\nNEGATIVE PROMPT\nDifferent face, altered identity, sitting on motorcycle, riding motorcycle, hands away from handlebars, incorrect hand placement, distorted fingers, extra limbs, incorrect motorcycle proportions, sports bike, modern racing bike, different shirt color, jacket, artificial lighting, cartoon, anime, CGI, excessive cinematic grading, text overlays, watermark, logo.\nAspect Ratio: 3:4 vertical portrait.",
+    "parameters": {
+      "isPremium": false
+    },
+    "updatedAt": "2026-11-26T06:02:37.232Z",
+    "bookmarksCount": 0,
+    "variables": []
   },
   {
-    "additionalImages": [
-      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@6b4f69628d17989717fddde823135d939f20df83/prompts/viral-instagram-dp-prompt-slide-1.jpg"
-    ],
-    "author": {
-      "avatar": "/logo.png",
-      "name": "tool.reelz",
-      "role": "Author"
-    },
-    "isPremium": false,
-    "viewsCount": 0,
-    "aiTool": "Midjourney",
-    "variables": [],
-    "createdAt": "2026-11-20T12:01:28.397Z",
-    "imageAlt": "Viral Instagram DP Prompt",
-    "updatedAt": "2026-11-26T10:41:21.711Z",
-    "imageFileName": "viral-instagram-dp-prompt.webp",
-    "affiliateProducts": [],
+    "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
     "id": "prompt-1795176088397",
+    "copiesCount": 0,
+    "createdAt": "2026-11-20T12:01:28.397Z",
+    "bookmarksCount": 0,
+    "parameters": {
+      "isPremium": false
+    },
+    "promptText": "A circular frame portrait on a white background featuring user with long, dark wavy hair, smiling gently and looking to the right while softly touching her hair. A small white daisy is tucked behind her ear, and she wears ornate gold jhumka earrings with pearl drops. She is dressed in a vibrant red traditional Indian outfit with sheer sleeves and gold floral embroidery. Behind her, large, bold purple-to-pink gradient serif text reads \"Priya,\" layered over a dreamy pastel purple and pink halftone dot background. Soft-focus white daisies and a prominent pink lotus flower frame the bottom corners. Bright, soft, even lighting illuminates her face, creating a vibrant, polished, and romantic graphic design aesthetic with a thin pastel pink circular border. Aspect ratio 1:1",
     "slug": "viral-instagram-dp-prompt",
-    "publishedAt": "2026-11-20T12:01:28.397Z",
+    "aiTool": "Midjourney",
+    "imageFileName": "viral-instagram-dp-prompt.webp",
     "seo": {
       "metaTitle": "dp prompt | Trending Copy Paste Photo Prompts",
       "focusKeyword": "Viral Instagram DP Prompt",
       "metaDescription": "Copy and paste this photo prompt for Viral Instagram DP Prompt."
     },
-    "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@c9bb3406f378a129aa31fd0a3d544c49339a7a5f/prompts/viral-instagram-dp-prompt.jpg",
-    "parameters": {
-      "isPremium": false
-    },
-    "promptText": "A circular frame portrait on a white background featuring user with long, dark wavy hair, smiling gently and looking to the right while softly touching her hair. A small white daisy is tucked behind her ear, and she wears ornate gold jhumka earrings with pearl drops. She is dressed in a vibrant red traditional Indian outfit with sheer sleeves and gold floral embroidery. Behind her, large, bold purple-to-pink gradient serif text reads \"Priya,\" layered over a dreamy pastel purple and pink halftone dot background. Soft-focus white daisies and a prominent pink lotus flower frame the bottom corners. Bright, soft, even lighting illuminates her face, creating a vibrant, polished, and romantic graphic design aesthetic with a thin pastel pink circular border. Aspect ratio 1:1",
-    "preferredAi": "Gemini",
     "status": "published",
-    "copiesCount": 0,
+    "likesCount": 0,
+    "isNoIndex": false,
+    "viewsCount": 0,
+    "publishedAt": "2026-11-20T12:01:28.397Z",
+    "category": "Instagram Trend",
+    "affiliateProducts": [],
     "tags": [
       "Instagram Profile",
       "AI Portrait",
@@ -391,177 +381,177 @@
       "Graphic Design",
       "Social Media Trend"
     ],
+    "isPremium": false,
+    "author": {
+      "role": "Author",
+      "avatar": "/logo.png",
+      "name": "tool.reelz"
+    },
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@c9bb3406f378a129aa31fd0a3d544c49339a7a5f/prompts/viral-instagram-dp-prompt.jpg",
     "title": "Viral Instagram DP Prompt",
-    "category": "Instagram Trend",
-    "bookmarksCount": 0,
-    "isNoIndex": false,
-    "likesCount": 0
+    "additionalImages": [
+      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@6b4f69628d17989717fddde823135d939f20df83/prompts/viral-instagram-dp-prompt-slide-1.jpg"
+    ],
+    "updatedAt": "2026-11-26T10:41:21.711Z",
+    "variables": [],
+    "imageAlt": "Viral Instagram DP Prompt",
+    "preferredAi": "Gemini"
   },
   {
-    "copiesCount": 0,
-    "updatedAt": "2026-11-26T10:06:51.915Z",
-    "createdAt": "2026-11-20T11:59:23.521Z",
-    "parameters": {
-      "isPremium": false
-    },
-    "additionalImages": [],
-    "isPremium": false,
-    "affiliateProducts": [],
-    "status": "published",
-    "category": "Photorealistic & Portraits",
-    "viewsCount": 0,
-    "variables": [],
-    "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
-    "preferredAi": "Gemini",
-    "slug": "mirror-selfie-prompt-gemini",
-    "author": {
-      "name": "tool.reelz",
-      "role": "Author",
-      "avatar": "/logo.png"
-    },
-    "aiTool": "Midjourney",
     "publishedAt": "2026-11-20T11:59:23.521Z",
-    "isNoIndex": false,
-    "likesCount": 0,
-    "imageFileName": "mirror-selfie-prompt-gemini.webp",
-    "title": "mirror selfie prompt gemini",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@17c27cb458feef991af11ea66b9186be32edb4a0/prompts/mirror-selfie-prompt-gemini.jpg",
-    "promptText": "Create an ultra-realistic, high-end mirror portrait photograph using the uploaded user's photograph as the ONLY facial identity reference, and the provided reference image as the exact clothing, mirror composition, camera angle, environment, pose, lighting, and visual style reference.\n\n1. FACE AND IDENTITY — ABSOLUTE PRIORITY\n\nPreserve the user's exact recognizable facial identity, facial proportions, eyes, eyebrows, nose, lips, jawline, skin tone, and natural facial characteristics.\n\nMaintain realistic skin texture, natural imperfections, and authentic facial details. Do not replace, redesign, or beautify the user's face.\n\n2. EXACT OUTFIT — REFERENCE IMAGE\n\nRecreate the exact outfit visible in the reference image:\n\n- A fitted, solid black, long-sleeved button-down shirt.\n- Premium black fabric with a subtle natural sheen and realistic fabric texture.\n- Shirt collar slightly open and relaxed, with the top few buttons undone.\n- Natural open neckline, showing a small portion of the upper chest.\n- Sleeves full-length with natural folds and slight creasing around the elbows.\n- A thin, delicate silver-toned chain necklace around the neck.\n- No tie, no jacket, no additional layers, and no visible printed patterns.\n\nKeep the shirt completely black, with realistic highlights and deep natural shadows.\n\n3. HAIRSTYLE AND APPEARANCE\n\nCreate a naturally voluminous, slightly messy hairstyle with thick, textured hair swept backward and a few loose strands falling naturally toward the forehead.\n\nThe hairstyle should look effortlessly styled rather than perfectly groomed.\n\nMaintain the user's original hair color while adapting the styling to the reference photograph.\n\n4. EXACT MIRROR POSE AND COMPOSITION\n\nCreate a realistic bathroom mirror photograph.\n\nThe user is standing close to a large rectangular wall-mounted mirror, leaning slightly forward toward it with both hands resting naturally on the bathroom countertop or basin.\n\nThe camera captures the user's back and shoulders in the foreground, while the mirror displays the user's complete frontal reflection.\n\nThe reflection must show the user looking directly into their own eyes in the mirror with a serious, calm, confident expression.\n\nThe reflected face should be clearly visible, sharp, and positioned slightly left of the center.\n\nThe real person's back, shoulders, and head should occupy a significant portion of the right foreground, creating the exact over-the-shoulder mirror perspective.\n\nIMPORTANT: The reflection and the actual person's body must be perfectly synchronized, anatomically consistent, and accurately aligned.\n\n5. ENVIRONMENT AND BACKGROUND\n\nA sophisticated modern luxury bathroom with dark charcoal and black marble walls, subtle natural stone textures, a large rectangular illuminated mirror, and a minimalist countertop.\n\nInclude subtle vertical architectural lines, dark reflective surfaces, and understated bathroom details.\n\nThe background should remain dark, elegant, clean, and uncluttered.\n\n6. LIGHTING AND COLOR GRADING\n\nUse controlled, soft bathroom lighting with a cool-neutral white light illuminating the face through the mirror.\n\nCreate gentle highlights across the forehead, nose, cheeks, and hair, while retaining deep shadows around the black shirt and foreground.\n\nUse a muted charcoal, deep black, neutral grey, and subtle cool-white color palette.\n\nMaintain realistic skin tones without excessive orange or blue color grading.\n\n7. PHOTOGRAPHY STYLE\n\nUltra-realistic live-action photography, professional mirror portrait, natural human anatomy, realistic reflection physics, detailed hair strands, accurate fabric texture, subtle depth of field, premium editorial photography, and authentic low-light photographic detail.\n\nThe final image should look like a real photograph captured in a luxury bathroom, not an illustration or CGI render.\n\nAspect Ratio: Preserve the reference image's original landscape composition.\n\nNEGATIVE PROMPT\n\nDifferent face, altered identity, incorrect reflection, duplicated face, inconsistent mirror reflection, extra person, distorted hands, extra fingers, different shirt color, white shirt, printed shirt, jacket, tie, excessive jewelry, exaggerated hairstyle, cartoon, anime, CGI, artificial skin, oversaturated colors, text, watermark, logo.",
-    "seo": {
-      "focusKeyword": "mirror selfie prompt gemini",
-      "metaTitle": "mirror selfie prompt gemini | Trending Copy Paste Photo Prompts",
-      "metaDescription": "Copy and paste this photo prompt for mirror selfie prompt gemini."
-    },
-    "id": "prompt-1795175963521",
-    "imageAlt": "mirror selfie prompt gemini",
     "tags": [
       "AI",
       "Photorealistic",
       "Masterpiece",
       "Mirror Selfie Prompt Gemini"
     ],
-    "bookmarksCount": 0
+    "parameters": {
+      "isPremium": false
+    },
+    "promptText": "Create an ultra-realistic, high-end mirror portrait photograph using the uploaded user's photograph as the ONLY facial identity reference, and the provided reference image as the exact clothing, mirror composition, camera angle, environment, pose, lighting, and visual style reference.\n\n1. FACE AND IDENTITY — ABSOLUTE PRIORITY\n\nPreserve the user's exact recognizable facial identity, facial proportions, eyes, eyebrows, nose, lips, jawline, skin tone, and natural facial characteristics.\n\nMaintain realistic skin texture, natural imperfections, and authentic facial details. Do not replace, redesign, or beautify the user's face.\n\n2. EXACT OUTFIT — REFERENCE IMAGE\n\nRecreate the exact outfit visible in the reference image:\n\n- A fitted, solid black, long-sleeved button-down shirt.\n- Premium black fabric with a subtle natural sheen and realistic fabric texture.\n- Shirt collar slightly open and relaxed, with the top few buttons undone.\n- Natural open neckline, showing a small portion of the upper chest.\n- Sleeves full-length with natural folds and slight creasing around the elbows.\n- A thin, delicate silver-toned chain necklace around the neck.\n- No tie, no jacket, no additional layers, and no visible printed patterns.\n\nKeep the shirt completely black, with realistic highlights and deep natural shadows.\n\n3. HAIRSTYLE AND APPEARANCE\n\nCreate a naturally voluminous, slightly messy hairstyle with thick, textured hair swept backward and a few loose strands falling naturally toward the forehead.\n\nThe hairstyle should look effortlessly styled rather than perfectly groomed.\n\nMaintain the user's original hair color while adapting the styling to the reference photograph.\n\n4. EXACT MIRROR POSE AND COMPOSITION\n\nCreate a realistic bathroom mirror photograph.\n\nThe user is standing close to a large rectangular wall-mounted mirror, leaning slightly forward toward it with both hands resting naturally on the bathroom countertop or basin.\n\nThe camera captures the user's back and shoulders in the foreground, while the mirror displays the user's complete frontal reflection.\n\nThe reflection must show the user looking directly into their own eyes in the mirror with a serious, calm, confident expression.\n\nThe reflected face should be clearly visible, sharp, and positioned slightly left of the center.\n\nThe real person's back, shoulders, and head should occupy a significant portion of the right foreground, creating the exact over-the-shoulder mirror perspective.\n\nIMPORTANT: The reflection and the actual person's body must be perfectly synchronized, anatomically consistent, and accurately aligned.\n\n5. ENVIRONMENT AND BACKGROUND\n\nA sophisticated modern luxury bathroom with dark charcoal and black marble walls, subtle natural stone textures, a large rectangular illuminated mirror, and a minimalist countertop.\n\nInclude subtle vertical architectural lines, dark reflective surfaces, and understated bathroom details.\n\nThe background should remain dark, elegant, clean, and uncluttered.\n\n6. LIGHTING AND COLOR GRADING\n\nUse controlled, soft bathroom lighting with a cool-neutral white light illuminating the face through the mirror.\n\nCreate gentle highlights across the forehead, nose, cheeks, and hair, while retaining deep shadows around the black shirt and foreground.\n\nUse a muted charcoal, deep black, neutral grey, and subtle cool-white color palette.\n\nMaintain realistic skin tones without excessive orange or blue color grading.\n\n7. PHOTOGRAPHY STYLE\n\nUltra-realistic live-action photography, professional mirror portrait, natural human anatomy, realistic reflection physics, detailed hair strands, accurate fabric texture, subtle depth of field, premium editorial photography, and authentic low-light photographic detail.\n\nThe final image should look like a real photograph captured in a luxury bathroom, not an illustration or CGI render.\n\nAspect Ratio: Preserve the reference image's original landscape composition.\n\nNEGATIVE PROMPT\n\nDifferent face, altered identity, incorrect reflection, duplicated face, inconsistent mirror reflection, extra person, distorted hands, extra fingers, different shirt color, white shirt, printed shirt, jacket, tie, excessive jewelry, exaggerated hairstyle, cartoon, anime, CGI, artificial skin, oversaturated colors, text, watermark, logo.",
+    "createdAt": "2026-11-20T11:59:23.521Z",
+    "status": "published",
+    "aiTool": "Midjourney",
+    "imageFileName": "mirror-selfie-prompt-gemini.webp",
+    "preferredAi": "Gemini",
+    "copiesCount": 0,
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@17c27cb458feef991af11ea66b9186be32edb4a0/prompts/mirror-selfie-prompt-gemini.jpg",
+    "title": "mirror selfie prompt gemini",
+    "id": "prompt-1795175963521",
+    "isPremium": false,
+    "additionalImages": [],
+    "isNoIndex": false,
+    "imageAlt": "mirror selfie prompt gemini",
+    "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
+    "bookmarksCount": 0,
+    "updatedAt": "2026-11-26T10:06:51.915Z",
+    "slug": "mirror-selfie-prompt-gemini",
+    "seo": {
+      "focusKeyword": "mirror selfie prompt gemini",
+      "metaTitle": "mirror selfie prompt gemini | Trending Copy Paste Photo Prompts",
+      "metaDescription": "Copy and paste this photo prompt for mirror selfie prompt gemini."
+    },
+    "variables": [],
+    "viewsCount": 0,
+    "author": {
+      "avatar": "/logo.png",
+      "role": "Author",
+      "name": "tool.reelz"
+    },
+    "affiliateProducts": [],
+    "likesCount": 0,
+    "category": "Photorealistic & Portraits"
   },
   {
-    "category": "Photorealistic & Portraits",
-    "seo": {
-      "metaTitle": "Read | Trending Copy Paste Photo Prompts",
-      "metaDescription": "Copy and paste this photo prompt for Trending Girl Prompt for Instagram.",
-      "focusKeyword": "Trending Girl Prompt for Instagram"
-    },
-    "promptText": "A natural photo of user gazing softly while looking at camera. She is seated on a smooth stone wall, her posture relaxed. Her expression is serene and thoughtful. The background is a dense, lush, and overwhelming wall of brilliant magenta bougainvillea flowers in full bloom. The lighting is soft, diffuse daylight. High-detail skin texture, authentic portrait photography, no focus, blur or Bokeh effect, natural color palette. aspect ratio 3:4",
-    "status": "published",
-    "imageFileName": "trending-girl-prompt-for-instagram.webp",
-    "updatedAt": "2026-11-26T10:31:24.905Z",
-    "createdAt": "2026-11-20T11:57:34.262Z",
-    "preferredAi": "Gemini",
-    "variables": [],
-    "copiesCount": 0,
+    "isNoIndex": false,
     "bookmarksCount": 0,
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@5c71b5c0aae71b9408f8262c0d50cecf7c6c6857/prompts/trending-girl-prompt-for-instagram.jpg",
+    "status": "published",
+    "aiTool": "Midjourney",
+    "imageAlt": "Trending Girl Prompt for Instagram",
+    "imageFileName": "trending-girl-prompt-for-instagram.webp",
     "isPremium": false,
-    "affiliateProducts": [],
+    "copiesCount": 0,
+    "likesCount": 0,
+    "slug": "trending-girl-prompt-for-instagram",
+    "viewsCount": 0,
+    "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
+    "category": "Photorealistic & Portraits",
+    "updatedAt": "2026-11-26T10:31:24.905Z",
+    "variables": [],
     "tags": [
       "AI",
       "Photorealistic",
       "Masterpiece",
       "Trending Girl Prompt For Instagram"
     ],
-    "likesCount": 0,
-    "title": "Trending Girl Prompt for Instagram",
-    "viewsCount": 0,
-    "isNoIndex": false,
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@5c71b5c0aae71b9408f8262c0d50cecf7c6c6857/prompts/trending-girl-prompt-for-instagram.jpg",
-    "imageAlt": "Trending Girl Prompt for Instagram",
-    "id": "prompt-1795175854262",
-    "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
+    "affiliateProducts": [],
     "author": {
-      "avatar": "/logo.png",
       "name": "tool.reelz",
+      "avatar": "/logo.png",
       "role": "Author"
     },
-    "additionalImages": [],
-    "slug": "trending-girl-prompt-for-instagram",
-    "aiTool": "Midjourney",
+    "id": "prompt-1795175854262",
     "parameters": {
       "isPremium": false
     },
-    "publishedAt": "2026-11-20T11:57:34.262Z"
+    "promptText": "A natural photo of user gazing softly while looking at camera. She is seated on a smooth stone wall, her posture relaxed. Her expression is serene and thoughtful. The background is a dense, lush, and overwhelming wall of brilliant magenta bougainvillea flowers in full bloom. The lighting is soft, diffuse daylight. High-detail skin texture, authentic portrait photography, no focus, blur or Bokeh effect, natural color palette. aspect ratio 3:4",
+    "title": "Trending Girl Prompt for Instagram",
+    "createdAt": "2026-11-20T11:57:34.262Z",
+    "publishedAt": "2026-11-20T11:57:34.262Z",
+    "seo": {
+      "metaDescription": "Copy and paste this photo prompt for Trending Girl Prompt for Instagram.",
+      "metaTitle": "Read | Trending Copy Paste Photo Prompts",
+      "focusKeyword": "Trending Girl Prompt for Instagram"
+    },
+    "additionalImages": [],
+    "preferredAi": "Gemini"
   },
   {
+    "updatedAt": "2026-11-26T10:41:56.542Z",
+    "variables": [],
+    "preferredAi": "Gemini",
+    "author": {
+      "role": "Author",
+      "name": "tool.reelz",
+      "avatar": "/logo.png"
+    },
+    "slug": "new-bike-trend-prompt",
     "bookmarksCount": 0,
+    "publishedAt": "2026-11-20T11:55:31.690Z",
+    "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
+    "isPremium": false,
+    "id": "prompt-1795175731689",
     "isNoIndex": false,
+    "viewsCount": 0,
+    "likesCount": 0,
+    "affiliateProducts": [],
+    "title": "New Bike Trend Prompt",
+    "additionalImages": [],
+    "parameters": {
+      "isPremium": false
+    },
+    "promptText": "A high-quality medium shot of user captured from behind from a distance, wearing a casual olive-green button-down shirt. He is sitting on the background seat of pristine Royal Enfield Interceptor motorcycle with a distinctive white and red fuel tank while looking right side . The background features a serene, out-of-focus waterfront with a distant bridge, lush green trees under a vast, clear, bright blue sky, The image has a rich color palette with vibrant greens, deep blues, and warm highlights, no Bokeh, blur or focus effect, aspect ratio 3:4",
+    "aiTool": "Midjourney",
+    "imageFileName": "new-bike-trend-prompt.webp",
+    "status": "published",
+    "category": "Lifestyle & Portrait Photography",
+    "copiesCount": 0,
+    "createdAt": "2026-11-20T11:55:31.690Z",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@20ed005141125c8b29d17faf59d2f43c635aaadb/prompts/new-bike-trend-prompt.jpg",
+    "seo": {
+      "focusKeyword": "New Bike Trend Prompt",
+      "metaTitle": "new bike trend prompt | Trending Copy Paste Photo Prompts",
+      "metaDescription": "Copy and paste this photo prompt for New Bike Trend Prompt."
+    },
     "tags": [
       "AI",
       "Photorealistic",
       "Masterpiece",
       "New Bike Trend"
     ],
-    "promptText": "A high-quality medium shot of user captured from behind from a distance, wearing a casual olive-green button-down shirt. He is sitting on the background seat of pristine Royal Enfield Interceptor motorcycle with a distinctive white and red fuel tank while looking right side . The background features a serene, out-of-focus waterfront with a distant bridge, lush green trees under a vast, clear, bright blue sky, The image has a rich color palette with vibrant greens, deep blues, and warm highlights, no Bokeh, blur or focus effect, aspect ratio 3:4",
-    "aiTool": "Midjourney",
-    "publishedAt": "2026-11-20T11:55:31.690Z",
-    "author": {
-      "avatar": "/logo.png",
-      "name": "tool.reelz",
-      "role": "Author"
-    },
-    "imageAlt": "New Bike Trend Prompt",
-    "additionalImages": [],
-    "likesCount": 0,
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@20ed005141125c8b29d17faf59d2f43c635aaadb/prompts/new-bike-trend-prompt.jpg",
-    "copiesCount": 0,
-    "affiliateProducts": [],
-    "viewsCount": 0,
-    "id": "prompt-1795175731689",
-    "slug": "new-bike-trend-prompt",
-    "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
-    "createdAt": "2026-11-20T11:55:31.690Z",
-    "title": "New Bike Trend Prompt",
-    "updatedAt": "2026-11-26T10:41:56.542Z",
-    "variables": [],
-    "preferredAi": "Gemini",
-    "parameters": {
-      "isPremium": false
-    },
-    "category": "Lifestyle & Portrait Photography",
-    "status": "published",
-    "seo": {
-      "focusKeyword": "New Bike Trend Prompt",
-      "metaDescription": "Copy and paste this photo prompt for New Bike Trend Prompt.",
-      "metaTitle": "new bike trend prompt | Trending Copy Paste Photo Prompts"
-    },
-    "isPremium": false,
-    "imageFileName": "new-bike-trend-prompt.webp"
+    "imageAlt": "New Bike Trend Prompt"
   },
   {
-    "imageFileName": "trending-paper-cutout-effect-prompt.webp",
-    "title": "Trending Paper Cutout Effect Prompt",
-    "imageWidth": 765,
-    "isNoIndex": false,
-    "category": "Instagram Trend",
-    "preferredAi": "Gemini",
-    "bookmarksCount": 0,
-    "slug": "trending-paper-cutout-effect-prompt",
-    "likesCount": 0,
-    "id": "prompt-1794917992202",
-    "aiTool": "Midjourney",
-    "promptText": "Professional medium shot portrait of user looking at the camera, wearing a deep maroon button-down collared shirt made of soft cotton, hands resting in pockets. The background is a clean white studio setting featuring two large, vibrant, detailed yellow sunflowers positioned behind him. The entire composition is encased within a bold, solid red outer frame with a jagged, realistic 'paper-tear' edge effect isolating the central portrait from the red border. Above the man's head, the word 'Floral' is printed in a sophisticated red serif font. The lighting is bright, soft, and even, typical of high-end studio photography, with excellent skin detail and a warm, welcoming atmosphere. Photorealistic, 8k resolution, cinematic lighting, sharp focus, aspect ratio 3:4",
-    "copiesCount": 0,
+    "affiliateProducts": [],
     "author": {
+      "name": "tool.reelz",
       "avatar": "/logo.png",
-      "role": "Author",
-      "name": "tool.reelz"
+      "role": "Author"
     },
-    "imageAlt": "Trending Paper Cutout Effect Prompt",
-    "seo": {
-      "metaTitle": "Professional Editorial Portrait Prompt with Sunflower Accents",
-      "metaDescription": "Create a stunning professional portrait with a unique torn-paper edge and floral elements using this master-level AI prompt.",
-      "focusKeyword": "Editorial Portrait Prompt"
-    },
-    "createdAt": "2026-11-17T12:19:52.203Z",
-    "status": "published",
+    "imageFileName": "trending-paper-cutout-effect-prompt.webp",
+    "id": "prompt-1794917992202",
     "articleContent": "### Creating the Perfect Editorial Portrait\n\nThis prompt is engineered to balance clean studio portraiture with graphic design aesthetics. By specifying the 'torn-edge paper' effect, the AI understands the need for a layered, collage-like composition that mimics professional editorial layouts found in fashion magazines. \n\n#### Lighting & Composition\n- **Lighting:** We utilize high-key, soft studio flash to minimize harsh shadows on the subject's face while keeping the sunflowers vibrant.\n- **Optics:** Use a 85mm or 100mm lens simulation to ensure flattering facial proportions and depth-of-field separation.\n- **Color Palette:** The contrast between the deep burgundy shirt and the bright yellow sunflowers creates a visually striking focal point that draws the eye immediately to the subject.\n\n#### Pro Tips for Customization\n- **Change the Flower:** Replace 'sunflowers' with 'wildflowers' or 'lavender sprigs' for a seasonal shift.\n- **Adjust the Tone:** Change 'burgundy shirt' to 'emerald green linen' for an entirely different color harmony.",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@7ff569bd2b7757ba5da3203c87d83b1991cf1b9c/prompts/trending-paper-cutout-effect-prompt.webp",
-    "updatedAt": "2026-11-26T10:42:23.391Z",
+    "copiesCount": 0,
+    "createdAt": "2026-11-17T12:19:52.203Z",
+    "viewsCount": 0,
+    "title": "Trending Paper Cutout Effect Prompt",
+    "bookmarksCount": 0,
+    "likesCount": 0,
+    "slug": "trending-paper-cutout-effect-prompt",
+    "imageWidth": 765,
+    "imageHeight": 1024,
+    "isNoIndex": false,
     "tags": [
       "Editorial Portrait",
       "Studio Photography",
@@ -571,20 +561,33 @@
       "High Key Lighting",
       "Torn Paper Effect"
     ],
+    "additionalImages": [],
+    "isPremium": false,
+    "promptText": "Professional medium shot portrait of user looking at the camera, wearing a deep maroon button-down collared shirt made of soft cotton, hands resting in pockets. The background is a clean white studio setting featuring two large, vibrant, detailed yellow sunflowers positioned behind him. The entire composition is encased within a bold, solid red outer frame with a jagged, realistic 'paper-tear' edge effect isolating the central portrait from the red border. Above the man's head, the word 'Floral' is printed in a sophisticated red serif font. The lighting is bright, soft, and even, typical of high-end studio photography, with excellent skin detail and a warm, welcoming atmosphere. Photorealistic, 8k resolution, cinematic lighting, sharp focus, aspect ratio 3:4",
     "parameters": {
       "isPremium": false
     },
-    "variables": [],
-    "viewsCount": 0,
+    "status": "published",
     "publishedAt": "2026-11-17T12:19:52.203Z",
-    "imageHeight": 1024,
-    "additionalImages": [],
-    "affiliateProducts": [],
-    "isPremium": false
+    "aiTool": "Midjourney",
+    "category": "Instagram Trend",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@7ff569bd2b7757ba5da3203c87d83b1991cf1b9c/prompts/trending-paper-cutout-effect-prompt.webp",
+    "imageAlt": "Trending Paper Cutout Effect Prompt",
+    "updatedAt": "2026-11-26T10:42:23.391Z",
+    "preferredAi": "Gemini",
+    "variables": [],
+    "seo": {
+      "metaDescription": "Create a stunning professional portrait with a unique torn-paper edge and floral elements using this master-level AI prompt.",
+      "metaTitle": "Professional Editorial Portrait Prompt with Sunflower Accents",
+      "focusKeyword": "Editorial Portrait Prompt"
+    }
   },
   {
-    "isNoIndex": false,
-    "imageWidth": 1024,
+    "parameters": {
+      "isPremium": true
+    },
+    "promptText": "Cinematic black-and-white medium-full portrait of a young man with dark wavy hair in an open field, wearing a long black wool overcoat billowing in the wind and a dark turtleneck. Hands in pockets, looking thoughtfully upward toward the sky. A flock of black ravens flies dramatically around him at varying depths against an overcast, moody sky. Low-angle perspective, fine 35mm film grain, high contrast monochrome photography, sharp subject focus, aspect ratio 3:4",
+    "createdAt": "2026-11-17T12:04:26.185Z",
     "tags": [
       "Monochrome",
       "Gothic",
@@ -594,68 +597,42 @@
       "Fine-art",
       "Surreal"
     ],
-    "preferredAi": "Gemini",
     "category": "Photorealistic & Portraits",
-    "likesCount": 0,
-    "title": "Melancholic Gothic Portrait with Crows",
-    "copiesCount": 0,
-    "promptText": "Cinematic black-and-white medium-full portrait of a young man with dark wavy hair in an open field, wearing a long black wool overcoat billowing in the wind and a dark turtleneck. Hands in pockets, looking thoughtfully upward toward the sky. A flock of black ravens flies dramatically around him at varying depths against an overcast, moody sky. Low-angle perspective, fine 35mm film grain, high contrast monochrome photography, sharp subject focus, aspect ratio 3:4",
-    "additionalImages": [],
-    "status": "published",
+    "imageFileName": "melancholic-gothic-portrait-with-crows.webp",
     "seo": {
       "focusKeyword": "Gothic portrait prompt",
       "metaDescription": "Generate stunning, moody black and white portraits featuring surreal crow elements with this optimized prompt for AI image generators.",
       "metaTitle": "Melancholic Gothic Portrait with Crows Midjourney Prompt"
     },
-    "articleContent": "### Unleash Atmospheric Storytelling\nThis prompt is engineered to capture a specific mood of isolation and poetic melancholy. It leverages the contrast between the stillness of the subject and the chaotic motion of the surrounding birds to create a narrative-driven image. \n\n### Lighting & Camera Breakdown\n- **Lighting:** The prompt specifies 'moody, overcast' conditions, which provide soft, diffused light that prevents harsh shadows on the face, allowing for deeper tones in the black and white conversion.\n- **Optics:** By utilizing a 35mm film aesthetic, we introduce a natural grain and organic texture that elevates the image from a clean digital render to a timeless, artistic photograph.\n- **Composition:** The subject is placed centrally, utilizing the 'rule of thirds' for the birds to draw the viewer's eye inward toward the subject's gaze.\n\n### Pro Tips for Best Results\n- **Stylize:** If using Midjourney, use --stylize 250 to balance artistic flair with structural adherence.\n- **Variation:** Try swapping 'trench coat' for 'velvet cloak' if you want a more medieval or fantasy-gothic appearance.\n- **Contrast:** Since this is a monochrome prompt, consider using post-processing to slightly lift the shadows for a more 'filmic' look.",
-    "aiTool": "Midjourney",
-    "imageAlt": "Melancholic Gothic Portrait with Crows",
-    "createdAt": "2026-11-17T12:04:26.185Z",
-    "id": "prompt-1794917066185",
-    "imageFileName": "melancholic-gothic-portrait-with-crows.webp",
-    "author": {
-      "role": "Author",
-      "name": "tool.reelz",
-      "avatar": "/logo.png"
-    },
     "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@603bd06f7333ad4c2b1e4d25a7a629dff1e7d209/prompts/melancholic-gothic-portrait-with-crows.jpg",
-    "updatedAt": "2026-11-26T10:42:54.477Z",
-    "slug": "melancholic-gothic-portrait-with-crows",
-    "parameters": {
-      "isPremium": true
+    "copiesCount": 0,
+    "imageAlt": "Melancholic Gothic Portrait with Crows",
+    "id": "prompt-1794917066185",
+    "author": {
+      "avatar": "/logo.png",
+      "name": "tool.reelz",
+      "role": "Author"
     },
-    "viewsCount": 0,
-    "variables": [],
-    "publishedAt": "2026-11-17T12:07:39.433Z",
-    "imageHeight": 1536,
-    "affiliateProducts": [],
+    "title": "Melancholic Gothic Portrait with Crows",
+    "preferredAi": "Gemini",
     "bookmarksCount": 0,
-    "isPremium": true
+    "isPremium": true,
+    "additionalImages": [],
+    "isNoIndex": false,
+    "affiliateProducts": [],
+    "aiTool": "Midjourney",
+    "updatedAt": "2026-11-26T10:42:54.477Z",
+    "status": "published",
+    "publishedAt": "2026-11-17T12:07:39.433Z",
+    "variables": [],
+    "viewsCount": 0,
+    "articleContent": "### Unleash Atmospheric Storytelling\nThis prompt is engineered to capture a specific mood of isolation and poetic melancholy. It leverages the contrast between the stillness of the subject and the chaotic motion of the surrounding birds to create a narrative-driven image. \n\n### Lighting & Camera Breakdown\n- **Lighting:** The prompt specifies 'moody, overcast' conditions, which provide soft, diffused light that prevents harsh shadows on the face, allowing for deeper tones in the black and white conversion.\n- **Optics:** By utilizing a 35mm film aesthetic, we introduce a natural grain and organic texture that elevates the image from a clean digital render to a timeless, artistic photograph.\n- **Composition:** The subject is placed centrally, utilizing the 'rule of thirds' for the birds to draw the viewer's eye inward toward the subject's gaze.\n\n### Pro Tips for Best Results\n- **Stylize:** If using Midjourney, use --stylize 250 to balance artistic flair with structural adherence.\n- **Variation:** Try swapping 'trench coat' for 'velvet cloak' if you want a more medieval or fantasy-gothic appearance.\n- **Contrast:** Since this is a monochrome prompt, consider using post-processing to slightly lift the shadows for a more 'filmic' look.",
+    "imageHeight": 1536,
+    "slug": "melancholic-gothic-portrait-with-crows",
+    "likesCount": 0,
+    "imageWidth": 1024
   },
   {
-    "imageAlt": "Trending Viral Couple Eyes Prompt Free",
-    "imageWidth": 1254,
-    "likesCount": 0,
-    "isNoIndex": false,
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@d57538a6badab80864d9da775707bb90098b3dbc/prompts/trending-viral-couple-eyes-prompt-free.jpg",
-    "slug": "trending-viral-couple-eyes-prompt-free",
-    "articleContent": "### Master the Art of Natural Light Play\n\nThis prompt is engineered to capture the 'Dappled Sunlight' effect, where light filters through foliage to create intricate shadow patterns on the subject's face. \n\n**Lighting Breakdown:**\n- **Golden Hour:** We leverage the low-angle sun to create a warm, honey-toned color palette.\n- **Shadow Casting:** By referencing 'dense green foliage' and 'leaf shadows', the AI mimics the way natural light breaks through trees.\n\n**Compositional Strategy:**\n- **The Diptych:** Using a two-part frame allows you to contrast subjects while keeping a cohesive narrative. The blurred foreground 'leaves' act as a frame within a frame, creating depth.\n\n**Pro Tips for Best Results:**\n- If the faces are too dark, increase the 'lightness' in your parameters or add 'rim lighting' to the prompt.\n- Use an 85mm lens reference to get that flattering compression on facial features, perfect for portraiture.",
-    "promptText": "Split panel diptych in realistic style. Top panel: an extreme close-up of man's eyes and brow, dark brown eyes looking forward, and dappled sunlight dancing across his skin, framed by blurred green leaves. Bottom panel: an extreme close-up of woman's eyes, featuring defined dark eyebrows, radiant hazel-brown eyes, and sunlit dappled shadows, peeking through lush foreground foliage. Rich golden hour lighting, realistic skin with painterly textures, warm green and amber palette, crisp focus on the irises, aspect ratio 1:1",
-    "publishedAt": "2026-11-17T12:07:16.049Z",
-    "title": "Trending Viral Couple Eyes Prompt Free",
-    "imageHeight": 1254,
-    "status": "published",
-    "createdAt": "2026-11-17T12:07:16.049Z",
-    "additionalImages": [],
-    "aiTool": "Midjourney",
-    "updatedAt": "2026-11-26T10:42:40.077Z",
-    "affiliateProducts": [],
-    "author": {
-      "role": "Author",
-      "name": "tool.reelz",
-      "avatar": "/logo.png"
-    },
-    "preferredAi": "ChatGPT",
     "tags": [
       "Diptych",
       "Golden Hour",
@@ -665,56 +642,68 @@
       "Natural Lighting",
       "Cinematic Aesthetic"
     ],
+    "publishedAt": "2026-11-17T12:07:16.049Z",
+    "title": "Trending Viral Couple Eyes Prompt Free",
     "seo": {
-      "focusKeyword": "dappled sunlight portrait",
+      "metaDescription": "Learn how to prompt for stunning, high-contrast diptych portraits featuring dappled sunlight effects, professional bokeh, and cinematic composition.",
       "metaTitle": "Create Cinematic Dappled Sunlight Portraits | Midjourney & Gemini Guide",
-      "metaDescription": "Learn how to prompt for stunning, high-contrast diptych portraits featuring dappled sunlight effects, professional bokeh, and cinematic composition."
+      "focusKeyword": "dappled sunlight portrait"
     },
+    "imageFileName": "trending-viral-couple-eyes-prompt-free.webp",
+    "likesCount": 0,
+    "imageWidth": 1254,
+    "viewsCount": 0,
+    "imageHeight": 1254,
+    "id": "prompt-1794917236048",
     "category": "Instagram Trend",
+    "additionalImages": [],
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@d57538a6badab80864d9da775707bb90098b3dbc/prompts/trending-viral-couple-eyes-prompt-free.jpg",
+    "preferredAi": "ChatGPT",
+    "imageAlt": "Trending Viral Couple Eyes Prompt Free",
+    "status": "published",
+    "aiTool": "Midjourney",
+    "createdAt": "2026-11-17T12:07:16.049Z",
+    "bookmarksCount": 0,
+    "copiesCount": 0,
+    "affiliateProducts": [],
+    "updatedAt": "2026-11-26T10:42:40.077Z",
+    "variables": [],
+    "author": {
+      "name": "tool.reelz",
+      "avatar": "/logo.png",
+      "role": "Author"
+    },
     "parameters": {
       "isPremium": true
     },
-    "copiesCount": 0,
-    "bookmarksCount": 0,
-    "imageFileName": "trending-viral-couple-eyes-prompt-free.webp",
-    "viewsCount": 0,
-    "isPremium": true,
-    "id": "prompt-1794917236048",
-    "variables": []
+    "promptText": "Split panel diptych in realistic style. Top panel: an extreme close-up of man's eyes and brow, dark brown eyes looking forward, and dappled sunlight dancing across his skin, framed by blurred green leaves. Bottom panel: an extreme close-up of woman's eyes, featuring defined dark eyebrows, radiant hazel-brown eyes, and sunlit dappled shadows, peeking through lush foreground foliage. Rich golden hour lighting, realistic skin with painterly textures, warm green and amber palette, crisp focus on the irises, aspect ratio 1:1",
+    "slug": "trending-viral-couple-eyes-prompt-free",
+    "isNoIndex": false,
+    "articleContent": "### Master the Art of Natural Light Play\n\nThis prompt is engineered to capture the 'Dappled Sunlight' effect, where light filters through foliage to create intricate shadow patterns on the subject's face. \n\n**Lighting Breakdown:**\n- **Golden Hour:** We leverage the low-angle sun to create a warm, honey-toned color palette.\n- **Shadow Casting:** By referencing 'dense green foliage' and 'leaf shadows', the AI mimics the way natural light breaks through trees.\n\n**Compositional Strategy:**\n- **The Diptych:** Using a two-part frame allows you to contrast subjects while keeping a cohesive narrative. The blurred foreground 'leaves' act as a frame within a frame, creating depth.\n\n**Pro Tips for Best Results:**\n- If the faces are too dark, increase the 'lightness' in your parameters or add 'rim lighting' to the prompt.\n- Use an 85mm lens reference to get that flattering compression on facial features, perfect for portraiture.",
+    "isPremium": true
   },
   {
-    "viewsCount": 0,
-    "category": "Photorealistic & Portraits",
-    "preferredAi": "Gemini",
-    "slug": "golden-hour-bougainvillea-portrait-boy-prompt",
-    "author": {
-      "avatar": "/logo.png",
-      "name": "tool.reelz",
-      "role": "Author"
+    "imageFileName": "golden-hour-bougainvillea-portrait-boy-prompt.webp",
+    "aiTool": "Midjourney",
+    "status": "published",
+    "imageWidth": 1024,
+    "seo": {
+      "metaDescription": "Master the aesthetic of vibrant, sun-drenched portrait photography with this detailed prompt for AI image generators.",
+      "metaTitle": "Create Stunning Golden Hour Portraits with AI | Prompt Guide",
+      "focusKeyword": "golden hour portrait prompt"
     },
-    "copiesCount": 0,
-    "affiliateProducts": [],
+    "likesCount": 0,
+    "category": "Photorealistic & Portraits",
+    "viewsCount": 0,
+    "preferredAi": "Gemini",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@04b18b592efa0e5fbfb85f91e488b5c0f45b1da2/prompts/golden-hour-bougainvillea-portrait-boy-prompt.jpg",
+    "imageHeight": 1536,
     "additionalImages": [
       "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@3bb8f8d8c522915c3146b6c6f64157dd85b525b3/prompts/golden-hour-bougainvillea-portrait-boy-prompt-slide-1.jpg"
     ],
-    "bookmarksCount": 0,
-    "parameters": {
-      "isPremium": true
-    },
-    "title": "Golden Hour Bougainvillea Portrait Boy Prompt",
-    "isNoIndex": true,
-    "seo": {
-      "focusKeyword": "golden hour portrait prompt",
-      "metaDescription": "Master the aesthetic of vibrant, sun-drenched portrait photography with this detailed prompt for AI image generators.",
-      "metaTitle": "Create Stunning Golden Hour Portraits with AI | Prompt Guide"
-    },
-    "aiTool": "Midjourney",
-    "isPremium": true,
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@04b18b592efa0e5fbfb85f91e488b5c0f45b1da2/prompts/golden-hour-bougainvillea-portrait-boy-prompt.jpg",
-    "promptText": "Full-length outdoor portrait of a young man with dark wavy hair, dressed in a casual white t-shirt, black pants, and white sneakers, standing beside a pale wall overgrown with rich magenta bougainvillea flowers. He looks upward towards the branches of blooming floral wall in side profile with both hands in pocket. Falling bright pink petals float through the air, with several softly blurred petals in the foreground creating depth. Warm golden-hour sunlight casts gentle shadows, framed under a clear blue sky with light clouds, vibrant saturated colors, aspect ratio 3:4",
     "id": "prompt-1794916938187",
-    "status": "published",
-    "variables": [],
+    "publishedAt": "2026-11-17T12:02:18.190Z",
+    "imageAlt": "Golden Hour Bougainvillea Portrait Boy Prompt",
     "tags": [
       "Golden-hour",
       "Bougainvillea",
@@ -724,53 +713,54 @@
       "Mediterranean-vibe",
       "Soft-focus"
     ],
-    "imageAlt": "Golden Hour Bougainvillea Portrait Boy Prompt",
-    "articleContent": "### Capture the Essence of Golden Hour\n\nThis prompt is engineered to recreate the specific 'vacation editorial' aesthetic that dominates high-end lifestyle photography. The key to this image lies in the juxtaposition between the neutral, weathered stone architecture and the explosive, vibrant magenta of the bougainvillea petals.\n\n#### Lighting & Composition\n- **Golden Hour Light:** The soft, directional sunlight creates a natural glow on the subject's skin and enhances the saturation of the flora.\n- **Dynamic Motion:** By instructing the AI to place petals in the foreground bokeh, we create a sense of depth and movement that elevates the image from a static pose to a captured moment.\n- **Optical Settings:** We utilize a 35mm lens recommendation at f/2.8. This specific combination provides a human-eye perspective while isolating the subject from the background through beautiful lens blur (bokeh).\n\n#### Pro Tips for Better Results\n- **Stylize:** If using Midjourney, set --stylize to 250 or higher to allow the AI more creative freedom with the petal scattering.\n- **Focus:** Ensure your prompt emphasizes the 'sharp focus' on the eyes; if the AI softens the face too much, add 'razor sharp focus on eyes' to your positive prompt.\n- **Color Palette:** The success of this image relies on the contrast between the white shirt (neutral), the stone (warm beige), and the bougainvillea (intense magenta). Keep these elements in your mind if modifying the prompt for different color schemes.",
-    "updatedAt": "2026-11-26T10:43:34.966Z",
-    "imageWidth": 1024,
     "createdAt": "2026-11-17T12:02:18.190Z",
-    "imageFileName": "golden-hour-bougainvillea-portrait-boy-prompt.webp",
-    "publishedAt": "2026-11-17T12:02:18.190Z",
-    "likesCount": 0,
-    "imageHeight": 1536
-  },
-  {
-    "status": "published",
-    "id": "prompt-1794665512901",
-    "isPremium": true,
-    "bookmarksCount": 0,
-    "viewsCount": 0,
-    "imageHeight": 1536,
-    "variables": [],
-    "seo": {
-      "focusKeyword": "editorial portrait prompt",
-      "metaDescription": "Create stunning, high-fashion editorial portraits with this professional prompt designed for Midjourney and Flux. Master the look of suede textures and cinematic lighting.",
-      "metaTitle": "Professional Minimalist Fashion Editorial Portrait Prompt"
+    "updatedAt": "2026-11-26T10:43:34.966Z",
+    "articleContent": "### Capture the Essence of Golden Hour\n\nThis prompt is engineered to recreate the specific 'vacation editorial' aesthetic that dominates high-end lifestyle photography. The key to this image lies in the juxtaposition between the neutral, weathered stone architecture and the explosive, vibrant magenta of the bougainvillea petals.\n\n#### Lighting & Composition\n- **Golden Hour Light:** The soft, directional sunlight creates a natural glow on the subject's skin and enhances the saturation of the flora.\n- **Dynamic Motion:** By instructing the AI to place petals in the foreground bokeh, we create a sense of depth and movement that elevates the image from a static pose to a captured moment.\n- **Optical Settings:** We utilize a 35mm lens recommendation at f/2.8. This specific combination provides a human-eye perspective while isolating the subject from the background through beautiful lens blur (bokeh).\n\n#### Pro Tips for Better Results\n- **Stylize:** If using Midjourney, set --stylize to 250 or higher to allow the AI more creative freedom with the petal scattering.\n- **Focus:** Ensure your prompt emphasizes the 'sharp focus' on the eyes; if the AI softens the face too much, add 'razor sharp focus on eyes' to your positive prompt.\n- **Color Palette:** The success of this image relies on the contrast between the white shirt (neutral), the stone (warm beige), and the bougainvillea (intense magenta). Keep these elements in your mind if modifying the prompt for different color schemes.",
+    "author": {
+      "name": "tool.reelz",
+      "role": "Author",
+      "avatar": "/logo.png"
     },
-    "publishedAt": "2026-11-14T14:11:52.907Z",
-    "title": "Minimalist Suede Editorial Portrait",
-    "createdAt": "2026-11-14T14:11:52.907Z",
-    "imageAlt": "Minimalist Suede Editorial Portrait",
-    "updatedAt": "2026-11-26T11:51:38.590Z",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@33f96ac46912235f855bce6f13f62564b4ab4c3a/prompts/minimalist-suede-editorial-portrait.jpg",
-    "imageFileName": "minimalist-suede-editorial-portrait.webp",
-    "slug": "minimalist-suede-editorial-portrait",
+    "slug": "golden-hour-bougainvillea-portrait-boy-prompt",
+    "variables": [],
+    "isNoIndex": true,
+    "promptText": "Full-length outdoor portrait of a young man with dark wavy hair, dressed in a casual white t-shirt, black pants, and white sneakers, standing beside a pale wall overgrown with rich magenta bougainvillea flowers. He looks upward towards the branches of blooming floral wall in side profile with both hands in pocket. Falling bright pink petals float through the air, with several softly blurred petals in the foreground creating depth. Warm golden-hour sunlight casts gentle shadows, framed under a clear blue sky with light clouds, vibrant saturated colors, aspect ratio 3:4",
     "parameters": {
       "isPremium": true
     },
-    "articleContent": "This prompt is engineered to capture the clean, sophisticated aesthetic of modern fashion photography. The key to this image's success lies in the interplay between the textured suede fabric and the high-contrast shadow cast against the neutral wall. By specifying an 85mm lens, we achieve a flattering portrait compression that keeps the focus sharp on the subject while maintaining a clean, professional separation from the background. The lighting instructions prioritize 'directional side-lighting' which is essential for creating the dramatic shadow profile, a hallmark of high-end editorial work. Use this prompt when you want to showcase clothing texture, masculine style, or minimalist character designs.",
-    "promptText": "Professional studio portrait of user wearing stylish black rectangular sunglasses, dressed in a deep brown premium suede zip-up jacket over a black crew-neck t-shirt. The subject is angled slightly away from the camera, head turned to look over his shoulder with a sharp, piercing gaze. High-end editorial photography, sharp focus on skin texture and fabric weave, dramatic side lighting creating a soft dark shadow of the subject cast onto a plain, neutral-gray studio wall. Muted, desaturated color palette with rich brown and charcoal tones, cinematic film grain, subtle vignette, elegant and minimalist aesthetic, high-contrast, masterfully lit, professional color grading, aspect ratio 3:4",
-    "affiliateProducts": [],
+    "title": "Golden Hour Bougainvillea Portrait Boy Prompt",
+    "bookmarksCount": 0,
     "copiesCount": 0,
-    "additionalImages": [],
-    "imageWidth": 1024,
+    "affiliateProducts": [],
+    "isPremium": true
+  },
+  {
     "author": {
       "avatar": "/logo.png",
       "role": "Author",
       "name": "tool.reelz"
     },
+    "articleContent": "This prompt is engineered to capture the clean, sophisticated aesthetic of modern fashion photography. The key to this image's success lies in the interplay between the textured suede fabric and the high-contrast shadow cast against the neutral wall. By specifying an 85mm lens, we achieve a flattering portrait compression that keeps the focus sharp on the subject while maintaining a clean, professional separation from the background. The lighting instructions prioritize 'directional side-lighting' which is essential for creating the dramatic shadow profile, a hallmark of high-end editorial work. Use this prompt when you want to showcase clothing texture, masculine style, or minimalist character designs.",
+    "imageHeight": 1536,
     "isNoIndex": true,
-    "aiTool": "Midjourney",
+    "seo": {
+      "focusKeyword": "editorial portrait prompt",
+      "metaTitle": "Professional Minimalist Fashion Editorial Portrait Prompt",
+      "metaDescription": "Create stunning, high-fashion editorial portraits with this professional prompt designed for Midjourney and Flux. Master the look of suede textures and cinematic lighting."
+    },
+    "additionalImages": [],
+    "isPremium": true,
+    "publishedAt": "2026-11-14T14:11:52.907Z",
+    "imageFileName": "minimalist-suede-editorial-portrait.webp",
+    "slug": "minimalist-suede-editorial-portrait",
+    "imageWidth": 1024,
+    "likesCount": 0,
+    "title": "Minimalist Suede Editorial Portrait",
+    "viewsCount": 0,
+    "preferredAi": "ChatGPT",
+    "variables": [],
+    "bookmarksCount": 0,
+    "updatedAt": "2026-11-26T11:51:38.590Z",
     "tags": [
       "Menswear",
       "Minimalist",
@@ -781,7 +771,17 @@
       "Sharp-focus"
     ],
     "category": "Fashion & Editorial Photography",
-    "likesCount": 0,
-    "preferredAi": "ChatGPT"
+    "createdAt": "2026-11-14T14:11:52.907Z",
+    "parameters": {
+      "isPremium": true
+    },
+    "promptText": "Professional studio portrait of user wearing stylish black rectangular sunglasses, dressed in a deep brown premium suede zip-up jacket over a black crew-neck t-shirt. The subject is angled slightly away from the camera, head turned to look over his shoulder with a sharp, piercing gaze. High-end editorial photography, sharp focus on skin texture and fabric weave, dramatic side lighting creating a soft dark shadow of the subject cast onto a plain, neutral-gray studio wall. Muted, desaturated color palette with rich brown and charcoal tones, cinematic film grain, subtle vignette, elegant and minimalist aesthetic, high-contrast, masterfully lit, professional color grading, aspect ratio 3:4",
+    "status": "published",
+    "copiesCount": 0,
+    "aiTool": "Midjourney",
+    "imageAlt": "Minimalist Suede Editorial Portrait",
+    "id": "prompt-1794665512901",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@33f96ac46912235f855bce6f13f62564b4ab4c3a/prompts/minimalist-suede-editorial-portrait.jpg",
+    "affiliateProducts": []
   }
 ]
