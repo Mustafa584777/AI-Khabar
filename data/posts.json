@@ -1929,7 +1929,7 @@
     "parameters": {
       "isPremium": true
     },
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1794100658223.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@ed031a3cd5b7d00ca11cbd2274ac44ac70b481e2/prompts/candid-photographer-field-portrait.jpg",
     "tags": [
       "Lifestyle",
       "Candid",
@@ -1939,15 +1939,15 @@
       "DSLR",
       "Portraiture"
     ],
-    "updatedAt": "2026-11-08T01:20:01.910Z",
+    "updatedAt": "2026-11-26T12:34:54.956Z",
     "imageAlt": "Candid Photographer Field Portrait",
     "createdAt": "2026-11-08T01:19:15.429Z",
     "variables": [],
     "imageFileName": "candid-photographer-field-portrait.webp",
     "status": "published",
     "seo": {
-      "metaDescription": "Master the art of lifestyle portraiture with this candid photographer prompt designed for Midjourney v6 and advanced AI models.",
       "metaTitle": "Candid Photographer Field Portrait Midjourney Prompt",
+      "metaDescription": "Master the art of lifestyle portraiture with this candid photographer prompt designed for Midjourney v6 and advanced AI models.",
       "focusKeyword": "photographer portrait prompt"
     },
     "bookmarksCount": 0,
@@ -1968,14 +1968,14 @@
     "slug": "indian-girl-in-red-saree-vector-art-prompt",
     "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
     "imageHeight": 1536,
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@cdc993602894dda76dfac8f489b19d4a41180450/prompts/indian-girl-in-red-saree-vector-art-prompt.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@aaded16b8195fd2c8b4e0a82f88da94f7384a8ef/prompts/indian-girl-in-red-saree-vector-art-prompt.jpg",
     "likesCount": 0,
     "publishedAt": "2026-11-08T01:17:27.198Z",
     "imageWidth": 1024,
     "imageAlt": "Indian girl in red saree vector art prompt",
     "imageFileName": "indian-girl-in-red-saree-vector-art-prompt.webp",
     "preferredAi": "Gemini",
-    "updatedAt": "2026-11-26T12:35:56.436Z",
+    "updatedAt": "2026-11-26T12:38:28.206Z",
     "bookmarksCount": 0,
     "tags": [
       "AI",
