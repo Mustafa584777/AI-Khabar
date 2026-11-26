@@ -1724,13 +1724,9 @@
     "affiliateProducts": []
   },
   {
-    "id": "prompt-1794109887417",
-    "author": {
-      "name": "tool.reelz",
-      "role": "Author",
-      "avatar": "/logo.png"
-    },
-    "likesCount": 0,
+    "imageFileName": "indian-husband-and-wife-prompt-chatgpt.webp",
+    "isNoIndex": false,
+    "updatedAt": "2026-11-26T12:27:24.351Z",
     "tags": [
       "AI",
       "Photorealistic",
@@ -1739,38 +1735,42 @@
       "Wife And Husband Prompt Seen",
       "Couple Mirror Selfie in Saree"
     ],
-    "isNoIndex": false,
-    "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
-    "preferredAi": "ChatGPT",
-    "imageFileName": "indian-husband-and-wife-prompt-chatgpt.webp",
-    "imageWidth": 1024,
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1794109728427.jpg",
+    "affiliateProducts": [],
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@5fc4beb67a76f1f2c8bfe5b893aa754f80677427/prompts/indian-husband-and-wife-prompt-chatgpt.jpg",
+    "author": {
+      "name": "tool.reelz",
+      "avatar": "/logo.png",
+      "role": "Author"
+    },
     "parameters": {
       "isPremium": false
     },
-    "aiTool": "Midjourney",
-    "imageAlt": "Wife and husband prompt instagram",
-    "copiesCount": 0,
-    "updatedAt": "2026-11-08T03:56:09.220Z",
-    "slug": "indian-husband-and-wife-prompt-chatgpt",
-    "additionalImages": [],
     "variables": [],
-    "imageHeight": 1536,
+    "id": "prompt-1794109887417",
+    "copiesCount": 0,
     "publishedAt": "2026-11-08T03:51:27.418Z",
-    "title": "Indian husband and wife prompt ChatGPT",
-    "bookmarksCount": 0,
-    "createdAt": "2026-11-08T03:51:27.418Z",
-    "status": "published",
-    "viewsCount": 0,
-    "affiliateProducts": [],
+    "imageAlt": "Indian husband and wife prompt ChatGPT",
     "seo": {
-      "metaDescription": "Copy and paste this photo prompt for Indian husband and wife prompt ChatGPT.",
       "metaTitle": "wife and husband prompt | Trending Copy Paste Photo Prompts",
+      "metaDescription": "Copy and paste this photo prompt for Indian husband and wife prompt ChatGPT.",
       "focusKeyword": "Indian husband and wife prompt ChatGPT"
     },
-    "isPremium": false,
+    "aiTool": "Midjourney",
+    "slug": "indian-husband-and-wife-prompt-chatgpt",
     "category": "Photorealistic & Portraits",
-    "promptText": "Realistic phone photograph with natural light of a South Asian bride and groom taking a mirror selfie in front of a square mirror. The groom wears a tailored black sherwani with gold embroidered collar and an ornate gold brooch. The bride wears a deep maroon velvet lehenga choli with intricate antique gold zari embroidery, bridal bangles, ornate gold jewelry, and henna on her hands, holding a bouquet of fresh red roses and an iPhone pointing at the mirror. Authentic skin textures, soft natural ambient lighting, aspect ratio 3:4"
+    "status": "published",
+    "imageHeight": 1536,
+    "promptText": "Realistic phone photograph with natural light of a South Asian bride and groom taking a mirror selfie in front of a square mirror. The groom wears a tailored black sherwani with gold embroidered collar and an ornate gold brooch. The bride wears a deep maroon velvet lehenga choli with intricate antique gold zari embroidery, bridal bangles, ornate gold jewelry, and henna on her hands, holding a bouquet of fresh red roses and an iPhone pointing at the mirror. Authentic skin textures, soft natural ambient lighting, aspect ratio 3:4",
+    "isPremium": false,
+    "viewsCount": 0,
+    "preferredAi": "ChatGPT",
+    "likesCount": 0,
+    "bookmarksCount": 0,
+    "createdAt": "2026-11-08T03:51:27.418Z",
+    "additionalImages": [],
+    "imageWidth": 1024,
+    "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
+    "title": "Indian husband and wife prompt ChatGPT"
   },
   {
     "promptText": "Real phone photograph, candid mobile camera capture of an authentic South Indian Hindu wedding moment. A smiling South Asian groom in an off-white silk shirt fastens a sacred gold necklace around the neck of his radiant bride. The bride laughs joyfully, wearing a rich crimson and gold silk Kanjeevaram saree, opulent gold temple jewelry, jhumka earrings, a maang tikka, and numerous stacked red and gold bangles. Thick traditional garlands made of white jasmine and red flowers drape around their necks, and dense white gajra flowers adorn the bride's hair. Golden flower petals and festive confetti shower dynamically through the air with natural motion blur. realistic skin texture, aspect ratio 3:4",
