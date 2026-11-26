@@ -2476,7 +2476,7 @@
     },
     "viewsCount": 0,
     "imageFileName": "sukuna-prompt-for-chatgpt.webp",
-    "updatedAt": "2026-11-06T10:18:16.467Z",
+    "updatedAt": "2026-11-26T12:53:34.160Z",
     "aiTool": "Midjourney",
     "preferredAi": "ChatGPT",
     "id": "prompt-1793960295258",
@@ -2486,12 +2486,12 @@
     "imageWidth": 1024,
     "articleContent": "This prompt is engineered to balance human anatomy with high-fantasy creatures. By utilizing 'chiaroscuro' lighting, we force the AI to create deep shadows and bright highlights, which accentuates the muscle definition of the subject. The inclusion of 'obsidian-textured' and 'turbulent overcast sky' adds layers of grit to the composition, while the 35mm lens choice keeps the focus firmly on the character's intensity while blurring the background dragon just enough to give it a sense of overwhelming scale. Pro-tip: Increase the stylize parameter if you want more chaotic details in the dragon's scales, or decrease it for a cleaner, more photographic look.",
     "author": {
-      "role": "Author",
+      "name": "tool.reelz",
       "avatar": "/logo.png",
-      "name": "tool.reelz"
+      "role": "Author"
     },
     "isPremium": false,
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793960204087.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@e6696114667a9e8813f0349ec7205c42f3f73f52/prompts/sukuna-prompt-for-chatgpt.jpg",
     "slug": "sukuna-prompt-for-chatgpt",
     "imageAlt": "Sukuna Prompt For ChatGPT",
     "promptText": "A hyper-realistic cinematic portrait of a powerful, shirtless male warrior with short messy crimson hair and distinct intricate black tribal tattoos covering his arms, chest, and face. He stands with a menacing, stoic expression. Looming behind him is a massive, terrifying ancient dragon with obsidian-textured scales and glowing orange eyes, its jaw slightly agape in a snarl. The scene is set in the ruins of a desolate stone castle under a turbulent, overcast grey sky. Shot on 35mm lens, f/1.8 aperture for shallow depth of field, dramatic chiaroscuro lighting, sharp focus on the character's facial features and musculature, photorealistic textures, 8k resolution, cinematic color grading with cool tones and high contrast, dark fantasy aesthetic, intricate detail.",
