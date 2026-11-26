@@ -1026,54 +1026,59 @@
     }
   },
   {
+    "status": "published",
+    "aiTool": "Midjourney",
+    "category": "Photorealistic & Portraits",
+    "promptText": "A high-quality, authentic portrait of a beautiful young woman with long, wavy dark hair, sitting gracefully on a cream-colored knit picnic blanket in a sun-drenched public park. She is wearing an oversized, cozy off-the-shoulder cream cable-knit sweater and light-wash blue denim jeans. She has a gentle, inviting smile, resting her chin on her hand in a relaxed, candid posture. To her side sits a vintage film camera, an open hardcover book, and a refreshing iced matcha latte in a clear plastic cup. The background is a lush, soft-focus green meadow. Captured with 85mm f/1.8 lens, golden hour sunlight, soft natural rim lighting, cinematic film grain, photorealistic textures, 8k resolution, ethereal and calm atmosphere, high dynamic range.",
+    "viewsCount": 0,
+    "copiesCount": 0,
+    "bookmarksCount": 0,
+    "imageFileName": "chatgpt-prompt-girl.webp",
+    "publishedAt": "2026-11-14T13:58:04.811Z",
+    "id": "prompt-1794664684811",
     "likesCount": 0,
+    "articleContent": "### Capturing the Perfect Serene Portrait\nThis prompt is designed to replicate a high-end, lifestyle-oriented social media aesthetic. The key to this look lies in the balance between the subject's relaxed posture and the soft, diffused natural lighting of the golden hour.\n\n### Lighting & Camera Breakdown\n- **Optics:** The 85mm f/1.8 lens selection is crucial. This focal length provides a flattering compression for facial features while creating a creamy bokeh (background blur) that makes the subject pop.\n- **Lighting:** We specify 'golden hour' and 'soft natural rim lighting.' This creates a gentle glow on the subject's hair and shoulders, separating them from the background grass.\n- **Texture:** By mentioning 'cable-knit sweater' and 'film grain,' we guide the AI to prioritize realistic, tactile textures rather than smooth, plastic-like digital surfaces.\n\n### Pro Tips\n- **Mood:** If you want a moodier look, swap 'golden hour' for 'overcast morning light' to achieve cooler tones and softer shadows.\n- **Subject Customization:** You can easily adapt this by changing the drink or the book title to reflect personal interests, which keeps the lifestyle aesthetic feeling authentic.",
+    "imageAlt": "Chatgpt Prompt Girl",
+    "affiliateProducts": [],
+    "variables": [],
+    "isNoIndex": true,
+    "additionalImages": [],
     "parameters": {
       "isPremium": false
     },
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1794664513735.jpg",
-    "id": "prompt-1794664684811",
-    "variables": [],
-    "imageAlt": "Chatgpt Prompt Girl",
-    "articleContent": "### Capturing the Perfect Serene Portrait\nThis prompt is designed to replicate a high-end, lifestyle-oriented social media aesthetic. The key to this look lies in the balance between the subject's relaxed posture and the soft, diffused natural lighting of the golden hour.\n\n### Lighting & Camera Breakdown\n- **Optics:** The 85mm f/1.8 lens selection is crucial. This focal length provides a flattering compression for facial features while creating a creamy bokeh (background blur) that makes the subject pop.\n- **Lighting:** We specify 'golden hour' and 'soft natural rim lighting.' This creates a gentle glow on the subject's hair and shoulders, separating them from the background grass.\n- **Texture:** By mentioning 'cable-knit sweater' and 'film grain,' we guide the AI to prioritize realistic, tactile textures rather than smooth, plastic-like digital surfaces.\n\n### Pro Tips\n- **Mood:** If you want a moodier look, swap 'golden hour' for 'overcast morning light' to achieve cooler tones and softer shadows.\n- **Subject Customization:** You can easily adapt this by changing the drink or the book title to reflect personal interests, which keeps the lifestyle aesthetic feeling authentic.",
-    "slug": "chatgpt-prompt-girl",
-    "imageFileName": "chatgpt-prompt-girl.webp",
-    "copiesCount": 0,
-    "seo": {
-      "focusKeyword": "park portrait photography",
-      "metaDescription": "Learn how to prompt for a serene, high-quality outdoor lifestyle portrait featuring soft golden hour lighting and cozy knitwear details.",
-      "metaTitle": "Capture the Perfect Cozy Park Picnic Portrait"
-    },
-    "additionalImages": [],
-    "publishedAt": "2026-11-14T13:58:04.811Z",
-    "createdAt": "2026-11-14T13:58:04.811Z",
-    "viewsCount": 0,
-    "affiliateProducts": [],
-    "bookmarksCount": 0,
-    "author": {
-      "role": "Author",
-      "avatar": "/logo.png",
-      "name": "tool.reelz"
-    },
-    "category": "Photorealistic & Portraits",
-    "promptText": "A high-quality, authentic portrait of a beautiful young woman with long, wavy dark hair, sitting gracefully on a cream-colored knit picnic blanket in a sun-drenched public park. She is wearing an oversized, cozy off-the-shoulder cream cable-knit sweater and light-wash blue denim jeans. She has a gentle, inviting smile, resting her chin on her hand in a relaxed, candid posture. To her side sits a vintage film camera, an open hardcover book, and a refreshing iced matcha latte in a clear plastic cup. The background is a lush, soft-focus green meadow. Captured with 85mm f/1.8 lens, golden hour sunlight, soft natural rim lighting, cinematic film grain, photorealistic textures, 8k resolution, ethereal and calm atmosphere, high dynamic range.",
-    "aiTool": "Midjourney",
-    "imageWidth": 1024,
-    "updatedAt": "2026-11-14T13:58:05.002Z",
+    "imageHeight": 1536,
     "isPremium": false,
-    "status": "published",
+    "author": {
+      "name": "tool.reelz",
+      "avatar": "/logo.png",
+      "role": "Author"
+    },
+    "slug": "chatgpt-prompt-girl",
+    "imageWidth": 1024,
+    "preferredAi": "ChatGPT",
+    "createdAt": "2026-11-14T13:58:04.811Z",
+    "seo": {
+      "metaTitle": "Capture the Perfect Cozy Park Picnic Portrait",
+      "metaDescription": "Learn how to prompt for a serene, high-quality outdoor lifestyle portrait featuring soft golden hour lighting and cozy knitwear details.",
+      "focusKeyword": "park portrait photography"
+    },
+    "title": "Chatgpt Prompt Girl",
     "tags": [
+      "Photorealistic Portrait",
+      "Golden Hour Photography",
+      "Lifestyle Aesthetic",
+      "High Resolution Portrait",
+      "Cinematic Lighting",
       "Candid Photography",
+      "Woman Portrait",
       "Golden Hour",
       "Cozy Aesthetic",
       "Soft Portrait",
       "Lifestyle Portrait",
-      "Natural Lighting",
-      "Film Look"
+      "Natural Lighting"
     ],
-    "title": "Chatgpt Prompt Girl",
-    "preferredAi": "ChatGPT",
-    "isNoIndex": true,
-    "imageHeight": 1536
+    "updatedAt": "2026-11-26T11:57:18.007Z",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@e03d05d6bec1ec83634d8409c8bdd3ed31c3f1c8/prompts/chatgpt-prompt-girl.jpg"
   },
   {
     "category": "Lifestyle & Creative Portraiture",
@@ -1126,44 +1131,26 @@
     "slug": "digital-ghost-fashion-concept"
   },
   {
-    "updatedAt": "2026-11-26T11:57:11.799Z",
-    "id": "prompt-1794662028569",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@5332b704eb1f4758eb9270a211e221e3348bf0d9/prompts/urban-street-art-mural-fusion-portrait.jpg",
-    "status": "published",
-    "aiTool": "Midjourney",
+    "slug": "urban-street-art-mural-fusion-portrait",
     "createdAt": "2026-11-14T13:13:48.570Z",
-    "articleContent": "### Bringing Murals to Life: The Fusion of Nature and Art\n\nThis prompt captures the popular 'trompe l'oeil' style of street art, where a mural interacts with the real-world environment. To get the best results, the AI must understand the relationship between the two distinct elements: the flat wall and the 3D organic plant life.\n\n#### Lighting & Composition Breakdown:\n*   **Lighting:** The key is 'Bright natural daylight.' This ensures the cast shadows of the tree on the wall look authentic, grounding the mural into the physical space.\n*   **Camera Optics:** By specifying a 35mm lens, we maintain a sense of a street-level, human-eye perspective, which is crucial for making the mural look like it belongs on the corner of a real city street.\n*   **Pro Tip:** If the AI struggles with the interaction, focus on the 'tactile' details of the hand touching the flowers. Using terms like 'interwoven' or 'seamlessly integrated' helps the generator merge the two layers successfully.",
-    "affiliateProducts": [],
-    "likesCount": 0,
-    "isPremium": true,
-    "additionalImages": [],
-    "viewsCount": 0,
-    "publishedAt": "2026-11-14T13:13:48.571Z",
-    "promptText": "A high-quality street photography shot at a sunny intersection. On the corner, a stark white wall serves as a canvas for user with long flowing black hair and closed eyes. A real, mature, twisted-trunk bougainvillea tree grows right next to the wall, its branches heavy with vibrant, saturated purple flowers draping over the wall and the mural. The girl in the mural is painted as if she is reaching out to delicately smell one of the real purple flowers. The ground is an asphalt street marked with white crosswalk stripes, scattered with fallen purple bougainvillea petals. The background shows a clear blue sky with a few wispy clouds and distant street elements. The lighting is bright and natural, casting soft, realistic shadows. Sharp focus on the entire scene, cinematic composition, high detail, vibrant contrast between the white wall, purple blossoms, and blue sky, aspect ratio 3:4",
-    "copiesCount": 0,
-    "imageFileName": "urban-street-art-mural-fusion-portrait.webp",
-    "bookmarksCount": 0,
-    "isNoIndex": true,
-    "variables": [],
-    "imageWidth": 1024,
-    "imageAlt": "Urban Street Art Mural Fusion Portrait",
-    "preferredAi": "Gemini",
-    "author": {
-      "name": "tool.reelz",
-      "avatar": "/logo.png",
-      "role": "Author"
-    },
     "seo": {
-      "metaTitle": "Create Surreal Street Art Mural Portraits with AI",
+      "focusKeyword": "Street art mural AI prompt",
       "metaDescription": "Master the art of blending physical nature with street mural art in AI generation. Learn the perfect prompt for interactive wall art portraits.",
-      "focusKeyword": "Street art mural AI prompt"
+      "metaTitle": "Create Surreal Street Art Mural Portraits with AI"
     },
+    "title": "Urban Street Art Mural Fusion Portrait",
+    "bookmarksCount": 0,
     "parameters": {
       "isPremium": true
     },
-    "slug": "urban-street-art-mural-fusion-portrait",
-    "imageHeight": 1536,
-    "title": "Urban Street Art Mural Fusion Portrait",
+    "likesCount": 0,
+    "viewsCount": 0,
+    "publishedAt": "2026-11-14T13:13:48.571Z",
+    "variables": [],
+    "id": "prompt-1794662028569",
+    "imageFileName": "urban-street-art-mural-fusion-portrait.webp",
+    "category": "Digital Art & Creative Portraiture",
+    "copiesCount": 0,
     "tags": [
       "Streetart",
       "Surrealism",
@@ -1173,7 +1160,25 @@
       "Mixedmedia",
       "Cinematicportrait"
     ],
-    "category": "Digital Art & Creative Portraiture"
+    "promptText": "A high-quality street photography shot at a sunny intersection. On the corner, a stark white wall serves as a canvas for user with long flowing black hair and closed eyes. A real, mature, twisted-trunk bougainvillea tree grows right next to the wall, its branches heavy with vibrant, saturated purple flowers draping over the wall and the mural. The girl in the mural is painted as if she is reaching out to delicately smell one of the real purple flowers. The ground is an asphalt street marked with white crosswalk stripes, scattered with fallen purple bougainvillea petals. The background shows a clear blue sky with a few wispy clouds and distant street elements. The lighting is bright and natural, casting soft, realistic shadows. Sharp focus on the entire scene, cinematic composition, high detail, vibrant contrast between the white wall, purple blossoms, and blue sky, aspect ratio 3:4",
+    "additionalImages": [],
+    "isNoIndex": true,
+    "updatedAt": "2026-11-26T11:57:11.799Z",
+    "isPremium": true,
+    "author": {
+      "role": "Author",
+      "avatar": "/logo.png",
+      "name": "tool.reelz"
+    },
+    "affiliateProducts": [],
+    "aiTool": "Midjourney",
+    "preferredAi": "Gemini",
+    "status": "published",
+    "articleContent": "### Bringing Murals to Life: The Fusion of Nature and Art\n\nThis prompt captures the popular 'trompe l'oeil' style of street art, where a mural interacts with the real-world environment. To get the best results, the AI must understand the relationship between the two distinct elements: the flat wall and the 3D organic plant life.\n\n#### Lighting & Composition Breakdown:\n*   **Lighting:** The key is 'Bright natural daylight.' This ensures the cast shadows of the tree on the wall look authentic, grounding the mural into the physical space.\n*   **Camera Optics:** By specifying a 35mm lens, we maintain a sense of a street-level, human-eye perspective, which is crucial for making the mural look like it belongs on the corner of a real city street.\n*   **Pro Tip:** If the AI struggles with the interaction, focus on the 'tactile' details of the hand touching the flowers. Using terms like 'interwoven' or 'seamlessly integrated' helps the generator merge the two layers successfully.",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@5332b704eb1f4758eb9270a211e221e3348bf0d9/prompts/urban-street-art-mural-fusion-portrait.jpg",
+    "imageHeight": 1536,
+    "imageAlt": "Urban Street Art Mural Fusion Portrait",
+    "imageWidth": 1024
   },
   {
     "parameters": {
