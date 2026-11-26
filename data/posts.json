@@ -1929,7 +1929,7 @@
     "parameters": {
       "isPremium": true
     },
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@ed031a3cd5b7d00ca11cbd2274ac44ac70b481e2/prompts/candid-photographer-field-portrait.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1794100658223.jpg",
     "tags": [
       "Lifestyle",
       "Candid",
@@ -1939,15 +1939,15 @@
       "DSLR",
       "Portraiture"
     ],
-    "updatedAt": "2026-11-26T12:34:54.956Z",
+    "updatedAt": "2026-11-08T01:20:01.910Z",
     "imageAlt": "Candid Photographer Field Portrait",
     "createdAt": "2026-11-08T01:19:15.429Z",
     "variables": [],
     "imageFileName": "candid-photographer-field-portrait.webp",
     "status": "published",
     "seo": {
-      "metaTitle": "Candid Photographer Field Portrait Midjourney Prompt",
       "metaDescription": "Master the art of lifestyle portraiture with this candid photographer prompt designed for Midjourney v6 and advanced AI models.",
+      "metaTitle": "Candid Photographer Field Portrait Midjourney Prompt",
       "focusKeyword": "photographer portrait prompt"
     },
     "bookmarksCount": 0,
@@ -1958,9 +1958,9 @@
   },
   {
     "author": {
+      "name": "tool.reelz",
       "avatar": "/logo.png",
-      "role": "Author",
-      "name": "tool.reelz"
+      "role": "Author"
     },
     "isNoIndex": false,
     "promptText": "A sophisticated high-quality digital vector illustration collage of a beautiful young Indian woman with dark, expressive eyes and a warm smile, wearing a traditional elegant burgundy and black saree with intricate gold trim and ornate jhumka earrings. The composition is an editorial-style design featuring three distinct frames: a large primary portrait, a small inset showing her with hands framing her face, and a bottom panoramic crop focusing on her eyes. The background is a clean off-white cream color with bold, sharp-edged rectangular overlays of deep burgundy and black. Artistic touches include black ink splashes, faded antique cursive handwriting script at the bottom, and minimalist graphic design aesthetics. The portrait style is smooth, precise, with clean line work, vibrant yet sophisticated warm color palette, professional editorial layout, high contrast, elegant typography, aspect ratio 3:4. No extra text except handwriting",
@@ -1968,16 +1968,23 @@
     "slug": "indian-girl-in-red-saree-vector-art-prompt",
     "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
     "imageHeight": 1536,
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1794100561961.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@eb2d0df3d112a1c967afa0f7c7e88f2573f29a4d/prompts/indian-girl-in-red-saree-vector-art-prompt.jpg",
     "likesCount": 0,
     "publishedAt": "2026-11-08T01:17:27.198Z",
     "imageWidth": 1024,
     "imageAlt": "Indian girl in red saree vector art prompt",
     "imageFileName": "indian-girl-in-red-saree-vector-art-prompt.webp",
     "preferredAi": "Gemini",
-    "updatedAt": "2026-11-08T01:17:28.250Z",
+    "updatedAt": "2026-11-26T12:35:54.238Z",
     "bookmarksCount": 0,
     "tags": [
+      "Vector Art",
+      "Indian Fashion Illustration",
+      "Editorial Design",
+      "Saree Aesthetic",
+      "Digital Collage",
+      "Minimalist Graphic",
+      "Portrait Illustration",
       "AI",
       "Photorealistic",
       "Masterpiece",
@@ -1985,12 +1992,12 @@
     ],
     "createdAt": "2026-11-08T01:17:27.198Z",
     "seo": {
+      "metaTitle": "I | Trending Copy Paste Photo Prompts",
       "metaDescription": "Copy and paste this photo prompt for Indian girl in red saree vector art prompt.",
-      "focusKeyword": "Indian girl in red saree vector art prompt",
-      "metaTitle": "I | Trending Copy Paste Photo Prompts"
+      "focusKeyword": "Indian girl in red saree vector art prompt"
     },
     "viewsCount": 0,
-    "category": "Logos & Graphic Design",
+    "category": "Digital Illustration & Art",
     "affiliateProducts": [],
     "variables": [],
     "id": "prompt-1794100647198",
