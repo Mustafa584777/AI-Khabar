@@ -673,6 +673,12 @@ export async function pushFilesToGitHubRepo(
 
     const refData = await refRes.json().catch(() => ({}));
     if (!refRes.ok || !refData?.object?.sha) {
+      if (refRes.status === 404 || refRes.status === 403) {
+        return {
+          success: false,
+          error: `Token does not have access to ${repoFullName} (branch "${cfg.branch}"). Update your GitHub token to include ${repoFullName} with Contents: Read & Write permission, or set GITHUB_SITE_TOKEN.`,
+        };
+      }
       return {
         success: false,
         error: refData?.message || `Failed to read branch ref (${refRes.status})`,
