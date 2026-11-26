@@ -17,9 +17,11 @@ import {
   Download,
   UploadCloud,
   Loader2,
+  Images,
 } from 'lucide-react';
 import Image from 'next/image';
 import { getPromptSlug } from '@/lib/utils';
+import { MediaMigrationModal } from './MediaMigrationModal';
 
 export const PostsManager = () => {
   const {
@@ -88,6 +90,17 @@ export const PostsManager = () => {
   };
 
   const [isPushingGitHub, setIsPushingGitHub] = useState(false);
+  const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
+
+  const brokenMediaCount = useMemo(() => {
+    return posts.filter((p) => {
+      const coverBroken = Boolean(p.imageUrl && (p.imageUrl.includes('res.cloudinary.com/') || p.imageUrl.startsWith('/images/prompts/')));
+      const slideBroken = Array.isArray(p.additionalImages)
+        ? p.additionalImages.some((u) => Boolean(u && (u.includes('res.cloudinary.com/') || u.startsWith('/images/prompts/'))))
+        : false;
+      return coverBroken || slideBroken;
+    }).length;
+  }, [posts]);
 
   const handlePushPostsToGitHub = async () => {
     if (isPushingGitHub) return;
@@ -193,6 +206,19 @@ export const PostsManager = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setIsMigrationModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-md shadow-amber-500/30 transition-colors cursor-pointer"
+            id="btn-open-media-migration"
+            title="Auto-recover cached images or bulk upload folder to GitHub CDN"
+          >
+            <Images className="w-4 h-4" />
+            <span>
+              Fix Broken Images{brokenMediaCount > 0 ? ` (${brokenMediaCount})` : ''}
+            </span>
+          </button>
+
           <button
             type="button"
             onClick={handlePushPostsToGitHub}
@@ -557,6 +583,15 @@ export const PostsManager = () => {
           </table>
         </div>
       </div>
+      <MediaMigrationModal
+        isOpen={isMigrationModalOpen}
+        onClose={() => setIsMigrationModalOpen(false)}
+        posts={posts}
+        onRefreshData={refreshData}
+        onPushPostsGitHub={handlePushPostsToGitHub}
+        onDownloadPostsJson={handleDownloadPostsJson}
+        showToast={showToast}
+      />
     </div>
   );
 };
