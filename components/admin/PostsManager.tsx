@@ -15,6 +15,8 @@ import {
   Sparkles,
   Crown,
   Download,
+  UploadCloud,
+  Loader2,
 } from 'lucide-react';
 import Image from 'next/image';
 import { getPromptSlug } from '@/lib/utils';
@@ -82,6 +84,29 @@ export const PostsManager = () => {
     } catch (e) {
       console.error('Error downloading posts.json:', e);
       showToast('Failed to download posts.json');
+    }
+  };
+
+  const [isPushingGitHub, setIsPushingGitHub] = useState(false);
+
+  const handlePushPostsToGitHub = async () => {
+    if (isPushingGitHub) return;
+    setIsPushingGitHub(true);
+    try {
+      const res = await fetch('/api/admin/push-posts-github', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to push posts.json to GitHub');
+      }
+      showToast(data.message || `Pushed posts.json to ${data.repo}!`);
+    } catch (e: any) {
+      showToast(e?.message || 'Failed to push posts.json to GitHub');
+    } finally {
+      setIsPushingGitHub(false);
     }
   };
 
@@ -167,7 +192,23 @@ export const PostsManager = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={handlePushPostsToGitHub}
+            disabled={isPushingGitHub}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 text-white dark:text-neutral-900 text-xs font-bold shadow-md transition-colors cursor-pointer disabled:opacity-60"
+            id="btn-push-posts-github"
+            title="Push latest posts.json directly to GitHub (Mustafa584777/AI-Khabar)"
+          >
+            {isPushingGitHub ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <UploadCloud className="w-4 h-4" />
+            )}
+            <span>{isPushingGitHub ? 'Pushing...' : 'Push posts.json to GitHub'}</span>
+          </button>
+
           <button
             onClick={handleDownloadPostsJson}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/30 transition-colors cursor-pointer"

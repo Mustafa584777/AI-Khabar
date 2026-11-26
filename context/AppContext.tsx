@@ -2811,7 +2811,13 @@ export const AppProvider = ({
         }
         setAdminPosts(cleanPosts);
         const savedPost = data.post || post;
-        showToast('Prompt saved to Firebase! Click "Download posts.json" in Admin to export for main site.');
+        if (data.githubSync?.success) {
+          showToast(`Prompt saved & posts.json pushed to GitHub (${data.githubSync.repo})!`);
+        } else if (data.githubSync?.error) {
+          showToast(`Prompt saved to Firebase! GitHub push notice: ${data.githubSync.error}`);
+        } else {
+          showToast('Prompt saved to Firebase!');
+        }
 
         return savedPost;
       } else {
@@ -2878,6 +2884,9 @@ export const AppProvider = ({
         // Guarantee deleted IDs are NEVER reintroduced from server response
         const remaining = data.posts.filter((p: PromptPost) => !idSet.has(p.id));
         setAdminPosts(remaining);
+        if (data.githubSync?.success) {
+          showToast(`Removed & updated posts.json on GitHub (${data.githubSync.repo})!`);
+        }
       }
       return true;
     } catch (err) {

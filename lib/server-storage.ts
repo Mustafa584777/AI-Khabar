@@ -530,27 +530,29 @@ export const ServerStorage = {
       }
     }
 
-    // Keep local posts.json / initial-feed.json / memoryPosts synchronized for any existing post edit
+    // Keep local posts.json / initial-feed.json / memoryPosts synchronized on create or edit
     try {
       const idx = posts.findIndex((p) => p.id === savedPost.id);
+      const nextPosts = [...posts];
       if (idx !== -1) {
-        posts[idx] = savedPost;
-        writeJsonFile(POSTS_FILE, posts);
+        nextPosts[idx] = savedPost;
+      } else {
+        nextPosts.unshift(savedPost);
       }
-      if (fs.existsSync(INITIAL_FEED_FILE)) {
-        const feedPosts = readJsonFile<PromptPost[]>(INITIAL_FEED_FILE, []);
-        const fIdx = feedPosts.findIndex((p) => p.id === savedPost.id);
-        if (fIdx !== -1) {
-          feedPosts[fIdx] = savedPost;
-          writeJsonFile(INITIAL_FEED_FILE, feedPosts);
-        }
-      }
-      if (memoryPosts) {
-        const mIdx = memoryPosts.findIndex((p) => p.id === savedPost.id);
-        if (mIdx !== -1) {
-          memoryPosts[mIdx] = savedPost;
-        }
-      }
+      const cleanedNext = ServerStorage.deduplicatePosts(nextPosts);
+      writeJsonFile(POSTS_FILE, cleanedNext);
+      memoryPosts = cleanedNext;
+      memoryPostsTimestamp = Date.now();
+
+      const nextInitialFeed = cleanedNext
+        .filter((p) => p.status === 'published')
+        .sort(
+          (a, b) =>
+            new Date(b.publishedAt || b.createdAt || 0).getTime() -
+            new Date(a.publishedAt || a.createdAt || 0).getTime()
+        )
+        .slice(0, 16);
+      writeJsonFile(INITIAL_FEED_FILE, nextInitialFeed);
     } catch (syncLocalErr) {
       console.warn('Local JSON media update notice:', syncLocalErr);
     }
@@ -612,8 +614,30 @@ export const ServerStorage = {
 
     await recordDeletedPostIds(cleanIds);
 
-    // 1. Remove strictly from Firebase Firestore (Admin CMS database)
-    // CRUCIAL: Do NOT alter local posts.json or memoryPosts
+    // Sync local posts.json / initial-feed.json / memoryPosts removal
+    try {
+      const localPosts = readJsonFile<PromptPost[]>(POSTS_FILE, []);
+      if (Array.isArray(localPosts) && localPosts.length > 0) {
+        const filteredLocal = localPosts.filter((p) => p && !idSet.has(p.id));
+        writeJsonFile(POSTS_FILE, filteredLocal);
+        const nextFeed = filteredLocal
+          .filter((p) => p.status === 'published')
+          .sort(
+            (a, b) =>
+              new Date(b.publishedAt || b.createdAt || 0).getTime() -
+              new Date(a.publishedAt || a.createdAt || 0).getTime()
+          )
+          .slice(0, 16);
+        writeJsonFile(INITIAL_FEED_FILE, nextFeed);
+      }
+      if (memoryPosts) {
+        memoryPosts = memoryPosts.filter((p) => p && !idSet.has(p.id));
+      }
+    } catch (localDelErr) {
+      console.warn('Local JSON delete sync notice:', localDelErr);
+    }
+
+    // 1. Remove from Firebase Firestore (Admin CMS database)
     if (isFirebaseConfigured()) {
       try {
         const batch = writeBatch(firestoreDb);

@@ -1,9 +1,25 @@
 import { ServerStorage } from '@/lib/server-storage';
+import { pushPostsJsonToGitHub } from '@/lib/github-assets-server';
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
+import fs from 'fs';
+import path from 'path';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+
+function getExtraSyncFiles(): Array<{ path: string; content: string }> {
+  const extra: Array<{ path: string; content: string }> = [];
+  try {
+    const redirectsPath = path.join(process.cwd(), 'data', 'media-redirects.json');
+    if (fs.existsSync(redirectsPath)) {
+      const content = fs.readFileSync(redirectsPath, 'utf-8');
+      if (content && content.trim().length > 2) {
+        extra.push({ path: 'data/media-redirects.json', content });
+      }
+    }
+  } catch {}
+  return extra;
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -67,8 +83,17 @@ export async function POST(req: NextRequest) {
     const saved = await ServerStorage.savePost(body, token);
     const adminPosts = await ServerStorage.getFirebasePosts();
 
+    const skipGitHubPush = body.skipGitHubPush === true;
+    const githubSync = skipGitHubPush
+      ? { success: false, skipped: true }
+      : await pushPostsJsonToGitHub(
+          adminPosts,
+          `Update posts.json: ${saved.title.slice(0, 60)}`,
+          getExtraSyncFiles()
+        );
+
     return NextResponse.json(
-      { success: true, post: saved, posts: adminPosts },
+      { success: true, post: saved, posts: adminPosts, githubSync },
       {
         headers: {
           'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
@@ -119,8 +144,14 @@ export async function DELETE(req: NextRequest) {
     await ServerStorage.deletePosts(idsToDelete, token);
     const adminPosts = await ServerStorage.getFirebasePosts();
 
+    const githubSync = await pushPostsJsonToGitHub(
+      adminPosts,
+      `Update posts.json: removed ${idsToDelete.length} prompt(s)`,
+      getExtraSyncFiles()
+    );
+
     return NextResponse.json(
-      { success: true, posts: adminPosts, deletedIds: idsToDelete },
+      { success: true, posts: adminPosts, deletedIds: idsToDelete, githubSync },
       {
         headers: {
           'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',

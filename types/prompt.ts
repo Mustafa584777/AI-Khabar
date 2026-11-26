@@ -291,6 +291,16 @@ export interface AiSearchResult {
   isAiPowered: boolean;
 }
 
+export interface PromptComment {
+  id: string;
+  postId: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  text: string;
+  createdAt: string;
+}
+
 export type { UserTasteProfile, GenderVibe } from '@/lib/personalization';
 
 

@@ -2,7 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { PromptPost } from '@/types/prompt';
+import { PromptPost, PromptComment } from '@/types/prompt';
 import { useApp } from '@/context/AppContext';
 import {
   X,
@@ -33,6 +33,9 @@ import {
   Scissors,
   Footprints,
   Image as ImageIcon,
+  MessageSquare,
+  Send,
+  Trash2,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -431,6 +434,10 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
   const [isDownloadingImage, setIsDownloadingImage] = useState<boolean>(false);
   const downloadResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [historyStack, setHistoryStack] = useState<PromptPost[]>(() => (selectedPost ? [selectedPost] : []));
+  const [comments, setComments] = useState<PromptComment[]>([]);
+  const [isLoadingComments, setIsLoadingComments] = useState<boolean>(false);
+  const [commentInput, setCommentInput] = useState<string>('');
+  const [isSubmittingComment, setIsSubmittingComment] = useState<boolean>(false);
 
   // Gather all images for this prompt strictly for this post
   const allImages = useMemo(() => {
@@ -921,6 +928,126 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
       }, 400);
     } catch {
       showToast('Could not start download. Please try again.');
+    }
+  };
+
+  // Load GitHub-backed comments for active prompt
+  useEffect(() => {
+    const postId = selectedPost?.id;
+    if (!postId) {
+      setComments([]);
+      return;
+    }
+
+    let cancelled = false;
+    setIsLoadingComments(true);
+    setCommentInput('');
+
+    fetch(`/api/comments?postId=${encodeURIComponent(postId)}`, { cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+      .then((data) => {
+        if (!cancelled && data?.success && Array.isArray(data.comments)) {
+          setComments(data.comments);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setComments([]);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingComments(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedPost?.id]);
+
+  const handleSubmitComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPost) return;
+    if (!userAccount?.isLoggedIn) {
+      openAuthModal('Sign in to post a comment on this prompt.');
+      return;
+    }
+
+    const trimmed = commentInput.replace(/\s+/g, ' ').trim();
+    if (trimmed.length < 2) {
+      showToast('Please write at least 2 characters.');
+      return;
+    }
+    if (isSubmittingComment) return;
+
+    const optimisticId = `cmt_temp_${Date.now()}`;
+    const optimisticComment: PromptComment = {
+      id: optimisticId,
+      postId: selectedPost.id,
+      userId: userAccount.id,
+      userName: userAccount.name || userAccount.username || userAccount.email?.split('@')[0] || 'Creator',
+      userAvatar: userAccount.avatar,
+      text: trimmed,
+      createdAt: new Date().toISOString(),
+    };
+
+    setComments((prev) => [optimisticComment, ...prev]);
+    setCommentInput('');
+    setIsSubmittingComment(true);
+
+    try {
+      const res = await fetch('/api/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          postId: selectedPost.id,
+          userId: userAccount.id,
+          userEmail: userAccount.email,
+          userName: userAccount.name || userAccount.username,
+          userAvatar: userAccount.avatar,
+          text: trimmed,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to post comment');
+      }
+      if (Array.isArray(data.comments)) {
+        setComments(data.comments);
+      }
+      showToast('Comment posted!');
+    } catch (err: any) {
+      setComments((prev) => prev.filter((c) => c.id !== optimisticId));
+      setCommentInput(trimmed);
+      showToast(err?.message || 'Could not post comment. Please try again.');
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!selectedPost || !userAccount?.isLoggedIn) return;
+    const prevComments = comments;
+    setComments((prev) => prev.filter((c) => c.id !== commentId));
+
+    try {
+      const res = await fetch('/api/comments', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          postId: selectedPost.id,
+          commentId,
+          userId: userAccount.id,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to delete comment');
+      }
+      if (Array.isArray(data.comments)) {
+        setComments(data.comments);
+      }
+      showToast('Comment deleted');
+    } catch (err: any) {
+      setComments(prevComments);
+      showToast(err?.message || 'Failed to delete comment');
     }
   };
 
@@ -1968,6 +2095,122 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                     ))}
                   </div>
                 )}
+
+                {/* Comments Section (GitHub-backed) */}
+                <div className="pt-4 mt-2 border-t border-neutral-100 dark:border-neutral-800 space-y-3.5">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-extrabold text-neutral-900 dark:text-white flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-[#E60023]" />
+                      <span>Comments</span>
+                      <span className="px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-[11px] font-bold text-neutral-600 dark:text-neutral-300">
+                        {comments.length}
+                      </span>
+                    </h3>
+                  </div>
+
+                  {userAccount?.isLoggedIn ? (
+                    <form onSubmit={handleSubmitComment} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={commentInput}
+                        onChange={(e) => setCommentInput(e.target.value)}
+                        maxLength={500}
+                        placeholder="Add a comment or tip..."
+                        className="flex-1 min-w-0 px-3.5 py-2.5 rounded-full bg-neutral-100 dark:bg-neutral-800 border border-neutral-200/80 dark:border-neutral-700/80 text-xs sm:text-sm text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#E60023]/40"
+                      />
+                      <button
+                        type="submit"
+                        disabled={isSubmittingComment || commentInput.trim().length < 2}
+                        className="shrink-0 p-2.5 sm:px-4 sm:py-2.5 rounded-full bg-[#E60023] hover:bg-[#ad081b] disabled:opacity-50 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                        title="Post Comment"
+                        aria-label="Post Comment"
+                      >
+                        {isSubmittingComment ? (
+                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Send className="w-3.5 h-3.5" />
+                        )}
+                        <span className="hidden sm:inline">Post</span>
+                      </button>
+                    </form>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => openAuthModal('Sign in to share your comment on this prompt.')}
+                      className="w-full py-2.5 px-4 rounded-2xl bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800/80 dark:hover:bg-neutral-800 border border-neutral-200/80 dark:border-neutral-700/70 text-xs font-bold text-neutral-700 dark:text-neutral-200 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5 text-[#E60023]" />
+                      <span>Sign in to add a comment</span>
+                    </button>
+                  )}
+
+                  {isLoadingComments ? (
+                    <div className="py-3 flex items-center gap-2 text-xs text-neutral-400">
+                      <div className="w-3.5 h-3.5 border-2 border-neutral-400 border-t-transparent rounded-full animate-spin" />
+                      <span>Loading comments...</span>
+                    </div>
+                  ) : comments.length > 0 ? (
+                    <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                      {comments.map((comment) => {
+                        const isOwner = Boolean(userAccount?.isLoggedIn && userAccount.id === comment.userId);
+                        const initial = (comment.userName || 'U').charAt(0).toUpperCase();
+                        return (
+                          <div
+                            key={comment.id}
+                            className="flex items-start gap-2.5 p-2.5 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-800/80"
+                          >
+                            {comment.userAvatar ? (
+                              <img
+                                src={comment.userAvatar}
+                                alt={comment.userName}
+                                className="w-7 h-7 rounded-full object-cover shrink-0 bg-neutral-200 dark:bg-neutral-700"
+                                referrerPolicy="no-referrer"
+                              />
+                            ) : (
+                              <div className="w-7 h-7 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 text-xs font-bold flex items-center justify-center shrink-0">
+                                {initial}
+                              </div>
+                            )}
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs font-bold text-neutral-900 dark:text-white truncate">
+                                  {comment.userName}
+                                </span>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <span className="text-[10px] text-neutral-400">
+                                    {new Date(comment.createdAt).toLocaleDateString('en-US', {
+                                      month: 'short',
+                                      day: 'numeric',
+                                    })}
+                                  </span>
+                                  {isOwner && !comment.id.startsWith('cmt_temp_') && (
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleDeleteComment(comment.id)}
+                                      className="p-1 rounded-full text-neutral-400 hover:text-red-500 hover:bg-neutral-200/60 dark:hover:bg-neutral-700/60 transition-colors cursor-pointer"
+                                      title="Delete your comment"
+                                      aria-label="Delete your comment"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                              <p className="text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed break-words mt-0.5">
+                                {comment.text}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-neutral-400 py-1">
+                      No comments yet. Be the first to share your thoughts!
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
