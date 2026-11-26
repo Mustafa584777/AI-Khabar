@@ -826,10 +826,13 @@ export function buildCleanPostsPayload(rawPosts: PromptPost[]): {
     if (!seenIds.has(p.id) && !seenSlugs.has(slug)) {
       seenIds.add(p.id);
       seenSlugs.add(slug);
-      cleanPosts.push({
+
+      const { post: rewritten } = rewritePostMediaUrls({
         ...p,
         slug,
       });
+
+      cleanPosts.push(rewritten);
     }
   }
 
