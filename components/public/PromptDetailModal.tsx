@@ -429,6 +429,7 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [showFullImageModal, setShowFullImageModal] = useState<boolean>(false);
   const [isDownloadingImage, setIsDownloadingImage] = useState<boolean>(false);
+  const downloadResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [historyStack, setHistoryStack] = useState<PromptPost[]>(() => (selectedPost ? [selectedPost] : []));
 
   // Gather all images for this prompt strictly for this post
@@ -824,42 +825,102 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
     showToast('Loaded prompt into Create Studio!');
   };
 
-  const handleDownloadImage = async (e?: React.MouseEvent, overrideUrl?: string) => {
-    if (e) e.stopPropagation();
-    const downloadUrl = overrideUrl || (allImages[currentImageIndex] || selectedPost?.imageUrl);
-    if (!downloadUrl) return;
+  useEffect(() => {
+    setIsDownloadingImage(false);
+    if (downloadResetTimerRef.current) {
+      clearTimeout(downloadResetTimerRef.current);
+      downloadResetTimerRef.current = null;
+    }
+  }, [selectedPost?.id, currentImageIndex]);
+
+  useEffect(() => {
+    return () => {
+      if (downloadResetTimerRef.current) {
+        clearTimeout(downloadResetTimerRef.current);
+        downloadResetTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleDownloadImage = (e?: React.MouseEvent, overrideUrl?: string) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const rawUrl = overrideUrl || (allImages[currentImageIndex] || selectedPost?.imageUrl);
+    if (!rawUrl) return;
+
+    const cleanSlug =
+      selectedPost?.slug ||
+      selectedPost?.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) ||
+      'ai-photo-prompt';
+    const fileSuffix = allImages.length > 1 ? `-${currentImageIndex + 1}` : '';
+    const baseFilename = `${cleanSlug}${fileSuffix}`;
 
     setIsDownloadingImage(true);
+    if (downloadResetTimerRef.current) {
+      clearTimeout(downloadResetTimerRef.current);
+    }
+    downloadResetTimerRef.current = setTimeout(() => {
+      setIsDownloadingImage(false);
+      downloadResetTimerRef.current = null;
+    }, 600);
+
     try {
       showToast('Downloading photo...');
-      const response = await fetch(downloadUrl, { mode: 'cors' });
-      if (!response.ok) throw new Error('Network response error');
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const resolvedUrl = getOptimizedImageUrl(rawUrl, 1200) || rawUrl;
+
+      if (resolvedUrl.startsWith('data:') || resolvedUrl.startsWith('blob:')) {
+        let downloadHref = resolvedUrl;
+        let createdBlobUrl: string | null = null;
+
+        if (resolvedUrl.startsWith('data:')) {
+          const parts = resolvedUrl.split(',');
+          const header = parts[0] || '';
+          const mimeMatch = header.match(/data:([^;]+);base64/i);
+          const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+          const binary = atob(parts[1] || '');
+          const bytes = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+          }
+          createdBlobUrl = window.URL.createObjectURL(new Blob([bytes], { type: mime }));
+          downloadHref = createdBlobUrl;
+        }
+
+        const link = document.createElement('a');
+        link.href = downloadHref;
+        link.download = `${baseFilename}.jpg`;
+        link.rel = 'noopener';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => {
+          if (link.parentNode) link.parentNode.removeChild(link);
+        }, 400);
+        if (createdBlobUrl) {
+          const urlToRevoke = createdBlobUrl;
+          setTimeout(() => {
+            window.URL.revokeObjectURL(urlToRevoke);
+          }, 30000);
+        }
+        return;
+      }
+
+      // Trigger synchronous user-gesture download via same-origin Content-Disposition attachment proxy
+      const proxyUrl = `/api/download-image?url=${encodeURIComponent(resolvedUrl)}&filename=${encodeURIComponent(baseFilename)}`;
       const link = document.createElement('a');
-      link.href = url;
-      const cleanSlug = selectedPost?.slug || selectedPost?.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40) || 'ai-photo-prompt';
-      const fileSuffix = allImages.length > 1 ? `-${currentImageIndex + 1}` : '';
-      link.download = `${cleanSlug}${fileSuffix}.jpg`;
+      link.href = proxyUrl;
+      link.download = `${baseFilename}.jpg`;
+      link.rel = 'noopener';
+      link.style.display = 'none';
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      showToast('Image downloaded successfully!');
+      setTimeout(() => {
+        if (link.parentNode) link.parentNode.removeChild(link);
+      }, 400);
     } catch {
-      // Fallback
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.target = '_blank';
-      const fileSuffix = allImages.length > 1 ? `-${currentImageIndex + 1}` : '';
-      link.download = `${selectedPost?.slug || 'ai-prompt-photo'}${fileSuffix}.jpg`;
-      link.rel = 'noreferrer';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      showToast('Image downloaded!');
-    } finally {
-      setIsDownloadingImage(false);
+      showToast('Could not start download. Please try again.');
     }
   };
 
