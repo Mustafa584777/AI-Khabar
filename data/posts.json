@@ -934,96 +934,96 @@
     "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@c2204a38519d76ccc36bb21e167a22271d8a2cf3/prompts/girl-in-saree-prompts-gemini.jpg"
   },
   {
+    "viewsCount": 0,
+    "aiTool": "Midjourney",
     "imageWidth": 1024,
+    "copiesCount": 0,
+    "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
+    "affiliateProducts": [],
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@30a90480afe1b39a9dc6030dec3f56bde7c41b2d/prompts/boy-aesthetic-photo-prompt-for-gemini.jpg",
+    "id": "prompt-1794665027516",
+    "parameters": {
+      "isPremium": false
+    },
     "seo": {
       "metaTitle": "B | Trending Copy Paste Photo Prompts",
-      "metaDescription": "Copy and paste this photo prompt for Boy Aesthetic Photo Prompt For Gemini.",
-      "focusKeyword": "Boy Aesthetic Photo Prompt For Gemini"
+      "focusKeyword": "Boy Aesthetic Photo Prompt For Gemini",
+      "metaDescription": "Copy and paste this photo prompt for Boy Aesthetic Photo Prompt For Gemini."
     },
-    "bookmarksCount": 0,
-    "promptText": "A hyper-realistic wide shot of user standing in a vast, golden-brown grassy field wearing a dark navy blue shirt. His entire right side is surrealistically dissolving and disintegrating into a dense swirling cloud of fine dust particles that drift into the air, blending into the atmosphere. The backdrop features a misty, expansive valley transitioning into majestic, layered blue mountain ranges under a soft, overcast, bright sky. The lighting is natural and realistic, casting subtle rim light on the subject and the particles. High-contrast color palette with warm golden ochre foregrounds and cool, desaturated blue mountain tones. ethereal and melancholic mood, aspect ratio 3:4. Adjust lighting so that user properly blend with the environment",
-    "copiesCount": 0,
-    "publishedAt": "2026-11-14T14:03:47.520Z",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@30a90480afe1b39a9dc6030dec3f56bde7c41b2d/prompts/boy-aesthetic-photo-prompt-for-gemini.jpg",
-    "slug": "boy-aesthetic-photo-prompt-for-gemini",
+    "imageFileName": "boy-aesthetic-photo-prompt-for-gemini.webp",
+    "preferredAi": "Gemini",
+    "updatedAt": "2026-11-26T11:54:29.504Z",
     "tags": [
       "AI",
       "Photorealistic",
       "Masterpiece"
     ],
-    "affiliateProducts": [],
-    "variables": [],
-    "status": "published",
+    "publishedAt": "2026-11-14T14:03:47.520Z",
+    "title": "Boy Aesthetic Photo Prompt For Gemini",
+    "promptText": "A hyper-realistic wide shot of user standing in a vast, golden-brown grassy field wearing a dark navy blue shirt. His entire right side is surrealistically dissolving and disintegrating into a dense swirling cloud of fine dust particles that drift into the air, blending into the atmosphere. The backdrop features a misty, expansive valley transitioning into majestic, layered blue mountain ranges under a soft, overcast, bright sky. The lighting is natural and realistic, casting subtle rim light on the subject and the particles. High-contrast color palette with warm golden ochre foregrounds and cool, desaturated blue mountain tones. ethereal and melancholic mood, aspect ratio 3:4. Adjust lighting so that user properly blend with the environment",
+    "slug": "boy-aesthetic-photo-prompt-for-gemini",
     "createdAt": "2026-11-14T14:03:47.520Z",
-    "parameters": {
-      "isPremium": false
-    },
-    "preferredAi": "Gemini",
-    "likesCount": 0,
-    "aiTool": "Midjourney",
-    "imageFileName": "boy-aesthetic-photo-prompt-for-gemini.webp",
+    "category": "Digital Illustration & Art",
+    "isPremium": false,
+    "imageAlt": "Boy Aesthetic Photo Prompt For Gemini",
+    "variables": [],
+    "bookmarksCount": 0,
+    "imageHeight": 1536,
     "author": {
       "name": "tool.reelz",
       "avatar": "/logo.png",
       "role": "Author"
     },
-    "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
-    "isPremium": false,
-    "isNoIndex": false,
-    "imageAlt": "Boy Aesthetic Photo Prompt For Gemini",
-    "title": "Boy Aesthetic Photo Prompt For Gemini",
-    "viewsCount": 0,
-    "updatedAt": "2026-11-26T11:54:29.504Z",
-    "category": "Digital Illustration & Art",
+    "likesCount": 0,
+    "status": "published",
     "additionalImages": [],
-    "imageHeight": 1536,
-    "id": "prompt-1794665027516"
+    "isNoIndex": false
   },
   {
-    "additionalImages": [],
+    "imageFileName": "editorial-photoshoot-prompt-for-boy.webp",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@10a2e29231bcb8adb1a8589ebc683c83180c43d0/prompts/editorial-photoshoot-prompt-for-boy.jpg",
+    "tags": [
+      "AI",
+      "Photorealistic",
+      "Masterpiece"
+    ],
+    "imageHeight": 1536,
+    "slug": "editorial-photoshoot-prompt-for-boy",
+    "updatedAt": "2026-11-26T11:54:37.345Z",
+    "bookmarksCount": 0,
+    "viewsCount": 0,
+    "isNoIndex": false,
+    "isPremium": true,
     "likesCount": 0,
-    "createdAt": "2026-11-14T14:01:12.288Z",
+    "parameters": {
+      "isPremium": true
+    },
+    "aiTool": "Midjourney",
+    "preferredAi": "Gemini",
     "author": {
       "name": "tool.reelz",
       "avatar": "/logo.png",
       "role": "Author"
     },
-    "updatedAt": "2026-11-16T14:15:45.836Z",
     "status": "published",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1794662153341.jpg",
-    "imageHeight": 1536,
-    "publishedAt": "2026-11-14T14:01:12.288Z",
-    "isNoIndex": false,
+    "imageAlt": "Editorial Photoshoot Prompt For Boy",
     "seo": {
       "metaTitle": "Not | Trending Copy Paste Photo Prompts",
       "metaDescription": "Copy and paste this photo prompt for Editorial Photoshoot Prompt For Boy.",
       "focusKeyword": "Editorial Photoshoot Prompt For Boy"
     },
-    "variables": [],
-    "preferredAi": "Gemini",
-    "promptText": "Professional fashion editorial photography of user with dark curly hair and olive skin, sitting on a simple black metal chair against a solid, seamless, saturated royal blue studio background. The model is wearing a textured deep-blue short-sleeve polo shirt with a subtle knit pattern and loose-fit, faded light-grey denim jeans, paired with clean off-white retro-style sneakers. He is positioned leaning slightly forward, with a relaxed, confident posture and an engaging, direct gaze toward the camera lens. Lighting is soft, bright, and evenly diffused from the front, minimizing harsh shadows while accentuating the tactile fabric textures of the knit shirt and the weave of the denim. The image is captured with a 50mm lens, f/4 aperture, creating sharp, crystalline detail throughout the entire frame, highlighting natural skin texture and authentic fabric folds. The overall aesthetic is minimalist, bold, and clean, reminiscent of high-end contemporary menswear advertising campaigns. No text, no logos, no watermarks, pure clean composition, aspect ratio 3:4",
-    "isPremium": true,
-    "bookmarksCount": 0,
-    "imageFileName": "editorial-photoshoot-prompt-for-boy.webp",
-    "imageAlt": "Editorial Photoshoot Prompt For Boy",
-    "parameters": {
-      "isPremium": true
-    },
-    "affiliateProducts": [],
-    "slug": "editorial-photoshoot-prompt-for-boy",
-    "viewsCount": 0,
-    "copiesCount": 0,
-    "tags": [
-      "AI",
-      "Photorealistic",
-      "Masterpiece"
-    ],
-    "category": "Fashion & Editorial Photography",
-    "id": "prompt-1794664872283",
-    "imageWidth": 1024,
-    "aiTool": "Midjourney",
     "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
-    "title": "Editorial Photoshoot Prompt For Boy"
+    "createdAt": "2026-11-14T14:01:12.288Z",
+    "variables": [],
+    "additionalImages": [],
+    "affiliateProducts": [],
+    "copiesCount": 0,
+    "publishedAt": "2026-11-14T14:01:12.288Z",
+    "promptText": "Professional fashion editorial photography of user with dark curly hair and olive skin, sitting on a simple black metal chair against a solid, seamless, saturated royal blue studio background. The model is wearing a textured deep-blue short-sleeve polo shirt with a subtle knit pattern and loose-fit, faded light-grey denim jeans, paired with clean off-white retro-style sneakers. He is positioned leaning slightly forward, with a relaxed, confident posture and an engaging, direct gaze toward the camera lens. Lighting is soft, bright, and evenly diffused from the front, minimizing harsh shadows while accentuating the tactile fabric textures of the knit shirt and the weave of the denim. The image is captured with a 50mm lens, f/4 aperture, creating sharp, crystalline detail throughout the entire frame, highlighting natural skin texture and authentic fabric folds. The overall aesthetic is minimalist, bold, and clean, reminiscent of high-end contemporary menswear advertising campaigns. No text, no logos, no watermarks, pure clean composition, aspect ratio 3:4",
+    "id": "prompt-1794664872283",
+    "title": "Editorial Photoshoot Prompt For Boy",
+    "category": "Fashion & Editorial Photography",
+    "imageWidth": 1024
   },
   {
     "id": "prompt-1794664684811",
