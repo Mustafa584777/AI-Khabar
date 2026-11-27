@@ -324,7 +324,9 @@ export const ServerStorage = {
     if (options?.forceRemote || cacheExpired) {
       const [githubPosts, overlay] = await Promise.all([
         fetchPostsJsonFromGitHub().catch(() => null),
-        readRecentPostEditsOverlay().catch(() => ({ edits: {}, deletedIds: [] })),
+        readRecentPostEditsOverlay().catch(
+          () => ({ edits: {} as Record<string, PromptPost>, deletedIds: [] as string[] })
+        ),
       ]);
 
       if (Array.isArray(githubPosts) && githubPosts.length > 0) {
@@ -336,7 +338,7 @@ export const ServerStorage = {
         overlay.deletedIds.forEach((id) => delSet.add(id));
       }
 
-      const overlayPosts = Object.values(overlay.edits || {});
+      const overlayPosts = Object.values(overlay.edits || {}) as PromptPost[];
       if (overlayPosts.length > 0) {
         sources.push(overlayPosts);
       }
