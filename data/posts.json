@@ -3145,9 +3145,9 @@
     "copiesCount": 0,
     "imageWidth": 1024,
     "seo": {
-      "focusKeyword": "Indian wedding portrait prompt",
+      "metaTitle": "Professional Indian Wedding Portrait Prompt for Midjourney",
       "metaDescription": "Create stunning, high-end Indian wedding couple portraits with this professional Midjourney prompt. Optimized for realistic lighting and cultural detail.",
-      "metaTitle": "Professional Indian Wedding Portrait Prompt for Midjourney"
+      "focusKeyword": "Indian wedding portrait prompt"
     },
     "bookmarksCount": 0,
     "preferredAi": "Gemini",
@@ -3161,9 +3161,9 @@
     "title": "Maharashtrian Couple Look Prompt",
     "imageHeight": 1536,
     "publishedAt": "2026-11-02T20:23:56.563Z",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793650232303.webp",
-    "imageAlt": "maharashtrian wedding look couple prompt free",
-    "updatedAt": "2026-11-02T20:23:58.023Z",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@fcb4bcf570a30bb29df446c534584d8107e94650/prompts/maharashtrian-couple-look-prompt.jpg",
+    "imageAlt": "Maharashtrian Couple Look Prompt",
+    "updatedAt": "2026-11-27T05:20:09.136Z",
     "createdAt": "2026-11-02T20:23:56.563Z",
     "tags": [
       "Wedding Photography",
@@ -3177,8 +3177,8 @@
     "variables": [],
     "articleContent": "### Master the Art of Cultural Wedding Photography\n\nThis prompt is engineered to replicate the high-end, editorial aesthetic found in luxury Indian wedding photography. It focuses on **texture, lighting, and genuine emotion**.\n\n#### Key Elements:\n- **The Gear:** We specify an 85mm lens, which is the gold standard for portraiture to ensure flattering facial features and beautiful background separation.\n- **The Lighting:** The 'soft, flattering studio light' setup ensures that the intricate gold embroidery on the sherwani and the vibrant colors of the saree remain clear without harsh shadows.\n- **The Composition:** By using a medium close-up shot, we capture both the subject's expressions and the cultural details of their jewelry and fabric.\n\n#### Pro Tips:\n- **Customization:** If you want a different color palette, swap 'maroon and emerald green' for 'royal blue and gold' or 'fuchsia and orange' to match specific regional wedding styles.\n- **Lighting Variation:** For a more cinematic, moody look, try changing the background color to 'deep charcoal' and the lighting to 'Rembrandt style'.\n- **Post-Processing:** Use a subtle warm film grain filter to add a touch of vintage romance to the digital output.",
     "author": {
-      "avatar": "/logo.png",
       "name": "tool.reelz",
+      "avatar": "/logo.png",
       "role": "Author"
     },
     "aiTool": "Midjourney",
@@ -3244,10 +3244,10 @@
     "title": "Punjabi suit prompt for Gemini girl",
     "author": {
       "name": "tool.reelz",
-      "avatar": "/logo.png",
-      "role": "Author"
+      "role": "Author",
+      "avatar": "/logo.png"
     },
-    "updatedAt": "2026-11-27T05:21:22.477Z",
+    "updatedAt": "2026-11-02T09:19:31.943Z",
     "imageFileName": "punjabi-suit-prompt-for-gemini-girl.webp",
     "aiTool": "Midjourney",
     "slug": "punjabi-suit-prompt-for-gemini-girl",
@@ -3261,9 +3261,9 @@
     "bookmarksCount": 0,
     "likesCount": 0,
     "seo": {
-      "metaTitle": "Mastering Traditional Indian Portrait Photography Prompts",
       "metaDescription": "Learn how to generate stunning, photorealistic images of traditional Indian ethnic fashion with this expert Midjourney and AI photography prompt guide.",
-      "focusKeyword": "Indian portrait prompt"
+      "focusKeyword": "Indian portrait prompt",
+      "metaTitle": "Mastering Traditional Indian Portrait Photography Prompts"
     },
     "preferredAi": "ChatGPT",
     "isNoIndex": false,
@@ -3279,9 +3279,9 @@
     ],
     "imageWidth": 1024,
     "status": "published",
-    "imageAlt": "Punjabi suit prompt for Gemini girl",
+    "imageAlt": "Punjabi suit prompt for Gemini girl copy and paste",
     "articleContent": "### Bringing Cultural Elegance to Life\n\nThis prompt is engineered to capture the nuance of traditional Indian ethnic wear, focusing on texture, color contrast, and environmental authenticity. The key to this look is the balance between the vibrant, warm tones of the mustard yellow fabric and the raw, earthy textures of the brick background.\n\n### Lighting & Camera Breakdown\n* **Lighting:** Natural afternoon sunlight creates high-contrast shadows that define the subject's form while highlighting the intricate embroidery on the kameez.\n* **Optics:** The 85mm lens at f/1.8 is critical. It compresses the background to create a smooth, buttery bokeh effect, ensuring the subject remains the absolute focal point.\n* **Texture:** By specifying 'raw photography' and 'detailed skin texture,' you tell the model to avoid the 'plastic' AI look and lean into authentic, lifelike details.\n\n### Pro Tips for Customization\n* **Change the Color:** Swap 'mustard yellow' for 'emerald green' or 'royal blue' to shift the entire color palette of the image.\n* **Change the Setting:** Replace 'rural village alleyway' with 'festive temple courtyard' or 'opulent wedding reception' to drastically change the narrative.\n* **Vary the Pose:** Add descriptors like 'walking towards the camera' or 'candidly laughing' to bring more personality to your generation.",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@e6d52f252db3c85f84e3ff1bfe30636668338560/prompts/punjabi-suit-prompt-for-gemini-girl.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793610230553.jpg",
     "copiesCount": 0,
     "affiliateProducts": [],
     "promptText": "A candid photograph of a user posing in an old village alley. She is wearing a mustard yellow silk salwar kameez with fine embroidery along the neckline, paired with a vibrant multicolored geometric Phulkari dupatta draped over her right arm, and matching embroidered juttis. Her dark hair is styled in a neat long braid extending over her shoulder with colorful paranda tassels. She wears a delicate maang tikka and golden jhumka earrings. She leans softly against an aged rustic brick and plaster wall on a cobblestone path. Captured in bright natural sunlight, realistic skin texture, natural shadows, aspect ratio 3:4. No crowd, no blur, no background blur "
@@ -3395,14 +3395,14 @@
     "imageHeight": 1536,
     "seo": {
       "metaTitle": "Prompt for Pahadi look for girl | Trending Copy Paste Photo Prompts",
-      "focusKeyword": "Prompt for Pahadi look for girl",
-      "metaDescription": "Copy and paste this photo prompt for Prompt for Pahadi look for girl."
+      "metaDescription": "Copy and paste this photo prompt for Prompt for Pahadi look for girl.",
+      "focusKeyword": "Prompt for Pahadi look for girl"
     },
     "affiliateProducts": [],
     "publishedAt": "2026-11-07T12:00:38.297Z",
     "viewsCount": 0,
     "additionalImages": [],
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1794052781017.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@4318a0550f34c10d7a86fdba37c822ed36e05f63/prompts/prompt-for-pahadi-look-for-girl.jpg",
     "title": "Prompt for Pahadi look for girl",
     "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
     "parameters": {
@@ -3414,17 +3414,17 @@
     "imageAlt": "Prompt for Pahadi look for girl",
     "aiTool": "Midjourney",
     "isPremium": false,
-    "imageFileName": "Prompt for Pahadi look for girl",
+    "imageFileName": "prompt-for-pahadi-look-for-girl.webp",
     "promptText": "Hyper-realistic portrait of a beautiful woman wearing traditional Pahadi-inspired attire. The subject has long, sleek, chestnut-brown hair cascading over her shoulders. She wears a vibrant orange textured dupatta draped over her head, accented by a subtle green patterned border, and a rich, deep purple long-sleeved velvet blouse. The jewelry is intricate and cultural, featuring a large golden nath (nose ring) connected to an ornate golden earring, a layered red and gold beaded necklace, and a golden maang tikka on her forehead. The woman has glowing skin with subtle, natural makeup, soft eyeliner, and a gentle, inviting expression. The lighting is soft and flattering, typical of interior home photography, casting gentle highlights on the velvet texture and metallic jewelry. The background shows a simple, clean, neutral-toned interior with a glimpse of a ceiling fan, maintaining a realistic, candid aesthetic. Shot on a high-end smartphone camera with natural detail, 8k resolution, cinematic lighting, sharp focus on eyes, soft background blur, aspect ratio 3:4",
     "variables": [],
     "id": "prompt-1793521463243",
     "author": {
-      "role": "Author",
       "name": "tool.reelz",
-      "avatar": "/logo.png"
+      "avatar": "/logo.png",
+      "role": "Author"
     },
     "copiesCount": 0,
-    "updatedAt": "2026-11-07T12:00:39.257Z",
+    "updatedAt": "2026-11-27T05:22:05.858Z",
     "bookmarksCount": 0,
     "category": "Photorealistic & Portraits",
     "likesCount": 0,
@@ -3595,8 +3595,8 @@
     "slug": "vintage-motorcycle-travel-scrapbook-poster",
     "additionalImages": [],
     "seo": {
-      "metaTitle": "Vintage Motorcycle Travel Poster AI Prompt",
       "metaDescription": "Generate retro motorcycle adventure scrapbooks and vintage travel posters with this AI prompt guide.",
+      "metaTitle": "Vintage Motorcycle Travel Poster AI Prompt",
       "focusKeyword": "vintage travel poster prompt"
     },
     "bookmarksCount": 0,
@@ -3604,15 +3604,15 @@
     "viewsCount": 0,
     "author": {
       "name": "tool.reelz",
-      "avatar": "/logo.png",
-      "role": "Author"
+      "role": "Author",
+      "avatar": "/logo.png"
     },
     "imageAlt": "Vintage Motorcycle Travel Scrapbook Poster",
     "copiesCount": 0,
     "parameters": {
       "isPremium": true
     },
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@25b47d8833ec9f9f5a4ab13360344252a8060d0c/prompts/vintage-motorcycle-travel-scrapbook-poster.webp",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793518588508.jpg",
     "title": "Vintage Motorcycle Travel Scrapbook Poster",
     "aiTool": "Midjourney",
     "tags": [
@@ -3628,7 +3628,7 @@
     "createdAt": "2026-11-01T07:40:12.801Z",
     "articleContent": "### Overview This prompt crafts a retro travel scrapbook poster blending editorial portraiture with mixed-media paper ephemera. ### Visual Mechanics - **Subject & Framing:** A central framed portrait set against an aged paper background with distressed edges and vintage tape accents. - **Palette & Tone:** Earthy sepia, muted olive greens, and aged paper whites. - **Graphic Details:** Victorian etchings, stamps, and bold woodblock-style vintage fonts enrich the adventure theme. ### Customization Tips - Swap the subject or motorcycle model to fit different vintage settings. - Change the text prompts to reflect alternate locations or travel journeys.",
     "promptText": "Try this prompt in ChatGPT only 👇\n\nSTRICT REFERENCE-BASED IMAGE COMPOSITION — FOLLOW EVERY INSTRUCTION EXACTLY.\n\nREFERENCE IMAGE ROLES:\n\nIMAGE 1 — MASTER SUBJECT REFERENCE:\nUse the uploaded original photograph as the ONLY source for the person, facial identity, hairstyle, body proportions, original clothing, pose, motorcycle, motorcycle model, and surrounding photographic details.\n\nIMAGE 2 — POSTER DESIGN REFERENCE:\nUse this image ONLY as a visual reference for the vintage scrapbook poster layout, aged paper texture, typography placement, decorative elements, Polaroid positioning, and 3D photo cutout effect.\n\nIMPORTANT: Never copy the person, selfie, clothes, or motorcycle from IMAGE 2.\n\nIDENTITY AND SUBJECT LOCK — ABSOLUTE PRIORITY:\n\nReproduce the exact person from IMAGE 1. Preserve recognizable facial identity, facial proportions, hairstyle, skin tone, body structure, and natural appearance.\n\nPreserve the exact original outfit from IMAGE 1, including every garment, color, fabric, texture, fit, accessories, footwear, and visible details.\n\nPreserve the exact motorcycle from IMAGE 1. Do not replace it with another motorcycle, change its model, redesign its body, modify its wheels, or invent different mechanical components.\n\nMaintain the original subject's pose and natural interaction with the motorcycle.\n\nPOSTER DESIGN:\n\nCreate a premium vintage motorcycle scrapbook poster on a warm ivory, aged parchment paper background.\n\nPlace one large, slightly tilted rectangular photograph in the center, inspired by IMAGE 2.\n\nUse realistic textured cream paper, subtle paper creases, natural aged edges, soft paper shadows, and vintage beige masking tape attached near the upper edge.\n\nCRITICAL — OPEN BOTTOM FRAME / 3D POP-OUT EFFECT:\n\nThe photograph must have ONLY THREE visible frame borders:\n\n1. Top border — visible.\n2. Left border — visible.\n3. Right border — visible.\n\nABSOLUTELY NO BOTTOM FRAME BORDER.\n\nThe entire bottom edge of the photograph must remain OPEN, creating a seamless transition between the photograph and the surrounding parchment background.\n\nDo not draw a Polaroid bottom strip, rectangular bottom border, white frame edge, or paper boundary underneath the photograph.\n\n3D FOREGROUND BREAKOUT — MOST IMPORTANT:\n\nCreate a convincing layered 3D photo cutout effect.\n\nThe person's lower legs and shoes must extend naturally below the open bottom edge of the photograph.\n\nThe motorcycle's front wheel, tyre, lower body, and selected mechanical components must also protrude beyond the photograph's bottom boundary.\n\nNatural grass, soil, and foreground vegetation should extend beyond the photograph and blend into the parchment background.\n\nThe extracted foreground elements must sit IN FRONT of the remaining three-sided photograph frame.\n\nUse accurate subject masking, realistic overlapping layers, natural contact shadows, and believable depth.\n\nThe subject and motorcycle must appear physically emerging from the photograph, not like flat stickers pasted onto paper.\n\nKeep the upper portion of the original photograph inside the three-sided frame.\n\nBACKGROUND AND DECORATION:\n\nUse a warm vintage parchment background with subtle distressed paper texture.\n\nAdd restrained scrapbook decorations such as small botanical illustrations, vintage travel details, subtle masking tape, and delicate hand-drawn motorcycle or mountain sketches.\n\nKeep the central photograph dominant and visually uncluttered.\n\nTYPOGRAPHY:\n\nAdd the following editorial vintage typography:\n\nVINTAGE RIDERS\n\nA DAY IN AGRA\n\nTHE ENFIELD ADVENTURE\n\nUse bold vintage serif lettering with warm mustard and dark rust-red tones for the main heading. Keep supporting text smaller and elegant.\n\nPlace typography above the photograph without overlapping the person's face or motorcycle.\n\nREALISM AND QUALITY:\n\nPhotorealistic original subject, accurate motorcycle details, realistic fabric textures, authentic skin texture, natural shadows, precise perspective, realistic paper depth, premium editorial scrapbook composition.\n\nSTRICT NEGATIVE INSTRUCTIONS:\n\n- No random person.\n- No selfie or mirror selfie.\n- No different motorcycle.\n- No motorcycle redesign.\n- No clothing replacement.\n- No facial identity changes.\n- No additional limbs or distorted hands.\n- No duplicated motorcycle parts.\n- No completely enclosed Polaroid frame.\n- NO BOTTOM PHOTO FRAME BORDER.\n- No flat sticker-like cutouts.\n- No artificial floating objects.\n- No unnecessary text.\n- No unrelated background scenes.\n\nFINAL OUTPUT:\n\nA premium vintage motorcycle scrapbook poster using IMAGE 1 as the exact photographic subject and IMAGE 2 strictly as the poster layout reference, featuring an open-bottom three-sided photo frame and a highly realistic 3D foreground breakout effect.\n\nPrioritize subject accuracy and composition over creative reinterpretation.",
-    "updatedAt": "2026-11-27T05:24:38.410Z",
+    "updatedAt": "2026-11-01T08:25:05.410Z",
     "affiliateProducts": [],
     "variables": [],
     "likesCount": 0,
@@ -4059,9 +4059,9 @@
     "isNoIndex": true,
     "id": "prompt-1793428487968",
     "seo": {
-      "focusKeyword": "romantic couple portrait prompt",
+      "metaTitle": "Create Romantic Moonlight Couple Portraits | Midjourney & Gemini Prompts",
       "metaDescription": "Learn to generate stunning, cinematic couple portraits under a massive full moon with this high-quality AI image generation prompt guide.",
-      "metaTitle": "Create Romantic Moonlight Couple Portraits | Midjourney & Gemini Prompts"
+      "focusKeyword": "romantic couple portrait prompt"
     },
     "status": "published",
     "tags": [
@@ -4080,10 +4080,10 @@
     "articleContent": "### Create Dreamy Cinematic Couple Portraits\n\nThis prompt is designed to capture a serene, romantic moment blending traditional elegance with a fantasy-inspired landscape. The key to this look is the juxtaposition of the large, luminous supermoon and the intimate, grounded nature of the subjects.\n\n#### Lighting Breakdown\n- **Primary Light:** The warm glow of the supermoon provides the main ambient illumination, creating soft rim lighting on the couple.\n- **Secondary Light:** The glowing fairy lights in the foreground add a magical, bokeh-heavy depth to the composition.\n- **Background Light:** The deep sunset sky and valley city lights provide cool/warm contrast that separates the subjects from the vast landscape.\n\n#### Camera & Optics\n- **Focal Length:** 35mm provides a balance between showing the couple and the vastness of the environment.\n- **Aperture:** f/1.8 creates a beautiful soft-focus background, making the moon and lights pop while keeping the couple in sharp, dreamy focus.\n\n#### Pro Tips for Customization\n- **Change the Setting:** Swap 'valley' for 'coastal cliff' or 'alpine meadow' to change the environmental feel.\n- **Adjust Atmosphere:** Use keywords like 'misty', 'foggy', or 'clear starry night' to alter the sky conditions.",
     "createdAt": "2026-10-31T06:34:47.969Z",
     "likesCount": 0,
-    "updatedAt": "2026-11-05T12:09:51.743Z",
+    "updatedAt": "2026-11-27T05:26:33.250Z",
     "author": {
-      "avatar": "/logo.png",
       "name": "tool.reelz",
+      "avatar": "/logo.png",
       "role": "Author"
     },
     "imageFileName": "enchanted-moonlight-vista-romantic-couple-portrait.webp",
@@ -4096,7 +4096,7 @@
     "isPremium": false,
     "additionalImages": [],
     "affiliateProducts": [],
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793428245283.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@4705994355ca2fdf8b0ca7cca203d12b059ca2a4/prompts/enchanted-moonlight-vista-romantic-couple-portrait.jpg",
     "promptText": "A back angle highly detailed, hyper realistic romantic cinematic portrait capturing a young couple sitting together on a lush grassy hilltop at twilight. both gazing upward with serene expressions toward a massive, luminous full moon in the clear sky. The scene is framed by the heavy, detailed branches of a large tree overhead. In the distance, a sprawling valley reveals a winding river and faint, scattered city lights glowing under a sky with vibrant hues of magenta, deep orange, and twilight blue. The foreground is filled with soft grass and magical, warm, glowing firefly-like lights, ethereal atmosphere, magical realism, vibrant color palette, soft rim lighting from the moon, dreamy textures, aspect ratio 3:4",
     "variables": []
   },
