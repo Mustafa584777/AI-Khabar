@@ -2957,9 +2957,9 @@
     "id": "prompt-1793678021800",
     "title": "South Indian husband and wife prompt in English",
     "seo": {
-      "focusKeyword": "South Indian couple portrait",
+      "metaTitle": "Professional South Indian Couple Portrait Midjourney Prompt",
       "metaDescription": "Learn how to recreate stunning South Indian heritage couple portraits with this professional-grade AI prompt.",
-      "metaTitle": "Professional South Indian Couple Portrait Midjourney Prompt"
+      "focusKeyword": "South Indian couple portrait"
     },
     "parameters": {
       "isPremium": false
@@ -2974,18 +2974,18 @@
     "slug": "south-indian-husband-and-wife-prompt-in-english",
     "author": {
       "name": "tool.reelz",
-      "role": "Author",
-      "avatar": "/logo.png"
+      "avatar": "/logo.png",
+      "role": "Author"
     },
     "preferredAi": "ChatGPT",
     "articleContent": "### Mastering the South Indian Heritage Portrait\n\nThis prompt is engineered to capture the perfect balance of traditional ethnic elegance and modern cinematic fashion. \n\n**Lighting Breakdown:** The setup relies on a soft key light to maintain skin detail and subtle rim lighting to separate the subjects from the deep brown studio backdrop. This creates the 'expensive' look common in high-end Indian wedding editorial magazines.\n\n**Composition & Optics:** Using an 85mm lens setting is crucial for portraits; it compresses the background and produces a flattering, natural look for faces without distortion. The placement—woman standing, man sitting—follows classic portrait photography geometry to create a balanced, triangular composition.\n\n**Pro Tips for Customization:**\n- **Change the Color:** If you prefer a different palette, swap 'red silk' for 'royal blue' or 'emerald green'.\n- **Adjust the Mood:** For a more candid look, remove the 'studio backdrop' keyword and replace it with 'intricate temple architecture background'.\n- **Enhance Detail:** Ensure your generation tools are set to high fidelity to capture the fine embroidery on the saree fabric.",
     "variables": [],
     "imageWidth": 1024,
     "likesCount": 0,
-    "imageFileName": "Husband wife prompt copy paste.webp",
+    "imageFileName": "south-indian-husband-and-wife-prompt-in-english.webp",
     "aiTool": "Midjourney",
     "isPremium": false,
-    "imageAlt": "Husband wife prompt ChatGPT",
+    "imageAlt": "South Indian husband and wife prompt in English",
     "promptText": "Professional studio portrait of a young South Indian couple, woman wearing a rich red silk Kanjeevaram saree with gold embroidery and jasmine flowers in her hair, man wearing a crisp white linen shirt and traditional white silk dhoti with gold border, man wearing stylish dark sunglasses, woman standing gracefully beside the man sitting in a vintage wooden armchair, deep warm brown studio backdrop, soft cinematic rim lighting, 8k resolution, photorealistic skin textures, shot on 85mm lens, f/1.8, elegant cultural fashion photography, sharp focus, high fashion editorial style.",
     "tags": [
       "Southindianculture",
@@ -2999,8 +2999,8 @@
     ],
     "copiesCount": 0,
     "createdAt": "2026-11-03T03:53:41.801Z",
-    "updatedAt": "2026-11-03T03:53:42.699Z",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793677952449.jpg"
+    "updatedAt": "2026-11-27T07:53:11.128Z",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@706321928f5b10caf12272fc8ea4acfafbe60577/prompts/south-indian-husband-and-wife-prompt-in-english.jpg"
   },
   {
     "imageFileName": "maharashtrian-wedding-look-couple-prompt-free.webp",
