@@ -2815,10 +2815,10 @@
     "isPremium": false,
     "aiTool": "Midjourney",
     "imageAlt": "Car Selfie Gemini Prompt",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@9055a4f58adff7af4621bef9355ac447d0758a6e/prompts/car-selfie-gemini-prompt.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793789312023.jpg",
     "author": {
-      "name": "tool.reelz",
       "avatar": "/logo.png",
+      "name": "tool.reelz",
       "role": "Author"
     },
     "parameters": {
@@ -2826,13 +2826,13 @@
     },
     "variables": [],
     "seo": {
-      "metaTitle": "Capture Authentic Kerala Elegance with this AI Portrait Prompt",
       "metaDescription": "Master the art of natural, cultural portraiture with our detailed guide and prompt. Perfect for creating realistic South Indian style lifestyle photography.",
+      "metaTitle": "Capture Authentic Kerala Elegance with this AI Portrait Prompt",
       "focusKeyword": "Kerala saree portrait prompt"
     },
     "createdAt": "2026-11-04T10:51:29.164Z",
     "viewsCount": 0,
-    "updatedAt": "2026-11-27T05:14:43.657Z",
+    "updatedAt": "2026-11-04T13:06:11.582Z",
     "affiliateProducts": [],
     "articleContent": "### The Art of Authentic Portraiture\nThis prompt is engineered to capture the 'unposed' beauty of everyday moments. The key to this aesthetic is the contrast between the intricate gold zari of the traditional Kasavu saree and the modern, muted environment of the car interior.\n\n### Lighting & Camera Breakdown\n- **Lighting:** We utilize 'window light'—a favorite among portrait photographers for its ability to wrap around the subject's face, highlighting facial structure without creating harsh shadows.\n- **Optics:** The 35mm lens choice is deliberate; it provides a 'storytelling' focal length that includes enough of the environment (the car seat, the window) to provide context without distracting from the subject.\n\n### Pro Tips for Best Results\n- **Stylize:** Keep the stylize value between 200-300 to maintain realism while allowing the AI enough freedom to generate high-quality skin textures.\n- **Subject Consistency:** If you are using this to generate a specific person, combine this prompt with a reference image or a character LoRA for better facial feature retention.\n- **Composition:** The 'hand-under-chin' pose is a classic compositional tool that frames the face and draws the viewer's eye directly to the subject's expression.",
     "copiesCount": 0
@@ -3086,10 +3086,10 @@
     "id": "prompt-1793651265588"
   },
   {
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793650710248.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@0d2d81cdf3647b05e8ddc9fa44324df681cca005/prompts/maharashtrian-couple-look-prompt-online.webp",
     "author": {
-      "avatar": "/logo.png",
       "name": "tool.reelz",
+      "avatar": "/logo.png",
       "role": "Author"
     },
     "articleContent": "### Mastering Traditional Wedding Portraiture with AI\n\nCapturing the elegance of traditional Indian wedding attire requires a delicate balance of lighting, texture, and cultural precision. This prompt is designed to help you generate high-fidelity wedding portraits that feel authentic, respectful, and visually rich.\n\n#### Lighting & Composition\n- **Lens Choice:** The 85mm focal length is the industry standard for portraiture. It compresses the facial features slightly, creating a flattering look that mimics professional studio work.\n- **Soft Diffusion:** By specifying 'soft diffused natural golden hour lighting,' we simulate the high-end look of wedding photography where harsh shadows are removed to highlight the intricate gold embroidery and fabric textures.\n\n#### Why This Works\n- **Cultural Specificity:** By explicitly mentioning 'Paithani silk,' 'Mundavalya,' and 'pheta,' the AI gains specific visual cues for the historical and regional context of the attire.\n- **Detail Oriented:** The inclusion of 'henna (mehndi) designs' adds a layer of realism that elevates the image from a generic portrait to a specific cultural representation.\n\n#### Pro Tips for Customization\n- **Variations:** Swap out the 'Paithani silk saree' for 'Banarasi brocade' or 'Kanjeevaram' to change the regional style.\n- **Depth of Field:** If you want more background detail, change the f-stop to f/4.0. If you want a more dreamlike, blurry background, stick to f/1.4 or f/1.8.",
@@ -3097,7 +3097,7 @@
     "additionalImages": [],
     "isNoIndex": false,
     "imageFileName": "maharashtrian-couple-look-prompt-online.webp",
-    "imageAlt": "maharashtrian wedding look couple simple",
+    "imageAlt": "Maharashtrian Couple Look Prompt Online",
     "aiTool": "Midjourney",
     "promptText": "A highly realistic professional candid photograph of a happy Marathi couple on their wedding day. The bride has a glowing complexion, wearing a traditional deep red and olive green Paithani saree with intricate zari borders, adorned with opulent temple gold jewelry, multiple green bangles, and detailed mehndi henna patterns on her hands. She wears a crescent bindi and traditional head jewelry. The groom stands beside her wearing a cream-colored silk sherwani, a vibrant red silk shawl draped over his shoulder, and a traditional royal red pheta turban with gold trim. Both have joyous, natural smiles and are looking directly at the camera. The lighting is soft, realistic and natural. The background is a soft-focus architectural wall in terracotta tones. Shot on 85mm lens, f/1.8, ultra-high resolution, sharp details on silk textures, jewelry, and skin pores, organic color depth, cinematic portrait photography, aspect ratio 3:4",
     "title": "Maharashtrian Couple Look Prompt Online",
@@ -3106,11 +3106,11 @@
     "slug": "maharashtrian-couple-look-prompt-online",
     "imageWidth": 1024,
     "publishedAt": "2026-11-02T20:26:06.280Z",
-    "updatedAt": "2026-11-02T20:26:07.222Z",
+    "updatedAt": "2026-11-27T05:15:36.795Z",
     "seo": {
+      "metaTitle": "Professional Indian Wedding Portrait Prompt for AI Art",
       "metaDescription": "Create stunning, high-fidelity Maharashtrian wedding portraits with this expert-level AI image generation prompt for Midjourney and DALL-E.",
-      "focusKeyword": "Indian wedding portrait prompt",
-      "metaTitle": "Professional Indian Wedding Portrait Prompt for AI Art"
+      "focusKeyword": "Indian wedding portrait prompt"
     },
     "bookmarksCount": 0,
     "category": "Photorealistic & Portraits",
