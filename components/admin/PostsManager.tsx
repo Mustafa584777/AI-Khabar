@@ -6,19 +6,17 @@ import { PromptPost } from '@/types/prompt';
 import {
   PlusCircle,
   Search,
-  Filter,
   Edit,
   Trash2,
-  Globe,
   CheckCircle2,
   Clock,
-  Sparkles,
   Crown,
   Download,
   UploadCloud,
   Loader2,
+  RotateCcw,
+  AlertTriangle,
 } from 'lucide-react';
-import Image from 'next/image';
 import { getPromptSlug, getImageFallbackCandidates } from '@/lib/utils';
 
 const AdminPostThumb = ({ src, alt, slug }: { src: string; alt: string; slug: string }) => {
@@ -47,8 +45,11 @@ export const PostsManager = () => {
     posts,
     setPosts,
     categories,
-    deletePost,
-    deletePosts,
+    moveToTrash,
+    restoreFromTrash,
+    permanentlyDeletePosts,
+    hasPendingGitHubPush,
+    markGitHubPushSynced,
     togglePublishStatus,
     togglePremiumStatus,
     toggleNoIndexStatus,
@@ -59,6 +60,25 @@ export const PostsManager = () => {
     showToast,
     refreshData,
   } = useApp();
+
+  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'trash'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [search, setSearch] = useState<string>('');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isPushingGitHub, setIsPushingGitHub] = useState(false);
+  const [confirmEmptyTrash, setConfirmEmptyTrash] = useState(false);
+
+  const activePosts = useMemo(() => posts.filter((p) => p.status !== 'trash'), [posts]);
+  const publishedCount = useMemo(
+    () => activePosts.filter((p) => p.status === 'published').length,
+    [activePosts]
+  );
+  const draftCount = useMemo(
+    () => activePosts.filter((p) => p.status === 'draft').length,
+    [activePosts]
+  );
+  const trashPosts = useMemo(() => posts.filter((p) => p.status === 'trash'), [posts]);
+  const trashCount = trashPosts.length;
 
   const handleDownloadPostsJson = async () => {
     try {
@@ -109,29 +129,50 @@ export const PostsManager = () => {
     }
   };
 
-  const [isPushingGitHub, setIsPushingGitHub] = useState(false);
-
   const handlePushPostsToGitHub = async () => {
     if (isPushingGitHub) return;
     setIsPushingGitHub(true);
     try {
-      const postUpdates = posts.map((p) => ({
-        id: p.id,
-        slug: getPromptSlug(p),
-        title: p.title,
-        imageUrl: p.imageUrl,
-        imageAlt: p.imageAlt,
-        imageFileName: p.imageFileName,
-        additionalImages: p.additionalImages,
-        status: p.status,
-        isPremium: p.isPremium,
-        isNoIndex: p.isNoIndex,
-        updatedAt: p.updatedAt,
-      }));
+      const recentCutoff = Date.now() - 14 * 24 * 60 * 60 * 1000;
+      const postUpdates = posts.map((p) => {
+        const updatedTs = new Date(p.updatedAt || p.createdAt || 0).getTime();
+        const isDirtyOrTrash = p.status === 'trash' || updatedTs >= recentCutoff;
+        if (isDirtyOrTrash) {
+          return {
+            ...p,
+            slug: getPromptSlug(p),
+          };
+        }
+        return {
+          id: p.id,
+          slug: getPromptSlug(p),
+          title: p.title,
+          imageUrl: p.imageUrl,
+          imageAlt: p.imageAlt,
+          imageFileName: p.imageFileName,
+          additionalImages: p.additionalImages,
+          status: p.status,
+          isPremium: p.isPremium,
+          isNoIndex: p.isNoIndex,
+          updatedAt: p.updatedAt,
+        };
+      });
+
+      let deletedIds: string[] = [];
+      if (typeof window !== 'undefined') {
+        try {
+          const rawDel = localStorage.getItem('promptcms_deleted_ids');
+          if (rawDel) {
+            const parsed = JSON.parse(rawDel);
+            if (Array.isArray(parsed)) deletedIds = parsed.filter(Boolean);
+          }
+        } catch {}
+      }
+
       const res = await fetch('/api/admin/push-posts-github', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postUpdates }),
+        body: JSON.stringify({ postUpdates, deletedIds }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -140,6 +181,12 @@ export const PostsManager = () => {
       if (Array.isArray(data.posts) && data.posts.length > 0) {
         setPosts(data.posts);
       }
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('promptcms_deleted_ids');
+        } catch {}
+      }
+      markGitHubPushSynced();
       refreshData();
       showToast(data.message || `Pushed posts.json to ${data.repo}!`);
     } catch (e: any) {
@@ -149,17 +196,21 @@ export const PostsManager = () => {
     }
   };
 
-  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft'>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [search, setSearch] = useState<string>('');
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-
-  const publishedCount = posts.filter((p) => p.status === 'published').length;
-  const draftCount = posts.filter((p) => p.status === 'draft').length;
+  const handleStatusTabChange = (nextStatus: 'all' | 'published' | 'draft' | 'trash') => {
+    setStatusFilter(nextStatus);
+    setSelectedIds([]);
+    setConfirmEmptyTrash(false);
+  };
 
   const filteredPosts = useMemo(() => {
     return posts.filter((post) => {
-      if (statusFilter !== 'all' && post.status !== statusFilter) return false;
+      if (statusFilter === 'trash') {
+        if (post.status !== 'trash') return false;
+      } else {
+        // Never display trashed prompts inside All / Published / Drafts
+        if (post.status === 'trash') return false;
+        if (statusFilter !== 'all' && post.status !== statusFilter) return false;
+      }
       if (categoryFilter !== 'all' && post.category.toLowerCase() !== categoryFilter.toLowerCase()) return false;
       if (search.trim()) {
         const q = search.toLowerCase();
@@ -209,10 +260,34 @@ export const PostsManager = () => {
     showToast('Selected posts reverted to draft');
   };
 
-  const handleBulkDelete = () => {
+  const handleBulkTrash = async () => {
     if (selectedIds.length === 0) return;
-    deletePosts(selectedIds);
+    await moveToTrash(selectedIds);
     setSelectedIds([]);
+  };
+
+  const handleBulkRestore = async () => {
+    if (selectedIds.length === 0) return;
+    await restoreFromTrash(selectedIds);
+    setSelectedIds([]);
+  };
+
+  const handleBulkPermanentDelete = async () => {
+    if (selectedIds.length === 0) return;
+    await permanentlyDeletePosts(selectedIds);
+    setSelectedIds([]);
+  };
+
+  const handleEmptyTrash = async () => {
+    if (trashPosts.length === 0) return;
+    if (!confirmEmptyTrash) {
+      setConfirmEmptyTrash(true);
+      return;
+    }
+    const allTrashIds = trashPosts.map((p) => p.id);
+    await permanentlyDeletePosts(allTrashIds);
+    setSelectedIds([]);
+    setConfirmEmptyTrash(false);
   };
 
   return (
@@ -223,11 +298,11 @@ export const PostsManager = () => {
           <h1 className="text-2xl font-extrabold text-neutral-900 dark:text-white flex items-center gap-2">
             <span>Prompt Articles & Posts</span>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 font-bold">
-              {posts.length}
+              {activePosts.length}
             </span>
           </h1>
           <p className="text-xs text-neutral-500 mt-0.5">
-            Manage your prompt catalog, edit articles, and control publication status.
+            Manage your prompt catalog, edit articles, and push posts.json to GitHub only when ready.
           </p>
         </div>
 
@@ -236,7 +311,11 @@ export const PostsManager = () => {
             type="button"
             onClick={handlePushPostsToGitHub}
             disabled={isPushingGitHub}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 text-white dark:text-neutral-900 text-xs font-bold shadow-md transition-colors cursor-pointer disabled:opacity-60"
+            className={`relative inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold shadow-md transition-colors cursor-pointer disabled:opacity-60 ${
+              hasPendingGitHubPush
+                ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/30'
+                : 'bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 text-white dark:text-neutral-900'
+            }`}
             id="btn-push-posts-github"
             title="Push latest posts.json directly to GitHub (Mustafa584777/AI-Khabar)"
           >
@@ -245,7 +324,13 @@ export const PostsManager = () => {
             ) : (
               <UploadCloud className="w-4 h-4" />
             )}
-            <span>{isPushingGitHub ? 'Pushing...' : 'Push posts.json to GitHub'}</span>
+            <span>
+              {isPushingGitHub
+                ? 'Pushing...'
+                : hasPendingGitHubPush
+                  ? 'Push posts.json to GitHub (Pending)'
+                  : 'Push posts.json to GitHub'}
+            </span>
           </button>
 
           <button
@@ -272,21 +357,21 @@ export const PostsManager = () => {
       </div>
 
       {/* Editorial Status Tabs */}
-      <div className="flex items-center gap-3 text-xs font-semibold border-b border-neutral-200 dark:border-neutral-800 pb-3">
+      <div className="flex flex-wrap items-center gap-3 text-xs font-semibold border-b border-neutral-200 dark:border-neutral-800 pb-3">
         <button
-          onClick={() => setStatusFilter('all')}
-          className={`hover:text-blue-600 transition-colors ${
+          onClick={() => handleStatusTabChange('all')}
+          className={`hover:text-blue-600 transition-colors cursor-pointer ${
             statusFilter === 'all'
               ? 'text-blue-600 dark:text-blue-400 font-bold'
               : 'text-neutral-500'
           }`}
         >
-          All ({posts.length})
+          All ({activePosts.length})
         </button>
         <span className="text-neutral-300 dark:text-neutral-700">|</span>
         <button
-          onClick={() => setStatusFilter('published')}
-          className={`hover:text-emerald-600 transition-colors ${
+          onClick={() => handleStatusTabChange('published')}
+          className={`hover:text-emerald-600 transition-colors cursor-pointer ${
             statusFilter === 'published'
               ? 'text-emerald-600 dark:text-emerald-400 font-bold'
               : 'text-neutral-500'
@@ -296,8 +381,8 @@ export const PostsManager = () => {
         </button>
         <span className="text-neutral-300 dark:text-neutral-700">|</span>
         <button
-          onClick={() => setStatusFilter('draft')}
-          className={`hover:text-amber-600 transition-colors ${
+          onClick={() => handleStatusTabChange('draft')}
+          className={`hover:text-amber-600 transition-colors cursor-pointer ${
             statusFilter === 'draft'
               ? 'text-amber-600 dark:text-amber-400 font-bold'
               : 'text-neutral-500'
@@ -305,39 +390,123 @@ export const PostsManager = () => {
         >
           Drafts ({draftCount})
         </button>
+        <span className="text-neutral-300 dark:text-neutral-700">|</span>
+        <button
+          onClick={() => handleStatusTabChange('trash')}
+          id="tab-posts-trash"
+          className={`inline-flex items-center gap-1.5 hover:text-red-600 transition-colors cursor-pointer ${
+            statusFilter === 'trash'
+              ? 'text-red-600 dark:text-red-400 font-bold'
+              : 'text-neutral-500'
+          }`}
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+          <span>Trash ({trashCount})</span>
+        </button>
       </div>
+
+      {/* Trash Notice Banner */}
+      {statusFilter === 'trash' && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-red-50/70 dark:bg-red-950/30 border border-red-200 dark:border-red-900/60 p-4 rounded-2xl">
+          <div className="flex items-start gap-2.5 text-xs text-red-800 dark:text-red-200">
+            <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold">Trash Section ({trashCount} removed {trashCount === 1 ? 'prompt' : 'prompts'})</p>
+              <p className="text-[11px] text-red-700/80 dark:text-red-300/80 mt-0.5">
+                Removed prompts appear here and are hidden from your live site. Restore them anytime or permanently delete them, then click &quot;Push posts.json to GitHub&quot;.
+              </p>
+            </div>
+          </div>
+
+          {trashCount > 0 && (
+            <div className="flex items-center gap-2 shrink-0">
+              {confirmEmptyTrash ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleEmptyTrash}
+                    className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-sm cursor-pointer"
+                  >
+                    Confirm Empty Trash ({trashCount})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmEmptyTrash(false)}
+                    className="px-3 py-1.5 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-semibold cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleEmptyTrash}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-sm cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Empty Trash</span>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Action Filters Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white dark:bg-neutral-900 p-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm">
         {/* Bulk Action Controls */}
         <div className="flex items-center gap-2">
           {selectedIds.length > 0 ? (
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
-                {selectedIds.length} Selected:
-              </span>
-              <button
-                type="button"
-                onClick={handleBulkPublish}
-                className="px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 text-xs font-semibold hover:bg-emerald-100 cursor-pointer"
-              >
-                Publish
-              </button>
-              <button
-                type="button"
-                onClick={handleBulkDraft}
-                className="px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 text-xs font-semibold hover:bg-amber-100 cursor-pointer"
-              >
-                Set to Draft
-              </button>
-              <button
-                type="button"
-                onClick={handleBulkDelete}
-                className="px-2.5 py-1.5 rounded-lg bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300 border border-red-200 text-xs font-semibold hover:bg-red-100 cursor-pointer"
-              >
-                Delete
-              </button>
-            </div>
+            statusFilter === 'trash' ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                  {selectedIds.length} Selected:
+                </span>
+                <button
+                  type="button"
+                  onClick={handleBulkRestore}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold hover:bg-emerald-100 cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Restore</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkPermanentDelete}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300 border border-red-200 dark:border-red-800 text-xs font-semibold hover:bg-red-100 cursor-pointer"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Delete Forever</span>
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                  {selectedIds.length} Selected:
+                </span>
+                <button
+                  type="button"
+                  onClick={handleBulkPublish}
+                  className="px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 text-xs font-semibold hover:bg-emerald-100 cursor-pointer"
+                >
+                  Publish
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkDraft}
+                  className="px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 text-xs font-semibold hover:bg-amber-100 cursor-pointer"
+                >
+                  Set to Draft
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkTrash}
+                  className="px-2.5 py-1.5 rounded-lg bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300 border border-red-200 text-xs font-semibold hover:bg-red-100 cursor-pointer"
+                >
+                  Move to Trash
+                </button>
+              </div>
+            )
           ) : (
             <div className="text-xs text-neutral-400 font-medium">
               Select rows below for bulk actions
@@ -394,7 +563,7 @@ export const PostsManager = () => {
                 <th className="py-4 pr-3">Prompt Title & Slug</th>
                 <th className="py-4 px-3">Category</th>
                 <th className="py-4 px-3">Status</th>
-                <th className="py-4 px-3">Date</th>
+                <th className="py-4 px-3">{statusFilter === 'trash' ? 'Removed' : 'Date'}</th>
                 <th className="py-4 pr-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -402,6 +571,7 @@ export const PostsManager = () => {
               {filteredPosts.length > 0 ? (
                 filteredPosts.map((post) => {
                   const isChecked = selectedIds.includes(post.id);
+                  const isTrashed = post.status === 'trash';
 
                   return (
                     <tr
@@ -434,10 +604,14 @@ export const PostsManager = () => {
                             <div className="flex items-center gap-1.5">
                               <h4
                                 onClick={() => {
-                                  setEditingPostId(post.id);
-                                  setAdminSubView('edit-post');
+                                  if (!isTrashed) {
+                                    setEditingPostId(post.id);
+                                    setAdminSubView('edit-post');
+                                  }
                                 }}
-                                className="font-bold text-neutral-900 dark:text-white text-xs hover:text-blue-600 cursor-pointer line-clamp-1"
+                                className={`font-bold text-neutral-900 dark:text-white text-xs line-clamp-1 ${
+                                  isTrashed ? '' : 'hover:text-blue-600 cursor-pointer'
+                                }`}
                               >
                                 {post.title}
                               </h4>
@@ -445,7 +619,7 @@ export const PostsManager = () => {
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  togglePremiumStatus(post.id);
+                                  if (!isTrashed) togglePremiumStatus(post.id);
                                 }}
                                 title={post.isPremium ? 'Currently PRO Premium (Click to change to Free)' : 'Currently Free (Click to upgrade to PRO Premium)'}
                                 className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase shrink-0 transition-all cursor-pointer ${
@@ -461,7 +635,7 @@ export const PostsManager = () => {
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  toggleNoIndexStatus(post.id);
+                                  if (!isTrashed) toggleNoIndexStatus(post.id);
                                 }}
                                 title={post.isNoIndex ? 'Currently NoIndex (Excluded from sitemap). Click to make Indexable' : 'Currently Indexable. Click to set NoIndex'}
                                 className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider uppercase shrink-0 transition-all cursor-pointer ${
@@ -479,40 +653,68 @@ export const PostsManager = () => {
 
                             {/* Row Action Links */}
                             <div className="flex items-center gap-2 pt-1 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-[11px]">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingPostId(post.id);
-                                  setAdminSubView('edit-post');
-                                }}
-                                className="text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer"
-                              >
-                                Edit
-                              </button>
-                              <span className="text-neutral-300">|</span>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedPost(post);
-                                  setCurrentView('public');
-                                }}
-                                className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline cursor-pointer"
-                              >
-                                View Live
-                              </button>
-                              <span className="text-neutral-300">|</span>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  deletePost(post.id);
-                                }}
-                                className="text-red-600 dark:text-red-400 font-medium hover:underline cursor-pointer"
-                              >
-                                Trash
-                              </button>
+                              {isTrashed ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      void restoreFromTrash([post.id]);
+                                    }}
+                                    className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline cursor-pointer"
+                                  >
+                                    Restore
+                                  </button>
+                                  <span className="text-neutral-300">|</span>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      void permanentlyDeletePosts([post.id]);
+                                    }}
+                                    className="text-red-600 dark:text-red-400 font-medium hover:underline cursor-pointer"
+                                  >
+                                    Delete Forever
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingPostId(post.id);
+                                      setAdminSubView('edit-post');
+                                    }}
+                                    className="text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer"
+                                  >
+                                    Edit
+                                  </button>
+                                  <span className="text-neutral-300">|</span>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedPost(post);
+                                      setCurrentView('public');
+                                    }}
+                                    className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline cursor-pointer"
+                                  >
+                                    View Live
+                                  </button>
+                                  <span className="text-neutral-300">|</span>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      void moveToTrash([post.id]);
+                                    }}
+                                    className="text-red-600 dark:text-red-400 font-medium hover:underline cursor-pointer"
+                                  >
+                                    Trash
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -522,33 +724,42 @@ export const PostsManager = () => {
                         {post.category}
                       </td>
 
-
-
                       <td className="py-4 px-3">
-                        <button
-                          onClick={() => togglePublishStatus(post.id)}
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-colors ${
-                            post.status === 'published'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
-                              : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800'
-                          }`}
-                        >
-                          {post.status === 'published' ? (
-                            <>
-                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                              <span>Published</span>
-                            </>
-                          ) : (
-                            <>
-                              <Clock className="w-3 h-3 text-amber-600" />
-                              <span>Draft</span>
-                            </>
-                          )}
-                        </button>
+                        {isTrashed ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border bg-red-50 text-red-700 border-red-200 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800">
+                            <Trash2 className="w-3 h-3 text-red-600 dark:text-red-400" />
+                            <span>In Trash</span>
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => togglePublishStatus(post.id)}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-colors cursor-pointer ${
+                              post.status === 'published'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
+                                : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800'
+                            }`}
+                          >
+                            {post.status === 'published' ? (
+                              <>
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                <span>Published</span>
+                              </>
+                            ) : (
+                              <>
+                                <Clock className="w-3 h-3 text-amber-600" />
+                                <span>Draft</span>
+                              </>
+                            )}
+                          </button>
+                        )}
                       </td>
 
                       <td className="py-4 px-3 text-neutral-400 font-mono text-[11px]">
-                        {new Date(post.createdAt).toLocaleDateString('en-US', {
+                        {new Date(
+                          isTrashed
+                            ? post.deletedAt || post.updatedAt || post.createdAt
+                            : post.createdAt
+                        ).toLocaleDateString('en-US', {
                           month: 'short',
                           day: 'numeric',
                         })}
@@ -556,29 +767,58 @@ export const PostsManager = () => {
 
                       <td className="py-4 pr-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingPostId(post.id);
-                              setAdminSubView('edit-post');
-                            }}
-                            className="p-1.5 rounded-lg text-neutral-400 hover:text-blue-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer"
-                            title="Edit"
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deletePost(post.id);
-                            }}
-                            className="p-1.5 rounded-lg text-neutral-400 hover:text-red-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {isTrashed ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void restoreFromTrash([post.id]);
+                                }}
+                                className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/50 cursor-pointer"
+                                title="Restore Prompt"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void permanentlyDeletePosts([post.id]);
+                                }}
+                                className="p-1.5 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50 cursor-pointer"
+                                title="Delete Forever"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingPostId(post.id);
+                                  setAdminSubView('edit-post');
+                                }}
+                                className="p-1.5 rounded-lg text-neutral-400 hover:text-blue-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer"
+                                title="Edit"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void moveToTrash([post.id]);
+                                }}
+                                className="p-1.5 rounded-lg text-neutral-400 hover:text-red-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer"
+                                title="Move to Trash"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -587,7 +827,9 @@ export const PostsManager = () => {
               ) : (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-neutral-400">
-                    No prompts found matching your criteria.
+                    {statusFilter === 'trash'
+                      ? 'Trash is empty. Removed prompts will appear here.'
+                      : 'No prompts found matching your criteria.'}
                   </td>
                 </tr>
               )}

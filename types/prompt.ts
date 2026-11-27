@@ -78,7 +78,9 @@ export interface PromptPost {
   variables?: PromptVariable[];
   articleContent: string; // Rich markdown or HTML guide
   tags: string[];
-  status: 'published' | 'draft' | 'scheduled';
+  status: 'published' | 'draft' | 'scheduled' | 'trash';
+  deletedAt?: string;
+  previousStatus?: 'published' | 'draft' | 'scheduled';
   isFeatured?: boolean;
   isTrending?: boolean;
   isPremium?: boolean;

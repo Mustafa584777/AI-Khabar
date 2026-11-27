@@ -22,6 +22,7 @@ import { PLAN_CONFIGS } from './plans';
 import { getPromptSlug } from './utils';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const POSTS_FILE = path.join(DATA_DIR, 'posts.json');
@@ -35,6 +36,7 @@ const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
 const DELETED_POSTS_FILE = path.join(DATA_DIR, 'deleted_posts.json');
 const MEDIA_REDIRECTS_FILE = path.join(DATA_DIR, 'media-redirects.json');
 const INITIAL_FEED_FILE = path.join(DATA_DIR, 'initial-feed.json');
+const PENDING_EDITS_TEMP_FILE = path.join(os.tmpdir(), 'zeena-pending-post-edits.json');
 
 const DEFAULT_TAGS = [
   'Portrait', '35mm', 'Cinematic', 'Street Photography', 'Fashion',
@@ -148,6 +150,25 @@ let memoryPostsTimestamp = 0;
 const POSTS_CACHE_TTL = 2 * 60 * 1000; // 2 minutes for automatic cross-lambda GitHub sync
 let memoryRecentEdits: Record<string, PromptPost> = {};
 
+function readPendingEditsTemp(): Record<string, PromptPost> {
+  try {
+    if (fs.existsSync(PENDING_EDITS_TEMP_FILE)) {
+      const raw = fs.readFileSync(PENDING_EDITS_TEMP_FILE, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as Record<string, PromptPost>;
+      }
+    }
+  } catch {}
+  return {};
+}
+
+function writePendingEditsTemp(edits: Record<string, PromptPost>): void {
+  try {
+    fs.writeFileSync(PENDING_EDITS_TEMP_FILE, JSON.stringify(edits), 'utf-8');
+  } catch {}
+}
+
 function getPostVersionTime(p?: PromptPost | null): number {
   if (!p) return 0;
   const t = new Date(p.updatedAt || p.publishedAt || p.createdAt || 0).getTime();
@@ -188,7 +209,10 @@ async function readRecentPostEditsOverlay(): Promise<{
   edits: Record<string, PromptPost>;
   deletedIds: string[];
 }> {
-  const localOverlay = { ...memoryRecentEdits };
+  const localOverlay: Record<string, PromptPost> = {
+    ...readPendingEditsTemp(),
+    ...memoryRecentEdits,
+  };
   if (!isFirebaseConfigured()) {
     return { edits: localOverlay, deletedIds: [] };
   }
@@ -217,12 +241,16 @@ async function readRecentPostEditsOverlay(): Promise<{
 
 async function recordRecentPostEditOverlay(post: PromptPost): Promise<void> {
   if (!post || !post.id) return;
-  memoryRecentEdits[post.id] = post;
+  const diskTemp = readPendingEditsTemp();
+  const mergedLocal = { ...diskTemp, ...memoryRecentEdits, [post.id]: post };
 
-  const entries = Object.entries(memoryRecentEdits)
-    .sort((a, b) => getPostVersionTime(b[1]) - getPostVersionTime(a[1]))
-    .slice(0, 40);
-  memoryRecentEdits = Object.fromEntries(entries);
+  const cappedLocal = Object.fromEntries(
+    Object.entries(mergedLocal)
+      .sort((a, b) => getPostVersionTime(b[1]) - getPostVersionTime(a[1]))
+      .slice(0, 80)
+  );
+  memoryRecentEdits = cappedLocal;
+  writePendingEditsTemp(cappedLocal);
 
   if (!isFirebaseConfigured()) return;
   try {
@@ -242,7 +270,7 @@ async function recordRecentPostEditOverlay(post: PromptPost): Promise<void> {
     const capped = Object.fromEntries(
       Object.entries(combined)
         .sort((a, b) => getPostVersionTime(b[1]) - getPostVersionTime(a[1]))
-        .slice(0, 40)
+        .slice(0, 80)
     );
     await setDoc(
       doc(firestoreDb, 'settings', 'recent_post_edits'),
@@ -315,7 +343,10 @@ export const ServerStorage = {
       sources.push(memoryPosts);
     }
 
-    const recentEditsList = Object.values(memoryRecentEdits);
+    const recentEditsList = Object.values({
+      ...readPendingEditsTemp(),
+      ...memoryRecentEdits,
+    });
     if (recentEditsList.length > 0) {
       sources.push(recentEditsList);
     }
@@ -369,11 +400,14 @@ export const ServerStorage = {
       forceRemote: true,
       includeCollectionScanFallback: true,
     });
-    const cleaned = ServerStorage.applyReconciledPosts(merged);
+    const cleaned = ServerStorage.applyReconciledPosts(merged, { writeLocalJson: true });
     return { count: cleaned.length, posts: cleaned };
   },
 
-  applyReconciledPosts: (posts: PromptPost[]): PromptPost[] => {
+  applyReconciledPosts: (
+    posts: PromptPost[],
+    options?: { writeLocalJson?: boolean }
+  ): PromptPost[] => {
     const cleaned = ServerStorage.deduplicatePosts(posts);
     memoryPosts = cleaned;
     memoryPostsTimestamp = Date.now();
@@ -386,16 +420,19 @@ export const ServerStorage = {
         }
       }
     }
-    writeJsonFile(POSTS_FILE, cleaned);
-    const nextInitialFeed = cleaned
-      .filter((p) => p.status === 'published')
-      .sort(
-        (a, b) =>
-          new Date(b.publishedAt || b.createdAt || 0).getTime() -
-          new Date(a.publishedAt || a.createdAt || 0).getTime()
-      )
-      .slice(0, 16);
-    writeJsonFile(INITIAL_FEED_FILE, nextInitialFeed);
+    if (options?.writeLocalJson === true) {
+      writeJsonFile(POSTS_FILE, cleaned);
+      const nextInitialFeed = cleaned
+        .filter((p) => p.status === 'published')
+        .sort(
+          (a, b) =>
+            new Date(b.publishedAt || b.createdAt || 0).getTime() -
+            new Date(a.publishedAt || a.createdAt || 0).getTime()
+        )
+        .slice(0, 16);
+      writeJsonFile(INITIAL_FEED_FILE, nextInitialFeed);
+      writePendingEditsTemp({});
+    }
     return cleaned;
   },
 
@@ -514,12 +551,22 @@ export const ServerStorage = {
     const defaultLikes =
       post.likesCount !== undefined ? post.likesCount : (existing?.likesCount ?? Math.floor(Math.random() * 15) + 1);
 
+    const resolvedStatus: PromptPost['status'] =
+      post.status === 'trash'
+        ? 'trash'
+        : post.status === 'draft'
+          ? 'draft'
+          : post.status === 'scheduled'
+            ? 'scheduled'
+            : 'published';
+
     const savedPost: PromptPost = {
       ...existing,
       ...post,
       id,
       title: safeTitle,
       slug: autoSlug,
+      status: resolvedStatus,
       promptText: post.promptText || existing?.promptText || '',
       negativePrompt: post.negativePrompt || existing?.negativePrompt,
       category: post.category || existing?.category || 'General',
@@ -539,12 +586,22 @@ export const ServerStorage = {
       },
       createdAt: existing?.createdAt || post.createdAt || now,
       updatedAt: now,
-      publishedAt: post.status === 'published' ? post.publishedAt || existing?.publishedAt || now : undefined,
+      publishedAt: resolvedStatus === 'published' ? post.publishedAt || existing?.publishedAt || now : existing?.publishedAt,
       viewsCount: defaultViews,
       copiesCount: defaultCopies,
       likesCount: defaultLikes,
       bookmarksCount: post.bookmarksCount !== undefined ? post.bookmarksCount : (existing?.bookmarksCount || 0),
     };
+
+    if (resolvedStatus === 'trash') {
+      savedPost.deletedAt = post.deletedAt || existing?.deletedAt || now;
+      savedPost.previousStatus =
+        post.previousStatus ||
+        (existing?.status && existing.status !== 'trash' ? existing.status : 'published');
+    } else {
+      delete savedPost.deletedAt;
+      delete savedPost.previousStatus;
+    }
 
     const uploadDataUriToCloud = async (
       dataUri: string,
@@ -688,7 +745,7 @@ export const ServerStorage = {
       }
     }
 
-    // Keep local posts.json / initial-feed.json / memoryPosts synchronized on create or edit
+    // Update in-memory posts without overwriting data/posts.json (posts.json updates ONLY on explicit GitHub push)
     try {
       const idx = posts.findIndex((p) => p.id === savedPost.id);
       const nextPosts = [...posts];
@@ -700,20 +757,8 @@ export const ServerStorage = {
       const cleanedNext = ServerStorage.deduplicatePosts(nextPosts);
       memoryPosts = cleanedNext;
       memoryPostsTimestamp = Date.now();
-      memoryRecentEdits[savedPost.id] = savedPost;
-      writeJsonFile(POSTS_FILE, cleanedNext);
-
-      const nextInitialFeed = cleanedNext
-        .filter((p) => p.status === 'published')
-        .sort(
-          (a, b) =>
-            new Date(b.publishedAt || b.createdAt || 0).getTime() -
-            new Date(a.publishedAt || a.createdAt || 0).getTime()
-        )
-        .slice(0, 16);
-      writeJsonFile(INITIAL_FEED_FILE, nextInitialFeed);
     } catch (syncLocalErr) {
-      console.warn('Local JSON media update notice:', syncLocalErr);
+      console.warn('Memory cache update notice:', syncLocalErr);
     }
 
     // Persist to single recent_post_edits overlay + individual Firestore doc (non-fatal if Firestore daily quota is exhausted)
@@ -723,7 +768,7 @@ export const ServerStorage = {
       try {
         await setDoc(doc(firestoreDb, 'posts', savedPost.id), cleanForFirestore(savedPost));
       } catch (fErr: any) {
-        console.warn('Firestore savePost notice (continuing with GitHub/memory sync):', fErr?.message || fErr);
+        console.warn('Firestore savePost notice (continuing with memory sync):', fErr?.message || fErr);
       }
     }
 
@@ -761,6 +806,81 @@ export const ServerStorage = {
     return savedPost;
   },
 
+  savePostsBatch: async (postsToUpdate: PromptPost[]): Promise<PromptPost[]> => {
+    if (!Array.isArray(postsToUpdate) || postsToUpdate.length === 0) {
+      return ServerStorage.getFirebasePosts();
+    }
+    const existingAll = await ServerStorage.mergePostsWithSources({ forceRemote: false });
+    const byId = new Map<string, PromptPost>();
+    for (const p of existingAll) {
+      if (p?.id) byId.set(p.id, p);
+    }
+
+    const diskTemp = readPendingEditsTemp();
+    const combinedEdits: Record<string, PromptPost> = { ...diskTemp, ...memoryRecentEdits };
+
+    for (const p of postsToUpdate) {
+      if (!p?.id) continue;
+      unrecordDeletedPostId(p.id);
+      byId.set(p.id, p);
+      combinedEdits[p.id] = p;
+    }
+
+    const cappedEdits = Object.fromEntries(
+      Object.entries(combinedEdits)
+        .sort((a, b) => getPostVersionTime(b[1]) - getPostVersionTime(a[1]))
+        .slice(0, 80)
+    );
+    memoryRecentEdits = cappedEdits;
+    writePendingEditsTemp(cappedEdits);
+
+    const cleanedAll = ServerStorage.deduplicatePosts(Array.from(byId.values()));
+    memoryPosts = cleanedAll;
+    memoryPostsTimestamp = Date.now();
+
+    if (isFirebaseConfigured()) {
+      try {
+        let baseEdits: Record<string, PromptPost> = {};
+        try {
+          const existingSnap = await getDoc(doc(firestoreDb, 'settings', 'recent_post_edits'));
+          if (existingSnap.exists()) {
+            const d = existingSnap.data() as any;
+            if (d?.edits && typeof d.edits === 'object') baseEdits = d.edits;
+          }
+        } catch {}
+
+        const remoteCombined = { ...baseEdits, ...cappedEdits };
+        const remoteCapped = Object.fromEntries(
+          Object.entries(remoteCombined)
+            .sort((a, b) => getPostVersionTime(b[1]) - getPostVersionTime(a[1]))
+            .slice(0, 80)
+        );
+        await setDoc(
+          doc(firestoreDb, 'settings', 'recent_post_edits'),
+          cleanForFirestore({
+            edits: remoteCapped,
+            updatedAt: new Date().toISOString(),
+          }),
+          { merge: true }
+        );
+
+        const batch = writeBatch(firestoreDb);
+        let count = 0;
+        for (const p of postsToUpdate) {
+          if (!p?.id) continue;
+          batch.set(doc(firestoreDb, 'posts', p.id), cleanForFirestore(p));
+          count++;
+          if (count >= 450) break;
+        }
+        if (count > 0) await batch.commit();
+      } catch (err) {
+        console.warn('Firestore savePostsBatch notice:', err);
+      }
+    }
+
+    return cleanedAll;
+  },
+
   deletePost: async (id: string, token?: string): Promise<void> => {
     return ServerStorage.deletePosts([id], token);
   },
@@ -773,27 +893,20 @@ export const ServerStorage = {
 
     await recordDeletedPostIds(cleanIds);
 
-    // Sync local posts.json / initial-feed.json / memoryPosts removal
+    // Update in-memory cache and pending edits without overwriting data/posts.json until explicit GitHub push
     try {
+      const diskTemp = readPendingEditsTemp();
       for (const id of cleanIds) {
         delete memoryRecentEdits[id];
+        delete diskTemp[id];
       }
+      writePendingEditsTemp(diskTemp);
       const currentPosts = await ServerStorage.mergePostsWithSources({ forceRemote: false });
       const filteredLocal = currentPosts.filter((p) => p && !idSet.has(p.id));
       memoryPosts = filteredLocal;
       memoryPostsTimestamp = Date.now();
-      writeJsonFile(POSTS_FILE, filteredLocal);
-      const nextFeed = filteredLocal
-        .filter((p) => p.status === 'published')
-        .sort(
-          (a, b) =>
-            new Date(b.publishedAt || b.createdAt || 0).getTime() -
-            new Date(a.publishedAt || a.createdAt || 0).getTime()
-        )
-        .slice(0, 16);
-      writeJsonFile(INITIAL_FEED_FILE, nextFeed);
     } catch (localDelErr) {
-      console.warn('Local JSON delete sync notice:', localDelErr);
+      console.warn('Memory delete sync notice:', localDelErr);
     }
 
     if (isFirebaseConfigured()) {
@@ -849,7 +962,12 @@ export const ServerStorage = {
         aiTool: p.aiTool || 'Midjourney',
         imageUrl: p.imageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe',
         tags: cleanTagsArray(p.tags || ['AI Prompt']),
-        status: p.status === 'draft' ? ('draft' as const) : ('published' as const),
+        status:
+          p.status === 'trash'
+            ? ('trash' as const)
+            : p.status === 'draft'
+              ? ('draft' as const)
+              : ('published' as const),
         viewsCount: Number(p.viewsCount) || 0,
         copiesCount: Number(p.copiesCount) || 0,
         likesCount: Number(p.likesCount) || 0,

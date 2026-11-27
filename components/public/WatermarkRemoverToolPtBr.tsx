@@ -121,7 +121,7 @@ export const WatermarkRemoverToolPtBr = () => {
 
   const latestHomepagePost = useMemo(() => {
     const published = (posts || []).filter(
-      (p) => p && p.status !== 'draft' && typeof p.imageUrl === 'string' && p.imageUrl.trim().length > 0
+      (p) => p && p.status === 'published' && typeof p.imageUrl === 'string' && p.imageUrl.trim().length > 0
     );
     if (published.length === 0) return null;
     const sorted = [...published].sort((a, b) => {

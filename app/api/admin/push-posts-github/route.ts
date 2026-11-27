@@ -13,18 +13,8 @@ import path from 'path';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-interface CompactPostUpdate {
+interface ClientPostUpdate extends Partial<PromptPost> {
   id: string;
-  slug?: string;
-  title?: string;
-  imageUrl?: string;
-  imageAlt?: string;
-  imageFileName?: string;
-  additionalImages?: string[];
-  status?: 'published' | 'draft';
-  isPremium?: boolean;
-  isNoIndex?: boolean;
-  updatedAt?: string;
 }
 
 function getVersionTs(p?: { updatedAt?: string; publishedAt?: string; createdAt?: string } | null): number {
@@ -46,22 +36,34 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const serverPosts = await ServerStorage.getFirebasePosts();
-
-    // Merge optional compact client overrides sent from Admin PostsManager
-    const clientUpdates = Array.isArray(body?.postUpdates)
-      ? (body.postUpdates as CompactPostUpdate[])
+    const deletedIds: string[] = Array.isArray(body?.deletedIds)
+      ? body.deletedIds.filter((x: unknown): x is string => typeof x === 'string' && x.length > 0)
       : [];
 
-    let mergedPosts: PromptPost[] = serverPosts;
+    if (deletedIds.length > 0) {
+      await ServerStorage.deletePosts(deletedIds);
+    }
+
+    const deletedSet = new Set(deletedIds);
+    const serverPosts = await ServerStorage.getFirebasePosts();
+
+    // Merge client overrides (supports both compact metadata updates & full new/modified PromptPost objects)
+    const clientUpdates = Array.isArray(body?.postUpdates)
+      ? (body.postUpdates as ClientPostUpdate[])
+      : [];
+
+    let mergedPosts: PromptPost[] = serverPosts.filter((p) => p && !deletedSet.has(p.id));
     if (clientUpdates.length > 0) {
-      const updateById = new Map<string, CompactPostUpdate>();
-      for (const u of clientUpdates) {
-        if (u && u.id) updateById.set(u.id, u);
+      const serverById = new Map<string, PromptPost>();
+      for (const p of mergedPosts) {
+        if (p?.id) serverById.set(p.id, p);
       }
-      mergedPosts = serverPosts.map((post) => {
-        const u = updateById.get(post.id);
+
+      const seenClientIds = new Set<string>();
+      const nextMerged: PromptPost[] = mergedPosts.map((post) => {
+        const u = clientUpdates.find((item) => item && item.id === post.id);
         if (!u) return post;
+        seenClientIds.add(post.id);
         const serverTs = getVersionTs(post);
         const clientTs = getVersionTs(u);
         const hasSha = (url?: string) => Boolean(url && /@[a-f0-9]{40}\//i.test(url));
@@ -69,8 +71,12 @@ export async function POST(req: NextRequest) {
           clientTs > serverTs ||
           (clientTs === serverTs && hasSha(u.imageUrl) && !hasSha(post.imageUrl));
         if (!shouldTakeClient) return post;
-        return {
+
+        const nextStatus = u.status || post.status;
+        const mergedItem: PromptPost = {
           ...post,
+          ...u,
+          id: post.id,
           title: u.title || post.title,
           slug: u.slug || post.slug,
           imageUrl: u.imageUrl || post.imageUrl,
@@ -79,17 +85,34 @@ export async function POST(req: NextRequest) {
           additionalImages: Array.isArray(u.additionalImages)
             ? u.additionalImages
             : post.additionalImages,
-          status: u.status || post.status,
+          status: nextStatus,
           isPremium: u.isPremium ?? post.isPremium,
           isNoIndex: u.isNoIndex ?? post.isNoIndex,
           updatedAt: u.updatedAt || post.updatedAt,
         };
+        if (nextStatus !== 'trash') {
+          delete mergedItem.deletedAt;
+          delete mergedItem.previousStatus;
+        }
+        return mergedItem;
       });
+
+      // Insert any brand-new client posts missing from server cache (e.g. cold serverless instance)
+      for (const u of clientUpdates) {
+        if (!u?.id || deletedSet.has(u.id) || seenClientIds.has(u.id) || serverById.has(u.id)) {
+          continue;
+        }
+        if (u.title && u.promptText) {
+          nextMerged.unshift(u as PromptPost);
+        }
+      }
+
+      mergedPosts = nextMerged;
     }
 
     // Reconcile any orphaned/legacy image URLs against actual files uploaded in zeena-prompt-assets
     const { posts: reconciledPosts, healedCount } = await reconcilePostsWithGitHubAssets(mergedPosts);
-    const finalPosts = ServerStorage.applyReconciledPosts(reconciledPosts);
+    const finalPosts = ServerStorage.applyReconciledPosts(reconciledPosts, { writeLocalJson: true });
 
     const extraFiles: Array<{ path: string; content: string }> = [];
     try {

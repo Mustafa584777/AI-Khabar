@@ -32,6 +32,7 @@ export const AdminSidebar = () => {
     currentUser,
   } = useApp();
 
+  const activePostsCount = posts.filter((p) => p.status !== 'trash').length;
   const draftCount = posts.filter((p) => p.status === 'draft').length;
 
   interface NavItem {
@@ -47,7 +48,7 @@ export const AdminSidebar = () => {
       id: 'posts',
       label: 'All Prompts / Articles',
       icon: FileText,
-      badge: posts.length,
+      badge: activePostsCount,
     },
     {
       id: 'categories',

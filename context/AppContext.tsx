@@ -124,6 +124,11 @@ interface AppContextType {
   savePost: (post: PromptPost) => Promise<PromptPost>;
   deletePost: (id: string) => Promise<boolean>;
   deletePosts: (ids: string[]) => Promise<boolean>;
+  moveToTrash: (ids: string[]) => Promise<boolean>;
+  restoreFromTrash: (ids: string[]) => Promise<boolean>;
+  permanentlyDeletePosts: (ids: string[]) => Promise<boolean>;
+  hasPendingGitHubPush: boolean;
+  markGitHubPushSynced: () => void;
   togglePublishStatus: (id: string) => void;
   togglePremiumStatus: (id: string) => Promise<void>;
   toggleNoIndexStatus: (id: string) => Promise<void>;
@@ -1454,6 +1459,28 @@ export const AppProvider = ({
 
   // Admin posts are loaded live from Firebase Firestore for the Editorial CMS
   const [adminPosts, setAdminPosts] = useState<PromptPost[]>([]);
+  const [hasPendingGitHubPush, setHasPendingGitHubPush] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('promptcms_pending_github_push') === 'true';
+    }
+    return false;
+  });
+
+  const markPendingGitHubPush = useCallback((pending: boolean) => {
+    setHasPendingGitHubPush(pending);
+    if (typeof window !== 'undefined') {
+      if (pending) {
+        localStorage.setItem('promptcms_pending_github_push', 'true');
+      } else {
+        localStorage.removeItem('promptcms_pending_github_push');
+      }
+    }
+  }, []);
+
+  const markGitHubPushSynced = useCallback(() => {
+    markPendingGitHubPush(false);
+  }, [markPendingGitHubPush]);
+
   useEffect(() => {
     postsRef.current = posts;
   }, [posts]);
@@ -2885,7 +2912,7 @@ export const AppProvider = ({
     });
 
     try {
-      // Send to server to persist and push updated posts.json to GitHub
+      // Send to server to persist locally/in Firestore (posts.json updates ONLY when user manually clicks Push)
       const res = await fetch('/api/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2913,13 +2940,8 @@ export const AppProvider = ({
 
         const savedPost = data.post || post;
         setSelectedPostState((prev) => (prev && prev.id === savedPost.id ? savedPost : prev));
-        if (data.githubSync?.success) {
-          showToast(`Prompt saved & posts.json pushed to GitHub (${data.githubSync.repo})!`);
-        } else if (data.githubSync?.error) {
-          showToast(`Prompt saved! GitHub push notice: ${data.githubSync.error}`);
-        } else {
-          showToast('Prompt saved!');
-        }
+        markPendingGitHubPush(true);
+        showToast('Prompt saved! Click "Push posts.json to GitHub" when ready.');
 
         return savedPost;
       } else {
@@ -2936,12 +2958,124 @@ export const AppProvider = ({
     }
   };
 
-  const deletePosts = async (ids: string[]): Promise<boolean> => {
+  const moveToTrash = async (ids: string[]): Promise<boolean> => {
+    if (!ids || ids.length === 0) return true;
+    isSavingRef.current = true;
+    const idSet = new Set(ids);
+    const now = new Date().toISOString();
+
+    const applyTrashTransform = (list: PromptPost[]): PromptPost[] =>
+      list.map((p) => {
+        if (!p || !idSet.has(p.id)) return p;
+        return {
+          ...p,
+          previousStatus: p.status !== 'trash' ? p.status : (p.previousStatus || 'published'),
+          status: 'trash' as const,
+          deletedAt: now,
+          updatedAt: now,
+        };
+      });
+
+    const sourceList = adminPosts.length > 0 ? adminPosts : posts;
+    const affectedPosts = sourceList.filter((p) => p && idSet.has(p.id));
+
+    setAdminPosts((prev) => applyTrashTransform(prev));
+    setPosts((prev) => {
+      const next = prev.filter((p) => !idSet.has(p.id));
+      postsRef.current = next;
+      return next;
+    });
+    markPendingGitHubPush(true);
+    showToast(`${ids.length} prompt${ids.length > 1 ? 's' : ''} moved to Trash`);
+
+    try {
+      const res = await fetch('/api/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'trash', ids, posts: affectedPosts }),
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.posts)) {
+        setAdminPosts(data.posts);
+        const publishedRemaining = data.posts.filter((p: PromptPost) => p.status === 'published');
+        setPosts(publishedRemaining);
+        postsRef.current = publishedRemaining;
+      }
+      return true;
+    } catch (err) {
+      console.error('Failed to move posts to trash:', err);
+      return false;
+    } finally {
+      setTimeout(() => {
+        isSavingRef.current = false;
+      }, 1000);
+    }
+  };
+
+  const restoreFromTrash = async (ids: string[]): Promise<boolean> => {
+    if (!ids || ids.length === 0) return true;
+    isSavingRef.current = true;
+    const idSet = new Set(ids);
+    const now = new Date().toISOString();
+
+    const applyRestoreTransform = (list: PromptPost[]): PromptPost[] =>
+      list.map((p) => {
+        if (!p || !idSet.has(p.id)) return p;
+        const restoredStatus = p.previousStatus === 'draft' ? 'draft' : 'published';
+        const copy: PromptPost = {
+          ...p,
+          status: restoredStatus,
+          publishedAt: restoredStatus === 'published' ? p.publishedAt || now : p.publishedAt,
+          updatedAt: now,
+        };
+        delete copy.deletedAt;
+        delete copy.previousStatus;
+        return copy;
+      });
+
+    const sourceList = adminPosts.length > 0 ? adminPosts : posts;
+    const affectedPosts = sourceList.filter((p) => p && idSet.has(p.id));
+
+    setAdminPosts((prev) => {
+      const nextAdmin = applyRestoreTransform(prev);
+      const publishedNext = nextAdmin.filter((p) => p.status === 'published');
+      setPosts(publishedNext);
+      postsRef.current = publishedNext;
+      return nextAdmin;
+    });
+    markPendingGitHubPush(true);
+    showToast(`${ids.length} prompt${ids.length > 1 ? 's' : ''} restored from Trash`);
+
+    try {
+      const res = await fetch('/api/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'restore', ids, posts: affectedPosts }),
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.posts)) {
+        setAdminPosts(data.posts);
+        const publishedRemaining = data.posts.filter((p: PromptPost) => p.status === 'published');
+        setPosts(publishedRemaining);
+        postsRef.current = publishedRemaining;
+      }
+      return true;
+    } catch (err) {
+      console.error('Failed to restore posts from trash:', err);
+      return false;
+    } finally {
+      setTimeout(() => {
+        isSavingRef.current = false;
+      }, 1000);
+    }
+  };
+
+  const permanentlyDeletePosts = async (ids: string[]): Promise<boolean> => {
     if (!ids || ids.length === 0) return true;
     isSavingRef.current = true;
     const idSet = new Set(ids);
 
-    // Save deleted IDs to localStorage permanently
+    // Save deleted IDs to localStorage until pushed to GitHub
     if (typeof window !== 'undefined') {
       try {
         const raw = localStorage.getItem('promptcms_deleted_ids');
@@ -2953,7 +3087,6 @@ export const AppProvider = ({
       } catch {}
     }
 
-    // 1. Instant optimistic update for admin CMS and public feed
     setAdminPosts((prev) => prev.filter((p) => !idSet.has(p.id)));
     setPosts((prev) => {
       const next = prev.filter((p) => !idSet.has(p.id));
@@ -2978,7 +3111,8 @@ export const AppProvider = ({
       return updated;
     });
 
-    showToast(`${ids.length} prompt${ids.length > 1 ? 's' : ''} removed`);
+    markPendingGitHubPush(true);
+    showToast(`${ids.length} prompt${ids.length > 1 ? 's' : ''} permanently deleted`);
 
     try {
       const res = await fetch('/api/posts', {
@@ -2988,19 +3122,15 @@ export const AppProvider = ({
       });
       const data = await res.json();
       if (data.success && Array.isArray(data.posts)) {
-        // Guarantee deleted IDs are NEVER reintroduced from server response
         const remaining = data.posts.filter((p: PromptPost) => !idSet.has(p.id));
         setAdminPosts(remaining);
         const publishedRemaining = remaining.filter((p: PromptPost) => p.status === 'published');
         setPosts(publishedRemaining);
         postsRef.current = publishedRemaining;
-        if (data.githubSync?.success) {
-          showToast(`Removed & updated posts.json on GitHub (${data.githubSync.repo})!`);
-        }
       }
       return true;
     } catch (err) {
-      console.error('Failed to delete posts on server:', err);
+      console.error('Failed to permanently delete posts on server:', err);
       return false;
     } finally {
       setTimeout(() => {
@@ -3009,8 +3139,12 @@ export const AppProvider = ({
     }
   };
 
+  const deletePosts = async (ids: string[]): Promise<boolean> => {
+    return moveToTrash(ids);
+  };
+
   const deletePost = async (id: string): Promise<boolean> => {
-    return deletePosts([id]);
+    return moveToTrash([id]);
   };
 
   const togglePublishStatus = async (id: string) => {
@@ -3389,6 +3523,11 @@ export const AppProvider = ({
         savePost,
         deletePost,
         deletePosts,
+        moveToTrash,
+        restoreFromTrash,
+        permanentlyDeletePosts,
+        hasPendingGitHubPush,
+        markGitHubPushSynced,
         togglePublishStatus,
         togglePremiumStatus,
         toggleNoIndexStatus,

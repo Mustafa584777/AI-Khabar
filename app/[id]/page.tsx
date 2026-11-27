@@ -48,10 +48,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { id } = await params;
   const post = await resolvePost(id);
 
-  if (!post) {
+  if (!post || post.status !== 'published') {
     return {
       title: 'Prompt Not Found | Trending Copy Paste Photo Prompts',
       description: 'The requested AI photo prompt was not found.',
+      robots: { index: false, follow: false },
     };
   }
 
@@ -130,7 +131,7 @@ export default async function SinglePromptDetailPage({ params }: PageProps) {
   const { id } = await params;
   const post = await resolvePost(id);
 
-  if (!post) {
+  if (!post || post.status !== 'published') {
     notFound();
   }
 

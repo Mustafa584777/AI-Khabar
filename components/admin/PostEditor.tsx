@@ -333,7 +333,7 @@ export const PostEditor = () => {
   // Manual File Upload Handler
   const [isSavingPost, setIsSavingPost] = useState(false);
 
-  const optimizeImageFile = (file: File): Promise<string> => {
+  const convertImageToWebpInBrowser = (file: File): Promise<string> => {
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -343,14 +343,19 @@ export const PostEditor = () => {
           return;
         }
 
-        // Preserve lightweight files already under 250KB
-        if (file.size <= 250 * 1024) {
-          resolve(dataUrl);
-          return;
-        }
-
         const img = document.createElement('img');
         img.onload = () => {
+          // Only skip re-encoding if it is already a small, appropriately sized WebP
+          if (
+            file.type === 'image/webp' &&
+            file.size <= 250 * 1024 &&
+            img.width <= 1600 &&
+            img.height <= 1600
+          ) {
+            resolve(dataUrl);
+            return;
+          }
+
           const maxDimension = 1600;
           let width = img.width;
           let height = img.height;
@@ -373,8 +378,8 @@ export const PostEditor = () => {
           }
           ctx.drawImage(img, 0, 0, width, height);
 
-          // Step down quality if needed so base64 upload stays well below Vercel's 4.5MB limit
-          const qualities = [0.88, 0.78, 0.68];
+          // Always convert to WebP in browser; step down quality if needed so upload stays below limit
+          const qualities = [0.90, 0.82, 0.72];
           for (const q of qualities) {
             try {
               const webpData = canvas.toDataURL('image/webp', q);
@@ -392,7 +397,12 @@ export const PostEditor = () => {
               return;
             }
           }
-          resolve(canvas.toDataURL('image/jpeg', 0.75));
+          const finalWebp = canvas.toDataURL('image/webp', 0.8);
+          resolve(
+            finalWebp && finalWebp.startsWith('data:image/webp')
+              ? finalWebp
+              : canvas.toDataURL('image/jpeg', 0.8)
+          );
         };
         img.onerror = () => resolve(dataUrl);
         img.src = dataUrl;
@@ -402,9 +412,29 @@ export const PostEditor = () => {
     });
   };
 
+  const uploadWebpToGitHub = async (webpDataUri: string, targetPublicId: string): Promise<string> => {
+    const upRes = await fetch('/api/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        image: webpDataUri,
+        folder: 'prompts',
+        publicId: targetPublicId,
+      }),
+    });
+    const upJson = await upRes.json().catch(() => ({}));
+    if (!upRes.ok || !upJson?.success || !upJson?.url) {
+      throw new Error(upJson?.error || `Image upload failed (${upRes.status})`);
+    }
+    if (upJson.provider === 'fallback' || String(upJson.url).startsWith('data:')) {
+      throw new Error(upJson?.warning || upJson?.message || 'Cloud upload returned local base64 fallback.');
+    }
+    return String(upJson.url);
+  };
+
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-  // Stage image locally ONLY (actual upload to GitHub runs when clicking Save / Publish / Update)
+  // Convert locally in browser to WebP first, then upload immediately to GitHub CDN
   const handleFileUpload = async (file: File) => {
     if (!file.type.startsWith('image/')) {
       showToast('Please select a valid image file (PNG, JPG, WebP, GIF, AVIF).');
@@ -418,34 +448,53 @@ export const PostEditor = () => {
 
     setIsUploadingImage(true);
     try {
-      const optimized = await optimizeImageFile(file);
-      if (optimized) {
-        setLocalImageBase64(optimized);
-        setImageUrl(optimized);
+      const webpDataUri = await convertImageToWebpInBrowser(file);
+      if (!webpDataUri) {
+        showToast('Failed to convert image to WebP in browser');
+        return;
+      }
 
-        const formattedSize =
-          file.size / 1024 < 1024
-            ? `${Math.round(file.size / 1024)} KB`
-            : `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+      // Compute converted WebP size for display
+      const base64Part = webpDataUri.split(',')[1] || '';
+      const webpBytes = base64Part ? Math.floor((base64Part.length * 3) / 4) : file.size;
+      const formattedSize =
+        webpBytes / 1024 < 1024
+          ? `${Math.max(1, Math.round(webpBytes / 1024))} KB`
+          : `${(webpBytes / (1024 * 1024)).toFixed(1)} MB`;
 
-        setUploadedFileInfo({
-          name: file.name,
-          size: formattedSize,
-        });
+      const webpFileName = `${file.name.replace(/\.[^/.]+$/, '') || 'prompt-image'}.webp`;
+      setUploadedFileInfo({
+        name: webpFileName,
+        size: formattedSize,
+      });
 
-        // Auto-set alt text and filename from Title
-        const autoAlt = title.trim() || file.name.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' ');
-        setImageAlt(autoAlt);
+      // Auto-set alt text and .webp filename from Title
+      const autoAlt = title.trim() || file.name.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' ');
+      setImageAlt(autoAlt);
+      setImageFileName(generateImageFileNameFromTitle(title || file.name, webpFileName));
 
-        const autoFileName = generateImageFileNameFromTitle(title || file.name, file.name);
-        setImageFileName(autoFileName);
+      // Show converted WebP preview right away while uploading to GitHub
+      setLocalImageBase64(webpDataUri);
+      setImageUrl(webpDataUri);
 
-        showToast('Image ready! Click Update / Publish to upload to GitHub.');
+      const targetSlug =
+        slugify(slug || title || existingPost?.slug || file.name.replace(/\.[^/.]+$/, '')) ||
+        existingPost?.id ||
+        `prompt-${Date.now()}`;
 
-        // Auto-assign category & tags if title or prompt is present
-        if (title.trim() || promptText.trim()) {
-          handleAutoTaxonomy();
-        }
+      try {
+        const cdnUrl = await uploadWebpToGitHub(webpDataUri, targetSlug);
+        setImageUrl(cdnUrl);
+        setLocalImageBase64('');
+        showToast('Converted to WebP & uploaded to GitHub!');
+      } catch (uploadErr: any) {
+        console.warn('Immediate GitHub upload failed, keeping WebP staged:', uploadErr);
+        showToast('Converted to WebP locally — GitHub upload will retry on Save.');
+      }
+
+      // Auto-assign category & tags if title or prompt is present
+      if (title.trim() || promptText.trim()) {
+        handleAutoTaxonomy();
       }
     } catch {
       showToast('Failed to process image file');
@@ -454,7 +503,7 @@ export const PostEditor = () => {
     }
   };
 
-  // Stage carousel slide images locally ONLY (uploaded sequentially with clean slug when clicking Save)
+  // Convert carousel slide images locally to WebP in browser and immediately upload each to GitHub
   const handleAdditionalFileUpload = async (files: FileList | File[]) => {
     const fileArray = Array.from(files).filter((f) => f.type.startsWith('image/'));
     if (fileArray.length === 0) {
@@ -464,23 +513,48 @@ export const PostEditor = () => {
 
     setIsUploadingAdditional(true);
     try {
-      const stagedSlides: string[] = [];
-      for (const file of fileArray) {
+      const baseSlug =
+        slugify(slug || title || existingPost?.slug || '') ||
+        existingPost?.id ||
+        `prompt-${Date.now()}`;
+      const startIndex = additionalImages.length;
+
+      const uploadedSlides: string[] = [];
+      let uploadedToGitHubCount = 0;
+      let stagedFallbackCount = 0;
+
+      for (let i = 0; i < fileArray.length; i++) {
+        const file = fileArray[i];
         if (file.size > 15 * 1024 * 1024) {
           showToast(`File ${file.name} exceeds 15MB limit.`);
           continue;
         }
 
-        const optimized = await optimizeImageFile(file);
-        if (optimized) {
-          stagedSlides.push(optimized);
+        const webpDataUri = await convertImageToWebpInBrowser(file);
+        if (!webpDataUri) continue;
+
+        try {
+          const cdnUrl = await uploadWebpToGitHub(webpDataUri, `${baseSlug}-slide-${startIndex + uploadedSlides.length + 1}`);
+          uploadedSlides.push(cdnUrl);
+          uploadedToGitHubCount++;
+        } catch (err) {
+          console.warn(`Slide ${i + 1} immediate GitHub upload failed, keeping staged WebP:`, err);
+          uploadedSlides.push(webpDataUri);
+          stagedFallbackCount++;
         }
       }
-      if (stagedSlides.length > 0) {
-        setAdditionalImages((prev) => [...prev, ...stagedSlides]);
-        showToast(
-          `Added ${stagedSlides.length} slide ${stagedSlides.length === 1 ? 'image' : 'images'} — click Save / Update to upload to GitHub!`
-        );
+
+      if (uploadedSlides.length > 0) {
+        setAdditionalImages((prev) => [...prev, ...uploadedSlides]);
+        if (stagedFallbackCount === 0) {
+          showToast(
+            `Converted ${uploadedToGitHubCount} ${uploadedToGitHubCount === 1 ? 'image' : 'images'} to WebP & uploaded to GitHub!`
+          );
+        } else {
+          showToast(
+            `Converted ${uploadedSlides.length} image(s) to WebP (${uploadedToGitHubCount} uploaded, ${stagedFallbackCount} will retry on Save).`
+          );
+        }
       }
     } catch {
       showToast('Failed to process slide images');
@@ -664,6 +738,10 @@ export const PostEditor = () => {
 
   const handleSave = async (publishStatus: 'published' | 'draft') => {
     if (isSavingPost) return;
+    if (isUploadingImage || isUploadingAdditional) {
+      showToast('Please wait for WebP image upload to GitHub to finish...');
+      return;
+    }
 
     if (!title.trim() || !promptText.trim()) {
       showToast('Title and Prompt Text are required.');
@@ -745,44 +823,24 @@ export const PostEditor = () => {
           : undefined,
     };
 
-    const uploadStagedImage = async (dataUri: string, targetPublicId: string): Promise<string> => {
-      const upRes = await fetch('/api/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image: dataUri,
-          folder: 'prompts',
-          publicId: targetPublicId,
-        }),
-      });
-      const upJson = await upRes.json().catch(() => ({}));
-      if (!upRes.ok || !upJson?.success || !upJson?.url) {
-        throw new Error(upJson?.error || `Image upload failed (${upRes.status})`);
-      }
-      if (upJson.provider === 'fallback' || String(upJson.url).startsWith('data:')) {
-        throw new Error(upJson?.warning || upJson?.message || 'Cloud upload returned local base64 fallback.');
-      }
-      return String(upJson.url);
-    };
-
     setIsSavingPost(true);
     try {
-      // Upload staged cover image ONLY when saving (prevents duplicate/orphaned GitHub files)
+      // Fallback upload only if cover image is still a local data URI (already converted to WebP)
       let finalImageUrl = postPayload.imageUrl;
       if (finalImageUrl && finalImageUrl.startsWith('data:image/')) {
-        showToast('Uploading cover image to GitHub CDN...');
-        finalImageUrl = await uploadStagedImage(finalImageUrl, finalSlug);
+        showToast('Uploading WebP cover image to GitHub CDN...');
+        finalImageUrl = await uploadWebpToGitHub(finalImageUrl, finalSlug);
         setImageUrl(finalImageUrl);
         setLocalImageBase64('');
       }
 
-      // Upload staged carousel slides sequentially with deterministic clean names
+      // Fallback upload only if any carousel slides are still local data URIs
       const finalAdditionalImages: string[] = [];
       for (let i = 0; i < postPayload.additionalImages!.length; i++) {
         const slideImg = postPayload.additionalImages![i];
         if (slideImg && slideImg.startsWith('data:image/')) {
-          showToast(`Uploading slide ${i + 1} to GitHub CDN...`);
-          const uploadedSlideUrl = await uploadStagedImage(slideImg, `${finalSlug}-slide-${i + 1}`);
+          showToast(`Uploading WebP slide ${i + 1} to GitHub CDN...`);
+          const uploadedSlideUrl = await uploadWebpToGitHub(slideImg, `${finalSlug}-slide-${i + 1}`);
           finalAdditionalImages.push(uploadedSlideUrl);
         } else if (slideImg) {
           finalAdditionalImages.push(slideImg);
@@ -963,10 +1021,10 @@ export const PostEditor = () => {
                     <div className="flex flex-col items-center justify-center py-2">
                       <div className="w-10 h-10 rounded-full border-2 border-blue-500 border-t-transparent animate-spin mb-3" />
                       <p className="text-xs font-bold text-neutral-900 dark:text-white">
-                        Preparing & Optimizing Photo...
+                        Converting to WebP &amp; Uploading to GitHub...
                       </p>
                       <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
-                        Uploads to GitHub when you click Save / Update
+                        Optimizing image in browser before pushing to GitHub CDN
                       </p>
                     </div>
                   ) : (
@@ -975,10 +1033,10 @@ export const PostEditor = () => {
                         <FileUp className="w-6 h-6" />
                       </div>
                       <p className="text-xs font-bold text-neutral-900 dark:text-white mb-1">
-                        Click to browse or drag & drop photo
+                        Click to browse or drag &amp; drop photo
                       </p>
                       <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                        PNG, JPG, WebP, AVIF or GIF (uploads to GitHub only when you click Save)
+                        PNG, JPG, WebP, AVIF or GIF — converts to WebP in browser &amp; uploads directly to GitHub
                       </p>
                       {uploadedFileInfo && (
                         <div className="mt-3 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[11px] font-medium flex items-center gap-1.5">
@@ -1020,10 +1078,12 @@ export const PostEditor = () => {
                   <span>Current Preview</span>
                   {imageUrl.startsWith('data:image/') ? (
                     <span className="text-amber-600 dark:text-amber-400 font-bold">
-                      Staged locally — click Save / Update to upload
+                      {isUploadingImage ? 'Uploading WebP to GitHub...' : 'WebP ready locally — will retry upload on Save'}
                     </span>
                   ) : (
-                    <span className="text-blue-600 dark:text-blue-400">Live Aspect Ratio 16:10</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                      Uploaded to GitHub CDN (WebP)
+                    </span>
                   )}
                 </div>
                 <div className="relative w-full aspect-[16/10] rounded-2xl overflow-hidden bg-neutral-950 border border-neutral-200 dark:border-neutral-800 shadow-inner group">
@@ -1095,7 +1155,7 @@ export const PostEditor = () => {
                 {isUploadingAdditional ? (
                   <div className="flex items-center gap-2 text-xs font-semibold text-neutral-600 dark:text-neutral-400">
                     <Loader2 className="w-4 h-4 animate-spin text-[#E60023]" />
-                    <span>Preparing slide image(s)...</span>
+                    <span>Converting slide(s) to WebP &amp; uploading to GitHub...</span>
                   </div>
                 ) : (
                   <>
@@ -1107,7 +1167,7 @@ export const PostEditor = () => {
                         Click to upload slider images
                       </p>
                       <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
-                        Select one or multiple images (PNG, JPG, WebP up to 15MB)
+                        Auto-converts to WebP in browser &amp; uploads directly to GitHub (up to 15MB)
                       </p>
                     </div>
                   </>
