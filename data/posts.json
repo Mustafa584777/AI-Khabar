@@ -2608,9 +2608,9 @@
   },
   {
     "author": {
-      "role": "Author",
       "name": "tool.reelz",
-      "avatar": "/logo.png"
+      "avatar": "/logo.png",
+      "role": "Author"
     },
     "imageWidth": 1024,
     "preferredAi": "Gemini",
@@ -2627,8 +2627,8 @@
     "id": "prompt-1793959768380",
     "seo": {
       "metaTitle": "Gemini | Trending Copy Paste Photo Prompts",
-      "focusKeyword": "Gemini Beach Photo Prompt",
-      "metaDescription": "Copy and paste this photo prompt for Gemini Beach Photo Prompt."
+      "metaDescription": "Copy and paste this photo prompt for Gemini Beach Photo Prompt.",
+      "focusKeyword": "Gemini Beach Photo Prompt"
     },
     "promptText": "A highly detailed, realistic mobile phone photograph of a user, standing on a jagged, dark volcanic rock shoreline, gazing out toward the vast horizon. The man has short, dark, natural hair and is wearing a crisp, light-sage green loose button-up shirt and dark grey relaxed-fit trousers. The ocean is deep blue with white foam crashing against the rocks in the foreground. The sky is the dominant feature, an expansive, breathtaking canvas of brilliant azure blue filled with scattered, intricate, wispy cirrus clouds that stretch and swirl across the heavens, rendered with absolute photographic realism. In the distant, blurry background, a faint hint of a coastal city skyline touches the horizon. The lighting is bright and natural, casting soft, realistic shadows and highlighting the texture of the wet rocks and the fabric of the man's clothing. Captured with a modern flagship smartphone, high-resolution, sharp focus throughout, vivid color reproduction, natural atmospheric depth, calm and serene mood, clear sky, aspect ratio 3:4",
     "affiliateProducts": [],
@@ -2639,7 +2639,7 @@
     "isPremium": false,
     "imageAlt": "Gemini Beach Photo Prompt",
     "slug": "gemini-beach-photo-prompt",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/gemini-beach-photo-prompt.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@f7081d9cd46b82ca255c1d913e556556845372f8/prompts/gemini-beach-photo-prompt.jpg",
     "variables": [],
     "parameters": {
       "isPremium": false
@@ -2648,7 +2648,7 @@
     "createdAt": "2026-11-06T10:09:28.381Z",
     "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
     "additionalImages": [],
-    "updatedAt": "2026-11-06T10:09:37.285Z",
+    "updatedAt": "2026-11-27T07:47:11.011Z",
     "viewsCount": 0,
     "publishedAt": "2026-11-06T10:09:28.381Z",
     "status": "published"
