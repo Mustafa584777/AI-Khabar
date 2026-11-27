@@ -2111,7 +2111,7 @@
     "createdAt": "2026-11-07T11:54:00.791Z",
     "viewsCount": 0,
     "id": "prompt-1794052440789",
-    "updatedAt": "2026-11-07T11:54:01.957Z",
+    "updatedAt": "2026-11-27T05:07:59.781Z",
     "status": "published",
     "additionalImages": [],
     "tags": [
@@ -2121,8 +2121,8 @@
       "Pahadi Look Prompt Chatgpt Copy And Paste"
     ],
     "author": {
-      "avatar": "/logo.png",
       "name": "tool.reelz",
+      "avatar": "/logo.png",
       "role": "Author"
     },
     "copiesCount": 0,
@@ -2131,15 +2131,15 @@
     "imageWidth": 1024,
     "likesCount": 0,
     "aiTool": "Midjourney",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1794052361470.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@255ab828cd967d05c228627a5f5d36686a48b9e6/prompts/pahadi-look-prompt-chatgpt-copy-and-paste.jpg",
     "promptText": "Create an ultra-realistic professional outdoor portrait using the uploaded user's photograph as the ONLY facial identity reference and the provided reference image as the exact clothing, styling, pose, and environment reference.\n\n1. IDENTITY PRESERVATION — ABSOLUTE PRIORITY\n\nPreserve the user's exact recognizable facial identity, facial proportions, eyes, eyebrows, nose, lips, jawline, skin tone, and natural facial characteristics. Maintain realistic skin texture and natural imperfections. Do not replace the person with another individual.\n\n2. EXACT TRADITIONAL HIMACHALI OUTFIT\n\nDress the subject in the exact traditional Himachali-inspired outfit from the reference:\n\n- Deep navy-blue traditional long dress with a flowing silhouette.\n- Rich multicolored floral embroidery across the chest, sleeves, waist, and front borders.\n- Intricately embroidered matching navy-blue shawl draped over the shoulders.\n- Colorful traditional Himachali embroidered cap with a rounded shape and decorative detailing.\n- Traditional silver tribal jewellery, including layered heavy silver necklaces, large silver earrings, and decorative pendants.\n- Detailed woven fabric with authentic embroidery, natural folds, and realistic textile texture.\n\nReproduce the outfit's original navy-blue, red, orange, green, and golden embroidery colors accurately.\n\n3. POSE AND PROPS\n\nCreate a natural standing half-to-three-quarter-body portrait.\n\nThe subject stands facing the camera with a gentle, confident smile.\n\nShe holds a large round rustic woven wicker basket filled with fresh ripe red and pink apples. One hand grips the basket handle while the other naturally supports its side.\n\nKeep the basket and apples clearly visible in the foreground.\n\n4. BACKGROUND AND ENVIRONMENT\n\nPlace the subject in a beautiful traditional Himalayan apple orchard.\n\nSurround the subject with lush green apple trees filled with ripe red apples. Add a distant majestic Himalayan mountain range covered with fresh white snow.\n\nCreate visible mountain peaks behind the subject, with natural atmospheric depth and realistic green foothills.\n\nInclude natural orchard grass, small plants, and authentic rural Himalayan scenery.\n\n5. LIGHTING AND COLORS\n\nUse bright natural daylight with soft sunlight illuminating the face and outfit.\n\nCreate realistic shadows, natural skin tones, vibrant green foliage, rich red apples, deep navy-blue clothing, and crisp white snowy mountains.\n\nThe sky should appear naturally pale blue with subtle atmospheric clouds.\n\nNo artificial cinematic color grading, no excessive HDR, and no fake glow.\n\n6. PHOTOGRAPHIC QUALITY\n\nProfessional DSLR travel photography, realistic 50mm portrait lens, natural depth of field, highly detailed embroidery, authentic jewellery reflections, realistic apples, natural facial texture, and photorealistic environmental composition.\n\nVertical 3:4 aspect ratio. No text, watermark, logo, or artificial beauty filters.",
     "preferredAi": "Gemini",
     "title": "Pahadi look Prompt chatgpt copy and paste",
     "isNoIndex": false,
     "seo": {
       "metaTitle": "Pahadi look Prompt chatgpt | Trending Copy Paste Photo Prompts",
-      "focusKeyword": "Pahadi look Prompt chatgpt copy and paste",
-      "metaDescription": "Copy and paste this photo prompt for Pahadi look Prompt chatgpt copy and paste."
+      "metaDescription": "Copy and paste this photo prompt for Pahadi look Prompt chatgpt copy and paste.",
+      "focusKeyword": "Pahadi look Prompt chatgpt copy and paste"
     },
     "slug": "pahadi-look-prompt-chatgpt-copy-and-paste",
     "imageFileName": "pahadi-look-prompt-chatgpt-copy-and-paste.webp"
