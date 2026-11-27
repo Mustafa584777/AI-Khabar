@@ -2815,10 +2815,10 @@
     "isPremium": false,
     "aiTool": "Midjourney",
     "imageAlt": "Car Selfie Gemini Prompt",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793789312023.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@9055a4f58adff7af4621bef9355ac447d0758a6e/prompts/car-selfie-gemini-prompt.jpg",
     "author": {
-      "avatar": "/logo.png",
       "name": "tool.reelz",
+      "avatar": "/logo.png",
       "role": "Author"
     },
     "parameters": {
@@ -2826,13 +2826,13 @@
     },
     "variables": [],
     "seo": {
-      "metaDescription": "Master the art of natural, cultural portraiture with our detailed guide and prompt. Perfect for creating realistic South Indian style lifestyle photography.",
       "metaTitle": "Capture Authentic Kerala Elegance with this AI Portrait Prompt",
+      "metaDescription": "Master the art of natural, cultural portraiture with our detailed guide and prompt. Perfect for creating realistic South Indian style lifestyle photography.",
       "focusKeyword": "Kerala saree portrait prompt"
     },
     "createdAt": "2026-11-04T10:51:29.164Z",
     "viewsCount": 0,
-    "updatedAt": "2026-11-04T13:06:11.582Z",
+    "updatedAt": "2026-11-27T05:14:43.657Z",
     "affiliateProducts": [],
     "articleContent": "### The Art of Authentic Portraiture\nThis prompt is engineered to capture the 'unposed' beauty of everyday moments. The key to this aesthetic is the contrast between the intricate gold zari of the traditional Kasavu saree and the modern, muted environment of the car interior.\n\n### Lighting & Camera Breakdown\n- **Lighting:** We utilize 'window light'—a favorite among portrait photographers for its ability to wrap around the subject's face, highlighting facial structure without creating harsh shadows.\n- **Optics:** The 35mm lens choice is deliberate; it provides a 'storytelling' focal length that includes enough of the environment (the car seat, the window) to provide context without distracting from the subject.\n\n### Pro Tips for Best Results\n- **Stylize:** Keep the stylize value between 200-300 to maintain realism while allowing the AI enough freedom to generate high-quality skin textures.\n- **Subject Consistency:** If you are using this to generate a specific person, combine this prompt with a reference image or a character LoRA for better facial feature retention.\n- **Composition:** The 'hand-under-chin' pose is a classic compositional tool that frames the face and draws the viewer's eye directly to the subject's expression.",
     "copiesCount": 0
