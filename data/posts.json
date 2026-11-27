@@ -3145,9 +3145,9 @@
     "copiesCount": 0,
     "imageWidth": 1024,
     "seo": {
-      "focusKeyword": "Indian wedding portrait prompt",
+      "metaTitle": "Professional Indian Wedding Portrait Prompt for Midjourney",
       "metaDescription": "Create stunning, high-end Indian wedding couple portraits with this professional Midjourney prompt. Optimized for realistic lighting and cultural detail.",
-      "metaTitle": "Professional Indian Wedding Portrait Prompt for Midjourney"
+      "focusKeyword": "Indian wedding portrait prompt"
     },
     "bookmarksCount": 0,
     "preferredAi": "Gemini",
@@ -3161,9 +3161,9 @@
     "title": "Maharashtrian Couple Look Prompt",
     "imageHeight": 1536,
     "publishedAt": "2026-11-02T20:23:56.563Z",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793650232303.webp",
-    "imageAlt": "maharashtrian wedding look couple prompt free",
-    "updatedAt": "2026-11-02T20:23:58.023Z",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@fcb4bcf570a30bb29df446c534584d8107e94650/prompts/maharashtrian-couple-look-prompt.jpg",
+    "imageAlt": "Maharashtrian Couple Look Prompt",
+    "updatedAt": "2026-11-27T05:20:09.136Z",
     "createdAt": "2026-11-02T20:23:56.563Z",
     "tags": [
       "Wedding Photography",
@@ -3177,8 +3177,8 @@
     "variables": [],
     "articleContent": "### Master the Art of Cultural Wedding Photography\n\nThis prompt is engineered to replicate the high-end, editorial aesthetic found in luxury Indian wedding photography. It focuses on **texture, lighting, and genuine emotion**.\n\n#### Key Elements:\n- **The Gear:** We specify an 85mm lens, which is the gold standard for portraiture to ensure flattering facial features and beautiful background separation.\n- **The Lighting:** The 'soft, flattering studio light' setup ensures that the intricate gold embroidery on the sherwani and the vibrant colors of the saree remain clear without harsh shadows.\n- **The Composition:** By using a medium close-up shot, we capture both the subject's expressions and the cultural details of their jewelry and fabric.\n\n#### Pro Tips:\n- **Customization:** If you want a different color palette, swap 'maroon and emerald green' for 'royal blue and gold' or 'fuchsia and orange' to match specific regional wedding styles.\n- **Lighting Variation:** For a more cinematic, moody look, try changing the background color to 'deep charcoal' and the lighting to 'Rembrandt style'.\n- **Post-Processing:** Use a subtle warm film grain filter to add a touch of vintage romance to the digital output.",
     "author": {
-      "avatar": "/logo.png",
       "name": "tool.reelz",
+      "avatar": "/logo.png",
       "role": "Author"
     },
     "aiTool": "Midjourney",
