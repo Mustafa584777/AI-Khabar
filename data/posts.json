@@ -2396,7 +2396,7 @@
     "imageHeight": 1536
   },
   {
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@d08e26ca0df1f90675d4abbae6754095668e0e01/prompts/ethereal-mountain-sunset-silhouette.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793960253250.jpg",
     "bookmarksCount": 0,
     "viewsCount": 0,
     "affiliateProducts": [],
@@ -2412,43 +2412,38 @@
     "status": "published",
     "promptText": "IDENTITY AND EXACT CLOTHING PRESERVATION\nUse the uploaded user's photograph as the ONLY identity and clothing reference.\nPreserve the user's exact recognizable facial identity, hairstyle, natural body proportions, skin tone, and authentic physical appearance.\nKeep the user's EXACT ORIGINAL CLOTHES unchanged. Do not copy the white shirt and black trousers from the reference photograph.\nPreserve every original clothing detail: garment type, original colors, fabric, patterns, collar, sleeves, stitching, folds, fit, and accessories. No outfit replacement, recoloring, or redesign.\nPOSE AND CAMERA COMPOSITION\nRecreate the reference image's natural back-facing sitting portrait.\nThe user is sitting on a grassy mountain viewpoint with their back toward the camera, looking toward the distant valley and setting sun.\nPosition the user in the lower central portion of the vertical frame.\nKeep the legs naturally bent, one knee raised closer to the chest, with the arms resting comfortably around the raised knee.\nThe user's head should face the horizon, not the camera.\nCreate a natural, peaceful, contemplative posture.\nMOUNTAIN ENVIRONMENT\nPlace the user on a high mountain ridge overlooking a spectacular, expansive green valley.\nCreate multiple layers of lush forest-covered mountains extending toward the far horizon.\nThe nearest slopes should have dense natural green vegetation, while the distant mountains gradually fade into atmospheric blue-gray haze.\nInclude scattered tiny settlements and subtle winding roads visible within the valley, adding realistic geographical scale.\nThe foreground should contain tall natural green grass, small wild plants, and a sloping hillside around the seated user.\nSKY — EXACT DRAMATIC SUNSET\nCreate a spectacular open sky occupying approximately the upper 60% of the image.\nThe upper sky should be deep muted blue transitioning gradually into dusty blue-gray, soft lavender, warm peach, pale pink, and glowing orange near the horizon.\nOn the upper-left side, create a huge dramatic cloud formation with dense, towering cumulonimbus structures.\nIts darker portions should be deep bluish-gray, while the cloud edges facing the setting sun should glow with brilliant warm golden-orange illumination.\nAcross the central sky, create multiple scattered irregular cloud formations with detailed natural textures.\nSome clouds should have dark gray undersides, while their upper edges catch the orange-pink sunset light.\nOn the right side, create another massive cloud formation with dramatic volumetric depth and warm illuminated edges.\nThe sky must look physically realistic, with naturally varying cloud density, atmospheric perspective, and realistic sunlight scattering.\nSUN POSITION AND LIGHT\nPlace a bright, clearly visible setting sun toward the left side of the frame, slightly above the distant mountain horizon.\nCreate a brilliant warm golden-orange solar disk with subtle natural rays extending through gaps in the clouds.\nAdd gentle sunlight illuminating the distant mountain ridges and creating a soft atmospheric golden glow across the valley.\nThe seated user should remain naturally darker due to backlighting, with subtle realistic edge illumination.\nSHOOTING STAR\nPlace a single bright meteor in the upper-right quadrant of the sky.\nCreate a small intensely glowing white-golden meteor head followed by a long, thin diagonal luminous tail extending toward the upper-right.\nThe meteor should travel diagonally downward toward the left.\nAdd a faint warm-colored dissipating trail and realistic atmospheric glow.\nKeep the meteor relatively small compared with the sky, matching the scale and placement of the reference.\nCOLOR GRADING\nPreserve a natural sunset photographic palette: deep blue upper sky, orange and peach cloud highlights, warm golden sunlight, dark forest-green mountains, muted distant blue hills, and natural earthy foreground colors.\nUse realistic dynamic range, balanced exposure, authentic shadows, subtle atmospheric haze, and natural contrast.\nAvoid excessive orange saturation, artificial HDR, neon colors, and fantasy lighting.\nCAMERA AND PHOTOGRAPHIC REALISM\n 3:4 composition.\nRealistic smartphone or DSLR landscape photography, approximately 24–28mm wide-angle lens perspective.\nNatural depth of field with the user and foreground grass realistically detailed, distant mountains softened by atmospheric haze, and highly detailed clouds.\nAuthentic natural outdoor exposure, realistic sunset illumination, physically accurate cloud shadows, and believable meteor integration.\nThe final result must look like an actual photograph taken from a beautiful mountain viewpoint during sunset.\nABSOLUTE NEGATIVE PROMPT\nChanged identity, changed clothes, white shirt replacement, different outfit, altered clothing colors, front-facing portrait, standing pose, changed sitting posture, artificial landscape, fake mountains, painted clouds, anime, cartoon, illustration, CGI, fantasy sky, multiple meteors, oversized meteor, artificial sun rays, excessive orange grading, oversaturated sky, text, watermark, logo.",
     "publishedAt": "2026-11-06T10:19:26.433Z",
-    "updatedAt": "2026-11-27T05:01:02.777Z",
+    "updatedAt": "2026-11-06T10:19:27.803Z",
     "articleContent": "This prompt is designed to capture the quintessential 'travel influencer' aesthetic. By focusing on the juxtaposition of a sharp silhouette against a high-contrast sunset, the AI prioritizes depth and emotional resonance. The inclusion of the 'meteor streak' adds an element of wonder and surrealism. Lighting: Set to 'Golden Hour' to ensure the warm, amber tones bleed into the shadows of the mountains. Camera Optics: Using a 35mm lens equivalent provides a natural field of view that balances the subject with the vastness of the environment. Pro Tip: If the AI generates too much detail on the subject, increase the 'silhouette' emphasis in your parameters or lower the subject's brightness in post-processing.",
     "additionalImages": [
-      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@25f4d0f0675351901e77a01bbcbbec6e64f1974b/prompts/ethereal-mountain-sunset-silhouette-slide-1.jpg"
+      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/slide-1793960256480-iif5.jpg"
     ],
     "aiTool": "Midjourney",
     "imageHeight": 1536,
     "createdAt": "2026-11-06T10:19:26.433Z",
-    "category": "Photorealistic & Portraits",
+    "category": "Lifestyle & Travel Photography",
     "author": {
       "name": "tool.reelz",
-      "avatar": "/logo.png",
-      "role": "Author"
+      "role": "Author",
+      "avatar": "/logo.png"
     },
     "title": "Ethereal Mountain Sunset Silhouette",
     "imageWidth": 1024,
     "isPremium": true,
     "id": "prompt-1793960366431",
     "seo": {
+      "focusKeyword": "sunset mountain silhouette photography",
       "metaTitle": "Ethereal Mountain Sunset Silhouette Photography Prompt",
-      "metaDescription": "Capture the perfect golden hour silhouette with this professional travel photography prompt designed for AI art generators.",
-      "focusKeyword": "sunset mountain silhouette photography"
+      "metaDescription": "Capture the perfect golden hour silhouette with this professional travel photography prompt designed for AI art generators."
     },
     "variables": [],
     "tags": [
-      "Photorealistic",
-      "Sunset Photography",
-      "Mountain Portrait",
-      "Backlit Silhouette",
-      "Cinematic Landscape",
-      "Nature Photography",
-      "Portrait Editing",
       "Golden Hour",
       "Silhouette",
+      "Cinematic Landscape",
       "Mountain View",
       "Atmospheric",
-      "Wanderlust"
+      "Wanderlust",
+      "Hyper-realistic"
     ],
     "likesCount": 0
   },
