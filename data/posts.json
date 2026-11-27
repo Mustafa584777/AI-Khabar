@@ -3036,56 +3036,6 @@
     "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793677952449.jpg"
   },
   {
-    "imageFileName": "maharashtrian-wedding-look-couple-prompt-free.webp",
-    "copiesCount": 0,
-    "seo": {
-      "metaTitle": "Ethereal Indian Wedding Portrait AI Prompt",
-      "focusKeyword": "Indian wedding portrait prompt",
-      "metaDescription": "Create stunning, high-quality portraits of Indian couples in traditional wedding attire with this optimized AI image generation prompt."
-    },
-    "bookmarksCount": 0,
-    "promptText": "A breathtaking, hyper-realistic medium close-up shot of a young Indian couple in traditional wedding attire, captured at the historic Markandeshwar Temple during golden hour. The groom wears a cream-colored sherwani with a vibrant magenta turban, while the bride is adorned in a deep magenta silk saree with intricate gold embroidery, heavy gold temple jewelry, a traditional nose ring, and green glass bangles. The groom is gently embracing the bride from behind, both sharing a look of soft affection. The background features the ancient, weathered stone architecture of the temple under a hazy, soft-lit sky. The lighting is warm and cinematic, emphasizing the texture of the silk fabrics and the soft glow on their faces. Shot on Sony A7R IV, 85mm lens, f/1.8, high-end wedding photography style, 8k resolution, cinematic depth of field, romantic atmosphere.",
-    "title": "Maharashtrian wedding look Couple Prompt Free",
-    "affiliateProducts": [],
-    "imageAlt": "Marathi couple prompts for Gemini AI",
-    "likesCount": 0,
-    "status": "published",
-    "isNoIndex": false,
-    "imageWidth": 1024,
-    "slug": "maharashtrian-wedding-look-couple-prompt-free",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793651051684.webp",
-    "preferredAi": "Gemini",
-    "aiTool": "Midjourney",
-    "isPremium": false,
-    "imageHeight": 1536,
-    "author": {
-      "avatar": "/logo.png",
-      "role": "Author",
-      "name": "tool.reelz"
-    },
-    "articleContent": "### Creating Cinematic Indian Wedding Portraits with AI\n\nThis prompt is engineered to capture the intricate details, rich colors, and romantic mood characteristic of high-end traditional Indian wedding photography. By specifying the camera settings (85mm lens, f/1.8), we ensure a shallow depth of field that keeps the focus on the couple while beautifully blurring the historical temple background.\n\n#### Key Elements of the Prompt:\n* **Lighting:** We've specified 'golden hour' to achieve the warm, flattering glow that makes the silk fabrics shimmer and creates a soft, romantic aura around the subjects.\n* **Composition:** The 'medium close-up' framing ensures the focus remains on the subjects' emotions and the intricate details of their jewelry and outfits.\n* **Subject Detail:** Mentioning specific cultural items like the 'magenta turban,' 'green glass bangles,' and 'temple jewelry' guides the AI to generate culturally accurate and visually rich results.\n\n#### Pro Tips for Customization:\n* **Change the Setting:** Replace 'Markandeshwar Temple' with 'a lush tropical garden' or 'a opulent palace balcony' to shift the context while keeping the romantic aesthetic.\n* **Adjust the Color Palette:** Swap 'magenta' for 'royal blue and gold' or 'emerald green and silver' to change the entire color scheme of the generated image.\n* **Lighting Variations:** Change 'golden hour' to 'soft morning mist' for a more moody, ethereal, and cooler-toned portrait.",
-    "publishedAt": "2026-11-02T20:27:45.590Z",
-    "viewsCount": 0,
-    "variables": [],
-    "createdAt": "2026-11-02T20:27:45.589Z",
-    "updatedAt": "2026-11-02T20:27:46.547Z",
-    "parameters": {
-      "isPremium": false
-    },
-    "tags": [
-      "Wedding Photography",
-      "Traditional Indian Attire",
-      "Cinematic Portrait",
-      "Temple Background",
-      "Golden Hour",
-      "Cultural Elegance",
-      "Hyper-realistic"
-    ],
-    "category": "Photorealistic & Portraits",
-    "additionalImages": [],
-    "id": "prompt-1793651265588"
-  },
-  {
     "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@0d2d81cdf3647b05e8ddc9fa44324df681cca005/prompts/maharashtrian-couple-look-prompt-online.webp",
     "author": {
       "name": "tool.reelz",
@@ -3244,10 +3194,10 @@
     "title": "Punjabi suit prompt for Gemini girl",
     "author": {
       "name": "tool.reelz",
-      "avatar": "/logo.png",
-      "role": "Author"
+      "role": "Author",
+      "avatar": "/logo.png"
     },
-    "updatedAt": "2026-11-27T05:21:22.477Z",
+    "updatedAt": "2026-11-02T09:19:31.943Z",
     "imageFileName": "punjabi-suit-prompt-for-gemini-girl.webp",
     "aiTool": "Midjourney",
     "slug": "punjabi-suit-prompt-for-gemini-girl",
@@ -3261,9 +3211,9 @@
     "bookmarksCount": 0,
     "likesCount": 0,
     "seo": {
-      "metaTitle": "Mastering Traditional Indian Portrait Photography Prompts",
       "metaDescription": "Learn how to generate stunning, photorealistic images of traditional Indian ethnic fashion with this expert Midjourney and AI photography prompt guide.",
-      "focusKeyword": "Indian portrait prompt"
+      "focusKeyword": "Indian portrait prompt",
+      "metaTitle": "Mastering Traditional Indian Portrait Photography Prompts"
     },
     "preferredAi": "ChatGPT",
     "isNoIndex": false,
@@ -3279,9 +3229,9 @@
     ],
     "imageWidth": 1024,
     "status": "published",
-    "imageAlt": "Punjabi suit prompt for Gemini girl",
+    "imageAlt": "Punjabi suit prompt for Gemini girl copy and paste",
     "articleContent": "### Bringing Cultural Elegance to Life\n\nThis prompt is engineered to capture the nuance of traditional Indian ethnic wear, focusing on texture, color contrast, and environmental authenticity. The key to this look is the balance between the vibrant, warm tones of the mustard yellow fabric and the raw, earthy textures of the brick background.\n\n### Lighting & Camera Breakdown\n* **Lighting:** Natural afternoon sunlight creates high-contrast shadows that define the subject's form while highlighting the intricate embroidery on the kameez.\n* **Optics:** The 85mm lens at f/1.8 is critical. It compresses the background to create a smooth, buttery bokeh effect, ensuring the subject remains the absolute focal point.\n* **Texture:** By specifying 'raw photography' and 'detailed skin texture,' you tell the model to avoid the 'plastic' AI look and lean into authentic, lifelike details.\n\n### Pro Tips for Customization\n* **Change the Color:** Swap 'mustard yellow' for 'emerald green' or 'royal blue' to shift the entire color palette of the image.\n* **Change the Setting:** Replace 'rural village alleyway' with 'festive temple courtyard' or 'opulent wedding reception' to drastically change the narrative.\n* **Vary the Pose:** Add descriptors like 'walking towards the camera' or 'candidly laughing' to bring more personality to your generation.",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@e6d52f252db3c85f84e3ff1bfe30636668338560/prompts/punjabi-suit-prompt-for-gemini-girl.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793610230553.jpg",
     "copiesCount": 0,
     "affiliateProducts": [],
     "promptText": "A candid photograph of a user posing in an old village alley. She is wearing a mustard yellow silk salwar kameez with fine embroidery along the neckline, paired with a vibrant multicolored geometric Phulkari dupatta draped over her right arm, and matching embroidered juttis. Her dark hair is styled in a neat long braid extending over her shoulder with colorful paranda tassels. She wears a delicate maang tikka and golden jhumka earrings. She leans softly against an aged rustic brick and plaster wall on a cobblestone path. Captured in bright natural sunlight, realistic skin texture, natural shadows, aspect ratio 3:4. No crowd, no blur, no background blur "
@@ -3341,9 +3291,9 @@
   {
     "imageHeight": 1536,
     "seo": {
+      "metaTitle": "Golden Hour Desert Lifestyle Portrait Prompt",
       "metaDescription": "Create stunning golden hour desert lifestyle portraits with this professional-grade AI art prompt. Optimized for Midjourney and FLUX.",
-      "focusKeyword": "desert lifestyle portrait",
-      "metaTitle": "Golden Hour Desert Lifestyle Portrait Prompt"
+      "focusKeyword": "desert lifestyle portrait"
     },
     "affiliateProducts": [],
     "publishedAt": "2026-11-02T07:36:07.909Z",
@@ -3352,7 +3302,7 @@
       "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/slide-1793604944882-jnl0.jpg",
       "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/slide-1793604950861-nl5x.jpg"
     ],
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793604938589.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@37d3fe4f29d43a8503363c907d8e70d7659f820d/prompts/golden-hour-desert-lifestyle-portrait.jpg",
     "title": "Golden Hour Desert Lifestyle Portrait",
     "parameters": {
       "isPremium": true
@@ -3368,13 +3318,13 @@
     "variables": [],
     "promptText": "A phone photograph of user standing beside black Thar. He is wearing a minimalist black polo shirt, relaxed-fit light grey wash denim jeans, and classic black and white high-top sneakers, with a black wristwatch visible on his wrist and trendy rectangular sunglasses framing his face. The subject is looking away from the camera. The lighting is natural and atmospheric, with soft, directional rim lighting highlighting his profile against the vast, hazy desert backdrop, aspect ratio 3:4. No background blur.",
     "author": {
-      "role": "Author",
+      "name": "tool.reelz",
       "avatar": "/logo.png",
-      "name": "tool.reelz"
+      "role": "Author"
     },
     "id": "prompt-1793604967907",
     "copiesCount": 0,
-    "updatedAt": "2026-11-04T04:16:06.946Z",
+    "updatedAt": "2026-11-27T05:21:47.223Z",
     "bookmarksCount": 0,
     "category": "Lifestyle & Travel Photography",
     "likesCount": 0,
