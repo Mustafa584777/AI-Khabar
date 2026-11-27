@@ -7482,7 +7482,7 @@
     "articleContent": "### Creating Editorial Portraits in Nature\n\nThis prompt is engineered to capture the clean, high-end aesthetic found in modern fashion lookbooks and editorial lifestyle photography. The key to this look is the balance between the subject and the soft, organic background.\n\n#### Lighting and Atmosphere\nWe utilize 'diffused overcast lighting' to eliminate harsh shadows and create a premium, soft-focus feel on the skin. The pampas grass acts as a natural, textured backdrop that provides a beautiful color harmony with the white linen shirt.\n\n#### Camera Settings\nThe 85mm lens is the gold standard for portraiture because it provides a flattering compression of facial features and a professional background blur (bokeh) that keeps the focus strictly on the subject.\n\n#### Pro Tips for Customization\n- **Subject:** Replace [subject] with 'a young man with dark wavy hair' or 'an elegant woman in a flowy dress'.\n- **Mood:** You can change the atmosphere by adding keywords like 'dusk lighting' for more dramatic mood or 'warm sunrise' for extra golden hues.\n- **Clothing:** Linen fabric is essential for this 'organic' aesthetic; ensure your subject description mentions breathable or natural textures.",
     "affiliateProducts": [],
     "imageHeight": 1536,
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1792724053828.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@069013121416e9dc8b1eee3d84f823b3d5ce8366/prompts/ethereal-pampa-grass-editorial-portrait.jpg",
     "aiTool": "Midjourney",
     "likesCount": 0,
     "publishedAt": "2026-10-23T02:56:37.477Z",
@@ -7497,9 +7497,9 @@
       "Raw-photography"
     ],
     "author": {
-      "role": "Author",
+      "name": "tool.reelz",
       "avatar": "/logo.png",
-      "name": "tool.reelz"
+      "role": "Author"
     },
     "isNoIndex": true,
     "imageAlt": "Ethereal Pampa Grass Editorial Portrait",
@@ -7511,7 +7511,7 @@
     "viewsCount": 0,
     "additionalImages": [],
     "bookmarksCount": 0,
-    "updatedAt": "2026-11-05T12:08:00.091Z",
+    "updatedAt": "2026-11-27T07:59:04.475Z",
     "parameters": {
       "isPremium": false
     },
@@ -7519,8 +7519,8 @@
     "createdAt": "2026-10-23T02:56:37.477Z",
     "seo": {
       "metaTitle": "Ethereal Pampa Grass Editorial Portrait Prompt",
-      "focusKeyword": "editorial portrait prompt",
-      "metaDescription": "Learn how to generate professional, high-end editorial portraits in pampa grass fields with this detailed AI art prompt."
+      "metaDescription": "Learn how to generate professional, high-end editorial portraits in pampa grass fields with this detailed AI art prompt.",
+      "focusKeyword": "editorial portrait prompt"
     },
     "slug": "ethereal-pampa-grass-editorial-portrait",
     "copiesCount": 0
