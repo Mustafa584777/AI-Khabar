@@ -2070,7 +2070,7 @@
     },
     "viewsCount": 0,
     "variables": [],
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@2e11d339783a101cb6cb3649cdd985cc57fcfdc9/prompts/blue-saree-girl-gemini-prompt.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1794099935899.jpg",
     "imageAlt": "Blue Saree Girl Gemini Prompt",
     "imageWidth": 1024,
     "bookmarksCount": 0,
@@ -2082,11 +2082,11 @@
     "affiliateProducts": [],
     "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
     "author": {
-      "name": "tool.reelz",
+      "role": "Author",
       "avatar": "/logo.png",
-      "role": "Author"
+      "name": "tool.reelz"
     },
-    "updatedAt": "2026-11-27T04:59:47.079Z",
+    "updatedAt": "2026-11-08T01:06:47.370Z",
     "tags": [
       "AI",
       "Photorealistic",
@@ -2099,9 +2099,9 @@
     "copiesCount": 0,
     "additionalImages": [],
     "seo": {
-      "metaTitle": "B | Trending Copy Paste Photo Prompts",
+      "focusKeyword": "Blue Saree Girl Gemini Prompt",
       "metaDescription": "Copy and paste this photo prompt for Blue Saree Girl Gemini Prompt.",
-      "focusKeyword": "Blue Saree Girl Gemini Prompt"
+      "metaTitle": "B | Trending Copy Paste Photo Prompts"
     }
   },
   {
@@ -2204,7 +2204,7 @@
     "copiesCount": 0,
     "imageAlt": "Sunset Petal Reach Portrait",
     "variables": [],
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793970419894.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@e14ef0275a2ea66b7a45ad48897e2009cd089188/prompts/sunset-petal-reach-portrait.jpg",
     "imageHeight": 1536,
     "tags": [
       "Goldenhour",
@@ -2224,7 +2224,7 @@
     "status": "published",
     "viewsCount": 0,
     "imageWidth": 1024,
-    "updatedAt": "2026-11-06T13:08:52.990Z",
+    "updatedAt": "2026-11-27T05:00:10.911Z",
     "isPremium": true,
     "additionalImages": [
       "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/slide-1793970422791-fhep.jpg"
@@ -2240,8 +2240,8 @@
     "aiTool": "Midjourney",
     "seo": {
       "metaTitle": "Golden Hour Portrait with Floating Petal Prompt | AI Photography Guide",
-      "focusKeyword": "Golden Hour Portrait",
-      "metaDescription": "Learn how to recreate this stunning golden hour portrait featuring a floating petal and sharp teal color contrast with our professional Midjourney prompt."
+      "metaDescription": "Learn how to recreate this stunning golden hour portrait featuring a floating petal and sharp teal color contrast with our professional Midjourney prompt.",
+      "focusKeyword": "Golden Hour Portrait"
     },
     "imageFileName": "sunset-petal-reach-portrait.webp",
     "title": "Sunset Petal Reach Portrait",
