@@ -2662,11 +2662,11 @@
     "title": "Trending Girl Prompt For ChatGPT",
     "author": {
       "name": "tool.reelz",
-      "role": "Author",
-      "avatar": "/logo.png"
+      "avatar": "/logo.png",
+      "role": "Author"
     },
     "imageWidth": 1024,
-    "updatedAt": "2026-11-04T10:54:13.692Z",
+    "updatedAt": "2026-11-27T07:50:18.654Z",
     "aiTool": "Midjourney",
     "additionalImages": [],
     "createdAt": "2026-11-04T10:54:12.765Z",
@@ -2682,14 +2682,14 @@
     "promptText": "try this in ChatGPT only 👇 \n\nCreate a premium, ultra-realistic vertical 3:4 floral aesthetic portrait poster using the uploaded user's photograph as the ONLY facial identity reference.\nIDENTITY PRESERVATION — ABSOLUTE PRIORITY:\nPreserve the user's exact recognizable facial identity, facial proportions, eyes, eyebrows, nose, lips, jawline, skin tone, hairstyle characteristics, and natural facial texture. Do not replace the face or create a different person. Maintain realistic skin pores and natural facial details.\nPOSTER DESIGN AND TYPOGRAPHY:\nCreate a beautiful, bright, feminine, editorial-style floral portrait poster with a soft pastel yellow and warm golden aesthetic.\nAt the TOP CENTER, place the name:\n\"MONIKA\"\nUse extremely large, bold, uppercase, condensed editorial typography in a rich burnt-orange / terracotta color. The letters should occupy almost the entire upper width of the poster, positioned behind the woman's head and upper body. Use a tall, elegant, heavy condensed sans-serif font similar to a premium fashion magazine cover.\nAt the TOP RIGHT, add this exact small black text in cursive:\n\"zeenaprompt.com\"\nOn the LEFT SIDE, add the name:\n\"Monika\"\nUse elegant handwritten cursive lettering in warm golden-brown, arranged vertically with a gentle decorative heart and curved ornamental flourish.\nSUBJECT — POSE AND COMPOSITION:\nCreate a beautiful young woman positioned centrally in a medium-to-three-quarter portrait composition.\nShe is looking directly toward the camera with a gentle, confident smile.\nOne hand is raised naturally beside the back of her head, lightly touching her hair. The other arm rests naturally alongside her body.\nHer posture should look relaxed, feminine, and authentic.\nEXACT CLOTHING:\nA red and dark-maroon plaid checkered oversized button-down shirt, worn open with sleeves casually rolled up to the elbows.\nUnderneath, a fitted plain white ribbed sleeveless crop top with a simple rounded neckline.\nHigh-waisted dark blue denim jeans with a visible brown leather belt and a metallic oval buckle.\nPreserve realistic fabric folds, stitching, plaid patterns, denim texture, and natural clothing fit.\nHAIRSTYLE AND ACCESSORIES:\nLong, voluminous, naturally wavy dark brown hair with a slightly messy, soft hairstyle.\nPlace a small, bright yellow sunflower with a dark brown center on the left side of her hair, near the temple.\nAdd a delicate small black bindi, subtle traditional silver jhumka earrings, and a thin metallic bracelet on the raised wrist.\nFLORAL DECORATION:\nCreate a beautiful arrangement of large, realistic peach-pink and soft coral roses along the entire bottom foreground.\nInclude clusters of tiny white baby's breath flowers, fresh green leaves, and delicate floral details.\nSome flowers should overlap the lower edge of the woman's denim outfit, creating a natural layered foreground composition.\nBUTTERFLIES:\nAdd several realistic yellow and black monarch-style butterflies throughout the poster.\n- One butterfly near the upper-right corner beside the title.\n- One small butterfly near the woman's left shoulder.\n- One butterfly near the lower center, above the roses.\n- One butterfly around the lower-left floral arrangement.\n- A large, partially cropped butterfly wing entering from the upper-left corner.\nButterflies should have realistic wing patterns and natural positions, with a few appearing closer to the camera.\nBACKGROUND:\nUse a soft pastel buttery-yellow background with subtle warm cream gradients.\nAdd delicate translucent abstract floral shapes, soft organic curves, faint decorative botanical textures, and subtle golden ornamental line art.\nKeep the background clean, bright, and elegant, allowing the large orange typography and central portrait to stand out.\nLIGHTING AND PHOTOGRAPHIC REALISM:\nBright natural daylight with soft warm sunlight illuminating the woman's face from the upper-left direction.\nCreate gentle highlights on her hair, natural shadows beneath her chin, realistic skin tones, and soft sunlight reflections on the flowers.\nMaintain balanced exposure, crisp facial details, natural fabric texture, and realistic flower petals.\nThe final image should resemble a professionally designed fashion magazine poster combined with an authentic high-quality outdoor portrait photograph.\nTYPOGRAPHY ACCURACY — CRITICAL:\nRender every supplied text exactly as written.\nDo not misspell MONIKA.\nDo not alter zeenapronpt.com.\nDo not rewrite the quote.\nDo not add any extra text, random letters, logos, or watermarks.\nFINAL DESIGN:\nA premium feminine yellow floral editorial poster, oversized burnt-orange MONIKA typography, realistic central portrait, sunflower hair accessory, red plaid shirt, white crop top, blue jeans, peach roses, monarch butterflies, elegant handwritten decoration, and warm natural sunlight.\nAspect ratio: 3:4 vertical poster. No extra unnecessary or duplicate text",
     "id": "prompt-1793789652764",
     "seo": {
+      "metaTitle": "T | Trending Copy Paste Photo Prompts",
       "metaDescription": "Copy and paste this photo prompt for Trending Girl Prompt For ChatGPT.",
-      "focusKeyword": "Trending Girl Prompt For ChatGPT",
-      "metaTitle": "T | Trending Copy Paste Photo Prompts"
+      "focusKeyword": "Trending Girl Prompt For ChatGPT"
     },
     "imageFileName": "trending-girl-prompt-for-chatgpt.webp",
     "imageHeight": 1536,
     "bookmarksCount": 0,
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793789540926.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@19aa3a8cff8521f9562674a7fc77e87be7ab4074/prompts/trending-girl-prompt-for-chatgpt.jpg",
     "parameters": {
       "isPremium": true
     },
