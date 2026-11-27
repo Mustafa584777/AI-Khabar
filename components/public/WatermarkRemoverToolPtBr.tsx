@@ -45,6 +45,7 @@ import { useApp } from '@/context/AppContext';
 import { startRouteNavigation } from '@/lib/navigation';
 import { WatermarkRemoverSEOPtBr } from '@/components/public/WatermarkRemoverSEOPtBr';
 import { clearWatermarkHandoff, peekWatermarkHandoff } from '@/lib/watermark-handoff';
+import { AdsterraBanner300x250 } from '@/components/public/AdsterraBanner300x250';
 
 interface BulkWatermarkItem {
   id: string;
@@ -1990,6 +1991,8 @@ export const WatermarkRemoverToolPtBr = () => {
           </div>
         </section>
       )}
+
+      <AdsterraBanner300x250 className="mt-8" />
 
       {/* Guia Completo de SEO, Tabela Comparativa e Perguntas Frequentes */}
       <WatermarkRemoverSEOPtBr />

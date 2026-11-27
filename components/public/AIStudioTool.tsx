@@ -30,6 +30,7 @@ import { PromptToolHowTo } from '@/components/public/PromptToolHowTo';
 import { PromptToolExploreSection } from '@/components/public/PromptToolExploreSection';
 import { ensureAspectRatio34, formatPromptForClipboard } from '@/lib/utils';
 import { startRouteNavigation } from '@/lib/navigation';
+import { AdsterraBanner300x250 } from '@/components/public/AdsterraBanner300x250';
 
 const SAMPLE_IMAGES_FALLBACK = [
   {
@@ -1081,6 +1082,8 @@ export const AIStudioTool = ({
             </div>
           </div>
 
+          <AdsterraBanner300x250 className="mt-6" />
+
           <PromptToolHowTo tool="reverse" />
 
           <PromptToolExploreSection
@@ -1393,6 +1396,8 @@ export const AIStudioTool = ({
               )}
             </div>
           </div>
+
+          <AdsterraBanner300x250 className="mt-6" />
 
           <PromptToolHowTo tool="generator" />
 

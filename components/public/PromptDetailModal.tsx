@@ -49,6 +49,7 @@ import {
   recordLoadedImageElement,
 } from '@/lib/viewport-cache';
 import { useRouter } from 'next/navigation';
+import { AdsterraBanner300x250 } from '@/components/public/AdsterraBanner300x250';
 
 interface RecommendedPinCardProps {
   pin: PromptPost;
@@ -2127,6 +2128,8 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                     <span>Try Free Gemini Watermark Remover Tool</span>
                   </Link>
                 </div>
+
+                <AdsterraBanner300x250 key={`ad-${selectedPost.id}`} allowInsideModal />
 
                 {/* Tags */}
                 {selectedPost.tags && selectedPost.tags.length > 0 && (
