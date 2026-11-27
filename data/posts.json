@@ -10140,15 +10140,13 @@
       "Contemporaryfashion"
     ],
     "author": {
-      "role": "Author",
       "name": "tool.reelz",
-      "avatar": "/logo.png"
+      "avatar": "/logo.png",
+      "role": "Author"
     },
-    "additionalImages": [
-      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/neon-glow-mirror-selfie-aesthetic-1791804268079-b45q.jpg"
-    ],
+    "additionalImages": [],
     "viewsCount": 1,
-    "updatedAt": "2026-11-05T12:06:51.100Z",
+    "updatedAt": "2026-11-27T07:58:18.131Z",
     "aiTool": "Midjourney",
     "articleContent": "### The Aesthetic Breakdown\nThis prompt captures the essence of a modern 'social media aesthetic' mirror selfie. The key to this look is the contrast between the dark, moody environment and the vibrant pink neon accents. The framing focuses on personal style, emphasizing the 'flat lay' of accessories (necklaces, bracelets, tattoo) while keeping the subject's identity partially obscured for a cool, mysterious effect.\n\n### Lighting & Composition\n- **Lighting:** The image relies on 'Neon Spill'—a form of colored accent lighting that provides a rim light effect on the subject's hair and skin. It creates depth in otherwise dark surroundings.\n- **Composition:** The subject uses the 'Phone Shield' technique, which is a staple in influencer photography to keep the focus on outfit details, jewelry, and overall vibe rather than a portrait-heavy shot.\n- **Pro Tip:** To customize this, swap the 'olive green strapless top' for any outfit color or the 'floral tattoo' for a different body art description to personalize your generation.\n\n### Recommended Settings\n- **Aspect Ratio:** Use --ar 9:16 for a perfect mobile-ready vertical crop.\n- **Stylize:** Keep stylize values moderate (250-500) to maintain the realism of the texture of the skin and fabric while keeping the cinematic quality high.",
     "createdAt": "2026-10-09T13:23:33.131Z",
@@ -10160,7 +10158,7 @@
     "imageHeight": 1536,
     "imageFileName": "neon-glow-mirror-selfie-aesthetic.webp",
     "isPremium": false,
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1791552171047.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@64c7d2dc0235d1a599c64b82db2d319a91a8e74a/prompts/neon-glow-mirror-selfie-aesthetic.jpg",
     "isTrending": false,
     "slug": "neon-glow-mirror-selfie-aesthetic",
     "isNoIndex": true,
@@ -10174,7 +10172,13 @@
     "title": "Neon Glow Mirror Selfie Aesthetic",
     "isFeatured": false,
     "copiesCount": 0,
-    "imageWidth": 1024
+    "imageWidth": 1024,
+    "affiliateProducts": [],
+    "seo": {
+      "metaTitle": "Neon Glow Mirror Selfie Aesthetic | Trending Copy Paste Photo Prompts",
+      "metaDescription": "Copy and paste this photo prompt for Neon Glow Mirror Selfie Aesthetic.",
+      "focusKeyword": "Neon Glow Mirror Selfie Aesthetic"
+    }
   },
   {
     "imageHeight": 1536,
