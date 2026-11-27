@@ -2802,7 +2802,7 @@
     "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
     "category": "Digital Art & Creative Portraiture",
     "viewsCount": 0,
-    "updatedAt": "2026-11-04T10:56:05.727Z",
+    "updatedAt": "2026-11-27T07:45:49.532Z",
     "createdAt": "2026-11-04T10:49:38.911Z",
     "preferredAi": "ChatGPT",
     "variables": [],
@@ -2818,14 +2818,14 @@
     "additionalImages": [],
     "copiesCount": 0,
     "isPremium": true,
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793789117792.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@6b6cb931fbc54df600590ebad5aa2041df654b9b/prompts/google-maps-glowing-ground-projection-effect-prompt.jpg",
     "isNoIndex": false,
     "bookmarksCount": 0,
     "title": "Google Maps Glowing Ground Projection Effect Prompt",
     "seo": {
-      "focusKeyword": "Google Maps Glowing Ground Projection Effect Prompt",
+      "metaTitle": "Google Maps 3D Ground Projection Effect | Trending Copy Paste Photo Prompts",
       "metaDescription": "Copy and paste this photo prompt for Google Maps Glowing Ground Projection Effect Prompt.",
-      "metaTitle": "Google Maps 3D Ground Projection Effect | Trending Copy Paste Photo Prompts"
+      "focusKeyword": "Google Maps Glowing Ground Projection Effect Prompt"
     },
     "affiliateProducts": [],
     "imageAlt": "Google Maps Glowing Ground Projection Effect Prompt",
@@ -2834,8 +2834,8 @@
     "slug": "google-maps-glowing-ground-projection-effect-prompt",
     "author": {
       "name": "tool.reelz",
-      "role": "Author",
-      "avatar": "/logo.png"
+      "avatar": "/logo.png",
+      "role": "Author"
     },
     "imageFileName": "google-maps-glowing-ground-projection-effect-prompt.webp",
     "imageHeight": 1536,
