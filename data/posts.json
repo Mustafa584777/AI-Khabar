@@ -4152,9 +4152,9 @@
   },
   {
     "seo": {
-      "metaTitle": "Ethereal South Asian Portraiture Photography Prompt",
       "metaDescription": "Create stunning, high-end editorial portraits of South Asian fashion with this professional prompt designed for Midjourney and DALL-E 3.",
-      "focusKeyword": "South Asian Portrait Prompt"
+      "focusKeyword": "South Asian Portrait Prompt",
+      "metaTitle": "Ethereal South Asian Portraiture Photography Prompt"
     },
     "imageAlt": "Ethereal South Asian Portraiture",
     "copiesCount": 0,
@@ -4170,7 +4170,7 @@
     "promptText": "A professional, high-end studio portrait of user with wavy hair that cascades over her shoulders. Her expression is soft, serene, and welcoming, with direct eye contact toward the lens. The lighting is bright, airy, and ethereal, utilizing soft-box diffusion to create gentle highlights on her skin and hair, emphasizing natural skin texture and a healthy, luminous glow. The background is an intricate, artistic composite featuring overlapping pastel geometric shapes, subtle vertical grid lines, and delicate, faded botanical leaf silhouettes. The aesthetic combines clean, modern minimalism with an artistic, layered graphic design style. The color palette is harmonized in soft, muted tones of powder blue, warm sand, pale lavender, and sage green, evoking a sense of optimism and tranquility. The photograph is shot with an 85mm lens at f/1.8, resulting in a shallow depth of field that keeps the focus sharp on the subject while creating a soft, dreamy quality in the backdrop. The image has a clean, polished finish with a hint of fine film grain for organic photographic texture, aspect ratio 3:4",
     "variables": [],
     "status": "published",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@a2f7e9e2de43300a88eeb27c01a0fff4cd9cb0ac/prompts/ethereal-south-asian-portraiture.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793427219532.jpg",
     "isPremium": false,
     "additionalImages": [],
     "imageWidth": 1024,
@@ -4178,7 +4178,7 @@
     "createdAt": "2026-10-31T06:14:59.652Z",
     "preferredAi": "Gemini",
     "likesCount": 0,
-    "updatedAt": "2026-11-27T05:28:45.676Z",
+    "updatedAt": "2026-11-05T12:09:53.906Z",
     "viewsCount": 0,
     "slug": "ethereal-south-asian-portraiture",
     "imageFileName": "ethereal-south-asian-portraiture.webp",
@@ -4195,9 +4195,9 @@
     },
     "bookmarksCount": 0,
     "author": {
-      "name": "tool.reelz",
       "avatar": "/logo.png",
-      "role": "Author"
+      "role": "Author",
+      "name": "tool.reelz"
     }
   },
   {
