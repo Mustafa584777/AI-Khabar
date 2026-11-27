@@ -3145,9 +3145,9 @@
     "copiesCount": 0,
     "imageWidth": 1024,
     "seo": {
-      "metaTitle": "Professional Indian Wedding Portrait Prompt for Midjourney",
+      "focusKeyword": "Indian wedding portrait prompt",
       "metaDescription": "Create stunning, high-end Indian wedding couple portraits with this professional Midjourney prompt. Optimized for realistic lighting and cultural detail.",
-      "focusKeyword": "Indian wedding portrait prompt"
+      "metaTitle": "Professional Indian Wedding Portrait Prompt for Midjourney"
     },
     "bookmarksCount": 0,
     "preferredAi": "Gemini",
@@ -3161,9 +3161,9 @@
     "title": "Maharashtrian Couple Look Prompt",
     "imageHeight": 1536,
     "publishedAt": "2026-11-02T20:23:56.563Z",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@fcb4bcf570a30bb29df446c534584d8107e94650/prompts/maharashtrian-couple-look-prompt.jpg",
-    "imageAlt": "Maharashtrian Couple Look Prompt",
-    "updatedAt": "2026-11-27T05:20:09.136Z",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793650232303.webp",
+    "imageAlt": "maharashtrian wedding look couple prompt free",
+    "updatedAt": "2026-11-02T20:23:58.023Z",
     "createdAt": "2026-11-02T20:23:56.563Z",
     "tags": [
       "Wedding Photography",
@@ -3177,8 +3177,8 @@
     "variables": [],
     "articleContent": "### Master the Art of Cultural Wedding Photography\n\nThis prompt is engineered to replicate the high-end, editorial aesthetic found in luxury Indian wedding photography. It focuses on **texture, lighting, and genuine emotion**.\n\n#### Key Elements:\n- **The Gear:** We specify an 85mm lens, which is the gold standard for portraiture to ensure flattering facial features and beautiful background separation.\n- **The Lighting:** The 'soft, flattering studio light' setup ensures that the intricate gold embroidery on the sherwani and the vibrant colors of the saree remain clear without harsh shadows.\n- **The Composition:** By using a medium close-up shot, we capture both the subject's expressions and the cultural details of their jewelry and fabric.\n\n#### Pro Tips:\n- **Customization:** If you want a different color palette, swap 'maroon and emerald green' for 'royal blue and gold' or 'fuchsia and orange' to match specific regional wedding styles.\n- **Lighting Variation:** For a more cinematic, moody look, try changing the background color to 'deep charcoal' and the lighting to 'Rembrandt style'.\n- **Post-Processing:** Use a subtle warm film grain filter to add a touch of vintage romance to the digital output.",
     "author": {
-      "name": "tool.reelz",
       "avatar": "/logo.png",
+      "name": "tool.reelz",
       "role": "Author"
     },
     "aiTool": "Midjourney",
@@ -3244,10 +3244,10 @@
     "title": "Punjabi suit prompt for Gemini girl",
     "author": {
       "name": "tool.reelz",
-      "role": "Author",
-      "avatar": "/logo.png"
+      "avatar": "/logo.png",
+      "role": "Author"
     },
-    "updatedAt": "2026-11-02T09:19:31.943Z",
+    "updatedAt": "2026-11-27T05:21:22.477Z",
     "imageFileName": "punjabi-suit-prompt-for-gemini-girl.webp",
     "aiTool": "Midjourney",
     "slug": "punjabi-suit-prompt-for-gemini-girl",
@@ -3261,9 +3261,9 @@
     "bookmarksCount": 0,
     "likesCount": 0,
     "seo": {
+      "metaTitle": "Mastering Traditional Indian Portrait Photography Prompts",
       "metaDescription": "Learn how to generate stunning, photorealistic images of traditional Indian ethnic fashion with this expert Midjourney and AI photography prompt guide.",
-      "focusKeyword": "Indian portrait prompt",
-      "metaTitle": "Mastering Traditional Indian Portrait Photography Prompts"
+      "focusKeyword": "Indian portrait prompt"
     },
     "preferredAi": "ChatGPT",
     "isNoIndex": false,
@@ -3279,9 +3279,9 @@
     ],
     "imageWidth": 1024,
     "status": "published",
-    "imageAlt": "Punjabi suit prompt for Gemini girl copy and paste",
+    "imageAlt": "Punjabi suit prompt for Gemini girl",
     "articleContent": "### Bringing Cultural Elegance to Life\n\nThis prompt is engineered to capture the nuance of traditional Indian ethnic wear, focusing on texture, color contrast, and environmental authenticity. The key to this look is the balance between the vibrant, warm tones of the mustard yellow fabric and the raw, earthy textures of the brick background.\n\n### Lighting & Camera Breakdown\n* **Lighting:** Natural afternoon sunlight creates high-contrast shadows that define the subject's form while highlighting the intricate embroidery on the kameez.\n* **Optics:** The 85mm lens at f/1.8 is critical. It compresses the background to create a smooth, buttery bokeh effect, ensuring the subject remains the absolute focal point.\n* **Texture:** By specifying 'raw photography' and 'detailed skin texture,' you tell the model to avoid the 'plastic' AI look and lean into authentic, lifelike details.\n\n### Pro Tips for Customization\n* **Change the Color:** Swap 'mustard yellow' for 'emerald green' or 'royal blue' to shift the entire color palette of the image.\n* **Change the Setting:** Replace 'rural village alleyway' with 'festive temple courtyard' or 'opulent wedding reception' to drastically change the narrative.\n* **Vary the Pose:** Add descriptors like 'walking towards the camera' or 'candidly laughing' to bring more personality to your generation.",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793610230553.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@e6d52f252db3c85f84e3ff1bfe30636668338560/prompts/punjabi-suit-prompt-for-gemini-girl.jpg",
     "copiesCount": 0,
     "affiliateProducts": [],
     "promptText": "A candid photograph of a user posing in an old village alley. She is wearing a mustard yellow silk salwar kameez with fine embroidery along the neckline, paired with a vibrant multicolored geometric Phulkari dupatta draped over her right arm, and matching embroidered juttis. Her dark hair is styled in a neat long braid extending over her shoulder with colorful paranda tassels. She wears a delicate maang tikka and golden jhumka earrings. She leans softly against an aged rustic brick and plaster wall on a cobblestone path. Captured in bright natural sunlight, realistic skin texture, natural shadows, aspect ratio 3:4. No crowd, no blur, no background blur "
@@ -3402,7 +3402,7 @@
     "publishedAt": "2026-11-07T12:00:38.297Z",
     "viewsCount": 0,
     "additionalImages": [],
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@4318a0550f34c10d7a86fdba37c822ed36e05f63/prompts/prompt-for-pahadi-look-for-girl.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@d8083062ea04e35266fb08b51227beb93db0aa4a/prompts/prompt-for-pahadi-look-for-girl.jpg",
     "title": "Prompt for Pahadi look for girl",
     "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
     "parameters": {
@@ -3424,7 +3424,7 @@
       "role": "Author"
     },
     "copiesCount": 0,
-    "updatedAt": "2026-11-27T05:22:05.858Z",
+    "updatedAt": "2026-11-27T05:23:50.507Z",
     "bookmarksCount": 0,
     "category": "Photorealistic & Portraits",
     "likesCount": 0,
