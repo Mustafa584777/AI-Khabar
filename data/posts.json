@@ -2848,9 +2848,9 @@
     "promptText": "A stunning, high-definition cinematic bridal portrait of user. She has glowing skin, perfectly groomed eyebrows, long lashes, and soft, warm makeup with a subtle glossy red lip. She is wearing an opulent, deep red velvet bridal veil heavily adorned with intricate antique gold embroidery, zardosi work, and shimmering sequin embellishments. A traditional maang tikka sits delicately on her forehead, and she wears a large, classic gold nose ring (nath) that catches the soft light. Her hair is styled in a sleek middle part, obscured slightly by the heavy, ornate veil. The lighting is natural and realistic, utilizing soft directional studio lights to create a subtle glow on her cheekbones and rim lighting that illuminates the fine textures of the embroidery and the contours of her face. The background is a soft, out-of-focus neutral tone, allowing the vibrant red and gold of her attire to dominate the color palette. Shot on a low quality phone, no bokeh, sharp focus or blur effect. The atmosphere is luxurious, romantic, and ethereal, with professional color grading enhancing the richness of the red and gold tones. Organic, subtle film grain for a realistic photographic texture, aspect ratio 3:4",
     "copiesCount": 0,
     "seo": {
+      "metaTitle": "muslim bride prompt for gemini | Trending Copy Paste Photo Prompts",
       "metaDescription": "Copy and paste this photo prompt for Muslim Bride Prompt For Gemini.",
-      "focusKeyword": "Muslim Bride Prompt For Gemini",
-      "metaTitle": "muslim bride prompt for gemini | Trending Copy Paste Photo Prompts"
+      "focusKeyword": "Muslim Bride Prompt For Gemini"
     },
     "isPremium": false,
     "category": "Photorealistic & Portraits",
@@ -2859,14 +2859,12 @@
     "createdAt": "2026-11-03T10:47:51.293Z",
     "author": {
       "name": "tool.reelz",
-      "role": "Author",
-      "avatar": "/logo.png"
+      "avatar": "/logo.png",
+      "role": "Author"
     },
     "imageWidth": 1024,
-    "additionalImages": [
-      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/muslim-bride-prompt-for-gemini-1793702882558-tuwi.jpg"
-    ],
-    "updatedAt": "2026-11-04T08:30:05.177Z",
+    "additionalImages": [],
+    "updatedAt": "2026-11-27T07:46:51.514Z",
     "id": "prompt-1793702871292",
     "slug": "muslim-bride-prompt-for-gemini",
     "preferredAi": "Gemini",
@@ -2880,10 +2878,17 @@
     "title": "Muslim Bride Prompt For Gemini",
     "imageHeight": 1536,
     "imageFileName": "muslim-bride-prompt-for-gemini.webp",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793702500050.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@a3c6ff6f7e0b55e7e920155f352f29b27ba6e9e8/prompts/muslim-bride-prompt-for-gemini.jpg",
     "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
     "isNoIndex": false,
     "tags": [
+      "Muslim Bride",
+      "Bridal Portrait",
+      "Traditional Wedding",
+      "Zardosi Embroidery",
+      "Cinematic Photography",
+      "South Asian Bride",
+      "Portrait Photography",
       "AI",
       "Photorealistic",
       "Masterpiece",
