@@ -1386,51 +1386,6 @@
     "imageFileName": "chatgpt-indian-wedding-photo-prompt.webp"
   },
   {
-    "aiTool": "Midjourney",
-    "category": "Digital Art & Creative Illustration",
-    "affiliateProducts": [],
-    "updatedAt": "2026-11-27T06:59:40.516Z",
-    "parameters": {
-      "isPremium": false
-    },
-    "author": {
-      "name": "tool.reelz",
-      "avatar": "/logo.png",
-      "role": "Author"
-    },
-    "createdAt": "2026-11-09T03:33:16.683Z",
-    "slug": "digital-illustration-saree-prompt-for-girl",
-    "viewsCount": 0,
-    "variables": [],
-    "copiesCount": 0,
-    "isPremium": false,
-    "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
-    "title": "Digital Illustration Saree Prompt For Girl",
-    "imageWidth": 1024,
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@e73fcf02a1b25346e38da291e03425122bc2d6cd/prompts/digital-illustration-saree-prompt-for-girl.jpg",
-    "additionalImages": [],
-    "isNoIndex": false,
-    "tags": [
-      "AI",
-      "Photorealistic",
-      "Masterpiece"
-    ],
-    "imageAlt": "Digital Illustration Saree Prompt For Girl",
-    "likesCount": 0,
-    "seo": {
-      "metaTitle": "Sare | Trending Copy Paste Photo Prompts",
-      "metaDescription": "Copy and paste this photo prompt for Digital Illustration Saree Prompt For Girl.",
-      "focusKeyword": "Digital Illustration Saree Prompt For Girl"
-    },
-    "publishedAt": "2026-11-27T06:59:37.246Z",
-    "id": "prompt-1794195196682",
-    "promptText": "A highly detailed, sophisticated portrait of a beautiful young woman. She has a gentle, inviting smile and deep expressive eyes. The portrait is centered against a clean, stark white background. High-contrast sepia and deep espresso brown tones define the shadows, while negative white space defines the highlights. The overall aesthetic is that of fine-art ink portrait merged with modern digital typography, sharp edges on the facial features, organic dissipation at the borders, masterpiece quality, photorealistic art, cinematic depth, aspect ratio 3:4. No text",
-    "imageHeight": 1536,
-    "imageFileName": "digital-illustration-saree-prompt-for-girl.webp",
-    "status": "published",
-    "bookmarksCount": 0
-  },
-  {
     "status": "published",
     "tags": [
       "AI",
@@ -1620,7 +1575,7 @@
   {
     "publishedAt": "2026-11-10T14:41:12.541Z",
     "imageFileName": "prompt-seen-girl-prompt.webp",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-seen-girl.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@91e983cd305559b327031425bb46281ec5ccc5ea/prompts/prompt-seen-girl-prompt.jpg",
     "imageHeight": 1536,
     "viewsCount": 0,
     "imageAlt": "prompt seen girl prompt",
@@ -1640,14 +1595,14 @@
     "aiTool": "Midjourney",
     "author": {
       "name": "tool.reelz",
-      "role": "Author",
-      "avatar": "/logo.png"
+      "avatar": "/logo.png",
+      "role": "Author"
     },
     "parameters": {
       "isPremium": false
     },
     "promptText": "Create a highly creative, ultra-realistic mixed-media photograph featuring a romantic couple on a quiet urban street, combining a hand-drawn cartoon character with a real-life photographic person.\n\nMain Concept: A playful romantic scene where a large hand-drawn illustrated cartoon boy appears in the foreground, taking a selfie with a real young woman standing beside him. The cartoon character and the real woman are positioned close together as if they are sharing an affectionate moment.\n\nCartoon Character: A cute hand-drawn young male character occupying the left foreground. He has short dark hair, a simple smiling face, expressive cartoon eyes, and thick black hand-drawn outlines. He wears an oversized cream-white short-sleeved shirt with subtle vertical stripes and dark trousers. His right arm is dramatically extended toward the bottom-left foreground, creating an exaggerated selfie-camera perspective. His illustrated body has a slightly rough pencil-and-marker texture with visible sketch lines, soft beige skin shading and imperfect hand-drawn outlines.\n\nReal Female Subject: A beautiful young woman standing closely beside the illustrated character on the right. She has long, naturally flowing dark brown hair, a gentle smile, and closed eyes. She is leaning her head affectionately toward the cartoon character's face, creating a sweet romantic pose.\n\nExact Outfit: A fitted white sleeveless top underneath a soft pastel-pink cardigan with white fluffy detailing around the sleeves. Loose-fitting high-waisted light-blue denim jeans with a drawstring waist and white sneakers.\n\nExact Pose: The woman stands naturally beside the cartoon character, her head tilted toward him, eyes closed and smiling softly. Her right arm extends outward and slightly backward with a relaxed open hand. Her left side is close to the illustrated character. The cartoon character faces the camera with one oversized arm extending dramatically toward the lower-left corner, imitating a close-up selfie perspective.\n\nBackground & Environment: A real urban residential street with a long paved grey concrete road extending into the distance. Tall apartment buildings line both sides of the street. Metal boundary railings, residential balconies, windows and street-side structures are visible. Large mature green trees form a leafy canopy overhead, creating beautiful natural shade. A few distant pedestrians and a motorcycle appear in the background, softly blending into the street scene.\n\nExact Lighting & Color Grading: Warm natural afternoon daylight filtered through overhead trees. Soft golden-beige highlights, gentle shadows, slightly faded vintage film appearance, muted earthy brown tones, natural green foliage and warm skin tones. Subtle film grain, nostalgic Instagram photography aesthetic and slightly hazy atmospheric lighting.\n\nSpecial Artistic Effects: Two light-cyan hand-drawn cloud-shaped stickers appear in the upper background, one toward the upper-left side and another near the upper-right corner. The cartoon character must have a clearly illustrated appearance, while the woman and street remain completely photorealistic. Maintain a seamless visual combination of real photography and hand-drawn illustration.\n\nCamera & Composition: Vertical 3:4 smartphone selfie photograph, wide-angle perspective, slightly elevated selfie angle. The cartoon character dominates the left foreground, while the real woman stands in the center-right. The extended illustrated arm creates dramatic foreground depth. Full-body view of the woman, natural perspective distortion, detailed urban environment, candid romantic composition.\n\nNegative Instructions: No text, no captions, no stickers containing words, no typography, no logos, no watermark, no additional cartoon characters, no extra limbs, no distorted faces, no artificial CGI appearance.",
-    "updatedAt": "2026-11-10T14:44:58.078Z",
+    "updatedAt": "2026-11-27T07:01:07.032Z",
     "seo": {
       "metaTitle": "prompt seen girl | Trending Copy Paste Photo Prompts",
       "metaDescription": "Copy and paste this photo prompt for prompt seen girl.",
