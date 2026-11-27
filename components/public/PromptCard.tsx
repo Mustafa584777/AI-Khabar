@@ -6,7 +6,7 @@ import { PromptPost } from '@/types/prompt';
 import { useApp } from '@/context/AppContext';
 import Image from 'next/image';
 import { Sparkles, Bookmark, Crown, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Layers, Copy } from 'lucide-react';
-import { getPromptSlug, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription } from '@/lib/utils';
+import { getPromptSlug, getOptimizedImageUrl, getImageFallbackCandidates, detectPostAspectRatio, getPromptMetaDescription } from '@/lib/utils';
 import { startRouteNavigation, pushPromptHistoryState } from '@/lib/navigation';
 import {
   warmPromptDetailModalChunk,
@@ -38,6 +38,7 @@ export const PromptCard = ({
 
   const router = useRouter();
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [fallbackAttempts, setFallbackAttempts] = useState<Record<string, number>>({});
   const [resolvedAspectRatio, setResolvedAspectRatio] = useState<string | null>(() =>
     getCachedImageAspectRatio(post.imageUrl)
   );
@@ -278,13 +279,17 @@ export const PromptCard = ({
               const img360 = getOptimizedImageUrl(imgUrl, 360);
               const img280 = getOptimizedImageUrl(imgUrl, 280);
               const img520 = getOptimizedImageUrl(imgUrl, 520);
-              const hasOptimized = img360 !== imgUrl;
+              const candidates = getImageFallbackCandidates(img360, promptSlug);
+              const attempt = fallbackAttempts[imgUrl] ?? -1;
+              const activeSrc = attempt >= 0 && attempt < candidates.length ? candidates[attempt] : img360;
+              const isUsingFallback = attempt >= 0;
+              const hasOptimized = !isUsingFallback && img360 !== imgUrl;
               const isLeadImage = imgUrl === allImages[0];
               return (
-                <div key={idx} className="w-full h-full shrink-0 relative overflow-hidden bg-neutral-900">
+                <div key={`${imgUrl}-${idx}`} className="w-full h-full shrink-0 relative overflow-hidden bg-neutral-900">
                   <img
                     ref={isLeadImage ? primaryImgRef : undefined}
-                    src={img360}
+                    src={activeSrc}
                     srcSet={hasOptimized ? `${img280} 280w, ${img360} 360w, ${img520} 520w` : undefined}
                     sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 240px"
                     alt={`${post.imageAlt || post.title} - photo ${idx + 1}`}
@@ -295,6 +300,12 @@ export const PromptCard = ({
                     fetchPriority={priority && isLeadImage ? 'high' : 'auto'}
                     decoding="async"
                     onLoad={isLeadImage ? (e) => syncNaturalRatio(e.currentTarget) : undefined}
+                    onError={() => {
+                      const nextAttempt = attempt + 1;
+                      if (nextAttempt < candidates.length) {
+                        setFallbackAttempts((prev) => ({ ...prev, [imgUrl]: nextAttempt }));
+                      }
+                    }}
                   />
                 </div>
               );
@@ -305,11 +316,23 @@ export const PromptCard = ({
             const img360 = getOptimizedImageUrl(post.imageUrl, 360);
             const img280 = getOptimizedImageUrl(post.imageUrl, 280);
             const img520 = getOptimizedImageUrl(post.imageUrl, 520);
-            const hasOptimized = img360 !== post.imageUrl;
+            const candidates = getImageFallbackCandidates(img360, promptSlug);
+            const attempt = fallbackAttempts[post.imageUrl] ?? -1;
+            const activeSrc = attempt >= 0 && attempt < candidates.length ? candidates[attempt] : img360;
+            const hasOptimized = attempt < 0 && img360 !== post.imageUrl;
+            const allFailed = attempt >= candidates.length && !imageLoaded;
+            if (allFailed) {
+              return (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-tr from-neutral-800 to-neutral-900 text-neutral-400">
+                  <Sparkles className="w-8 h-8 opacity-40" />
+                </div>
+              );
+            }
             return (
               <img
+                key={activeSrc}
                 ref={primaryImgRef}
-                src={img360}
+                src={activeSrc}
                 srcSet={hasOptimized ? `${img280} 280w, ${img360} 360w, ${img520} 520w` : undefined}
                 sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 240px"
                 alt={post.imageAlt || post.title}
@@ -320,6 +343,10 @@ export const PromptCard = ({
                 fetchPriority={priority ? 'high' : 'auto'}
                 decoding="async"
                 onLoad={(e) => syncNaturalRatio(e.currentTarget)}
+                onError={() => {
+                  const nextAttempt = attempt + 1;
+                  setFallbackAttempts((prev) => ({ ...prev, [post.imageUrl]: nextAttempt }));
+                }}
               />
             );
           })()

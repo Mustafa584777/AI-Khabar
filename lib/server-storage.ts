@@ -12,7 +12,12 @@ import {
 } from 'firebase/firestore';
 import { cleanTagsArray, canonicalizeTag } from './tag-utils';
 import { uploadImageToCloudinary } from './cloudinary-server';
-import { uploadImageToGitHubAssets, resolveGitHubAssetsConfig, extractCloudinaryAssetPath } from './github-assets-server';
+import {
+  uploadImageToGitHubAssets,
+  resolveGitHubAssetsConfig,
+  extractCloudinaryAssetPath,
+  fetchPostsJsonFromGitHub,
+} from './github-assets-server';
 import { PLAN_CONFIGS } from './plans';
 import { getPromptSlug } from './utils';
 import fs from 'fs';
@@ -137,10 +142,120 @@ function cleanForFirestore<T = any>(obj: any): T {
   return obj;
 }
 
-// In-memory runtime cache with 24-hour TTL
+// In-memory runtime cache with short remote refresh TTL
 let memoryPosts: PromptPost[] | null = null;
 let memoryPostsTimestamp = 0;
-const POSTS_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+const POSTS_CACHE_TTL = 2 * 60 * 1000; // 2 minutes for automatic cross-lambda GitHub sync
+let memoryRecentEdits: Record<string, PromptPost> = {};
+
+function getPostVersionTime(p?: PromptPost | null): number {
+  if (!p) return 0;
+  const t = new Date(p.updatedAt || p.publishedAt || p.createdAt || 0).getTime();
+  return Number.isFinite(t) ? t : 0;
+}
+
+function mergePostListsPreferNewest(sources: PromptPost[][]): PromptPost[] {
+  const deletedIds = getDeletedPostIds();
+  const byId = new Map<string, PromptPost>();
+
+  for (const list of sources) {
+    if (!Array.isArray(list)) continue;
+    for (const raw of list) {
+      if (!raw || !raw.id || deletedIds.has(raw.id)) continue;
+      const existing = byId.get(raw.id);
+      if (!existing) {
+        byId.set(raw.id, raw);
+        continue;
+      }
+      const existingTime = getPostVersionTime(existing);
+      const incomingTime = getPostVersionTime(raw);
+      if (incomingTime > existingTime) {
+        byId.set(raw.id, raw);
+      } else if (incomingTime === existingTime) {
+        // When timestamps match, prefer entries already pointing to an immutable GitHub commit SHA CDN URL
+        const hasSha = (u?: string) => Boolean(u && /@[a-f0-9]{40}\//i.test(u));
+        if (hasSha(raw.imageUrl) && !hasSha(existing.imageUrl)) {
+          byId.set(raw.id, raw);
+        }
+      }
+    }
+  }
+
+  return Array.from(byId.values());
+}
+
+async function readRecentPostEditsOverlay(): Promise<{
+  edits: Record<string, PromptPost>;
+  deletedIds: string[];
+}> {
+  const localOverlay = { ...memoryRecentEdits };
+  if (!isFirebaseConfigured()) {
+    return { edits: localOverlay, deletedIds: [] };
+  }
+  try {
+    const snap = await getDoc(doc(firestoreDb, 'settings', 'recent_post_edits'));
+    if (snap.exists()) {
+      const data = snap.data() as any;
+      const remoteEdits = (data?.edits && typeof data.edits === 'object' ? data.edits : {}) as Record<
+        string,
+        PromptPost
+      >;
+      const deletedIds = Array.isArray(data?.deletedIds) ? (data.deletedIds as string[]) : [];
+      for (const [k, v] of Object.entries(remoteEdits)) {
+        if (!v || !v.id) continue;
+        if (!localOverlay[k] || getPostVersionTime(v) >= getPostVersionTime(localOverlay[k])) {
+          localOverlay[k] = v;
+        }
+      }
+      return { edits: localOverlay, deletedIds };
+    }
+  } catch (err) {
+    console.warn('Firestore recent_post_edits read notice:', err);
+  }
+  return { edits: localOverlay, deletedIds: [] };
+}
+
+async function recordRecentPostEditOverlay(post: PromptPost): Promise<void> {
+  if (!post || !post.id) return;
+  memoryRecentEdits[post.id] = post;
+
+  const entries = Object.entries(memoryRecentEdits)
+    .sort((a, b) => getPostVersionTime(b[1]) - getPostVersionTime(a[1]))
+    .slice(0, 40);
+  memoryRecentEdits = Object.fromEntries(entries);
+
+  if (!isFirebaseConfigured()) return;
+  try {
+    // Merge into the single settings/recent_post_edits doc (1 read + 1 write instead of 469-doc collection scan)
+    let baseEdits: Record<string, PromptPost> = {};
+    try {
+      const existingSnap = await getDoc(doc(firestoreDb, 'settings', 'recent_post_edits'));
+      if (existingSnap.exists()) {
+        const d = existingSnap.data() as any;
+        if (d?.edits && typeof d.edits === 'object') {
+          baseEdits = d.edits;
+        }
+      }
+    } catch {}
+
+    const combined = { ...baseEdits, ...memoryRecentEdits, [post.id]: post };
+    const capped = Object.fromEntries(
+      Object.entries(combined)
+        .sort((a, b) => getPostVersionTime(b[1]) - getPostVersionTime(a[1]))
+        .slice(0, 40)
+    );
+    await setDoc(
+      doc(firestoreDb, 'settings', 'recent_post_edits'),
+      cleanForFirestore({
+        edits: capped,
+        updatedAt: new Date().toISOString(),
+      }),
+      { merge: true }
+    );
+  } catch (err) {
+    console.warn('Firestore recent_post_edits write notice:', err);
+  }
+}
 
 let memoryCategories: Category[] | null = null;
 let memorySettings: SiteSettings | null = null;
@@ -162,23 +277,21 @@ export const ServerStorage = {
     const deletedIds = getDeletedPostIds();
     const map = new Map<string, PromptPost>();
     const seenSlugs = new Set<string>();
-    const seenImageUrls = new Set<string>();
 
-    const sorted = [...posts].sort(
-      (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-    );
+    const sorted = [...posts].sort((a, b) => {
+      const tDiff = getPostVersionTime(b) - getPostVersionTime(a);
+      if (tDiff !== 0) return tDiff;
+      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+    });
 
     for (const p of sorted) {
       if (!p || !p.id || deletedIds.has(p.id)) continue;
       const canonicalSlug = getPromptSlug(p);
-      const imgKey = p.imageUrl ? p.imageUrl.split('?')[0].trim().toLowerCase() : '';
 
       if (canonicalSlug && seenSlugs.has(canonicalSlug)) continue;
-      if (imgKey && seenImageUrls.has(imgKey)) continue;
       if (map.has(p.id)) continue;
 
       if (canonicalSlug) seenSlugs.add(canonicalSlug);
-      if (imgKey) seenImageUrls.add(imgKey);
       map.set(p.id, {
         ...p,
         slug: canonicalSlug,
@@ -191,80 +304,124 @@ export const ServerStorage = {
     );
   },
 
-  syncDatabaseToLocalPosts: async (): Promise<{ count: number; posts: PromptPost[] }> => {
-    let remotePosts: PromptPost[] = [];
-    if (isFirebaseConfigured()) {
-      try {
-        const postsSnap = await getDocs(collection(firestoreDb, 'posts'));
-        postsSnap.forEach((docSnap) => {
-          const data = docSnap.data() as PromptPost;
-          if (data && data.id) {
-            remotePosts.push(data);
-          }
-        });
-      } catch (e) {
-        console.error('Error reading posts collection during sync:', e);
+  mergePostsWithSources: async (options?: {
+    forceRemote?: boolean;
+    includeCollectionScanFallback?: boolean;
+  }): Promise<PromptPost[]> => {
+    const localPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
+    const sources: PromptPost[][] = [localPosts];
+
+    if (memoryPosts && memoryPosts.length > 0) {
+      sources.push(memoryPosts);
+    }
+
+    const recentEditsList = Object.values(memoryRecentEdits);
+    if (recentEditsList.length > 0) {
+      sources.push(recentEditsList);
+    }
+
+    const cacheExpired = !memoryPosts || Date.now() - memoryPostsTimestamp > POSTS_CACHE_TTL;
+    if (options?.forceRemote || cacheExpired) {
+      const [githubPosts, overlay] = await Promise.all([
+        fetchPostsJsonFromGitHub().catch(() => null),
+        readRecentPostEditsOverlay().catch(() => ({ edits: {}, deletedIds: [] })),
+      ]);
+
+      if (Array.isArray(githubPosts) && githubPosts.length > 0) {
+        sources.push(githubPosts);
+      }
+
+      if (overlay.deletedIds.length > 0) {
+        const delSet = getDeletedPostIds();
+        overlay.deletedIds.forEach((id) => delSet.add(id));
+      }
+
+      const overlayPosts = Object.values(overlay.edits || {});
+      if (overlayPosts.length > 0) {
+        sources.push(overlayPosts);
+      }
+
+      if (options?.includeCollectionScanFallback && (!githubPosts || githubPosts.length === 0) && isFirebaseConfigured()) {
+        try {
+          const postsSnap = await getDocs(collection(firestoreDb, 'posts'));
+          const fbPosts: PromptPost[] = [];
+          postsSnap.forEach((docSnap) => {
+            const data = docSnap.data() as PromptPost;
+            if (data && data.id) fbPosts.push(data);
+          });
+          if (fbPosts.length > 0) sources.push(fbPosts);
+        } catch (err) {
+          console.warn('Firestore collection fallback notice:', err);
+        }
       }
     }
 
-    const localPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
-    const all = remotePosts.length > 0 ? remotePosts : localPosts;
-    const merged = ServerStorage.deduplicatePosts(all);
-
+    const merged = ServerStorage.deduplicatePosts(mergePostListsPreferNewest(sources));
     memoryPosts = merged;
     memoryPostsTimestamp = Date.now();
-    writeJsonFile(POSTS_FILE, merged);
-
-    return { count: merged.length, posts: merged };
+    return merged;
   },
 
-  getStaticPosts: async (): Promise<PromptPost[]> => {
-    if (memoryPosts && memoryPosts.length > 0) {
-      return memoryPosts;
-    }
-    const posts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
+  syncDatabaseToLocalPosts: async (): Promise<{ count: number; posts: PromptPost[] }> => {
+    const merged = await ServerStorage.mergePostsWithSources({
+      forceRemote: true,
+      includeCollectionScanFallback: true,
+    });
+    const cleaned = ServerStorage.applyReconciledPosts(merged);
+    return { count: cleaned.length, posts: cleaned };
+  },
+
+  applyReconciledPosts: (posts: PromptPost[]): PromptPost[] => {
     const cleaned = ServerStorage.deduplicatePosts(posts);
     memoryPosts = cleaned;
     memoryPostsTimestamp = Date.now();
+    for (const p of cleaned) {
+      if (p?.id && memoryRecentEdits[p.id]) {
+        const currentTime = getPostVersionTime(p);
+        const editTime = getPostVersionTime(memoryRecentEdits[p.id]);
+        if (currentTime >= editTime) {
+          memoryRecentEdits[p.id] = p;
+        }
+      }
+    }
+    writeJsonFile(POSTS_FILE, cleaned);
+    const nextInitialFeed = cleaned
+      .filter((p) => p.status === 'published')
+      .sort(
+        (a, b) =>
+          new Date(b.publishedAt || b.createdAt || 0).getTime() -
+          new Date(a.publishedAt || a.createdAt || 0).getTime()
+      )
+      .slice(0, 16);
+    writeJsonFile(INITIAL_FEED_FILE, nextInitialFeed);
     return cleaned;
   },
 
+  getStaticPosts: async (): Promise<PromptPost[]> => {
+    if (memoryPosts && memoryPosts.length > 0 && Date.now() - memoryPostsTimestamp < POSTS_CACHE_TTL) {
+      return memoryPosts;
+    }
+    return ServerStorage.mergePostsWithSources({ forceRemote: false });
+  },
+
   getFirebasePosts: async (): Promise<PromptPost[]> => {
-    if (!isFirebaseConfigured()) {
-      return ServerStorage.getStaticPosts();
-    }
-    try {
-      const postsSnap = await getDocs(collection(firestoreDb, 'posts'));
-      const firebasePosts: PromptPost[] = [];
-      postsSnap.forEach((docSnap) => {
-        const data = docSnap.data() as PromptPost;
-        if (data && data.id) {
-          firebasePosts.push(data);
-        }
-      });
-      if (firebasePosts.length > 0) {
-        return ServerStorage.deduplicatePosts(firebasePosts);
-      }
-    } catch (e) {
-      console.error('Error fetching posts from Firebase for admin:', e);
-    }
-    return ServerStorage.getStaticPosts();
+    return ServerStorage.mergePostsWithSources({
+      forceRemote: true,
+      includeCollectionScanFallback: false,
+    });
   },
 
   getAllPosts: async (includeDrafts = false, fromFirebase = false): Promise<PromptPost[]> => {
-    // If admin explicitly requests Firebase, fetch live from Firebase Firestore
     if (fromFirebase) {
       const fbPosts = await ServerStorage.getFirebasePosts();
       return includeDrafts ? fbPosts : fbPosts.filter((p) => p.status === 'published');
     }
 
-    // For public visitors (main site), load strictly from local posts.json (zero Firestore reads)
     const staticPosts = await ServerStorage.getStaticPosts();
     return includeDrafts ? staticPosts : staticPosts.filter((p) => p.status === 'published');
   },
 
   getPostBySlug: async (slug: string): Promise<PromptPost | undefined> => {
-    // Main site articles load strictly from static posts.json
     const posts = await ServerStorage.getStaticPosts();
     const targetSlug = slug.toLowerCase().trim();
     return posts.find((p) => {
@@ -283,7 +440,6 @@ export const ServerStorage = {
   },
 
   getPostById: async (id: string): Promise<PromptPost | undefined> => {
-    // Main site lookups load strictly from static posts.json
     const posts = await ServerStorage.getStaticPosts();
     return posts.find((p) => p.id === id);
   },
@@ -293,10 +449,10 @@ export const ServerStorage = {
     const safeTitle = post.title?.trim() || 'Untitled Prompt';
     const computedSlug = getPromptSlug({ ...post, title: safeTitle });
 
-    const posts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
+    const posts = await ServerStorage.mergePostsWithSources({ forceRemote: true });
     let existing = post.id ? posts.find((p) => p.id === post.id) : undefined;
 
-    // Check Firestore for existing post by ID when not present in local posts.json
+    // Check Firestore for existing post by ID when not present in merged list
     if (!existing && post.id && isFirebaseConfigured()) {
       try {
         const snap = await getDoc(doc(firestoreDb, 'posts', post.id));
@@ -540,9 +696,10 @@ export const ServerStorage = {
         nextPosts.unshift(savedPost);
       }
       const cleanedNext = ServerStorage.deduplicatePosts(nextPosts);
-      writeJsonFile(POSTS_FILE, cleanedNext);
       memoryPosts = cleanedNext;
       memoryPostsTimestamp = Date.now();
+      memoryRecentEdits[savedPost.id] = savedPost;
+      writeJsonFile(POSTS_FILE, cleanedNext);
 
       const nextInitialFeed = cleanedNext
         .filter((p) => p.status === 'published')
@@ -557,14 +714,14 @@ export const ServerStorage = {
       console.warn('Local JSON media update notice:', syncLocalErr);
     }
 
-    // Save strictly to Firebase Firestore (Admin CMS database)
+    // Persist to single recent_post_edits overlay + individual Firestore doc (non-fatal if Firestore daily quota is exhausted)
     unrecordDeletedPostId(savedPost.id);
+    await recordRecentPostEditOverlay(savedPost);
     if (isFirebaseConfigured()) {
       try {
         await setDoc(doc(firestoreDb, 'posts', savedPost.id), cleanForFirestore(savedPost));
       } catch (fErr: any) {
-        console.error('Firestore savePost error:', fErr);
-        throw new Error(fErr?.message || 'Failed to save prompt to Firestore');
+        console.warn('Firestore savePost notice (continuing with GitHub/memory sync):', fErr?.message || fErr);
       }
     }
 
@@ -616,25 +773,35 @@ export const ServerStorage = {
 
     // Sync local posts.json / initial-feed.json / memoryPosts removal
     try {
-      const localPosts = readJsonFile<PromptPost[]>(POSTS_FILE, []);
-      if (Array.isArray(localPosts) && localPosts.length > 0) {
-        const filteredLocal = localPosts.filter((p) => p && !idSet.has(p.id));
-        writeJsonFile(POSTS_FILE, filteredLocal);
-        const nextFeed = filteredLocal
-          .filter((p) => p.status === 'published')
-          .sort(
-            (a, b) =>
-              new Date(b.publishedAt || b.createdAt || 0).getTime() -
-              new Date(a.publishedAt || a.createdAt || 0).getTime()
-          )
-          .slice(0, 16);
-        writeJsonFile(INITIAL_FEED_FILE, nextFeed);
+      for (const id of cleanIds) {
+        delete memoryRecentEdits[id];
       }
-      if (memoryPosts) {
-        memoryPosts = memoryPosts.filter((p) => p && !idSet.has(p.id));
-      }
+      const currentPosts = await ServerStorage.mergePostsWithSources({ forceRemote: false });
+      const filteredLocal = currentPosts.filter((p) => p && !idSet.has(p.id));
+      memoryPosts = filteredLocal;
+      memoryPostsTimestamp = Date.now();
+      writeJsonFile(POSTS_FILE, filteredLocal);
+      const nextFeed = filteredLocal
+        .filter((p) => p.status === 'published')
+        .sort(
+          (a, b) =>
+            new Date(b.publishedAt || b.createdAt || 0).getTime() -
+            new Date(a.publishedAt || a.createdAt || 0).getTime()
+        )
+        .slice(0, 16);
+      writeJsonFile(INITIAL_FEED_FILE, nextFeed);
     } catch (localDelErr) {
       console.warn('Local JSON delete sync notice:', localDelErr);
+    }
+
+    if (isFirebaseConfigured()) {
+      try {
+        await setDoc(
+          doc(firestoreDb, 'settings', 'recent_post_edits'),
+          { deletedIds: Array.from(getDeletedPostIds()), updatedAt: new Date().toISOString() },
+          { merge: true }
+        );
+      } catch {}
     }
 
     // 1. Remove from Firebase Firestore (Admin CMS database)

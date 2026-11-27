@@ -186,41 +186,61 @@ export async function testGitHubAssetsConnection(): Promise<{
   }
 }
 
-export async function listGitHubAssetPaths(): Promise<Set<string>> {
+export async function getGitHubAssetsTreeWithHead(): Promise<{
+  headCommitSha?: string;
+  blobs: Set<string>;
+}> {
   const cfg = resolveGitHubAssetsConfig();
-  if (!cfg.isConfigured) return new Set();
+  if (!cfg.isConfigured) return { blobs: new Set() };
 
   try {
-    const res = await fetch(
-      `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/git/trees/${encodeURIComponent(cfg.branch)}?recursive=1`,
-      {
-        headers: githubHeaders(cfg.token),
-        cache: 'no-store',
+    const [refRes, treeRes] = await Promise.all([
+      fetch(
+        `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/git/refs/heads/${encodeURIComponent(cfg.branch)}`,
+        {
+          headers: githubHeaders(cfg.token),
+          cache: 'no-store',
+        }
+      ).catch(() => null),
+      fetch(
+        `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/git/trees/${encodeURIComponent(cfg.branch)}?recursive=1`,
+        {
+          headers: githubHeaders(cfg.token),
+          cache: 'no-store',
+        }
+      ),
+    ]);
+
+    let headCommitSha: string | undefined;
+    if (refRes && refRes.ok) {
+      const refJson = await refRes.json().catch(() => null);
+      if (typeof refJson?.object?.sha === 'string') {
+        headCommitSha = refJson.object.sha;
       }
-    );
-
-    if (res.status === 404 || res.status === 409) {
-      // Empty repository or branch doesn't exist yet
-      return new Set();
     }
 
-    if (!res.ok) {
-      return new Set();
+    if (treeRes.status === 404 || treeRes.status === 409 || !treeRes.ok) {
+      return { headCommitSha, blobs: new Set() };
     }
 
-    const data = await res.json();
-    const paths = new Set<string>();
+    const data = await treeRes.json();
+    const blobs = new Set<string>();
     if (Array.isArray(data?.tree)) {
       for (const entry of data.tree) {
         if (entry?.type === 'blob' && typeof entry.path === 'string') {
-          paths.add(entry.path);
+          blobs.add(entry.path);
         }
       }
     }
-    return paths;
+    return { headCommitSha, blobs };
   } catch {
-    return new Set();
+    return { blobs: new Set() };
   }
+}
+
+export async function listGitHubAssetPaths(): Promise<Set<string>> {
+  const { blobs } = await getGitHubAssetsTreeWithHead();
+  return blobs;
 }
 
 function normalizeMimeExtension(mimeOrExt?: string): string {
@@ -846,6 +866,214 @@ export function buildCleanPostsPayload(rawPosts: PromptPost[]): {
     .slice(0, 16);
 
   return { allPosts: cleanPosts, initialFeed };
+}
+
+export async function fetchPostsJsonFromGitHub(
+  overrideConfig?: Partial<GitHubAssetsConfig>
+): Promise<PromptPost[] | null> {
+  const baseCfg = resolveGitHubSiteRepoConfig();
+  const cfg: GitHubAssetsConfig = {
+    ...baseCfg,
+    ...overrideConfig,
+    token: overrideConfig?.token || baseCfg.token,
+    owner: overrideConfig?.owner || baseCfg.owner,
+    repo: overrideConfig?.repo || baseCfg.repo,
+    branch: overrideConfig?.branch || baseCfg.branch,
+  };
+
+  // 1. Authenticated GitHub API read (bypasses raw CDN cache & supports >1MB blobs)
+  if (cfg.token && cfg.owner && cfg.repo) {
+    try {
+      const metaRes = await fetch(
+        `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/data/posts.json?ref=${encodeURIComponent(cfg.branch)}`,
+        {
+          headers: githubHeaders(cfg.token),
+          cache: 'no-store',
+          signal: AbortSignal.timeout(8000),
+        }
+      );
+
+      if (metaRes.ok) {
+        const meta = await metaRes.json().catch(() => null);
+        if (meta && typeof meta.content === 'string' && meta.content.length > 0) {
+          const decoded = Buffer.from(meta.content.replace(/\n/g, ''), 'base64').toString('utf-8');
+          const parsed = JSON.parse(decoded);
+          if (Array.isArray(parsed)) return parsed as PromptPost[];
+        }
+        if (meta && typeof meta.sha === 'string') {
+          const blobRes = await fetch(
+            `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/git/blobs/${meta.sha}`,
+            {
+              headers: {
+                ...githubHeaders(cfg.token),
+                Accept: 'application/vnd.github.raw+json',
+              },
+              cache: 'no-store',
+              signal: AbortSignal.timeout(10000),
+            }
+          );
+          if (blobRes.ok) {
+            const parsed = await blobRes.json().catch(() => null);
+            if (Array.isArray(parsed)) return parsed as PromptPost[];
+          }
+        }
+        if (meta && typeof meta.download_url === 'string') {
+          const dlRes = await fetch(meta.download_url, {
+            cache: 'no-store',
+            signal: AbortSignal.timeout(10000),
+          });
+          if (dlRes.ok) {
+            const parsed = await dlRes.json().catch(() => null);
+            if (Array.isArray(parsed)) return parsed as PromptPost[];
+          }
+        }
+      }
+    } catch (err: any) {
+      console.warn('GitHub API fetchPostsJsonFromGitHub notice:', err?.message || err);
+    }
+  }
+
+  // 2. Public raw.githubusercontent.com fallback
+  if (cfg.owner && cfg.repo) {
+    try {
+      const rawUrl = `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${encodeURIComponent(cfg.branch)}/data/posts.json?t=${Date.now()}`;
+      const rawRes = await fetch(rawUrl, {
+        cache: 'no-store',
+        signal: AbortSignal.timeout(8000),
+      });
+      if (rawRes.ok) {
+        const parsed = await rawRes.json().catch(() => null);
+        if (Array.isArray(parsed)) return parsed as PromptPost[];
+      }
+    } catch {}
+  }
+
+  return null;
+}
+
+export async function reconcilePostsWithGitHubAssets(
+  rawPosts: PromptPost[]
+): Promise<{ posts: PromptPost[]; healedCount: number }> {
+  if (!Array.isArray(rawPosts) || rawPosts.length === 0) {
+    return { posts: rawPosts || [], healedCount: 0 };
+  }
+
+  const cfg = resolveGitHubAssetsConfig();
+  if (!cfg.isConfigured) {
+    return { posts: rawPosts, healedCount: 0 };
+  }
+
+  const { headCommitSha, blobs } = await getGitHubAssetsTreeWithHead();
+  if (!blobs || blobs.size === 0) {
+    return { posts: rawPosts, healedCount: 0 };
+  }
+
+  // Index all prompt assets by basename (without extension) for fast O(1) lookup
+  const assetsByStem = new Map<string, string[]>();
+  for (const blobPath of blobs) {
+    if (!blobPath.startsWith('prompts/')) continue;
+    const stem = blobPath
+      .replace(/^prompts\//, '')
+      .replace(/\.[a-z0-9]+$/i, '')
+      .toLowerCase();
+    if (!stem) continue;
+    if (!assetsByStem.has(stem)) assetsByStem.set(stem, []);
+    assetsByStem.get(stem)!.push(blobPath);
+  }
+
+  const preferExtOrder = (paths: string[]): string => {
+    const rank = (p: string) => {
+      if (/\.webp$/i.test(p)) return 0;
+      if (/\.jpe?g$/i.test(p)) return 1;
+      if (/\.png$/i.test(p)) return 2;
+      if (/\.avif$/i.test(p)) return 3;
+      return 4;
+    };
+    return [...paths].sort((a, b) => rank(a) - rank(b))[0];
+  };
+
+  const extractRepoPath = (url?: string): { path: string; ref: string } | null => {
+    if (!url || typeof url !== 'string') return null;
+    const prefix = `https://cdn.jsdelivr.net/gh/${cfg.owner}/${cfg.repo}@`;
+    if (url.startsWith(prefix)) {
+      const rest = url.slice(prefix.length);
+      const slash = rest.indexOf('/');
+      if (slash !== -1) {
+        return {
+          ref: rest.slice(0, slash),
+          path: decodeURIComponent(rest.slice(slash + 1).split('?')[0]),
+        };
+      }
+    }
+    const rawPrefix = `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/`;
+    if (url.startsWith(rawPrefix)) {
+      const rest = url.slice(rawPrefix.length);
+      const slash = rest.indexOf('/');
+      if (slash !== -1) {
+        return {
+          ref: rest.slice(0, slash),
+          path: decodeURIComponent(rest.slice(slash + 1).split('?')[0]),
+        };
+      }
+    }
+    return null;
+  };
+
+  let healedCount = 0;
+  const cdnBranchRef = headCommitSha || cfg.branch;
+
+  const updatedPosts = rawPosts.map((post) => {
+    if (!post || !post.id) return post;
+    const slug = getPromptSlug(post);
+    const stemCandidates = assetsByStem.get(slug.toLowerCase()) || [];
+
+    let nextImageUrl = post.imageUrl;
+    let postChanged = false;
+
+    const currentInfo = extractRepoPath(post.imageUrl);
+    const currentExistsOnMain = currentInfo ? blobs.has(currentInfo.path) : false;
+    const isLegacyRandomPath = Boolean(
+      currentInfo && /^prompts\/(prompt-\d+|prompt-seen-)/i.test(currentInfo.path)
+    );
+
+    // Heal if current imageUrl is missing from zeena-prompt-assets OR still points to a legacy timestamp/broken filename while <slug>.<ext> exists in zeena-prompt-assets
+    if (stemCandidates.length > 0 && (!currentExistsOnMain || isLegacyRandomPath || !post.imageUrl)) {
+      const bestAssetPath = preferExtOrder(stemCandidates);
+      const healedUrl = buildJsDelivrUrl(bestAssetPath, { ...cfg, branch: cdnBranchRef });
+      if (healedUrl !== nextImageUrl) {
+        nextImageUrl = healedUrl;
+        postChanged = true;
+      }
+    }
+
+    // Heal or preserve carousel slide images uploaded under prompts/<slug>-slide-<n>.<ext>
+    let nextAdditional = Array.isArray(post.additionalImages) ? [...post.additionalImages] : [];
+    for (let i = 0; i < nextAdditional.length; i++) {
+      const slideInfo = extractRepoPath(nextAdditional[i]);
+      const slideExists = slideInfo ? blobs.has(slideInfo.path) : false;
+      if (!slideExists) {
+        const slideStem = `${slug.toLowerCase()}-slide-${i + 1}`;
+        const slideCandidates = assetsByStem.get(slideStem) || [];
+        if (slideCandidates.length > 0) {
+          nextAdditional[i] = buildJsDelivrUrl(preferExtOrder(slideCandidates), {
+            ...cfg,
+            branch: cdnBranchRef,
+          });
+          postChanged = true;
+        }
+      }
+    }
+
+    if (!postChanged) return post;
+    healedCount++;
+    return {
+      ...post,
+      imageUrl: nextImageUrl,
+      additionalImages: nextAdditional,
+    };
+  });
+
+  return { posts: updatedPosts, healedCount };
 }
 
 export async function pushPostsJsonToGitHub(

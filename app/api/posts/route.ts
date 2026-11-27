@@ -1,6 +1,8 @@
 import { ServerStorage } from '@/lib/server-storage';
 import { pushPostsJsonToGitHub } from '@/lib/github-assets-server';
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
+import { getPromptSlug } from '@/lib/utils';
 import fs from 'fs';
 import path from 'path';
 
@@ -25,6 +27,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const fromFirebase = searchParams.get('source') === 'firebase' || searchParams.get('admin') === 'true';
+    const hasCacheBust = searchParams.has('t');
     const includeDrafts = fromFirebase || searchParams.get('all') === 'true';
     const category = searchParams.get('category');
     const tool = searchParams.get('tool');
@@ -56,9 +59,10 @@ export async function GET(req: NextRequest) {
       { success: true, posts },
       {
         headers: {
-          'Cache-Control': fromFirebase
-            ? 'no-store, no-cache, must-revalidate, max-age=0'
-            : 'public, s-maxage=60, stale-while-revalidate=120',
+          'Cache-Control':
+            fromFirebase || hasCacheBust
+              ? 'no-store, no-cache, must-revalidate, max-age=0'
+              : 'public, s-maxage=15, stale-while-revalidate=30',
         },
       }
     );
@@ -81,7 +85,14 @@ export async function POST(req: NextRequest) {
     const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : undefined;
 
     const saved = await ServerStorage.savePost(body, token);
-    const adminPosts = await ServerStorage.getFirebasePosts();
+    const fetchedPosts = await ServerStorage.getFirebasePosts();
+
+    // Ensure the just-saved post unconditionally overrides any stale copy by ID or slug
+    const savedSlug = getPromptSlug(saved);
+    const filtered = fetchedPosts.filter(
+      (p) => p && p.id !== saved.id && getPromptSlug(p) !== savedSlug
+    );
+    const adminPosts = ServerStorage.applyReconciledPosts([saved, ...filtered]);
 
     const skipGitHubPush = body.skipGitHubPush === true;
     const githubSync = skipGitHubPush
@@ -91,6 +102,12 @@ export async function POST(req: NextRequest) {
           `Update posts.json: ${saved.title.slice(0, 60)}`,
           getExtraSyncFiles()
         );
+
+    try {
+      revalidatePath('/');
+      revalidatePath('/api/posts');
+      if (savedSlug) revalidatePath(`/${savedSlug}`);
+    } catch {}
 
     return NextResponse.json(
       { success: true, post: saved, posts: adminPosts, githubSync },
@@ -142,13 +159,21 @@ export async function DELETE(req: NextRequest) {
     const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : undefined;
 
     await ServerStorage.deletePosts(idsToDelete, token);
-    const adminPosts = await ServerStorage.getFirebasePosts();
+    const idSet = new Set(idsToDelete);
+    const adminPosts = ServerStorage.applyReconciledPosts(
+      (await ServerStorage.getFirebasePosts()).filter((p) => p && !idSet.has(p.id))
+    );
 
     const githubSync = await pushPostsJsonToGitHub(
       adminPosts,
       `Update posts.json: removed ${idsToDelete.length} prompt(s)`,
       getExtraSyncFiles()
     );
+
+    try {
+      revalidatePath('/');
+      revalidatePath('/api/posts');
+    } catch {}
 
     return NextResponse.json(
       { success: true, posts: adminPosts, deletedIds: idsToDelete, githubSync },

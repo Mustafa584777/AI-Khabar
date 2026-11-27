@@ -41,7 +41,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { startRouteNavigation, pushPromptHistoryState } from '@/lib/navigation';
 import { PersonalizationEngine } from '@/lib/personalization';
-import { getPromptSlug, slugify, getOptimizedImageUrl, detectPostAspectRatio, getPromptMetaDescription, formatPromptForClipboard } from '@/lib/utils';
+import { getPromptSlug, slugify, getOptimizedImageUrl, getImageFallbackCandidates, detectPostAspectRatio, getPromptMetaDescription, formatPromptForClipboard } from '@/lib/utils';
 import {
   isImageUrlCachedInMemory,
   getCachedImageAspectRatio,
@@ -99,7 +99,9 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
   }, [pin.imageUrl, pin.additionalImages]);
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [pinFallbackAttempts, setPinFallbackAttempts] = useState<Record<string, number>>({});
   const isMultiple = allImages.length > 1;
+  const pinSlug = getPromptSlug(pin);
 
   const isVerticalSlide = useMemo(() => {
     if (!pin.id) return false;
@@ -207,18 +209,28 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
             const img360 = getOptimizedImageUrl(imgUrl, 360);
             const img280 = getOptimizedImageUrl(imgUrl, 280);
             const img420 = getOptimizedImageUrl(imgUrl, 420);
+            const candidates = getImageFallbackCandidates(img360, pinSlug);
+            const attempt = pinFallbackAttempts[imgUrl] ?? -1;
+            const activeSrc = attempt >= 0 && attempt < candidates.length ? candidates[attempt] : img360;
+            const hasOptimized = attempt < 0;
             const isLeadImage = imgUrl === allImages[0];
             return (
-              <div key={idx} className="w-full h-full shrink-0 relative overflow-hidden bg-neutral-900">
+              <div key={`${imgUrl}-${idx}`} className="w-full h-full shrink-0 relative overflow-hidden bg-neutral-900">
                 <img
                   ref={isLeadImage ? pinImgRef : undefined}
-                  src={img360}
-                  srcSet={`${img280} 280w, ${img420} 420w`}
+                  src={activeSrc}
+                  srcSet={hasOptimized ? `${img280} 280w, ${img420} 420w` : undefined}
                   sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 240px"
                   alt={`${pin.imageAlt || pin.title} - photo ${idx + 1}`}
                   loading={isLeadImage ? 'eager' : 'lazy'}
                   decoding={isLeadImage ? 'sync' : 'async'}
                   onLoad={isLeadImage ? (e) => syncPinRatio(e.currentTarget) : undefined}
+                  onError={() => {
+                    const nextAttempt = attempt + 1;
+                    if (nextAttempt < candidates.length) {
+                      setPinFallbackAttempts((prev) => ({ ...prev, [imgUrl]: nextAttempt }));
+                    }
+                  }}
                   className="w-full h-full object-cover object-top block select-none pointer-events-none"
                   referrerPolicy="no-referrer"
                 />
@@ -227,18 +239,33 @@ const RecommendedPinCard: React.FC<RecommendedPinCardProps> = ({
           })}
         </div>
       ) : pin.imageUrl ? (
-        <img
-          ref={pinImgRef}
-          src={getOptimizedImageUrl(pin.imageUrl, 360)}
-          srcSet={`${getOptimizedImageUrl(pin.imageUrl, 280)} 280w, ${getOptimizedImageUrl(pin.imageUrl, 420)} 420w`}
-          sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 240px"
-          alt={pin.imageAlt || pin.title}
-          loading="eager"
-          decoding="sync"
-          onLoad={(e) => syncPinRatio(e.currentTarget)}
-          className="absolute inset-0 w-full h-full object-cover block"
-          referrerPolicy="no-referrer"
-        />
+        (() => {
+          const primarySrc = getOptimizedImageUrl(pin.imageUrl, 360);
+          const candidates = getImageFallbackCandidates(primarySrc, pinSlug);
+          const attempt = pinFallbackAttempts[pin.imageUrl] ?? -1;
+          const activeSrc = attempt >= 0 && attempt < candidates.length ? candidates[attempt] : primarySrc;
+          const hasOptimized = attempt < 0;
+          return (
+            <img
+              ref={pinImgRef}
+              src={activeSrc}
+              srcSet={hasOptimized ? `${getOptimizedImageUrl(pin.imageUrl, 280)} 280w, ${getOptimizedImageUrl(pin.imageUrl, 420)} 420w` : undefined}
+              sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 240px"
+              alt={pin.imageAlt || pin.title}
+              loading="eager"
+              decoding="sync"
+              onLoad={(e) => syncPinRatio(e.currentTarget)}
+              onError={() => {
+                const nextAttempt = attempt + 1;
+                if (nextAttempt < candidates.length) {
+                  setPinFallbackAttempts((prev) => ({ ...prev, [pin.imageUrl]: nextAttempt }));
+                }
+              }}
+              className="absolute inset-0 w-full h-full object-cover block"
+              referrerPolicy="no-referrer"
+            />
+          );
+        })()
       ) : null}
 
       {/* Multi-Image Slider Controls (Arrows & Dots) */}
@@ -463,6 +490,7 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
   const [imageRatios, setImageRatios] = useState<Record<string, string>>({});
   const [loadedMediaMap, setLoadedMediaMap] = useState<Record<string, boolean>>({});
   const [erroredMediaMap, setErroredMediaMap] = useState<Record<string, boolean>>({});
+  const [mediaFallbackMap, setMediaFallbackMap] = useState<Record<string, number>>({});
   const mediaImgRefs = useRef<Record<number, HTMLImageElement | null>>({});
 
   // Reset active slide synchronously during render when switching posts so frame 1 has index 0
@@ -1556,7 +1584,11 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                         {allImages.map((imgUrl, idx) => {
                           const slide800 = getOptimizedImageUrl(imgUrl, 800);
                           const slidePreviewUrl = getOptimizedImageUrl(imgUrl, 360);
+                          const slideCandidates = getImageFallbackCandidates(slide800, getPromptSlug(selectedPost));
                           const slideKey = `${selectedPost.id}::${idx}::${slide800}`;
+                          const attempt = mediaFallbackMap[slideKey] ?? -1;
+                          const activeSlideSrc =
+                            attempt >= 0 && attempt < slideCandidates.length ? slideCandidates[attempt] : slide800;
                           const isSlideLoaded =
                             Boolean(loadedMediaMap[slideKey]) || isImageUrlCachedInMemory(imgUrl, 800);
                           const isSlidePreviewLoaded = isImageUrlCachedInMemory(imgUrl, 360);
@@ -1564,7 +1596,7 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                           const hasDifferentSlidePreview = Boolean(slidePreviewUrl && slidePreviewUrl !== slide800);
                           return (
                             <div
-                              key={idx}
+                              key={`${imgUrl}-${idx}`}
                               className="w-full h-full shrink-0 relative overflow-hidden bg-neutral-200 dark:bg-neutral-900 flex items-center justify-center"
                             >
                               {!isSlideLoaded && !isSlidePreviewLoaded && !isSlideErrored && (
@@ -1592,7 +1624,7 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                                 ref={(el) => {
                                   mediaImgRefs.current[idx] = el;
                                 }}
-                                src={slide800}
+                                src={activeSlideSrc}
                                 alt={`${selectedPost.imageAlt || selectedPost.title} - photo ${idx + 1}`}
                                 className="relative z-[2] w-full h-full object-cover object-top block select-none pointer-events-none"
                                 referrerPolicy="no-referrer"
@@ -1600,9 +1632,14 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                                 fetchPriority={idx === 0 ? 'high' : 'auto'}
                                 decoding="sync"
                                 onLoad={(e) => syncMediaRatio(selectedPost.id, idx, e.currentTarget, slideKey, imgUrl)}
-                                onError={() =>
-                                  setErroredMediaMap((prev) => (prev[slideKey] ? prev : { ...prev, [slideKey]: true }))
-                                }
+                                onError={() => {
+                                  const nextAttempt = attempt + 1;
+                                  if (nextAttempt < slideCandidates.length) {
+                                    setMediaFallbackMap((prev) => ({ ...prev, [slideKey]: nextAttempt }));
+                                  } else {
+                                    setErroredMediaMap((prev) => (prev[slideKey] ? prev : { ...prev, [slideKey]: true }));
+                                  }
+                                }}
                               />
                             </div>
                           );
@@ -1709,7 +1746,11 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                       const rawSingleUrl = allImages[0] || selectedPost.imageUrl;
                       const singleUrl = getOptimizedImageUrl(rawSingleUrl, 800);
                       const singlePreviewUrl = getOptimizedImageUrl(rawSingleUrl, 360);
+                      const singleCandidates = getImageFallbackCandidates(singleUrl, getPromptSlug(selectedPost));
                       const singleKey = `${selectedPost.id}::0::${singleUrl}`;
+                      const attempt = mediaFallbackMap[singleKey] ?? -1;
+                      const activeSingleSrc =
+                        attempt >= 0 && attempt < singleCandidates.length ? singleCandidates[attempt] : singleUrl;
                       const previewKey = `${selectedPost.id}::0::preview::${singlePreviewUrl}`;
                       const isSingleLoaded =
                         Boolean(loadedMediaMap[singleKey]) || isImageUrlCachedInMemory(rawSingleUrl, 800);
@@ -1756,15 +1797,20 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
                             ref={(el) => {
                               mediaImgRefs.current[0] = el;
                             }}
-                            src={singleUrl}
+                            src={activeSingleSrc}
                             alt={selectedPost.imageAlt || selectedPost.title}
                             loading="eager"
                             fetchPriority="high"
                             decoding="sync"
                             onLoad={(e) => syncMediaRatio(selectedPost.id, 0, e.currentTarget, singleKey, rawSingleUrl)}
-                            onError={() =>
-                              setErroredMediaMap((prev) => (prev[singleKey] ? prev : { ...prev, [singleKey]: true }))
-                            }
+                            onError={() => {
+                              const nextAttempt = attempt + 1;
+                              if (nextAttempt < singleCandidates.length) {
+                                setMediaFallbackMap((prev) => ({ ...prev, [singleKey]: nextAttempt }));
+                              } else {
+                                setErroredMediaMap((prev) => (prev[singleKey] ? prev : { ...prev, [singleKey]: true }));
+                              }
+                            }}
                             className={
                               isSingleLoaded
                                 ? exactCachedRatio

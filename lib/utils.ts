@@ -103,6 +103,57 @@ export function getOptimizedImageUrl(url?: string, width = 550): string {
   return url;
 }
 
+export function getImageFallbackCandidates(url?: string, slug?: string): string[] {
+  if (!url || typeof url !== 'string') return [];
+  const trimmed = url.trim();
+  if (!trimmed || trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
+    return [];
+  }
+
+  const candidates: string[] = [];
+  const addCandidate = (candidate?: string | null) => {
+    if (!candidate) return;
+    if (candidate !== trimmed && !candidates.includes(candidate)) {
+      candidates.push(candidate);
+    }
+  };
+
+  // Match jsDelivr GitHub URL: https://cdn.jsdelivr.net/gh/<owner>/<repo>@<ref>/<path>
+  const jsdMatch = trimmed.match(/^https:\/\/cdn\.jsdelivr\.net\/gh\/([^/]+)\/([^/@]+)@([^/]+)\/([^?#]+)(?:[?#].*)?$/i);
+  if (jsdMatch) {
+    const [, owner, repo, ref, assetPath] = jsdMatch;
+    // 1. raw.githubusercontent.com at exact ref bypasses jsDelivr edge cache immediately
+    addCandidate(`https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${assetPath}`);
+    // 2. If ref wasn't main, also try @main on both raw and jsDelivr (handles moved/updated files)
+    if (ref !== 'main') {
+      addCandidate(`https://raw.githubusercontent.com/${owner}/${repo}/main/${assetPath}`);
+      addCandidate(`https://cdn.jsdelivr.net/gh/${owner}/${repo}@main/${assetPath}`);
+    }
+    // 3. If slug is known and URL pointed to a legacy prompt-<id>.* or mismatched filename/ext, try slug-based filenames
+    if (slug) {
+      const cleanSlug = slugify(slug);
+      if (cleanSlug) {
+        for (const ext of ['jpg', 'webp', 'png']) {
+          const slugPath = `prompts/${cleanSlug}.${ext}`;
+          if (slugPath !== assetPath) {
+            addCandidate(`https://cdn.jsdelivr.net/gh/${owner}/${repo}@main/${slugPath}`);
+            addCandidate(`https://raw.githubusercontent.com/${owner}/${repo}/main/${slugPath}`);
+          }
+        }
+      }
+    }
+  } else {
+    // Match raw.githubusercontent.com fallback -> jsDelivr
+    const rawMatch = trimmed.match(/^https:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)\/([^?#]+)(?:[?#].*)?$/i);
+    if (rawMatch) {
+      const [, owner, repo, ref, assetPath] = rawMatch;
+      addCandidate(`https://cdn.jsdelivr.net/gh/${owner}/${repo}@${ref}/${assetPath}`);
+    }
+  }
+
+  return candidates;
+}
+
 export function detectPostAspectRatio(post: {
   parameters?: { aspectRatio?: string };
   promptText?: string;

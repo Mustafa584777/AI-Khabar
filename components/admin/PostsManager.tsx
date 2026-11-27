@@ -19,11 +19,33 @@ import {
   Loader2,
 } from 'lucide-react';
 import Image from 'next/image';
-import { getPromptSlug } from '@/lib/utils';
+import { getPromptSlug, getImageFallbackCandidates } from '@/lib/utils';
+
+const AdminPostThumb = ({ src, alt, slug }: { src: string; alt: string; slug: string }) => {
+  const [fallbackIdx, setFallbackIdx] = useState<number>(-1);
+  const candidates = useMemo(() => getImageFallbackCandidates(src, slug), [src, slug]);
+  const activeSrc = fallbackIdx >= 0 && fallbackIdx < candidates.length ? candidates[fallbackIdx] : src;
+
+  return (
+    <img
+      src={activeSrc}
+      alt={alt}
+      className="w-full h-full object-cover"
+      referrerPolicy="no-referrer"
+      onError={() => {
+        setFallbackIdx((prev) => {
+          const next = prev + 1;
+          return next < candidates.length ? next : prev;
+        });
+      }}
+    />
+  );
+};
 
 export const PostsManager = () => {
   const {
     posts,
+    setPosts,
     categories,
     deletePost,
     deletePosts,
@@ -93,15 +115,32 @@ export const PostsManager = () => {
     if (isPushingGitHub) return;
     setIsPushingGitHub(true);
     try {
+      const postUpdates = posts.map((p) => ({
+        id: p.id,
+        slug: getPromptSlug(p),
+        title: p.title,
+        imageUrl: p.imageUrl,
+        imageAlt: p.imageAlt,
+        imageFileName: p.imageFileName,
+        additionalImages: p.additionalImages,
+        status: p.status,
+        isPremium: p.isPremium,
+        isNoIndex: p.isNoIndex,
+        updatedAt: p.updatedAt,
+      }));
       const res = await fetch('/api/admin/push-posts-github', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ postUpdates }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Failed to push posts.json to GitHub');
       }
+      if (Array.isArray(data.posts) && data.posts.length > 0) {
+        setPosts(data.posts);
+      }
+      refreshData();
       showToast(data.message || `Pushed posts.json to ${data.repo}!`);
     } catch (e: any) {
       showToast(e?.message || 'Failed to push posts.json to GitHub');
@@ -384,11 +423,10 @@ export const PostsManager = () => {
                         <div className="flex items-center gap-3">
                           {post.imageUrl && (
                             <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-neutral-900 shrink-0 border border-neutral-200 dark:border-neutral-800">
-                              <img
+                              <AdminPostThumb
                                 src={post.imageUrl}
                                 alt={post.title}
-                                className="w-full h-full object-cover"
-                                referrerPolicy="no-referrer"
+                                slug={getPromptSlug(post)}
                               />
                             </div>
                           )}

@@ -1287,9 +1287,71 @@ export const AppProvider = ({
   const [isCatalogLoading, setIsCatalogLoading] = useState<boolean>(false);
   const [catalogLoadError, setCatalogLoadError] = useState<boolean>(false);
   const fullCatalogPromiseRef = useRef<Promise<PromptPost[]> | null>(null);
+  const hasSyncedLiveCatalogRef = useRef<boolean>(false);
 
   const ensureFullCatalogLoaded = useCallback(async (): Promise<PromptPost[]> => {
+    const mergeCatalogByVersion = (base: PromptPost[], incoming: PromptPost[]): PromptPost[] => {
+      const getVer = (p?: PromptPost | null) => {
+        if (!p) return 0;
+        const t = new Date(p.updatedAt || p.publishedAt || p.createdAt || 0).getTime();
+        return Number.isFinite(t) ? t : 0;
+      };
+      const hasSha = (u?: string) => Boolean(u && /@[a-f0-9]{40}\//i.test(u));
+
+      const byId = new Map<string, PromptPost>();
+      const slugToId = new Map<string, string>();
+      const orderedIds: string[] = [];
+
+      const upsert = (p: PromptPost, preferIncomingOrder = false) => {
+        if (!p || !p.id) return;
+        const slug = getPromptSlug(p);
+        const existingIdBySlug = slug ? slugToId.get(slug) : undefined;
+        const targetId = byId.has(p.id) ? p.id : existingIdBySlug || p.id;
+        const existing = byId.get(targetId);
+        if (!existing) {
+          byId.set(targetId, { ...p, slug });
+          if (slug) slugToId.set(slug, targetId);
+          if (preferIncomingOrder) {
+            orderedIds.unshift(targetId);
+          } else {
+            orderedIds.push(targetId);
+          }
+          return;
+        }
+        const existingVer = getVer(existing);
+        const incomingVer = getVer(p);
+        if (
+          incomingVer > existingVer ||
+          (incomingVer === existingVer && hasSha(p.imageUrl) && !hasSha(existing.imageUrl))
+        ) {
+          byId.set(targetId, { ...existing, ...p, id: targetId, slug });
+        }
+      };
+
+      for (const item of base) upsert(item, false);
+      for (const item of incoming) upsert(item, true);
+
+      return orderedIds.map((id) => byId.get(id)!).filter(Boolean);
+    };
+
     if (isFullCatalogLoaded && postsRef.current.length > INITIAL_FEED_POSTS.length) {
+      if (!hasSyncedLiveCatalogRef.current && typeof window !== 'undefined' && !isSavingRef.current) {
+        hasSyncedLiveCatalogRef.current = true;
+        void fetch('/api/posts?all=false')
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            if (data?.success && Array.isArray(data.posts) && data.posts.length > 0 && !isSavingRef.current) {
+              setPosts((prev) => {
+                const updated = mergeCatalogByVersion(prev, data.posts);
+                postsRef.current = updated;
+                return updated;
+              });
+            }
+          })
+          .catch(() => {
+            hasSyncedLiveCatalogRef.current = false;
+          });
+      }
       return postsRef.current;
     }
     if (fullCatalogPromiseRef.current) {
@@ -1302,15 +1364,31 @@ export const AppProvider = ({
     fullCatalogPromiseRef.current = import('@/data/posts.json')
       .then((mod) => {
         const allRaw = (Array.isArray(mod.default) ? mod.default : []) as unknown as PromptPost[];
-        const currentTop = postsRef.current;
-        const seenIds = new Set(currentTop.map((p) => p.id));
-        const remaining = allRaw.filter((p) => p && p.id && !seenIds.has(p.id));
-        const merged = [...currentTop, ...remaining];
+        const merged = mergeCatalogByVersion(postsRef.current, allRaw);
         setPosts(merged);
         postsRef.current = merged;
         setIsFullCatalogLoaded(true);
         setCatalogLoadError(false);
         setIsCatalogLoading(false);
+
+        if (!hasSyncedLiveCatalogRef.current && typeof window !== 'undefined' && !isSavingRef.current) {
+          hasSyncedLiveCatalogRef.current = true;
+          void fetch('/api/posts?all=false')
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => {
+              if (data?.success && Array.isArray(data.posts) && data.posts.length > 0 && !isSavingRef.current) {
+                setPosts((prev) => {
+                  const updated = mergeCatalogByVersion(prev, data.posts);
+                  postsRef.current = updated;
+                  return updated;
+                });
+              }
+            })
+            .catch(() => {
+              hasSyncedLiveCatalogRef.current = false;
+            });
+        }
+
         return merged;
       })
       .catch(() => {
@@ -2201,6 +2279,9 @@ export const AppProvider = ({
                     }
                   }
                   setAdminPosts(cleanList);
+                  const publishedClean = cleanList.filter((p) => p.status === 'published');
+                  setPosts(publishedClean);
+                  postsRef.current = publishedClean;
                 }
               }
             })
@@ -2775,7 +2856,7 @@ export const AppProvider = ({
       } catch {}
     }
 
-    // Immediate optimistic local update for admin CMS
+    // Immediate optimistic local update for BOTH admin CMS and public catalog
     const postSlug = getPromptSlug(post);
     setAdminPosts((prev) => {
       const idx = prev.findIndex((p) => p.id === post.id || (postSlug && getPromptSlug(p) === postSlug));
@@ -2786,9 +2867,25 @@ export const AppProvider = ({
       }
       return [{ ...post, slug: postSlug }, ...prev];
     });
+    setPosts((prev) => {
+      let next: PromptPost[];
+      if (post.status !== 'published') {
+        next = prev.filter((p) => p.id !== post.id);
+      } else {
+        const idx = prev.findIndex((p) => p.id === post.id || (postSlug && getPromptSlug(p) === postSlug));
+        if (idx >= 0) {
+          next = [...prev];
+          next[idx] = { ...next[idx], ...post, slug: postSlug };
+        } else {
+          next = [{ ...post, slug: postSlug }, ...prev];
+        }
+      }
+      postsRef.current = next;
+      return next;
+    });
 
     try {
-      // Send to server to persist directly into Firebase Firestore
+      // Send to server to persist and push updated posts.json to GitHub
       const res = await fetch('/api/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2810,18 +2907,23 @@ export const AppProvider = ({
           }
         }
         setAdminPosts(cleanPosts);
+        const publishedClean = cleanPosts.filter((p) => p.status === 'published');
+        setPosts(publishedClean);
+        postsRef.current = publishedClean;
+
         const savedPost = data.post || post;
+        setSelectedPostState((prev) => (prev && prev.id === savedPost.id ? savedPost : prev));
         if (data.githubSync?.success) {
           showToast(`Prompt saved & posts.json pushed to GitHub (${data.githubSync.repo})!`);
         } else if (data.githubSync?.error) {
-          showToast(`Prompt saved to Firebase! GitHub push notice: ${data.githubSync.error}`);
+          showToast(`Prompt saved! GitHub push notice: ${data.githubSync.error}`);
         } else {
-          showToast('Prompt saved to Firebase!');
+          showToast('Prompt saved!');
         }
 
         return savedPost;
       } else {
-        throw new Error(data.error || 'Failed to save post to Firebase');
+        throw new Error(data.error || 'Failed to save post');
       }
     } catch (err: any) {
       console.error('Failed to save post on server:', err);
@@ -2851,8 +2953,13 @@ export const AppProvider = ({
       } catch {}
     }
 
-    // 1. Instant optimistic update for admin CMS
+    // 1. Instant optimistic update for admin CMS and public feed
     setAdminPosts((prev) => prev.filter((p) => !idSet.has(p.id)));
+    setPosts((prev) => {
+      const next = prev.filter((p) => !idSet.has(p.id));
+      postsRef.current = next;
+      return next;
+    });
 
     setBookmarkedIds((prev) => {
       const updated = prev.filter((item) => !idSet.has(item));
@@ -2871,7 +2978,7 @@ export const AppProvider = ({
       return updated;
     });
 
-    showToast(`${ids.length} prompt${ids.length > 1 ? 's' : ''} removed from Firebase`);
+    showToast(`${ids.length} prompt${ids.length > 1 ? 's' : ''} removed`);
 
     try {
       const res = await fetch('/api/posts', {
@@ -2884,6 +2991,9 @@ export const AppProvider = ({
         // Guarantee deleted IDs are NEVER reintroduced from server response
         const remaining = data.posts.filter((p: PromptPost) => !idSet.has(p.id));
         setAdminPosts(remaining);
+        const publishedRemaining = remaining.filter((p: PromptPost) => p.status === 'published');
+        setPosts(publishedRemaining);
+        postsRef.current = publishedRemaining;
         if (data.githubSync?.success) {
           showToast(`Removed & updated posts.json on GitHub (${data.githubSync.repo})!`);
         }
@@ -2904,7 +3014,8 @@ export const AppProvider = ({
   };
 
   const togglePublishStatus = async (id: string) => {
-    const post = posts.find((p) => p.id === id);
+    const activeList = currentView === 'admin' && adminPosts.length > 0 ? adminPosts : posts;
+    const post = activeList.find((p) => p.id === id) || posts.find((p) => p.id === id);
     if (!post) return;
     const newStatus = post.status === 'published' ? 'draft' : 'published';
     const updated = { ...post, status: newStatus as 'published' | 'draft' };
@@ -2913,7 +3024,8 @@ export const AppProvider = ({
   };
 
   const togglePremiumStatus = async (id: string) => {
-    const post = posts.find((p) => p.id === id);
+    const activeList = currentView === 'admin' && adminPosts.length > 0 ? adminPosts : posts;
+    const post = activeList.find((p) => p.id === id) || posts.find((p) => p.id === id);
     if (!post) return;
     const newIsPremium = !post.isPremium;
     const updated: PromptPost = {
@@ -2929,7 +3041,8 @@ export const AppProvider = ({
   };
 
   const toggleNoIndexStatus = async (id: string) => {
-    const post = posts.find((p) => p.id === id);
+    const activeList = currentView === 'admin' && adminPosts.length > 0 ? adminPosts : posts;
+    const post = activeList.find((p) => p.id === id) || posts.find((p) => p.id === id);
     if (!post) return;
     const newIsNoIndex = !post.isNoIndex;
     const updated: PromptPost = {
@@ -3225,7 +3338,23 @@ export const AppProvider = ({
         deleteAiHistoryItem,
         clearAiHistory,
         posts: (currentView === 'admin' && adminPosts.length > 0) ? adminPosts : posts,
-        setPosts: currentView === 'admin' ? setAdminPosts : setPosts,
+        setPosts: currentView === 'admin'
+          ? (action) => {
+              setAdminPosts((prev) => {
+                const next = typeof action === 'function' ? action(prev) : action;
+                const pub = next.filter((p) => p.status === 'published');
+                setPosts(pub);
+                postsRef.current = pub;
+                return next;
+              });
+            }
+          : (action) => {
+              setPosts((prev) => {
+                const next = typeof action === 'function' ? action(prev) : action;
+                postsRef.current = next;
+                return next;
+              });
+            },
         isLoadingPosts,
         categories,
         tags: allKnownTags,
