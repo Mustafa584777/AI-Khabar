@@ -3546,9 +3546,9 @@
     "id": "prompt-1793519125888",
     "publishedAt": "2026-11-01T07:45:25.891Z",
     "author": {
+      "role": "Author",
       "name": "tool.reelz",
-      "avatar": "/logo.png",
-      "role": "Author"
+      "avatar": "/logo.png"
     },
     "imageHeight": 1536,
     "isPremium": false,
@@ -3572,14 +3572,14 @@
       "focusKeyword": "editorial portrait prompt"
     },
     "imageFileName": "editorial-urban-rider-portrait-prompt.webp",
-    "updatedAt": "2026-11-27T05:24:17.193Z",
+    "updatedAt": "2026-11-05T12:10:04.946Z",
     "createdAt": "2026-11-01T07:45:25.891Z",
     "copiesCount": 0,
     "parameters": {
       "isPremium": false
     },
     "affiliateProducts": [],
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@6c2fde843121650c738fcaf1afe91d71549682ad/prompts/editorial-urban-rider-portrait-prompt.webp",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793518398115.jpg",
     "slug": "editorial-urban-rider-portrait-prompt",
     "preferredAi": "ChatGPT",
     "viewsCount": 0,
@@ -3595,8 +3595,8 @@
     "slug": "vintage-motorcycle-travel-scrapbook-poster",
     "additionalImages": [],
     "seo": {
-      "metaDescription": "Generate retro motorcycle adventure scrapbooks and vintage travel posters with this AI prompt guide.",
       "metaTitle": "Vintage Motorcycle Travel Poster AI Prompt",
+      "metaDescription": "Generate retro motorcycle adventure scrapbooks and vintage travel posters with this AI prompt guide.",
       "focusKeyword": "vintage travel poster prompt"
     },
     "bookmarksCount": 0,
@@ -3604,15 +3604,15 @@
     "viewsCount": 0,
     "author": {
       "name": "tool.reelz",
-      "role": "Author",
-      "avatar": "/logo.png"
+      "avatar": "/logo.png",
+      "role": "Author"
     },
     "imageAlt": "Vintage Motorcycle Travel Scrapbook Poster",
     "copiesCount": 0,
     "parameters": {
       "isPremium": true
     },
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793518588508.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@25b47d8833ec9f9f5a4ab13360344252a8060d0c/prompts/vintage-motorcycle-travel-scrapbook-poster.webp",
     "title": "Vintage Motorcycle Travel Scrapbook Poster",
     "aiTool": "Midjourney",
     "tags": [
@@ -3628,7 +3628,7 @@
     "createdAt": "2026-11-01T07:40:12.801Z",
     "articleContent": "### Overview This prompt crafts a retro travel scrapbook poster blending editorial portraiture with mixed-media paper ephemera. ### Visual Mechanics - **Subject & Framing:** A central framed portrait set against an aged paper background with distressed edges and vintage tape accents. - **Palette & Tone:** Earthy sepia, muted olive greens, and aged paper whites. - **Graphic Details:** Victorian etchings, stamps, and bold woodblock-style vintage fonts enrich the adventure theme. ### Customization Tips - Swap the subject or motorcycle model to fit different vintage settings. - Change the text prompts to reflect alternate locations or travel journeys.",
     "promptText": "Try this prompt in ChatGPT only 👇\n\nSTRICT REFERENCE-BASED IMAGE COMPOSITION — FOLLOW EVERY INSTRUCTION EXACTLY.\n\nREFERENCE IMAGE ROLES:\n\nIMAGE 1 — MASTER SUBJECT REFERENCE:\nUse the uploaded original photograph as the ONLY source for the person, facial identity, hairstyle, body proportions, original clothing, pose, motorcycle, motorcycle model, and surrounding photographic details.\n\nIMAGE 2 — POSTER DESIGN REFERENCE:\nUse this image ONLY as a visual reference for the vintage scrapbook poster layout, aged paper texture, typography placement, decorative elements, Polaroid positioning, and 3D photo cutout effect.\n\nIMPORTANT: Never copy the person, selfie, clothes, or motorcycle from IMAGE 2.\n\nIDENTITY AND SUBJECT LOCK — ABSOLUTE PRIORITY:\n\nReproduce the exact person from IMAGE 1. Preserve recognizable facial identity, facial proportions, hairstyle, skin tone, body structure, and natural appearance.\n\nPreserve the exact original outfit from IMAGE 1, including every garment, color, fabric, texture, fit, accessories, footwear, and visible details.\n\nPreserve the exact motorcycle from IMAGE 1. Do not replace it with another motorcycle, change its model, redesign its body, modify its wheels, or invent different mechanical components.\n\nMaintain the original subject's pose and natural interaction with the motorcycle.\n\nPOSTER DESIGN:\n\nCreate a premium vintage motorcycle scrapbook poster on a warm ivory, aged parchment paper background.\n\nPlace one large, slightly tilted rectangular photograph in the center, inspired by IMAGE 2.\n\nUse realistic textured cream paper, subtle paper creases, natural aged edges, soft paper shadows, and vintage beige masking tape attached near the upper edge.\n\nCRITICAL — OPEN BOTTOM FRAME / 3D POP-OUT EFFECT:\n\nThe photograph must have ONLY THREE visible frame borders:\n\n1. Top border — visible.\n2. Left border — visible.\n3. Right border — visible.\n\nABSOLUTELY NO BOTTOM FRAME BORDER.\n\nThe entire bottom edge of the photograph must remain OPEN, creating a seamless transition between the photograph and the surrounding parchment background.\n\nDo not draw a Polaroid bottom strip, rectangular bottom border, white frame edge, or paper boundary underneath the photograph.\n\n3D FOREGROUND BREAKOUT — MOST IMPORTANT:\n\nCreate a convincing layered 3D photo cutout effect.\n\nThe person's lower legs and shoes must extend naturally below the open bottom edge of the photograph.\n\nThe motorcycle's front wheel, tyre, lower body, and selected mechanical components must also protrude beyond the photograph's bottom boundary.\n\nNatural grass, soil, and foreground vegetation should extend beyond the photograph and blend into the parchment background.\n\nThe extracted foreground elements must sit IN FRONT of the remaining three-sided photograph frame.\n\nUse accurate subject masking, realistic overlapping layers, natural contact shadows, and believable depth.\n\nThe subject and motorcycle must appear physically emerging from the photograph, not like flat stickers pasted onto paper.\n\nKeep the upper portion of the original photograph inside the three-sided frame.\n\nBACKGROUND AND DECORATION:\n\nUse a warm vintage parchment background with subtle distressed paper texture.\n\nAdd restrained scrapbook decorations such as small botanical illustrations, vintage travel details, subtle masking tape, and delicate hand-drawn motorcycle or mountain sketches.\n\nKeep the central photograph dominant and visually uncluttered.\n\nTYPOGRAPHY:\n\nAdd the following editorial vintage typography:\n\nVINTAGE RIDERS\n\nA DAY IN AGRA\n\nTHE ENFIELD ADVENTURE\n\nUse bold vintage serif lettering with warm mustard and dark rust-red tones for the main heading. Keep supporting text smaller and elegant.\n\nPlace typography above the photograph without overlapping the person's face or motorcycle.\n\nREALISM AND QUALITY:\n\nPhotorealistic original subject, accurate motorcycle details, realistic fabric textures, authentic skin texture, natural shadows, precise perspective, realistic paper depth, premium editorial scrapbook composition.\n\nSTRICT NEGATIVE INSTRUCTIONS:\n\n- No random person.\n- No selfie or mirror selfie.\n- No different motorcycle.\n- No motorcycle redesign.\n- No clothing replacement.\n- No facial identity changes.\n- No additional limbs or distorted hands.\n- No duplicated motorcycle parts.\n- No completely enclosed Polaroid frame.\n- NO BOTTOM PHOTO FRAME BORDER.\n- No flat sticker-like cutouts.\n- No artificial floating objects.\n- No unnecessary text.\n- No unrelated background scenes.\n\nFINAL OUTPUT:\n\nA premium vintage motorcycle scrapbook poster using IMAGE 1 as the exact photographic subject and IMAGE 2 strictly as the poster layout reference, featuring an open-bottom three-sided photo frame and a highly realistic 3D foreground breakout effect.\n\nPrioritize subject accuracy and composition over creative reinterpretation.",
-    "updatedAt": "2026-11-01T08:25:05.410Z",
+    "updatedAt": "2026-11-27T05:24:38.410Z",
     "affiliateProducts": [],
     "variables": [],
     "likesCount": 0,
