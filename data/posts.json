@@ -3969,9 +3969,9 @@
     "likesCount": 0,
     "title": "Indian wedding prompt for Gemini",
     "author": {
+      "name": "tool.reelz",
       "avatar": "/logo.png",
-      "role": "Author",
-      "name": "tool.reelz"
+      "role": "Author"
     },
     "bookmarksCount": 0,
     "imageWidth": 1024,
@@ -3980,9 +3980,9 @@
     "additionalImages": [],
     "isNoIndex": false,
     "seo": {
+      "metaTitle": "Professional South Asian Wedding Portrait Prompt for AI",
       "metaDescription": "Create stunning, high-end South Asian wedding portraits with this master-level AI image generation prompt. Perfect for Midjourney, Flux, and SDXL.",
-      "focusKeyword": "South Asian wedding photography",
-      "metaTitle": "Professional South Asian Wedding Portrait Prompt for AI"
+      "focusKeyword": "South Asian wedding photography"
     },
     "category": "Photorealistic & Portraits",
     "tags": [
@@ -3999,7 +3999,7 @@
     "imageHeight": 1536,
     "imageFileName": "indian-wedding-prompt-for-gemini.webp",
     "publishedAt": "2026-10-31T06:39:58.021Z",
-    "updatedAt": "2026-10-31T06:40:48.371Z",
+    "updatedAt": "2026-11-27T08:00:33.095Z",
     "parameters": {
       "isPremium": false
     },
@@ -4009,10 +4009,10 @@
     "slug": "indian-wedding-prompt-for-gemini",
     "isPremium": false,
     "status": "published",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793428626719.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@7651924b616046c4a422064b7d9168bfaa002efb/prompts/indian-wedding-prompt-for-gemini.webp",
     "copiesCount": 0,
     "variables": [],
-    "imageAlt": "Prompt for marriage photo Indian",
+    "imageAlt": "Indian wedding prompt for Gemini",
     "viewsCount": 0,
     "id": "prompt-1793428798021"
   },
