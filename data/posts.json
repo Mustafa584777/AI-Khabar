@@ -3395,14 +3395,14 @@
     "imageHeight": 1536,
     "seo": {
       "metaTitle": "Prompt for Pahadi look for girl | Trending Copy Paste Photo Prompts",
-      "metaDescription": "Copy and paste this photo prompt for Prompt for Pahadi look for girl.",
-      "focusKeyword": "Prompt for Pahadi look for girl"
+      "focusKeyword": "Prompt for Pahadi look for girl",
+      "metaDescription": "Copy and paste this photo prompt for Prompt for Pahadi look for girl."
     },
     "affiliateProducts": [],
     "publishedAt": "2026-11-07T12:00:38.297Z",
     "viewsCount": 0,
     "additionalImages": [],
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@d8083062ea04e35266fb08b51227beb93db0aa4a/prompts/prompt-for-pahadi-look-for-girl.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1794052781017.jpg",
     "title": "Prompt for Pahadi look for girl",
     "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
     "parameters": {
@@ -3414,17 +3414,17 @@
     "imageAlt": "Prompt for Pahadi look for girl",
     "aiTool": "Midjourney",
     "isPremium": false,
-    "imageFileName": "prompt-for-pahadi-look-for-girl.webp",
+    "imageFileName": "Prompt for Pahadi look for girl",
     "promptText": "Hyper-realistic portrait of a beautiful woman wearing traditional Pahadi-inspired attire. The subject has long, sleek, chestnut-brown hair cascading over her shoulders. She wears a vibrant orange textured dupatta draped over her head, accented by a subtle green patterned border, and a rich, deep purple long-sleeved velvet blouse. The jewelry is intricate and cultural, featuring a large golden nath (nose ring) connected to an ornate golden earring, a layered red and gold beaded necklace, and a golden maang tikka on her forehead. The woman has glowing skin with subtle, natural makeup, soft eyeliner, and a gentle, inviting expression. The lighting is soft and flattering, typical of interior home photography, casting gentle highlights on the velvet texture and metallic jewelry. The background shows a simple, clean, neutral-toned interior with a glimpse of a ceiling fan, maintaining a realistic, candid aesthetic. Shot on a high-end smartphone camera with natural detail, 8k resolution, cinematic lighting, sharp focus on eyes, soft background blur, aspect ratio 3:4",
     "variables": [],
     "id": "prompt-1793521463243",
     "author": {
+      "role": "Author",
       "name": "tool.reelz",
-      "avatar": "/logo.png",
-      "role": "Author"
+      "avatar": "/logo.png"
     },
     "copiesCount": 0,
-    "updatedAt": "2026-11-27T05:23:50.507Z",
+    "updatedAt": "2026-11-07T12:00:39.257Z",
     "bookmarksCount": 0,
     "category": "Photorealistic & Portraits",
     "likesCount": 0,
@@ -3546,9 +3546,9 @@
     "id": "prompt-1793519125888",
     "publishedAt": "2026-11-01T07:45:25.891Z",
     "author": {
-      "role": "Author",
       "name": "tool.reelz",
-      "avatar": "/logo.png"
+      "avatar": "/logo.png",
+      "role": "Author"
     },
     "imageHeight": 1536,
     "isPremium": false,
@@ -3572,14 +3572,14 @@
       "focusKeyword": "editorial portrait prompt"
     },
     "imageFileName": "editorial-urban-rider-portrait-prompt.webp",
-    "updatedAt": "2026-11-05T12:10:04.946Z",
+    "updatedAt": "2026-11-27T05:24:17.193Z",
     "createdAt": "2026-11-01T07:45:25.891Z",
     "copiesCount": 0,
     "parameters": {
       "isPremium": false
     },
     "affiliateProducts": [],
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793518398115.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@6c2fde843121650c738fcaf1afe91d71549682ad/prompts/editorial-urban-rider-portrait-prompt.webp",
     "slug": "editorial-urban-rider-portrait-prompt",
     "preferredAi": "ChatGPT",
     "viewsCount": 0,
