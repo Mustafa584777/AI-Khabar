@@ -4332,12 +4332,10 @@
     "preferredAi": "Gemini",
     "affiliateProducts": [],
     "isNoIndex": false,
-    "additionalImages": [
-      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/slide-1793703080843-pfb8.jpg"
-    ],
+    "additionalImages": [],
     "author": {
-      "avatar": "/logo.png",
       "name": "tool.reelz",
+      "avatar": "/logo.png",
       "role": "Author"
     },
     "aiTool": "Midjourney",
@@ -4357,19 +4355,19 @@
     "createdAt": "2026-10-30T07:58:40.312Z",
     "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
     "title": "Muslim Wedding Prompt For Gemini",
-    "updatedAt": "2026-11-04T08:34:33.336Z",
+    "updatedAt": "2026-11-27T07:57:23.562Z",
     "id": "prompt-1793347120312",
     "imageWidth": 1024,
     "imageHeight": 1536,
-    "imageAlt": "muslim girl prompt chatgpt",
+    "imageAlt": "Muslim Wedding Prompt For Gemini",
     "isPremium": false,
     "publishedAt": "2026-11-03T10:52:34.442Z",
     "seo": {
-      "metaDescription": "Copy and paste this photo prompt for Muslim Wedding Prompt For Gemini.",
       "metaTitle": "C | Trending Copy Paste Photo Prompts",
+      "metaDescription": "Copy and paste this photo prompt for Muslim Wedding Prompt For Gemini.",
       "focusKeyword": "Muslim Wedding Prompt For Gemini"
     },
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793703077623.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@409fa5432eca5cb77d68a3808ef04707b41147dd/prompts/muslim-wedding-prompt-for-gemini.jpg",
     "variables": [],
     "likesCount": 0
   },
