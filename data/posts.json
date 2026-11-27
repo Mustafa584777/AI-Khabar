@@ -3411,8 +3411,8 @@
     "id": "prompt-1793521248955",
     "title": "Gemini Pahadi Look Prompt For Girl",
     "seo": {
-      "metaDescription": "Create stunning, high-fidelity traditional Indian bridal portraits with this professional-grade AI prompt, optimized for Midjourney and DALL-E 3.",
       "metaTitle": "Ethereal Traditional Indian Bridal Portrait Prompt",
+      "metaDescription": "Create stunning, high-fidelity traditional Indian bridal portraits with this professional-grade AI prompt, optimized for Midjourney and DALL-E 3.",
       "focusKeyword": "Indian bridal portrait"
     },
     "parameters": {
@@ -3429,8 +3429,8 @@
     "articleContent": "### Master the Art of Cultural Portraiture\n\nThis prompt is engineered to capture the intricate beauty of traditional Indian bridal wear with a cinematic, editorial flair. By combining specific material descriptions (black velvet, gold zari embroidery) with shallow depth-of-field optics, the prompt ensures that the subject stands out against the soft, misty background.\n\n#### Lighting & Composition Breakdown\n- **Lighting:** The prompt utilizes 'diffused natural overcast lighting,' which is the gold standard for portraiture as it eliminates harsh shadows and provides even, flattering illumination on the subject's face.\n- **Optics:** The use of an '85mm lens at f/1.8' is crucial. This focal length compresses facial features beautifully and creates a creamy bokeh that isolates the subject from the mountainous background.\n- **Composition:** The subject is positioned with a 'slightly downward gaze,' which evokes a sense of grace and introspection, characteristic of traditional wedding photography.\n\n#### Pro Tips for Customization\n- **Modify the Attire:** Swap 'black velvet' for 'deep crimson silk' or 'emerald green brocade' to change the color mood entirely.\n- **Adjust the Setting:** Change 'mountainous landscape' to 'palace garden' or 'intricately carved temple arches' to shift the cultural narrative.\n- **Stylize:** If using Midjourney, append `--stylize 250` for a balance between artistic flair and photographic realism.",
     "author": {
       "name": "tool.reelz",
-      "role": "Author",
-      "avatar": "/logo.png"
+      "avatar": "/logo.png",
+      "role": "Author"
     },
     "preferredAi": "Gemini",
     "variables": [],
@@ -3439,7 +3439,7 @@
     "imageFileName": "gemini-pahadi-look-prompt-for-girl.webp",
     "aiTool": "Midjourney",
     "isPremium": false,
-    "imageAlt": "Gemini pahadi look prompt aesthetic",
+    "imageAlt": "Gemini Pahadi Look Prompt For Girl",
     "promptText": "Professional cinematic portrait of a beautiful young woman wearing authentic Pahadi traditional attire, featuring a deep black velvet blouse with intricate gold zari embroidery on the cuffs and bodice. She is adorned with traditional gold jewelry, including a delicate maang tikka on her forehead and an ornate gold nath nose ring connected by a dainty chain. A vibrant, colorful traditional pahadi shawl with detailed multi-colored floral embroidery patterns is draped gracefully over her head and shoulders, framing her face perfectly. Her expression is serene and contemplative, eyes downcast with a soft gaze. The lighting is soft, natural daylight, casting gentle highlights on her skin and the polished gold ornaments. The background is a dreamy, soft-focus panorama of lush green mountain slopes under a bright, overcast sky, creating a beautiful bokeh effect. High resolution, 8k, hyper-realistic, rich textures, sharp focus on eyes, intricate embroidery detail, cinematic photography, elegant composition, aspect ratio 3:4",
     "createdAt": "2026-11-01T08:20:48.955Z",
     "tags": [
@@ -3454,8 +3454,8 @@
       "Gemini Pahadi Look Prompt Aesthetic"
     ],
     "copiesCount": 0,
-    "updatedAt": "2026-11-01T08:20:49.830Z",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793521103271.jpg"
+    "updatedAt": "2026-11-27T07:56:35.227Z",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@249062e9e45b498ebed8679ad2ee460087f97b14/prompts/gemini-pahadi-look-prompt-for-girl.jpg"
   },
   {
     "createdAt": "2026-11-01T07:50:14.680Z",
