@@ -2901,7 +2901,7 @@
     }
   },
   {
-    "imageAlt": "Pahadi look for women prompt",
+    "imageAlt": "Pahadi Look For Girls Gemini Prompt",
     "imageHeight": 1536,
     "tags": [
       "Himalayan Portrait",
@@ -2914,7 +2914,7 @@
       "Pahadi Look For Women"
     ],
     "publishedAt": "2026-11-03T04:10:57.017Z",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793678865170.webp",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@d07f8dbd0b0df99b7f55e722dc11aa9e8eef931c/prompts/pahadi-look-for-girls-gemini-prompt.webp",
     "promptText": "An ultra-realistic, authentic high-angle selfie photograph of a young woman wearing traditional Pahadi Himalayan attire. 1. SUBJECT: A young woman with a radiant, joyful expression, natural skin texture, almond-shaped eyes, and a warm smile. 2. EXPRESSION & GAUGE: Direct eye contact, friendly and inviting, capturing a candid moment. 3. POSE & BODY LANGUAGE: The subject is holding the camera for a selfie, with one hand elegantly brought up near her cheek, showcasing a traditional gold nose ring (nath), while her head is tilted slightly to one side. 4. COMPOSITION & FRAMING: Close-up portrait, high-angle framing typical of a selfie, with the vast, rolling green landscape of an alpine meadow and distant majestic mountains providing a sweeping background. 5. CAMERA & OPTICS: Smartphone-style capture, no fucus, blur or bokeh effect. 6. CLOTHING & ACCESSORIES: She is adorned in exquisite, heavy traditional silver layered necklaces, a vibrant red-and-white patterned headscarf (dhattu) wrapped around her head, and gold jhumka earrings. 7. HAIR: Long, thick black hair styled in a single, well-defined braid, falling over her shoulder, accessorized with a decorative braided tassel. 8. LIGHTING & SHADOWS: Soft, natural overcast daylight, providing clean fill light and gentle highlights on her face with minimal harsh shadowing. 9. BACKGROUND & ENVIRONMENT: An idyllic mountain meadow in the Himalayas, featuring lush green grass, rocky outcrops, and sparse evergreen trees under a bright sky. 10. COLOR PALETTE & COLOR GRADING: Bright, natural desaturated color 11. IMAGE TEXTURE & PHOTOGRAPHIC CHARACTER: low-resolution, raw aesthetic , aspect ratio 3:4",
     "aiTool": "Midjourney",
     "likesCount": 0,
@@ -2922,14 +2922,14 @@
     "bookmarksCount": 0,
     "author": {
       "name": "tool.reelz",
-      "role": "Author",
-      "avatar": "/logo.png"
+      "avatar": "/logo.png",
+      "role": "Author"
     },
     "imageWidth": 1024,
     "seo": {
-      "focusKeyword": "Himalayan cultural portrait",
       "metaTitle": "Himalayan Cultural Heritage Portrait Prompt for AI Art",
-      "metaDescription": "Learn how to generate authentic, culturally rich Himalayan-inspired portraits with this professional Midjourney and AI photography prompt guide."
+      "metaDescription": "Learn how to generate authentic, culturally rich Himalayan-inspired portraits with this professional Midjourney and AI photography prompt guide.",
+      "focusKeyword": "Himalayan cultural portrait"
     },
     "copiesCount": 0,
     "variables": [],
@@ -2946,7 +2946,7 @@
     "affiliateProducts": [],
     "createdAt": "2026-11-03T04:10:57.017Z",
     "preferredAi": "Gemini",
-    "updatedAt": "2026-11-04T08:30:03.868Z",
+    "updatedAt": "2026-11-27T07:51:57.541Z",
     "additionalImages": [],
     "imageFileName": "pahadi-look-for-girls-gemini-prompt.webp",
     "articleContent": "This prompt is meticulously designed to capture the essence of high-altitude Himalayan culture through a modern lens. The prompt leverages 'candid selfie' terminology to replicate the casual, high-fidelity aesthetic of modern smartphone photography. Lighting is defined as 'natural soft diffused daylight', which is crucial for achieving that characteristic mountain atmosphere under overcast skies. Key elements like the 'multi-layered silver necklace' and 'gold nose ring' provide specific visual anchors for the AI to maintain cultural accuracy. For best results, use models like Midjourney v6.1 or Flux.1, which excel at rendering skin texture and complex jewelry details. Pro tip: To adjust the mood, change the weather condition in the prompt from 'overcast' to 'golden hour' for warmer, more dramatic highlights."
