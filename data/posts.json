@@ -3207,7 +3207,7 @@
     "category": "Photorealistic & Portraits",
     "imageHeight": 1536,
     "createdAt": "2026-11-02T09:19:01.122Z",
-    "updatedAt": "2026-11-27T05:21:05.837Z",
+    "updatedAt": "2026-11-02T09:19:01.966Z",
     "promptText": "A real photograph of a user walking outdoor on a footpath beside road with black round sunglasses. The subject is wearing a vibrant, traditional red punjabi salwar suit with intricate gold embroidery and a contrasting mustard yellow dupatta with floral patterns. She has elegant gold jhumka earrings, and her dark hair is styled in a neat side-braid. She is smiling softly at the camera. The lighting is realistic, natural. The image captures authentic skin micro-textures, the rich fabric details of the silk garment, and the delicate craftsmanship of the jewelry candid photograph quality, aspect ratio 3:4. No background blur. No traffic, only road and footpath visible. No extra accessories like phone or bag. Clean roads.",
     "additionalImages": [],
     "status": "published",
@@ -3218,18 +3218,18 @@
       "isPremium": false
     },
     "aiTool": "Midjourney",
-    "imageAlt": "Punjabi look prompt for girl",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@1d2b9fdd2f371c139c8c34c50b2c7f78542d0be4/prompts/punjabi-look-prompt-for-girl.webp",
+    "imageAlt": "Punjabi girl prompt copy and paste",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793611027467.jpg",
     "author": {
-      "name": "tool.reelz",
       "avatar": "/logo.png",
+      "name": "tool.reelz",
       "role": "Author"
     },
     "title": "Punjabi look prompt for girl",
     "seo": {
-      "metaTitle": "Create Stunning Ethnic Street Style Portraits with AI",
+      "focusKeyword": "Ethnic Portrait Photography",
       "metaDescription": "Learn how to generate professional-grade, high-fashion ethnic portraits using our custom AI prompt for realistic lighting and textures.",
-      "focusKeyword": "Ethnic Portrait Photography"
+      "metaTitle": "Create Stunning Ethnic Street Style Portraits with AI"
     },
     "affiliateProducts": [],
     "isNoIndex": false,
@@ -3244,10 +3244,10 @@
     "title": "Punjabi suit prompt for Gemini girl",
     "author": {
       "name": "tool.reelz",
-      "role": "Author",
-      "avatar": "/logo.png"
+      "avatar": "/logo.png",
+      "role": "Author"
     },
-    "updatedAt": "2026-11-02T09:19:31.943Z",
+    "updatedAt": "2026-11-27T05:21:22.477Z",
     "imageFileName": "punjabi-suit-prompt-for-gemini-girl.webp",
     "aiTool": "Midjourney",
     "slug": "punjabi-suit-prompt-for-gemini-girl",
@@ -3261,9 +3261,9 @@
     "bookmarksCount": 0,
     "likesCount": 0,
     "seo": {
+      "metaTitle": "Mastering Traditional Indian Portrait Photography Prompts",
       "metaDescription": "Learn how to generate stunning, photorealistic images of traditional Indian ethnic fashion with this expert Midjourney and AI photography prompt guide.",
-      "focusKeyword": "Indian portrait prompt",
-      "metaTitle": "Mastering Traditional Indian Portrait Photography Prompts"
+      "focusKeyword": "Indian portrait prompt"
     },
     "preferredAi": "ChatGPT",
     "isNoIndex": false,
@@ -3279,9 +3279,9 @@
     ],
     "imageWidth": 1024,
     "status": "published",
-    "imageAlt": "Punjabi suit prompt for Gemini girl copy and paste",
+    "imageAlt": "Punjabi suit prompt for Gemini girl",
     "articleContent": "### Bringing Cultural Elegance to Life\n\nThis prompt is engineered to capture the nuance of traditional Indian ethnic wear, focusing on texture, color contrast, and environmental authenticity. The key to this look is the balance between the vibrant, warm tones of the mustard yellow fabric and the raw, earthy textures of the brick background.\n\n### Lighting & Camera Breakdown\n* **Lighting:** Natural afternoon sunlight creates high-contrast shadows that define the subject's form while highlighting the intricate embroidery on the kameez.\n* **Optics:** The 85mm lens at f/1.8 is critical. It compresses the background to create a smooth, buttery bokeh effect, ensuring the subject remains the absolute focal point.\n* **Texture:** By specifying 'raw photography' and 'detailed skin texture,' you tell the model to avoid the 'plastic' AI look and lean into authentic, lifelike details.\n\n### Pro Tips for Customization\n* **Change the Color:** Swap 'mustard yellow' for 'emerald green' or 'royal blue' to shift the entire color palette of the image.\n* **Change the Setting:** Replace 'rural village alleyway' with 'festive temple courtyard' or 'opulent wedding reception' to drastically change the narrative.\n* **Vary the Pose:** Add descriptors like 'walking towards the camera' or 'candidly laughing' to bring more personality to your generation.",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793610230553.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@e6d52f252db3c85f84e3ff1bfe30636668338560/prompts/punjabi-suit-prompt-for-gemini-girl.jpg",
     "copiesCount": 0,
     "affiliateProducts": [],
     "promptText": "A candid photograph of a user posing in an old village alley. She is wearing a mustard yellow silk salwar kameez with fine embroidery along the neckline, paired with a vibrant multicolored geometric Phulkari dupatta draped over her right arm, and matching embroidered juttis. Her dark hair is styled in a neat long braid extending over her shoulder with colorful paranda tassels. She wears a delicate maang tikka and golden jhumka earrings. She leans softly against an aged rustic brick and plaster wall on a cobblestone path. Captured in bright natural sunlight, realistic skin texture, natural shadows, aspect ratio 3:4. No crowd, no blur, no background blur "
