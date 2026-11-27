@@ -3865,7 +3865,7 @@
   {
     "createdAt": "2026-10-31T06:46:41.624Z",
     "likesCount": 0,
-    "updatedAt": "2026-10-31T06:46:42.461Z",
+    "updatedAt": "2026-11-27T08:01:25.485Z",
     "tags": [
       "Indian Bride",
       "Bridal Couture",
@@ -3882,13 +3882,13 @@
     "title": "Traditional wedding prompt for Gemini",
     "author": {
       "name": "tool.reelz",
-      "role": "Author",
-      "avatar": "/logo.png"
+      "avatar": "/logo.png",
+      "role": "Author"
     },
     "seo": {
       "metaTitle": "Create Stunning Indian Bridal Mirror Selfies with AI",
-      "focusKeyword": "Indian bridal photography",
-      "metaDescription": "Learn how to generate professional Indian bridal mirror selfie portraits using AI. Perfect for fashion inspiration, wedding mood boards, and social media content."
+      "metaDescription": "Learn how to generate professional Indian bridal mirror selfie portraits using AI. Perfect for fashion inspiration, wedding mood boards, and social media content.",
+      "focusKeyword": "Indian bridal photography"
     },
     "isPremium": false,
     "aiTool": "Midjourney",
@@ -3905,13 +3905,13 @@
     "isNoIndex": false,
     "imageFileName": "traditional-wedding-prompt-for-gemini.webp",
     "slug": "traditional-wedding-prompt-for-gemini",
-    "imageAlt": "South Indian Marriage prompt",
+    "imageAlt": "Traditional wedding prompt for Gemini",
     "additionalImages": [],
     "id": "prompt-1793429201624",
     "copiesCount": 0,
     "articleContent": "### The Indian Bridal Aesthetic Guide\n\nThis prompt is engineered to capture the specific 'mirror selfie' trend popular on social media, blending modern convenience with high-end bridal luxury. \n\n**Lighting Breakdown:**\n- **Primary Light:** Soft, flattering ambient light coming from the vanity mirror bulbs creates a halo effect and reduces harsh shadows on the skin.\n- **Secondary Light:** Warm, soft interior lighting adds depth to the room and highlights the gold embroidery on the lehenga.\n\n**Composition Tips:**\n- The mirror frame serves as a natural border, focusing the viewer's eye directly onto the subject. \n- The choice of a 'mirror selfie' angle adds a layer of authenticity and intimacy, making the high-fashion subject feel more relatable and modern.\n\n**Pro Tips for Customization:**\n- Swap the 'deep red' for 'emerald green' or 'royal blue' to change the color palette while keeping the festive mood.\n- Adjust the environment to 'opulent palace interior' or 'modern hotel suite' to shift the context of the photo.",
     "viewsCount": 0,
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793428941332.jpg"
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@46159a944fa275ad54e14623cd7a4824a7b70f62/prompts/traditional-wedding-prompt-for-gemini.webp"
   },
   {
     "seo": {
