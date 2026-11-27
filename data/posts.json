@@ -3460,7 +3460,7 @@
   {
     "createdAt": "2026-11-01T07:50:14.680Z",
     "likesCount": 0,
-    "updatedAt": "2026-11-05T12:10:10.642Z",
+    "updatedAt": "2026-11-27T07:59:43.606Z",
     "tags": [
       "Indian-fashion",
       "Golden-hour-photography",
@@ -3474,9 +3474,9 @@
     "bookmarksCount": 0,
     "title": "Ethereal Sunset Portrait in Traditional Attire",
     "author": {
-      "role": "Author",
       "name": "tool.reelz",
-      "avatar": "/logo.png"
+      "avatar": "/logo.png",
+      "role": "Author"
     },
     "seo": {
       "metaTitle": "Master the Golden Hour Portrait: Traditional Attire & Urban Aesthetic",
@@ -3505,7 +3505,7 @@
     "copiesCount": 0,
     "articleContent": "### Capture the Golden Hour Essence\n\nThis prompt is engineered to capture the perfect balance between high-fashion elegance and authentic lifestyle photography. By focusing on specific details like 'dusty rose lehenga' and '85mm lens', the AI is instructed to simulate a professional photoshoot environment.\n\n### Lighting & Camera Breakdown\n- **Lighting:** The 'golden hour' instruction ensures a warm, flattering light that minimizes harsh shadows and creates a dreamy, ethereal glow on the skin.\n- **Optics:** The use of an 85mm f/1.8 lens setting is crucial; it mimics the compression and shallow depth-of-field characteristic of high-end portrait photography, effectively separating the subject from the city background.\n- **Composition:** The subject-centered composition with a soft-focus background keeps the viewer's attention on the subject's expression and the intricate details of the clothing.\n\n### Pro Tips for Customization\n- **Subject:** Replace 'Indian woman' with other descriptors to explore different cultural attires.\n- **Environment:** Swap 'urban rooftop' for 'lush garden' or 'beach at sunset' to shift the mood entirely.\n- **Color Palette:** Adjust 'dusty rose' to 'royal blue' or 'emerald green' to match specific themes or color branding.",
     "viewsCount": 0,
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793519383619.jpg"
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@855f051bdd2a6d0b04645f3244df9f32a63db1f8/prompts/ethereal-sunset-portrait-in-traditional-attire.jpg"
   },
   {
     "variables": [],
