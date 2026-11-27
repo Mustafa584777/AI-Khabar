@@ -2251,14 +2251,14 @@
   {
     "isPremium": true,
     "author": {
+      "name": "tool.reelz",
       "avatar": "/logo.png",
-      "role": "Author",
-      "name": "tool.reelz"
+      "role": "Author"
     },
     "seo": {
       "metaTitle": "Create Surreal Levitation Photography with AI",
-      "focusKeyword": "editorial portrait prompt",
-      "metaDescription": "Learn how to prompt hyper-realistic, editorial-style portraits featuring suspended objects and cinematic lighting."
+      "metaDescription": "Learn how to prompt hyper-realistic, editorial-style portraits featuring suspended objects and cinematic lighting.",
+      "focusKeyword": "editorial portrait prompt"
     },
     "aiTool": "Midjourney",
     "affiliateProducts": [],
@@ -2271,10 +2271,10 @@
       "isPremium": true
     },
     "imageAlt": "Suspended Motion Editorial Portrait",
-    "updatedAt": "2026-11-06T13:03:44.153Z",
+    "updatedAt": "2026-11-27T07:44:45.743Z",
     "imageHeight": 1536,
     "slug": "suspended-motion-editorial-portrait",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793969850142.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@408204295006e67e4ccaec3073ce82c08cfb55e2/prompts/suspended-motion-editorial-portrait.jpg",
     "imageFileName": "suspended-motion-editorial-portrait.webp",
     "preferredAi": "Gemini",
     "id": "prompt-1793970018402",
@@ -2287,17 +2287,22 @@
     "isNoIndex": true,
     "category": "Fashion & Editorial Photography",
     "additionalImages": [
-      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/slide-1793969852866-b8n4.jpg"
+      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@b9a4651e896ff607d1f6c2c7c56f5b106834a4b1/prompts/suspended-motion-editorial-portrait-slide-1.webp"
     ],
     "imageWidth": 1024,
     "tags": [
+      "Editorial Portrait",
+      "Fashion Photography",
+      "Suspended Motion",
+      "Photorealistic",
+      "Studio Photography",
+      "Cinematic Portrait",
+      "High-fashion",
       "Editorial",
       "Minimalist",
       "Levitation",
       "Cinematic",
-      "Fashion",
-      "Portrait",
-      "Surreal"
+      "Fashion"
     ]
   },
   {
