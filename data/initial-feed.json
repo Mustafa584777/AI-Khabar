@@ -1,5 +1,50 @@
 [
   {
+    "aiTool": "Midjourney",
+    "category": "Digital Art & Creative Illustration",
+    "affiliateProducts": [],
+    "updatedAt": "2026-11-27T06:59:40.516Z",
+    "parameters": {
+      "isPremium": false
+    },
+    "author": {
+      "name": "tool.reelz",
+      "avatar": "/logo.png",
+      "role": "Author"
+    },
+    "createdAt": "2026-11-09T03:33:16.683Z",
+    "slug": "digital-illustration-saree-prompt-for-girl",
+    "viewsCount": 0,
+    "variables": [],
+    "copiesCount": 0,
+    "isPremium": false,
+    "articleContent": "## How to Use This Prompt\n\nRun this prompt in your favorite AI image generator to produce photorealistic results.",
+    "title": "Digital Illustration Saree Prompt For Girl",
+    "imageWidth": 1024,
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@e73fcf02a1b25346e38da291e03425122bc2d6cd/prompts/digital-illustration-saree-prompt-for-girl.jpg",
+    "additionalImages": [],
+    "isNoIndex": false,
+    "tags": [
+      "AI",
+      "Photorealistic",
+      "Masterpiece"
+    ],
+    "imageAlt": "Digital Illustration Saree Prompt For Girl",
+    "likesCount": 0,
+    "seo": {
+      "metaTitle": "Sare | Trending Copy Paste Photo Prompts",
+      "metaDescription": "Copy and paste this photo prompt for Digital Illustration Saree Prompt For Girl.",
+      "focusKeyword": "Digital Illustration Saree Prompt For Girl"
+    },
+    "publishedAt": "2026-11-27T06:59:37.246Z",
+    "id": "prompt-1794195196682",
+    "promptText": "A highly detailed, sophisticated portrait of a beautiful young woman. She has a gentle, inviting smile and deep expressive eyes. The portrait is centered against a clean, stark white background. High-contrast sepia and deep espresso brown tones define the shadows, while negative white space defines the highlights. The overall aesthetic is that of fine-art ink portrait merged with modern digital typography, sharp edges on the facial features, organic dissipation at the borders, masterpiece quality, photorealistic art, cinematic depth, aspect ratio 3:4. No text",
+    "imageHeight": 1536,
+    "imageFileName": "digital-illustration-saree-prompt-for-girl.webp",
+    "status": "published",
+    "bookmarksCount": 0
+  },
+  {
     "copiesCount": 0,
     "author": {
       "role": "Author",
@@ -733,55 +778,5 @@
     "publishedAt": "2026-11-17T12:02:18.190Z",
     "likesCount": 0,
     "imageHeight": 1536
-  },
-  {
-    "status": "published",
-    "id": "prompt-1794665512901",
-    "isPremium": true,
-    "bookmarksCount": 0,
-    "viewsCount": 0,
-    "imageHeight": 1536,
-    "variables": [],
-    "seo": {
-      "focusKeyword": "editorial portrait prompt",
-      "metaDescription": "Create stunning, high-fashion editorial portraits with this professional prompt designed for Midjourney and Flux. Master the look of suede textures and cinematic lighting.",
-      "metaTitle": "Professional Minimalist Fashion Editorial Portrait Prompt"
-    },
-    "publishedAt": "2026-11-14T14:11:52.907Z",
-    "title": "Minimalist Suede Editorial Portrait",
-    "createdAt": "2026-11-14T14:11:52.907Z",
-    "imageAlt": "Minimalist Suede Editorial Portrait",
-    "updatedAt": "2026-11-26T11:51:38.590Z",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@33f96ac46912235f855bce6f13f62564b4ab4c3a/prompts/minimalist-suede-editorial-portrait.jpg",
-    "imageFileName": "minimalist-suede-editorial-portrait.webp",
-    "slug": "minimalist-suede-editorial-portrait",
-    "parameters": {
-      "isPremium": true
-    },
-    "articleContent": "This prompt is engineered to capture the clean, sophisticated aesthetic of modern fashion photography. The key to this image's success lies in the interplay between the textured suede fabric and the high-contrast shadow cast against the neutral wall. By specifying an 85mm lens, we achieve a flattering portrait compression that keeps the focus sharp on the subject while maintaining a clean, professional separation from the background. The lighting instructions prioritize 'directional side-lighting' which is essential for creating the dramatic shadow profile, a hallmark of high-end editorial work. Use this prompt when you want to showcase clothing texture, masculine style, or minimalist character designs.",
-    "promptText": "Professional studio portrait of user wearing stylish black rectangular sunglasses, dressed in a deep brown premium suede zip-up jacket over a black crew-neck t-shirt. The subject is angled slightly away from the camera, head turned to look over his shoulder with a sharp, piercing gaze. High-end editorial photography, sharp focus on skin texture and fabric weave, dramatic side lighting creating a soft dark shadow of the subject cast onto a plain, neutral-gray studio wall. Muted, desaturated color palette with rich brown and charcoal tones, cinematic film grain, subtle vignette, elegant and minimalist aesthetic, high-contrast, masterfully lit, professional color grading, aspect ratio 3:4",
-    "affiliateProducts": [],
-    "copiesCount": 0,
-    "additionalImages": [],
-    "imageWidth": 1024,
-    "author": {
-      "avatar": "/logo.png",
-      "role": "Author",
-      "name": "tool.reelz"
-    },
-    "isNoIndex": true,
-    "aiTool": "Midjourney",
-    "tags": [
-      "Menswear",
-      "Minimalist",
-      "Suede-jacket",
-      "Editorial",
-      "Studio-portrait",
-      "Contemporary-fashion",
-      "Sharp-focus"
-    ],
-    "category": "Fashion & Editorial Photography",
-    "likesCount": 0,
-    "preferredAi": "ChatGPT"
   }
 ]
