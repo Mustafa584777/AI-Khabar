@@ -2306,8 +2306,8 @@
     "preferredAi": "Gemini",
     "slug": "candid-atmospheric-contemplation",
     "author": {
-      "avatar": "/logo.png",
       "name": "tool.reelz",
+      "avatar": "/logo.png",
       "role": "Author"
     },
     "copiesCount": 0,
@@ -2319,14 +2319,14 @@
     },
     "title": "Candid Atmospheric Contemplation",
     "seo": {
-      "focusKeyword": "atmospheric photography prompt",
+      "metaTitle": "Candid Atmospheric Portrait Prompt for AI Art",
       "metaDescription": "Master the aesthetic of candid, contemplative portrait photography with this high-quality AI image generation prompt, optimized for natural lighting and sky composition.",
-      "metaTitle": "Candid Atmospheric Portrait Prompt for AI Art"
+      "focusKeyword": "atmospheric photography prompt"
     },
     "isNoIndex": false,
     "aiTool": "Midjourney",
     "isPremium": false,
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1793960310469.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@6f89a1ee21f213e9131218ef45c90d05135404d4/prompts/candid-atmospheric-contemplation.jpg",
     "promptText": "A cinematic, low-angle, ultra-wide-angle shot of a young man with dark, textured, slightly curly hair, seen from behind and slightly to the side, looking towards the distance, wearing a grey and white plaid shirt with rolled-up sleeves, positioned on the left side of the frame. The background is a vast, expansive sky filled with massive, detailed white cumulus clouds set against a deep, vibrant blue. Two power lines cut diagonally through the sky adding depth and scale. The lighting is bright, natural daylight, casting soft light on the subject. High clarity, sharp focus throughout the entire image, capturing the fine fabric texture of the shirt and the individual curls in the hair, crisp digital photography, deep sky blues, airy atmosphere, expansive negative space, professional color grading, aspect ratio 3:4",
     "status": "published",
     "id": "prompt-1793960431074",
@@ -2342,7 +2342,7 @@
     ],
     "imageAlt": "Candid Atmospheric Contemplation",
     "articleContent": "### Crafting the Perfect Candid Moment\n\nThis prompt is engineered to capture the 'quiet contemplation' aesthetic often seen in top-tier travel and lifestyle photography. By focusing on the interplay between the human subject and the vastness of the sky, you create an immediate sense of scale and mood.\n\n#### Lighting & Composition\n- **Subject Positioning:** The 'from behind' angle invites the viewer to step into the subject's shoes, creating a relatable, immersive experience.\n- **Lighting Breakdown:** The prompt specifies bright, high-contrast daylight. To get the best results, ensure your model focuses on the texture of the fabric (plaid) and the natural fall-off of light.\n- **Compositional Element:** The diagonal power lines are a 'compositional hook.' They break the vastness of the sky and add a touch of realism, preventing the image from feeling too staged or overly ethereal.\n\n#### Pro Tips for Better Results\n- **Lens Choice:** Using a 35mm lens in your prompt ensures a natural field of view that feels like a human eye rather than an over-processed wide-angle.\n- **Focus:** If the background looks too blurry, increase the f-stop value (higher f-number) to keep the horizon sharp.",
-    "updatedAt": "2026-11-06T10:20:41.556Z",
+    "updatedAt": "2026-11-27T07:44:13.793Z",
     "imageWidth": 1024,
     "createdAt": "2026-11-06T10:20:31.075Z",
     "imageFileName": "candid-atmospheric-contemplation.webp",
