@@ -18,6 +18,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { getPromptSlug, getImageFallbackCandidates } from '@/lib/utils';
+import { compactPostsForJson } from '@/lib/post-normalizer';
 
 const AdminPostThumb = ({ src, alt, slug }: { src: string; alt: string; slug: string }) => {
   const [fallbackIdx, setFallbackIdx] = useState<number>(-1);
@@ -113,7 +114,10 @@ export const PostsManager = () => {
         }
       }
 
-      const blob = new Blob([JSON.stringify(cleanPostsToDownload, null, 2)], { type: 'application/json' });
+      const blob = new Blob(
+        [JSON.stringify(compactPostsForJson(cleanPostsToDownload), null, 2)],
+        { type: 'application/json' }
+      );
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

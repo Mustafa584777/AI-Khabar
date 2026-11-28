@@ -2,6 +2,7 @@ import { Category, PromptPost, SiteSettings } from '@/types/prompt';
 import defaultPostsData from '@/data/posts.json';
 import defaultNotificationsData from '@/data/notifications.json';
 import { PushNotificationItem } from '@/types/notification';
+import { hydrateCompactPosts } from './post-normalizer';
 
 export const INITIAL_CATEGORIES: Category[] = [
   {
@@ -78,7 +79,7 @@ export const INITIAL_CATEGORIES: Category[] = [
   }
 ];
 
-export const INITIAL_POSTS: PromptPost[] = (Array.isArray(defaultPostsData) ? defaultPostsData : []) as unknown as PromptPost[];
+export const INITIAL_POSTS: PromptPost[] = hydrateCompactPosts(defaultPostsData);
 
 export const INITIAL_NOTIFICATIONS: PushNotificationItem[] = (Array.isArray(defaultNotificationsData) ? defaultNotificationsData : []) as unknown as PushNotificationItem[];
 

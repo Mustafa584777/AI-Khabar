@@ -131,7 +131,7 @@ export const PromptGrid = () => {
 
     if (selectedTool && selectedTool !== 'all') {
       list = list.filter(
-        (p) => p.aiTool.toLowerCase() === selectedTool.toLowerCase()
+        (p) => (p.aiTool || p.preferredAi || '').toLowerCase() === selectedTool.toLowerCase()
       );
     }
 

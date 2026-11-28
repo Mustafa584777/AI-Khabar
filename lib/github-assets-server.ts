@@ -1,5 +1,6 @@
 import { Category, PromptComment, PromptPost, SiteSettings } from '@/types/prompt';
 import { getPromptSlug } from './utils';
+import { compactPostsForJson, hydrateCompactPosts } from './post-normalizer';
 
 export interface GitHubAssetsConfig {
   token: string;
@@ -898,7 +899,7 @@ export async function fetchPostsJsonFromGitHub(
         if (meta && typeof meta.content === 'string' && meta.content.length > 0) {
           const decoded = Buffer.from(meta.content.replace(/\n/g, ''), 'base64').toString('utf-8');
           const parsed = JSON.parse(decoded);
-          if (Array.isArray(parsed)) return parsed as PromptPost[];
+          if (Array.isArray(parsed)) return hydrateCompactPosts(parsed);
         }
         if (meta && typeof meta.sha === 'string') {
           const blobRes = await fetch(
@@ -914,7 +915,7 @@ export async function fetchPostsJsonFromGitHub(
           );
           if (blobRes.ok) {
             const parsed = await blobRes.json().catch(() => null);
-            if (Array.isArray(parsed)) return parsed as PromptPost[];
+            if (Array.isArray(parsed)) return hydrateCompactPosts(parsed);
           }
         }
         if (meta && typeof meta.download_url === 'string') {
@@ -924,7 +925,7 @@ export async function fetchPostsJsonFromGitHub(
           });
           if (dlRes.ok) {
             const parsed = await dlRes.json().catch(() => null);
-            if (Array.isArray(parsed)) return parsed as PromptPost[];
+            if (Array.isArray(parsed)) return hydrateCompactPosts(parsed);
           }
         }
       }
@@ -943,7 +944,7 @@ export async function fetchPostsJsonFromGitHub(
       });
       if (rawRes.ok) {
         const parsed = await rawRes.json().catch(() => null);
-        if (Array.isArray(parsed)) return parsed as PromptPost[];
+        if (Array.isArray(parsed)) return hydrateCompactPosts(parsed);
       }
     } catch {}
   }
@@ -1092,11 +1093,15 @@ export async function pushPostsJsonToGitHub(
   const filesToPush: Array<{ path: string; content: string }> = [
     {
       path: 'data/posts.json',
-      content: JSON.stringify(allPosts, null, 2),
+      content: JSON.stringify(compactPostsForJson(allPosts), null, 2),
     },
     {
       path: 'data/initial-feed.json',
-      content: JSON.stringify(initialFeed, null, 2),
+      content: JSON.stringify(
+        compactPostsForJson(initialFeed, { omitPublishedStatus: true }),
+        null,
+        2
+      ),
     },
   ];
 
@@ -1173,11 +1178,11 @@ export async function pushPublicCdnBundleToAssetsRepo(
   const filesToPush: Array<{ path: string; content: string }> = [
     {
       path: 'data/posts.min.json',
-      content: JSON.stringify(publishedPosts),
+      content: JSON.stringify(compactPostsForJson(publishedPosts, { omitPublishedStatus: true })),
     },
     {
       path: 'data/initial-feed.json',
-      content: JSON.stringify(initialFeed),
+      content: JSON.stringify(compactPostsForJson(initialFeed, { omitPublishedStatus: true })),
     },
   ];
 

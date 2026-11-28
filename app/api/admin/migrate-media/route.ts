@@ -15,6 +15,7 @@ import {
   uploadBatchToGitHubAssets,
 } from '@/lib/github-assets-server';
 import { PromptPost } from '@/types/prompt';
+import { compactPostsForJson, hydrateCompactPosts } from '@/lib/post-normalizer';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -46,7 +47,7 @@ function readJsonPosts(filePath: string): PromptPost[] {
     if (fs.existsSync(filePath)) {
       const raw = fs.readFileSync(filePath, 'utf-8');
       const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
+      return Array.isArray(parsed) ? hydrateCompactPosts(parsed) : [];
     }
   } catch (err) {
     console.warn(`Failed to read ${filePath}:`, err);
@@ -56,7 +57,10 @@ function readJsonPosts(filePath: string): PromptPost[] {
 
 function writeJsonPosts(filePath: string, posts: PromptPost[]): boolean {
   try {
-    fs.writeFileSync(filePath, JSON.stringify(posts, null, 2), 'utf-8');
+    const compacted = compactPostsForJson(posts, {
+      omitPublishedStatus: filePath.endsWith('initial-feed.json'),
+    });
+    fs.writeFileSync(filePath, JSON.stringify(compacted, null, 2), 'utf-8');
     return true;
   } catch (err) {
     console.warn(`Unable to write ${filePath} (expected on read-only serverless fs):`, err);

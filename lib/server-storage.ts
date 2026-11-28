@@ -20,6 +20,7 @@ import {
 } from './github-assets-server';
 import { PLAN_CONFIGS } from './plans';
 import { getPromptSlug } from './utils';
+import { compactPostsForJson, hydrateCompactPosts } from './post-normalizer';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -336,7 +337,7 @@ export const ServerStorage = {
     forceRemote?: boolean;
     includeCollectionScanFallback?: boolean;
   }): Promise<PromptPost[]> => {
-    const localPosts = readJsonFile<PromptPost[]>(POSTS_FILE, INITIAL_POSTS || []);
+    const localPosts = hydrateCompactPosts(readJsonFile<unknown[]>(POSTS_FILE, INITIAL_POSTS || []));
     const sources: PromptPost[][] = [localPosts];
 
     if (memoryPosts && memoryPosts.length > 0) {
@@ -421,7 +422,7 @@ export const ServerStorage = {
       }
     }
     if (options?.writeLocalJson === true) {
-      writeJsonFile(POSTS_FILE, cleaned);
+      writeJsonFile(POSTS_FILE, compactPostsForJson(cleaned));
       const nextInitialFeed = cleaned
         .filter((p) => p.status === 'published')
         .sort(
@@ -430,7 +431,10 @@ export const ServerStorage = {
             new Date(a.publishedAt || a.createdAt || 0).getTime()
         )
         .slice(0, 16);
-      writeJsonFile(INITIAL_FEED_FILE, nextInitialFeed);
+      writeJsonFile(
+        INITIAL_FEED_FILE,
+        compactPostsForJson(nextInitialFeed, { omitPublishedStatus: true })
+      );
       writePendingEditsTemp({});
     }
     return cleaned;
@@ -995,7 +999,7 @@ export const ServerStorage = {
       }
     } else {
       // Merge mode: combine existing + incoming by ID
-      const existing = readJsonFile<PromptPost[]>(POSTS_FILE, []);
+      const existing = hydrateCompactPosts(readJsonFile<unknown[]>(POSTS_FILE, []));
       const map = new Map<string, PromptPost>();
       for (const p of existing) {
         if (p.id) map.set(p.id, p);

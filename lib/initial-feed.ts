@@ -5,10 +5,9 @@ import categoryCountsData from '@/data/category-counts.json';
 import defaultCategoriesData from '@/data/categories.json';
 import defaultSettingsData from '@/data/settings.json';
 import defaultNotificationsData from '@/data/notifications.json';
+import { hydrateCompactPosts } from './post-normalizer';
 
-export const INITIAL_FEED_POSTS: PromptPost[] = (
-  Array.isArray(initialFeedData) ? initialFeedData : []
-) as unknown as PromptPost[];
+export const INITIAL_FEED_POSTS: PromptPost[] = hydrateCompactPosts(initialFeedData);
 
 export const INITIAL_CATEGORY_COUNTS: Record<string, number> =
   categoryCountsData && typeof categoryCountsData === 'object'

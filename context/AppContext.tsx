@@ -28,6 +28,7 @@ import {
 } from '@/lib/plans';
 import { getPromptSlug, getEmailAvatarUrl, formatPromptForClipboard, slugify } from '@/lib/utils';
 import { fetchPublicCatalogFromCdn, fetchPublicSiteMetaFromCdn } from '@/lib/cdn-catalog';
+import { hydrateCompactPosts } from '@/lib/post-normalizer';
 
 interface AppContextType {
   // Navigation & Views
@@ -1357,7 +1358,7 @@ export const AppProvider = ({
       // 2. Static fallback if CDN catalog hasn't been seeded yet (0 Vercel Origin)
       if (!catalogPosts || catalogPosts.length === 0) {
         const mod = await import('@/data/posts.json');
-        catalogPosts = (Array.isArray(mod.default) ? mod.default : []) as unknown as PromptPost[];
+        catalogPosts = hydrateCompactPosts(mod.default);
       }
 
       const merged = mergeCatalogByVersion(postsRef.current, catalogPosts);

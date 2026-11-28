@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (tool && tool !== 'all') {
-      posts = posts.filter((p) => p.aiTool.toLowerCase() === tool.toLowerCase());
+      posts = posts.filter((p) => (p.aiTool || p.preferredAi || '').toLowerCase() === tool.toLowerCase());
     }
 
     if (search) {

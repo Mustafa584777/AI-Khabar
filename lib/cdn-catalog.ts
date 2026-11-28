@@ -1,4 +1,5 @@
 import { Category, PromptPost, SiteSettings } from '@/types/prompt';
+import { hydrateCompactPosts } from './post-normalizer';
 
 export const GITHUB_ASSETS_OWNER = 'Mustafa584777';
 export const GITHUB_ASSETS_REPO = 'zeena-prompt-assets';
@@ -41,14 +42,14 @@ async function fetchJsonWithFallback<T>(urls: string[]): Promise<T | null> {
  * (0 bytes of Vercel Fast Origin Transfer). Returns null if CDN file doesn't exist yet.
  */
 export async function fetchPublicCatalogFromCdn(): Promise<PromptPost[] | null> {
-  const data = await fetchJsonWithFallback<PromptPost[]>([
+  const data = await fetchJsonWithFallback<unknown[]>([
     PUBLIC_CDN_POSTS_URL,
     PUBLIC_RAW_POSTS_URL,
   ]);
   if (!Array.isArray(data) || data.length === 0) {
     return null;
   }
-  return data;
+  return hydrateCompactPosts(data);
 }
 
 /**
