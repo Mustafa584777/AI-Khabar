@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getOptimizedImageUrl } from '@/lib/utils';
-import { doc, getDoc } from 'firebase/firestore';
-import { db as firestoreDb, isFirebaseConfigured } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore/lite';
+import { db as firestoreDb, isFirebaseConfigured } from '@/lib/firebase-db';
 import { extractCloudinaryAssetPath } from '@/lib/github-assets-server';
 
 export const dynamic = 'force-dynamic';

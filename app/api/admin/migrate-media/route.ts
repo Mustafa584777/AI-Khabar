@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import fs from 'fs';
 import path from 'path';
-import { collection, doc, getDocs, writeBatch } from 'firebase/firestore';
-import { db as firestoreDb, isFirebaseConfigured } from '@/lib/firebase';
+import { collection, doc, getDocs, writeBatch } from 'firebase/firestore/lite';
+import { db as firestoreDb, isFirebaseConfigured } from '@/lib/firebase-db';
 import { ServerStorage } from '@/lib/server-storage';
 import { isAuthorizedAdmin } from '@/lib/security';
 import {

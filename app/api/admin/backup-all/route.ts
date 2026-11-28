@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ServerStorage } from '@/lib/server-storage';
 import { NotificationServerStore } from '@/lib/notification-storage';
-import { db as firestoreDb, isFirebaseConfigured } from '@/lib/firebase';
-import { doc, setDoc, getDoc, getDocs, collection, writeBatch } from 'firebase/firestore';
+import { db as firestoreDb, isFirebaseConfigured } from '@/lib/firebase-db';
+import { doc, setDoc, getDoc, getDocs, collection, writeBatch } from 'firebase/firestore/lite';
 import {
   RegisteredUserRecord,
   PromptPost,

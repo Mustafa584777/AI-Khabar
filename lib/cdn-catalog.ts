@@ -37,19 +37,24 @@ async function fetchJsonWithFallback<T>(urls: string[]): Promise<T | null> {
   return null;
 }
 
+export const FALLBACK_CDN_POSTS_URL = `https://cdn.jsdelivr.net/gh/${GITHUB_ASSETS_OWNER}/AI-Khabar@main/data/posts.json`;
+export const FALLBACK_RAW_POSTS_URL = `https://raw.githubusercontent.com/${GITHUB_ASSETS_OWNER}/AI-Khabar/main/data/posts.json`;
+
 /**
  * Fetches the published prompt catalog directly from GitHub + jsDelivr CDN
- * (0 bytes of Vercel Fast Origin Transfer). Returns null if CDN file doesn't exist yet.
+ * (0 bytes of origin transfer and 0 KB bundled into server worker).
  */
 export async function fetchPublicCatalogFromCdn(): Promise<PromptPost[] | null> {
   const data = await fetchJsonWithFallback<unknown[]>([
     PUBLIC_CDN_POSTS_URL,
     PUBLIC_RAW_POSTS_URL,
+    FALLBACK_CDN_POSTS_URL,
+    FALLBACK_RAW_POSTS_URL,
   ]);
   if (!Array.isArray(data) || data.length === 0) {
     return null;
   }
-  return hydrateCompactPosts(data);
+  return hydrateCompactPosts(data).filter((p) => p.status === 'published');
 }
 
 /**

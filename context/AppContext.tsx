@@ -1353,13 +1353,7 @@ export const AppProvider = ({
 
     fullCatalogPromiseRef.current = (async () => {
       // 1. Primary zero-origin path: fetch published catalog directly from GitHub + jsDelivr CDN
-      let catalogPosts = await fetchPublicCatalogFromCdn();
-
-      // 2. Static fallback if CDN catalog hasn't been seeded yet (0 Vercel Origin)
-      if (!catalogPosts || catalogPosts.length === 0) {
-        const mod = await import('@/data/posts.json');
-        catalogPosts = hydrateCompactPosts(mod.default);
-      }
+      const catalogPosts = (await fetchPublicCatalogFromCdn()) || [];
 
       const merged = mergeCatalogByVersion(postsRef.current, catalogPosts);
       setPosts(merged);

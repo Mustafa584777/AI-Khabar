@@ -1,6 +1,10 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
+  outputFileTracingExcludes: {
+    '*': ['./public/assets/**', './public/images/prompts/**'],
+  },
   reactStrictMode: true,
   compress: true,
   turbopack: {},

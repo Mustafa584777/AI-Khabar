@@ -1,7 +1,7 @@
 import { Category, PromptPost, SiteSettings, SearchQueryItem, PlanTier } from '@/types/prompt';
 import { INITIAL_CATEGORIES, INITIAL_SETTINGS } from './site-defaults';
 import { fetchPublicCatalogFromCdn } from './cdn-catalog';
-import { db as firestoreDb, isFirebaseConfigured } from './firebase';
+import { db as firestoreDb, isFirebaseConfigured } from './firebase-db';
 import {
   doc,
   getDoc,
@@ -10,7 +10,7 @@ import {
   writeBatch,
   collection,
   getDocs,
-} from 'firebase/firestore';
+} from 'firebase/firestore/lite';
 import { cleanTagsArray, canonicalizeTag } from './tag-utils';
 import { uploadImageToCloudinary } from './cloudinary-server';
 import {

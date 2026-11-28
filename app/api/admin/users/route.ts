@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db as firestoreDb, isFirebaseConfigured } from '@/lib/firebase';
-import { collection, doc, getDoc, getDocs, setDoc, deleteDoc } from 'firebase/firestore';
+import { db as firestoreDb, isFirebaseConfigured } from '@/lib/firebase-db';
+import { collection, doc, getDoc, getDocs, setDoc, deleteDoc } from 'firebase/firestore/lite';
 import { RegisteredUserRecord, PlanTier } from '@/types/prompt';
 import { getClientIp, checkRateLimit, createRateLimitResponse, sanitizePayload } from '@/lib/security';
 import fs from 'fs';

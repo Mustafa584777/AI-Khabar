@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import { PushNotificationItem, PushSubscriber } from '@/types/notification';
-import { db as firestoreDb, isFirebaseConfigured } from './firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db as firestoreDb, isFirebaseConfigured } from './firebase-db';
+import { doc, getDoc, setDoc } from 'firebase/firestore/lite';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const SUBSCRIBERS_FILE = path.join(DATA_DIR, 'subscribers.json');

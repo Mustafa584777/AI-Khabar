@@ -5,8 +5,8 @@ import { ServerStorage } from '@/lib/server-storage';
 import { getPromptSlug, getPromptMetaDescription, getOptimizedImageUrl } from '@/lib/utils';
 import { DirectPromptLoader } from '@/components/public/DirectPromptLoader';
 
-export const revalidate = false;
-export const dynamicParams = false;
+export const revalidate = 86400;
+export const dynamicParams = true;
 
 export async function generateStaticParams() {
   const posts = await ServerStorage.getAllPosts(false);
@@ -19,6 +19,7 @@ export async function generateStaticParams() {
     if (slug && !seen.has(slug)) {
       seen.add(slug);
       paramsList.push({ id: slug });
+      if (paramsList.length >= 24) break;
     }
   }
 
