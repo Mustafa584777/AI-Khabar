@@ -1,7 +1,6 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
   reactStrictMode: true,
   compress: true,
   turbopack: {},
@@ -10,6 +9,7 @@ const nextConfig: NextConfig = {
   },
   // Allow access to remote image placeholder.
   images: {
+    unoptimized: true,
     contentDispositionType: 'inline',
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 31536000,
@@ -114,7 +114,6 @@ const nextConfig: NextConfig = {
   },
   transpilePackages: ['motion'],
   experimental: {
-    inlineCss: true,
     optimizePackageImports: ['lucide-react', 'motion'],
     staleTimes: {
       dynamic: 0,

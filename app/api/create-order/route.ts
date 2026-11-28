@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Razorpay from 'razorpay';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,20 +29,45 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const razorpay = new Razorpay({
-      key_id: keyId,
-      key_secret: keySecret,
-    });
-
     const receiptId = receipt || `rcpt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const basicAuth = btoa(`${keyId}:${keySecret}`);
 
     try {
-      const order = await razorpay.orders.create({
-        amount: Math.round(numericAmount),
-        currency: String(currency || 'INR').toUpperCase(),
-        receipt: receiptId,
-        notes: notes || {},
+      const rzpRes = await fetch('https://api.razorpay.com/v1/orders', {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${basicAuth}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: Math.round(numericAmount),
+          currency: String(currency || 'INR').toUpperCase(),
+          receipt: receiptId,
+          notes: notes || {},
+        }),
       });
+
+      const order = await rzpRes.json().catch(() => ({}));
+
+      if (!rzpRes.ok) {
+        if (
+          rzpRes.status === 401 ||
+          (order?.error?.code === 'BAD_REQUEST_ERROR' &&
+            String(order?.error?.description || '').toLowerCase().includes('auth'))
+        ) {
+          return NextResponse.json(
+            { error: order?.error?.description || 'Razorpay authentication failed: check your API keys' },
+            { status: 401 }
+          );
+        }
+
+        const errorMessage =
+          order?.error?.description || order?.message || 'Failed to create order on Razorpay';
+        return NextResponse.json(
+          { error: errorMessage },
+          { status: rzpRes.status || 500 }
+        );
+      }
 
       return NextResponse.json({
         order_id: order.id,
@@ -54,25 +78,9 @@ export async function POST(req: NextRequest) {
       });
     } catch (apiError: any) {
       console.error('Razorpay API error creating order:', apiError);
-
-      // Handle auth failures (HTTP 401)
-      if (
-        apiError?.statusCode === 401 ||
-        (apiError?.error?.code === 'BAD_REQUEST_ERROR' &&
-          apiError?.error?.description?.toLowerCase().includes('auth'))
-      ) {
-        return NextResponse.json(
-          { error: apiError?.error?.description || 'Razorpay authentication failed: check your API keys' },
-          { status: 401 }
-        );
-      }
-
-      const statusCode = apiError?.statusCode || 500;
-      const errorMessage =
-        apiError?.error?.description || apiError?.message || 'Failed to create order on Razorpay';
       return NextResponse.json(
-        { error: errorMessage },
-        { status: statusCode }
+        { error: apiError?.message || 'Failed to create order on Razorpay' },
+        { status: 500 }
       );
     }
   } catch (err: any) {

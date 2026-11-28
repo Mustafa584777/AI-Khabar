@@ -55,6 +55,7 @@ Ensure the prompt includes rich detail with lighting, camera optics, composition
             console.warn('Failed to fetch remote image for multimodal analysis:', fetchErr);
           }
         } else if (image.startsWith('/')) {
+          let loadedFromDisk = false;
           try {
             const publicPath = path.join(process.cwd(), 'public', image.replace(/^\//, ''));
             if (fs.existsSync(publicPath)) {
@@ -64,9 +65,24 @@ Ensure the prompt includes rich detail with lighting, camera optics, composition
               if (ext === '.webp') mimeType = 'image/webp';
               else if (ext === '.png') mimeType = 'image/png';
               else mimeType = 'image/jpeg';
+              loadedFromDisk = true;
             }
           } catch (fsErr) {
-            console.warn('Failed to read local image for multimodal analysis:', fsErr);
+            console.warn('Local image read fallback notice:', fsErr);
+          }
+
+          if (!loadedFromDisk) {
+            try {
+              const originUrl = new URL(image, req.url).toString();
+              const imgRes = await fetch(originUrl, { signal: AbortSignal.timeout(5000) });
+              if (imgRes.ok) {
+                const arrayBuffer = await imgRes.arrayBuffer();
+                base64Data = Buffer.from(arrayBuffer).toString('base64');
+                mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
+              }
+            } catch (fetchErr) {
+              console.warn('Failed to fetch relative image for multimodal analysis:', fetchErr);
+            }
           }
         }
 

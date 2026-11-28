@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server';
-import { resolveCloudinaryCredentials, uploadImageToCloudinary } from '@/lib/cloudinary-server';
+import {
+  pingCloudinaryRest,
+  resolveCloudinaryCredentials,
+  uploadImageToCloudinary,
+} from '@/lib/cloudinary-server';
 import {
   resolveGitHubAssetsConfig,
   testGitHubAssetsConnection,
   uploadImageToGitHubAssets,
 } from '@/lib/github-assets-server';
-import { v2 as cloudinary } from 'cloudinary';
 
 export async function GET(req: Request) {
   try {
@@ -44,15 +47,8 @@ export async function GET(req: Request) {
         });
       }
 
-      cloudinary.config({
-        cloud_name: clConfig.cloudName,
-        api_key: clConfig.apiKey,
-        api_secret: clConfig.apiSecret,
-        secure: true,
-      });
-
       try {
-        const pingResult = await cloudinary.api.ping();
+        const pingResult = await pingCloudinaryRest(clConfig);
         return NextResponse.json({
           configured: true,
           success: true,

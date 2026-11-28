@@ -1,17 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { setVapidDetails, sendNotification } from 'web-push';
+import { sendWebPushEdge } from '@/lib/webpush-edge';
 import { NotificationServerStore } from '@/lib/notification-storage';
 import { PushNotificationItem } from '@/types/notification';
 import { VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT } from '@/lib/push-config';
-
-// Initialize web-push VAPID credentials once
-if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
-  try {
-    setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
-  } catch (err) {
-    console.error('Failed to configure webpush VAPID details:', err);
-  }
-}
 
 export async function GET() {
   try {
@@ -145,10 +136,19 @@ export async function POST(req: NextRequest) {
         };
 
         try {
-          await sendNotification(pushSub, pushPayload, {
-            TTL: 60 * 60 * 24, // 24 hours
-            urgency: 'high',
-          });
+          await sendWebPushEdge(
+            pushSub,
+            pushPayload,
+            {
+              subject: VAPID_SUBJECT,
+              publicKey: VAPID_PUBLIC_KEY,
+              privateKey: VAPID_PRIVATE_KEY,
+            },
+            {
+              TTL: 60 * 60 * 24, // 24 hours
+              urgency: 'high',
+            }
+          );
           pushDeliveredCount++;
         } catch (err: any) {
           pushFailedCount++;

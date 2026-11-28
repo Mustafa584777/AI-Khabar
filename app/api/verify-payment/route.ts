@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
 import { ServerStorage } from '@/lib/server-storage';
 import {
   PLAN_CONFIGS,
@@ -65,19 +64,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Algorithm: HMAC-SHA256(order_id + "|" + payment_id, KEY_SECRET)
-    const expectedSignature = crypto
-      .createHmac('sha256', keySecret)
-      .update(`${orderId}|${paymentId}`)
-      .digest('hex');
+    // Algorithm: HMAC-SHA256(order_id + "|" + payment_id, KEY_SECRET) using Web Crypto
+    const enc = new TextEncoder();
+    const hmacKey = await crypto.subtle.importKey(
+      'raw',
+      enc.encode(keySecret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    const sigBuffer = await crypto.subtle.sign(
+      'HMAC',
+      hmacKey,
+      enc.encode(`${orderId}|${paymentId}`)
+    );
+    const expectedSignature = Array.from(new Uint8Array(sigBuffer))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
 
     // Constant-time comparison to prevent timing attacks
-    const isMatch =
-      expectedSignature.length === receivedSignature.length &&
-      crypto.timingSafeEqual(
-        Buffer.from(expectedSignature, 'utf-8'),
-        Buffer.from(receivedSignature, 'utf-8')
-      );
+    let diff = expectedSignature.length ^ receivedSignature.length;
+    const len = Math.min(expectedSignature.length, receivedSignature.length);
+    for (let i = 0; i < len; i++) {
+      diff |= expectedSignature.charCodeAt(i) ^ receivedSignature.charCodeAt(i);
+    }
+    const isMatch = expectedSignature.length === receivedSignature.length && diff === 0;
 
     if (!isMatch) {
       console.warn(`Payment signature mismatch for order: ${orderId}, payment: ${paymentId}`);

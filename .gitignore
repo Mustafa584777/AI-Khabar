@@ -38,3 +38,8 @@ next-env.d.ts
 # caches
 .cache
 node-compile-cache/
+
+# cloudflare open-next & wrangler
+/.open-next/
+/.wrangler/
+

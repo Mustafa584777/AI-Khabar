@@ -190,12 +190,13 @@ export async function GET(req: NextRequest) {
     const rzpKeySecret = process.env.RAZORPAY_KEY_SECRET;
     if (rzpKeyId && rzpKeySecret) {
       try {
-        const Razorpay = (await import('razorpay')).default;
-        const razorpay = new Razorpay({
-          key_id: rzpKeyId,
-          key_secret: rzpKeySecret,
+        const rzpRes = await fetch('https://api.razorpay.com/v1/payments?count=100', {
+          headers: {
+            Authorization: `Basic ${btoa(`${rzpKeyId}:${rzpKeySecret}`)}`,
+          },
+          cache: 'no-store',
         });
-        const payments = await razorpay.payments.all({ count: 100 });
+        const payments = rzpRes.ok ? await rzpRes.json().catch(() => null) : null;
         if (payments && Array.isArray((payments as any).items)) {
           for (const p of (payments as any).items) {
             if (p.status === 'captured') {

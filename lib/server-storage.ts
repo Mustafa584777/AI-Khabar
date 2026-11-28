@@ -1,5 +1,6 @@
 import { Category, PromptPost, SiteSettings, SearchQueryItem, PlanTier } from '@/types/prompt';
-import { INITIAL_CATEGORIES, INITIAL_SETTINGS, INITIAL_POSTS } from './initial-data';
+import { INITIAL_CATEGORIES, INITIAL_SETTINGS } from './site-defaults';
+import { fetchPublicCatalogFromCdn } from './cdn-catalog';
 import { db as firestoreDb, isFirebaseConfigured } from './firebase';
 import {
   doc,
@@ -337,8 +338,11 @@ export const ServerStorage = {
     forceRemote?: boolean;
     includeCollectionScanFallback?: boolean;
   }): Promise<PromptPost[]> => {
-    const localPosts = hydrateCompactPosts(readJsonFile<unknown[]>(POSTS_FILE, INITIAL_POSTS || []));
-    const sources: PromptPost[][] = [localPosts];
+    const localPosts = hydrateCompactPosts(readJsonFile<unknown[]>(POSTS_FILE, []));
+    const sources: PromptPost[][] = [];
+    if (localPosts.length > 0) {
+      sources.push(localPosts);
+    }
 
     if (memoryPosts && memoryPosts.length > 0) {
       sources.push(memoryPosts);
@@ -353,13 +357,18 @@ export const ServerStorage = {
     }
 
     const cacheExpired = !memoryPosts || Date.now() - memoryPostsTimestamp > POSTS_CACHE_TTL;
-    if (options?.forceRemote || cacheExpired) {
-      const [githubPosts, overlay] = await Promise.all([
+    if (options?.forceRemote || cacheExpired || localPosts.length === 0) {
+      const [githubPosts, cdnPosts, overlay] = await Promise.all([
         fetchPostsJsonFromGitHub().catch(() => null),
+        localPosts.length === 0 ? fetchPublicCatalogFromCdn().catch(() => null) : Promise.resolve(null),
         readRecentPostEditsOverlay().catch(
           () => ({ edits: {} as Record<string, PromptPost>, deletedIds: [] as string[] })
         ),
       ]);
+
+      if (Array.isArray(cdnPosts) && cdnPosts.length > 0) {
+        sources.push(cdnPosts);
+      }
 
       if (Array.isArray(githubPosts) && githubPosts.length > 0) {
         sources.push(githubPosts);
