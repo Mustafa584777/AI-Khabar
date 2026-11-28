@@ -1481,7 +1481,7 @@
   },
   {
     "isPremium": false,
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@73b78017188d03e6a17869029b95494c32597bca/prompts/prompt-seen-gemini-boy.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@216a9b815553916ffc9541bfa64fe8782a35d696/prompts/prompt-seen-gemini-boy.jpg",
     "viewsCount": 0,
     "likesCount": 0,
     "copiesCount": 0,
@@ -1575,7 +1575,7 @@
   {
     "publishedAt": "2026-11-10T14:41:12.541Z",
     "imageFileName": "prompt-seen-girl-prompt.webp",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@73b78017188d03e6a17869029b95494c32597bca/prompts/prompt-seen-girl-prompt.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@216a9b815553916ffc9541bfa64fe8782a35d696/prompts/prompt-seen-girl-prompt.jpg",
     "imageHeight": 1536,
     "viewsCount": 0,
     "imageAlt": "prompt seen girl prompt",
@@ -6362,53 +6362,58 @@
     "promptText": "A candid, high-quality mobile phone photograph of user, wearing black wayfarer sunglasses. He is wearing a black knitted sweater and dark trousers, standing on a mountain ridge, his body facing away from the camera while he turns his head to gaze at the distant, misty valley. The composition is a medium shot, with soft-focus foliage in the foreground creating natural framing. The background features rolling mountain ranges covered in lush green forest with low-hanging clouds and thick fog, evoking a serene, quiet atmosphere. The lighting is soft and diffused, typical of a cloudy, overcast day, providing gentle falloff and minimal harsh shadows. The color palette is composed of deep black tones, muted greens, and soft grey skies, with a subtle, realistic photographic finish that looks like a high-end smartphone capture. Authentic skin texture, realistic fiber details on the sweater, subtle sensor noise, natural atmospheric perspective, aspect ratio 3:4"
   },
   {
+    "isNoIndex": true,
+    "additionalImages": [],
+    "variables": [],
+    "imageAlt": "Lakeside Palace Heritage Travel Portrait",
+    "aiTool": "Midjourney",
+    "affiliateProducts": [],
+    "bookmarksCount": 0,
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@27eef57784a268538a80e55db6925bd962b99539/prompts/lakeside-palace-heritage-travel-portrait.webp",
+    "imageHeight": 1536,
+    "title": "Lakeside Palace Heritage Travel Portrait",
+    "seo": {
+      "metaDescription": "Generate realistic sunny lakeside vacation portraits with heritage backdrops using this Midjourney and Flux prompt.",
+      "focusKeyword": "lakeside travel portrait prompt",
+      "metaTitle": "Lakeside Palace Travel Portrait AI Prompt"
+    },
+    "copiesCount": 0,
+    "category": "Lifestyle & Travel Photography",
+    "likesCount": 0,
+    "imageWidth": 1024,
+    "articleContent": "### Overview This prompt captures a vibrant daytime travel portrait blending heritage architecture, vacation fashion, and natural sunlight. Perfect for lifestyle and social media imagery.  ### Visual Breakdown - **Subject:** Elegant traveler wearing an embroidered yellow maxi dress, casual sunglasses, and white flat sandals. - **Setting:** Lakeside stone promenade lined with potted bougainvillea overlooking a historic white palace. - **Lighting:** Direct, midday natural sunlight with realistic shadows and water reflections. - **Optics:** 35mm focal length providing moderate environmental depth of field.  ### Customization Variables Replace elements like `[subject]`, `[clothing]`, or `[location]` to create alternative settings, such as European lakes or coastal Mediterranean villas.",
+    "isPremium": false,
+    "slug": "lakeside-palace-heritage-travel-portrait",
+    "promptText": "IDENTITY LOCK — HIGHEST PRIORITY\n\n\nUse the uploaded user's photograph as the ONLY identity reference. Preserve the user's exact facial identity, facial structure, skin tone, eyes, nose, lips, jawline, natural skin texture, and hairstyle. Do not replace the person with a different individual. Keep the face authentic and recognizable, with realistic skin pores and natural facial details.\n\n\nEXACT OUTFIT — MATCH THE CLOTHING REFERENCE\n\n\nRecreate the outfit exactly as shown in the clothing reference image:\n\n\n- A mustard-yellow, ankle-length, flowy ethnic maxi dress with long sleeves.\n\n- A fitted upper bodice featuring intricate multicolored floral embroidery in pink, red, green, cream, and subtle golden tones.\n\n- Matching floral embroidery around both sleeve cuffs.\n\n- A round neckline with detailed embroidered decoration extending down the center of the bodice.\n\n- A gathered waist and a loose, tiered skirt with natural fabric folds.\n\n- A decorative floral embroidered border along the bottom hem.\n\n- White strappy flat sandals with delicate straps.\n\n- Small, elegant silver-grey rectangular handbag with a structured shape, top handle, and metallic clasp.\n\n- Slim, dark-tinted rectangular sunglasses with thin metallic frames.\n\n\nDo not change the dress color, embroidery pattern, sleeve length, neckline, skirt design, accessories, or footwear. Preserve the exact outfit details and realistic fabric texture.\n\n\nPOSE AND COMPOSITION\n\n\nCreate a full-body, vertical travel photograph of the user standing on a stone lakeside walkway in Udaipur, Rajasthan, India.\n\n\nThe user stands slightly to the left of the image center, with one hand resting naturally on top of the head, fingers gently touching the hair. The other hand holds the small grey handbag beside the thigh. The head is turned slightly toward the right, with the gaze directed into the distance rather than at the camera. Maintain a relaxed, confident, candid travel-photo expression.\n\n\nKeep the body proportions realistic and the posture natural. Show the entire outfit from head to feet, including the sandals.\n\n\nBACKGROUND — UDAIPUR LAKESIDE\n\n\nRecreate the scenic atmosphere of Lake Pichola in Udaipur. Include calm blue lake water, the beautiful cream-colored historic Rajasthani palace architecture across the lake, distant green hills, and a clear blue sky with a few small, naturally scattered white clouds.\n\n\nAdd a traditional stone-paved lakeside terrace with a low stone boundary wall. Place white ceramic flowerpots along the walkway containing green foliage and vibrant magenta-pink bougainvillea flowers. Keep the palace, water, stonework, flowers, and hills detailed and naturally proportioned.\n\n\nLIGHTING — NATURAL DAYLIGHT\n\n\nUse genuine midday outdoor sunlight under a clear blue sky. Create bright, clean daylight with natural shadows falling onto the stone pavement. Sunlight should illuminate the mustard-yellow dress and its embroidery without washing out the details.\n\n\nMaintain realistic skin tones, accurate white balance, natural reflections on the lake, and believable highlights on the sunglasses and handbag hardware. The white palace should retain architectural details rather than appearing overexposed.\n\n\nUse balanced exposure, natural contrast, authentic colors, and realistic dynamic range. Avoid artificial studio lighting, excessive HDR, orange skin tones, heavy color grading, or cinematic fantasy lighting.\n\n\nPHOTOGRAPHY STYLE — REAL SMARTPHONE CAMERA\n\n\nThe final result must look like an actual photograph taken by a friend using a modern smartphone during a vacation.\n\n\nUse a natural eye-level camera perspective, a vertical 3:4 composition, realistic smartphone optics, moderate depth of field, and natural perspective. Keep the person's face, dress embroidery, hands, handbag, footwear, flowers, palace architecture, and lake clearly detailed.\n\n\nNo artificial portrait-mode blur. No excessive background blur. No artificial skin smoothing. Preserve natural hair strands, fabric creases, stone textures, and realistic environmental details.\n\n\nThe image should look spontaneous, believable, and naturally captured rather than like an AI-generated fashion shoot.\n\n\nNEGATIVE PROMPT\n\n\nDifferent face, altered identity, changed dress design, orange dress, red dress, incorrect embroidery, missing floral border, short sleeves, altered neckline, missing sunglasses, wrong handbag, incorrect footwear, extra fingers, malformed hands, unnatural limbs, plastic skin, beauty filter, excessive makeup, artificial lighting, oversaturated colors, extreme HDR, blurry face, blurred background, fake bokeh, distorted palace, unrealistic lake reflections, floating feet, incorrect shadows, cartoon, illustration, CGI, 3D render, watermark, text, logo.\n\n\nOutput: Photorealistic, natural smartphone travel photography, vertical 3:4 aspect ratio.",
     "parameters": {
       "isPremium": false
     },
-    "id": "prompt-1792976389867",
-    "articleContent": "### Overview This prompt captures a vibrant daytime travel portrait blending heritage architecture, vacation fashion, and natural sunlight. Perfect for lifestyle and social media imagery.  ### Visual Breakdown - **Subject:** Elegant traveler wearing an embroidered yellow maxi dress, casual sunglasses, and white flat sandals. - **Setting:** Lakeside stone promenade lined with potted bougainvillea overlooking a historic white palace. - **Lighting:** Direct, midday natural sunlight with realistic shadows and water reflections. - **Optics:** 35mm focal length providing moderate environmental depth of field.  ### Customization Variables Replace elements like `[subject]`, `[clothing]`, or `[location]` to create alternative settings, such as European lakes or coastal Mediterranean villas.",
-    "author": {
-      "role": "Author",
-      "name": "tool.reelz",
-      "avatar": "/logo.png"
-    },
-    "isNoIndex": true,
-    "aiTool": "Midjourney",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1792976108332.webp",
     "tags": [
+      "Photorealistic",
       "Travel Portrait",
+      "Smartphone Photography",
+      "Face Swap",
+      "Indian Heritage",
+      "Vacation Aesthetic",
+      "Candid Photography",
       "Lakefront Portrait",
       "Indian Ethnic Fashion",
       "Heritage Travel",
       "Candid Vacation",
-      "Daylight Photography",
-      "Vacation Aesthetic"
+      "Daylight Photography"
     ],
-    "seo": {
-      "focusKeyword": "lakeside travel portrait prompt",
-      "metaDescription": "Generate realistic sunny lakeside vacation portraits with heritage backdrops using this Midjourney and Flux prompt.",
-      "metaTitle": "Lakeside Palace Travel Portrait AI Prompt"
-    },
-    "viewsCount": 0,
-    "publishedAt": "2026-10-26T00:59:49.869Z",
-    "imageAlt": "Lakeside Palace Heritage Travel Portrait",
-    "additionalImages": [],
-    "imageHeight": 1536,
-    "likesCount": 0,
-    "bookmarksCount": 0,
-    "updatedAt": "2026-11-05T12:08:42.561Z",
-    "affiliateProducts": [],
-    "imageWidth": 1024,
-    "createdAt": "2026-10-26T00:59:49.868Z",
-    "variables": [],
     "imageFileName": "lakeside-palace-heritage-travel-portrait.webp",
-    "copiesCount": 0,
-    "slug": "lakeside-palace-heritage-travel-portrait",
-    "category": "Lifestyle & Travel Photography",
     "status": "published",
-    "isPremium": false,
-    "promptText": "IDENTITY LOCK — HIGHEST PRIORITY\n\n\nUse the uploaded user's photograph as the ONLY identity reference. Preserve the user's exact facial identity, facial structure, skin tone, eyes, nose, lips, jawline, natural skin texture, and hairstyle. Do not replace the person with a different individual. Keep the face authentic and recognizable, with realistic skin pores and natural facial details.\n\n\nEXACT OUTFIT — MATCH THE CLOTHING REFERENCE\n\n\nRecreate the outfit exactly as shown in the clothing reference image:\n\n\n- A mustard-yellow, ankle-length, flowy ethnic maxi dress with long sleeves.\n\n- A fitted upper bodice featuring intricate multicolored floral embroidery in pink, red, green, cream, and subtle golden tones.\n\n- Matching floral embroidery around both sleeve cuffs.\n\n- A round neckline with detailed embroidered decoration extending down the center of the bodice.\n\n- A gathered waist and a loose, tiered skirt with natural fabric folds.\n\n- A decorative floral embroidered border along the bottom hem.\n\n- White strappy flat sandals with delicate straps.\n\n- Small, elegant silver-grey rectangular handbag with a structured shape, top handle, and metallic clasp.\n\n- Slim, dark-tinted rectangular sunglasses with thin metallic frames.\n\n\nDo not change the dress color, embroidery pattern, sleeve length, neckline, skirt design, accessories, or footwear. Preserve the exact outfit details and realistic fabric texture.\n\n\nPOSE AND COMPOSITION\n\n\nCreate a full-body, vertical travel photograph of the user standing on a stone lakeside walkway in Udaipur, Rajasthan, India.\n\n\nThe user stands slightly to the left of the image center, with one hand resting naturally on top of the head, fingers gently touching the hair. The other hand holds the small grey handbag beside the thigh. The head is turned slightly toward the right, with the gaze directed into the distance rather than at the camera. Maintain a relaxed, confident, candid travel-photo expression.\n\n\nKeep the body proportions realistic and the posture natural. Show the entire outfit from head to feet, including the sandals.\n\n\nBACKGROUND — UDAIPUR LAKESIDE\n\n\nRecreate the scenic atmosphere of Lake Pichola in Udaipur. Include calm blue lake water, the beautiful cream-colored historic Rajasthani palace architecture across the lake, distant green hills, and a clear blue sky with a few small, naturally scattered white clouds.\n\n\nAdd a traditional stone-paved lakeside terrace with a low stone boundary wall. Place white ceramic flowerpots along the walkway containing green foliage and vibrant magenta-pink bougainvillea flowers. Keep the palace, water, stonework, flowers, and hills detailed and naturally proportioned.\n\n\nLIGHTING — NATURAL DAYLIGHT\n\n\nUse genuine midday outdoor sunlight under a clear blue sky. Create bright, clean daylight with natural shadows falling onto the stone pavement. Sunlight should illuminate the mustard-yellow dress and its embroidery without washing out the details.\n\n\nMaintain realistic skin tones, accurate white balance, natural reflections on the lake, and believable highlights on the sunglasses and handbag hardware. The white palace should retain architectural details rather than appearing overexposed.\n\n\nUse balanced exposure, natural contrast, authentic colors, and realistic dynamic range. Avoid artificial studio lighting, excessive HDR, orange skin tones, heavy color grading, or cinematic fantasy lighting.\n\n\nPHOTOGRAPHY STYLE — REAL SMARTPHONE CAMERA\n\n\nThe final result must look like an actual photograph taken by a friend using a modern smartphone during a vacation.\n\n\nUse a natural eye-level camera perspective, a vertical 3:4 composition, realistic smartphone optics, moderate depth of field, and natural perspective. Keep the person's face, dress embroidery, hands, handbag, footwear, flowers, palace architecture, and lake clearly detailed.\n\n\nNo artificial portrait-mode blur. No excessive background blur. No artificial skin smoothing. Preserve natural hair strands, fabric creases, stone textures, and realistic environmental details.\n\n\nThe image should look spontaneous, believable, and naturally captured rather than like an AI-generated fashion shoot.\n\n\nNEGATIVE PROMPT\n\n\nDifferent face, altered identity, changed dress design, orange dress, red dress, incorrect embroidery, missing floral border, short sleeves, altered neckline, missing sunglasses, wrong handbag, incorrect footwear, extra fingers, malformed hands, unnatural limbs, plastic skin, beauty filter, excessive makeup, artificial lighting, oversaturated colors, extreme HDR, blurry face, blurred background, fake bokeh, distorted palace, unrealistic lake reflections, floating feet, incorrect shadows, cartoon, illustration, CGI, 3D render, watermark, text, logo.\n\n\nOutput: Photorealistic, natural smartphone travel photography, vertical 3:4 aspect ratio.",
-    "title": "Lakeside Palace Heritage Travel Portrait"
+    "createdAt": "2026-10-26T00:59:49.868Z",
+    "id": "prompt-1792976389867",
+    "updatedAt": "2026-11-28T04:03:08.551Z",
+    "viewsCount": 0,
+    "author": {
+      "avatar": "/logo.png",
+      "name": "tool.reelz",
+      "role": "Author"
+    },
+    "publishedAt": "2026-10-26T00:59:49.869Z"
   },
   {
     "author": {
@@ -6416,11 +6421,9 @@
       "avatar": "/logo.png",
       "role": "Author"
     },
-    "updatedAt": "2026-11-05T12:08:40.864Z",
+    "updatedAt": "2026-11-28T04:01:49.822Z",
     "viewsCount": 0,
-    "additionalImages": [
-      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/slide-1792975945804-id25.jpg"
-    ],
+    "additionalImages": [],
     "createdAt": "2026-10-26T00:54:42.752Z",
     "aiTool": "Midjourney",
     "articleContent": "### Visual Aesthetic Overview This concept merges traditional South Indian ethnic fashion with contemporary pop-art collage graphics. The stark contrast between the photorealistic subject and 2D illustrative flora creates an eye-catching magazine editorial look. ### Lighting & Camera Breakdown Set up dual softbox lighting to deliver clean, shadowless beauty illumination across the face while accentuating the metallic sheen of the gold jewelry and silk saree. An 85mm portrait lens keeps facial features undistorted with crisp focus throughout. ### Key Styling Elements - **Subject:** Elegant posture, genuine smile, intricate silk saree with zari embroidery. - **Backdrop:** Flat saturated yellow background interrupted by graphic 2D cutouts and floral pop-art stickers. - **Border & Overlay:** Bold ink-lined roses and torn paper collage effects around the frame corners. ### Pro Tips For alternate cultures or modern looks, replace the saree description with contemporary streetwear or tailored suits while retaining the yellow collage graphic framing.",
@@ -6430,10 +6433,16 @@
     "imageFileName": "vibrant-pop-art-indian-saree-editorial.webp",
     "variables": [],
     "id": "prompt-1792976082749",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1792975940438.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@3195eeb503f85e2fefebe1ca2f3e28dffaa8721f/prompts/vibrant-pop-art-indian-saree-editorial.webp",
     "imageAlt": "Vibrant Pop Art Indian Saree Editorial",
     "tags": [
+      "Pop Art Style",
       "Indian Fashion",
+      "High Contrast",
+      "Saree Editorial",
+      "Vibrant Portrait",
+      "Fashion Photography",
+      "Studio Aesthetic",
       "Silk Saree",
       "Pop Art Portrait",
       "Editorial Photography",
@@ -6445,7 +6454,7 @@
     "publishedAt": "2026-10-26T00:54:42.752Z",
     "isNoIndex": true,
     "affiliateProducts": [],
-    "promptText": "A stunning high-fashion portrait of an Indian woman with long dark wavy hair, wearing a traditional blue saree. She is striking a dynamic, confident pose, one hand touching her hair. The composition is a vibrant, realistic style poster. The background is a solid, bold, electric yellow color. In the foreground, there are stylized, vividly colored floral illustrations of red and yellow roses. The overall aesthetic is a high-contrast collage with bright, saturated colors of magenta and yellow. The lighting is clean and bright, studio-quality, emphasizing the smooth texture of the dress and skin, sharp focus, professional fashion editorial style, aspect ratio 3:4y",
+    "promptText": "A stunning high-fashion portrait of an Indian woman with long dark wavy hair, wearing a traditional blue saree. She is striking a dynamic, confident pose, one hand touching her hair. The composition is a vibrant, realistic style poster. The background is a solid, bold, electric yellow color. In the foreground, there are stylized, vividly colored floral illustrations of red and yellow roses. The overall aesthetic is a high-contrast collage with bright, saturated colors of magenta and yellow. The lighting is clean and bright, studio-quality, emphasizing the smooth texture of the dress and skin, sharp focus, professional fashion editorial style, aspect ratio 3:4",
     "category": "Fashion & Editorial Photography",
     "likesCount": 0,
     "copiesCount": 0,
@@ -6454,94 +6463,105 @@
     "title": "Vibrant Pop Art Indian Saree Editorial",
     "imageWidth": 1024,
     "seo": {
-      "focusKeyword": "indian saree pop art portrait",
+      "metaTitle": "Pop Art Indian Saree Portrait Prompt | AI Art Guide",
       "metaDescription": "Generate high-fashion South Indian saree portraits blended with pop-art collage elements using this prompt for Midjourney and Flux.",
-      "metaTitle": "Pop Art Indian Saree Portrait Prompt | AI Art Guide"
+      "focusKeyword": "indian saree pop art portrait"
     },
-    "slug": "vibrant-pop-art-indian-saree-editorial"
+    "slug": "vibrant-pop-art-indian-saree-editorial",
+    "preferredAi": "Gemini"
   },
   {
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1792910877026.jpg",
-    "likesCount": 0,
-    "title": "Cinematic Film Strip Vintage Noir Portrait",
-    "imageWidth": 1024,
+    "articleContent": "This prompt is designed to capture the essence of classic 35mm film photography, specifically mimicking a contact sheet or film strip layout. The magic lies in the combination of 'volumetric fog' and 'warm golden backlighting,' which creates a silhouette effect that feels both intimate and cinematic. When using this prompt, focus on the 'film grain' and 'light leak' descriptors to ensure the final output retains that authentic, retro physical media texture. Perfect for social media editorial looks or artistic storytelling projects.",
+    "createdAt": "2026-10-25T06:50:19.899Z",
+    "slug": "cinematic-film-strip-vintage-noir-portrait",
+    "category": "Vintage & Retro Photography",
+    "updatedAt": "2026-11-28T04:04:07.013Z",
+    "imageFileName": "cinematic-film-strip-vintage-noir-portrait.webp",
+    "isPremium": true,
+    "aiTool": "Midjourney",
+    "seo": {
+      "metaTitle": "Create Cinematic Film Strip Portraits with AI",
+      "focusKeyword": "vintage film strip photography",
+      "metaDescription": "Learn how to generate moody, vintage-inspired film strip portraits using this professional Midjourney and Gemini prompt guide."
+    },
+    "affiliateProducts": [],
     "tags": [
+      "Cinematic Portrait",
+      "Film Strip",
+      "Noir Aesthetic",
+      "Vintage Photography",
+      "35mm Film",
+      "Moody Lighting",
+      "Film Grain",
       "Cinematic",
       "35mm",
-      "Film-strip",
       "Vintage-portrait",
-      "Moody-lighting",
       "Sepia-tone",
       "Nostalgic-vibe"
     ],
-    "isNoIndex": true,
-    "imageAlt": "Cinematic Film Strip Vintage Noir Portrait",
-    "bookmarksCount": 0,
-    "aiTool": "Midjourney",
-    "id": "prompt-1792911019899",
-    "author": {
-      "avatar": "/logo.png",
-      "name": "tool.reelz",
-      "role": "Author"
-    },
-    "copiesCount": 0,
-    "promptText": "Cinematic vertical three-panel film strip of a young man with messy wavy dark hair wearing a loose white collared shirt, sitting in a smoky room. In each panel, he drinks from a clear glass bottle in progressive motion. Intense blinding golden-amber backlight creates heavy atmospheric haze, dense smoke swirling in air, strong rim lighting, and silhouetted forms. Shot on 35mm film, vintage anamorphic lens, warm optical bloom, heavy halation, golden yellow and deep shadow color grading, melancholic and gritty aesthetic, aspect ratio 3:4",
-    "seo": {
-      "focusKeyword": "vintage film strip photography",
-      "metaTitle": "Create Cinematic Film Strip Portraits with AI",
-      "metaDescription": "Learn how to generate moody, vintage-inspired film strip portraits using this professional Midjourney and Gemini prompt guide."
-    },
+    "publishedAt": "2026-10-25T06:50:19.899Z",
     "additionalImages": [],
-    "updatedAt": "2026-11-04T04:17:07.317Z",
+    "imageAlt": "Cinematic Film Strip Vintage Noir Portrait",
+    "author": {
+      "role": "Author",
+      "name": "tool.reelz",
+      "avatar": "/logo.png"
+    },
     "parameters": {
       "isPremium": true
     },
-    "category": "Vintage & Retro Photography",
-    "imageFileName": "cinematic-film-strip-vintage-noir-portrait.webp",
-    "createdAt": "2026-10-25T06:50:19.899Z",
+    "title": "Cinematic Film Strip Vintage Noir Portrait",
+    "id": "prompt-1792911019899",
+    "viewsCount": 0,
     "status": "published",
-    "slug": "cinematic-film-strip-vintage-noir-portrait",
-    "isPremium": true,
-    "publishedAt": "2026-10-25T06:50:19.899Z",
-    "articleContent": "This prompt is designed to capture the essence of classic 35mm film photography, specifically mimicking a contact sheet or film strip layout. The magic lies in the combination of 'volumetric fog' and 'warm golden backlighting,' which creates a silhouette effect that feels both intimate and cinematic. When using this prompt, focus on the 'film grain' and 'light leak' descriptors to ensure the final output retains that authentic, retro physical media texture. Perfect for social media editorial looks or artistic storytelling projects.",
-    "imageHeight": 1536,
+    "bookmarksCount": 0,
     "variables": [],
-    "affiliateProducts": [],
-    "viewsCount": 0
+    "imageWidth": 1024,
+    "isNoIndex": true,
+    "likesCount": 0,
+    "promptText": "Cinematic vertical three-panel film strip of a young man with messy wavy dark hair wearing a loose white collared shirt, sitting in a smoky room. In each panel, he drinks from a clear glass bottle in progressive motion. Intense blinding golden-amber backlight creates heavy atmospheric haze, dense smoke swirling in air, strong rim lighting, and silhouetted forms. Shot on 35mm film, vintage anamorphic lens, warm optical bloom, heavy halation, golden yellow and deep shadow color grading, melancholic and gritty aesthetic, aspect ratio 3:4",
+    "copiesCount": 0,
+    "imageHeight": 1536,
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@cb96b490f906e88baba45832d1f4db2c10f306f4/prompts/cinematic-film-strip-vintage-noir-portrait.webp"
   },
   {
-    "imageFileName": "golden-hour-silhouette-photographer-portrait.webp",
-    "isPremium": false,
-    "slug": "golden-hour-silhouette-photographer-portrait",
     "viewsCount": 0,
-    "category": "Lifestyle & Creative Portraiture",
-    "id": "prompt-1792911001062",
-    "variables": [],
     "seo": {
       "metaTitle": "Golden Hour Silhouette Prompt for Midjourney & Flux",
       "metaDescription": "Create dramatic backlit sunset portraits with golden rim lighting and natural silhouettes using this photorealistic AI prompt.",
       "focusKeyword": "golden hour silhouette prompt"
     },
-    "createdAt": "2026-10-25T06:50:01.063Z",
+    "category": "Lifestyle & Creative Portraiture",
     "parameters": {
       "isPremium": false
     },
-    "aiTool": "Midjourney",
-    "updatedAt": "2026-11-05T12:08:34.696Z",
+    "variables": [],
+    "bookmarksCount": 0,
+    "promptText": "Medium shot of user viewed from behind, standing in a lush rural meadow during sunset. The scene is illuminated by dramatic golden hour backlighting with a fiery orange and amber sky, soft clouds, power lines, and a distant flock of silhouette birds. Warm rim light outlines his figure and illuminates the tops of the tall grass, cinematic warm color grading, aspect ratio 3:4",
     "affiliateProducts": [],
-    "copiesCount": 0,
+    "isNoIndex": true,
+    "publishedAt": "2026-10-25T06:50:01.064Z",
+    "aiTool": "Midjourney",
+    "imageWidth": 1024,
+    "likesCount": 0,
+    "createdAt": "2026-10-25T06:50:01.063Z",
+    "articleContent": "### Visual Breakdown\nThis prompt recreates a classic cinematic backlit aesthetic. Placing the light source directly behind the subject emphasizes contours via intense rim lighting while keeping facial features hidden in moody shadow.\n\n### Core Styling Parameters\n- **Optics**: 85mm focal length at f/2 creates shallow depth of field, gently blurring foreground grass.\n- **Atmosphere**: Strong warm color grading focused in the amber and orange spectrum.\n- **Wardrobe Contrast**: The ombre gradient shirt bridges the deep black shadows and bright sky tones.\n\n### Customization\n- **Subject**: Swap the subject with `[young woman with long hair]` or `[traveler with backpack]`.\n- **Props**: Replace the camera with `[vintage journal]`, `[acoustic guitar]`, or remove entirely.",
+    "imageAlt": "Golden Hour Silhouette Photographer Portrait",
+    "status": "published",
     "author": {
       "avatar": "/logo.png",
       "name": "tool.reelz",
       "role": "Author"
     },
-    "bookmarksCount": 0,
-    "imageAlt": "Golden Hour Silhouette Photographer Portrait",
-    "additionalImages": [
-      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/slide-1792910863748-294f.jpg"
-    ],
-    "promptText": "Medium shot of user viewed from behind, standing in a lush rural meadow during sunset. The scene is illuminated by dramatic golden hour backlighting with a fiery orange and amber sky, soft clouds, power lines, and a distant flock of silhouette birds. Warm rim light outlines his figure and illuminates the tops of the tall grass, cinematic warm color grading, aspect ratio 3:4",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1792910861225.jpg",
+    "id": "prompt-1792911001062",
+    "updatedAt": "2026-11-28T04:04:21.309Z",
+    "slug": "golden-hour-silhouette-photographer-portrait",
+    "imageHeight": 1536,
+    "isPremium": false,
+    "copiesCount": 0,
+    "additionalImages": [],
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@4bb072f9babd1af83a756e82d1328f712d5123fe/prompts/golden-hour-silhouette-photographer-portrait.webp",
+    "imageFileName": "golden-hour-silhouette-photographer-portrait.webp",
     "tags": [
       "Golden Hour",
       "Backlit Portrait",
@@ -6550,68 +6570,69 @@
       "Photographer Aesthetic",
       "Cinematic Lighting"
     ],
-    "status": "published",
-    "publishedAt": "2026-10-25T06:50:01.064Z",
-    "likesCount": 0,
-    "imageHeight": 1536,
-    "articleContent": "### Visual Breakdown\nThis prompt recreates a classic cinematic backlit aesthetic. Placing the light source directly behind the subject emphasizes contours via intense rim lighting while keeping facial features hidden in moody shadow.\n\n### Core Styling Parameters\n- **Optics**: 85mm focal length at f/2 creates shallow depth of field, gently blurring foreground grass.\n- **Atmosphere**: Strong warm color grading focused in the amber and orange spectrum.\n- **Wardrobe Contrast**: The ombre gradient shirt bridges the deep black shadows and bright sky tones.\n\n### Customization\n- **Subject**: Swap the subject with `[young woman with long hair]` or `[traveler with backpack]`.\n- **Props**: Replace the camera with `[vintage journal]`, `[acoustic guitar]`, or remove entirely.",
-    "isNoIndex": true,
-    "title": "Golden Hour Silhouette Photographer Portrait",
-    "imageWidth": 1024
+    "title": "Golden Hour Silhouette Photographer Portrait"
   },
   {
-    "likesCount": 0,
-    "variables": [],
-    "seo": {
-      "metaDescription": "Master the art of moody editorial portraiture with this cinematic AI prompt, perfect for generating high-end professional photography results.",
-      "focusKeyword": "cinematic editorial portrait",
-      "metaTitle": "Cinematic Editorial Portrait Prompt for Midjourney & AI"
-    },
+    "imageHeight": 1536,
+    "isPremium": false,
+    "imageFileName": "cinematic-editorial-portraiture-moody-ambient-haze.webp",
+    "viewsCount": 0,
     "tags": [
-      "Cinematic Lighting",
+      "Cinematic Portrait",
+      "Moody Lighting",
+      "35mm Film Aesthetic",
+      "Chiaroscuro",
+      "Atmospheric Haze",
       "Editorial Photography",
+      "Deep Shadow",
+      "Cinematic Lighting",
       "Male Model Portrait",
       "Moody Atmosphere",
       "Golden Hour",
-      "Professional Portrait",
-      "Soft Haze"
+      "Professional Portrait"
     ],
-    "isPremium": false,
-    "imageWidth": 1024,
-    "title": "Cinematic Editorial Portraiture: Moody Ambient Haze",
-    "bookmarksCount": 0,
-    "category": "Photorealistic & Portraits",
-    "aiTool": "Midjourney",
-    "id": "prompt-1792910847365",
     "copiesCount": 0,
-    "updatedAt": "2026-11-05T12:08:32.948Z",
-    "author": {
-      "role": "Author",
-      "avatar": "/logo.png",
-      "name": "tool.reelz"
-    },
-    "imageFileName": "cinematic-editorial-portraiture-moody-ambient-haze.webp",
-    "promptText": "Cinematic medium portrait of user seated leaning forward on a sofa in a dimly lit room, resting his hand thoughtfully against his lower face in deep contemplative reflection. An intense warm golden backlight from the upper-left creates dramatic rim lighting and vivid lens flare, cutting through dense atmospheric haze and mist drifting around him. Deep moody shadows with an olive-green tone fill the scene, featuring soft-focus sofa cushions with geometric patterns in the background. Captured on 35mm film, shallow depth of field, chiaroscuro lighting, moody cinematic grain, aspect ratio 3:4",
     "createdAt": "2026-10-25T06:47:27.368Z",
-    "additionalImages": [],
+    "imageAlt": "Cinematic Editorial Portraiture: Moody Ambient Haze",
+    "affiliateProducts": [],
+    "id": "prompt-1792910847365",
+    "status": "published",
+    "title": "Cinematic Editorial Portraiture: Moody Ambient Haze",
+    "promptText": "Cinematic medium portrait of user seated leaning forward on a sofa in a dimly lit room, resting his hand thoughtfully against his lower face in deep contemplative reflection. An intense warm golden backlight from the upper-left creates dramatic rim lighting and vivid lens flare, cutting through dense atmospheric haze and mist drifting around him. Deep moody shadows with an olive-green tone fill the scene, featuring soft-focus sofa cushions with geometric patterns in the background. Captured on 35mm film, shallow depth of field, chiaroscuro lighting, moody cinematic grain, aspect ratio 3:4",
+    "slug": "cinematic-editorial-portraiture-moody-ambient-haze",
+    "likesCount": 0,
     "parameters": {
       "isPremium": false
     },
-    "slug": "cinematic-editorial-portraiture-moody-ambient-haze",
-    "affiliateProducts": [],
-    "status": "published",
-    "publishedAt": "2026-10-25T06:47:27.368Z",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1792910788689.jpg",
+    "author": {
+      "name": "tool.reelz",
+      "role": "Author",
+      "avatar": "/logo.png"
+    },
     "isNoIndex": true,
+    "aiTool": "Midjourney",
+    "additionalImages": [],
+    "updatedAt": "2026-11-28T04:05:53.457Z",
+    "category": "Photorealistic & Portraits",
+    "variables": [],
     "articleContent": "### The Art of Moody Editorial Portraiture This prompt is designed to capture high-end, magazine-style portrait photography. It leverages the specific interaction between backlight and atmospheric haze to create a 'film-like' quality. The 85mm lens specification ensures a flattering compression of the subject's features, while the f/1.8 aperture provides that buttery soft bokeh in the background, keeping the focus entirely on the subject. To customize this look, experiment with changing the [clothing style] or the [ambient environment], such as a café or a studio, while keeping the core lighting instructions intact. For best results, use a model like Midjourney v6 or Flux.1.",
-    "imageHeight": 1536,
-    "viewsCount": 0,
-    "imageAlt": "Cinematic Editorial Portraiture: Moody Ambient Haze"
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@e843b6e2a16de901d20e7645da795e3e0afb72a7/prompts/cinematic-editorial-portraiture-moody-ambient-haze.webp",
+    "bookmarksCount": 0,
+    "imageWidth": 1024,
+    "publishedAt": "2026-10-25T06:47:27.368Z",
+    "seo": {
+      "metaDescription": "Master the art of moody editorial portraiture with this cinematic AI prompt, perfect for generating high-end professional photography results.",
+      "metaTitle": "Cinematic Editorial Portrait Prompt for Midjourney & AI",
+      "focusKeyword": "cinematic editorial portrait"
+    }
   },
   {
-    "copiesCount": 0,
-    "isNoIndex": true,
-    "promptText": "Medium rear shot of a man standing on a high mountain summit, looking out over a vast misty valley. He has short dark hair, wearing a realistic red, blue, and white checkered flannel shirt and carrying a black nylon guitar case slung over his shoulder. He stands beside a rocky, cliffside slope densely covered in vibrant, lush neon-green moss and grass. Soft foreground foliage slightly blurred. The sky is an intense, seamless high-key overcast white, casting soft diffused daylight. Realistic textures on fabric, rocks, and foliage, cinematic travel photography, vivid natural saturation on greenery, clean composition, aspect ratio 3:4",
+    "imageHeight": 1536,
+    "seo": {
+      "focusKeyword": "mountain travel photography prompt",
+      "metaDescription": "Create breathtaking outdoor travel portraits with misty mountain backdrops and natural diffused lighting using this tuned AI photography prompt.",
+      "metaTitle": "Misty Mountain Travel Portrait AI Prompt - Flux & Midjourney"
+    },
     "tags": [
       "Travel Photography",
       "Wanderlust",
@@ -6620,175 +6641,181 @@
       "Cloud Valley",
       "Musician Portrait"
     ],
-    "category": "Lifestyle & Travel Photography",
-    "additionalImages": [],
-    "bookmarksCount": 0,
-    "title": "Misty Mountain Wanderer Portrait",
-    "imageWidth": 1024,
-    "likesCount": 0,
-    "status": "published",
-    "aiTool": "Midjourney",
-    "imageAlt": "Misty Mountain Wanderer Portrait",
+    "affiliateProducts": [],
     "viewsCount": 0,
-    "imageFileName": "misty-mountain-wanderer-portrait.webp",
-    "publishedAt": "2026-10-25T06:32:12.811Z",
-    "createdAt": "2026-10-25T06:32:12.811Z",
+    "imageAlt": "Misty Mountain Wanderer Portrait",
+    "copiesCount": 0,
+    "variables": [],
+    "status": "published",
+    "id": "prompt-1792909932805",
+    "title": "Misty Mountain Wanderer Portrait",
+    "bookmarksCount": 0,
     "articleContent": "### Overview\nThis prompt recreates atmospheric lifestyle and travel imagery featuring an introspective subject overlooking a cloud-drenched mountain valley. It captures a balance of vibrant alpine moss, casual attire, and serene natural lighting.\n\n### Adaptable Formula\nCustomize the generation using variable tokens:\n`[subject] carrying [accessory] standing on [terrain], overlooking [environment], wearing [clothing], [lighting conditions], shot on [lens/camera], photorealistic.`\n\n### Lighting & Atmosphere\n- **Type:** High-key overcast sky with soft, wrap-around daylight.\n- **Atmosphere:** Heavy fog and low-lying cloud inversions to create clean depth separation between the subject and the misty backdrop.\n\n### Camera Settings\n- **Focal Length:** 50mm–85mm prime lens.\n- **Aperture:** f/2.8 to keep the subject crisp while creating smooth foreground framing bokeh and a gentle mountain drop-off.\n\n### Key Tips\n- Balance the vivid emerald greens of alpine moss against muted cloud layers.\n- Use a structured accessory like a gig bag or hiking pack to anchor the narrative.",
-    "seo": {
-      "metaDescription": "Create breathtaking outdoor travel portraits with misty mountain backdrops and natural diffused lighting using this tuned AI photography prompt.",
-      "focusKeyword": "mountain travel photography prompt",
-      "metaTitle": "Misty Mountain Travel Portrait AI Prompt - Flux & Midjourney"
+    "updatedAt": "2026-11-28T04:06:06.962Z",
+    "isNoIndex": true,
+    "promptText": "Medium rear shot of a man standing on a high mountain summit, looking out over a vast misty valley. He has short dark hair, wearing a realistic red, blue, and white checkered flannel shirt and carrying a black nylon guitar case slung over his shoulder. He stands beside a rocky, cliffside slope densely covered in vibrant, lush neon-green moss and grass. Soft foreground foliage slightly blurred. The sky is an intense, seamless high-key overcast white, casting soft diffused daylight. Realistic textures on fabric, rocks, and foliage, cinematic travel photography, vivid natural saturation on greenery, clean composition, aspect ratio 3:4",
+    "slug": "misty-mountain-wanderer-portrait",
+    "additionalImages": [],
+    "category": "Lifestyle & Travel Photography",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@f386c3d7ac47077d5f222025eb8cd85a9f0f76ba/prompts/misty-mountain-wanderer-portrait.webp",
+    "imageFileName": "misty-mountain-wanderer-portrait.webp",
+    "parameters": {
+      "isPremium": true
     },
+    "likesCount": 0,
+    "isPremium": true,
     "author": {
-      "role": "Author",
       "avatar": "/logo.png",
+      "role": "Author",
       "name": "tool.reelz"
     },
-    "updatedAt": "2026-11-04T08:33:45.534Z",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1792909767764.jpg",
-    "slug": "misty-mountain-wanderer-portrait",
-    "imageHeight": 1536,
-    "affiliateProducts": [],
-    "variables": [],
-    "id": "prompt-1792909932805",
-    "parameters": {
-      "isPremium": true
-    },
-    "isPremium": true
+    "aiTool": "Midjourney",
+    "imageWidth": 1024,
+    "createdAt": "2026-10-25T06:32:12.811Z",
+    "publishedAt": "2026-10-25T06:32:12.811Z"
   },
   {
-    "imageAlt": "Cinematic 35mm Film Strip Portrait",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1792909797126.jpg",
-    "viewsCount": 0,
-    "affiliateProducts": [],
-    "isNoIndex": true,
+    "author": {
+      "name": "tool.reelz",
+      "avatar": "/logo.png",
+      "role": "Author"
+    },
+    "updatedAt": "2026-11-28T04:08:07.565Z",
     "parameters": {
       "isPremium": true
     },
+    "category": "Photorealistic & Portraits",
+    "isPremium": true,
+    "additionalImages": [],
+    "imageWidth": 1024,
+    "imageFileName": "cinematic-35mm-film-strip-portrait.webp",
+    "copiesCount": 0,
+    "status": "published",
+    "title": "Cinematic 35mm Film Strip Portrait",
+    "affiliateProducts": [],
+    "imageHeight": 1536,
+    "likesCount": 0,
     "tags": [
+      "Cinematic Photography",
+      "35mm Film Aesthetic",
+      "Film Strip Portrait",
+      "Atmospheric Lighting",
+      "Vintage Photography",
+      "Moody Portrait",
+      "Anamorphic Len",
       "Triptych",
       "Film-noir",
       "Editorial-photography",
       "Volumetric-lighting",
-      "Moody-portrait",
-      "35mm-grain",
-      "Cinematic-lighting"
+      "35mm-grain"
     ],
-    "status": "published",
+    "variables": [],
+    "createdAt": "2026-10-25T06:31:08.143Z",
+    "isNoIndex": true,
+    "bookmarksCount": 0,
     "articleContent": "### Mastering the Cinematic Film Strip Aesthetic\n\nThis prompt is engineered to emulate high-end fashion editorial photography using a classic triptych layout. \n\n#### Why This Works:\n* **The Triptych Format:** By defining a three-part narrative (Action -> Pose -> Atmosphere), you create a sense of storytelling that static images often lack.\n* **Volumetric Lighting:** The inclusion of 'volumetric smoke' and 'rim lighting' acts as the primary tool for carving the subject out of the background, giving the portrait a 3D feel.\n* **Film Emulation:** Mentioning 'Kodak Portra 400' and '35mm grain' forces the AI to move away from overly-digital, smooth renders, providing a more authentic, tactile quality.\n\n#### Pro Tips for Customization:\n* **Subject:** Swap 'young man in a white linen shirt' for any character archetype, such as 'a cyberpunk nomad in a chrome jacket'.\n* **Lighting:** Change 'golden-hour' to 'electric blue neon' or 'harsh monochromatic moonlight' for a completely different tonal shift.\n* **Parameters:** Use `--ar 4:5` for a portrait-friendly film strip look, or `--ar 16:9` if you want a horizontal sequence.",
-    "copiesCount": 0,
-    "aiTool": "Midjourney",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@ad53f18e0d9e54efb97383390b348567761d4c3b/prompts/cinematic-35mm-film-strip-portrait.webp",
+    "viewsCount": 0,
+    "promptText": "Cinematic vertical three-panel film strip of user wearing a loose white collared shirt, sitting in a smoky room. In each panel, he wears blue sunglasses in progressive motion like holding sunglasses, wearing them and smoking, giving out smoke. Intense blinding golden-amber backlight creates heavy atmospheric haze, dense smoke swirling in air, strong rim lighting, and silhouetted forms. Shot on 35mm film, vintage anamorphic lens, warm optical bloom, heavy halation, golden yellow and deep shadow color grading, melancholic and gritty aesthetic, aspect ratio 3:4",
     "seo": {
       "focusKeyword": "cinematic film strip portrait",
       "metaTitle": "Cinematic 35mm Film Strip Portrait Prompt for Midjourney & AI Art",
       "metaDescription": "Learn how to create moody, cinematic triptych film strip portraits with this professional AI prompt. Perfect for editorial style photography."
     },
-    "variables": [],
-    "title": "Cinematic 35mm Film Strip Portrait",
+    "aiTool": "Midjourney",
+    "imageAlt": "Cinematic 35mm Film Strip Portrait",
     "id": "prompt-1792909868141",
-    "additionalImages": [
-      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/cinematic-35mm-film-strip-portrait-1792910826081-ljnm.jpg"
-    ],
-    "isPremium": true,
-    "category": "Fashion & Editorial Photography",
-    "promptText": "Cinematic vertical three-panel film strip of user wearing a loose white collared shirt, sitting in a smoky room. In each panel, he wears blue sunglasses in progressive motion like holding sunglasses, wearing them and smoking, giving out smoke. Intense blinding golden-amber backlight creates heavy atmospheric haze, dense smoke swirling in air, strong rim lighting, and silhouetted forms. Shot on 35mm film, vintage anamorphic lens, warm optical bloom, heavy halation, golden yellow and deep shadow color grading, melancholic and gritty aesthetic, aspect ratio 3:4",
-    "author": {
-      "avatar": "/logo.png",
-      "name": "tool.reelz",
-      "role": "Author"
-    },
-    "likesCount": 0,
-    "slug": "cinematic-35mm-film-strip-portrait",
-    "imageFileName": "cinematic-35mm-film-strip-portrait.webp",
     "publishedAt": "2026-10-25T06:31:08.144Z",
-    "imageHeight": 1536,
-    "createdAt": "2026-10-25T06:31:08.143Z",
-    "imageWidth": 1024,
-    "bookmarksCount": 0,
-    "updatedAt": "2026-11-02T07:40:38.440Z"
+    "slug": "cinematic-35mm-film-strip-portrait"
   },
   {
-    "copiesCount": 0,
-    "aiTool": "Midjourney",
-    "likesCount": 0,
-    "bookmarksCount": 0,
-    "imageWidth": 1024,
-    "author": {
-      "avatar": "/logo.png",
-      "name": "tool.reelz",
-      "role": "Author"
-    },
-    "imageAlt": "Coastal Sophistication: Modern Summer Editorial",
-    "slug": "coastal-sophistication-modern-summer-editorial",
-    "title": "Coastal Sophistication: Modern Summer Editorial",
+    "variables": [],
+    "viewsCount": 0,
     "promptText": "Full-body portrait of user standing casually at an open-air seaside restaurant terrace. He is wearing an oversized deep red button-down shirt, baggy wide-leg black denim trousers, white sneakers, and black sunglasses, with one hand running through his hair and the other holding a smartphone. The setting features woven pendant lamps hanging from a white fabric canopy, white wicker dining furniture, tropical potted plants, and a vibrant turquoise ocean in the background. Bright diffused daylight, sharp focus, natural color saturation, aspect ratio 3:4",
+    "createdAt": "2026-10-25T06:01:21.529Z",
+    "imageHeight": 1536,
+    "isNoIndex": true,
+    "imageFileName": "coastal-sophistication-modern-summer-editorial.webp",
+    "copiesCount": 0,
+    "tags": [
+      "Modern Editorial",
+      "Menswear Fashion",
+      "Seaside Aesthetic",
+      "Coastal Living",
+      "Summer Style",
+      "Fashion Portraiture",
+      "Street Style",
+      "Lifestyle",
+      "Beachside",
+      "Mens-fashion",
+      "Vacation-style",
+      "Resort-aesthetic"
+    ],
+    "likesCount": 0,
     "seo": {
       "metaDescription": "Learn how to recreate this luxury beachside editorial look using AI image generators with our detailed prompt package.",
       "focusKeyword": "editorial lifestyle photography",
       "metaTitle": "Coastal Sophistication: Summer Editorial Lifestyle Photography Prompt"
     },
-    "isNoIndex": true,
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1792907982369.jpg",
+    "aiTool": "Midjourney",
+    "slug": "coastal-sophistication-modern-summer-editorial",
+    "bookmarksCount": 0,
+    "articleContent": "### Master the Coastal Editorial Look\n\nThis prompt is engineered to capture the 'quiet luxury' aesthetic common in high-end travel and fashion magazines. \n\n**Lighting Breakdown:** The scene utilizes natural, diffused daylight common in beachside terrace settings. The white fabric shade acts as a massive softbox, creating soft shadows and even illumination on the subject's face while maintaining vibrant colors from the tropical background.\n\n**Camera Settings:** \n- **Lens:** A 35mm lens is used to create a realistic, slightly wide portrait perspective that includes environmental storytelling.\n- **Aperture:** f/2.8 helps isolate the subject from the background just enough to make them pop without losing the luxurious resort details.\n\n**Pro Tip for Customization:** To adapt this for different subjects, replace '[subject]' with specific style markers, such as 'a woman in a floral summer dress' or 'a mature man in a cream-colored linen suit.' Maintain the 'rich color' and 'breezy atmosphere' keywords to keep the editorial mood consistent.",
+    "category": "Fashion & Editorial Photography",
+    "publishedAt": "2026-10-25T06:01:21.529Z",
+    "title": "Coastal Sophistication: Modern Summer Editorial",
+    "isPremium": false,
+    "author": {
+      "role": "Author",
+      "name": "tool.reelz",
+      "avatar": "/logo.png"
+    },
+    "imageAlt": "Coastal Sophistication: Modern Summer Editorial",
+    "updatedAt": "2026-11-28T04:08:30.912Z",
+    "affiliateProducts": [],
     "parameters": {
       "isPremium": false
     },
-    "isPremium": false,
-    "additionalImages": [],
-    "publishedAt": "2026-10-25T06:01:21.529Z",
     "id": "prompt-1792908081527",
-    "imageHeight": 1536,
-    "articleContent": "### Master the Coastal Editorial Look\n\nThis prompt is engineered to capture the 'quiet luxury' aesthetic common in high-end travel and fashion magazines. \n\n**Lighting Breakdown:** The scene utilizes natural, diffused daylight common in beachside terrace settings. The white fabric shade acts as a massive softbox, creating soft shadows and even illumination on the subject's face while maintaining vibrant colors from the tropical background.\n\n**Camera Settings:** \n- **Lens:** A 35mm lens is used to create a realistic, slightly wide portrait perspective that includes environmental storytelling.\n- **Aperture:** f/2.8 helps isolate the subject from the background just enough to make them pop without losing the luxurious resort details.\n\n**Pro Tip for Customization:** To adapt this for different subjects, replace '[subject]' with specific style markers, such as 'a woman in a floral summer dress' or 'a mature man in a cream-colored linen suit.' Maintain the 'rich color' and 'breezy atmosphere' keywords to keep the editorial mood consistent.",
-    "variables": [],
-    "imageFileName": "coastal-sophistication-modern-summer-editorial.webp",
-    "tags": [
-      "Lifestyle",
-      "Beachside",
-      "Mens-fashion",
-      "Vacation-style",
-      "Resort-aesthetic",
-      "Editorial-portrait",
-      "Summer-vibe"
-    ],
-    "createdAt": "2026-10-25T06:01:21.529Z",
-    "updatedAt": "2026-11-05T12:08:29.126Z",
-    "affiliateProducts": [],
     "status": "published",
-    "category": "Lifestyle & Travel Photography",
-    "viewsCount": 0
+    "imageWidth": 1024,
+    "additionalImages": [],
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@8d83f0cbaa912da9e54532e7c69d640886fa6e98/prompts/coastal-sophistication-modern-summer-editorial.webp"
   },
   {
-    "publishedAt": "2026-10-24T16:24:36.934Z",
-    "imageWidth": 1024,
-    "imageHeight": 1536,
-    "likesCount": 0,
-    "slug": "urban-stillness-motion-blur-street-photography",
-    "promptText": "A candid phone photograph of user. He is standing on zebra crossing with hand folded and looking at camera. The scene features a creative long-exposure aesthetic, where the central figure remains perfectly sharp and static while multiple blurred, motion-streaked figures walk past him on either side, creating a dynamic sense of time and urban pace. The lighting is natural sunlight. The color grading is realistic, natural and desaturated. aspect ratio 3:4. No cars or buildings, just people behind and a long road",
-    "aiTool": "Midjourney",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/urban-stillness-motion-blur-street-photography.jpg",
-    "bookmarksCount": 0,
-    "imageAlt": "Urban Stillness: Motion-Blur Street Photography",
-    "isNoIndex": true,
+    "additionalImages": [],
+    "imageFileName": "urban-stillness-motion-blur-street-photography.webp",
+    "viewsCount": 0,
+    "copiesCount": 0,
     "author": {
-      "name": "tool.reelz",
       "role": "Author",
-      "avatar": "/logo.png"
+      "avatar": "/logo.png",
+      "name": "tool.reelz"
     },
+    "promptText": "A candid phone photograph of user. He is standing on zebra crossing with hand folded and looking at camera. The scene features a creative long-exposure aesthetic, where the central figure remains perfectly sharp and static while multiple blurred, motion-streaked figures walk past him on either side, creating a dynamic sense of time and urban pace. The lighting is natural sunlight. The color grading is realistic, natural and desaturated. aspect ratio 3:4. No cars or buildings, just people behind and a long road",
+    "imageHeight": 1536,
+    "updatedAt": "2026-11-28T04:08:38.711Z",
+    "status": "published",
+    "likesCount": 0,
+    "id": "prompt-1792859076927",
+    "isPremium": false,
+    "category": "Lifestyle & Portrait Photography",
+    "title": "Urban Stillness: Motion-Blur Street Photography",
+    "imageAlt": "Urban Stillness: Motion-Blur Street Photography",
+    "affiliateProducts": [],
     "seo": {
       "focusKeyword": "motion blur photography",
       "metaDescription": "Learn how to recreate the viral urban motion-blur street portrait style with our professional AI prompt guide.",
       "metaTitle": "Mastering Motion Blur: Urban Portrait Photography Prompt"
     },
-    "isPremium": false,
-    "copiesCount": 0,
-    "status": "published",
-    "additionalImages": [],
-    "variables": [],
-    "id": "prompt-1792859076927",
+    "articleContent": "### Mastering the Still-in-Motion Portrait\n\nThis prompt is designed to capture the juxtaposition between a calm subject and a chaotic environment. The key to this aesthetic is the contrast between the sharp, high-definition focus on the main subject and the long-exposure motion blur effect applied to the surrounding crowd.\n\n#### Lighting & Camera Breakdown\n- **Lens Choice:** The 35mm lens is chosen for its classic street photography look—wide enough to include context but intimate enough to focus on the human element.\n- **Depth of Field:** Using f/1.8 helps isolate your subject from the background, ensuring they pop against the blurred motion.\n- **Lighting:** Overcast, natural light is preferred to avoid harsh shadows, keeping the skin tones natural and the overall mood cinematic and gritty.\n\n#### How to Customize\n- **Subject:** Replace [subject description] with specific details like 'a stylish man in a black shirt' or 'a woman in a trench coat' to change the character design.\n- **Environment:** Experiment with different backgrounds like 'busy subway station' or 'rainy city intersection' to change the narrative.\n\n#### Pro-Tip for Midjourney Users\nIf the blur isn't strong enough, try adding '--stylize 250' to give the AI more creative freedom to interpret the motion trails, or adjust the weight of 'motion blur' in your prompt.",
+    "bookmarksCount": 0,
+    "slug": "urban-stillness-motion-blur-street-photography",
+    "publishedAt": "2026-10-24T16:24:36.934Z",
+    "aiTool": "Midjourney",
     "parameters": {
       "isPremium": false
     },
-    "updatedAt": "2026-11-05T12:08:27.988Z",
-    "category": "Lifestyle & Portrait Photography",
     "tags": [
       "Street Photography",
       "Motion Blur",
@@ -6798,318 +6825,335 @@
       "Depth of Field",
       "Minimalist"
     ],
+    "variables": [],
     "createdAt": "2026-10-24T16:24:36.934Z",
-    "title": "Urban Stillness: Motion-Blur Street Photography",
-    "viewsCount": 0,
-    "affiliateProducts": [],
-    "imageFileName": "urban-stillness-motion-blur-street-photography.webp",
-    "articleContent": "### Mastering the Still-in-Motion Portrait\n\nThis prompt is designed to capture the juxtaposition between a calm subject and a chaotic environment. The key to this aesthetic is the contrast between the sharp, high-definition focus on the main subject and the long-exposure motion blur effect applied to the surrounding crowd.\n\n#### Lighting & Camera Breakdown\n- **Lens Choice:** The 35mm lens is chosen for its classic street photography look—wide enough to include context but intimate enough to focus on the human element.\n- **Depth of Field:** Using f/1.8 helps isolate your subject from the background, ensuring they pop against the blurred motion.\n- **Lighting:** Overcast, natural light is preferred to avoid harsh shadows, keeping the skin tones natural and the overall mood cinematic and gritty.\n\n#### How to Customize\n- **Subject:** Replace [subject description] with specific details like 'a stylish man in a black shirt' or 'a woman in a trench coat' to change the character design.\n- **Environment:** Experiment with different backgrounds like 'busy subway station' or 'rainy city intersection' to change the narrative.\n\n#### Pro-Tip for Midjourney Users\nIf the blur isn't strong enough, try adding '--stylize 250' to give the AI more creative freedom to interpret the motion trails, or adjust the weight of 'motion blur' in your prompt."
+    "imageWidth": 1024,
+    "isNoIndex": true,
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@74035f2b9dd638385e72f3d2873f764844ad08a6/prompts/urban-stillness-motion-blur-street-photography.webp"
   },
   {
+    "aiTool": "Midjourney",
     "likesCount": 0,
-    "title": "Minimalist Low-Poly Geometric Vector Portrait",
-    "affiliateProducts": [],
-    "variables": [],
-    "bookmarksCount": 0,
-    "imageAlt": "Minimalist Low-Poly Geometric Vector Portrait",
-    "publishedAt": "2026-10-24T16:24:06.847Z",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/minimalist-low-poly-geometric-vector-portrait.jpg",
-    "status": "published",
-    "isPremium": true,
-    "imageWidth": 1024,
-    "imageHeight": 1536,
     "slug": "minimalist-low-poly-geometric-vector-portrait",
-    "additionalImages": [
-      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/slide-1792859019371-7tui.jpg"
-    ],
-    "imageFileName": "minimalist-low-poly-geometric-vector-portrait.webp",
-    "createdAt": "2026-10-24T16:24:06.847Z",
-    "seo": {
-      "metaTitle": "Create Stunning Low-Poly Geometric Portraits | AI Prompt",
-      "focusKeyword": "low-poly vector portrait",
-      "metaDescription": "Learn to create professional-grade low-poly geometric vector art portraits with this master-level AI prompt. Perfect for profile pictures and brand identity."
-    },
-    "promptText": "Stylized 3D geometric low-poly digital illustration of user. His facial features are formed by sharp angular planes and smooth warm skin-tone gradients. Bold, high-contrast graphic lighting emphasizing the polygonal shapes. Clean, isolated solid vibrant crimson red background, minimal modern aesthetic, no text, no watermarks, aspect ratio 3:4",
-    "updatedAt": "2026-11-02T07:40:42.041Z",
-    "copiesCount": 0,
-    "articleContent": "### Unlock the Power of Geometric Illustration\n\nThis prompt is engineered to generate a clean, high-contrast, low-poly aesthetic that mimics premium vector illustration. By utilizing terms like 'geometric facets' and 'sharp angular planes', the AI creates a structured, modern look perfect for social media avatars, personal branding, or creative agency assets.\n\n#### Lighting & Composition Tips\n* **Lighting:** The prompt focuses on 'studio-quality' lighting to ensure the geometric planes have enough depth through highlight and shadow.\n* **Color Theory:** The vibrant solid background acts as a 'negative space' canvas that allows the subject to pop. Feel free to experiment by swapping 'vibrant magenta' for 'electric blue' or 'deep charcoal' to match your specific branding colors.\n* **Subject Flexibility:** You can replace 'holding a professional DSLR camera' with any other hobby-specific item like 'holding a coffee cup', 'wearing futuristic headphones', or 'holding a paintbrush' to personalize the character.\n\n#### Parameter Strategy\n* **Aspect Ratio:** Set to 3:4 or 1:1 for a classic portrait look.\n* **Stylize:** Keep this moderate (around 250) to allow the model to interpret the geometry without losing the artistic structure.",
-    "parameters": {
-      "isPremium": true
-    },
-    "id": "prompt-1792859046839",
+    "title": "Minimalist Low-Poly Geometric Vector Portrait",
     "tags": [
+      "Low-poly",
+      "Geometric Art",
+      "Minimalist Illustration",
+      "3D Vector Art",
+      "Abstract Portrait",
+      "Digital Art",
+      "Graphic Design",
       "Vector Art",
       "Geometric",
-      "Low-poly",
       "Minimalist",
-      "Graphic Design",
       "Stylized Portrait",
       "Digital Illustration"
     ],
-    "category": "Digital Art & Creative Illustration",
-    "aiTool": "Midjourney",
-    "isNoIndex": true,
-    "viewsCount": 0,
-    "author": {
-      "name": "tool.reelz",
-      "role": "Author",
-      "avatar": "/logo.png"
-    }
-  },
-  {
-    "viewsCount": 0,
-    "aiTool": "Midjourney",
-    "category": "Fashion & Editorial Photography",
+    "id": "prompt-1792859046839",
+    "articleContent": "### Unlock the Power of Geometric Illustration\n\nThis prompt is engineered to generate a clean, high-contrast, low-poly aesthetic that mimics premium vector illustration. By utilizing terms like 'geometric facets' and 'sharp angular planes', the AI creates a structured, modern look perfect for social media avatars, personal branding, or creative agency assets.\n\n#### Lighting & Composition Tips\n* **Lighting:** The prompt focuses on 'studio-quality' lighting to ensure the geometric planes have enough depth through highlight and shadow.\n* **Color Theory:** The vibrant solid background acts as a 'negative space' canvas that allows the subject to pop. Feel free to experiment by swapping 'vibrant magenta' for 'electric blue' or 'deep charcoal' to match your specific branding colors.\n* **Subject Flexibility:** You can replace 'holding a professional DSLR camera' with any other hobby-specific item like 'holding a coffee cup', 'wearing futuristic headphones', or 'holding a paintbrush' to personalize the character.\n\n#### Parameter Strategy\n* **Aspect Ratio:** Set to 3:4 or 1:1 for a classic portrait look.\n* **Stylize:** Keep this moderate (around 250) to allow the model to interpret the geometry without losing the artistic structure.",
     "bookmarksCount": 0,
+    "publishedAt": "2026-10-24T16:24:06.847Z",
+    "variables": [],
+    "viewsCount": 0,
+    "additionalImages": [],
+    "seo": {
+      "metaDescription": "Learn to create professional-grade low-poly geometric vector art portraits with this master-level AI prompt. Perfect for profile pictures and brand identity.",
+      "focusKeyword": "low-poly vector portrait",
+      "metaTitle": "Create Stunning Low-Poly Geometric Portraits | AI Prompt"
+    },
+    "promptText": "Stylized 3D geometric low-poly digital illustration of user. His facial features are formed by sharp angular planes and smooth warm skin-tone gradients. Bold, high-contrast graphic lighting emphasizing the polygonal shapes. Clean, isolated solid vibrant crimson red background, minimal modern aesthetic, no text, no watermarks, aspect ratio 3:4",
+    "category": "Digital Art & Creative Illustration",
+    "createdAt": "2026-10-24T16:24:06.847Z",
     "isNoIndex": true,
-    "imageFileName": "graceful-indian-portrait-with-rose-petals-and-gajra.webp",
-    "author": {
-      "name": "tool.reelz",
-      "role": "Author",
-      "avatar": "/logo.png"
-    },
-    "slug": "graceful-indian-portrait-with-rose-petals-and-gajra",
-    "additionalImages": [
-      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/slide-1792823358673-u7c0.jpg"
-    ],
-    "publishedAt": "2026-10-24T06:32:21.304Z",
-    "parameters": {
-      "isPremium": false
-    },
-    "imageHeight": 1536,
-    "title": "Graceful Indian Portrait with Rose Petals and Gajra",
-    "promptText": "Studio portrait of a beautiful South Indian woman with dark wavy hair styled with fresh white jasmine flowers. She wears an elegant sheer peacock-blue tulle saree and matching sleeveless blouse embellished with delicate silver and gold embroidery. Gentle smile, warm brown eyes looking directly at the camera, delicate gold necklace and earrings. Minimalist light gray backdrop with a soft cyan circular halo and faint white floral illustrations, drifting red rose petals falling through the frame with soft foreground blur. Soft cinematic studio lighting, crisp focus, natural skin texture, aspect ratio 3:4",
-    "articleContent": "### Overview\\nThis prompt recreates an editorial South Asian studio portrait balancing classic ethnic styling with cinematic depth-of-field.\\n\\n### Key Elements\\n- **Subject & Styling**: South Asian woman in a sheer peacock-blue georgette saree, zardozi embroidery, gold jhumkas, and jasmine gajra.\\n- **Atmosphere**: Falling red rose petals create three-dimensional foreground and background blur.\\n- **Backdrop**: Studio grey offset with a soft circular rim light and baby's breath accents.\\n\\n### Lighting & Optics\\n- **Camera**: 85mm portrait prime at f/2.0 for soft subject separation.\\n- **Lighting**: Diffused beauty dish key with hair rim light for edge definition.\\n\\n### Customization Tips\\n- Swap `peacock-blue saree` with crimson lehenga or emerald anarkali.\\n- Replace `rose petals` with marigold petals for festive warmth.",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1792823355348.jpg",
     "affiliateProducts": [],
-    "updatedAt": "2026-11-05T12:08:24.292Z",
-    "tags": [
-      "Indian Portrait",
-      "Teal Saree",
-      "Rose Petal Bokeh",
-      "Gajra Hair",
-      "Traditional Fashion",
-      "Editorial Portrait",
-      "South Asian Model"
-    ],
-    "imageAlt": "Graceful Indian Portrait with Rose Petals and Gajra",
-    "createdAt": "2026-10-24T06:32:21.304Z",
-    "seo": {
-      "metaDescription": "Create a breathtaking South Asian portrait in a teal embroidered saree with floating rose petals using this AI photography prompt.",
-      "focusKeyword": "indian festive portrait prompt",
-      "metaTitle": "Indian Festive Portrait Prompt - Flux & Midjourney"
-    },
-    "copiesCount": 0,
-    "id": "prompt-1792823541302",
-    "variables": [],
     "imageWidth": 1024,
     "status": "published",
-    "isPremium": false,
-    "likesCount": 0
-  },
-  {
-    "likesCount": 0,
-    "updatedAt": "2026-10-24T15:12:39.812Z",
-    "articleContent": "### Unlocking the 'Shadow Stalker' Aesthetic\n\nThis prompt is engineered to capture a sense of dread and mystery by utilizing a **worm's-eye view (low angle)**, which immediately makes the subject feel larger than life and intimidating. \n\n#### Key Elements:\n*   **Perspective:** By specifying a 'fisheye wide shot' from the ground up, we distort the proportions, emphasizing the shoes/feet in the foreground while making the head reach toward the canopy.\n*   **Lighting:** The 'glowing ethereal white eyes' and 'outline aura' serve as the main focal points, cutting through the heavy, dark ambient light of the forest.\n*   **Color Palette:** We utilize a 'monochromatic' base with 'desaturated tones' to ensure the focus remains on the supernatural highlights rather than distracting colors.\n\n#### Pro Tips:\n*   **Customization:** Replace the `[subject]` with terms like 'a hooded monk', 'a sleek cyberpunk assassin', or 'a mythical specter' to instantly change the narrative.\n*   **Atmosphere:** If the result is too bright, increase the 'negative prompt' weight for 'daylight' or 'sunlight'.\n*   **Styling:** Use a high 'stylize' parameter (e.g., --stylize 250 in Midjourney) if you want the artistic, electric aura around the character to appear more pronounced.",
-    "createdAt": "2026-10-24T06:32:04.237Z",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1792823448511.jpg",
-    "status": "published",
-    "additionalImages": [
-      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/slide-1792823452372-xykl.jpg",
-      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/slide-1792823464678-fk95.jpg"
-    ],
-    "id": "prompt-1792823524237",
-    "imageAlt": "Ethereal Shadow Stalker Cinematic Perspective",
-    "slug": "ethereal-shadow-stalker-cinematic-perspective",
-    "imageWidth": 1024,
-    "isPremium": true,
-    "seo": {
-      "metaTitle": "Create Ethereal Shadow Figures with This Cinematic AI Prompt",
-      "focusKeyword": "cinematic shadow figure prompt",
-      "metaDescription": "Learn how to generate imposing, supernatural portrait photography with glowing effects and a deep, foggy forest atmosphere using this Midjourney and Flux prompt."
-    },
-    "copiesCount": 0,
-    "imageFileName": "ethereal-shadow-stalker-cinematic-perspective.webp",
-    "variables": [],
-    "title": "Ethereal Shadow Stalker Cinematic Perspective",
-    "promptText": "An extreme worm's-eye view photograph of user standing in a dark, misty, ancient forest. The figure is captured in deep shadow. The foreground sneaker is massive due to the forced perspective of an ultra-wide angle lens. The subject's eyes are glowing bright, ethereal white. The surrounding forest is dense with tall, towering pine trees fading into a thick, moody white fog. A thin, hand-drawn white outline traces the silhouette of the subject. The lighting is diffused, cool-toned, and high-contrast, emphasizing the dark silhouette against the bright, ethereal background. Cinematic, moody atmosphere, high-resolution, sharp textures on the forest floor, aspect ratio 3:4",
-    "category": "Digital Art & Creative Portraiture",
+    "imageAlt": "Minimalist Low-Poly Geometric Vector Portrait",
     "parameters": {
       "isPremium": true
     },
-    "affiliateProducts": [],
-    "bookmarksCount": 0,
-    "isNoIndex": true,
-    "tags": [
-      "Cinematic Lighting",
-      "Low Angle",
-      "Fisheye Len",
-      "Supernatural",
-      "Foggy Forest",
-      "Moody Photography",
-      "Ethereal",
-      "Dark Aesthetic"
-    ],
-    "publishedAt": "2026-10-24T06:32:04.238Z",
-    "author": {
-      "name": "tool.reelz",
-      "role": "Author",
-      "avatar": "/logo.png"
-    },
-    "imageHeight": 1536,
-    "viewsCount": 0,
-    "aiTool": "Midjourney"
-  },
-  {
-    "aiTool": "Midjourney",
-    "category": "Fashion & Editorial Photography",
-    "promptText": "A professional portrait of user with a clear, realistic face and natural skin texture, posing in profile viewing backward a solid, bright, clinical white background. Behind the subject, the word 'REBUILD' is written in bold, tall, minimalist red poppins typography with a slight deliberate motion blur effect. The lighting is soft, even, and high-key, creating a clean studio aesthetic with no harsh shadows. The bottom of the image fades into a soft, ethereal white mist, blurring the lower torso area into the background. Realistic, high-resolution, sharp focus on the man's eyes and facial features, cinematic lighting, 85mm lens aesthetic, ultra-clean composition, aspect ratio 3:4",
-    "isNoIndex": true,
-    "tags": [
-      "Editorial",
-      "Minimalism",
-      "Typography",
-      "Studio-portrait",
-      "Mens-fashion",
-      "High-fashion",
-      "Commercial-photography"
-    ],
-    "publishedAt": "2026-10-24T06:30:12.514Z",
+    "copiesCount": 0,
+    "updatedAt": "2026-11-28T04:10:32.133Z",
     "author": {
       "avatar": "/logo.png",
       "name": "tool.reelz",
       "role": "Author"
     },
-    "bookmarksCount": 0,
+    "isPremium": true,
     "imageHeight": 1536,
-    "title": "Minimalist Editorial Portrait with Bold Typography",
-    "imageWidth": 1024,
-    "affiliateProducts": [],
-    "likesCount": 0,
-    "copiesCount": 0,
-    "viewsCount": 0,
-    "imageFileName": "minimalist-editorial-portrait-with-bold-typography.webp",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1792823316056.jpg",
-    "articleContent": "### The Aesthetic of Minimalism\\nThis prompt captures the essence of modern fashion advertising. It focuses on the juxtaposition between the sharp, high-contrast portrait of the subject and the clean, bold typography in the background. The key to this look is the 'white space'—a stark, clean environment that directs the viewer's eye immediately to the subject's face and the message behind them.\\n\\n### Lighting & Camera Breakdown\\n- **Lighting:** We use a soft rim light setup to separate the subject from the white background, ensuring the hair and shoulders pop. Soft studio lighting provides a flattering, professional finish without harsh shadows.\\n- **Camera Optics:** An 85mm lens at f/2.8 is the gold standard for portraiture. It creates a shallow depth of field that keeps the subject tack-sharp while allowing the background text to remain readable yet slightly secondary to the model.\\n\\n### Pro Tips for Success\\n1. **Typography Handling:** If the AI struggles with the exact spelling of 'REBUILD', consider using a base image generation for the person, then layering the text in Canva or Photoshop for absolute control over kerning and font choice.\\n2. **Atmosphere:** The 'ethereal atmospheric haze' at the bottom of the prompt adds a modern, high-end editorial touch that prevents the bottom of the image from feeling too stark.",
-    "updatedAt": "2026-11-05T12:08:22.513Z",
-    "imageAlt": "Minimalist Editorial Portrait with Bold Typography",
-    "seo": {
-      "metaTitle": "Minimalist Editorial Portrait Prompt with Bold Typography for AI Art",
-      "focusKeyword": "editorial portrait prompt",
-      "metaDescription": "Learn how to create high-end editorial portraits with clean typography and studio lighting using this professional AI prompt."
-    },
-    "slug": "minimalist-editorial-portrait-with-bold-typography",
-    "additionalImages": [
-      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/slide-1792823319892-adxu.jpg"
-    ],
-    "createdAt": "2026-10-24T06:30:12.514Z",
-    "variables": [],
-    "id": "prompt-1792823412514",
-    "parameters": {
-      "isPremium": false
-    },
-    "status": "published",
-    "isPremium": false
+    "imageFileName": "minimalist-low-poly-geometric-vector-portrait.webp",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@d9973b92090e047eff533eed04823ca3f9f3cdd0/prompts/minimalist-low-poly-geometric-vector-portrait.webp"
   },
   {
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1792823250266.jpg",
+    "affiliateProducts": [],
+    "seo": {
+      "focusKeyword": "indian festive portrait prompt",
+      "metaDescription": "Create a breathtaking South Asian portrait in a teal embroidered saree with floating rose petals using this AI photography prompt.",
+      "metaTitle": "Indian Festive Portrait Prompt - Flux & Midjourney"
+    },
+    "updatedAt": "2026-11-28T04:11:38.528Z",
+    "author": {
+      "name": "tool.reelz",
+      "avatar": "/logo.png",
+      "role": "Author"
+    },
+    "likesCount": 0,
+    "category": "Photorealistic & Portraits",
+    "slug": "graceful-indian-portrait-with-rose-petals-and-gajra",
+    "articleContent": "### Overview\\nThis prompt recreates an editorial South Asian studio portrait balancing classic ethnic styling with cinematic depth-of-field.\\n\\n### Key Elements\\n- **Subject & Styling**: South Asian woman in a sheer peacock-blue georgette saree, zardozi embroidery, gold jhumkas, and jasmine gajra.\\n- **Atmosphere**: Falling red rose petals create three-dimensional foreground and background blur.\\n- **Backdrop**: Studio grey offset with a soft circular rim light and baby's breath accents.\\n\\n### Lighting & Optics\\n- **Camera**: 85mm portrait prime at f/2.0 for soft subject separation.\\n- **Lighting**: Diffused beauty dish key with hair rim light for edge definition.\\n\\n### Customization Tips\\n- Swap `peacock-blue saree` with crimson lehenga or emerald anarkali.\\n- Replace `rose petals` with marigold petals for festive warmth.",
+    "isNoIndex": true,
+    "isPremium": false,
+    "copiesCount": 0,
+    "viewsCount": 0,
+    "imageWidth": 1024,
+    "additionalImages": [],
+    "status": "published",
     "parameters": {
       "isPremium": false
     },
-    "affiliateProducts": [],
-    "imageAlt": "Golden Hour Romantic Couples Portrait Collection",
-    "seo": {
-      "metaTitle": "Golden Hour Romantic Couples Photography Prompt",
-      "metaDescription": "Master the aesthetic of golden hour romantic portraits with this professionally crafted prompt for Midjourney and Gemini. Perfect for high-end lifestyle photography.",
-      "focusKeyword": "romantic couple portrait"
-    },
-    "viewsCount": 0,
-    "title": "Golden Hour Romantic Couples Portrait Collection",
-    "bookmarksCount": 0,
-    "author": {
-      "role": "Author",
-      "avatar": "/logo.png",
-      "name": "tool.reelz"
-    },
-    "isNoIndex": true,
-    "copiesCount": 0,
-    "aiTool": "Midjourney",
-    "slug": "golden-hour-romantic-couples-portrait-collection",
-    "variables": [],
-    "status": "published",
-    "imageWidth": 1024,
-    "category": "Lifestyle & Portrait Photography",
-    "isPremium": false,
-    "likesCount": 0,
-    "imageFileName": "golden-hour-romantic-couples-portrait-collection.webp",
-    "articleContent": "### Creating Cinematic Romantic Portraits\n\nThis prompt is engineered to capture the 'Golden Hour' aesthetic, which relies heavily on warm, back-lit scenes and a shallow depth of field. By using the 85mm f/1.2 lens reference, the AI focuses on subject separation, ensuring the couple pops from the soft, out-of-focus background.\n\n#### Key Elements:\n- **Lighting:** The prompt specifies 'golden hour backlight,' which creates that glowing rim light effect on hair and clothing.\n- **Composition:** The 'multi-panel storyboard' keyword encourages the AI to generate a layout that tells a cohesive story.\n- **Styling:** We’ve specified high-contrast clothing (Black vs. Ornate Red) to create visual interest and color harmony within the frame.\n\n#### Pro-Tips for Best Results:\n- Use `--ar 4:5` for a classic portrait-ready ratio on social media.\n- If the output is too chaotic, reduce the stylize parameter to keep the composition cleaner.\n- Experiment with the location by swapping 'beach' for 'urban rooftop' or 'wheat field' to change the entire narrative.",
-    "promptText": "A romantic photo collage of a young South Asian couple on a beach at golden hour, featuring multiple panels of candid moments: an intimate embrace from behind, lifting each other playfully in ocean waves, sitting together on the sand watching the sun set over the horizon, walking hand-in-hand along the shoreline, and a cozy evening portrait behind a candlelit table with red roses. Cinematic golden lighting, shallow depth of field, authentic emotional expressions, soft ocean spray, warm sunset glow, aspect ratio 3:4.",
-    "id": "prompt-1792823297565",
-    "updatedAt": "2026-11-05T12:08:18.158Z",
-    "imageHeight": 1536,
     "tags": [
+      "Indian Portrait",
+      "South Indian Beauty",
+      "Saree Photography",
+      "Cinematic Portrait",
+      "Cultural Fashion",
+      "Floral Aesthetic",
+      "Realistic Portrait",
+      "Teal Saree",
+      "Rose Petal Bokeh",
+      "Gajra Hair",
+      "Traditional Fashion",
+      "Editorial Portrait"
+    ],
+    "imageFileName": "graceful-indian-portrait-with-rose-petals-and-gajra.webp",
+    "imageAlt": "Graceful Indian Portrait with Rose Petals and Gajra",
+    "aiTool": "Midjourney",
+    "id": "prompt-1792823541302",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@207c51df2dfb996df9da36f24ad103d5155f6b6b/prompts/graceful-indian-portrait-with-rose-petals-and-gajra.webp",
+    "imageHeight": 1536,
+    "publishedAt": "2026-10-24T06:32:21.304Z",
+    "title": "Graceful Indian Portrait with Rose Petals and Gajra",
+    "variables": [],
+    "bookmarksCount": 0,
+    "createdAt": "2026-10-24T06:32:21.304Z",
+    "promptText": "Studio portrait of a beautiful South Indian woman with dark wavy hair styled with fresh white jasmine flowers. She wears an elegant sheer peacock-blue tulle saree and matching sleeveless blouse embellished with delicate silver and gold embroidery. Gentle smile, warm brown eyes looking directly at the camera, delicate gold necklace and earrings. Minimalist light gray backdrop with a soft cyan circular halo and faint white floral illustrations, drifting red rose petals falling through the frame with soft foreground blur. Soft cinematic studio lighting, crisp focus, natural skin texture, aspect ratio 3:4"
+  },
+  {
+    "affiliateProducts": [],
+    "bookmarksCount": 0,
+    "articleContent": "### Unlocking the 'Shadow Stalker' Aesthetic\n\nThis prompt is engineered to capture a sense of dread and mystery by utilizing a **worm's-eye view (low angle)**, which immediately makes the subject feel larger than life and intimidating. \n\n#### Key Elements:\n*   **Perspective:** By specifying a 'fisheye wide shot' from the ground up, we distort the proportions, emphasizing the shoes/feet in the foreground while making the head reach toward the canopy.\n*   **Lighting:** The 'glowing ethereal white eyes' and 'outline aura' serve as the main focal points, cutting through the heavy, dark ambient light of the forest.\n*   **Color Palette:** We utilize a 'monochromatic' base with 'desaturated tones' to ensure the focus remains on the supernatural highlights rather than distracting colors.\n\n#### Pro Tips:\n*   **Customization:** Replace the `[subject]` with terms like 'a hooded monk', 'a sleek cyberpunk assassin', or 'a mythical specter' to instantly change the narrative.\n*   **Atmosphere:** If the result is too bright, increase the 'negative prompt' weight for 'daylight' or 'sunlight'.\n*   **Styling:** Use a high 'stylize' parameter (e.g., --stylize 250 in Midjourney) if you want the artistic, electric aura around the character to appear more pronounced.",
+    "viewsCount": 0,
+    "additionalImages": [],
+    "slug": "ethereal-shadow-stalker-cinematic-perspective",
+    "promptText": "An extreme worm's-eye view photograph of user standing in a dark, misty, ancient forest. The figure is captured in deep shadow. The foreground sneaker is massive due to the forced perspective of an ultra-wide angle lens. The subject's eyes are glowing bright, ethereal white. The surrounding forest is dense with tall, towering pine trees fading into a thick, moody white fog. A thin, hand-drawn white outline traces the silhouette of the subject. The lighting is diffused, cool-toned, and high-contrast, emphasizing the dark silhouette against the bright, ethereal background. Cinematic, moody atmosphere, high-resolution, sharp textures on the forest floor, aspect ratio 3:4",
+    "updatedAt": "2026-11-28T04:11:12.748Z",
+    "tags": [
+      "Cinematic Photography",
+      "Ethereal",
+      "Dark Aesthetic",
+      "Forced Perspective",
+      "Moody Atmosphere",
+      "Street Style",
+      "Digital Art",
+      "Cinematic Lighting",
+      "Low Angle",
+      "Fisheye Len",
+      "Supernatural",
+      "Foggy Forest"
+    ],
+    "aiTool": "Midjourney",
+    "copiesCount": 0,
+    "likesCount": 0,
+    "isPremium": true,
+    "imageHeight": 1536,
+    "category": "Digital Art & Creative Portraiture",
+    "imageAlt": "Ethereal Shadow Stalker Cinematic Perspective",
+    "author": {
+      "name": "tool.reelz",
+      "role": "Author",
+      "avatar": "/logo.png"
+    },
+    "seo": {
+      "focusKeyword": "cinematic shadow figure prompt",
+      "metaDescription": "Learn how to generate imposing, supernatural portrait photography with glowing effects and a deep, foggy forest atmosphere using this Midjourney and Flux prompt.",
+      "metaTitle": "Create Ethereal Shadow Figures with This Cinematic AI Prompt"
+    },
+    "title": "Ethereal Shadow Stalker Cinematic Perspective",
+    "imageWidth": 1024,
+    "id": "prompt-1792823524237",
+    "status": "published",
+    "imageFileName": "ethereal-shadow-stalker-cinematic-perspective.webp",
+    "parameters": {
+      "isPremium": true
+    },
+    "variables": [],
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@07b3cb0af6e7a486e662388067552105f170b01b/prompts/ethereal-shadow-stalker-cinematic-perspective.webp",
+    "publishedAt": "2026-10-24T06:32:04.238Z",
+    "createdAt": "2026-10-24T06:32:04.237Z",
+    "isNoIndex": true
+  },
+  {
+    "status": "published",
+    "tags": [
+      "Minimalist-portrait",
+      "Editorial-photography",
+      "Typography-art",
+      "High-key-lighting",
+      "Studio-portrait",
+      "Clean-aesthetic",
+      "Cinematic-photography",
+      "Editorial",
+      "Minimalism",
+      "Typography",
+      "Mens-fashion",
+      "High-fashion"
+    ],
+    "promptText": "A professional portrait of user with a clear, realistic face and natural skin texture, posing in profile viewing backward a solid, bright, clinical white background. Behind the subject, the word 'REBUILD' is written in bold, tall, minimalist red poppins typography with a slight deliberate motion blur effect. The lighting is soft, even, and high-key, creating a clean studio aesthetic with no harsh shadows. The bottom of the image fades into a soft, ethereal white mist, blurring the lower torso area into the background. Realistic, high-resolution, sharp focus on the man's eyes and facial features, cinematic lighting, 85mm lens aesthetic, ultra-clean composition, aspect ratio 3:4",
+    "id": "prompt-1792823412514",
+    "title": "Minimalist Editorial Portrait with Bold Typography",
+    "aiTool": "Midjourney",
+    "imageHeight": 1536,
+    "publishedAt": "2026-10-24T06:30:12.514Z",
+    "updatedAt": "2026-11-28T04:13:03.707Z",
+    "affiliateProducts": [],
+    "isNoIndex": true,
+    "additionalImages": [],
+    "bookmarksCount": 0,
+    "category": "Fashion & Editorial Photography",
+    "imageWidth": 1024,
+    "isPremium": false,
+    "parameters": {
+      "isPremium": false
+    },
+    "imageFileName": "minimalist-editorial-portrait-with-bold-typography.webp",
+    "imageAlt": "Minimalist Editorial Portrait with Bold Typography",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@51146303007b48bbe1b4d42150e5223876ae4e5a/prompts/minimalist-editorial-portrait-with-bold-typography.webp",
+    "copiesCount": 0,
+    "viewsCount": 0,
+    "author": {
+      "avatar": "/logo.png",
+      "name": "tool.reelz",
+      "role": "Author"
+    },
+    "slug": "minimalist-editorial-portrait-with-bold-typography",
+    "articleContent": "### The Aesthetic of Minimalism\\nThis prompt captures the essence of modern fashion advertising. It focuses on the juxtaposition between the sharp, high-contrast portrait of the subject and the clean, bold typography in the background. The key to this look is the 'white space'—a stark, clean environment that directs the viewer's eye immediately to the subject's face and the message behind them.\\n\\n### Lighting & Camera Breakdown\\n- **Lighting:** We use a soft rim light setup to separate the subject from the white background, ensuring the hair and shoulders pop. Soft studio lighting provides a flattering, professional finish without harsh shadows.\\n- **Camera Optics:** An 85mm lens at f/2.8 is the gold standard for portraiture. It creates a shallow depth of field that keeps the subject tack-sharp while allowing the background text to remain readable yet slightly secondary to the model.\\n\\n### Pro Tips for Success\\n1. **Typography Handling:** If the AI struggles with the exact spelling of 'REBUILD', consider using a base image generation for the person, then layering the text in Canva or Photoshop for absolute control over kerning and font choice.\\n2. **Atmosphere:** The 'ethereal atmospheric haze' at the bottom of the prompt adds a modern, high-end editorial touch that prevents the bottom of the image from feeling too stark.",
+    "likesCount": 0,
+    "createdAt": "2026-10-24T06:30:12.514Z",
+    "seo": {
+      "focusKeyword": "editorial portrait prompt",
+      "metaDescription": "Learn how to create high-end editorial portraits with clean typography and studio lighting using this professional AI prompt.",
+      "metaTitle": "Minimalist Editorial Portrait Prompt with Bold Typography for AI Art"
+    },
+    "variables": []
+  },
+  {
+    "publishedAt": "2026-10-24T06:28:17.569Z",
+    "updatedAt": "2026-11-28T04:18:20.126Z",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@a1ea4eadfb9ecf594aadc8ac4e8865d68fc521e9/prompts/golden-hour-romantic-couples-portrait-collection.webp",
+    "likesCount": 0,
+    "affiliateProducts": [],
+    "seo": {
+      "focusKeyword": "romantic couple portrait",
+      "metaDescription": "Master the aesthetic of golden hour romantic portraits with this professionally crafted prompt for Midjourney and Gemini. Perfect for high-end lifestyle photography.",
+      "metaTitle": "Golden Hour Romantic Couples Photography Prompt"
+    },
+    "variables": [],
+    "tags": [
+      "Couple Portrait",
+      "Golden Hour Photography",
+      "Romantic Beach Photoshoot",
+      "South Asian Couple",
+      "Candid Lifestyle",
+      "Cinematic Lighting",
+      "Portrait Collage",
       "Golden-hour",
       "Couple-photography",
       "Romantic-aesthetic",
       "Sunset-lighting",
-      "Editorial-portrait",
-      "Beach-vibe",
-      "Cinematic-photography"
+      "Editorial-portrait"
     ],
+    "imageAlt": "Golden Hour Romantic Couples Portrait Collection",
+    "articleContent": "### Creating Cinematic Romantic Portraits\n\nThis prompt is engineered to capture the 'Golden Hour' aesthetic, which relies heavily on warm, back-lit scenes and a shallow depth of field. By using the 85mm f/1.2 lens reference, the AI focuses on subject separation, ensuring the couple pops from the soft, out-of-focus background.\n\n#### Key Elements:\n- **Lighting:** The prompt specifies 'golden hour backlight,' which creates that glowing rim light effect on hair and clothing.\n- **Composition:** The 'multi-panel storyboard' keyword encourages the AI to generate a layout that tells a cohesive story.\n- **Styling:** We’ve specified high-contrast clothing (Black vs. Ornate Red) to create visual interest and color harmony within the frame.\n\n#### Pro-Tips for Best Results:\n- Use `--ar 4:5` for a classic portrait-ready ratio on social media.\n- If the output is too chaotic, reduce the stylize parameter to keep the composition cleaner.\n- Experiment with the location by swapping 'beach' for 'urban rooftop' or 'wheat field' to change the entire narrative.",
+    "aiTool": "Midjourney",
+    "isPremium": false,
+    "isNoIndex": true,
+    "imageHeight": 1536,
+    "promptText": "A romantic photo collage of a young South Asian couple on a beach at golden hour, featuring multiple panels of candid moments: an intimate embrace from behind, lifting each other playfully in ocean waves, sitting together on the sand watching the sun set over the horizon, walking hand-in-hand along the shoreline, and a cozy evening portrait behind a candlelit table with red roses. Cinematic golden lighting, shallow depth of field, authentic emotional expressions, soft ocean spray, warm sunset glow, aspect ratio 3:4.",
+    "imageFileName": "golden-hour-romantic-couples-portrait-collection.webp",
+    "slug": "golden-hour-romantic-couples-portrait-collection",
+    "bookmarksCount": 0,
+    "imageWidth": 1024,
+    "category": "Lifestyle & Portrait Photography",
+    "viewsCount": 0,
+    "id": "prompt-1792823297565",
+    "copiesCount": 0,
     "additionalImages": [],
-    "publishedAt": "2026-10-24T06:28:17.569Z",
+    "author": {
+      "role": "Author",
+      "name": "tool.reelz",
+      "avatar": "/logo.png"
+    },
+    "parameters": {
+      "isPremium": false
+    },
+    "title": "Golden Hour Romantic Couples Portrait Collection",
+    "status": "published",
     "createdAt": "2026-10-24T06:28:17.569Z"
   },
   {
+    "isNoIndex": true,
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@26b9fbfbb86deaac55575637c2ca7b6ca5691a28/prompts/minimalist-high-angle-fashion-portrait.webp",
+    "articleContent": "### Mastering the Minimalist Editorial Look\n\nThis prompt is engineered to replicate the clean, high-end aesthetic found in e-commerce fashion catalogs. By focusing on a high-angle perspective and a seamless white backdrop, you draw all attention to the subject's outfit and styling.\n\n#### Lighting & Composition\n- **Composition:** The high-angle (bird's-eye view) creates a modern, slightly detached editorial feel that emphasizes the silhouette of the outfit.\n- **Lighting:** We specify 'diffused overhead lighting' to avoid harsh shadows on the face while ensuring the clothing texture is clearly visible. This 'high-key' style is perfect for clean brand imagery.\n\n#### Pro Tips for Customization\n- **Swap the Subject:** Change '[subject]' to 'a female model' or 'an older professional' to see how the framing adapts to different styles.\n- **Change Colors:** Replace 'teal' with 'mustard yellow' or 'burnt orange' for a seasonal color palette shift.\n- **Background:** If you want a more urban feel, swap the 'off-white studio backdrop' for 'an urban concrete floor'.",
+    "imageAlt": "Minimalist High-Angle Fashion Portrait",
+    "id": "prompt-1792823284724",
+    "affiliateProducts": [],
+    "copiesCount": 0,
+    "viewsCount": 0,
+    "isPremium": false,
+    "slug": "minimalist-high-angle-fashion-portrait",
+    "aiTool": "Midjourney",
+    "updatedAt": "2026-11-28T04:14:38.171Z",
+    "likesCount": 0,
+    "status": "published",
+    "publishedAt": "2026-10-24T06:28:04.725Z",
     "imageHeight": 1536,
-    "createdAt": "2026-10-24T06:28:04.725Z",
-    "additionalImages": [
-      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/slide-1792823229814-l419.jpg"
-    ],
     "tags": [
+      "Minimalist Fashion",
+      "Studio Portrait",
+      "Mens Style",
+      "High Angle Photography",
+      "Commercial Photography",
+      "Editorial Lookbook",
+      "Streetwear Aesthetic",
       "Editorial",
       "Studio Photography",
       "Minimalist",
       "High-angle",
-      "Streetwear",
-      "Professional Portrait",
-      "Fashion Catalog"
+      "Streetwear"
     ],
-    "imageAlt": "Minimalist High-Angle Fashion Portrait",
-    "publishedAt": "2026-10-24T06:28:04.725Z",
-    "updatedAt": "2026-11-05T12:08:16.448Z",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1792823224337.jpg",
-    "viewsCount": 0,
-    "title": "Minimalist High-Angle Fashion Portrait",
-    "isPremium": false,
-    "status": "published",
-    "affiliateProducts": [],
-    "parameters": {
-      "isPremium": false
-    },
+    "createdAt": "2026-10-24T06:28:04.725Z",
     "bookmarksCount": 0,
+    "imageFileName": "minimalist-high-angle-fashion-portrait.webp",
     "variables": [],
-    "slug": "minimalist-high-angle-fashion-portrait",
+    "promptText": "A high-angle full-body studio portrait of a young man with voluminous dark curly hair, wearing premium black rectangular sunglasses, a stylish teal blue cotton chore jacket, a crisp white crew-neck t-shirt, light cream-colored chinos, and modern teal-and-white sneakers. He is standing with his hands clasped behind his back, looking directly into the camera with a calm and confident expression. The shot is taken from a high vantage point using a wide-angle lens, creating a flattering perspective. The background is a seamless, pristine white cyclorama with soft, even, high-key studio lighting that produces minimal shadows and a clean, commercial aesthetic. High-resolution, professional fashion photography, sharp focus, 8k, natural skin micro-texture, vibrant colors, clean composition, aspect ratio 3:4",
+    "imageWidth": 1024,
     "author": {
       "avatar": "/logo.png",
       "role": "Author",
       "name": "tool.reelz"
     },
-    "isNoIndex": true,
-    "promptText": "A high-angle full-body studio portrait of a young man with voluminous dark curly hair, wearing premium black rectangular sunglasses, a stylish teal blue cotton chore jacket, a crisp white crew-neck t-shirt, light cream-colored chinos, and modern teal-and-white sneakers. He is standing with his hands clasped behind his back, looking directly into the camera with a calm and confident expression. The shot is taken from a high vantage point using a wide-angle lens, creating a flattering perspective. The background is a seamless, pristine white cyclorama with soft, even, high-key studio lighting that produces minimal shadows and a clean, commercial aesthetic. High-resolution, professional fashion photography, sharp focus, 8k, natural skin micro-texture, vibrant colors, clean composition, aspect ratio 3:4",
-    "category": "Fashion & Editorial Photography",
-    "aiTool": "Midjourney",
-    "copiesCount": 0,
+    "parameters": {
+      "isPremium": false
+    },
+    "title": "Minimalist High-Angle Fashion Portrait",
+    "additionalImages": [],
     "seo": {
       "metaTitle": "Minimalist High-Angle Fashion Portrait Prompt",
       "focusKeyword": "fashion portrait prompt",
       "metaDescription": "Learn how to prompt for clean, professional, high-angle fashion photography with this Midjourney and AI-ready master guide."
     },
-    "likesCount": 0,
-    "imageFileName": "minimalist-high-angle-fashion-portrait.webp",
-    "imageWidth": 1024,
-    "articleContent": "### Mastering the Minimalist Editorial Look\n\nThis prompt is engineered to replicate the clean, high-end aesthetic found in e-commerce fashion catalogs. By focusing on a high-angle perspective and a seamless white backdrop, you draw all attention to the subject's outfit and styling.\n\n#### Lighting & Composition\n- **Composition:** The high-angle (bird's-eye view) creates a modern, slightly detached editorial feel that emphasizes the silhouette of the outfit.\n- **Lighting:** We specify 'diffused overhead lighting' to avoid harsh shadows on the face while ensuring the clothing texture is clearly visible. This 'high-key' style is perfect for clean brand imagery.\n\n#### Pro Tips for Customization\n- **Swap the Subject:** Change '[subject]' to 'a female model' or 'an older professional' to see how the framing adapts to different styles.\n- **Change Colors:** Replace 'teal' with 'mustard yellow' or 'burnt orange' for a seasonal color palette shift.\n- **Background:** If you want a more urban feel, swap the 'off-white studio backdrop' for 'an urban concrete floor'.",
-    "id": "prompt-1792823284724"
+    "category": "Fashion & Editorial Photography"
   },
   {
     "isPremium": false,
@@ -7117,9 +7161,9 @@
     "articleContent": "# Sunlit Field Lifestyle Portrait Guide\n\nCapture an effortlessly relaxed summer or spring outdoor portrait using low-angle golden hour sun and natural environments.\n\n### Core Elements\n- **Subject & Pose:** Casual lounging pose lying directly in tall grass with hands behind the head.\n- **Wardrobe:** Minimalist, timeless streetwear (white tee, vintage denim, classic sneakers) contrasting with natural greens.\n- **Lighting:** Late afternoon direct sun to emphasize garment folds and grass blades.\n- **Composition:** High-angle camera looking down while preserving the distant flat horizon.\n\n### Key Modifications\nSwap the setting to autumn fields, replace the wardrobe with earth-toned outerwear, or alter the time of day to overcast for softer, even lighting.",
     "id": "prompt-1792804524777",
     "author": {
-      "role": "Author",
       "name": "tool.reelz",
-      "avatar": "/logo.png"
+      "avatar": "/logo.png",
+      "role": "Author"
     },
     "imageFileName": "sunlit-field-relaxation-portrait.webp",
     "variables": [],
@@ -7127,35 +7171,38 @@
     "aiTool": "Midjourney",
     "imageHeight": 1536,
     "imageWidth": 1024,
-    "updatedAt": "2026-11-05T12:08:15.839Z",
+    "updatedAt": "2026-11-28T04:20:53.343Z",
     "slug": "sunlit-field-relaxation-portrait",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1792804263317.jpg",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@4ced085aeccec1407536e9b1858e699ba10ebfb6/prompts/sunlit-field-relaxation-portrait.webp",
     "seo": {
       "metaTitle": "Sunlit Field Portrait AI Prompt - Gemini & Midjourney",
-      "focusKeyword": "sunlit field lifestyle portrait",
-      "metaDescription": "Generate relaxed outdoor lifestyle portraits in lush green fields using natural golden hour lighting with this optimized prompt."
+      "metaDescription": "Generate relaxed outdoor lifestyle portraits in lush green fields using natural golden hour lighting with this optimized prompt.",
+      "focusKeyword": "sunlit field lifestyle portrait"
     },
     "createdAt": "2026-10-24T01:15:24.782Z",
     "affiliateProducts": [],
-    "additionalImages": [
-      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/slide-1792804379730-b5lu.jpg"
-    ],
+    "additionalImages": [],
     "imageAlt": "Sunlit Field Relaxation Portrait",
     "likesCount": 0,
     "copiesCount": 0,
     "bookmarksCount": 0,
     "viewsCount": 0,
     "status": "published",
-    "category": "Lifestyle & Portrait Photography",
+    "category": "Photorealistic & Portraits",
     "title": "Sunlit Field Relaxation Portrait",
     "tags": [
+      "Golden Hour Photography",
+      "Lifestyle Portrait",
+      "35mm Film Aesthetic",
+      "Street Fashion Photography",
+      "Summer Vibe",
+      "Cinematic Outdoor Shot",
+      "Candid Photography",
       "Golden Hour",
       "Meadow Portrait",
       "Film Aesthetic",
       "Casual Menswear",
-      "High-angle Shot",
-      "Spring Field",
-      "Outdoor Lifestyle"
+      "High-angle Shot"
     ],
     "parameters": {
       "isPremium": false
@@ -7163,80 +7210,90 @@
     "isNoIndex": true
   },
   {
-    "imageAlt": "Golden Hour Meadow Muse Portrait",
-    "aiTool": "Midjourney",
-    "viewsCount": 0,
+    "variables": [],
+    "status": "published",
+    "category": "Photorealistic & Portraits",
+    "bookmarksCount": 0,
+    "slug": "golden-hour-meadow-muse-portrait",
+    "imageHeight": 1536,
+    "updatedAt": "2026-11-28T04:24:49.136Z",
+    "imageWidth": 1024,
     "author": {
       "name": "tool.reelz",
       "avatar": "/logo.png",
       "role": "Author"
     },
-    "isNoIndex": true,
-    "additionalImages": [],
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1792803836428.jpg",
+    "viewsCount": 0,
+    "publishedAt": "2026-10-24T01:12:05.365Z",
     "tags": [
-      "Goldenhour",
+      "Portrait Photography",
+      "Golden Hour",
+      "Cinematic Lighting",
+      "Film Texture",
+      "Nature Portrait",
+      "85mm Len",
       "Softlighting",
       "Editorialphotography",
       "Summervibe",
       "Portraitmasterpiece",
-      "Linenfashion",
-      "Cinematiclighting"
+      "Linenfashion"
     ],
-    "id": "prompt-1792804325362",
-    "publishedAt": "2026-10-24T01:12:05.365Z",
-    "seo": {
-      "metaDescription": "Create stunning, high-end editorial lifestyle portraits with this golden hour meadow prompt. Perfect for AI art generators like Midjourney and Flux.",
-      "focusKeyword": "Golden hour portrait prompt",
-      "metaTitle": "Golden Hour Meadow Portrait Prompt for Midjourney & AI"
-    },
-    "imageHeight": 1536,
-    "title": "Golden Hour Meadow Muse Portrait",
-    "bookmarksCount": 0,
+    "isNoIndex": true,
+    "isPremium": false,
     "parameters": {
       "isPremium": false
     },
-    "createdAt": "2026-10-24T01:12:05.365Z",
-    "promptText": "A professional cinematic medium portrait of a young woman with long dark wavy hair standing in a sun-drenched field of tall dry golden grass at golden hour. She is wearing a delicate cream-colored linen peasant dress with ruffled edges and a classic woven straw sun hat. One hand is elegantly raised to rest on the brim of her hat, while the other holds a round straw basket brimming with vibrant, fresh sunflowers. Her gaze is soft and downcast with a serene, peaceful expression. The lighting is ethereal, characterized by warm golden rim lighting hitting her hair and shoulders, creating a gentle sun flare effect. The background is a dreamy, soft-focus meadow blurring into hazy light. High-end photography, 85mm f/1.4 lens, shallow depth of field, natural film texture, organic skin micro-texture, warm, glowing, and nostalgic atmosphere, soft color grading, cinematic composition, aspect ratio 3:4",
-    "updatedAt": "2026-11-05T12:08:14.330Z",
-    "category": "Lifestyle & Portrait Photography",
     "imageFileName": "golden-hour-meadow-muse-portrait.webp",
-    "copiesCount": 0,
-    "affiliateProducts": [],
-    "imageWidth": 1024,
-    "slug": "golden-hour-meadow-muse-portrait",
-    "isPremium": false,
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@98cdc6955b9cfb2757c458e910ba42f0616f507f/prompts/golden-hour-meadow-muse-portrait.webp",
+    "additionalImages": [],
+    "imageAlt": "Golden Hour Meadow Muse Portrait",
     "articleContent": "### Master the Golden Hour Aesthetic. This prompt is designed to capture the quintessential 'Golden Hour' look—a favorite in editorial and lifestyle photography. By specifying the 85mm lens at f/1.8, we tell the AI to create a shallow depth of field, which provides that professional-grade background blur (bokeh) that keeps the focus entirely on the subject. The inclusion of 'warm golden tones' and 'hazy backlighting' ensures the model prioritizes the ethereal, sun-kissed atmosphere found in high-end magazines. Pro Tip: To change the vibe, swap 'sunflowers and daisies' for 'wild lavender and dried wheat' to shift the color palette toward cool purples or rustic browns.",
-    "status": "published",
     "likesCount": 0,
-    "variables": []
+    "aiTool": "Midjourney",
+    "id": "prompt-1792804325362",
+    "promptText": "A professional cinematic medium portrait of a young woman with long dark wavy hair standing in a sun-drenched field of tall dry golden grass at golden hour. She is wearing a delicate cream-colored linen peasant dress with ruffled edges and a classic woven straw sun hat. One hand is elegantly raised to rest on the brim of her hat, while the other holds a round straw basket brimming with vibrant, fresh sunflowers. Her gaze is soft and downcast with a serene, peaceful expression. The lighting is ethereal, characterized by warm golden rim lighting hitting her hair and shoulders, creating a gentle sun flare effect. The background is a dreamy, soft-focus meadow blurring into hazy light. High-end photography, 85mm f/1.4 lens, shallow depth of field, natural film texture, organic skin micro-texture, warm, glowing, and nostalgic atmosphere, soft color grading, cinematic composition, aspect ratio 3:4",
+    "createdAt": "2026-10-24T01:12:05.365Z",
+    "copiesCount": 0,
+    "title": "Golden Hour Meadow Muse Portrait",
+    "seo": {
+      "metaTitle": "Golden Hour Meadow Portrait Prompt for Midjourney & AI",
+      "metaDescription": "Create stunning, high-end editorial lifestyle portraits with this golden hour meadow prompt. Perfect for AI art generators like Midjourney and Flux.",
+      "focusKeyword": "Golden hour portrait prompt"
+    },
+    "affiliateProducts": []
   },
   {
-    "id": "prompt-1792773703622",
+    "imageAlt": "Split Personality Sketch: Photorealistic to Hand-Drawn Transformation",
+    "seo": {
+      "metaDescription": "Learn how to generate professional split-screen portraits that blend hyper-realistic photography with hand-drawn ink sketches using this master prompt.",
+      "metaTitle": "Create Stunning Split-Style Sketch Portraits with Midjourney",
+      "focusKeyword": "split portrait prompt"
+    },
+    "updatedAt": "2026-11-28T04:22:03.742Z",
+    "affiliateProducts": [],
+    "promptText": "Creative split portrait of user divided vertically down the center with a torn paper effect. The left half is a crisp, realistic photo with soft studio lighting showing natural skin texture, while holding a black stylus pen. The right half perfectly aligns as a black and white manga-style pen-and-ink crosshatched sketch. The entire background is white lined notebook paper with subtle blue rules, decorated with cute playful black doodles including hearts, stars, a paper airplane, smiley faces, aspect ratio 3:4",
+    "likesCount": 0,
+    "aiTool": "Midjourney",
     "variables": [],
     "articleContent": "### The Power of Mixed Media Portraits\nThis prompt leverages the contrast between hyper-realistic studio photography and classic ink-hatching techniques. By utilizing a 'torn edge' concept, you create a compelling narrative about the duality of creativity and reality.\n\n### Why This Prompt Works\n- **Compositional Balance:** It forces the AI to maintain structural consistency between the photographic side and the illustrated side.\n- **Lighting Control:** By specifying 'soft cinematic studio lighting', we ensure the photographic half retains a professional, high-end look.\n- **Contextual Elements:** The inclusion of 'doodles' and 'lined paper' adds texture and emotional depth to the image.\n\n### Customization Tips\n- **Subject:** Replace [Subject Description] with specific details like 'an elderly woman with glasses', 'a cyberpunk hacker', or 'a professional athlete' to change the character.\n- **Style:** Experiment with changing 'ink-line cross-hatching' to 'charcoal sketch', 'watercolor painting', or 'oil painting' for different artistic aesthetics.\n- **Doodles:** If you want a specific vibe, change the doodle types from 'hearts and stars' to 'geometric shapes' or 'botanical sketches'.",
     "imageFileName": "split-personality-sketch-photorealistic-to-hand-drawn-transformation.webp",
-    "isPremium": false,
-    "parameters": {
-      "isPremium": false
-    },
-    "seo": {
-      "focusKeyword": "split portrait prompt",
-      "metaTitle": "Create Stunning Split-Style Sketch Portraits with Midjourney",
-      "metaDescription": "Learn how to generate professional split-screen portraits that blend hyper-realistic photography with hand-drawn ink sketches using this master prompt."
-    },
     "author": {
-      "role": "Author",
+      "avatar": "/logo.png",
       "name": "tool.reelz",
-      "avatar": "/logo.png"
+      "role": "Author"
     },
-    "publishedAt": "2026-10-23T16:41:43.629Z",
-    "affiliateProducts": [],
-    "viewsCount": 0,
     "category": "Digital Art & Creative Illustration",
-    "imageHeight": 1536,
+    "id": "prompt-1792773703622",
+    "copiesCount": 0,
+    "additionalImages": [],
+    "isPremium": false,
     "title": "Split Personality Sketch: Photorealistic to Hand-Drawn Transformation",
-    "updatedAt": "2026-11-05T12:08:12.105Z",
+    "status": "published",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@3e696510ad9ec9d98f288b703a7c12143b99decc/prompts/split-personality-sketch-photorealistic-to-hand-drawn-transformation.webp",
+    "viewsCount": 0,
+    "imageHeight": 1536,
+    "isNoIndex": true,
+    "imageWidth": 1024,
     "tags": [
       "Creative Portrait",
       "Ink Sketch",
@@ -7246,40 +7303,40 @@
       "Hyper-realistic",
       "Mixed Media Art"
     ],
-    "aiTool": "Midjourney",
+    "publishedAt": "2026-10-23T16:41:43.629Z",
     "createdAt": "2026-10-23T16:41:43.629Z",
-    "imageWidth": 1024,
-    "status": "published",
-    "bookmarksCount": 0,
-    "likesCount": 0,
-    "additionalImages": [
-      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/split-personality-sketch-portrait-1792773562909-kbrw.jpg"
-    ],
-    "promptText": "Creative split portrait of user divided vertically down the center with a torn paper effect. The left half is a crisp, realistic photo with soft studio lighting showing natural skin texture, while holding a black stylus pen. The right half perfectly aligns as a black and white manga-style pen-and-ink crosshatched sketch. The entire background is white lined notebook paper with subtle blue rules, decorated with cute playful black doodles including hearts, stars, a paper airplane, smiley faces, aspect ratio 3:4",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/split-personality-sketch-portrait.jpg",
-    "isNoIndex": true,
-    "copiesCount": 0,
-    "imageAlt": "Split Personality Sketch: Photorealistic to Hand-Drawn Transformation",
-    "slug": "split-personality-sketch-photorealistic-to-hand-drawn-transformation"
+    "slug": "split-personality-sketch-photorealistic-to-hand-drawn-transformation",
+    "parameters": {
+      "isPremium": false
+    },
+    "bookmarksCount": 0
   },
   {
-    "promptText": "Full body shot from a high-angle drone perspective of user walking across a pedestrian crosswalk. The subject is carrying a coffee cup. The image is styled as a high-tech biometric surveillance feed. The environment is a gritty asphalt zebra crossing rendered in muted monochrome tones. The scene is overlaid with a sophisticated, neon-green digital HUD (head-up display). This includes a square tracking reticle over her face, floating data points marking her limbs, a left-side data panel with the text 'OFFLINE ACTIVITY DETECTED', 'ID: P-2204-02', 'SOCIAL SYNC RATE: 43%', 'INTERACTION FREQUENCY: RARE', and 'EMOTIONAL OUTPUT: CONTROLLED'. At the top, 'SYSTEM STATUS: RECORDING | TIME: 14:32:55' and a signal strength indicator. High-contrast, sharp, cinematic digital art, clean white typography, tech-noir aesthetic, hyper-realistic, 8k resolution, aspect ratio 3:4",
-    "copiesCount": 0,
-    "isPremium": true,
-    "bookmarksCount": 0,
-    "variables": [],
-    "createdAt": "2026-10-23T03:22:51.075Z",
-    "imageAlt": "Surveillance HUD Cinematic Portrait",
-    "imageWidth": 1024,
-    "updatedAt": "2026-11-02T07:40:56.329Z",
+    "imageHeight": 1536,
+    "category": "Cyberpunk & Sci-Fi",
     "author": {
       "avatar": "/logo.png",
-      "name": "tool.reelz",
-      "role": "Author"
+      "role": "Author",
+      "name": "tool.reelz"
     },
+    "createdAt": "2026-10-23T03:22:51.075Z",
+    "isPremium": true,
+    "publishedAt": "2026-10-23T03:22:51.075Z",
+    "promptText": "Full body shot from a high-angle drone perspective of user walking across a pedestrian crosswalk. The subject is carrying a coffee cup. The image is styled as a high-tech biometric surveillance feed. The environment is a gritty asphalt zebra crossing rendered in muted monochrome tones. The scene is overlaid with a sophisticated, neon-green digital HUD (head-up display). This includes a square tracking reticle over her face, floating data points marking her limbs, a left-side data panel with the text 'OFFLINE ACTIVITY DETECTED', 'ID: P-2204-02', 'SOCIAL SYNC RATE: 43%', 'INTERACTION FREQUENCY: RARE', and 'EMOTIONAL OUTPUT: CONTROLLED'. At the top, 'SYSTEM STATUS: RECORDING | TIME: 14:32:55' and a signal strength indicator. High-contrast, sharp, cinematic digital art, clean white typography, tech-noir aesthetic, hyper-realistic, 8k resolution, aspect ratio 3:4",
+    "imageAlt": "Surveillance HUD Cinematic Portrait",
     "aiTool": "Midjourney",
-    "imageFileName": "surveillance-hud-cinematic-portrait.webp",
+    "isNoIndex": true,
+    "bookmarksCount": 0,
     "likesCount": 0,
+    "id": "prompt-1792725771067",
+    "slug": "surveillance-hud-cinematic-portrait",
+    "additionalImages": [],
+    "imageWidth": 1024,
+    "parameters": {
+      "isPremium": true
+    },
+    "title": "Surveillance HUD Cinematic Portrait",
+    "imageFileName": "surveillance-hud-cinematic-portrait.webp",
     "tags": [
       "Hud",
       "Cyberpunk",
@@ -7290,96 +7347,113 @@
       "Sci-fi",
       "Digital Art"
     ],
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1792725566982.jpg",
-    "status": "published",
-    "title": "Surveillance HUD Cinematic Portrait",
-    "additionalImages": [
-      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/slide-1792725592499-j9a2.jpg"
-    ],
+    "updatedAt": "2026-11-28T04:23:46.636Z",
+    "copiesCount": 0,
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@54809728703a505bfebd7db3459498f7dca2b5c4/prompts/surveillance-hud-cinematic-portrait.webp",
     "affiliateProducts": [],
-    "viewsCount": 0,
-    "publishedAt": "2026-10-23T03:22:51.075Z",
-    "imageHeight": 1536,
     "articleContent": "## Master the Surveillance Aesthetic\n\nThis prompt is engineered to blend high-fashion street photography with aggressive, tactical sci-fi UI design. By utilizing a high-angle 'drone' perspective, you immediately establish a sense of voyeurism and advanced technology.\n\n### Lighting & Camera Breakdown\n- **Perspective:** High-angle, top-down perspective mimicking CCTV or drone optics.\n- **Lighting:** Natural daylight with high-contrast shadows common in urban canyons, balanced with cool, glowing neon-green interface elements.\n- **Camera:** 35mm lens equivalent to maintain a sharp, observational feel without extreme distortion.\n\n### Pro Tips for Success\n1. **Customize the Subject:** You can replace '[subject]' in the prompt with any character archetype, such as 'a businessman in a sharp suit' or 'a futuristic bounty hunter.'\n2. **UI Integration:** The strength of this prompt lies in the HUD keywords. If you want more complexity, add phrases like 'complex data streams' or 'thermal signature overlay' to the prompt text.\n3. **Post-Processing:** This style thrives on slight film grain and chromatic aberration to sell the 'low-res recording' look.",
+    "status": "published",
     "seo": {
-      "metaDescription": "Create stunning, high-tech surveillance drone footage style art with this comprehensive Midjourney and AI prompt guide.",
+      "metaTitle": "Surveillance HUD Cinematic Portrait Prompt",
       "focusKeyword": "Surveillance HUD Prompt",
-      "metaTitle": "Surveillance HUD Cinematic Portrait Prompt"
+      "metaDescription": "Create stunning, high-tech surveillance drone footage style art with this comprehensive Midjourney and AI prompt guide."
     },
-    "slug": "surveillance-hud-cinematic-portrait",
-    "category": "Cyberpunk & Sci-Fi",
-    "isNoIndex": true,
-    "id": "prompt-1792725771067",
-    "parameters": {
-      "isPremium": true
-    }
+    "viewsCount": 0,
+    "variables": []
   },
   {
-    "variables": [],
     "status": "published",
-    "promptText": "Candid phone photograph Medium shot of user wearing dark sunglasses, an oversized white crewneck t-shirt, and black pants. He sits casually on a bright glossy yellow classic scooter with chrome round mirrors and a black seat, with one hand resting on his leg and the other raised to his ear, gazing off to the side. Above him is a lush, sprawling canopy of vibrant magenta bougainvillea blossoms against an out-of-focus whitewashed wall and teal gate. Captured in soft, bright outdoor daylight with an 85mm portrait lens, shallow depth of field, vivid punchy colors, and natural skin textures, aspect ratio 3:4",
-    "bookmarksCount": 0,
+    "affiliateProducts": [],
     "isPremium": false,
-    "id": "prompt-1792725747632",
-    "imageWidth": 1024,
-    "copiesCount": 0,
-    "likesCount": 0,
-    "title": "Summer Mediterranean Style Portrait",
-    "imageFileName": "summer-mediterranean-style-portrait.webp",
-    "createdAt": "2026-10-23T03:22:27.634Z",
+    "publishedAt": "2026-10-23T03:22:27.634Z",
+    "bookmarksCount": 0,
+    "isNoIndex": true,
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@b6edcde9d057b595c19f1daadc20d04d57bce3c0/prompts/summer-mediterranean-style-portrait.webp",
+    "promptText": "Candid phone photograph Medium shot of user wearing dark sunglasses, an oversized white crewneck t-shirt, and black pants. He sits casually on a bright glossy yellow classic scooter with chrome round mirrors and a black seat, with one hand resting on his leg and the other raised to his ear, gazing off to the side. Above him is a lush, sprawling canopy of vibrant magenta bougainvillea blossoms against an out-of-focus whitewashed wall and teal gate. Captured in soft, bright outdoor daylight with an 85mm portrait lens, shallow depth of field, vivid punchy colors, and natural skin textures, aspect ratio 3:4",
+    "imageHeight": 1536,
     "tags": [
+      "Mediterranean Style",
+      "Street Photography",
+      "Candid Portrait",
+      "Summer Aesthetic",
+      "Vespa Style",
+      "Lifestyle Photography",
+      "Portrait Inspiration",
       "Lifestyle",
       "Travel",
       "Summer-vibe",
       "Scooter",
-      "Portrait",
-      "Vibrant",
-      "Editorial"
+      "Portrait"
     ],
-    "category": "Lifestyle & Travel Photography",
-    "updatedAt": "2026-11-05T12:08:08.836Z",
+    "slug": "summer-mediterranean-style-portrait",
+    "createdAt": "2026-10-23T03:22:27.634Z",
+    "likesCount": 0,
+    "id": "prompt-1792725747632",
+    "imageFileName": "summer-mediterranean-style-portrait.webp",
+    "updatedAt": "2026-11-28T04:23:49.574Z",
+    "imageWidth": 1024,
+    "category": "Lifestyle & Portrait Photography",
     "articleContent": "This prompt is designed to capture the quintessential Mediterranean summer aesthetic. It leverages natural, soft lighting to emphasize the contrast between the saturated yellow of the scooter and the striking pink bougainvillea. To achieve the best results, use an 85mm focal length setting to ensure a flattering compression of the subject and a creamy, professional-grade bokeh. Pro tip: For even better results in Midjourney v6, add --ar 4:5 to match the social media portrait aspect ratio.",
-    "viewsCount": 0,
-    "affiliateProducts": [],
+    "additionalImages": [],
+    "copiesCount": 0,
+    "aiTool": "Midjourney",
+    "title": "Summer Mediterranean Style Portrait",
+    "variables": [],
+    "parameters": {
+      "isPremium": false
+    },
     "author": {
       "avatar": "/logo.png",
       "role": "Author",
       "name": "tool.reelz"
     },
-    "publishedAt": "2026-10-23T03:22:27.634Z",
-    "isNoIndex": true,
     "imageAlt": "Summer Mediterranean Style Portrait",
+    "viewsCount": 0,
+    "seo": {
+      "metaTitle": "Summer Mediterranean Style Lifestyle Portrait Prompt",
+      "metaDescription": "Create stunning Mediterranean-inspired lifestyle portraits with this professional Midjourney and AI photography prompt. Perfect for summer aesthetic content.",
+      "focusKeyword": "lifestyle portrait photography"
+    }
+  },
+  {
+    "category": "Photorealistic & Portraits",
+    "aiTool": "Midjourney",
+    "articleContent": "### Mastering the South Asian Editorial Portrait\n\nThis prompt is engineered to capture the delicate interplay between traditional ethnic attire and modern cinematic photography. \n\n#### Why it works:\n- **Composite Structure:** By referencing a 'triple-panel composite', the AI understands the need for a macro detail shot (the eyes) contrasted with wider portrait views.\n- **Lighting Setup:** The use of 'soft ambient evening cafe lighting' combined with 'bokeh' creates a high-end, luxurious atmosphere perfect for fashion portfolios.\n- **Technical Detail:** Specifying '85mm lens at f/1.8' forces the AI to prioritize portrait-standard optics, resulting in that creamy, professional blurred background.\n\n#### Pro Tips:\n- **Customizing the Outfit:** Replace 'pink velvet ethnic garment' with specific descriptions like 'emerald green silk sari' or 'midnight blue designer lehenga' to change the color palette entirely.\n- **Enhancing Detail:** If using Midjourney, append '--v 6.0 --style raw' to the end of the prompt for a more realistic, less filtered look.\n- **Lighting Variation:** Swap 'evening cafe lighting' for 'golden hour sunlight' to shift the mood from intimate indoor luxury to outdoor radiance.",
+    "affiliateProducts": [],
+    "updatedAt": "2026-11-28T04:26:41.113Z",
+    "promptText": "A vertical three-panel stacked collage portrait of a beautiful young South Asian woman with wavy dark hair and hazel-brown eyes. Top panel shows her resting her chin on her hand, smiling warmly at the camera. Middle panel is an extreme close-up of her eyes highlighting detailed spiky lashes, soft winged eyeliner, and clear eye reflections. Bottom panel captures her looking off to the side with an effortless soft smile. She wears a traditional dusty rose pink crushed velvet salwar suit with gold zardozi embroidery and ornate dangling gold jhumka earrings. Soft direct flash photography combined with warm interior background bokeh, realistic skin texture, sharp focus, cinematic editorial aesthetic, aspect ratio 3:4",
+    "imageAlt": "Ethereal South Asian Portrait Photography",
+    "author": {
+      "avatar": "/logo.png",
+      "role": "Author",
+      "name": "tool.reelz"
+    },
+    "likesCount": 0,
+    "copiesCount": 0,
+    "variables": [],
+    "imageWidth": 1024,
+    "imageFileName": "ethereal-south-asian-portrait-photography.webp",
+    "createdAt": "2026-10-23T03:22:04.514Z",
+    "bookmarksCount": 0,
+    "seo": {
+      "metaTitle": "Ethereal South Asian Portrait Photography Prompt for AI Art",
+      "metaDescription": "Create stunning, high-fashion South Asian portraits with this professional Midjourney/Gemini prompt featuring detailed textures and cinematic lighting.",
+      "focusKeyword": "South Asian portrait photography prompt"
+    },
+    "status": "published",
     "imageHeight": 1536,
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1792725688255.jpg",
     "parameters": {
       "isPremium": false
     },
-    "additionalImages": [],
-    "aiTool": "Midjourney",
-    "seo": {
-      "metaDescription": "Create stunning Mediterranean-inspired lifestyle portraits with this professional Midjourney and AI photography prompt. Perfect for summer aesthetic content.",
-      "focusKeyword": "lifestyle portrait photography",
-      "metaTitle": "Summer Mediterranean Style Lifestyle Portrait Prompt"
-    },
-    "slug": "summer-mediterranean-style-portrait"
-  },
-  {
-    "affiliateProducts": [],
-    "aiTool": "Midjourney",
-    "variables": [],
-    "likesCount": 0,
-    "bookmarksCount": 0,
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1792725679841.jpg",
-    "imageAlt": "Ethereal South Asian Portrait Photography",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@fe63737bbea869d466b7c8bfd3bf49a40da44954/prompts/ethereal-south-asian-portrait-photography.webp",
+    "id": "prompt-1792725724514",
+    "slug": "ethereal-south-asian-portrait-photography",
     "isPremium": false,
-    "author": {
-      "name": "tool.reelz",
-      "avatar": "/logo.png",
-      "role": "Author"
-    },
-    "imageWidth": 1024,
-    "copiesCount": 0,
-    "updatedAt": "2026-11-05T12:08:05.553Z",
+    "additionalImages": [],
+    "viewsCount": 0,
+    "isNoIndex": true,
+    "title": "Ethereal South Asian Portrait Photography",
+    "publishedAt": "2026-10-23T03:22:04.514Z",
     "tags": [
       "Portrait",
       "South-asian-beauty",
@@ -7388,79 +7462,59 @@
       "Cinematic-lighting",
       "Hyper-realistic",
       "85mm-len"
-    ],
-    "promptText": "A vertical three-panel stacked collage portrait of a beautiful young South Asian woman with wavy dark hair and hazel-brown eyes. Top panel shows her resting her chin on her hand, smiling warmly at the camera. Middle panel is an extreme close-up of her eyes highlighting detailed spiky lashes, soft winged eyeliner, and clear eye reflections. Bottom panel captures her looking off to the side with an effortless soft smile. She wears a traditional dusty rose pink crushed velvet salwar suit with gold zardozi embroidery and ornate dangling gold jhumka earrings. Soft direct flash photography combined with warm interior background bokeh, realistic skin texture, sharp focus, cinematic editorial aesthetic, aspect ratio 3:4",
-    "createdAt": "2026-10-23T03:22:04.514Z",
-    "title": "Ethereal South Asian Portrait Photography",
-    "parameters": {
-      "isPremium": false
-    },
-    "category": "Photorealistic & Portraits",
-    "articleContent": "### Mastering the South Asian Editorial Portrait\n\nThis prompt is engineered to capture the delicate interplay between traditional ethnic attire and modern cinematic photography. \n\n#### Why it works:\n- **Composite Structure:** By referencing a 'triple-panel composite', the AI understands the need for a macro detail shot (the eyes) contrasted with wider portrait views.\n- **Lighting Setup:** The use of 'soft ambient evening cafe lighting' combined with 'bokeh' creates a high-end, luxurious atmosphere perfect for fashion portfolios.\n- **Technical Detail:** Specifying '85mm lens at f/1.8' forces the AI to prioritize portrait-standard optics, resulting in that creamy, professional blurred background.\n\n#### Pro Tips:\n- **Customizing the Outfit:** Replace 'pink velvet ethnic garment' with specific descriptions like 'emerald green silk sari' or 'midnight blue designer lehenga' to change the color palette entirely.\n- **Enhancing Detail:** If using Midjourney, append '--v 6.0 --style raw' to the end of the prompt for a more realistic, less filtered look.\n- **Lighting Variation:** Swap 'evening cafe lighting' for 'golden hour sunlight' to shift the mood from intimate indoor luxury to outdoor radiance.",
-    "imageHeight": 1536,
-    "publishedAt": "2026-10-23T03:22:04.514Z",
-    "id": "prompt-1792725724514",
-    "imageFileName": "ethereal-south-asian-portrait-photography.webp",
-    "additionalImages": [],
-    "isNoIndex": true,
-    "viewsCount": 0,
-    "status": "published",
-    "seo": {
-      "metaTitle": "Ethereal South Asian Portrait Photography Prompt for AI Art",
-      "focusKeyword": "South Asian portrait photography prompt",
-      "metaDescription": "Create stunning, high-fashion South Asian portraits with this professional Midjourney/Gemini prompt featuring detailed textures and cinematic lighting."
-    },
-    "slug": "ethereal-south-asian-portrait-photography"
+    ]
   },
   {
-    "variables": [],
-    "status": "published",
-    "bookmarksCount": 0,
-    "promptText": "A commercial 2x2 collage featuring four equal-sized panels of user streetwear against distinct vibrant studio backgrounds. Top-left panel: bright blue backdrop, subject wearing a blue fleece jacket, jeans. Top-right panel: bold red backdrop, subject in an all-black tracksuit. Bottom-left panel: vivid yellow backdrop, subject in a yellow nylon windbreaker and black cargo pants. Bottom-right panel: muted forest green backdrop, subject in a green fleece pullover and grey trousers in a casual walking posture. High-key crisp studio lighting, sharp full-body photography, flat color blocking, modern pop advertising aesthetic, aspect ratio 9:16.  All panels capture user in different photoshoot poses",
-    "isPremium": false,
-    "id": "prompt-1792725703424",
-    "imageWidth": 1024,
     "title": "Minimalist Colorblock Menswear Lookbook",
-    "likesCount": 0,
-    "copiesCount": 0,
-    "imageFileName": "minimalist-colorblock-menswear-lookbook.webp",
-    "tags": [
-      "Streetwear",
-      "Mens Fashion",
-      "Lookbook",
-      "Studio Portrait",
-      "Colorblock",
-      "Commercial Photography"
-    ],
-    "createdAt": "2026-10-23T03:21:43.426Z",
     "category": "Fashion & Editorial Photography",
-    "updatedAt": "2026-11-05T12:08:04.250Z",
-    "articleContent": "### Overview\\nThis prompt captures clean, commercial apparel catalog photography featuring vibrant monochrome backgrounds and casual streetwear styling.\\n\\n### Key Elements\\n- **Lighting:** Soft dual-box studio diffusion to minimize harsh shadows while maintaining clear garment textures.\\n- **Composition:** Centered full-body vertical crop with minimal floor interaction.\\n- **Color Palette:** Saturated, high-contrast solid backgrounds paired with neutral or complementary modern outfits.\\n\\n### Customization\\n- Swap garment types (e.g., fleece, windbreaker, tracksuits) to fit your brand identity.\\n- Change the background color variable to produce matching editorial collections.",
-    "viewsCount": 0,
     "affiliateProducts": [],
     "isNoIndex": true,
-    "publishedAt": "2026-10-23T03:21:43.426Z",
-    "author": {
-      "name": "tool.reelz",
-      "role": "Author",
-      "avatar": "/logo.png"
-    },
-    "imageAlt": "Minimalist Colorblock Menswear Lookbook",
-    "imageHeight": 1536,
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1792725555902.jpg",
+    "copiesCount": 0,
+    "tags": [
+      "Menswear",
+      "Streetwear",
+      "Colorblock",
+      "Fashion Lookbook",
+      "Commercial Photography",
+      "Studio Lighting",
+      "Editorial Style",
+      "Mens Fashion",
+      "Lookbook",
+      "Studio Portrait"
+    ],
+    "viewsCount": 0,
+    "isPremium": false,
+    "slug": "minimalist-colorblock-menswear-lookbook",
+    "imageFileName": "minimalist-colorblock-menswear-lookbook.webp",
+    "status": "published",
+    "createdAt": "2026-10-23T03:21:43.426Z",
     "parameters": {
       "isPremium": false
     },
-    "additionalImages": [
-      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/slide-1792725585344-r5zw.jpg"
-    ],
+    "imageAlt": "Minimalist Colorblock Menswear Lookbook",
+    "articleContent": "### Overview\\nThis prompt captures clean, commercial apparel catalog photography featuring vibrant monochrome backgrounds and casual streetwear styling.\\n\\n### Key Elements\\n- **Lighting:** Soft dual-box studio diffusion to minimize harsh shadows while maintaining clear garment textures.\\n- **Composition:** Centered full-body vertical crop with minimal floor interaction.\\n- **Color Palette:** Saturated, high-contrast solid backgrounds paired with neutral or complementary modern outfits.\\n\\n### Customization\\n- Swap garment types (e.g., fleece, windbreaker, tracksuits) to fit your brand identity.\\n- Change the background color variable to produce matching editorial collections.",
+    "imageWidth": 1024,
+    "publishedAt": "2026-10-23T03:21:43.426Z",
     "aiTool": "Midjourney",
+    "variables": [],
+    "additionalImages": [],
+    "likesCount": 0,
+    "promptText": "A commercial 2x2 collage featuring four equal-sized panels of user streetwear against distinct vibrant studio backgrounds. Top-left panel: bright blue backdrop, subject wearing a blue fleece jacket, jeans. Top-right panel: bold red backdrop, subject in an all-black tracksuit. Bottom-left panel: vivid yellow backdrop, subject in a yellow nylon windbreaker and black cargo pants. Bottom-right panel: muted forest green backdrop, subject in a green fleece pullover and grey trousers in a casual walking posture. High-key crisp studio lighting, sharp full-body photography, flat color blocking, modern pop advertising aesthetic, aspect ratio 9:16.  All panels capture user in different photoshoot poses",
+    "updatedAt": "2026-11-28T04:27:42.609Z",
     "seo": {
+      "focusKeyword": "menswear lookbook prompt",
       "metaTitle": "Minimalist Colorblock Menswear Lookbook Prompt",
-      "metaDescription": "Generate clean, commercial-grade streetwear lookbook portraits with solid color backdrops using this Midjourney and Flux prompt.",
-      "focusKeyword": "menswear lookbook prompt"
+      "metaDescription": "Generate clean, commercial-grade streetwear lookbook portraits with solid color backdrops using this Midjourney and Flux prompt."
     },
-    "slug": "minimalist-colorblock-menswear-lookbook"
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@bac5b53aac89578784d83871bc150a8286a6a1e9/prompts/minimalist-colorblock-menswear-lookbook.webp",
+    "imageHeight": 1536,
+    "bookmarksCount": 0,
+    "id": "prompt-1792725703424",
+    "author": {
+      "avatar": "/logo.png",
+      "role": "Author",
+      "name": "tool.reelz"
+    }
   },
   {
     "id": "prompt-1792725627192",
@@ -7471,31 +7525,34 @@
     "imageFileName": "surreal-vortex-portrait-photography.webp",
     "affiliateProducts": [],
     "tags": [
-      "Surrealism",
+      "Surreal Portrait",
+      "Abstract Photography",
       "Vortex Effect",
+      "Digital Art",
+      "Fashion Editorial",
+      "Creative Concept Art",
+      "Warped Motion",
+      "Surrealism",
       "Creative Portrait",
       "Fashion Photography",
       "Reality Warping",
-      "Cinematic",
-      "Sharp Focus"
+      "Cinematic"
     ],
-    "category": "Lifestyle & Creative Portraiture",
+    "category": "Digital Art & Creative Portraiture",
     "imageWidth": 1024,
     "title": "Surreal Vortex Portrait Photography",
     "imageHeight": 1536,
     "publishedAt": "2026-10-23T03:20:27.195Z",
     "promptText": "Low-angle wide shot of a young man with curly hair and round sunglasses standing balanced on a dark textured boulder, arms slightly spread out, wearing a black oversized collared sweatshirt with cream accents and black cargo pants. The background features an exact surreal warped effect made of flowing, wavy vertical ribbons and stretched motion streaks of forest green, sky blue, charcoal, and warm beige curving outward like an abstract portal vortex, crisp subject focus against smooth flowing digital abstraction, natural daylight, aspect ratio 3:4",
-    "additionalImages": [
-      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/slide-1792725499606-333p.jpg"
-    ],
+    "additionalImages": [],
     "parameters": {
       "isPremium": false
     },
     "bookmarksCount": 0,
     "imageAlt": "Surreal Vortex Portrait Photography",
     "createdAt": "2026-10-23T03:20:27.195Z",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1792725491697.jpg",
-    "updatedAt": "2026-11-05T12:08:03.052Z",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@f0cd297cdefcecfda6324ee079df31fa18b7d132/prompts/surreal-vortex-portrait-photography.webp",
+    "updatedAt": "2026-11-28T04:28:12.584Z",
     "seo": {
       "metaTitle": "Surreal Vortex Portrait Prompt for Midjourney & AI Art",
       "metaDescription": "Create stunning reality-warping portraits with this high-end AI prompt, featuring vortex effects and cinematic lighting for professional creative photography.",
@@ -7505,64 +7562,67 @@
     "variables": [],
     "copiesCount": 0,
     "author": {
-      "role": "Author",
+      "name": "tool.reelz",
       "avatar": "/logo.png",
-      "name": "tool.reelz"
+      "role": "Author"
     },
     "aiTool": "Midjourney",
     "viewsCount": 0,
     "isPremium": false
   },
   {
-    "articleContent": "### How to Use This Prompt\nThis prompt is engineered to capture the 'candid professional' aesthetic. It utilizes a specific depth-of-field configuration (85mm f/1.8) to separate the subject from the busy garden background, mimicking a high-end prime lens effect.\n\n### Lighting & Camera Breakdown\n- **Lens Choice:** The 85mm focal length is the industry standard for portraiture because it compresses the face naturally, avoiding distortion.\n- **Depth of Field:** By specifying f/1.8, we force the AI to generate a 'bokeh' effect, ensuring the vibrant bougainvillea flowers in the background remain soft and dreamlike.\n- **Lighting:** The 'Golden Hour' instruction ensures warm color temperatures and soft shadows, which are essential for flattering skin tones in portraiture.\n\n### Pro Tips for Customization\n- **Swap the Subject:** Change [young man] to [creative woman] or [elderly professional] to change the narrative.\n- **Modify the Setting:** Swap [garden] for [urban cityscape] or [minimalist studio] to pivot the style from lifestyle to editorial.\n- **Color Adjustment:** Add 'muted desaturated tones' or 'vibrant high contrast' to the prompt to shift the color grading style.",
-    "imageFileName": "naturalistic-summer-professional-portrait.webp",
-    "imageHeight": 1536,
-    "publishedAt": "2026-10-23T03:20:11.303Z",
-    "viewsCount": 0,
-    "parameters": {
-      "isPremium": false
-    },
-    "isNoIndex": true,
-    "category": "Lifestyle & Portrait Photography",
-    "affiliateProducts": [],
-    "title": "Naturalistic Summer Professional Portrait",
+    "bookmarksCount": 0,
+    "promptText": "Realistic candid phone photograph of a young man wearing dark sunglasses and a black white gradient shirt, holding a Canon DSLR camera in his hands, looking to the side, vibrant magenta and yellow bougainvillea flowers in the top-left foreground, green garden background, no blur, Captured in soft, bright outdoor daylight with an 85mm portrait lens, shallow depth of field, vivid punchy colors, and natural skin textures  aspect ratio 3:4",
     "tags": [
+      "Photorealistic Portrait",
+      "Street Photography Style",
+      "Candid Photography",
+      "Summer Aesthetic",
+      "Professional Portrait",
+      "Lifestyle Photography",
+      "DSLR Camera Photography",
       "Portrait",
       "Golden-hour",
       "Lifestyle",
       "DSLR",
-      "Summer-vibe",
-      "Outdoor-photography",
-      "Candid-style"
+      "Summer-vibe"
     ],
-    "status": "published",
-    "variables": [],
-    "aiTool": "Midjourney",
-    "bookmarksCount": 0,
-    "isPremium": false,
+    "copiesCount": 0,
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@a1d4f6400eb7efb2f725c14bcc0c056e6a753b55/prompts/naturalistic-summer-professional-portrait.webp",
+    "title": "Naturalistic Summer Professional Portrait",
     "author": {
       "role": "Author",
-      "avatar": "/logo.png",
-      "name": "tool.reelz"
+      "name": "tool.reelz",
+      "avatar": "/logo.png"
     },
-    "copiesCount": 0,
-    "promptText": "Realistic candid phone photograph of a young man wearing dark sunglasses and a black white gradient shirt, holding a Canon DSLR camera in his hands, looking to the side, vibrant magenta and yellow bougainvillea flowers in the top-left foreground, green garden background, no blur, Captured in soft, bright outdoor daylight with an 85mm portrait lens, shallow depth of field, vivid punchy colors, and natural skin textures  aspect ratio 3:4",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1792725479087.jpg",
+    "slug": "naturalistic-summer-professional-portrait",
     "likesCount": 0,
+    "updatedAt": "2026-11-28T04:29:42.546Z",
     "seo": {
       "metaDescription": "Learn how to recreate professional outdoor lifestyle portraits with this expert-level photography prompt. Perfect for Midjourney and DALL-E.",
       "metaTitle": "Mastering Natural Lifestyle Portrait Photography Prompts",
       "focusKeyword": "lifestyle portrait photography prompt"
     },
-    "additionalImages": [
-      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/slide-1792725503447-0fqs.jpg"
-    ],
-    "slug": "naturalistic-summer-professional-portrait",
-    "id": "prompt-1792725611290",
-    "updatedAt": "2026-11-05T12:08:01.793Z",
-    "imageWidth": 1024,
+    "variables": [],
+    "aiTool": "Midjourney",
+    "affiliateProducts": [],
+    "publishedAt": "2026-10-23T03:20:11.303Z",
     "imageAlt": "Naturalistic Summer Professional Portrait",
-    "createdAt": "2026-10-23T03:20:11.291Z"
+    "createdAt": "2026-10-23T03:20:11.291Z",
+    "additionalImages": [],
+    "viewsCount": 0,
+    "articleContent": "### How to Use This Prompt\nThis prompt is engineered to capture the 'candid professional' aesthetic. It utilizes a specific depth-of-field configuration (85mm f/1.8) to separate the subject from the busy garden background, mimicking a high-end prime lens effect.\n\n### Lighting & Camera Breakdown\n- **Lens Choice:** The 85mm focal length is the industry standard for portraiture because it compresses the face naturally, avoiding distortion.\n- **Depth of Field:** By specifying f/1.8, we force the AI to generate a 'bokeh' effect, ensuring the vibrant bougainvillea flowers in the background remain soft and dreamlike.\n- **Lighting:** The 'Golden Hour' instruction ensures warm color temperatures and soft shadows, which are essential for flattering skin tones in portraiture.\n\n### Pro Tips for Customization\n- **Swap the Subject:** Change [young man] to [creative woman] or [elderly professional] to change the narrative.\n- **Modify the Setting:** Swap [garden] for [urban cityscape] or [minimalist studio] to pivot the style from lifestyle to editorial.\n- **Color Adjustment:** Add 'muted desaturated tones' or 'vibrant high contrast' to the prompt to shift the color grading style.",
+    "id": "prompt-1792725611290",
+    "category": "Photorealistic & Portraits",
+    "imageHeight": 1536,
+    "isPremium": false,
+    "status": "published",
+    "imageWidth": 1024,
+    "imageFileName": "naturalistic-summer-professional-portrait.webp",
+    "parameters": {
+      "isPremium": false
+    },
+    "isNoIndex": true
   },
   {
     "title": "Ethereal Pampa Grass Editorial Portrait",
@@ -7614,45 +7674,37 @@
     "copiesCount": 0
   },
   {
-    "seo": {
-      "metaDescription": "Master the art of high-end ethnic fashion photography in mountain landscapes with this professional Midjourney and Gemini prompt.",
-      "focusKeyword": "ethnic fashion photography",
-      "metaTitle": "Himalayan Ethnic Fashion Photography Prompt"
-    },
-    "title": "Himalayan Ethnic Elegance Portrait",
     "viewsCount": 0,
+    "isPremium": false,
+    "imageAlt": "Himalayan Ethnic Elegance Portrait",
+    "title": "Himalayan Ethnic Elegance Portrait",
+    "isNoIndex": true,
+    "bookmarksCount": 0,
+    "copiesCount": 0,
+    "status": "published",
+    "id": "prompt-1792724196259",
+    "additionalImages": [],
+    "seo": {
+      "metaTitle": "Himalayan Ethnic Fashion Photography Prompt",
+      "metaDescription": "Master the art of high-end ethnic fashion photography in mountain landscapes with this professional Midjourney and Gemini prompt.",
+      "focusKeyword": "ethnic fashion photography"
+    },
+    "category": "Lifestyle & Travel Photography",
     "parameters": {
       "isPremium": false
     },
-    "isNoIndex": true,
     "affiliateProducts": [],
-    "aiTool": "Midjourney",
-    "additionalImages": [
-      "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/himalayan-ethnic-elegance-portrait-1792724177044-iac7.jpg"
-    ],
-    "author": {
-      "name": "tool.reelz",
-      "avatar": "/logo.png",
-      "role": "Author"
-    },
-    "imageFileName": "himalayan-ethnic-elegance-portrait.webp",
-    "imageHeight": 1536,
-    "category": "Lifestyle & Travel Photography",
-    "slug": "himalayan-ethnic-elegance-portrait",
-    "publishedAt": "2026-10-23T02:56:36.263Z",
-    "bookmarksCount": 0,
-    "id": "prompt-1792724196259",
-    "variables": [],
-    "promptText": "A breathtaking high-resolution cinematic portrait of a stunning South Asian woman wearing an intricately embroidered black and crimson lehenga choli with gold zari detailing, standing gracefully in a vibrant marigold flower field. In the background, the majestic, snow-capped peaks of the Annapurna range rise against a clear, deep blue sky. Soft natural morning sunlight illuminates her features and the texture of her traditional attire. The composition is a full-body wide shot, captured with a professional 85mm lens, sharp focus on the subject with a shallow depth of field, high-end editorial fashion photography style, authentic natural skin textures, 8k resolution, photorealistic masterpiece.",
-    "status": "published",
-    "isPremium": false,
-    "likesCount": 0,
-    "imageAlt": "Himalayan Ethnic Elegance Portrait",
-    "copiesCount": 0,
-    "articleContent": "This prompt is designed to capture the perfect intersection of cultural elegance and dramatic natural beauty. ### Lighting Breakdown The prompt utilizes natural 'morning light' to create soft shadows that highlight the intricate textures of the embroidery without blowing out the highlights on the snow-capped mountains. ### Camera Optics Using an 85mm lens specification ensures a flattering compression of the background while maintaining a professional separation between the subject and the landscape. The shallow depth of field focuses attention on the model. ### Pro-Tips To customize this for different results: - Change the 'black and crimson' colors to match different seasonal themes. - Adjust the 'Annapurna' location to 'Alps' or 'Patagonia' for entirely different mountain aesthetics. - Increase the stylize parameter for a more painterly, artistic version of the portrait.",
     "createdAt": "2026-10-23T02:56:36.263Z",
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1792724065297.jpg",
-    "updatedAt": "2026-11-05T12:07:59.450Z",
+    "imageWidth": 1024,
+    "updatedAt": "2026-11-28T04:29:47.098Z",
+    "likesCount": 0,
+    "articleContent": "This prompt is designed to capture the perfect intersection of cultural elegance and dramatic natural beauty. ### Lighting Breakdown The prompt utilizes natural 'morning light' to create soft shadows that highlight the intricate textures of the embroidery without blowing out the highlights on the snow-capped mountains. ### Camera Optics Using an 85mm lens specification ensures a flattering compression of the background while maintaining a professional separation between the subject and the landscape. The shallow depth of field focuses attention on the model. ### Pro-Tips To customize this for different results: - Change the 'black and crimson' colors to match different seasonal themes. - Adjust the 'Annapurna' location to 'Alps' or 'Patagonia' for entirely different mountain aesthetics. - Increase the stylize parameter for a more painterly, artistic version of the portrait.",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@196efcc151173af318c224bebdf1f3142904bfbb/prompts/himalayan-ethnic-elegance-portrait.webp",
+    "aiTool": "Midjourney",
+    "promptText": "A breathtaking high-resolution cinematic portrait of a stunning South Asian woman wearing an intricately embroidered black and crimson lehenga choli with gold zari detailing, standing gracefully in a vibrant marigold flower field. In the background, the majestic, snow-capped peaks of the Annapurna range rise against a clear, deep blue sky. Soft natural morning sunlight illuminates her features and the texture of her traditional attire. The composition is a full-body wide shot, captured with a professional 85mm lens, sharp focus on the subject with a shallow depth of field, high-end editorial fashion photography style, authentic natural skin textures, 8k resolution, photorealistic masterpiece.",
+    "publishedAt": "2026-10-23T02:56:36.263Z",
+    "variables": [],
+    "slug": "himalayan-ethnic-elegance-portrait",
     "tags": [
       "Ethnic Fashion",
       "Himalayan Landscape",
@@ -7662,41 +7714,15 @@
       "Golden Hour",
       "Cinematic Photography"
     ],
-    "imageWidth": 1024
-  },
-  {
-    "promptText": "A full-body high-fashion editorial studio portrait of a handsome male model posing confidently in a sleek black chore jacket, white undershirt, tailored black trousers, and leather loafers, wearing dark vintage-inspired sunglasses. The aesthetic is sharp, monochromatic, and minimalist. Lighting is a harsh, high-contrast studio setup with a single bright light source creating a dramatic, long, sharp-edged shadow against a clean, seamless white wall. Captured with 85mm lens, f/8 aperture for crisp focus, cinematic fashion photography style, black and white aesthetic, clean composition, high-end magazine editorial look.",
-    "id": "prompt-1792721861071",
-    "bookmarksCount": 0,
-    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@main/prompts/prompt-1792721830128.jpg",
-    "imageAlt": "Minimalist High-Fashion Monochrome Editorial",
-    "title": "Minimalist High-Fashion Monochrome Editorial",
-    "isNoIndex": true,
-    "imageWidth": 1024,
-    "publishedAt": "2026-10-23T02:17:41.074Z",
-    "slug": "minimalist-high-fashion-monochrome-editorial",
-    "aiTool": "Midjourney",
-    "seo": {
-      "focusKeyword": "fashion editorial prompt",
-      "metaTitle": "Minimalist High-Fashion Monochrome Editorial Prompt for AI",
-      "metaDescription": "Master the art of high-contrast fashion photography with this professional studio prompt. Perfect for creating minimalist, high-end editorial images."
-    },
+    "imageFileName": "himalayan-ethnic-elegance-portrait.webp",
     "imageHeight": 1536,
     "author": {
       "avatar": "/logo.png",
-      "role": "Author",
-      "name": "tool.reelz"
-    },
-    "likesCount": 0,
-    "updatedAt": "2026-11-02T07:41:06.950Z",
-    "category": "Fashion & Editorial Photography",
-    "additionalImages": [],
-    "viewsCount": 0,
-    "articleContent": "### Mastering the Minimalist Editorial Look\n\nThis prompt is engineered to replicate the clean, high-impact aesthetic found in premium fashion magazines like Vogue Hommes or GQ. \n\n#### Lighting Breakdown\nThe core of this image is the **high-contrast studio lighting**. By using a single, intense light source (like a hard-focus flash or spotlight), we force the creation of the distinct, elongated shadow. The white background acts as a reflector, ensuring the subject remains sharp while the negative space emphasizes the silhouette.\n\n#### Camera & Lens Selection\nWe specify an **85mm lens**—the gold standard for portraiture—because it minimizes facial distortion and creates a pleasing compression that makes the subject stand out against the background. An **f/8 aperture** ensures that both the shoes and the head are in sharp focus, characteristic of commercial editorial shots.\n\n#### Pro Tips for Customization\n- **Subject Swaps:** You can easily swap the [subject] to a female model or change the outfit to a structured suit or avant-garde streetwear.\n- **Lighting Variation:** If you prefer a softer look, replace 'harsh, high-contrast studio setup' with 'soft-box beauty lighting' to reduce the intensity of the shadow.\n- **Color Tweak:** While this is designed for a black and white aesthetic, you can remove the monochromatic constraint and add 'vibrant colors' or 'desaturated warm tones' to match a specific brand identity.",
-    "createdAt": "2026-10-23T02:17:41.074Z",
-    "affiliateProducts": [],
-    "status": "published",
-    "isPremium": true,
+      "name": "tool.reelz",
+      "role": "Author"
+    }
+  },
+  {
     "tags": [
       "Monochrome",
       "Minimalist",
@@ -7706,12 +7732,44 @@
       "Sharp-contrast",
       "High-fashion"
     ],
-    "copiesCount": 0,
-    "variables": [],
+    "createdAt": "2026-10-23T02:17:41.074Z",
+    "articleContent": "### Mastering the Minimalist Editorial Look\n\nThis prompt is engineered to replicate the clean, high-impact aesthetic found in premium fashion magazines like Vogue Hommes or GQ. \n\n#### Lighting Breakdown\nThe core of this image is the **high-contrast studio lighting**. By using a single, intense light source (like a hard-focus flash or spotlight), we force the creation of the distinct, elongated shadow. The white background acts as a reflector, ensuring the subject remains sharp while the negative space emphasizes the silhouette.\n\n#### Camera & Lens Selection\nWe specify an **85mm lens**—the gold standard for portraiture—because it minimizes facial distortion and creates a pleasing compression that makes the subject stand out against the background. An **f/8 aperture** ensures that both the shoes and the head are in sharp focus, characteristic of commercial editorial shots.\n\n#### Pro Tips for Customization\n- **Subject Swaps:** You can easily swap the [subject] to a female model or change the outfit to a structured suit or avant-garde streetwear.\n- **Lighting Variation:** If you prefer a softer look, replace 'harsh, high-contrast studio setup' with 'soft-box beauty lighting' to reduce the intensity of the shadow.\n- **Color Tweak:** While this is designed for a black and white aesthetic, you can remove the monochromatic constraint and add 'vibrant colors' or 'desaturated warm tones' to match a specific brand identity.",
+    "publishedAt": "2026-10-23T02:17:41.074Z",
+    "viewsCount": 0,
+    "author": {
+      "avatar": "/logo.png",
+      "role": "Author",
+      "name": "tool.reelz"
+    },
+    "slug": "minimalist-high-fashion-monochrome-editorial",
+    "imageUrl": "https://cdn.jsdelivr.net/gh/Mustafa584777/zeena-prompt-assets@216a9b815553916ffc9541bfa64fe8782a35d696/prompts/minimalist-high-fashion-monochrome-editorial.webp",
+    "isNoIndex": true,
+    "aiTool": "Midjourney",
+    "imageHeight": 1536,
+    "imageWidth": 1024,
     "parameters": {
       "isPremium": true
     },
-    "imageFileName": "minimalist-high-fashion-monochrome-editorial.webp"
+    "isPremium": true,
+    "promptText": "A full-body high-fashion editorial studio portrait of a handsome male model posing confidently in a sleek black chore jacket, white undershirt, tailored black trousers, and leather loafers, wearing dark vintage-inspired sunglasses. The aesthetic is sharp, monochromatic, and minimalist. Lighting is a harsh, high-contrast studio setup with a single bright light source creating a dramatic, long, sharp-edged shadow against a clean, seamless white wall. Captured with 85mm lens, f/8 aperture for crisp focus, cinematic fashion photography style, black and white aesthetic, clean composition, high-end magazine editorial look.",
+    "category": "Fashion & Editorial Photography",
+    "title": "Minimalist High-Fashion Monochrome Editorial",
+    "seo": {
+      "focusKeyword": "fashion editorial prompt",
+      "metaTitle": "Minimalist High-Fashion Monochrome Editorial Prompt for AI",
+      "metaDescription": "Master the art of high-contrast fashion photography with this professional studio prompt. Perfect for creating minimalist, high-end editorial images."
+    },
+    "copiesCount": 0,
+    "id": "prompt-1792721861071",
+    "likesCount": 0,
+    "bookmarksCount": 0,
+    "affiliateProducts": [],
+    "imageFileName": "minimalist-high-fashion-monochrome-editorial.webp",
+    "variables": [],
+    "imageAlt": "Minimalist High-Fashion Monochrome Editorial",
+    "updatedAt": "2026-11-28T04:31:35.823Z",
+    "additionalImages": [],
+    "status": "published"
   },
   {
     "viewsCount": 0,
