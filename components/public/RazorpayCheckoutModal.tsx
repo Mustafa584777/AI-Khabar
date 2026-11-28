@@ -24,6 +24,7 @@ const SINGLE_YEARLY_PLAN = {
   period: '/ year',
   badge: 'All-Access Annual Pass',
   features: [
+    'No ads (100% ad-free browsing)',
     'Unlock all premium prompts',
     'Bulk upload in Watermark Remover',
     'No watermark text on copied prompts',
@@ -84,7 +85,7 @@ export const RazorpayCheckoutModal: React.FC = () => {
         amount: amountPaise,
         currency: 'INR',
         name: 'Trending Copy Paste Photo Prompts',
-        description: 'Pro Yearly Membership (₹99/year) - All Benefits + 120 Credits',
+        description: 'Pro Yearly Membership (₹99/year) - No Ads + All Benefits + 120 Credits',
         receipt: `rcpt_${Date.now()}`,
         prefill: {
           name: userAccount.name || userAccount.username || userAccount.email.split('@')[0],

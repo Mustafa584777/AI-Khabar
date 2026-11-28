@@ -21,6 +21,7 @@ import { startRouteNavigation } from '@/lib/navigation';
 import { PromptToolHowTo } from '@/components/public/PromptToolHowTo';
 import { PromptToolExploreSection } from '@/components/public/PromptToolExploreSection';
 import { AdsterraBanner300x250 } from '@/components/public/AdsterraBanner300x250';
+import { AdsterraAd, AdsterraResponsiveLeaderboard } from '@/components/public/AdsterraAd';
 
 export const PromptEditorTool = () => {
   const router = useRouter();
@@ -174,6 +175,9 @@ export const PromptEditorTool = () => {
           )}
         </div>
       </div>
+
+      {/* Instant Responsive Leaderboard Banner */}
+      <AdsterraResponsiveLeaderboard className="my-2" />
 
       {/* Main Workspace */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -379,19 +383,35 @@ export const PromptEditorTool = () => {
 
       <AdsterraBanner300x250 className="mt-6" />
 
-      {/* Step-by-Step How To Section */}
-      <PromptToolHowTo tool="editor" />
+      <div className="flex items-start gap-6 w-full">
+        <div className="flex-1 min-w-0 space-y-8">
+          {/* Step-by-Step How To Section */}
+          <PromptToolHowTo tool="editor" />
 
-      {/* Native Explore Prompts Section */}
-      <PromptToolExploreSection
-        mode="editor"
-        onUseInTool={(post) => {
-          setInputPrompt(post.promptText || '');
-          setResultData(null);
-          setEditorError(null);
-          showToast('Prompt loaded into Box 1! Add your desired changes in Box 2.', 'success');
-        }}
-      />
+          {/* Native Explore Prompts Section */}
+          <PromptToolExploreSection
+            mode="editor"
+            onUseInTool={(post) => {
+              setInputPrompt(post.promptText || '');
+              setResultData(null);
+              setEditorError(null);
+              showToast('Prompt loaded into Box 1! Add your desired changes in Box 2.', 'success');
+            }}
+          />
+        </div>
+        <div className="hidden xl:flex flex-col gap-6 w-[176px] shrink-0 sticky top-24 self-start items-center pt-4">
+          <AdsterraAd
+            variant="160x300"
+            minWidthMediaQuery="(min-width: 1280px)"
+            compact
+          />
+          <AdsterraAd
+            variant="160x600"
+            minWidthMediaQuery="(min-width: 1280px)"
+            compact
+          />
+        </div>
+      </div>
     </div>
   );
 };

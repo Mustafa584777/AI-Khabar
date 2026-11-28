@@ -7,6 +7,7 @@ import { useApp } from '@/context/AppContext';
 
 const PROMO_ITEMS = [
   'Unlock premium prompts at ₹99/Year',
+  'No Ads (Ad-Free Experience)',
   'Unlock All PRO Prompts',
   'Bulk Upload in Watermark Remover',
   '120 Prompt Tool Credits',

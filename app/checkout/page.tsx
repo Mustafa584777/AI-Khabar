@@ -25,7 +25,7 @@ import { formatExpiryDateWithHour } from '@/lib/plans';
 const FAQS = [
   {
     question: 'What does the ₹99/year Pro Yearly plan include?',
-    answer: 'For just ₹99 per year (365 days), you unlock all benefits: unlimited access to all premium prompts, Bulk Upload in the Watermark Remover tool, clean prompts with no watermark text on copy, 120 prompt tool credits for AI prompt generation/extraction/editing, AI Search (3 daily searches), and unlimited saves & history.',
+    answer: 'For just ₹99 per year (365 days), you unlock all benefits: No Ads (100% ad-free browsing across all pages & tools), unlimited access to all premium prompts, Bulk Upload in the Watermark Remover tool, clean prompts with no watermark text on copy, 120 prompt tool credits for AI prompt generation/extraction/editing, AI Search (3 daily searches), and unlimited saves & history.',
   },
   {
     question: 'How many tool credits do I receive with the ₹99/year plan?',
@@ -70,7 +70,7 @@ export default function CheckoutPage() {
           </h1>
 
           <p className="text-xs sm:text-base text-neutral-600 dark:text-neutral-400">
-            Unlock every single Pro feature for an entire year at just ₹99/year — including all premium prompts, clean watermark-free copied prompts, AI Search, unlimited saves & history, and 120 prompt tool credits.
+            Unlock every single Pro feature for an entire year at just ₹99/year — including No Ads across the site, all premium prompts, clean watermark-free copied prompts, AI Search, unlimited saves &amp; history, and 120 prompt tool credits.
           </p>
 
           {/* Current User Status */}
@@ -134,6 +134,12 @@ export default function CheckoutPage() {
                 <li className="flex items-center gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-[#E60023] shrink-0" />
                   <span className="font-bold text-neutral-900 dark:text-white">
+                    No Ads — 100% ad-free browsing
+                  </span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-[#E60023] shrink-0" />
+                  <span className="font-bold text-neutral-900 dark:text-white">
                     Unlock all premium prompts
                   </span>
                 </li>
@@ -175,7 +181,7 @@ export default function CheckoutPage() {
               planTier="pro"
               billingCycle="yearly"
               planName="Pro Yearly"
-              description="1 Year Pro Access • 120 Credits • All Premium Prompts • AI Search • Unlimited Saves"
+              description="1 Year Pro Access • No Ads • 120 Credits • All Premium Prompts • AI Search • Unlimited Saves"
               buttonText="Get Pro Yearly for ₹99/year"
               variant="pill"
               size="lg"
@@ -256,6 +262,14 @@ export default function CheckoutPage() {
                   <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400">
                     <Check className="w-4 h-4 text-emerald-500 inline-block mr-1" />
                     <span>Bulk Upload Unlocked</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-3.5 px-4 font-bold text-neutral-900 dark:text-white">Ad-Free Browsing</td>
+                  <td className="py-3.5 px-4 text-center font-medium text-neutral-500">Display Ads Shown</td>
+                  <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400">
+                    <Check className="w-4 h-4 text-emerald-500 inline-block mr-1" />
+                    <span>No Ads (100% Ad-Free)</span>
                   </td>
                 </tr>
               </tbody>

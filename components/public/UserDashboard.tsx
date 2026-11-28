@@ -581,8 +581,8 @@ export const UserDashboard = () => {
                 </div>
                 <p className="text-xs sm:text-sm text-neutral-300 max-w-xl leading-relaxed">
                   {isPaid
-                    ? `You have full access to all premium prompts, ${toolCredits} prompt tool credits, unlimited saves & history, and 3 daily AI searches.`
-                    : 'Unlock all premium prompts, 120 prompt tool credits, unlimited saves & history, and 3 daily AI searches — all for just ₹99/year.'}
+                    ? `You enjoy 100% ad-free browsing (No Ads), full access to all premium prompts, ${toolCredits} prompt tool credits, unlimited saves & history, and 3 daily AI searches.`
+                    : 'Enjoy No Ads across the entire site, unlock all premium prompts, 120 prompt tool credits, unlimited saves & history, and 3 daily AI searches — all for just ₹99/year.'}
                 </p>
                 {isPaid && (
                   <div className="space-y-1 text-xs text-amber-400 font-bold">
@@ -665,6 +665,10 @@ export const UserDashboard = () => {
               {
                 title: 'Bulk Watermark Upload',
                 desc: 'Clean multiple watermarked photos at once offline',
+              },
+              {
+                title: 'No Ads (Ad-Free)',
+                desc: 'Zero banner ads across all pages & tools',
               },
             ].map((feat, idx) => (
               <div key={idx} className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-start gap-3">

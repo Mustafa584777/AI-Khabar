@@ -31,6 +31,7 @@ import { PromptToolExploreSection } from '@/components/public/PromptToolExploreS
 import { ensureAspectRatio34, formatPromptForClipboard } from '@/lib/utils';
 import { startRouteNavigation } from '@/lib/navigation';
 import { AdsterraBanner300x250 } from '@/components/public/AdsterraBanner300x250';
+import { AdsterraAd, AdsterraResponsiveLeaderboard } from '@/components/public/AdsterraAd';
 
 const SAMPLE_IMAGES_FALLBACK = [
   {
@@ -641,7 +642,8 @@ export const AIStudioTool = ({
           </div>
         ) : activeStudioTab === 'reverse' ? (
           /* IMAGE TO PROMPT STUDIO */
-          <div className="space-y-12">
+          <div className="space-y-10">
+          <AdsterraResponsiveLeaderboard className="my-1" />
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Left Column: Input Image & Options (5 cols) */}
             <div className="lg:col-span-5 space-y-6">
@@ -1084,24 +1086,41 @@ export const AIStudioTool = ({
 
           <AdsterraBanner300x250 className="mt-6" />
 
-          <PromptToolHowTo tool="reverse" />
+          <div className="flex items-start gap-6 w-full">
+            <div className="flex-1 min-w-0 space-y-10">
+              <PromptToolHowTo tool="reverse" />
 
-          <PromptToolExploreSection
-            mode="reverse"
-            onUseInTool={(post) => {
-              if (post.imageUrl) {
-                setUploadedImage(post.imageUrl);
-                setExtractedData(null);
-                setIsSavedExtracted(false);
-                setToolError(null);
-                showToast('Loaded prompt image! Click "Extract AI Prompt from Image" above.');
-              }
-            }}
-          />
+              <PromptToolExploreSection
+                mode="reverse"
+                onUseInTool={(post) => {
+                  if (post.imageUrl) {
+                    setUploadedImage(post.imageUrl);
+                    setExtractedData(null);
+                    setIsSavedExtracted(false);
+                    setToolError(null);
+                    showToast('Loaded prompt image! Click "Extract AI Prompt from Image" above.');
+                  }
+                }}
+              />
+            </div>
+            <div className="hidden xl:flex flex-col gap-6 w-[176px] shrink-0 sticky top-24 self-start items-center pt-4">
+              <AdsterraAd
+                variant="160x300"
+                minWidthMediaQuery="(min-width: 1280px)"
+                compact
+              />
+              <AdsterraAd
+                variant="160x600"
+                minWidthMediaQuery="(min-width: 1280px)"
+                compact
+              />
+            </div>
+          </div>
           </div>
         ) : (
           /* AI PROMPT GENERATOR STUDIO (IDEA TO PROMPT) */
-          <div className="space-y-12">
+          <div className="space-y-10">
+            <AdsterraResponsiveLeaderboard className="my-1" />
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Left Column: Idea and Options */}
             <div className="lg:col-span-5 space-y-6">
@@ -1399,19 +1418,35 @@ export const AIStudioTool = ({
 
           <AdsterraBanner300x250 className="mt-6" />
 
-          <PromptToolHowTo tool="generator" />
+          <div className="flex items-start gap-6 w-full">
+            <div className="flex-1 min-w-0 space-y-10">
+              <PromptToolHowTo tool="generator" />
 
-          <PromptToolExploreSection
-            mode="generator"
-            onUseInTool={(post) => {
-              const remixIdea = `generate a new version of this prompt: ${post.promptText}`;
-              setPromptIdea(remixIdea);
-              setGeneratedPromptData(null);
-              setIsSavedGenerated(false);
-              setToolError(null);
-              showToast('Prompt loaded into Idea to Prompt! Click Generate above.');
-            }}
-          />
+              <PromptToolExploreSection
+                mode="generator"
+                onUseInTool={(post) => {
+                  const remixIdea = `generate a new version of this prompt: ${post.promptText}`;
+                  setPromptIdea(remixIdea);
+                  setGeneratedPromptData(null);
+                  setIsSavedGenerated(false);
+                  setToolError(null);
+                  showToast('Prompt loaded into Idea to Prompt! Click Generate above.');
+                }}
+              />
+            </div>
+            <div className="hidden xl:flex flex-col gap-6 w-[176px] shrink-0 sticky top-24 self-start items-center pt-4">
+              <AdsterraAd
+                variant="160x300"
+                minWidthMediaQuery="(min-width: 1280px)"
+                compact
+              />
+              <AdsterraAd
+                variant="160x600"
+                minWidthMediaQuery="(min-width: 1280px)"
+                compact
+              />
+            </div>
+          </div>
           </div>
         )}
       </div>
@@ -1446,9 +1481,10 @@ export const AIStudioTool = ({
                 <span>Pro Yearly Plan (₹99 / year):</span>
               </div>
               <ul className="space-y-1 text-[11px] text-neutral-600 dark:text-neutral-400">
-                <li>• <strong>120 Prompt Tool Credits</strong> for AI generator, extractor & editor</li>
+                <li>• <strong>No Ads</strong> — 100% ad-free browsing across all pages &amp; tools</li>
+                <li>• <strong>120 Prompt Tool Credits</strong> for AI generator, extractor &amp; editor</li>
                 <li>• <strong>All Premium Prompts</strong> unlocked for 365 days</li>
-                <li>• <strong>AI Search (3 daily)</strong> + Unlimited saves & history</li>
+                <li>• <strong>AI Search (3 daily)</strong> + Unlimited saves &amp; history</li>
               </ul>
             </div>
 

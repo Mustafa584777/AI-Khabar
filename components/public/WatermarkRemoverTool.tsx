@@ -46,6 +46,7 @@ import { startRouteNavigation } from '@/lib/navigation';
 import { WatermarkRemoverSEO } from '@/components/public/WatermarkRemoverSEO';
 import { clearWatermarkHandoff, peekWatermarkHandoff } from '@/lib/watermark-handoff';
 import { AdsterraBanner300x250 } from '@/components/public/AdsterraBanner300x250';
+import { AdsterraAd, AdsterraResponsiveLeaderboard } from '@/components/public/AdsterraAd';
 
 interface BulkWatermarkItem {
   id: string;
@@ -1146,6 +1147,9 @@ export const WatermarkRemoverTool = () => {
         </div>
       </div>
 
+      {/* Instant Above-the-Fold Responsive Banner (728x90 / 468x60 / 320x50) */}
+      <AdsterraResponsiveLeaderboard className="my-2" />
+
       {/* Hidden File Inputs */}
       <input
         ref={fileInputRef}
@@ -2004,8 +2008,24 @@ export const WatermarkRemoverTool = () => {
 
       <AdsterraBanner300x250 className="mt-8" />
 
-      {/* Comprehensive On-Page SEO Guide, Comparison Table & Interactive FAQ */}
-      <WatermarkRemoverSEO />
+      {/* Comprehensive On-Page SEO Guide + Desktop Skyscraper Rail */}
+      <div className="flex items-start gap-6 w-full">
+        <div className="flex-1 min-w-0">
+          <WatermarkRemoverSEO />
+        </div>
+        <div className="hidden xl:flex flex-col gap-6 w-[176px] shrink-0 sticky top-24 self-start items-center pt-6">
+          <AdsterraAd
+            variant="160x600"
+            minWidthMediaQuery="(min-width: 1280px)"
+            compact
+          />
+          <AdsterraAd
+            variant="160x300"
+            minWidthMediaQuery="(min-width: 1280px)"
+            compact
+          />
+        </div>
+      </div>
     </div>
   );
 };

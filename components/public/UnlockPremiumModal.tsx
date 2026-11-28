@@ -122,6 +122,10 @@ export const UnlockPremiumModal: React.FC = () => {
           <ul className="space-y-2 text-xs text-neutral-700 dark:text-neutral-300">
             <li className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-[#E60023] shrink-0" />
+              <span className="font-bold text-neutral-900 dark:text-white">No ads — 100% ad-free experience</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-[#E60023] shrink-0" />
               <span className="font-bold text-neutral-900 dark:text-white">Unlock all premium prompts</span>
             </li>
             <li className="flex items-center gap-2">
@@ -149,7 +153,7 @@ export const UnlockPremiumModal: React.FC = () => {
             planName="Pro Yearly"
             planTier="pro"
             billingCycle="yearly"
-            description="1 Year Pro Access • 120 Credits • AI Search • Unlimited Saves"
+            description="1 Year Pro Access • No Ads • 120 Credits • AI Search • Unlimited Saves"
             buttonText="Unlock Everything for ₹99 / year"
             variant="primary"
             size="md"

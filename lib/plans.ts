@@ -32,6 +32,7 @@ const SINGLE_PRO_YEARLY_CONFIG: Omit<PlanConfig, 'id'> = {
   unlimitedSearches: false,
   unlockAllPrompts: true,
     features: [
+      'No ads across the entire site',
       'Unlock all premium prompts',
       'Bulk upload in Watermark Remover',
       '120 prompt tool credits',
@@ -61,6 +62,7 @@ export const PLAN_CONFIGS: Record<PlanTier, PlanConfig> = {
       '10 combined saves & history',
       'Free tier prompt access',
       'Copied prompts include watermark text',
+      'Includes display ads',
     ],
   },
   // Legacy tier keys alias to the single ₹99/year Pro Yearly benefits for backward DB compatibility

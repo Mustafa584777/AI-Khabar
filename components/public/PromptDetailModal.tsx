@@ -50,6 +50,7 @@ import {
 } from '@/lib/viewport-cache';
 import { useRouter } from 'next/navigation';
 import { AdsterraBanner300x250 } from '@/components/public/AdsterraBanner300x250';
+import { AdsterraAd, AdsterraResponsiveLeaderboard } from '@/components/public/AdsterraAd';
 
 interface RecommendedPinCardProps {
   pin: PromptPost;
@@ -2265,6 +2266,8 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
           </div>
         </section>
 
+        <AdsterraResponsiveLeaderboard key={`lb-${selectedPost.id}`} allowInsideModal className="pt-2" />
+
         {/* "More to explore" / "More Prompts" Masonry Image Grid */}
         <section className="space-y-6 pt-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-200 dark:border-neutral-800 pb-4">
@@ -2285,58 +2288,76 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
             </span>
           </div>
 
-          {/* Responsive Visual Pins Deterministic Masonry Columns (0 CLS & 0 transitions) */}
-          <div className="flex items-start gap-3 sm:gap-4 w-full" id="more-explore-masonry">
-            {exploreMasonryColumns.map((colPins, colIdx) => (
-              <div key={colIdx} className="flex-1 min-w-0 flex flex-col gap-3 sm:gap-4">
-                {colPins.map((pin) => (
-                  <div
-                    key={pin.id}
-                    ref={(el) => registerExploreCardNode(pin.id, el)}
-                    data-explore-pin-id={pin.id}
-                    className="w-full"
-                  >
-                    <RecommendedPinCard
-                      pin={pin}
-                      isPinBookmarked={bookmarkedIds.includes(pin.id)}
-                      isCopied={copiedPinId === pin.id}
-                      isUnlocked={isPromptUnlocked(pin.id, pin.isPremium)}
-                      isProUser={isProUser}
-                      onSelect={handleSelectPin}
-                      onAspectRatioResolved={handlePinAspectRatioResolved}
-                      onGenerate={(e, p) => {
-                        e.stopPropagation();
-                        const isPinUnlocked = isPromptUnlocked(p.id, p.isPremium);
-                        if (!isPinUnlocked) {
-                          handleSelectPin(p);
-                          return;
-                        }
-                        if (typeof window !== 'undefined') {
-                          sessionStorage.setItem('auraprompt_studio_preload', p.promptText);
-                          sessionStorage.setItem('promptcms_studio_preload', p.promptText);
-                          if (p.imageUrl) {
-                            sessionStorage.setItem('promptcms_studio_image_preload', p.imageUrl);
+          <div className="flex items-start gap-6 w-full">
+            {/* Responsive Visual Pins Deterministic Masonry Columns (0 CLS & 0 transitions) */}
+            <div className="flex-1 min-w-0 flex items-start gap-3 sm:gap-4 w-full" id="more-explore-masonry">
+              {exploreMasonryColumns.map((colPins, colIdx) => (
+                <div key={colIdx} className="flex-1 min-w-0 flex flex-col gap-3 sm:gap-4">
+                  {colPins.map((pin) => (
+                    <div
+                      key={pin.id}
+                      ref={(el) => registerExploreCardNode(pin.id, el)}
+                      data-explore-pin-id={pin.id}
+                      className="w-full"
+                    >
+                      <RecommendedPinCard
+                        pin={pin}
+                        isPinBookmarked={bookmarkedIds.includes(pin.id)}
+                        isCopied={copiedPinId === pin.id}
+                        isUnlocked={isPromptUnlocked(pin.id, pin.isPremium)}
+                        isProUser={isProUser}
+                        onSelect={handleSelectPin}
+                        onAspectRatioResolved={handlePinAspectRatioResolved}
+                        onGenerate={(e, p) => {
+                          e.stopPropagation();
+                          const isPinUnlocked = isPromptUnlocked(p.id, p.isPremium);
+                          if (!isPinUnlocked) {
+                            handleSelectPin(p);
+                            return;
                           }
-                        }
-                        setSelectedPost(null);
-                        startRouteNavigation('/create', 'Opening AI Studio...');
-                        router.push('/create');
-                        showToast('Loaded prompt into Create Studio!');
-                      }}
-                      onCopy={(e, p) => handleQuickCopyPin(e, p)}
-                      onToggleBookmark={(e, p) => {
-                        e.stopPropagation();
-                        if (!userAccount?.isLoggedIn) {
-                          openAuthModal('Please sign in or create an account to save prompts.');
-                          return;
-                        }
-                        toggleBookmark(p.id);
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
-            ))}
+                          if (typeof window !== 'undefined') {
+                            sessionStorage.setItem('auraprompt_studio_preload', p.promptText);
+                            sessionStorage.setItem('promptcms_studio_preload', p.promptText);
+                            if (p.imageUrl) {
+                              sessionStorage.setItem('promptcms_studio_image_preload', p.imageUrl);
+                            }
+                          }
+                          setSelectedPost(null);
+                          startRouteNavigation('/create', 'Opening AI Studio...');
+                          router.push('/create');
+                          showToast('Loaded prompt into Create Studio!');
+                        }}
+                        onCopy={(e, p) => handleQuickCopyPin(e, p)}
+                        onToggleBookmark={(e, p) => {
+                          e.stopPropagation();
+                          if (!userAccount?.isLoggedIn) {
+                            openAuthModal('Please sign in or create an account to save prompts.');
+                            return;
+                          }
+                          toggleBookmark(p.id);
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Sticky Skyscraper Side Rail (only mounts iframe on >= 1280px) */}
+            <div className="hidden xl:flex flex-col gap-6 w-[176px] shrink-0 sticky top-24 self-start items-center">
+              <AdsterraAd
+                variant="160x300"
+                allowInsideModal
+                minWidthMediaQuery="(min-width: 1280px)"
+                compact
+              />
+              <AdsterraAd
+                variant="160x600"
+                allowInsideModal
+                minWidthMediaQuery="(min-width: 1280px)"
+                compact
+              />
+            </div>
           </div>
 
           {/* Bottom Infinite Scroll Sentinel & Loader */}

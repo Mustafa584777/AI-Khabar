@@ -55,9 +55,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   ReactDOM.preconnect('https://cdn.jsdelivr.net', { crossOrigin: 'anonymous' });
   ReactDOM.preconnect('https://images.unsplash.com', { crossOrigin: 'anonymous' });
+  ReactDOM.preconnect('https://bauval.org', { crossOrigin: 'anonymous' });
   if (typeof (ReactDOM as any).prefetchDNS === 'function') {
     (ReactDOM as any).prefetchDNS('https://cdn.jsdelivr.net');
     (ReactDOM as any).prefetchDNS('https://images.unsplash.com');
+    (ReactDOM as any).prefetchDNS('https://bauval.org');
   }
 
   return (
