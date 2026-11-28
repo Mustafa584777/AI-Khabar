@@ -7,11 +7,21 @@ export async function GET(req: NextRequest) {
     const getAll = searchParams.get('all') === 'true';
     if (getAll) {
       const queries = await ServerStorage.getAllSearchQueries();
-      return NextResponse.json({ success: true, queries });
+      return NextResponse.json(
+        { success: true, queries },
+        { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0' } }
+      );
     }
     const limitParam = parseInt(searchParams.get('limit') || '12', 10);
     const queries = await ServerStorage.getTopSearchQueries(limitParam);
-    return NextResponse.json({ success: true, queries });
+    return NextResponse.json(
+      { success: true, queries },
+      {
+        headers: {
+          'Cache-Control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400',
+        },
+      }
+    );
   } catch (err: any) {
     console.error('Failed to get search queries:', err);
     return NextResponse.json({ error: 'Failed to fetch search queries', details: err.message }, { status: 500 });

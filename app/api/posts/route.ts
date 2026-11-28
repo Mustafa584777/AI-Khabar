@@ -1,5 +1,5 @@
 import { ServerStorage } from '@/lib/server-storage';
-import { pushPostsJsonToGitHub } from '@/lib/github-assets-server';
+import { pushPostsJsonToGitHub, pushPublicCdnBundleToAssetsRepo } from '@/lib/github-assets-server';
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { getPromptSlug } from '@/lib/utils';
@@ -151,11 +151,14 @@ export async function POST(req: NextRequest) {
       });
 
       const githubSync = shouldPushGitHub
-        ? await pushPostsJsonToGitHub(
-            adminPosts,
-            `Update posts.json: ${body.action === 'trash' ? 'trashed' : 'restored'} ${updatesToSave.length} prompt(s)`,
-            getExtraSyncFiles()
-          )
+        ? await Promise.all([
+            pushPostsJsonToGitHub(
+              adminPosts,
+              `Update posts.json: ${body.action === 'trash' ? 'trashed' : 'restored'} ${updatesToSave.length} prompt(s)`,
+              getExtraSyncFiles()
+            ),
+            pushPublicCdnBundleToAssetsRepo(adminPosts).catch(() => null),
+          ]).then(([res]) => res)
         : { success: false, skipped: true };
 
       try {
@@ -194,11 +197,14 @@ export async function POST(req: NextRequest) {
 
     // Only push posts.json to GitHub when explicitly requested (manual "Push posts.json to GitHub" button)
     const githubSync = shouldPushGitHub
-      ? await pushPostsJsonToGitHub(
-          adminPosts,
-          `Update posts.json: ${saved.title.slice(0, 60)}`,
-          getExtraSyncFiles()
-        )
+      ? await Promise.all([
+          pushPostsJsonToGitHub(
+            adminPosts,
+            `Update posts.json: ${saved.title.slice(0, 60)}`,
+            getExtraSyncFiles()
+          ),
+          pushPublicCdnBundleToAssetsRepo(adminPosts).catch(() => null),
+        ]).then(([res]) => res)
       : { success: false, skipped: true };
 
     try {
@@ -268,11 +274,14 @@ export async function DELETE(req: NextRequest) {
     );
 
     const githubSync = shouldPushGitHub
-      ? await pushPostsJsonToGitHub(
-          adminPosts,
-          `Update posts.json: permanently removed ${idsToDelete.length} prompt(s)`,
-          getExtraSyncFiles()
-        )
+      ? await Promise.all([
+          pushPostsJsonToGitHub(
+            adminPosts,
+            `Update posts.json: permanently removed ${idsToDelete.length} prompt(s)`,
+            getExtraSyncFiles()
+          ),
+          pushPublicCdnBundleToAssetsRepo(adminPosts).catch(() => null),
+        ]).then(([res]) => res)
       : { success: false, skipped: true };
 
     try {

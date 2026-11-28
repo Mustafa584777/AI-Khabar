@@ -27,6 +27,7 @@ import {
   BillingCycle,
 } from '@/lib/plans';
 import { getPromptSlug, getEmailAvatarUrl, formatPromptForClipboard, slugify } from '@/lib/utils';
+import { fetchPublicCatalogFromCdn, fetchPublicSiteMetaFromCdn } from '@/lib/cdn-catalog';
 
 interface AppContextType {
   // Navigation & Views
@@ -1340,23 +1341,6 @@ export const AppProvider = ({
     };
 
     if (isFullCatalogLoaded && postsRef.current.length > INITIAL_FEED_POSTS.length) {
-      if (!hasSyncedLiveCatalogRef.current && typeof window !== 'undefined' && !isSavingRef.current) {
-        hasSyncedLiveCatalogRef.current = true;
-        void fetch('/api/posts?all=false')
-          .then((res) => (res.ok ? res.json() : null))
-          .then((data) => {
-            if (data?.success && Array.isArray(data.posts) && data.posts.length > 0 && !isSavingRef.current) {
-              setPosts((prev) => {
-                const updated = mergeCatalogByVersion(prev, data.posts);
-                postsRef.current = updated;
-                return updated;
-              });
-            }
-          })
-          .catch(() => {
-            hasSyncedLiveCatalogRef.current = false;
-          });
-      }
       return postsRef.current;
     }
     if (fullCatalogPromiseRef.current) {
@@ -1366,43 +1350,54 @@ export const AppProvider = ({
     setIsCatalogLoading(true);
     setCatalogLoadError(false);
 
-    fullCatalogPromiseRef.current = import('@/data/posts.json')
-      .then((mod) => {
-        const allRaw = (Array.isArray(mod.default) ? mod.default : []) as unknown as PromptPost[];
-        const merged = mergeCatalogByVersion(postsRef.current, allRaw);
-        setPosts(merged);
-        postsRef.current = merged;
-        setIsFullCatalogLoaded(true);
-        setCatalogLoadError(false);
-        setIsCatalogLoading(false);
+    fullCatalogPromiseRef.current = (async () => {
+      // 1. Primary zero-origin path: fetch published catalog directly from GitHub + jsDelivr CDN
+      let catalogPosts = await fetchPublicCatalogFromCdn();
 
-        if (!hasSyncedLiveCatalogRef.current && typeof window !== 'undefined' && !isSavingRef.current) {
-          hasSyncedLiveCatalogRef.current = true;
-          void fetch('/api/posts?all=false')
-            .then((res) => (res.ok ? res.json() : null))
-            .then((data) => {
-              if (data?.success && Array.isArray(data.posts) && data.posts.length > 0 && !isSavingRef.current) {
-                setPosts((prev) => {
-                  const updated = mergeCatalogByVersion(prev, data.posts);
-                  postsRef.current = updated;
-                  return updated;
-                });
-              }
-            })
-            .catch(() => {
-              hasSyncedLiveCatalogRef.current = false;
-            });
-        }
+      // 2. Static fallback if CDN catalog hasn't been seeded yet (0 Vercel Origin)
+      if (!catalogPosts || catalogPosts.length === 0) {
+        const mod = await import('@/data/posts.json');
+        catalogPosts = (Array.isArray(mod.default) ? mod.default : []) as unknown as PromptPost[];
+      }
 
-        return merged;
-      })
-      .catch(() => {
-        // Clear promise ref so slow/transient network failures retry cleanly on scroll or button click
-        fullCatalogPromiseRef.current = null;
-        setCatalogLoadError(true);
-        setIsCatalogLoading(false);
-        return postsRef.current;
-      });
+      const merged = mergeCatalogByVersion(postsRef.current, catalogPosts);
+      setPosts(merged);
+      postsRef.current = merged;
+      setIsFullCatalogLoaded(true);
+      setCatalogLoadError(false);
+      setIsCatalogLoading(false);
+
+      // Refresh categories/tags/settings/searchQueries from jsDelivr CDN (0 Vercel Origin)
+      if (!hasSyncedLiveCatalogRef.current && typeof window !== 'undefined' && !isSavingRef.current) {
+        hasSyncedLiveCatalogRef.current = true;
+        void fetchPublicSiteMetaFromCdn().then((meta) => {
+          if (!meta || isSavingRef.current) return;
+          if (Array.isArray(meta.categories) && meta.categories.length > 0) {
+            setCategories(meta.categories);
+            StorageService.saveCachedCategories(meta.categories);
+          }
+          if (Array.isArray(meta.tags) && meta.tags.length > 0) {
+            setTags(meta.tags);
+            StorageService.saveCachedTags(meta.tags);
+          }
+          if (meta.settings) {
+            setSettings(meta.settings);
+            StorageService.saveCachedSettings(meta.settings);
+          }
+          if (Array.isArray(meta.searchQueries) && meta.searchQueries.length > 0) {
+            setPopularSearchQueries(meta.searchQueries);
+          }
+        });
+      }
+
+      return merged;
+    })().catch(() => {
+      // Clear promise ref so slow/transient network failures retry cleanly on scroll or button click
+      fullCatalogPromiseRef.current = null;
+      setCatalogLoadError(true);
+      setIsCatalogLoading(false);
+      return postsRef.current;
+    });
 
     return fullCatalogPromiseRef.current;
   }, [isFullCatalogLoaded]);

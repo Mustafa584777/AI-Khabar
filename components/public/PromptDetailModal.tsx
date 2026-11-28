@@ -784,13 +784,14 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
           targetSlug = decodeURIComponent(rawSlug).toLowerCase().trim();
         } catch {}
 
+        const checkMatch = (p: PromptPost) => {
+          if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
+          if (p.id && p.id.toLowerCase() === targetSlug) return true;
+          if (p.title && (p.title.toLowerCase() === targetSlug || slugify(p.title) === targetSlug)) return true;
+          return false;
+        };
+
         if (!matched) {
-          const checkMatch = (p: PromptPost) => {
-            if (p.slug && (p.slug.toLowerCase() === targetSlug || slugify(p.slug) === targetSlug)) return true;
-            if (p.id && p.id.toLowerCase() === targetSlug) return true;
-            if (p.title && (p.title.toLowerCase() === targetSlug || slugify(p.title) === targetSlug)) return true;
-            return false;
-          };
           matched =
             currentStack.find(checkMatch) ||
             currentPosts.find(checkMatch) ||
@@ -805,17 +806,30 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
           setSelectedPost(matched);
           setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
         } else {
-          fetch(`/api/posts/${encodeURIComponent(targetSlug)}`)
-            .then((res) => (res.ok ? res.json() : Promise.reject(res)))
-            .then((data) => {
-              if (data.success && data.post) {
+          void ensureFullCatalogLoaded()
+            .then((catalog) => {
+              const cdnMatch = catalog.find(checkMatch);
+              if (cdnMatch) {
                 setIsDirectClosed(false);
                 if (containerRef.current) {
                   containerRef.current.scrollTop = 0;
                 }
-                setSelectedPost(data.post);
+                setSelectedPost(cdnMatch);
                 setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
+                return;
               }
+              return fetch(`/api/posts/${encodeURIComponent(targetSlug)}`)
+                .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+                .then((data) => {
+                  if (data.success && data.post) {
+                    setIsDirectClosed(false);
+                    if (containerRef.current) {
+                      containerRef.current.scrollTop = 0;
+                    }
+                    setSelectedPost(data.post);
+                    setDisplayedCount(INITIAL_RECOMMENDED_COUNT);
+                  }
+                });
             })
             .catch(() => {});
         }
@@ -824,7 +838,7 @@ export const PromptDetailModal = ({ inlinePost = null, isDirectRoute = false }: 
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [setSelectedPost]);
+  }, [setSelectedPost, ensureFullCatalogLoaded]);
 
   // Escape key closes lightbox or goes back
   useEffect(() => {

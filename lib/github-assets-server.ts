@@ -1,4 +1,4 @@
-import { PromptPost, PromptComment } from '@/types/prompt';
+import { Category, PromptComment, PromptPost, SiteSettings } from '@/types/prompt';
 import { getPromptSlug } from './utils';
 
 export interface GitHubAssetsConfig {
@@ -1115,6 +1115,143 @@ export async function pushPostsJsonToGitHub(
   return {
     ...res,
     count: allPosts.length,
+  };
+}
+
+export interface SiteMetaSnapshotInput {
+  categories?: Category[];
+  tags?: string[];
+  settings?: SiteSettings;
+  searchQueries?: string[];
+}
+
+async function purgeJsDelivrDataPaths(cfg: GitHubAssetsConfig, paths: string[]): Promise<void> {
+  await Promise.allSettled(
+    paths.map((assetPath) => {
+      const cleanPath = assetPath.replace(/^\/+/, '');
+      return fetch(
+        `https://purge.jsdelivr.net/gh/${cfg.owner}/${cfg.repo}@${cfg.branch}/${cleanPath}`,
+        { cache: 'no-store' }
+      ).catch(() => {});
+    })
+  );
+}
+
+/**
+ * Pushes minified public catalog (`data/posts.min.json`, `data/initial-feed.json`)
+ * and optional `data/site-meta.json` directly to the public assets repository (`zeena-prompt-assets`)
+ * and purges jsDelivr CDN so public browsers fetch catalog updates with 0 Vercel Fast Origin Transfer.
+ */
+export async function pushPublicCdnBundleToAssetsRepo(
+  rawPosts: PromptPost[],
+  meta?: SiteMetaSnapshotInput,
+  commitMessage?: string
+): Promise<{
+  success: boolean;
+  commitSha?: string;
+  repo: string;
+  branch: string;
+  publishedCount: number;
+  error?: string;
+}> {
+  const assetsCfg = resolveGitHubAssetsConfig();
+  const repoFullName = `${assetsCfg.owner}/${assetsCfg.repo}`;
+  if (!assetsCfg.isConfigured) {
+    return {
+      success: false,
+      repo: repoFullName,
+      branch: assetsCfg.branch,
+      publishedCount: 0,
+      error: 'GITHUB_ASSETS_TOKEN is not configured.',
+    };
+  }
+
+  const { allPosts, initialFeed } = buildCleanPostsPayload(rawPosts);
+  // Strictly expose ONLY published prompts on the public CDN
+  const publishedPosts = allPosts.filter((p) => p.status === 'published');
+
+  const filesToPush: Array<{ path: string; content: string }> = [
+    {
+      path: 'data/posts.min.json',
+      content: JSON.stringify(publishedPosts),
+    },
+    {
+      path: 'data/initial-feed.json',
+      content: JSON.stringify(initialFeed),
+    },
+  ];
+
+  if (meta) {
+    filesToPush.push({
+      path: 'data/site-meta.json',
+      content: JSON.stringify({
+        categories: meta.categories || [],
+        tags: meta.tags || [],
+        settings: meta.settings || null,
+        searchQueries: meta.searchQueries || [],
+        count: publishedPosts.length,
+        updatedAt: new Date().toISOString(),
+      }),
+    });
+  }
+
+  const message =
+    commitMessage ||
+    `Sync public CDN catalog (${publishedPosts.length} published prompts)`;
+
+  const res = await pushFilesToGitHubRepo(filesToPush, message, assetsCfg);
+  if (res.success) {
+    await purgeJsDelivrDataPaths(
+      assetsCfg,
+      filesToPush.map((f) => f.path)
+    );
+  }
+
+  return {
+    ...res,
+    publishedCount: publishedPosts.length,
+  };
+}
+
+/**
+ * Lightweight sync of categories, tags, site settings, and top search queries
+ * to `zeena-prompt-assets/data/site-meta.json` + jsDelivr CDN purge.
+ */
+export async function pushSiteMetaSnapshotToAssetsRepo(
+  meta: SiteMetaSnapshotInput,
+  commitMessage = 'Sync public site metadata to CDN'
+): Promise<{ success: boolean; commitSha?: string; error?: string }> {
+  const assetsCfg = resolveGitHubAssetsConfig();
+  if (!assetsCfg.isConfigured) {
+    return { success: false, error: 'GITHUB_ASSETS_TOKEN is not configured.' };
+  }
+
+  const filePath = 'data/site-meta.json';
+  const res = await pushFilesToGitHubRepo(
+    [
+      {
+        path: filePath,
+        content: JSON.stringify({
+          categories: meta.categories || [],
+          tags: meta.tags || [],
+          settings: meta.settings || null,
+          searchQueries: meta.searchQueries || [],
+          updatedAt: new Date().toISOString(),
+        }),
+      },
+    ],
+    commitMessage,
+    assetsCfg
+  );
+
+  if (res.success) {
+    await purgeJsDelivrDataPaths(assetsCfg, [filePath]);
+  }
+
+  return {
+    success: res.success,
+    commitSha: res.commitSha,
+    error: res.error,
   };
 }
 

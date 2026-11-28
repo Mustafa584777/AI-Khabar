@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { ServerStorage } from '@/lib/server-storage';
 import {
   pushPostsJsonToGitHub,
+  pushPublicCdnBundleToAssetsRepo,
   reconcilePostsWithGitHubAssets,
   resolveGitHubSiteRepoConfig,
 } from '@/lib/github-assets-server';
@@ -132,7 +133,33 @@ export async function POST(req: NextRequest) {
           ? `Update data/posts.json (${finalPosts.length} prompts, linked ${healedCount} GitHub images)`
           : undefined;
 
-    const result = await pushPostsJsonToGitHub(finalPosts, commitMessage, extraFiles);
+    const [categories, tags, settings, topQueries] = await Promise.all([
+      ServerStorage.getAllCategories().catch(() => []),
+      ServerStorage.getAllTags().catch(() => []),
+      ServerStorage.getSettings().catch(() => undefined),
+      ServerStorage.getTopSearchQueries(12).catch(() => []),
+    ]);
+
+    const [result, cdnResult] = await Promise.all([
+      pushPostsJsonToGitHub(finalPosts, commitMessage, extraFiles),
+      pushPublicCdnBundleToAssetsRepo(
+        finalPosts,
+        {
+          categories,
+          tags,
+          settings,
+          searchQueries: Array.isArray(topQueries) ? topQueries.map((q) => q.query).filter(Boolean) : [],
+        },
+        commitMessage
+      ).catch((err) => ({
+        success: false,
+        commitSha: undefined,
+        repo: 'Mustafa584777/zeena-prompt-assets',
+        branch: 'main',
+        publishedCount: 0,
+        error: err?.message || 'CDN sync skipped',
+      })),
+    ]);
 
     if (!result.success) {
       return NextResponse.json(
@@ -159,11 +186,13 @@ export async function POST(req: NextRequest) {
         branch: result.branch,
         count: result.count,
         healedCount,
+        cdnSynced: Boolean(cdnResult?.success),
+        cdnCommitSha: cdnResult?.commitSha,
         posts: finalPosts,
         message:
           healedCount > 0
-            ? `Pushed ${result.count} prompts & linked ${healedCount} GitHub image${healedCount === 1 ? '' : 's'} to ${result.repo}!`
-            : `Pushed ${result.count} prompts to ${result.repo} (${result.branch})!`,
+            ? `Pushed ${result.count} prompts & linked ${healedCount} GitHub image${healedCount === 1 ? '' : 's'} to ${result.repo}${cdnResult?.success ? ' + jsDelivr CDN' : ''}!`
+            : `Pushed ${result.count} prompts to ${result.repo} (${result.branch})${cdnResult?.success ? ' + jsDelivr CDN' : ''}!`,
       },
       {
         headers: {

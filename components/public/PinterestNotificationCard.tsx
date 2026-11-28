@@ -114,6 +114,7 @@ export const PinterestNotificationCard: React.FC<PinterestNotificationCardProps>
               alt="zeenaprompt.com"
               width={32}
               height={32}
+              unoptimized
               className="w-full h-full object-cover"
             />
           </div>

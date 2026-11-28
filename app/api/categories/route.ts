@@ -1,7 +1,25 @@
 import { ServerStorage } from '@/lib/server-storage';
+import { pushSiteMetaSnapshotToAssetsRepo } from '@/lib/github-assets-server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const revalidate = 604800;
+
+async function syncMetaToCdn() {
+  try {
+    const [categories, tags, settings, topQueries] = await Promise.all([
+      ServerStorage.getAllCategories(),
+      ServerStorage.getAllTags(),
+      ServerStorage.getSettings(),
+      ServerStorage.getTopSearchQueries(12),
+    ]);
+    await pushSiteMetaSnapshotToAssetsRepo({
+      categories,
+      tags,
+      settings,
+      searchQueries: topQueries.map((q) => q.query).filter(Boolean),
+    });
+  } catch {}
+}
 
 export async function GET() {
   try {
@@ -26,6 +44,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Category name is required' }, { status: 400 });
     }
     const saved = await ServerStorage.saveCategory(body);
+    void syncMetaToCdn();
     return NextResponse.json({ success: true, category: saved });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -41,6 +60,7 @@ export async function DELETE(req: NextRequest) {
     }
     const deleted = await ServerStorage.deleteCategory(id);
     const categories = await ServerStorage.getAllCategories();
+    void syncMetaToCdn();
     return NextResponse.json({ success: deleted, categories });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -345,6 +345,7 @@ export const HeroSection = () => {
                                   src={getOptimizedImageUrl(post.imageUrl, 200)}
                                   alt={post.title}
                                   fill
+                                  unoptimized
                                   sizes="80px"
                                   className="object-cover group-hover:scale-105 transition-transform duration-300"
                                   referrerPolicy="no-referrer"

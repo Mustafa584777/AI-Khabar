@@ -348,7 +348,7 @@ export const PromptGrid = () => {
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#E60023] via-rose-500 to-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-red-500/20 relative overflow-hidden">
               {isAiSearching ? (
                 <div className="w-7 h-7 rounded-full overflow-hidden animate-spin flex items-center justify-center bg-white/20 p-0.5">
-                  <Image src="/logo.png" alt="Logo" width={28} height={28} className="w-full h-full object-cover rounded-full" referrerPolicy="no-referrer" />
+                  <Image src="/logo.png" alt="Logo" width={28} height={28} unoptimized className="w-full h-full object-cover rounded-full" referrerPolicy="no-referrer" />
                 </div>
               ) : (
                 <Sparkles className="w-5 h-5" />

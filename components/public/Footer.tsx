@@ -45,6 +45,7 @@ export const Footer = () => {
                 alt="Zeena Prompt"
                 width={48}
                 height={48}
+                unoptimized
                 className="w-full h-full object-cover"
                 priority
               />

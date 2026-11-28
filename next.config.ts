@@ -155,7 +155,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=0, must-revalidate, s-maxage=60, stale-while-revalidate=300',
+            value: 'public, max-age=0, must-revalidate, s-maxage=31536000, stale-while-revalidate=86400',
           },
         ],
       },
@@ -164,12 +164,12 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=0, must-revalidate, s-maxage=60, stale-while-revalidate=300',
+            value: 'public, max-age=0, must-revalidate, s-maxage=31536000, stale-while-revalidate=86400',
           },
         ],
       },
       {
-        source: '/(dashboard|cms-login|admin)',
+        source: '/(dashboard|cms-login|admin|auth)',
         headers: [
           {
             key: 'Cache-Control',
